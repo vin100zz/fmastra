@@ -1,208 +1,125 @@
 # Architecture
 
-## Objectif
+## Objectif et couches
 
-Le projet sera enrichi de façon itérative pendant longtemps. L'architecture doit
-rendre chaque ajout local : nouvelle fonctionnalité = nouveau fichier ou nouvelle
-implémentation d'interface, pas une modification dispersée dans le code existant.
-
-## Couches
-
-```
-web/          ──▶  api/  ──▶  core/  ◀──  benchmarks/
-                                 │
-                              config/
-```
+Isoler règles, décisions et adaptateurs pour enrichir le jeu sans disperser les
+modifications. Les interfaces réduisent le couplage ; elles ne garantissent
+pas qu'une nouvelle fonctionnalité n'affectera qu'un fichier.
 
 | Couche | Responsabilité | Interdits |
 |---|---|---|
-| `core/domain` | entités, value objects, règles invariantes | I/O, processus, config globale |
-| `core/engine` | simuler un match | connaître le calendrier, la saison, le mercato |
-| `core/ai` | décider pour un club | modifier le monde directement |
-| `core/world` | faire avancer le temps, orchestrer | contenir des règles de match |
-| `core/config` | charger et valider la config | logique métier |
-| `api` | exposer des vues, router | contenir des règles de jeu |
-| `web` | afficher | dupliquer l'état serveur |
-| `benchmarks` | mesurer et calibrer | être importé par `core` |
+| `core/domain` | entités, objets valeur, invariants | I/O, config globale |
+| `core/engine` | simulation d'un match | calendrier de saison, mercato |
+| `core/ai` | produire des décisions | modifier directement le monde |
+| `core/world` | orchestration et application des événements | I/O, règles de match dupliquées |
+| `core/config` | modèles et validation pure | lecture de fichiers |
+| `infrastructure` | CSV, JSON, sauvegarde, migrations | décisions métier |
+| `api` | commandes et vues | règles de jeu |
+| `web` | affichage et navigation | état métier faisant autorité |
+| `benchmarks` | mesurer et calibrer | être importé par le métier |
 
-**Règle de dépendance** : les flèches vont vers `core`, jamais l'inverse.
-`core` n'importe rien de `api`, `web` ou `benchmarks`.
+`api`, `infrastructure` et `benchmarks` dépendent de `core`, jamais l'inverse.
+Le point d'assemblage injecte configuration, RNG, contrôleurs et adaptateurs.
+Le métier peut employer des dictionnaires typés comme index ; il ne manipule
+pas les dictionnaires JSON bruts.
 
-## Une responsabilité par fichier
+Une responsabilité par module. Une longueur de 200 lignes est un signal de
+relecture, pas une limite imposant un découpage artificiel. Noms Python anglais.
 
-Exemple pour le moteur de match — chaque fichier fait une seule chose :
+## Interfaces
 
-```
-core/engine/
-  possession.py        machine à états d'une possession
-  notes_zones.py       agrégation qualité × densité par zone et couloir
-  composites.py        attributs → composites
-  couloirs.py          choix et changement de couloir
-  occasion.py          résolution centre / frappe
-  coups_arretes.py     branche corners et coups francs
-  selection_joueur.py  tirage pondéré du joueur impliqué
-  chronologie.py       durée des possessions, temps additionnel
-  match.py             orchestration, assemblage du ResultatMatch
-  analytique.py        moteur Poisson de référence
-```
+- `ClubController` : sélection, remplacements, besoins, offres ; contextes typés
+  en entrée, décisions en sortie. `AIController` en v1, voir le README.
+- `MatchEngine` : équipes préparées, configuration et RNG vers `MatchResult`.
+  Deux implémentations : `PossessionEngine` et `AnalyticalEngine`.
+- `CompetitionRules` : calendrier, classement, décisions de fin de saison.
+  L'entité `Competition` stocke les données et porte un nom distinct de
+  l'interface de règles. `LeagueRules` en v1.
+- `TransferRule` : valide un transfert et produit des événements, sans modifier
+  directement le monde. Les prêts pourront ajouter droits contractuels et dates
+  de retour au modèle.
+- Interfaces d'import et de persistance côté cœur, adaptateurs dans
+  `infrastructure`. Aucun chargement dans le moteur de match.
 
-Test : si un fichier dépasse ~200 lignes ou si son nom nécessite un « et », il
-porte deux responsabilités.
+Le contrôle humain demandera aussi des commandes, écrans et points d'attente.
+Rejouer un résultat calculé est distinct d'un match interactif où une décision
+change la suite. Prévoir des étapes de match reprenables ; le journal seul ne
+suffira pas à ce futur mode. Aucune règle ne teste « club de l'utilisateur ».
 
-## Interfaces d'extension
+Activer un club dormant demande de valider son effectif, initialiser contrôleur,
+calendrier, finances et statistiques, puis changer son statut. Un service
+regroupe ces opérations : ce n'est pas une simple bascule de champ.
 
-Chaque point d'évolution connu est déjà une interface en v1, avec une seule
-implémentation. Ajouter la fonctionnalité = ajouter une implémentation.
+## État et événements
 
-### ClubController
+Une règle produit des événements typés ; un applicateur central mute le monde
+et contrôle ses invariants. L'orchestrateur avance par phases : appliquer une
+phase avant les décisions dépendant de son résultat. Toutes les intentions
+d'un tour de mercato lisent le même état.
 
-Décrit dans `CLAUDE.md`. `AIController` en v1, `HumanController` plus tard.
+Le moteur fait évoluer un état local de match sans modifier les entités du
+monde. Son résultat contient les événements à appliquer. Le journal n'offre
+pas à lui seul l'annulation : celle-ci demanderait instantanés ou événements
+inverses et reste hors v1.
 
-### MoteurMatch
+Un RNG injecté est consommé : ces fonctions sont déterministes relativement à
+son état, pas pures au sens mathématique. Les calculs sans tirage sont purs.
+Les effets de persistance sont séparés.
 
-```python
-class MoteurMatch(Protocol):
-    def simuler(self, dom: Equipe, ext: Equipe, cfg: Config, rng: Random) -> ResultatMatch: ...
-```
+## Déterminisme
 
-Deux implémentations dès la v1 : `MoteurPossession` et `MoteurAnalytique`. Le
-second sert d'oracle et de mode rapide pour simuler les compétitions non suivies.
+- Sauvegarder la graine initiale et `getstate()` de chaque RNG persistant ;
+  restaurer avec `setstate()`. Préserver les entiers et reconstruire la
+  structure attendue depuis le JSON, sans pickle.
+- Séparer les flux par sous-système. Import et estimations utilisent des
+  graines dérivées d'identifiants stables et d'une empreinte cryptographique,
+  jamais de `hash()` Python ni de l'ordre des lignes CSV.
+- Trier les entités et offres par clé stable avant les tirages sensibles à
+  l'ordre. Définir explicitement le départage des offres simultanées.
+- Les consultations API ne modifient ni le monde ni les RNG de simulation.
+- En benchmark parallèle, dériver la graine de l'ID de scénario et de l'indice
+  de répétition. Le nombre de processus ne change pas les résultats.
+- Une reproduction exacte suppose mêmes données, commandes, code,
+  configuration et environnement ; enregistrer leurs métadonnées.
 
-### Competition
+## Exécution et sauvegarde
 
-```python
-class Competition(Protocol):
-    def generer_calendrier(self, clubs: list[Club], saison: int, rng: Random) -> list[Journee]: ...
-    def classement(self, matches: list[Match]) -> Classement: ...
-    def appliquer_fin_saison(self, monde: Monde) -> list[EvenementSaison]: ...
-```
+Un seul processus possède le monde : un seul worker serveur en v1. Toutes les
+commandes d'écriture passent par une file et un verrou communs.
+Une simulation longue est un travail suivi par l'API, hors de sa boucle de
+requêtes. Les lectures utilisent la dernière vue cohérente publiée ; une
+seconde commande d'avancement est refusée tant que la première est active.
+Un ID de commande reconnaît une relance après interruption réseau.
 
-`Championnat` en v1. `Coupe` et `CompetitionEuropeenne` plus tard, sans toucher
-au reste. La promotion/relégation est un `EvenementSaison` produit par
-`appliquer_fin_saison`, donc localisée.
+Écrire les sauvegardes dans un fichier temporaire du même répertoire, puis
+remplacer atomiquement après succès ; conserver le dernier slot valide en cas
+d'échec. Valider et migrer un chargement avant de remplacer le monde courant.
+Les noms de slots sont des identifiants validés, jamais des chemins libres.
 
-### RegleTransfert
+## Import
 
-```python
-class RegleTransfert(Protocol):
-    def est_applicable(self, joueur: Joueur, source: Club, cible: Club) -> bool: ...
-    def appliquer(self, transfert: Transfert, monde: Monde) -> None: ...
-```
-
-`TransfertSec` en v1. `Pret`, `ClauseLiberatoire` plus tard.
-
-### Evenement
-
-Hiérarchie fermée d'événements de match (`But`, `Tir`, `Arret`, `Carton`,
-`Blessure`, `Remplacement`). Ajouter un type d'événement ne doit pas obliger à
-modifier le moteur : le moteur produit, les consommateurs filtrent par type.
-
-## Injection de la configuration
-
-La config est un paramètre, jamais un singleton importé.
-
-```python
-# BON
-def note_zone(equipe, zone, couloir, phase, cfg: ConfigMoteur) -> float: ...
-
-# INTERDIT
-from core.config import CONFIG
-def note_zone(equipe, zone, couloir, phase) -> float:
-    return ... * CONFIG.d_ref ...
-```
-
-Raison : un test doit pouvoir passer une config modifiée, et un benchmark doit
-pouvoir balayer un paramètre sans variable globale.
-
-Les objets de config sont des `dataclass(frozen=True)` typés, produits par le
-chargeur depuis les JSON. **Le code métier ne manipule jamais de `dict`.**
-
-## Injection de l'aléatoire
-
-Même principe. `Random` est un paramètre explicite, jamais le module global.
-
-Pour les tests, un `RngFixe` implémentant la même interface et renvoyant une
-séquence prédéterminée permet de tester une branche précise sans statistiques.
-
-## Mutation du monde
-
-Le cœur ne mute pas le monde en place au fil de l'eau. Il **retourne des
-événements**, appliqués ensuite par un applicateur unique.
-
-```python
-def jouer_journee(monde: Monde, cfg: Config, rng: Random) -> list[Evenement]: ...
-def appliquer(monde: Monde, evenements: list[Evenement]) -> None: ...
-```
-
-Bénéfices : les fonctions de simulation restent pures et testables, le journal
-d'événements de l'interface est gratuit, et l'annulation devient possible.
-
-## Testabilité
-
-### Tests unitaires (`tests/unit/`)
-
-Rapides, déterministes, sans monde complet. Chaque règle isolément.
-
-Utiliser des **fabriques de test** plutôt que des fixtures figées :
-
-```python
-def un_joueur(**overrides) -> Joueur: ...
-def un_club(nb_joueurs=25, **overrides) -> Club: ...
-def un_onze(formation="4-3-3", niveau=70) -> list[Joueur]: ...
-```
-
-Un test qui doit construire vingt-cinq joueurs à la main signale un couplage trop
-fort.
-
-### Tests d'intégration (`tests/integration/`)
-
-Scénarios sur plusieurs saisons, graine fixée, assertions sur des invariants :
-la population reste stable, aucun club ne dépasse son plafond salarial, aucun
-effectif ne descend sous 16 joueurs, aucun joueur n'a d'attribut hors bornes.
-
-Ce sont des tests d'invariants, pas de valeurs exactes.
-
-### Benchmarks (`benchmarks/`)
-
-Distincts des tests : ils mesurent des distributions et prennent des minutes.
-Voir `docs/benchmarks.md`.
-
-## Performance
-
-Le profil de charge est concentré : le moteur de match représente l'essentiel du
-temps CPU. Boucles serrées, non vectorisables (chaque possession dépend de la
-précédente).
-
-Ordre des optimisations, si le besoin se présente :
-
-1. Simuler en mode analytique les compétitions que l'utilisateur ne suit pas
-2. Précalculer les agrégats de zone (déjà spécifié : recalcul aux seuls
-   changements)
-3. Profiler avant toute réécriture
-4. En dernier recours, extraire `core/engine/possession.py` vers une extension
-   native
-
-Ne jamais réécrire tout le projet dans un autre langage : l'isolement du moteur
-rend cette extraction locale.
-
-## Chargement des données
-
-Les 32 000 joueurs et 26 000 clubs sont chargés une fois. Les clubs non simulés
-sont **dormants** : présents en mémoire, jamais simulés, accessibles au mercato.
-
-Séparer strictement :
-
-```
+```text
+infrastructure/importation/readers.py  lecture CSV cp1252
 core/world/importation/
-  lecteurs.py       CSV/JSON → dict brut
-  postes_fm.py      notation de poste de la source -> Poste (voir plus bas)
-  validation.py     contrôles d'intégrité
-  construction.py   dict → entités du domaine
-  perimetre.py      détermination actif / dormant
+  source_positions.py    grammaire des postes source
+  normalization.py       valeurs manquantes, nations, dates et IDs
+  synthesis.py           attributs et paramètres initiaux des clubs
+  selection.py           au maximum les 30 meilleurs par club
+  validation.py          intégrité après sélection
+  construction.py        assemblage des entités
 ```
 
-`importation/`, pas `import/` : `import` est un mot réservé Python, impossible
-à utiliser comme nom de paquet dans une instruction `from a.b.import.c import
-d`. Écart volontaire par rapport au nom suggéré plus haut dans ce document.
+Un changement de source peut toucher lecteur et normaliseur sans affecter le
+jeu. Les règles détaillées sont dans `docs/modele-donnees.md`.
 
-Un changement de format de données fourni ne doit toucher que `lecteurs.py`.
+## Vérification et performance
+
+Fabriques de joueurs, clubs et onze pour les tests unitaires ; scénarios pour
+les invariants de saison. Vérifier reprise de sauvegarde, lecture sans effet
+sur la suite, unicité des joueurs alignés et atomicité des transferts.
+Les benchmarks statistiques sont distincts des tests.
+
+Mesurer séparément moteur, orchestration, IA et I/O. Précalculer les notes de
+zone, profiler puis optimiser les goulots mesurés. Le mode analytique n'est
+utilisé que dans les suites acceptant ses statistiques limitées. Une extension
+native reste un dernier recours localisé au moteur.

@@ -28,23 +28,37 @@ simulé** :
 
 | Grandeur | Valeur |
 |---|---|
-| Clubs fournis | ~26 000 |
-| Joueurs fournis | ~32 000 |
-| Clubs **actifs** (simulés) | ~96 |
-| Joueurs dans les clubs actifs | ~2 400 |
-| Matches par saison | ~1 752 |
-| Regens par an | ~175 |
+| Clubs fournis (hors en-tête) | 26 759 |
+| Joueurs fournis (hors en-tête) | 32 369 |
+| Joueurs importés après limitation | 25 911 |
+| Clubs **actifs** (simulés) | 96 |
+| Joueurs dans les clubs actifs après import | 2 880 |
+| Joueurs dans les clubs dormants après import | 20 223 |
+| Agents libres importés | 2 808 |
+| Matches par saison | 1 752 |
+| Regens par an | calculés sur les sorties et les flux, aucun quota fixe |
 
-Cette asymétrie est une chance, pas une contrainte : **les 25 900 clubs non
+**Import : au maximum les 30 meilleurs joueurs de chaque club, actif ou dormant.**
+Le classement utilise la note globale synthétisée, pondérée par poste, à état
+neutre. Réserver deux places aux meilleurs gardiens si la source en contient
+au moins deux, puis compléter par niveau ; départager les égalités par ID.
+Les joueurs écartés ne sont ni importés, ni transformés en agents libres.
+Les agents libres déjà présents dans le CSV sont conservés sans plafond collectif.
+Les CSV sources restent inchangés. Voir `config/import.json` et le contrat
+d'import dans `docs/modele-donnees.md`. Après import, le plafond reste 30 ; le
+profil nominal visé par l'IA est de 24 joueurs, avec stabilisation progressive
+par le marché. La démographie tient compte de cette transition.
+
+Cette asymétrie est une chance, pas une contrainte : **les 26 663 clubs non
 simulés constituent le marché extérieur**. Sans eux, l'économie des 5
 championnats serait fermée et aucun club ne recruterait à l'étranger ou en
 division inférieure.
 
 Voir `docs/modele-donnees.md` pour la distinction actif / dormant.
 
-Ces volumes restent petits pour un serveur : 32 000 joueurs représentent 40 à
-80 Mo en mémoire avec `dataclass(slots=True)`. **Tout tient en mémoire, aucune
-base de données.**
+Le choix v1 est de conserver le monde en mémoire, sans base de données.
+Mesurer la mémoire réellement consommée avec les historiques et les événements ;
+le seul nombre d'entités ne suffit pas à l'estimer.
 
 ## Pile technique
 
@@ -60,7 +74,7 @@ Elles priment sur la rapidité d'écriture. Un code qui les respecte sera plus l
 
 ### Testabilité
 
-Une responsabilité par fichier et par classe. Aucune fonction du cœur ne fait
+Une responsabilité par fichier et par classe. Aucune fonction métier ne fait
 d'I/O, n'imprime, ni ne lit l'horloge système. Tout aléa passe par un `Random`
 injecté. Conséquence : chaque règle de jeu est testable isolément, sans monde
 complet ni serveur.
@@ -68,9 +82,10 @@ complet ni serveur.
 ### Extensibilité
 
 Le projet sera enrichi de façon itérative. Les points d'extension connus
-(divisions multiples, coupes, contrôle utilisateur, prêts) doivent être des
-implémentations d'interfaces existantes, pas des `if` ajoutés dans le code
-métier. Voir `docs/architecture.md`.
+(divisions multiples, coupes, contrôle utilisateur, prêts) passent par des
+interfaces explicites. Elles limitent les modifications transverses sans
+promettre qu'une fonctionnalité entière tiendra dans une seule implémentation.
+Voir `docs/architecture.md`.
 
 ### Configurabilité
 
@@ -79,8 +94,8 @@ coefficients, seuils, courbes, matrices et cibles vivent dans `config/*.json`,
 chargés au démarrage et validés par schéma. Le code contient des formules ; les
 nombres sont des données.
 
-Cette règle est absolue : si Claude Code écrit `0.45 * passe`, c'est une erreur —
-il faut `cfg.composites.progression.attaque.passe`. Voir `docs/configuration.md`.
+Les poids d'un composite sont lus dans la configuration, jamais recopiés dans
+la formule métier. Voir `docs/configuration.md`.
 
 ## Conséquence architecturale du mode observateur
 
@@ -89,14 +104,15 @@ Toute décision de club passe par une interface unique :
 
 ```python
 class ClubController(Protocol):
-    def choisir_composition(self, club: Club, match: Match) -> Composition: ...
-    def decider_remplacement(self, club: Club, etat: EtatMatch) -> Remplacement | None: ...
-    def evaluer_besoins(self, club: Club) -> list[Besoin]: ...
-    def repondre_offre(self, club: Club, offre: Offre) -> Reponse: ...
+    def select_lineup(self, context: LineupContext) -> Lineup: ...
+    def decide_substitution(self, context: MatchContext) -> Substitution | None: ...
+    def evaluate_needs(self, context: SquadContext) -> list[Need]: ...
+    def respond_to_offer(self, context: OfferContext) -> OfferResponse: ...
 ```
 
-En v1, `AIController` est la seule implémentation. L'ajout du contrôle
-utilisateur consistera à écrire `HumanController` et à changer une affectation.
+En v1, `AIController` est la seule implémentation ; configuration et RNG lui
+sont injectés. Le contrôle utilisateur demandera aussi des commandes, une
+gestion de l'attente et des écrans d'action, en plus de `HumanController`.
 **Aucun code métier ne doit tester « est-ce le club de l'utilisateur ».**
 
 ## Structure du dépôt
@@ -104,12 +120,13 @@ utilisateur consistera à écrire `HumanController` et à changer une affectatio
 ```
 config/          fichiers JSON de règles — voir docs/configuration.md
 src/
-  core/          cœur de simulation, fonctions pures
+  core/          règles métier, état et interfaces sans I/O
     domain/      entités et value objects, sans logique de processus
     engine/      moteur de match
     ai/          décisions de club
     world/       progression, démographie, calendrier, mercato
-    config/      chargement et validation des fichiers config
+    config/      modèles typés et validation pure de configuration
+  infrastructure/ lecteurs CSV/JSON, chargeur config, sauvegardes, migrations
   api/           FastAPI, couche mince au-dessus de core
   benchmarks/    harnais de calibrage — voir docs/benchmarks.md
 web/             front statique
@@ -125,24 +142,29 @@ Layout `src/` : le code s'importe toujours comme `core.xxx`, `api.xxx`,
 via `pythonpath = ["src"]` dans `pyproject.toml`. `web/` reste hors de
 `src/` : ce n'est pas du code Python installable.
 
-`core` ne doit jamais importer depuis `api`, `web` ou `benchmarks`.
+`core` ne doit jamais importer depuis `api`, `web`, `benchmarks` ou
+`infrastructure`. Les adaptateurs d'I/O dépendent de ses interfaces et modèles.
 
 ## Déterminisme
 
 Toute la simulation est reproductible.
 
 ```python
-def simuler_match(dom: Equipe, ext: Equipe, cfg: Config, rng: Random) -> ResultatMatch: ...
+def simulate_match(home: Team, away: Team, cfg: Config, rng: Random) -> MatchResult: ...
 ```
 
-Jamais d'appel au module `random` global. Une graine de partie est stockée dans
-la sauvegarde ; rejouer la même partie avec la même graine et la même config doit
-produire exactement les mêmes résultats. C'est ce qui rend les benchmarks
-exploitables et les bugs reproductibles.
+Jamais d'appel au module `random` global. Sauvegarder la graine initiale et
+l'état courant de chaque RNG, la configuration effective et son empreinte.
+À données, code, environnement d'exécution, commandes et configuration
+identiques, la simulation et sa reprise doivent être identiques. Les lectures
+API ne consomment jamais les RNG de simulation. Voir `docs/architecture.md`.
 
 ## Conventions
 
 - Code, noms de variables et commentaires **en anglais**
+- Les exemples français historiques sont des notations de spécification, pas
+  des noms à recopier dans l'implémentation. Les clés JSON françaises existantes
+  sont conservées comme format externe ; les modèles Python sont en anglais.
 - Type hints partout, `dataclass(slots=True)` pour les entités
 - Attributs de joueur sur une échelle **1-100**
 - Dates : objet `Date` de jeu, pas `datetime`
@@ -168,7 +190,7 @@ exploitables et les bugs reproductibles.
 
 1. Chargement de la config + validation par schéma
 2. Modèle de données + import des données fournies (actif / dormant)
-3. Moteur de match analytique (Poisson) — oracle de référence
+3. Moteur de match analytique (Poisson) — référence statistique
 4. **Harnais de benchmarks**
 5. Moteur de match par possessions, calibré contre les cibles
 6. Progression, déclin, fatigue, blessures, suspensions
@@ -176,6 +198,8 @@ exploitables et les bugs reproductibles.
 8. Démographie et regens
 9. API puis front
 
-Ne pas passer à l'étape suivante tant que les benchmarks de l'étape courante ne
-passent pas au vert. Le harnais arrive **avant** le moteur de production :
-pendant les premières semaines, il est le produit.
+Chaque étape valide ses tests et les seules suites dont les dépendances sont
+implémentées. Les cibles initiales sont des hypothèses de calibrage, pas des
+vérités empiriques : une cible incohérente doit être corrigée et documentée.
+Le harnais arrive **avant** le moteur de production ; les suites démographiques
+et économiques deviennent bloquantes une fois leurs mécanismes disponibles.

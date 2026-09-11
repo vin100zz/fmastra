@@ -1,5 +1,35 @@
 {
   "_note": "Parametres de synthese provisoire (v0) : data/clubs.csv et data/players.csv (export d'un jeu tiers) ne contiennent ni attributs de joueur, ni potentiel, ni reputation/budget de club. Ces valeurs sont approchees ici a partir de Value/Wage/Stad Cap, en reutilisant autant que possible ia_gestion.json et attributs.json plutot que de dupliquer des coefficients. A retirer/remplacer si l'utilisateur fournit une vraie source (voir docs/modele-donnees.md).",
+  "format_source": {
+    "encodage": "cp1252",
+    "separateur": ";",
+    "format_date": "%d.%m.%Y",
+    "identifiant_club_agent_libre": -1,
+    "marqueur_date_absente": "-",
+    "unite_salaire": "euros_par_semaine"
+  },
+  "selection_effectifs": {
+    "_note": "Tous les clubs, actifs et dormants. Reserver les meilleurs gardiens, puis completer par note globale a etat neutre. Synthese individuelle avec graine derivee de l'ID, independante de l'ordre CSV.",
+    "joueurs_max_par_club": 30,
+    "gardiens_reserves_si_disponibles": 2,
+    "critere": "note_globale_synthetisee",
+    "departage": "identifiant_croissant",
+    "joueurs_ecartes": "non_importes",
+    "agents_libres": "tous_conserves"
+  },
+  "valeurs_manquantes": {
+    "_note": "Replis explicites, chacun compte dans le rapport d'import. Ne jamais appliquer log a une valeur non positive.",
+    "valeur_non_positive": "estimer_depuis_salaire_positif_sinon_niveau_repli",
+    "niveau_repli": 35,
+    "salaire_nul_sous_contrat": "salaire_attendu",
+    "capacite_stade_non_positive": "borne_minimale_reference",
+    "contrat_absent_club": "prochain_30_juin_strictement_futur",
+    "contrat_expire": "avancer_annee_jusqua_date_strictement_future",
+    "date_signature_inconnue": "date_debut_partie",
+    "nationalite_principale": "premiere_nationalite_source",
+    "nom_sans_virgule": "nom_affichage_complet_prenom_vide",
+    "courbe_age_hors_domaine": "prolonger_valeur_extremite"
+  },
   "synthese_attributs": {
     "_note": "Niveau estime en inversant grossierement ia_gestion.valorisation (Value -> niveau), puis attributs generes comme un regen via attributs.profils_generation.",
     "niveau": {"min": 35, "max": 99},
@@ -17,7 +47,7 @@
     "note_centre_formation_bruit_ecart_type": 10.0
   },
   "postes": {
-    "_note": "Notation du jeu source (ex. 'AM RL, ST') parsee par core/world/import/postes_fm.py.",
+    "_note": "Notation du jeu source (ex. 'AM RL, ST') parsee par core/world/importation/source_positions.py. Une notation non reconnue bloque l'import ; aucun poste par defaut silencieux.",
     "affinite_secondaire_defaut": 0.6
   }
 }

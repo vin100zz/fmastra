@@ -6,8 +6,7 @@
 
 ## Principe
 
-Un attribut n'entre **jamais directement** dans une probabilité. Il traverse
-trois étages :
+Les transitions collectives de progression et création traversent trois étages :
 
 ```
 attribut → composite (par phase de jeu)
@@ -17,10 +16,14 @@ attribut → composite (par phase de jeu)
 
 Le même attribut sert à plusieurs endroits avec des poids différents. La vitesse
 pèse lourd en contre, peu en progression placée, pas du tout sur un tir.
+Les duels de tir utilisent les composites individuels ; endurance, vision,
+vitesse et relance peuvent aussi moduler les règles explicitement décrites de
+fatigue, changement de couloir, contre ou remise en jeu. Aucun attribut décoratif.
 
 ## Les 13 attributs
 
-Échelle 1-100. Toute valeur affichée est un entier.
+Échelle 1-100. Conserver des flottants en mémoire pour préserver les évolutions
+mensuelles ; toute valeur affichée est arrondie à un entier.
 
 ### Techniques
 
@@ -38,7 +41,7 @@ pèse lourd en contre, peu en progression placée, pas du tout sur un tir.
 |---|---|
 | `vision` | création d'occasion, changement d'aile |
 | `placement` | défense, position du gardien |
-| `sang_froid` | tir, penalty, fin de match |
+| `sang_froid` | tir, tête |
 
 ### Physiques
 
@@ -56,7 +59,7 @@ concernent pas et sa valorisation par l'IA est absurde.
 |---|---|
 | `reflexes` | arrêt |
 | `sorties` | centres, coups de pied arrêtés |
-| `relance` | zone de départ de la possession de son équipe |
+| `relance` | zone de départ après remise en jeu par le gardien |
 
 ## Ce qui est délibérément exclu
 
@@ -163,8 +166,9 @@ Zones : 1 défense, 2 milieu bas, 3 milieu haut, 4 zone de vérité.
 | AIL | 0.05 | 0.25 | 0.30 | 0.10 |
 | BU | 0.00 | 0.05 | 0.20 | 0.15 |
 
-Les zones sont numérotées **du point de vue de l'équipe qui possède le ballon**
-en attaque, et du point de vue de son propre but en défense.
+Attaque et défense sont stockées dans le repère local de chaque équipe, depuis
+son propre but. Pour opposer attaque et défense adverse, inverser les zones
+**et** les couloirs, comme spécifié dans `docs/moteur-match.md`.
 
 ### Implication latérale
 
@@ -214,5 +218,15 @@ Décalages par rapport au niveau cible, en points :
 | AIL | vitesse +14, technique +12 | tacle −12, jeu_tete −8 |
 | BU | finition +16, sang_froid +10, jeu_tete +6 | tacle −18, placement −10 |
 
-Ajouter ensuite un bruit gaussien d'écart-type 6 sur chaque attribut, puis
-borner à [1, 100].
+Ajouter ensuite le bruit gaussien configuré. Recentrer le profil obtenu en
+retranchant l'écart entre sa note globale pondérée et le niveau cible, puis
+borner à [1, 100]. Répéter le recentrage sur les attributs encore ajustables
+jusqu'à la précision numérique visée ou à saturation des bornes. Ne pas
+ajouter automatiquement les bonus de profil à la note globale cible : un
+buteur ne doit pas gagner plusieurs points de niveau sans compensation.
+
+Vérifier le niveau global final et la limite de potentiel après application
+des bornes. La croissance est plafonnée sur la note globale, pas sur chaque
+attribut pris séparément ; un spécialiste peut avoir un attribut supérieur à
+son potentiel global. Les états et malus de poste s'appliquent **une seule
+fois** : conserver les composites de base et leurs versions effectives séparés.

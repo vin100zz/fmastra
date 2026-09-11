@@ -1,286 +1,190 @@
 # Moteur de match
 
-> Toutes les valeurs numériques de ce document sont dans `config/moteur_match.json`, `config/formations.json` et `config/implications.json`.
-> Les tableaux ci-dessous documentent les valeurs initiales ; la source de
-> vérité est le JSON. Aucune constante ne doit apparaître dans le code.
+Les règles numériques vivent dans `config/moteur_match.json`, `formations.json`,
+`implications.json`, `attributs.json`, `etats.json` et `monde.json`. Les valeurs
+initiales sont des hypothèses à calibrer, pas une garantie de réalisme.
 
-## Deux moteurs
+## Deux moteurs, deux niveaux de détail
 
-**Moteur analytique** (à écrire en premier, à conserver ensuite)
+`AnalyticalEngine` fournit une référence rapide de distribution des scores.
+La force d'une équipe est la moyenne des notes des joueurs affectés aux postes,
+avec les états et affinités. À forces égales, partager la moyenne de buts en
+ajoutant la moitié du bonus domicile au domicile et en la retirant à l'extérieur.
+Multiplier chaque moyenne par l'exponentielle de l'écart de forces signé,
+pondérée par `analytique.sensibilite_ecart_force`, puis tirer deux Poisson.
 
-Calcule une force d'attaque et de défense par équipe, en déduit un nombre de buts
-attendus, tire le score dans une loi de Poisson. Sert d'oracle de référence et de
-mode rapide pour simuler en masse. Une centaine de lignes.
+`PossessionEngine` produit événements, statistiques et notes individuelles.
+Un écart avec Poisson déclenche une analyse des hypothèses et coefficients des
+deux modèles ; ce n'est pas automatiquement un bug du moteur détaillé.
 
-**Moteur par possessions** (le moteur de production)
+Le résultat analytique indique explicitement l'absence de détail : tirs, xG,
+notes et événements inconnus valent `None`, pas zéro. Il ne peut pas remplacer
+le moteur détaillé dans une suite qui dépend des minutes, blessures, cartons,
+notes ou statistiques individuelles. La performance « 100 saisons analytiques »
+concerne calendrier et scores seuls, pas le monde complet avec mercato.
 
-Simule le match possession par possession. C'est celui qui produit les
-événements, les statistiques par joueur et le compte rendu.
+## Chronologie
 
-Les deux doivent produire des distributions de résultats compatibles. Un écart
-signale un bug dans le second.
+Deux périodes séparées par une mi-temps. Les possessions consomment une durée
+Gamma positive de moyenne configurée (26 secondes au départ). Tirer un temps
+additionnel par match, le répartir entre les périodes et ajouter les arrêts
+survenus dans chacune ; ne pas ajouter deux fois le même arrêt. Une possession
+est limitée au temps restant de la période pour ne pas créer d'événement après
+le coup de sifflet. La durée simulée est la somme des durées attribuées aux deux
+équipes, ce qui définit la possession temporelle affichée.
 
-## Structure de la simulation
+À la mi-temps : changer l'engagement, appliquer les changements autorisés et
+conserver l'orientation relative des coordonnées. Les fenêtres tactiques à la
+mi-temps ne consomment pas les fenêtres de jeu, mais les joueurs remplacés
+comptent dans le maximum total. L'IA peut effectuer plusieurs changements dans
+une même fenêtre. Un blessé peut sortir dès la première minute.
 
-Un match est une suite de possessions, pas une suite de minutes. Environ 200 à
-240 possessions au total, 100 à 120 par équipe.
+Mettre à jour la fraîcheur aux paliers configurés, en fractionnant le calcul
+si une possession traverse un palier. Recalculer les agrégats sur remplacement,
+expulsion, sortie sur blessure, changement de poste ou formation et palier de
+fraîcheur. Les effets temporaires de contre se calculent sur les agrégats de
+base, puis expirent ; ne jamais les cumuler par erreur de cache.
 
-```python
-def simuler_match(dom, ext, rng) -> ResultatMatch:
-    notes = {dom: notes_zones(dom), ext: notes_zones(ext)}
-    t, score, evenements = 0, [0, 0], []
-    poss = engagement(rng)
+## Coordonnées
 
-    while t < 90 * 60:
-        t += duree_possession(rng)          # moyenne 22 s, loi Gamma
-        res = jouer_possession(poss, notes, t, rng)
-        appliquer(res, score, evenements)
-        poss = possession_suivante(res, rng)
+Chaque équipe possède des coordonnées locales : zones de son but vers le but
+adverse, couloirs gauche/axe/droite vus dans sa direction d'attaque. La défense
+est stockée dans ce même repère local, depuis son propre but.
 
-    return assembler_resultat(score, evenements)
-```
+Pour une attaque en zone `z`, couloir `c`, la défense adverse correspond à la
+zone et au couloir **miroirs** : `zones - 1 - z`, `couloirs - 1 - c` en indices
+zéro. Ainsi l'aile gauche offensive affronte le côté droit défensif. Le choix
+par softmax, les transitions et les joueurs impliqués utilisent tous la même
+conversion. Un turnover applique aussi les deux symétries avant toute règle
+de contre ou de hauteur de bloc.
 
-Recalculer `notes_zones` **uniquement** aux changements : remplacement, carton
-rouge, palier de fatigue franchi. Pas à chaque possession.
+Sur une remise en jeu par le gardien après arrêt ou tir non cadré, repartir en
+défense ou au milieu bas : sigmoïde du logit de la probabilité de base de relance,
+augmenté de sensibilité × (relance du gardien - niveau de référence). Choisir
+ensuite le couloir par softmax. Après but ou au début d'une période, engagement
+au milieu bas dans l'axe ; le premier engagement est tiré, le second revient
+à l'autre équipe. Cette règle donne un effet explicite à l'attribut de relance.
 
-## Géométrie
+## Qualité, densité et transitions
 
-**4 zones verticales** : `DEFENSE`, `MILIEU_BAS`, `MILIEU_HAUT`, `VERITE`
-**3 couloirs** : `GAUCHE`, `AXE`, `DROITE`
+Implication = poids vertical du poste aligné × poids latéral. La qualité de
+zone est la moyenne des composites pondérés par ces implications, après états
+et affinités. La note vaut qualité × (densité / référence)^exposant. Une zone
+vide vaut zéro, jamais davantage qu'une zone faiblement occupée.
 
-La zone est l'axe de la machine à états, elle pilote les phases. Le couloir est
-une propriété de la possession, qui peut changer en cours de route.
+La racine atténue les apports marginaux ; elle n'est pas une saturation bornée.
+La note de zone n'est pas nécessairement sur l'échelle [1, 100], contrairement
+aux attributs : sa différence combine qualité et densité.
 
-## Machine à états d'une possession
+Utiliser le composite de progression pour franchir une zone et le composite
+de création pour obtenir une occasion dans la dernière zone. Chaque transition
+est une sigmoïde de la différence attaque/défense pondérée par son coefficient.
+Le bonus domicile intervient seulement dans la progression du moteur détaillé.
+Un échec rend la possession, sauf attribution explicite d'un coup arrêté.
 
-```python
-def jouer_possession(p, notes, t, rng):
-    while True:
-        A = notes[p.equipe].att[p.zone][p.couloir]
-        D = notes[p.adverse].dfn[p.zone][p.couloir]
+Les tableaux de densités doivent être calculés depuis les JSON, jamais maintenus
+à la main. La conservation d'un budget d'implication identique entre tous les
+postes n'est pas garantie par les matrices ; vérifier l'équilibre en benchmark.
+Aucun bonus de confrontation codé entre formations.
 
-        if p.zone < VERITE:
-            if not reussite(k_prog * (A - D) + bonus_dom, rng):
-                return Turnover(zone=p.zone, couloir=p.couloir)
-            p.zone += 1
-            p = peut_changer_aile(p, notes, rng)
-        else:
-            if not reussite(k_occ * (A - D), rng):
-                return Turnover(zone=p.zone, couloir=p.couloir)
-            return resoudre_occasion(p, notes, rng)
-```
+## Couloirs et hauteur de bloc
 
-Toutes les probabilités de transition ont la forme :
+Choix initial par softmax des écarts de force, utilisant la défense miroir.
+Après progression, la probabilité de changer de couloir est la probabilité de
+base configurée multipliée par (1 + poids_vision × vision normalisée), bornée
+à [0, 1]. Tirer parmi les couloirs adjacents avec le même softmax. La moyenne
+proche du tiers est une cible sur scénarios symétriques, pas sur chaque équipe.
 
-```python
-def reussite(x, rng, biais=0.0):
-    return rng.random() < 1 / (1 + exp(-(x + biais)))
-```
-
-## Agrégats de zone — la formule qui compte
-
-C'est la partie la plus délicate du moteur. Elle doit séparer **qualité** et
-**densité**, sinon les formations défensives ne fonctionnent pas.
-
-```python
-def note_zone(equipe, zone, couloir, phase):
-    poids = [impl(j, zone, couloir, phase) for j in equipe.onze]
-    densite = sum(poids)
-    if densite == 0:
-        return NOTE_PLANCHER
-
-    qualite = sum(
-        p * composite(j, phase) * j.forme * j.fatigue * j.moral_mult * j.malus_poste
-        for p, j in zip(poids, equipe.onze)
-    ) / densite
-
-    return qualite * facteur_densite(densite)
-```
-
-**Pourquoi la division** : sans elle, un 5-4-1 gagne mécaniquement toutes les
-zones défensives parce qu'il y a plus de joueurs dedans, et les agrégats sortent
-de l'échelle 1-100. C'est le bug le plus courant de ce type de moteur.
-
-**Pourquoi le facteur de densité** : avec la seule moyenne, aligner un cinquième
-défenseur ne change rien — pire, s'il est moins bon, la moyenne baisse.
-
-```python
-D_REF = 3.5
-
-def facteur_densite(d):
-    return (d / D_REF) ** 0.5
-```
-
-L'exposant 0.5 fait saturer : le troisième joueur d'une zone apporte beaucoup, le
-sixième presque rien. C'est le bouton d'équilibrage des formations.
-
-Avec cette formule, `A - D` reste lisible : un écart de 10 signifie dix points de
-niveau.
-
-## Formations
-
-Aucune formation n'est traitée par du code spécifique. Une formation est
-uniquement **une liste de postes**, qui remplit la matrice d'implication.
-
-La conservation fait le reste : chaque joueur dispose d'un budget d'implication
-à peu près constant, donc empiler à l'arrière vide l'avant automatiquement.
-
-Densités totales attendues, en défense et en attaque :
-
-| Zone | 4-3-3 déf | 5-4-1 déf | 4-3-3 att | 5-4-1 att |
-|---|---|---|---|---|
-| Défense | 3.8 | 5.2 | 0.8 | 0.5 |
-| Milieu bas | 3.2 | 4.0 | 2.4 | 1.6 |
-| Milieu haut | 1.8 | 1.2 | 3.4 | 2.2 |
-| Vérité | 0.6 | 0.2 | 2.6 | 1.0 |
-
-**Interdit** : toute table de contres du type « 5-4-1 bat 4-3-3 avec +8 % ».
-L'avantage doit naître du calcul zone par zone, sinon le jeu se réduit à
-connaître la table.
-
-Formations à supporter en v1 : 4-4-2, 4-3-3, 4-2-3-1, 3-5-2, 5-3-2, 5-4-1.
-
-## Hauteur de bloc
-
-Axe **indépendant** de la formation : un 4-3-3 peut jouer bas, un 5-4-1 peut
-presser haut.
-
-```python
-h: float  # -1.0 (bloc bas) à +1.0 (pressing haut)
-```
-
-Deux effets, et seulement deux :
-
-1. **Zone de récupération** après turnover adverse. Bloc haut, on récupère en
-   zone 3 plutôt qu'en zone 1.
-2. **Vulnérabilité au contre**. Bloc haut, l'adversaire qui franchit la première
-   ligne saute une zone et arrive directement en situation dangereuse.
-
-## Choix du couloir
-
-Softmax sur l'écart de force, jamais uniforme :
-
-```python
-BETA = 0.06
-
-def choisir_couloir(notes, zone, equipe, adverse, rng):
-    ecarts = [notes[equipe].att[zone][c] - notes[adverse].dfn[zone][c]
-              for c in COULOIRS]
-    poids = [exp(BETA * e) for e in ecarts]
-    return tirage_pondere(COULOIRS, poids, rng)
-```
-
-Une équipe attaque plus souvent de son côté fort et cible le latéral faible d'en
-face. Intelligence tactique émergente, sans code d'IA. `BETA` bas au départ :
-trop élevé, 90 % des attaques passent du même côté.
-
-**Changement d'aile** : à chaque progression, probabilité de basculer vers un
-couloir voisin, pondérée par la vision du milieu de la zone courante. Empêche les
-attaques d'être des couloirs figés. Viser 15 à 20 % des progressions.
-
-## Résolution de l'occasion
-
-Le couloir détermine le type d'occasion.
-
-```python
-def resoudre_occasion(p, notes, rng):
-    if p.couloir in (GAUCHE, DROITE):
-        return resoudre_centre(p, notes, rng)
-    return resoudre_frappe(p, notes, rng)
-```
-
-**Centre** : tirer un centreur (pondéré par implication dans le couloir), puis un
-réceptionneur (pondéré par implication en zone `VERITE`). xG de base faible.
-
-```python
-xg_centre = 0.06 * f(comp_tete_receptionneur, comp_sortie_gardien)
-```
-
-**Frappe axiale** : tirer un tireur pondéré par implication. xG plus élevé,
-majoré si la possession vient d'un contre.
-
-```python
-xg_frappe = 0.11 * (1.6 if p.est_contre else 1.0)
-```
-
-Puis résolution contre le gardien, dans les deux cas :
-
-```python
-p_but = ajuster(xg, comp_tir_ou_tete, comp_arret_gardien)
-```
-
-**Ne pas ajouter de dimension latérale au tir lui-même** : la position est déjà
-encodée dans le xG, une dimension supplémentaire ne ferait que diluer la finition.
+Hauteur initiale : écart de forces du onze × sensibilité configurée, plus bonus
+domicile éventuel, bornée aux limites de hauteur. Lors d'une récupération, la
+probabilité d'avancer la zone de départ d'un cran est la sigmoïde du logit de
+`probabilite_recuperation_avancee_base` augmenté de hauteur ×
+`bonus_zone_recuperation`. Ne jamais sortir des limites du terrain.
 
 ## Turnovers et contres
 
-La **position de la perte de balle** détermine tout. C'est le mécanisme qui rend
-les matches vivants et récompense les profils rapides.
+Une perte près du but du possesseur donne géométriquement une récupération
+avancée à l'adversaire. Une perte près du but adverse lui donne une récupération
+basse : elle ne doit pas le téléporter directement devant le but opposé.
 
-- Perte en zone 1 ou 2 → possession adverse normale, en zone symétrique
-- Perte en zone 3 ou 4 → **contre** : l'adversaire démarre en zone avancée, dans
-  le même couloir, avec un malus défensif temporaire pour l'équipe qui vient de
-  perdre le ballon, et `est_contre = True` sur la possession
+Après symétrie et effet de bloc, une récupération au moins en zone
+`zone_declenchant_contre` démarre un contre. Depuis une zone basse, un tirage
+peut lancer une transition rapide : logit de la probabilité configurée, plus
+écart des vitesses moyennes × sensibilité, plus hauteur adverse × vulnérabilité.
+En cas de succès, avancer d'une zone et marquer le contre.
 
-Le malus s'applique surtout au couloir concerné : le latéral de ce côté est hors
-position. C'est ce qui rend un latéral offensif réellement risqué.
+Le contre applique le malus défensif temporaire au défenseur en repli, dans le
+repère converti ; dans le couloir concerné, utiliser le malus spécifique à la
+place du malus général, pas en supplément. Le marquage de contre augmente le xG
+axial et expire après la durée configurée. Une équipe menée en fin de match
+augmente sa hauteur depuis la valeur tactique de base, proportionnellement au
+retard et à l'avancement de la période finale ; ne pas réajouter le bonus à
+chaque possession. Une expulsion applique la baisse de bloc configurée.
 
-## Coups de pied arrêtés
+## Occasions, tirs et xG
 
-Environ 25 à 30 % des buts réels. Branche séparée, peu de code, mais elle donne
-une raison d'exister aux grands défenseurs.
+Les occasions sur une aile sont des centres aboutissant à une tentative de tête ;
+les occasions axiales sont des frappes. La probabilité de créer l'occasion
+englobe en v1 la réussite préalable du centre. Nommer centreur et réceptionneur
+séparément et interdire qu'ils soient la même personne.
 
-- Corner ou coup franc généré à partir d'un turnover en zone avancée
-- Réceptionneur tiré parmi **tout le onze**, pondéré par `jeu_tete`
-- Gardien résiste avec `comp_sortie`
-- xG autour de 0.04 par corner
+Le xG décrit la situation **avant** prise en compte des qualités du tireur et
+du gardien : base centre ou frappe, majoration axiale si contre. Il est cumulé
+par tentative, même si le tir est non cadré ou arrêté.
 
-## Avantage du terrain
+- Frappe : composite de tir contre composite d'arrêt.
+- Tête sur centre ou corner : composite de tête contre combinaison des
+  composites de sortie et d'arrêt du gardien, pondérée dans la configuration.
+- Probabilité de but = sigmoïde(logit(xG) + sensibilité × écart des composites).
+- Probabilité de cadrage = maximum de la probabilité de but et d'une sigmoïde
+  du logit de cadrage de base corrigé du niveau du tireur.
+- Un seul tirage catégoriel produit but, arrêt ou non-cadré, avec probabilités
+  respectives p_but, p_cadrage - p_but et 1 - p_cadrage.
 
-Un seul point d'application : `bonus_dom` dans la probabilité de progression.
-Ne pas l'appliquer sur les buts directement. Calibrer pour obtenir environ
-+0.3 but par match.
+Borner les entrées du logit aux limites configurées. Un but est un tir cadré,
+un arrêt est un tir cadré sans but ; les catégories ne créent pas deux tirs.
+Les qualités sont comparées individuellement, jamais diluées dans le onze.
 
-## Fin de match
+Les corners et coups francs sont des branches de turnover, résolues avec des
+probabilités exclusives (leur somme ne peut dépasser 1). Un corner choisit un
+receveur parmi les joueurs de champ pondérés par la tête. Un coup franc direct
+utilise un tireur pondéré par le composite de tir. Le gardien est nommé.
+Les penalties ne sont pas une branche séparée du moteur simplifié v1 ; une
+extension devra ajouter attribution, tirage et cibles dédiés ensemble.
 
-Temps additionnel : 2 à 5 minutes, tiré aléatoirement, majoré par le nombre
-d'arrêts de jeu (buts, remplacements, blessures).
+## Événements et statistiques
 
-Une équipe menée en fin de match augmente sa hauteur de bloc. Effet simple,
-proportionnel à l'écart au score et au temps restant.
+Chaque événement porte seconde de jeu, période, index stable à seconde égale,
+équipe, joueurs, zone/couloir et identifiant de possession/tentative si pertinent.
+Le journal distingue changement de possession, tentative, issue de tir, corner,
+coup franc, faute, carton, blessure, remplacement et fin de période.
 
-## Cibles de calibrage
+Pour un but, la passe décisive est attribuée au dernier passeur nommé de la même
+possession, différent du buteur ; pas d'assist sur un coup franc direct ou une
+possession sans passeur. Nommer le créateur de la dernière transition réussie
+si l'occasion est axiale. Les centres utilisent le centreur comme passeur.
 
-À atteindre **dans cet ordre**. Ne pas toucher aux ratios victoire/nul/défaite
-avant que ces chiffres-là soient justes.
+Les minutes proviennent des entrées/sorties, pas du nombre de possessions. Un
+joueur entré puis blessé conserve ses minutes. Score, buts, tirs, arrêts et xG
+sont déduits des tentatives et issues reliées, sans compter un événement de but
+comme une seconde tentative. Les compositions initiales et le banc sont stockés
+avant mutation de l'état local.
 
-Par match et par équipe :
+Notes : base et contributions d'événements dans `notes_joueurs`, puis bornes.
+Une expulsion est pénalisée une fois, distinctement des jaunes déjà reçus.
+Un joueur sous le minimum de minutes sans but, assist ou expulsion n'est pas
+noté ; son absence de note n'est pas un zéro. Ce barème initial doit être
+calibré avant d'utiliser les notes comme moteur important de progression/forme.
 
-| Métrique | Cible |
-|---|---|
-| Possessions | 100 – 120 |
-| Tirs | 12 – 14 |
-| xG cumulé | 1.3 – 1.5 |
-| Buts | 1.35 (2.7 par match) |
-| Possession | 45 – 55 % |
-| Avantage domicile | +0.3 but |
-| Buts sur coup de pied arrêté | 25 – 30 % |
-| Répartition par couloir | ~33 % chacun |
-| Dangerosité par attaque | axe > ailes |
+## Disponibilité et validation
 
-Une fois ces chiffres tenus, l'objectif « le PSG bat Toulouse 70 / 20 / 10 » se
-règle avec `k_prog` et `k_occ`, les coefficients qui disent à quel point l'écart
-de talent est décisif. C'est le seul bouton de « part d'aléatoire ».
+Avant le match, si une équipe n'atteint pas le minimum de joueurs disponibles,
+forfait selon la configuration. En cours de match, arrêt si le nombre présent
+descend sous ce minimum. Pour un forfait des deux équipes, aucun vainqueur ni
+points : statut explicite, exclu des statistiques ordinaires de tirs et buts.
+Les cas de gardien absent et de changements épuisés sont décrits dans les états.
 
-Piège classique : trop peu d'aléatoire. Un moteur naïf fait gagner le favori 95 %
-du temps, alors que le football réel plafonne vers 65-70 %.
-
-## Calibrage
-
-Le harnais, les suites et les critères d'échec sont dans `docs/benchmarks.md`.
-Les cibles chiffrées sont dans `config/benchmarks.json`.
-
-Rappel de l'ordre : valider `stats_match` (le match ressemble à un match), puis
-`formations` (aucune formation ne domine), puis seulement `match` (les bons
-favoris gagnent dans les bonnes proportions). Les coefficients de chaque étape
-dépendent des précédentes.
+Valider les invariants d'événements et les symétries, puis `stats_match`,
+`formations`, `match` et `saison`. Les suites de blessures et de monde complet
+attendent les mécanismes correspondants. Un benchmark impossible entraîne une
+révision documentée du protocole, pas une déformation du moteur pour le réussir.

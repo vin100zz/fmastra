@@ -1,290 +1,149 @@
-# Progression, déclin, démographie
-
-> Toutes les valeurs numériques de ce document sont dans
-> `config/demographie.json`. Les tableaux ci-dessous documentent les valeurs
-> initiales ; la source de vérité est le JSON.
-
-## Progression et déclin
-
-Même sans entraînement, le monde doit bouger. Sinon tout se fige en trois
-saisons.
-
-Évaluation **mensuelle**, pas quotidienne.
-
-```python
-def progresser(joueur, minutes_mois, rng):
-    marge = joueur.potentiel - note_globale(joueur)
-    facteur_age = courbe_progression(joueur.age)
-    facteur_jeu = 0.35 + 0.65 * min(minutes_mois / 400, 1.0)
-
-    delta = facteur_age * facteur_jeu * (marge / 100) * 2.2 + rng.gauss(0, 0.25)
-    appliquer_delta(joueur, delta)
-```
-
-### Courbe de progression par âge
-
-| Âge | Facteur |
-|---|---|
-| 16 – 19 | +1.00 |
-| 20 – 22 | +0.75 |
-| 23 – 25 | +0.40 |
-| 26 – 28 | +0.10 |
-| 29 – 30 | −0.15 |
-| 31 – 32 | −0.45 |
-| 33 – 34 | −0.85 |
-| 35+ | −1.30 |
-
-### Règles
-
-- La progression est **plafonnée par le potentiel**, jamais dépassé
-- Le déclin ne l'est pas : un joueur de 36 ans descend sous son niveau passé
-- Le déclin frappe d'abord `vitesse` et `endurance`, puis les attributs
-  techniques, et épargne largement `placement`, `vision` et `sang_froid`
-- Le temps de jeu compte : un jeune qui ne joue pas progresse trois fois moins
-  vite. C'est ce qui rend les prêts intéressants quand ils seront ajoutés
-- Échantillonner et stocker la note globale une fois par saison, pour la courbe
-  de carrière affichée sur la fiche joueur
-
-## Estimation du potentiel
-
-Le `potentiel` stocké est la valeur vraie. **Ni l'IA ni l'interface ne doivent y
-accéder directement.**
-
-```python
-def estimation_potentiel(joueur, club_observateur=None) -> Fourchette:
-    bruit = 22 * (1 - min(joueur.age - 15, 8) / 8)
-    if club_observateur:
-        bruit *= (1.3 - 0.5 * club_observateur.reputation / 100)
-    return Fourchette(joueur.potentiel - bruit, joueur.potentiel + bruit)
-```
-
-L'incertitude se resserre avec l'âge et avec la qualité de l'observateur. Sans
-elle, il n'y a aucun risque à recruter un jeune, donc aucun intérêt.
-
-## Démographie
-
-Ce n'est pas de la génération de joueurs à la demande : c'est le pilotage d'une
-population en régime permanent.
-
-```
-Cible démographique  →  Cohorte annuelle  →  Population active  →  Sorties
-                              ↑                      |
-                              └──── écart mesuré ────┘
-```
-
-### Conservation
-
-En régime stable, entrées = sorties.
-
-| Grandeur | Valeur |
-|---|---|
-| Population active | ~2 600 |
-| Carrière moyenne | ~15 ans |
-| Cohorte annuelle | **~175 joueurs** |
-
-Dimensionner la cohorte sur les **départs réels de l'année**, pas sur un nombre
-fixe.
-
-### Le piège des espérances de carrière
-
-La distribution de la population active n'est pas la distribution de génération :
-
-```
-population(niveau) = génération(niveau) × carrière(niveau)
-```
-
-La carrière s'allonge avec le niveau : un joueur à 85 joue jusqu'à 36 ans, un
-joueur à 55 disparaît vers 26. Donc il faut inverser :
-
-```
-génération(niveau) ∝ cible(niveau) / carrière(niveau)
-```
-
-**Il faut générer proportionnellement plus de joueurs faibles que la cible ne le
-suggère.** Un échantillonnage naïf sur la distribution cible fait gonfler l'élite
-saison après saison.
-
-Cas d'école : le gardien. Il en faut ~10 %, mais sa carrière est bien plus
-longue. Générer 10 % de gardiens en donne 14 % au bout de vingt saisons, tous
-vieux.
-
-### Boucle de rétroaction — le point clé
-
-Même juste, le calcul en boucle ouverte dérive : blessures, comportements de
-l'IA, règles de retraite, tout ce qui n'est pas modélisé s'accumule.
-
-Chaque été, comparer la population observée à la cible, bucket par bucket :
-
-```python
-KAPPA = 0.30
-
-def corriger(cible, observe):
-    return (cible / max(observe, 1)) ** KAPPA
-```
-
-L'exposant amortit. Sans lui le système oscille : surproduction de gardiens une
-année, pénurie la suivante.
-
-**Appliquer la correction séparément sur chaque axe** (niveau, poste, nation),
-jamais sur leur produit — sinon on obtient des milliers de buckets tous vides.
-
-C'est ce contrôleur, et non la qualité du tirage initial, qui garantit la
-stabilité sur trente saisons.
-
-## Tirage d'un joueur
-
-Dans cet ordre.
-
-### 1. Nation
-
-Chaque pays porte un poids de production et une force de football propre.
-Les 5 pays simulés produisent la majorité des joueurs ; le reste vient d'un
-**vivier externe abstrait** (voir plus bas).
-
-### 2. Potentiel
-
-Loi à forte asymétrie droite :
-
-```python
-potentiel = 35 + 65 * rng.betavariate(alpha, beta)
-```
-
-Avec `alpha = 2.0`, `beta = 5.0` pour une nation moyenne. Une nation forte
-monte `alpha`, une nation faible monte `beta`. Beaucoup de joueurs vers 50-60,
-très peu au-dessus de 85.
-
-### 3. Poste
-
-Tiré sur la cible corrigée, avec affinités secondaires pour permettre les
-reconversions.
-
-Cible de population active :
-
-| Poste | Part |
-|---|---|
-| GB | 10 % |
-| DC | 18 % |
-| DL / DR | 14 % |
-| MDC / MC | 24 % |
-| MOC | 11 % |
-| AIL | 12 % |
-| BU | 11 % |
-
-### 4. Niveau actuel
-
-```python
-niveau = potentiel * g(age) * rng.gauss(1.0, 0.06)
-```
-
-Avec `g(16) ≈ 0.40`, `g(18) ≈ 0.50`. À 16 ans un joueur montre à peine la moitié
-de ce qu'il sera.
-
-### 5. Attributs
-
-Répartis autour du niveau selon le profil de poste défini dans
-`docs/attributs.md`, avec bruit gaussien d'écart-type 6.
-
-### 6. Identité
-
-Prénom et nom tirés des listes pondérées de la nation. Vérifier l'unicité du
-couple (prénom, nom) dans la population active ; retirer en cas de collision.
-
-## Centres de formation
-
-Génération rattachée aux clubs, à date fixe (mi-juin), ce qui crée un rendez-vous
-annuel visible dans l'interface.
-
-```python
-def promotion_centre(club, rng):
-    n = rng.randint(2, 5)
-    moyenne = 30 + 0.30 * club.reputation + 0.25 * club.note_centre_formation
-    ...
-```
-
-**Mettre beaucoup de variance et des queues épaisses.** Si un petit club ne peut
-jamais sortir un joyau, la journée du centre de formation est prévisible et sans
-intérêt. Écart-type d'au moins 14 sur le potentiel, avec une probabilité non
-nulle de dépasser 85 même pour un club de réputation 40.
-
-Les jeunes issus du centre signent un contrat de 3 ans à salaire faible.
-
-## Marché extérieur : les clubs dormants
-
-Les ~25 900 clubs non simulés **sont** le marché extérieur. Il n'y a pas de
-vivier artificiel à générer : les données fournies contiennent déjà les
-divisions inférieures et les autres pays.
-
-### Comportement
-
-- Leurs joueurs progressent selon un modèle allégé : courbe d'âge seule, sans
-  temps de jeu ni forme. Coût négligeable pour 30 000 joueurs, et le marché ne se
-  fige pas.
-- Ils répondent aux offres des clubs actifs selon une heuristique simple
-  (`ia.mercato.clubs_dormants`) : acceptation probable au prix de marché majoré.
-- Ils démarchent occasionnellement les joueurs des clubs actifs en fin de contrat
-  ou en surplus, ce qui donne une sortie aux joueurs devenus inutiles.
-- Ils produisent leurs propres regens, mais en volume réduit et sans détail.
-
-### Conséquence sur la démographie
-
-La population à piloter n'est plus les seuls 2 400 joueurs des clubs actifs, mais
-l'ensemble des 32 000. Deux régimes distincts :
-
-| Population | Pilotage |
-|---|---|
-| Clubs actifs (~2 400) | boucle de rétroaction complète, sur les 3 axes |
-| Clubs dormants (~29 600) | conservation simple : cohorte = sorties, sans correction fine |
-
-La cible de ~175 regens par an concerne les **clubs actifs**. Les dormants
-génèrent séparément, avec une cohorte proportionnelle à leur population et une
-distribution de niveau centrée plus bas.
-
-### Flux entre les deux mondes
-
-- Un joueur acheté par un club actif quitte le monde dormant et entre dans le
-  régime complet
-- Un joueur vendu à un club dormant en sort
-- Ce flux doit représenter 25 à 40 % des transferts entrants des clubs actifs
-  (`benchmarks.economie.part_transferts_depuis_dormants`). S'il tombe à zéro,
-  l'économie des 5 championnats s'est refermée et le benchmark échoue.
+# Progression, déclin et démographie
+
+Les paramètres sont dans `config/demographie.json`. Les attributs restent
+fractionnaires en mémoire ; l'affichage arrondit. Une variation mensuelle
+inférieure à un point ne doit pas disparaître par arrondi.
+
+## Progression mensuelle
+
+Croissance = facteur d'âge positif × facteur de temps de jeu × marge au
+potentiel normalisée × amplitude. Le facteur de jeu passe du minimum configuré
+à 1 selon les minutes du mois et la référence. La croissance cesse à l'âge
+défini par sa courbe et ne peut pas dépasser le potentiel.
+
+Le déclin est un **terme indépendant**, en points de note globale par mois,
+issu de sa propre courbe d'âge. Il n'est multiplié ni par la marge au potentiel,
+ni par le temps de jeu. Un vétéran ayant atteint son plafond décline donc quand
+même. Pour les gardiens, décaler l'âge de la courbe de déclin selon la config.
+Prolonger les courbes par leur valeur extrême hors de leur domaine.
+
+Répartir le déclin sur les attributs selon les poids configurés, normalisés par
+les poids de note globale du poste, pour que l'effet global corresponde au taux
+voulu. Les physiques déclinent davantage que placement, vision et sang-froid.
+Appliquer le bruit mensuel puis les bornes ; plafonner tout gain net à la marge
+réelle au potentiel. Les blessures peuvent ajouter une pénalité permanente.
+
+Pour les joueurs dormants et libres, utiliser le facteur de jeu simplifié
+configuré, sans inventer des minutes ou des statistiques de matches. Les
+retraites et changements de régime ne doivent pas appliquer deux progressions
+au même joueur sur un même mois.
+
+## Potentiel estimé
+
+Seule la progression et la génération accèdent au potentiel réel. IA et API
+reçoivent une estimation produite par un service dédié.
+
+L'écart-type diminue avec l'âge depuis `age_debut_convergence` jusqu'à
+`age_convergence`, avec un minimum non nul ; la réputation de l'observateur le
+module. Tirer un biais normal avec un RNG dérivé de la graine, du joueur, de
+l'observateur et de l'année d'observation. Le centre vaut potentiel + biais,
+borné entre niveau connu et maximum d'attribut. La fourchette est centrée sur
+**cette estimation**, pas sur le potentiel réel, et utilise la largeur configurée.
+
+Conserver le biais et la période d'observation. Des consultations répétées ou
+un rechargement de page ne provoquent pas de nouveau tirage. Le potentiel reste
+incertain après l'âge de convergence ; le minimum de bruit évite sa révélation
+exacte. Une estimation publique stable sert à la fiche observateur ; chaque
+club dispose de la sienne. L'API n'expose ni le biais ni la valeur vraie.
+
+## Population cible et cohorte
+
+L'import charge 2 880 joueurs actifs avec les données présentes. À terme, la
+cible d'effectif actif est la somme des profils nominaux des clubs (24 par club,
+soit 2 304 avec la configuration initiale), avec maximum 30 par club. Les
+premières saisons constituent une transition, pas une dérive à compenser en
+réinjectant systématiquement tous les joueurs vendus.
+
+Conserver un comptage annuel distinct : actifs, dormants, libres, retraités.
+Les transferts entre ces populations ne créent pas de joueurs. Les cibles de
+niveaux et de nations sont établies à partir des proportions importées après
+sélection, puis stockées dans la partie ; les postes utilisent `cible_postes`.
+Les ajustements vers ces cibles sont progressifs et seront calibrés : le
+premier CSV ne constitue pas nécessairement un régime démographique stable.
+
+Au bilan annuel, après retraites et expirations du jour :
+
+- Mesurer la population active courante. Elle inclut déjà l'effet des départs,
+  arrivées et retraites depuis le dernier bilan : ne pas les compter deux fois.
+- Calculer le déficit positif par rapport à la cible nominale. La cohorte active
+  autorisée est ce déficit multiplié par le coefficient de retour configuré
+  (1 par défaut), arrondi stochastiquement avec le RNG de démographie si besoin.
+  Un coefficient inférieur à 1 peut laisser un déficit durable en présence de
+  sorties annuelles ; ce compromis doit être mesuré, pas présenté comme neutre.
+- Répartir la cohorte entre clubs avec places et budget salarial disponibles,
+  dans la limite annuelle par club. Aucun minimum obligatoire par centre.
+- Comptabiliser séparément les flux nets de l'année pour expliquer le déficit
+  et diagnostiquer la stabilité. Ne jamais ajouter un quota fixe de 175.
+
+Le bilan, l'allocation et la promotion des centres ont lieu le **1er juillet**,
+dans cet ordre, après expiration des contrats et mise à jour des budgets.
+Un jeune de la cohorte qui ne peut pas être placé faute de place ou de budget
+rejoint une capacité de génération dormante, en remplacement d'un jeune qui
+aurait été produit dans ce régime ; il n'est pas ajouté au total en supplément.
+S'il n'existe aucune capacité, ne pas générer cette place et rapporter le déficit.
+
+Le régime dormant/libre conserve sa population combinée après retraites et
+flux nets avec les actifs. Les agents libres vieillissent, progressent et
+prennent leur retraite ; ils ne forment pas une population oubliée en croissance
+illimitée. Répartir les remplacements du régime externe vers des clubs dormants
+ayant des places et des moyens ; à défaut, créer des agents libres dans la
+limite de la cohorte autorisée. Les créations ont toujours un ID neuf.
+
+## Correction des distributions
+
+Pour chaque axe niveau, poste, nation, comparer parts observées et cibles.
+Corriger les poids de tirage par le rapport cible / observé élevé à `kappa`,
+puis renormaliser. Les classes de niveau sont semi-ouvertes, dernière borne
+incluse ; elles couvrent [1, 100]. Utiliser des effectifs cibles et un plancher
+d'un individu au dénominateur pour les classes vides.
+
+Ne pas fabriquer une table de tous les triplets niveau/poste/nation. Le contrôleur
+corrige les marges séparément ; ses courbes de réponse et limites se vérifient
+sur plusieurs graines. Il ne garantit pas la stabilité par construction.
+Conserver les cibles dans la sauvegarde, pas les recalculer chaque année depuis
+une population qui dérive.
+
+## Génération
+
+1. Nation tirée dans les poids de production dérivés de la population source,
+   avec correction démographique ; les identités proviennent des listes de noms.
+2. Poste tiré dans la cible corrigée. Pour chaque poste secondaire autorisé
+   dans la table configurée, tirage indépendant à la probabilité configurée,
+   puis affinité secondaire configurée. Aucune affinité totale gardien/champ.
+3. Âge dans la plage de génération, niveau cible issu du potentiel et du ratio
+   d'âge, avec bruit. Les gardiens ne sont pas évalués sur les mêmes poids que
+   les joueurs de champ.
+4. Pour un centre actif, potentiel normal autour de la moyenne réputation/centre,
+   avec l'écart-type configuré, borné à [1, 100]. Pour le régime externe,
+   potentiel issu de la loi bêta configurée. Ce sont deux modes exclusifs :
+   on ne superpose pas deux tirages de potentiel au même joueur.
+5. Répartir les attributs selon le profil de poste ; recentrer pour que la note
+   globale corresponde au niveau cible. Le plafonnement peut réduire l'écart
+   effectif ; vérifier après génération niveau <= potentiel.
+6. ID unique, identité avec homonymes autorisés, contrat de centre si financé.
+
+La correction de niveau agit sur les poids des classes de niveau initial,
+pas en multipliant les attributs après coup. Réaliser un tirage conditionnel
+par classes à l'aide d'un nombre borné de candidats configuré ; en l'absence
+d'un candidat dans la classe, choisir le plus proche et journaliser ce repli.
+Le calibrage doit suivre les distributions de niveau initial **et** de
+potentiel ; elles ne sont pas interchangeables.
 
 ## Sorties
 
-Deux mécanismes distincts. **Le second est le plus souvent oublié et le plus
-important.**
+Retraite annuelle : probabilité liée à l'âge et au niveau selon `sorties`,
+bornée explicitement à [0, 1]. Un joueur retraité sort des boucles actives mais
+conserve une identité et une carrière archivées.
 
-### Retraite
-
-```python
-def p_retraite(joueur):
-    if joueur.age < 31: return 0.0
-    base = 0.04 * (joueur.age - 30) ** 1.9
-    return base * (1.4 - 0.6 * note_globale(joueur) / 100)
-```
-
-Un joueur faible raccroche plus tôt qu'une star. Évaluée en fin de saison.
-
-### Abandon
-
-Un joueur de 22 ans à 45 de niveau avec 48 de potentiel, dans un système dont le
-plancher est à 55, **redescend vers un club dormant**. Il ne disparaît pas : il
-reste consultable, et pourra remonter s'il progresse.
-
-```python
-def sort_du_perimetre(joueur):
-    return (joueur.age >= 21
-            and estimation_potentiel(joueur).max < SEUIL_PERIMETRE
-            and joueur.club_id is None)
-```
-
-Sans ce mécanisme, les effectifs des clubs actifs se remplissent de médiocrité.
-C'est le pendant naturel de l'achat depuis les dormants.
+Un joueur faible libre peut recevoir une offre d'un club dormant : cela suit
+le marché, les places et le budget, pas une téléportation forcée. Le seuil
+`sortie_perimetre` alimente les priorités de shortlist. Un joueur sans offre
+reste libre et pourra être recruté plus tard ou prendre sa retraite.
 
 ## Validation
 
-Suite `demographie` de `docs/benchmarks.md`, 30 saisons. Cibles dans
-`config/benchmarks.json`.
-
-Le nombre de joueurs au-dessus de 85 est **l'indicateur canari** : statistique de
-queue, il dérive en premier et de loin. Le surveiller à chaque modification du
-modèle de progression.
+Mesurer 30 saisons après la période de stabilisation configurée. Comparer
+fenêtres de plusieurs saisons et plusieurs graines ; suivre effectifs, âges,
+niveaux, postes, nations, flux et joueurs au-dessus de 85. Une tolérance
+absolue accompagne celle en pourcentage pour les populations d'élite faibles.
+La stabilité du total ne suffit pas si les joueurs d'élite disparaissent.

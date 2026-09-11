@@ -1,179 +1,134 @@
-# Fatigue, blessures, suspensions
+# Fatigue, blessures, suspensions, forme et moral
 
-> Toutes les valeurs numériques de ce document sont dans `config/etats.json`.
-> Les tableaux ci-dessous documentent les valeurs initiales ; la source de
-> vérité est le JSON. Aucune constante ne doit apparaître dans le code.
+Les paramètres vivent dans `config/etats.json`, `moteur_match.json`,
+`formations.json` et `monde.regles_match`. Les valeurs initiales de blessures
+sont à calibrer sur les cibles annuelles, pas sur une cible concurrente par match.
 
-## Pourquoi ces mécanismes sont obligatoires
+## Fraîcheur
 
-Sans eux, la sélection est un problème résolu : on aligne toujours son meilleur
-onze, et la décision disparaît. L'entraînement étant supprimé du jeu, **c'est la
-fatigue qui doit porter la rotation**.
+Le champ historique `fatigue` représente en fait la fraîcheur : 1 = frais,
+0 = épuisé. Nom Python recommandé : `fitness`, libellé affiché « fraîcheur ».
+Il multiplie les composites.
 
-## Fatigue
+Consommation = minutes × consommation de base × intensité / résistance.
+Résistance = base + coefficient × endurance normalisée. Interpoler l'intensité
+entre bloc bas, équilibré et pressing haut selon la hauteur effective.
 
-Valeur dans [0.0, 1.0], 1.0 = frais. Multiplie tous les composites.
+Récupération quotidienne = vitesse de base + coefficient × endurance normalisée,
+modulée par la classe d'âge. Borner à [0, 1]. Mettre à jour aux paliers de match
+configurés et aux passages de jour, sans récupérer deux fois un même jour.
+Un joueur blessé n'est pas sélectionnable ; à la guérison, réinitialiser sa
+fraîcheur et sa forme avec les valeurs de retour configurées, une seule fois.
 
-### Consommation en match
-
-```python
-def consommer(joueur, minutes, intensite):
-    base = 0.0042 * minutes                    # ~0.38 sur 90 minutes
-    resistance = 0.7 + 0.6 * (joueur.endurance / 100)
-    return base * intensite / resistance
-```
-
-`intensite` vient de la hauteur de bloc : 0.85 en bloc bas, 1.0 en équilibré,
-1.20 en pressing haut. Un pressing haut coûte cher — c'est le prix de la
-récupération avancée.
-
-Un joueur de 90 d'endurance perd environ 0.30 sur un match complet, un joueur de
-40 environ 0.45.
-
-### Récupération
-
-```python
-def recuperer(joueur, jours):
-    vitesse = 0.10 + 0.05 * (joueur.endurance / 100)
-    facteur_age = 1.15 if joueur.age < 24 else (0.85 if joueur.age > 31 else 1.0)
-    joueur.fatigue = min(1.0, joueur.fatigue + jours * vitesse * facteur_age)
-```
-
-Environ 3 à 4 jours pour récupérer complètement d'un match. C'est ce qui rend une
-semaine à deux matches réellement contraignante et force la rotation.
-
-### Effet en match
-
-La fatigue est recalculée par **paliers de 5 minutes**, pas en continu, pour ne
-pas recalculer les agrégats de zone à chaque possession.
-
-Un joueur sous 0.55 déclenche une alerte visible dans l'interface de match et un
-signal pour l'IA de remplacement.
+Avec un seul championnat et sept jours entre journées, la récupération ramène
+souvent les joueurs à pleine fraîcheur : ne pas promettre une rotation forte
+par la fatigue seule en v1. Blessures, suspensions, remplacements et profondeur
+de l'effectif restent utiles ; le calendrier congestionné renforcera ensuite
+ce mécanisme. Ne pas ajouter artificiellement des matches hors périmètre.
 
 ## Blessures
 
-### Survenue
+À chaque possession, choisir un joueur impliqué nommé, parmi les joueurs de
+champ des deux équipes pondérés par leur implication dans la zone pertinente
+(et le gardien lorsqu'il intervient dans l'action). Évaluer une seule fois le
+risque de base × (facteur de fatigue - fraîcheur) × fragilité × intensité.
+Borner la probabilité. La fragilité est tirée à l'import ou à la génération,
+conservée et sauvegardée ; les consultations ne la retirent pas.
 
-Deux sources.
+Hors match, effectuer le tirage quotidien configuré pour les joueurs actifs
+non blessés, y compris les remplaçants. Le régime dormant/libre ne simule pas
+les blessures en détail en v1. En cas de transfert, une blessure déjà acquise
+conserve sa date de guérison et sa pénalité éventuelle.
 
-**En match**, à chaque possession impliquant le joueur :
+Gravités initiales :
 
-```python
-p_blessure = P_BASE * (1.9 - joueur.fatigue) * fragilite(joueur) * intensite
-```
+| Gravité | Part | Durée en jours |
+|---|---:|---:|
+| Légère | 58 % | 3–10 |
+| Moyenne | 34 % | 14–42 |
+| Grave | 7 % | 61–150 |
+| Très grave | 1 % | 180–365 |
 
-`P_BASE` calibré pour environ **1.1 blessure par match** toutes équipes
-confondues. La fatigue quasi double le risque : c'est le lien qui rend la
-rotation rationnelle et pas seulement esthétique.
+La date de guérison est exclusive de l'indisponibilité : retour possible à
+partir de cette date. Une seule blessure active ; pas d'empilement de tirages
+quotidiens sur un joueur indisponible. Appliquer une seule fois la pénalité
+permanente configurée pour longue durée et âge élevé, en marquant son application.
 
-**Hors match**, faible probabilité quotidienne, indépendante de la fatigue.
-Représente 15 à 20 % des blessures.
-
-### Gravité
-
-Tirée dans une distribution à forte asymétrie droite :
-
-| Gravité | Part | Durée |
-|---|---|---|
-| Légère | 55 % | 3 – 10 jours |
-| Moyenne | 32 % | 2 – 6 semaines |
-| Grave | 11 % | 2 – 5 mois |
-| Très grave | 2 % | 6 – 12 mois |
-
-### Effets
-
-```python
-@dataclass(slots=True)
-class Blessure:
-    date_debut: Date
-    date_fin: Date
-    gravite: Gravite
-    description: str
-```
-
-- Indisponible jusqu'à `date_fin`
-- Au retour, la fatigue repart à 0.5 et la forme à 0.85
-- Une blessure de plus de 3 mois après 30 ans applique une **pénalité permanente**
-  de 2 à 5 points sur `vitesse` et `endurance`
-- Une `fragilite` par joueur, tirée à la création et stable, multiplie le risque
-  entre 0.6 et 1.8 — certains joueurs sont durablement fragiles
-
-### Cibles
+Cibles de calibrage **toutes blessures actives confondues** :
 
 | Métrique | Cible |
-|---|---|
-| Blessures par club et par saison | 12 – 18 |
-| Joueurs indisponibles simultanément par club | 2 – 4 |
-| Blessures longues (> 2 mois) par club et par saison | 0.8 – 1.5 |
+|---|---:|
+| Blessures par club et par saison | 12–18 |
+| Part hors match | 15–20 % |
+| Indisponibles simultanés, moyenne quotidienne par club | 1–2,5 |
+| Blessures longues (> 60 jours) par club et par saison | 0,8–1,5 |
 
-## Suspensions
+La cible ancienne de 1,1 blessure par match est supprimée : elle dépassait à
+elle seule la cible annuelle. Ajuster fréquence et gravité ensemble ; rapporter
+également la distribution de jours perdus et les pics d'indisponibilité.
 
-### Cartons
+## Cartons et suspensions
 
-Générés lors des turnovers défensifs, pondérés par la zone et le composite
-défensif du joueur impliqué.
+Les fautes/cartons sont attribués à un défenseur nommé dans le repère miroir.
+Les probabilités sont dans le moteur ; jaune et rouge direct sont des issues
+exclusives d'un même tirage. Un second jaune provoque une expulsion, distincte
+d'un rouge direct dans les statistiques mais incluse dans le total des expulsions.
 
-| Métrique | Cible par match |
-|---|---|
-| Cartons jaunes | 3.5 – 4.5 |
-| Cartons rouges | 0.10 – 0.15 |
+Conserver, pour chaque joueur et compétition :
 
-### Règles
+- jaunes du match courant ;
+- jaunes cumulés de la saison ;
+- seuils de cumul déjà sanctionnés ;
+- sanctions en attente et nombre de matches restant.
 
-- Rouge direct : 1 à 3 matches selon la gravité tirée
-- Deux jaunes dans un même match : expulsion + 1 match
-- Cumul de 5 jaunes sur la saison : 1 match, compteur remis à zéro
-- Cumul de 10 jaunes : 2 matches
-- Compteur de jaunes remis à zéro en fin de saison
+Ne pas remettre le cumul saisonnier à zéro au seuil de cinq. Le seuil de dix
+reste alors atteignable ; chaque seuil ne déclenche qu'une seule sanction.
+Les deux jaunes d'un match comptent dans le cumul saisonnier. Si plusieurs
+motifs surviennent dans le même match, retenir le maximum de leurs durées selon
+la règle simplifiée configurée, plutôt que les compter plusieurs fois.
 
-```python
-@dataclass(slots=True)
-class Suspension:
-    matches_restants: int
-    motif: str
-```
+La suspension porte un `competition_id`. Décrémenter uniquement après un match
+effectivement joué ou déclaré forfait par le **club du joueur** dans cette
+compétition, si la sanction était déjà active au coup d'envoi. Ne pas purger
+une nouvelle sanction dans le match où elle est infligée ; un match reporté
+ne compte pas. Le transfert ne supprime pas la sanction : elle reste attachée
+à sa compétition. Remettre les compteurs jaunes à zéro en fin de saison, mais
+conserver les suspensions restant à purger.
 
-Décrémenté à chaque match de la compétition concernée, joué ou non par le club.
+## Expulsion, blessure et remplacement
 
-### Effet d'une expulsion en match
+Une expulsion retire immédiatement le joueur et interdit son remplacement.
+Recalculer les zones, appliquer la baisse de bloc configurée ; pas de malus
+numérique supplémentaire qui ferait double emploi avec la perte de densité.
 
-Le joueur est retiré du onze, les agrégats de zone sont recalculés. La perte de
-densité est absorbée automatiquement par `facteur_densite` — aucun malus
-artificiel à ajouter. L'équipe réduite passe en bloc bas de force
-(`h = max(h - 0.5, -1.0)`).
+Une blessure exige une sortie immédiate à toute minute, y compris avant la
+première évaluation tactique. Remplacer si le quota et les fenêtres le permettent ;
+sinon poursuivre à moins de joueurs. Si le gardien sort, donner priorité au
+gardien du banc, en sortant un joueur de champ si le gardien a été expulsé.
+Sans remplacement possible, réaffecter le joueur présent ayant le meilleur
+composite de gardien, avec les attributs et malus de poste habituels.
 
-## Forme
+Évaluer les changements tactiques toutes les cinq minutes à partir de la minute
+configurée. Priorités : blessure, fraîcheur faible, averti fatigué en défense,
+équipe menée en fin de match, économie d'un cadre si avance suffisante.
+Maximum de joueurs remplacés et fenêtres dans `monde.regles_match`. Une fenêtre
+peut contenir plusieurs changements ; la mi-temps ne consomme pas une fenêtre
+de jeu. Une composition ne peut réintroduire un joueur déjà sorti.
 
-Marche aléatoire lente, bornée à [0.7, 1.3], avec retour à la moyenne :
+Le nombre minimal de joueurs pour commencer ou poursuivre et les forfaits
+sont dans les règles de match. Un banc incomplet est autorisé, sans génération
+spontanée de joueurs pour le remplir.
 
-```python
-def maj_forme(joueur, note_derniere_perf, rng):
-    cible = 1.0 + 0.06 * (note_derniere_perf - 6.5)
-    joueur.forme += 0.25 * (cible - joueur.forme) + rng.gauss(0, 0.03)
-    joueur.forme = clamp(joueur.forme, 0.7, 1.3)
-```
+## Forme et moral
 
-Un joueur en série de bonnes performances entre en forme. C'est le seul
-mécanisme de « momentum » du jeu, et il suffit.
+La forme suit un retour à une cible issue de la dernière note, avec bruit et
+bornes configurés. Un joueur non noté ne reçoit pas une note artificielle de
+zéro ; conserver sa forme jusqu'à une prochaine performance notée ou son
+retour de blessure. Le calcul du barème est dans `moteur_match.notes_joueurs`.
 
-## Moral
-
-Dérive lentement selon : temps de jeu réel comparé à l'attente du joueur,
-résultats du club, satisfaction contractuelle. Amplitude d'effet en match limitée
-à ±5 % — le moral doit surtout alimenter l'IA des contrats et les demandes de
-départ, pas dominer les résultats.
-
-## Décision de remplacement (IA)
-
-Évaluée toutes les 5 minutes à partir de la 55e.
-
-Déclencheurs, par priorité :
-
-1. Blessure — remplacement immédiat, obligatoire
-2. Joueur sous 0.50 de fatigue et remplaçant disponible à ce poste
-3. Joueur averti, sous 0.60 de fatigue, en zone défensive — risque de second jaune
-4. Ajustement tactique : mené à moins de 20 minutes de la fin, entrée d'un profil
-   offensif et hausse de la hauteur de bloc
-5. Économie : mène de deux buts, entrée d'un profil défensif, repos pour un cadre
-
-Maximum 5 remplacements, en 3 fenêtres, comme dans le règlement réel.
+Moral : cible pondérée du temps de jeu, des résultats du club et de la
+satisfaction contractuelle, chaque composante normalisée à [0, 1], puis dérive
+vers cette cible. Les attentes de minutes sont proratisées aux matches déjà
+joués ; sans attente, employer une valeur neutre. L'effet en match vaut
+1 + amplitude × (2 × moral - 1), borné par construction à l'amplitude configurée.
+Le moral alimente aussi les demandes de contrat et de départ.

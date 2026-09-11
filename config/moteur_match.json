@@ -2,7 +2,7 @@
   "_note": "Coefficients du moteur par possessions. k_prog et k_occ sont les boutons de part d'aleatoire.",
   "chronologie": {
     "duree_match_secondes": 5400,
-    "duree_possession_moyenne": 22.0,
+    "duree_possession_moyenne": 26.0,
     "duree_possession_forme_gamma": 2.5,
     "temps_additionnel_min": 120,
     "temps_additionnel_max": 300,
@@ -17,7 +17,7 @@
     "_note": "facteur = (densite / reference) ** exposant. Levier principal d'equilibrage des formations.",
     "reference": 3.5,
     "exposant": 0.5,
-    "note_plancher": 25.0
+    "note_plancher": 0.0
   },
   "couloirs": {
     "beta_softmax": 0.06,
@@ -25,10 +25,17 @@
     "poids_vision_changement_aile": 0.004
   },
   "occasion": {
+    "_note": "xG avant qualites individuelles ; la probabilite de but est ajustee ensuite dans l'espace logit.",
     "xg_base_centre": 0.06,
     "xg_base_frappe": 0.11,
     "multiplicateur_contre": 1.6,
-    "sensibilite_tireur_gardien": 0.035
+    "sensibilite_tireur_gardien": 0.035,
+    "poids_gardien_sur_tete": {"sortie": 0.5, "arret": 0.5},
+    "probabilite_tir_cadre_base": 0.35,
+    "sensibilite_cadrage": 0.015,
+    "niveau_reference_cadrage": 70.0,
+    "borne_probabilite_min": 0.000001,
+    "borne_probabilite_max": 0.999999
   },
   "coups_arretes": {
     "probabilite_corner_sur_turnover_avance": 0.16,
@@ -39,9 +46,17 @@
   },
   "turnover": {
     "zone_declenchant_contre": "MILIEU_HAUT",
+    "_note": "Le seuil s'applique a la zone du RECUPERATEUR apres symetrie ; une recuperation basse peut lancer un contre selon la vitesse et le bloc adverse.",
+    "probabilite_contre_depuis_zone_basse": 0.15,
+    "sensibilite_ecart_vitesse_contre": 0.03,
     "malus_defensif_contre": 8.0,
     "malus_defensif_couloir_concerne": 14.0,
     "duree_malus_possessions": 1
+  },
+  "relance_gardien": {
+    "probabilite_depart_milieu_bas": 0.30,
+    "sensibilite_relance": 0.025,
+    "niveau_reference": 70.0
   },
   "cartons": {
     "probabilite_jaune_par_turnover_defensif": 0.011,
@@ -60,5 +75,18 @@
     "buts_attendus_base": 1.35,
     "sensibilite_ecart_force": 0.028,
     "bonus_domicile_buts": 0.30
+  },
+  "notes_joueurs": {
+    "base": 6.5,
+    "min": 1.0,
+    "max": 10.0,
+    "but": 0.8,
+    "passe_decisive": 0.5,
+    "tir_cadre_sans_but": 0.05,
+    "arret": 0.10,
+    "but_encaisse_gardien": -0.20,
+    "jaune": -0.20,
+    "expulsion": -1.0,
+    "minutes_minimum_note": 15
   }
 }

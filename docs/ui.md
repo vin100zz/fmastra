@@ -8,7 +8,12 @@ consulter et à faire avancer le temps.
 
 Cela n'autorise pas à mélanger lecture et décision dans le code : les endpoints
 sont déjà organisés pour qu'ajouter le contrôle utilisateur consiste à ajouter
-des routes d'action, pas à réécrire les routes de lecture.
+des routes d'action et une gestion de l'attente, en préservant les vues de lecture.
+
+Afficher à la création le rapport d'import : au maximum 30 joueurs par club,
+classement par niveau estimé avec places réservées aux gardiens, joueurs écartés,
+agents libres et corrections de données. Les niveaux, potentiels et finances
+issus de la synthèse sont signalés comme estimés, sans exposer le potentiel réel.
 
 ## Principes
 
@@ -16,7 +21,7 @@ des routes d'action, pas à réécrire les routes de lecture.
 affiche, plutôt qu'un REST générique qui obligerait le front à faire quarante
 requêtes pour reconstituer une page.
 
-**Filtrage, tri et pagination côté serveur.** Ne jamais renvoyer 32 000 joueurs
+**Filtrage, tri et pagination côté serveur.** Ne jamais renvoyer tous les joueurs
 au navigateur. Toute liste est paginée, y compris la recherche de joueurs qui
 porte sur l'ensemble des clubs, actifs et dormants.
 
@@ -36,6 +41,12 @@ Barre persistante en tête d'application :
 - Boutons : avancer d'un jour, avancer à la prochaine journée de championnat,
   avancer à la fin de la fenêtre de mercato
 - Journal des événements du jour : résultats, transferts, blessures
+
+Une avance longue renvoie un identifiant de travail et une progression.
+Désactiver les commandes incompatibles tant qu'elle est active ; les vues
+lisent le dernier état cohérent validé. Une consultation ne tire aucun nouvel
+aléa de simulation. Les estimations affichées restent stables sur leur période
+d'observation.
 
 ## Écrans
 
@@ -71,7 +82,7 @@ En-tête : nom, pays, compétition, réputation, classement actuel, forme sur le
 | État | blessure en cours et durée, fatigue, suspension, forme, moral |
 | Contrat | club, salaire hebdomadaire, date de fin, valeur de marché estimée |
 | Saison en cours | matches, minutes, buts, passes, note moyenne, cartons |
-| Historique | une ligne par saison ; transferts avec montants ; courbe de la note globale par saison |
+| Historique | une ligne par saison, club et compétition ; transferts avec montants ; courbe annuelle de la note globale |
 
 ### Match
 
@@ -82,13 +93,17 @@ En-tête : nom, pays, compétition, réputation, classement actuel, forme sur le
 - Fil chronologique des événements avec joueurs nommés
 - Compositions des deux équipes avec notes individuelles
 
-En v1 le match est simulé instantanément. Prévoir dès la conception que le
-`ResultatMatch` contient tous les événements horodatés : le mode « match en
-direct » se construira en rejouant ce fil, sans toucher au moteur.
+En v1 le match détaillé est simulé avant consultation. Les événements horodatés
+permettent une animation différée. Un futur match interactif demandera aussi
+des points de pause et des commandes influençant la suite du moteur.
+Pour un résultat analytique, signaler l'absence de détail et masquer les
+statistiques inconnues au lieu d'afficher des zéros. Garder les compositions
+initiales indépendantes des remplacements enregistrés ensuite.
 
 ### Recherche de joueurs
 
-Vue transversale sur les 32 000 joueurs. Filtres serveur : poste, âge, niveau,
+Vue transversale sur les joueurs importés (25 911 avec les CSV présents).
+Filtres serveur : poste, âge, niveau,
 nationalité, club, statut du club (actif ou dormant), fourchette de salaire,
 statut contractuel. Tri sur toute colonne, pagination obligatoire.
 
@@ -100,7 +115,8 @@ signaler explicitement plutôt que d'afficher des sections vides.
 
 ```
 GET  /api/monde/etat                     date, saison, prochaines échéances
-POST /api/monde/avancer                  {jusqu_a: "jour" | "journee" | "fin_mercato"}
+POST /api/monde/avancer                  {commande_id: str, jusqu_a: "jour" | "journee" | "fin_mercato"} -> travail_id
+GET  /api/travaux/{id}                  statut, progression, erreur éventuelle
 GET  /api/monde/journal?date=             événements du jour
 
 GET  /api/clubs?competition=&statut=actif|dormant&recherche=&page=&tri=
@@ -126,6 +142,8 @@ GET  /api/matches/{id}                    compte rendu complet
 POST /api/partie/sauvegarder              {slot: str}
 POST /api/partie/charger                  {slot: str}
 GET  /api/partie/slots
+POST /api/partie/creer                   graine et date/config initiales explicites
+GET  /api/partie/rapport-import          volumes et corrections de la création
 ```
 
 ## Front
@@ -136,6 +154,10 @@ triables — un framework n'apporterait rien ici.
 - Une page par écran, navigation par ancres ou petit routeur maison
 - Aucun état applicatif dupliqué côté client : le serveur est la source de vérité
 - Rafraîchir après chaque avancée de temps
+
+Les mêmes commandes d'écriture sont sérialisées côté serveur ; désactiver les
+boutons ne remplace pas ce contrôle. Une sauvegarde reprend par défaut sa
+configuration enregistrée. Les noms de slots ne sont pas des chemins libres.
 
 Compter environ la moitié du temps total du projet sur l'interface si l'on veut
 quelque chose d'agréable à utiliser. Ne pas commencer avant que le harnais de

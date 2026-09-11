@@ -13,15 +13,16 @@
     "fatigue_retour_de_blessure": 0.5
   },
   "blessures": {
-    "probabilite_base_par_possession": 0.00019,
+    "_note": "Risque evalue sur un joueur implique nomme par possession, pas sur chaque membre du onze. Valeurs initiales a calibrer sur la suite blessures.",
+    "probabilite_base_par_possession": 0.0025,
     "facteur_fatigue_max": 1.9,
     "fragilite_min": 0.6, "fragilite_max": 1.8,
-    "probabilite_quotidienne_hors_match": 0.00035,
+    "probabilite_quotidienne_hors_match": 0.00025,
     "gravites": [
-      {"nom": "legere",    "part": 0.55, "jours_min": 3,   "jours_max": 10},
-      {"nom": "moyenne",   "part": 0.32, "jours_min": 14,  "jours_max": 42},
-      {"nom": "grave",     "part": 0.11, "jours_min": 60,  "jours_max": 150},
-      {"nom": "tres_grave","part": 0.02, "jours_min": 180, "jours_max": 365}
+      {"nom": "legere",    "part": 0.58, "jours_min": 3,   "jours_max": 10},
+      {"nom": "moyenne",   "part": 0.34, "jours_min": 14,  "jours_max": 42},
+      {"nom": "grave",     "part": 0.07, "jours_min": 61,  "jours_max": 150},
+      {"nom": "tres_grave","part": 0.01, "jours_min": 180, "jours_max": 365}
     ],
     "penalite_permanente": {
       "duree_minimale_jours": 90, "age_minimal": 30,
@@ -34,6 +35,9 @@
     "matches_rouge_min": 1, "matches_rouge_max": 3,
     "matches_double_jaune": 1,
     "seuils_cumul_jaunes": [{"jaunes": 5, "matches": 1}, {"jaunes": 10, "matches": 2}],
+    "remise_a_zero_apres_seuil": false,
+    "decompte": "matches_du_club_dans_competition_concernee",
+    "cumul_sanctions_meme_match": "maximum",
     "remise_a_zero_fin_saison": true
   },
   "forme": {

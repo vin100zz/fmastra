@@ -1,5 +1,6 @@
 {
-  "version_config": 1,
+  "version_config": 2,
+  "date_debut_partie": {"annee": 2025, "mois": 7, "jour": 1},
   "_note": "Perimetre simule et calendrier. Les clubs hors de ce perimetre sont dormants. division_id identifie la premiere division dans les donnees fournies (data/clubs.csv, colonne 'Division ID') ; le nom de la ligue n'y est pas fiable pour le filtrage.",
   "competitions_simulees": [
     {"pays": "FRA", "nom": "Ligue 1", "niveau": 1, "nb_clubs": 18, "division_id": 16},
@@ -21,14 +22,18 @@
     "tours_par_jour": 1
   },
   "dates_cles": {
-    "promotion_centre_formation": {"mois": 6, "jour": 15},
-    "liberation_contrats_expires": {"mois": 6, "jour": 30},
+    "promotion_centre_formation": {"mois": 7, "jour": 1},
+    "liberation_contrats_expires": {"mois": 7, "jour": 1},
     "bilan_demographique": {"mois": 7, "jour": 1}
   },
   "regles_match": {
     "joueurs_sur_terrain": 11,
     "remplacements_max": 5,
     "fenetres_remplacement": 3,
-    "taille_banc": 9
+    "taille_banc": 9,
+    "joueurs_minimum_poursuite": 7,
+    "score_forfait_buts_vainqueur": 3,
+    "score_forfait_buts_perdant": 0,
+    "mi_temps_secondes": 2700
   }
 }

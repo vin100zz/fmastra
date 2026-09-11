@@ -1,220 +1,170 @@
 # Benchmarks
 
-## Rôle
+## Statut des cibles
 
-Les benchmarks ne sont pas des tests. Un test vérifie une règle sur un cas ; un
-benchmark mesure une **distribution** sur des dizaines de milliers de
-simulations et la compare à une cible.
+Les valeurs de `config/benchmarks.json` sont des **hypothèses de calibrage**.
+Elles n'ont pas été établies ici sur un corpus historique sourcé. Elles guident
+le développement et peuvent être révisées avec justification ; ne pas forcer
+le moteur à satisfaire un ensemble de cibles mathématiquement contradictoires.
 
-C'est le seul moyen de savoir si le moteur et l'IA produisent un monde crédible.
-Le harnais est écrit **avant** le moteur de production et reste le premier outil
-de travail pendant tout le projet.
+Une suite devient bloquante quand ses mécanismes sont implémentés. Avant le
+harnais : tests de configuration et d'import. Ensuite : moteur analytique,
+statistiques détaillées, formations, résultats, états, puis monde complet.
+La comparaison « oracle » est diagnostique et non bloquante.
 
-## Structure
+## Harnais et rapports
 
-```
-benchmarks/
-  runner.py            exécution, parallélisation, graine
-  cibles.py            chargement de config/benchmarks.json
-  rapport.py           sortie console + JSON + CSV
-  variantes/           dossiers de surcharge de config
-  suites/
-    match.py           distribution des résultats d'un affrontement
-    saison.py          points, champion, écart-type
-    stats_match.py     tirs, xG, possession, cartons
-    formations.py      matrice formation contre formation
-    oracle.py          moteur possession contre moteur analytique
-    demographie.py     population sur 30 saisons
-    economie.py        masse salariale, transferts, concentration
-    performance.py     temps CPU par match et par saison
-```
+Modules dans `src/benchmarks/` : runner, targets, report et suites. Exécuter
+par `python -m benchmarks.runner`, avec suite, répétitions, graines, chemin de
+rapport et éventuellement balayage d'une clé réelle de config (par exemple
+`moteur_match.transitions.k_prog`). Les dossiers de surcharges remplacent les
+paramètres selon `docs/configuration.md` ; aucun fichier de base n'est modifié.
 
-## Invocation
+Rapports console + JSON + CSV : valeur, taille d'échantillon, cible, intervalle
+d'incertitude, tolérance et statut. Conserver graine(s), config effective et
+empreinte, hash des effectifs, révision du code, environnement et version du
+protocole. Les comparaisons doivent utiliser le même protocole et les mêmes
+instantanés, pas les effectifs courants d'une partie après mercato.
 
-```bash
-python -m benchmarks.runner --suite match --iterations 10000
-python -m benchmarks.runner --suite tout --rapport rapports/2026-09-10.json
-python -m benchmarks.runner --suite match --balayage moteur.k_prog=0.03:0.09:0.01
-```
+Les effectifs de référence sont figés après import et sélection des 30 joueurs,
+stockés dans `benchmarks/effectifs/` lors de leur création. Les identifiants
+868/886, 679/622 et 1736/1708 désignent les clubs des confrontations configurées.
+Un changement de source invalide les instantanés et demande une régénération
+explicite. Les noms servent uniquement à l'affichage.
 
-Sortie console : une ligne par cible, verte ou rouge, avec valeur mesurée,
-cible, tolérance et écart.
+## Suite match
 
-```
-match/psg_dom_toulouse    victoire  0.732   cible 0.75 ±0.05   OK
-match/psg_dom_toulouse    nul       0.211   cible 0.20 ±0.04   OK
-match/psg_dom_toulouse    defaite   0.057   cible 0.05 ±0.03   OK
-stats/tirs_par_equipe     12.8      cible 13.0 ±1.0            OK
-stats/xg_par_equipe        1.61      cible  1.40 ±0.15         ECHEC  (+0.21)
-```
+Répéter chaque confrontation, état initial réinitialisé à chaque match, et
+comparer les fréquences domicile/nul/extérieur aux cibles propres au scénario.
+Ne pas mélanger la perspective du PSG et celle de l'équipe à domicile.
+Un intervalle statistique accompagne chaque fréquence ; un résultat proche de
+la limite appelle davantage de simulations, pas des changements de paramètres
+sur la seule base du bruit d'échantillonnage.
 
-Sortie JSON pour l'historisation, CSV pour tracer l'évolution d'un paramètre lors
-d'un balayage.
+La distribution des scores porte sur un panel fixe de confrontations équilibrées
+domicile/extérieur, dont le protocole et les poids figurent dans le rapport.
+`ecart_buts_moyen` signifie différence **absolue**. Le score modal est rapporté
+comme diagnostic ; un 1-1 fréquent n'est pas à lui seul un échec. Les proportions
+de 0-0 et de matches à au moins quatre buts restent des cibles de distribution,
+pas une exigence appliquée séparément à chaque affiche très déséquilibrée.
 
-## Suite `match` — affrontements de référence
+## Suite stats_match
 
-C'est la suite que tu consultes en premier. Elle simule N fois un affrontement
-donné avec des effectifs figés et compare la distribution victoire / nul /
-défaite.
+Tirs, buts, xG, cartons et possessions sont des moyennes par équipe et par match
+sur le même panel figé, avec niveau moyen calibré et états neutralisés au départ.
+Les effets de fatigue pendant le match restent activés. Les blessures et
+suspensions n'affectent pas les matches suivants de cette suite.
 
-Les affrontements de référence sont déclarés dans `config/benchmarks.json`, avec
-la cible attendue. Exemples :
+La possession temporelle et les proportions par couloir sont vérifiées sur un
+scénario synthétique **symétrique**, avec alternance des domiciles. Une équipe
+ayant une aile plus forte doit pouvoir l'utiliser davantage ; elle n'est pas
+contrainte individuellement à un tiers des attaques dans chaque couloir.
+L'avantage domicile est la différence moyenne de buts domicile - extérieur
+sur les confrontations avec inversion des domiciles.
 
-| Affrontement | V | N | D |
-|---|---|---|---|
-| PSG domicile contre Toulouse | 0.75 | 0.20 | 0.05 |
-| PSG extérieur contre Toulouse | 0.62 | 0.24 | 0.14 |
-| Deux clubs de niveau égal, domicile | 0.45 | 0.27 | 0.28 |
-| Manchester City domicile contre Burnley | 0.78 | 0.16 | 0.06 |
-| Real Madrid domicile contre Barcelone | 0.44 | 0.27 | 0.29 |
+Le xG est la qualité préalable de chaque tentative, sans qualité du tireur ou
+du gardien. Un but compte dans les tirs et tirs cadrés. Le total des possessions
+et leurs durées doivent être cohérents avec la durée effective du match.
+Mesurer aussi la dangerosité par attaque axiale ou latérale, séparément du volume.
 
-Vérifier aussi la distribution des scores, pas seulement l'issue : un moteur qui
-donne le bon taux de victoire avec des 5-0 systématiques est faux.
+## Suite formations
 
-| Métrique | Cible |
-|---|---|
-| Score le plus fréquent | 1-0 ou 2-1 |
-| Part des matches à 0 but | 7 – 9 % |
-| Part des matches à 4 buts ou plus | 22 – 28 % |
-| Écart de buts moyen | 1.3 – 1.6 |
+Toutes les formations configurées contre toutes les autres, avec autant de
+matches dans chaque sens domicile/extérieur. Chaque côté reçoit le même vivier
+synthétique : attributs identiques, assez de joueurs et affinités identiques
+pour les postes testés, afin d'isoler les matrices de formation. Le sélectionneur
+ne doit pas introduire un biais de qualité du onze dans ce benchmark.
 
-**Effectifs figés** : la suite doit utiliser un instantané des effectifs stocké
-dans `benchmarks/effectifs/`, pas l'état courant du monde. Sinon les résultats
-changent à chaque mercato et deviennent incomparables.
+La matrice contient les taux V/N/D et le **score d'équilibre** :
 
-## Suite `stats_match`
+`(victoires + poids_nul × nuls) / matches`, avec `poids_nul = 0.5`.
 
-Vérifie que le match ressemble à un match avant de vérifier qui gagne.
-**À valider en premier** : ne pas toucher aux coefficients de talent tant que ces
-chiffres ne sont pas justes.
+Chaque formation vise un score moyen contre le champ entre 0,45 et 0,55.
+Le poids des adversaires est uniforme. Cette cible permet les nuls ; l'ancienne
+borne de 45 % de victoires ne le permettait pas avec la fréquence prévue de nuls.
+Tester aussi la symétrie gauche/droite et la monotonie d'une zone devenue vide.
 
-| Métrique (par match, par équipe) | Cible |
-|---|---|
-| Possessions | 100 – 120 |
-| Tirs | 12 – 14 |
-| xG cumulé | 1.3 – 1.5 |
-| Buts | 1.35 |
-| Possession | 45 – 55 % |
-| Avantage domicile | +0.30 but |
-| Buts sur coup de pied arrêté | 25 – 30 % |
-| Cartons jaunes | 1.75 – 2.25 |
-| Cartons rouges | 0.05 – 0.08 |
-| Répartition par couloir | 33 % ±5 chacun |
-| xG par attaque, axe contre aile | axe supérieur |
+## Suite saison
 
-## Suite `saison`
+Simuler des saisons indépendantes avec états réinitialisés. L'effectif est figé
+pour isoler le moteur ; aucun mercato ou changement démographique dans cette
+suite. Le moteur détaillé est requis pour les meilleurs buteurs et notes.
 
-Simule N saisons complètes. Plus révélateur que la validation match par match.
+Points du champion, du dernier et dispersion : **points par match**, pour rendre
+comparables 34 et 38 rencontres. Présenter aussi les points bruts par compétition.
+La corrélation est celle de Spearman entre réputation et rang inversé
+(nombre de clubs + 1 - rang), avec rangs moyens pour les égalités de réputation.
 
-| Métrique | Cible |
-|---|---|
-| Points du champion | 80 – 90 |
-| Points du dernier | 25 – 35 |
-| Écart-type des points | 12 – 16 |
-| Buts du meilleur buteur | 22 – 30 |
-| Titres du club le plus fort sur 100 saisons | 55 – 80 % |
-| Corrélation réputation / classement | 0.70 – 0.85 |
+La cible de domination du meilleur club porte sur les saisons indépendantes de
+chaque championnat, pas sur un monde dont la force change après vingt mercatos.
+Les références de réputation issues du stade sont synthétiques ; rapporter en
+complément la corrélation force du onze / rang inversé pour interpréter un échec.
 
-La dernière ligne est importante : une corrélation de 0.95 signifie un
-championnat sans surprise, une corrélation de 0.4 un championnat aléatoire.
+## Comparaison analytique
 
-## Suite `formations`
+Comparer les mêmes affrontements, équipes et états. Rapporter écarts V/N/D,
+moyennes et distribution des buts. La comparaison de taux utilise la tolérance
+configurée ; ne pas appliquer aveuglément un test continu à des scores discrets.
+Un écart signale soit une différence d'hypothèses, soit un mauvais calibrage,
+soit un bug. Examiner les deux moteurs. Cette suite ne remplace pas les tests
+de symétrie ou de conservation, qui restent bloquants.
 
-Chaque formation contre chaque autre, **effectifs strictement identiques des deux
-côtés**. Produit une matrice de taux de victoire.
+## Blessures
 
-**Critère** : aucune formation ne dépasse 55 % de victoires contre l'ensemble du
-champ, aucune ne descend sous 45 %.
+Sur des saisons complètes, cumuler blessures en match et hors match. Rapporter
+par club/saison, proportion hors match, jours perdus, moyenne quotidienne des
+indisponibles et longue durée (> 60 jours). Les cibles proviennent uniquement
+du bloc `blessures`, pas d'une seconde cible incompatible par possession.
+Rapporter la durée de calendrier couverte pour comparer les résultats.
 
-Levier de correction : l'exposant de `facteur_densite`
-(`moteur.densite.exposant`, 0.5 par défaut). Le baisser vers 0.4 si les
-formations défensives dominent, le monter vers 0.6 si toutes les formations sont
-indiscernables.
+## Démographie et économie
 
-C'est le benchmark le plus rentable du projet. Un déséquilibre de formation
-contamine ensuite toute l'IA de transferts, qui se met à recruter uniquement le
-profil alimentant la formation dominante.
+L'import contient au maximum 30 joueurs par club ; l'IA vise le profil nominal,
+qui peut être inférieur. Exclure la phase de stabilisation configurée des
+comparaisons de dérive. Après elle, simuler 30 saisons pour la démographie et
+25 pour l'économie, sur les graines de monde configurées.
 
-## Suite `oracle`
+Comparer les moyennes des fenêtres initiale et finale, de largeur configurée,
+pour réduire l'effet d'une cohorte exceptionnelle. Actifs, dormants et libres
+sont mesurés séparément. Conserver aussi les totaux de créations, retraites et
+transferts entre régimes pour vérifier l'identité comptable des populations.
 
-Compare le moteur par possessions au moteur analytique de Poisson sur les mêmes
-affrontements. Les distributions doivent être compatibles (test de
-Kolmogorov-Smirnov, ou simple comparaison des trois taux à ±0.04).
+- Effectif actif : stabilité des moyennes et distance à la cible nominale.
+- Parts par poste et nation : écarts en points de proportion.
+- Niveaux et âges : histogrammes, moyenne et quantiles rapportés ; les critères
+  sans seuil numérique configuré restent diagnostiques.
+- Élites au-dessus de 85 : tolérance max(relative, absolue) pour éviter une
+  division par zéro sur une population initiale nulle.
+- Concentration : joueurs actifs de niveau > 80 dans les trois clubs les mieux
+  classés du pays, divisés par tous les joueurs > 80 actifs de ce pays. Si le
+  dénominateur est nul, rapporter « non applicable », pas zéro réussi.
+- Salaires : dérive **cumulative** des moyennes de masse salariale réelle par
+  club entre fenêtres, inflation neutralisée. Ne pas accepter 12 % par an.
+- Solde négatif permanent : nombre de clubs présentant un solde négatif à la
+  clôture du nombre configuré de saisons consécutives. Rapporter aussi les creux.
+- Transferts : arrivées définitives par club et fenêtre ; part depuis dormants
+  parmi les arrivées ayant un club vendeur (les libres sont une ligne distincte).
+- Champions différents : par pays, sur les 25 saisons après stabilisation.
 
-Un écart signale un bug dans le moteur par possessions, pas un désaccord de
-modèle.
+La démographie et l'économie utilisent le monde complet, avec progression,
+contrats, minutes, états et événements nécessaires ; pas une substitution du
+moteur analytique laissant ces entrées vides. Des tests isolés peuvent employer
+un fournisseur de minutes synthétiques, mais ne sont pas la validation finale.
 
-## Suite `demographie`
+## Performance
 
-30 saisons sans interface. Compare l'année 1 et l'année 30.
+Les budgets configurés sont des objectifs à mesurer, pas des garanties avant
+implémentation. Fixer machine, versions, mode et nombre de répétitions dans
+chaque rapport ; distinguer temps CPU du moteur et temps réel utilisateur.
 
-| Indicateur | Critère |
-|---|---|
-| Effectif total actif | stable à ±5 % |
-| Pyramide des âges | forme stable |
-| Histogramme des niveaux | superposable |
-| Parts par poste | ±2 points |
-| Parts par nation | ±3 points |
-| **Joueurs au-dessus de 85** | **±20 %** |
-| Âge moyen des effectifs | 25 – 27 |
+- Match détaillé : seul calcul de match, hors lecture/écriture.
+- Saison complète : monde, IA, 1 752 matches et autosauvegardes inclus ; rapporter
+  aussi une mesure sans I/O pour identifier le goulot. L'objectif de 40 secondes
+  devra être réévalué si le coût réel des sauvegardes le rend incohérent.
+- 100 saisons analytiques : calendriers et scores seuls, sans économie/démographie.
+- Chargement : les CSV complets, normalisation, synthèse, sélection, validation.
+- Sauvegarde : monde représentatif avec deux saisons de détails et historique,
+  y compris compression et écriture atomique, pas uniquement sérialisation.
 
-Le nombre de joueurs au-dessus de 85 est **l'indicateur canari** : statistique de
-queue, il dérive en premier. Le surveiller à chaque modification du modèle de
-progression.
-
-## Suite `economie`
-
-25 saisons. Vérifie que l'IA de gestion ne dégénère pas.
-
-| Indicateur | Critère |
-|---|---|
-| Part des joueurs > 80 dans les 3 meilleurs clubs | ≤ 25 % |
-| Masse salariale moyenne | pas de dérive exponentielle |
-| Transferts par club et par fenêtre estivale | 3 – 7 |
-| Clubs différents champions sur 25 saisons, par pays | ≥ 4 |
-| Clubs au solde négatif en permanence | 0 |
-| Transferts depuis les clubs dormants | 25 – 40 % du total |
-
-La dernière ligne valide que le marché extérieur fonctionne : si elle tombe à
-zéro, l'économie des 5 championnats s'est refermée.
-
-## Suite `performance`
-
-| Métrique | Cible |
-|---|---|
-| Un match, moteur possession | < 20 ms |
-| Une saison complète (1 752 matches) | < 40 s |
-| 100 saisons en mode analytique | < 60 s |
-| Chargement des données (32 000 joueurs) | < 10 s |
-| Sauvegarde complète | < 2 s |
-
-Si la simulation d'une saison dépasse la minute, le calibrage devient pénible et
-c'est la boucle de travail entière qui se dégrade. Traiter la performance comme
-une cible, pas comme une optimisation.
-
-## Balayage de paramètre
-
-```bash
-python -m benchmarks.runner --suite match --balayage moteur.k_prog=0.03:0.09:0.01
-```
-
-Le runner génère une surcharge de config par valeur, exécute la suite, et sort un
-CSV exploitable. C'est la méthode de calibrage : on ne devine pas un coefficient,
-on balaie et on lit la courbe.
-
-Ordre de calibrage recommandé :
-
-1. `stats_match` — le match ressemble à un match
-2. `formations` — aucune formation ne domine
-3. `match` — les bons favoris gagnent dans les bonnes proportions
-4. `saison` — le championnat est crédible
-5. `demographie` et `economie` — le monde tient dans la durée
-
-Ne jamais calibrer une étape avant que la précédente soit verte : les
-coefficients des étapes suivantes dépendent des précédentes.
-
-## Reproductibilité
-
-Chaque exécution enregistre : graine, version de config, empreinte des effectifs
-utilisés, révision du code. Un rapport non reproductible ne vaut rien pour
-comparer deux versions du moteur.
+Éviter de lancer toute la suite de mille saisons détaillées à chaque modification.
+Utiliser d'abord les suites affectées, puis les longues validations aux jalons.
