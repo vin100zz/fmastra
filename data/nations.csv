@@ -1,0 +1,233 @@
+code,name,weight,internal_code
+X00,Afghanistan,7,1
+RSA,Afrique du Sud,116,0
+ALB,Albanie,109,0
+ALG,Algérie,178,0
+GER,Allemagne,3613,0
+X01,Andorre,14,1
+ENG,Angleterre,2848,0
+X02,Angola,36,1
+X03,Anguilla,2,1
+X04,Antigua-et-Barbuda,7,1
+KSA,Arabie saoudite,119,0
+ARG,Argentine,268,0
+X05,Arménie,11,1
+X06,Aruba,0,1
+AUS,Australie,87,0
+AUT,Autriche,311,0
+X07,Azerbaïdjan,6,1
+X08,Bahamas,2,1
+X09,Bahreïn,1,1
+X0A,Bangladesh,1,1
+X0B,Barbade,3,1
+BEL,Belgique,164,0
+X0C,Bermudes,5,1
+X0D,Bhoutan,0,1
+X0E,Birmanie,0,1
+X0F,Biélorussie,4,1
+X0G,Bolivie,42,1
+X0H,Bonaire,0,1
+BIH,Bosnie,132,0
+X0I,Botswana,0,1
+X0J,Brunei,0,1
+BRA,Brésil,293,0
+BUL,Bulgarie,44,0
+X0K,Burkina Faso,37,1
+X0L,Burundi,2,1
+X0M,Bélize,0,1
+X0N,Bénin,29,1
+X0O,Cambodge,0,1
+CMR,Cameroun,122,0
+CAN,Canada,127,0
+X0P,Cap-Vert,107,1
+X0Q,Caïman,0,1
+X0R,Centrafrique,23,1
+CHI,Chili,84,0
+CHN,Chine,6,0
+X0S,Chypre,13,1
+COL,Colombie,162,0
+X0T,Comores,48,1
+X0U,Congo,43,1
+X0V,Cook,0,1
+X0W,Corée du Nord,0,1
+KOR,Corée du Sud,112,0
+X0X,Costa Rica,8,1
+X0Y,Crimée,0,1
+CRO,Croatie,198,0
+X0Z,Cuba,7,1
+X10,Curaçao,102,1
+CIV,Côte d'Ivoire,206,0
+DEN,Danemark,148,0
+X11,Djibouti,0,1
+X12,Dominique,2,1
+X13,E.A.U.,8,1
+ESP,Espagne,5388,0
+X14,Estonie,9,1
+X15,Eswatini,0,1
+X16,Fidji,2,1
+FIN,Finlande,48,0
+FRA,France,5666,0
+X17,Féroé,4,1
+X18,Gabon,35,1
+X19,Gambie,50,1
+GHA,Ghana,172,0
+X1A,Gibraltar,8,1
+X1B,Grande-Bretagne,0,1
+X1C,Grenade,12,1
+GRE,Grèce,63,0
+X1D,Guadeloupe,31,1
+X1E,Guam,0,1
+X1F,Guatemala,1,1
+X1G,Guinée,85,1
+X1H,Guinée Éq.,25,1
+X1I,Guinée-Bissau,44,1
+X1J,Guyana,13,1
+X1K,Guyane,17,1
+X1L,Géorgie,34,1
+X1M,Haïti,116,1
+X1N,Honduras,10,1
+X1O,Hong Kong (RP de Chine),3,1
+HUN,Hongrie,42,0
+X1P,Inde,2,1
+X1Q,Indonésie,9,1
+X1R,Irak,119,1
+IRN,Iran,167,0
+IRL,Irlande,405,0
+NIR,Irlande du Nord,189,0
+ISL,Islande,35,0
+ISR,Israël,31,0
+ITA,Italie,3608,0
+X1S,Jamaïque,53,1
+JPN,Japon,162,0
+X1T,Jordanie,145,1
+X1U,Kazakhstan,10,1
+X1V,Kenya,16,1
+X1W,Kirghizistan,10,1
+X1X,Kiribati,0,1
+KVX,Kosovo,52,0
+X1Y,Koweït,0,1
+X1Z,La Réunion,0,1
+X20,Laos,0,1
+X21,Lesotho,0,1
+X22,Lettonie,19,1
+X23,Liban,6,1
+X24,Liberia,4,1
+X25,Libye,5,1
+X26,Liechtenstein,4,1
+X27,Lituanie,24,1
+X28,Luxembourg,36,1
+X29,Macao (RP de Chine),1,1
+MKD,Macédoine du N.,21,0
+X2A,Madagascar,24,1
+X2B,Malaisie,2,1
+X2C,Malawi,4,1
+X2D,Maldives,1,1
+MLI,Mali,135,0
+X2E,Malte,8,1
+X2F,Marianne du Nord,0,1
+MAR,Maroc,259,0
+X2G,Martinique,35,1
+X2H,Mauritanie,27,1
+X2I,Mayotte,3,1
+MEX,Mexique,121,0
+X2J,Micronésie,0,1
+X2K,Moldavie,23,1
+X2L,Monaco,1,1
+X2M,Mongolie,0,1
+X2N,Montserrat,6,1
+MNE,Monténégro,22,0
+X2O,Mozambique,10,1
+X2P,Namibie,2,1
+X2Q,Nicaragua,0,1
+X2R,Niger,6,1
+NGA,Nigeria,137,0
+X2S,Nlle-Calédonie,6,1
+NOR,Norvège,138,0
+NZL,Nouvelle-Zélande,111,0
+X2T,Népal,0,1
+X2U,Oman,1,1
+X2V,Ouganda,9,1
+X2W,Ouzbékistan,108,1
+X2X,Pakistan,4,1
+X2Y,Palestine,4,1
+X2Z,Panama,101,1
+X30,Papouasie,0,1
+PAR,Paraguay,111,0
+X31,Pays Basque,0,1
+WAL,Pays de Galles,219,0
+NED,Pays-Bas,239,0
+X32,Philippines,5,1
+POL,Pologne,102,0
+X33,Porto Rico,5,1
+POR,Portugal,219,0
+PER,Pérou,19,0
+QAT,Qatar,140,0
+X34,R.D. Congo,160,1
+X35,R.D.A.,0,1
+ROU,Roumanie,132,0
+RUS,Russie,48,0
+X36,Rwanda,2,1
+X37,Rép. Dominicaine,31,1
+CZE,Rép. tchèque,126,0
+X38,Saint-Barthélemy,0,1
+X39,Saint-Kitts,16,1
+X3A,Saint-Marin,6,1
+X3B,Saint-Martin,8,1
+X3C,Saint-Martin (PB),1,1
+X3D,Saint-Pierre-et-Miquelon,0,1
+X3E,Saint-Vincent,1,1
+X3F,Sainte-Lucie,6,1
+X3G,Salomon,0,1
+X3H,Salvador,2,1
+X3I,Samoa,0,1
+X3J,Samoa Am.,0,1
+SRB,Serbie,91,0
+X3K,Seychelles,1,1
+X3L,Sierra Leone,20,1
+X3M,Singapour,1,1
+SVK,Slovaquie,38,0
+SVN,Slovénie,51,0
+X3N,Somalie,0,1
+X3O,Soudan,3,1
+X3P,Soudan du Sud,1,1
+X3Q,Sri Lanka,1,1
+SUI,Suisse,156,0
+X3R,Suriname,21,1
+SWE,Suède,168,0
+X3S,Syrie,7,1
+X3T,São Tomé-et-Príncipe,5,1
+SEN,Sénégal,267,0
+X3U,Tadjikistan,7,1
+X3V,Tahiti,4,1
+X3W,Taipei chinois (RPC),2,1
+X3X,Tanzanie,4,1
+X3Y,Tchad,4,1
+X3Z,Thaïlande,5,1
+X40,Timor Oriental,4,1
+X41,Togo,28,1
+X42,Tonga,0,1
+X43,Trinité-et-Tobago,8,1
+TUN,Tunisie,147,0
+X44,Turkménistan,1,1
+X45,Turks-et-Caïcos,1,1
+TUR,Turquie,199,0
+X46,Tuvalu,0,1
+UKR,Ukraine,59,0
+URU,Uruguay,154,0
+X47,Vanuatu,1,1
+VEN,Venezuela,40,0
+X48,Vietnam,1,1
+X49,Yémen,0,1
+X4A,Zambie,10,1
+X4B,Zanzibar,0,1
+X4C,Zimbabwe,16,1
+SCO,Écosse,479,0
+EGY,Égypte,116,0
+ECU,Équateur,125,0
+X4D,Érythrée,1,1
+USA,États-Unis,181,0
+X4E,Éthiopie,2,1
+X4F,Île Maurice,3,1
+X4G,Îles Vierges,2,1
+X4H,Îles Vierges US,0,1
+X4I,Îles Wallis-et-Futuna,0,1

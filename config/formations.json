@@ -11,7 +11,7 @@
   "hauteur_bloc": {
     "min": -1.0, "max": 1.0, "defaut": 0.0,
     "bonus_zone_recuperation": 1.5,
-    "sensibilite_ecart_force_initial": 0.02,
+    "sensibilite_ecart_force_initial": 0.005,
     "bonus_domicile_initial": 0.10,
     "probabilite_recuperation_avancee_base": 0.20,
     "malus_vulnerabilite_contre": 0.35,

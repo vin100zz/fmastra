@@ -1,0 +1,105 @@
+"""Advance coherent game days, applying each phase before dependent decisions."""
+from __future__ import annotations
+
+from core.ai.controller import AIController
+from core.ai.selection import LineupContext
+from core.ai.market import propose_transfers
+from core.domain.date import Date
+from core.domain.world import World
+from core.engine.match import PossessionEngine
+from core.randomness import stream
+from .application import apply
+from .calendar import schedule, standings
+from .contracts import expiry_events, renewal_events
+from .demography import retirement_events, cohort_events
+from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
+from .finances import structural_income
+from .player_states import daily_player_events, monthly_player_events, match_event
+from .market import settle_offers, open_offers, ensure_minimums
+
+
+def market_window(world: World) -> str | None:
+    today = (world.date.month, world.date.day)
+    for name in ("summer", "winter"):
+        window = getattr(world.config.world.market, name)
+        if (window.start_month, window.start_day) <= today <= (window.end_month, window.end_day): return name
+    return None
+
+
+def target_date(world: World, until: str) -> Date:
+    if until == "jour": return world.date.add_days(1)
+    if until == "journee":
+        dates = [match.date for match in world.matches.values() if match.result is None and match.date > world.date]
+        if dates: return min(dates)
+        opening = world.config.world.season
+        return Date(world.season + 1, opening.start_month, opening.start_day)
+    if until == "fin_mercato":
+        dates = []
+        for year in (world.date.year, world.date.year + 1):
+            for window in (world.config.world.market.summer, world.config.world.market.winter):
+                date = Date(year, window.end_month, window.end_day)
+                if date > world.date: dates.append(date)
+        return min(dates)
+    raise ValueError("Unknown advancement target")
+
+
+def annual_review(world: World) -> None:
+    cfg = world.config
+    rankings, champions = {}, {}
+    for competition in world.competitions.values():
+        rows = standings(competition, [world.matches[mid] for mid in competition.match_ids], cfg)
+        champions[competition.id] = rows[0].club_id
+        rankings.update({row.club_id: index + 1 for index, row in enumerate(rows)})
+    for event in retirement_events(world): apply(world, event)
+    for club in world.clubs.values():
+        rank = rankings.get(club.id)
+        income = round(structural_income(club, cfg, rank) * club.funding_factor)
+        rules = cfg.management.budgets
+        # Existing signed wages are honored; no further wage growth until revenues catch up.
+        cap = max(club.wage_bill, round(income * rules.wage_income_share / rules.weeks_per_year))
+        budget = max(0, round(income * rules.transfer_income_share + club.balance * rules.transfer_balance_share))
+        apply(world, BudgetRenewed(club.id, income, cap, budget, rank))
+    matches, next_id = [], world.next_id
+    for competition in world.competitions.values():
+        fixtures = schedule(competition, world.date.year, next_id, cfg, stream(world.seed, "calendar", world.date.year, competition.id))
+        matches.extend(fixtures)
+        next_id += len(fixtures)
+    apply(world, SeasonOpened(world.date.year, matches, champions))
+    for event in cohort_events(world): apply(world, event)
+    ensure_minimums(world)
+
+
+def advance_day(world: World) -> None:
+    """No I/O, no clock reads; callers persist after this coherent boundary."""
+    cfg = world.config
+    apply(world, DateAdvanced(world.date.add_days(1)))
+    for event in expiry_events(world): apply(world, event)
+    for event in daily_player_events(world): apply(world, event)
+    if world.date.day == 1:
+        for event in monthly_player_events(world): apply(world, event)
+    review = cfg.world.key_dates.population_review
+    if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
+        annual_review(world)
+    if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
+        for event in renewal_events(world): apply(world, event)
+    open_market = market_window(world) is not None
+    for _ in range(cfg.world.market.rounds_per_day):
+        settle_offers(world, open_market)
+        open_offers(world, open_market)
+    controller = AIController(cfg, world.rngs["matches"])
+    engine = PossessionEngine()
+    for match in sorted((match for match in world.matches.values() if match.date == world.date and match.result is None), key=lambda item: item.id):
+        lineups = []
+        for club_id in (match.home_id, match.away_id):
+            club = world.clubs[club_id]
+            context = LineupContext(club, [world.players[pid] for pid in club.player_ids], match.competition_id, world.date)
+            lineups.append(controller.select_lineup(context))
+        result = engine.simulate(*lineups, cfg, world.rngs["matches"])
+        apply(world, match_event(world, match, result))
+    start = Date(world.season, review.month, review.day)
+    days = start.add_years(1).ordinal() - start.ordinal()
+    costs = cfg.management.budgets.accounting.other_cost_share
+    for club in world.clubs.values():
+        annual_net = round(club.income * (1 - costs)) - club.wage_bill * cfg.management.budgets.weeks_per_year
+        payment, remainder = divmod(annual_net + club.accounting_remainder, days)
+        apply(world, FinancePosted(club.id, payment, remainder))

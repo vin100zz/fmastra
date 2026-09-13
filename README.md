@@ -1,9 +1,89 @@
-# Football Manager Light — spécifications
+# Football Manager Light — Touchline
 
 Simulateur de football de gestion, usage personnel, mono-utilisateur.
 Version allégée : on garde effectif, contrats, transferts, matches, sélection et
 remplacements. On supprime entraînement, conférences de presse et discussions
 individuelles avec les joueurs.
+
+## Lancer le jeu
+
+Si l'environnement est déjà installé, double-cliquer sur **start.bat** :
+le serveur démarre et le navigateur s'ouvre automatiquement. Garder la fenêtre
+du serveur ouverte ; `Ctrl+C` arrête le jeu. Si le serveur tourne déjà, le
+lanceur ouvre simplement le jeu.
+
+Python 3.12 est requis. Depuis ce dossier, dans PowerShell :
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\run.ps1
+```
+
+Ouvrir **http://127.0.0.1:8011**, puis créer une partie ou reprendre une
+sauvegarde. Les CSV sont chargés à la création ; aucun service externe n'est
+nécessaire pendant le jeu. Pour un autre port : `./run.ps1 -Port 8012`.
+Conserver un seul processus serveur : l'état est en mémoire.
+
+L'interface comprend le tableau de bord, les classements, calendriers,
+statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
+les comptes rendus et les compositions. L'utilisateur reste observateur.
+
+La liste des joueurs affiche toutes leurs nationalités et leur valeur estimée,
+avec un tri initial par valeur décroissante. Les clubs sont triés par réputation
+décroissante. L'effectif affiche aussi les matchs, minutes, buts, passes décisives,
+cartons et note moyenne réalisés avec ce club pendant la saison courante.
+Les minutes sont affichées sans décimales.
+
+**Mercato mondial**, dans le menu principal, regroupe les transferts, fins de
+contrat, retraites et promotions de tous les clubs, par saison et avec pagination.
+L'interface utilise une présentation compacte et des tableaux défilants sur les
+petits écrans pour conserver l'accès à toutes les colonnes.
+
+Les salaires et plafonds salariaux sont affichés en moyenne mensuelle
+(hebdomadaire × 52 ÷ 12), arrondis à deux chiffres significatifs. Les filtres
+de salaire utilisent aussi des euros par mois. Les contrats et calculs internes
+conservent leur précision ; le journal financier présente les sommes réellement
+versées sur chaque période.
+
+Sur la fiche d'un club, **Finances** présente les revenus et dépenses par
+saison : revenus structurels, salaires, fonctionnement, indemnités de transfert
+et arrondis comptables, avec les soldes d'ouverture et de clôture. Les flux
+réguliers sont regroupés par mois. **Transferts** distingue les arrivées,
+départs transférés, fins de contrat, retraites et jeunes promus. Les flèches
+**Précédent / Suivant** permettent de parcourir les saisons dans ces deux onglets.
+Pour une ancienne sauvegarde, les comptes détaillés commencent à la mise à jour ;
+les données historiques manquantes sont signalées.
+
+Le bouton **▶ Auto** enchaîne les prochaines journées de championnat, avec
+sauvegarde après chaque avance. **⏸ Pause** arrête l'enchaînement après le
+calcul en cours. Une erreur ou le rechargement de la page arrête aussi ce mode.
+
+Les sauvegardes sont dans `saves/`. Le slot `autosave` est remplacé après chaque
+commande d'avance et chaque changement de mois. Utiliser un slot nommé dans
+« Ma partie » pour conserver plusieurs univers. Le chargement restitue la
+configuration de la sauvegarde, même si les JSON du dépôt ont changé.
+
+## Vérifier et calibrer
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+$env:PYTHONPATH = 'src'
+.\.venv\Scripts\python.exe -m benchmarks.runner --suite stats_match --iterations 2000 --report reports/matches.json
+.\.venv\Scripts\python.exe -m benchmarks.runner --suite formations --iterations 80 --report reports/formations.json
+.\.venv\Scripts\python.exe -m benchmarks.runner --suite world --seasons 3 --warmup 0 --report reports/monde.json
+```
+
+Suites disponibles : `analytical`, `match`, `stats_match`, `formations`,
+`season` (effectifs figés), `performance`, `injuries`, `demography`, `economy`,
+`world`. `--seed` choisit la graine ; `--overrides fichier.json` applique une
+surcharge sans modifier les fichiers de configuration. Les rapports sont JSON
+et CSV ; les suites de monde écrivent aussi un suivi annuel pendant le calcul.
+Un échantillon court ne valide pas la stabilité à trente saisons : le rapport
+signale explicitement un horizon insuffisant.
+
+Voir `docs/implementation.md` pour les mesures effectuées et les limites de
+calibrage connues. Les sections suivantes restent la spécification de référence.
 
 ## Périmètre de la v1
 

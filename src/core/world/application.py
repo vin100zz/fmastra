@@ -1,0 +1,182 @@
+"""The only entry point for applying decisions to an existing world."""
+from core.domain.players import Discipline
+from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord
+from core.domain.matches import MatchResult
+from .finances import book_cash, book_daily_cash
+from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
+                     FinancePosted, BudgetRenewed, SeasonOpened, DateAdvanced, OffersUpdated)
+
+
+def apply(world: World, event: WorldEvent) -> bool:
+    if isinstance(event, OffersUpdated):
+        world.offers = {offer.key: offer for offer in event.offers}
+    elif isinstance(event, DateAdvanced):
+        if event.date < world.date: raise ValueError("Game time cannot move backwards")
+        world.date = event.date
+    elif isinstance(event, PlayerChanged):
+        player = world.players[event.player_id]
+        for name in ("attributes", "rating", "fitness", "form", "morale"):
+            value = getattr(event, name)
+            if value is not None: setattr(player, name, value)
+        if event.healed: player.injury = None
+        if event.injury is not None:
+            player.injury = event.injury
+            world.journal.append(JournalEntry(world.date, "injury", f"{player.name} indisponible jusqu'au {event.injury.end.iso()}.", player.club_id, player.id))
+        if event.reset_month: player.monthly_minutes = 0
+    elif isinstance(event, MatchPlayed):
+        _apply_match(world, event)
+    elif isinstance(event, PlayerSigned):
+        return _apply_signing(world, event)
+    elif isinstance(event, PlayerReleased):
+        player = world.players[event.player_id]
+        source = player.club_id
+        if source is not None:
+            club = world.clubs[source]
+            club.player_ids.remove(player.id)
+            club.wage_bill -= player.contract.weekly_wage
+        player.club_id, player.contract = None, None
+        if event.retirement:
+            world.retired[player.id] = player.name
+            del world.players[player.id]
+        kind = "retirement" if event.retirement else "release"
+        world.transfers.append(TransferRecord(world.date, player.id, source, None, 0, kind, world.season))
+        world.journal.append(JournalEntry(world.date, kind, f"{player.name} : {'fin de carrière' if event.retirement else 'fin de contrat'}.", source, player.id))
+    elif isinstance(event, PlayerGenerated):
+        player = event.player
+        if player.id in world.players or player.id in world.retired: raise ValueError("Reused player ID")
+        if player.club_id is not None:
+            club = world.clubs[player.club_id]
+            if len(club.player_ids) >= world.config.management.guardrails.max_squad or club.wage_bill + player.contract.weekly_wage > club.wage_cap:
+                return False
+            club.player_ids.append(player.id)
+            club.wage_bill += player.contract.weekly_wage
+        world.players[player.id] = player
+        world.next_id = max(world.next_id, player.id + 1)
+        world.trajectories[player.id] = [(world.season, player.rating)]
+        if player.club_id is not None:
+            world.transfers.append(TransferRecord(world.date, player.id, None, player.club_id, 0, "academy", world.season))
+        if event.class_fallback:
+            world.journal.append(JournalEntry(world.date, "generation_fallback", f"{player.name} : classe de niveau initial approchée après échantillonnage borné.", player.club_id, player.id))
+        if player.club_id and world.clubs[player.club_id].competition_id:
+            world.journal.append(JournalEntry(world.date, "academy", f"{player.name} rejoint le centre de formation.", player.club_id, player.id))
+    elif isinstance(event, FinancePosted):
+        club = world.clubs[event.club_id]
+        book_daily_cash(world, club, event.change)
+        club.balance += event.change
+        club.accounting_remainder = event.remainder
+    elif isinstance(event, BudgetRenewed):
+        club = world.clubs[event.club_id]
+        club.income, club.wage_cap, club.transfer_budget = event.income, event.wage_cap, event.transfer_budget
+        club.previous_rank = event.rank
+        club.season_spent = club.season_sales = 0
+    elif isinstance(event, SeasonOpened):
+        previous = world.season
+        world.season = event.year
+        world.last_annual_review = event.year
+        for competition_id, winner in event.champions.items():
+            world.champions.setdefault(competition_id, []).append((previous, winner))
+        for competition in world.competitions.values(): competition.match_ids = []
+        for match in event.matches:
+            world.matches[match.id] = match
+            world.competitions[match.competition_id].match_ids.append(match.id)
+            world.next_id = max(world.next_id, match.id + 1)
+        for match in world.matches.values():
+            if match.season < event.year - 1 and match.result and match.result.engine != "archived":
+                match.result = MatchResult(match.result.home_goals, match.result.away_goals, "archived", status=match.result.status)
+        for player in world.players.values():
+            world.trajectories.setdefault(player.id, []).append((event.year, player.rating))
+            player.season_minutes = player.season_goals = player.season_assists = player.appearances = 0
+            player.rating_sum = player.rating_count = 0
+            for discipline in player.discipline.values():
+                discipline.yellows = 0
+                discipline.served_thresholds.clear()
+        # Daily UI journal is bounded; durable scores, transfers and histories are separate.
+        world.journal[:] = [entry for entry in world.journal if entry.date.year >= event.year - 1]
+        world.journal.append(JournalEntry(world.date, "season", f"Ouverture de la saison {event.year}/{event.year + 1}."))
+    else:
+        raise TypeError(f"Unrecognized world event: {type(event)}")
+    return True
+
+
+def _apply_signing(world: World, event: PlayerSigned) -> bool:
+    player = world.players.get(event.player_id)
+    if player is None or player.club_id != event.source_id: return False
+    club = world.clubs[event.target_id]
+    guard = world.config.management.guardrails
+    old_wage = player.contract.weekly_wage if event.renewal and player.contract else 0
+    if club.wage_bill - old_wage + event.contract.weekly_wage > club.wage_cap: return False
+    if event.renewal:
+        if event.source_id != event.target_id: return False
+        club.wage_bill += event.contract.weekly_wage - old_wage
+        player.contract = event.contract
+        return True
+    if event.source_id == event.target_id or len(club.player_ids) >= guard.max_squad: return False
+    reservations = [offer for offer in world.offers.values() if offer.target_id == club.id and offer.player_id != player.id]
+    reserved_money = sum(offer.ceiling for offer in reservations)
+    if event.fee + reserved_money > club.transfer_budget or club.balance - event.fee - reserved_money < guard.min_balance: return False
+    if len(club.player_ids) + len(reservations) >= guard.max_squad: return False
+    if club.wage_bill + event.contract.weekly_wage + sum(offer.contract.weekly_wage for offer in reservations) > club.wage_cap: return False
+    if event.source_id is not None:
+        seller = world.clubs[event.source_id]
+        if seller.competition_id is not None:
+            if len(seller.player_ids) <= guard.min_squad: return False
+            if player.position == "GB" and sum(world.players[pid].position == "GB" for pid in seller.player_ids) <= guard.min_goalkeepers: return False
+        seller.player_ids.remove(player.id)
+        seller.wage_bill -= player.contract.weekly_wage
+        if event.fee: book_cash(world, seller, transfer_index=len(world.transfers), transfer_income=event.fee)
+        seller.balance += event.fee
+        seller.transfer_budget += event.fee
+        seller.season_sales += event.fee
+    player.club_id, player.contract = club.id, event.contract
+    club.player_ids.append(player.id)
+    club.wage_bill += event.contract.weekly_wage
+    if event.fee: book_cash(world, club, transfer_index=len(world.transfers), transfer_expenses=event.fee)
+    club.balance -= event.fee
+    club.transfer_budget -= event.fee
+    club.season_spent += event.fee
+    world.transfers.append(TransferRecord(world.date, player.id, event.source_id, club.id, event.fee, "transfer", world.season))
+    world.journal.append(JournalEntry(world.date, "transfer", f"{player.name} rejoint {club.name}.", club.id, player.id))
+    return True
+
+
+def _apply_match(world: World, event: MatchPlayed) -> None:
+    match = world.matches[event.match_id]
+    if match.result is not None: raise ValueError("A match cannot be applied twice")
+    match.result = event.result
+    for club_id in (match.home_id, match.away_id):
+        for pid in world.clubs[club_id].player_ids:
+            discipline = world.players[pid].discipline.get(match.competition_id)
+            if discipline and discipline.suspended_matches > 0: discipline.suspended_matches -= 1
+    for pid, stats in event.result.player_stats.items():
+        player = world.players[pid]
+        player.fitness = stats.final_fitness
+        player.monthly_minutes += stats.minutes
+        player.season_minutes += stats.minutes
+        player.season_goals += stats.goals
+        player.season_assists += stats.assists
+        player.appearances += int(stats.minutes > 0)
+        if stats.rating is not None:
+            player.rating_sum += stats.rating
+            player.rating_count += 1
+            player.form = event.forms[pid]
+        discipline = player.discipline.setdefault(match.competition_id, Discipline())
+        discipline.yellows += stats.yellows
+        discipline.suspended_matches += event.suspensions.get(pid, 0)
+        for threshold in world.config.states.suspensions.yellow_thresholds:
+            if discipline.yellows >= threshold.yellows and threshold.yellows not in discipline.served_thresholds:
+                discipline.served_thresholds.append(threshold.yellows)
+        if pid in event.injuries:
+            player.injury = event.injuries[pid]
+            world.journal.append(JournalEntry(world.date, "injury", f"{player.name} se blesse en match.", player.club_id, pid, match.id))
+        key = f"{match.season}:{pid}:{player.club_id}:{match.competition_id}"
+        record = world.records.setdefault(key, SeasonRecord(match.season, pid, player.club_id, match.competition_id))
+        record.minutes += stats.minutes
+        record.matches += int(stats.minutes > 0)
+        record.goals += stats.goals
+        record.assists += stats.assists
+        record.yellows += stats.yellows
+        record.reds += int(stats.red)
+        if stats.rating is not None:
+            record.rating_sum += stats.rating
+            record.rating_count += 1
+    world.journal.append(JournalEntry(world.date, "result", f"{world.clubs[match.home_id].name} {event.result.home_goals}–{event.result.away_goals} {world.clubs[match.away_id].name}", match.home_id, match_id=match.id))

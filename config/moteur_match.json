@@ -9,9 +9,11 @@
     "secondes_par_arret_de_jeu": 25
   },
   "transitions": {
-    "k_prog": 0.055,
-    "k_occ": 0.048,
-    "bonus_domicile": 0.13
+    "progression_bias": 0.0,
+    "creation_bias": -1.90,
+    "k_prog": 0.028,
+    "k_occ": 0.023,
+    "bonus_domicile": 0.30
   },
   "densite": {
     "_note": "facteur = (densite / reference) ** exposant. Levier principal d'equilibrage des formations.",
@@ -26,10 +28,10 @@
   },
   "occasion": {
     "_note": "xG avant qualites individuelles ; la probabilite de but est ajustee ensuite dans l'espace logit.",
-    "xg_base_centre": 0.06,
-    "xg_base_frappe": 0.11,
+    "xg_base_centre": 0.103,
+    "xg_base_frappe": 0.150,
     "multiplicateur_contre": 1.6,
-    "sensibilite_tireur_gardien": 0.035,
+    "sensibilite_tireur_gardien": 0.019,
     "poids_gardien_sur_tete": {"sortie": 0.5, "arret": 0.5},
     "probabilite_tir_cadre_base": 0.35,
     "sensibilite_cadrage": 0.015,
@@ -38,10 +40,10 @@
     "borne_probabilite_max": 0.999999
   },
   "coups_arretes": {
-    "probabilite_corner_sur_turnover_avance": 0.16,
-    "probabilite_coup_franc_sur_turnover": 0.09,
-    "xg_base_corner": 0.04,
-    "xg_base_coup_franc_direct": 0.06,
+    "probabilite_corner_sur_turnover_avance": 0.075,
+    "probabilite_coup_franc_sur_turnover": 0.025,
+    "xg_base_corner": 0.05,
+    "xg_base_coup_franc_direct": 0.05,
     "part_cible_buts_sur_cpa": 0.27
   },
   "turnover": {
@@ -59,8 +61,9 @@
     "niveau_reference": 70.0
   },
   "cartons": {
-    "probabilite_jaune_par_turnover_defensif": 0.011,
-    "probabilite_rouge_direct_par_turnover_defensif": 0.0004,
+    "probabilite_jaune_par_turnover_defensif": 0.018,
+    "booked_caution_multiplier": 0.12,
+    "probabilite_rouge_direct_par_turnover_defensif": 0.0003,
     "poids_zone_defense": 1.4,
     "poids_agressivite_tacle": 0.006
   },

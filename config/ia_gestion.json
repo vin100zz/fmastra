@@ -69,6 +69,9 @@
     }
   },
   "mercato": {
+    "daily_proposal_probability": 0.06,
+    "max_candidates_scanned": 120,
+    "weekly_review_days": 7,
     "negociations_actives_max": 3,
     "taille_shortlist": 12,
     "seuil_vendeur_multiplicateur": 1.35,

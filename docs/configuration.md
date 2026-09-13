@@ -72,6 +72,11 @@ clé de configuration absente reste une erreur.
 
 ## Surcharges
 
+Le CLI accepte `--overrides chemin.json` (objet contenant les domaines, par
+exemple `{"moteur_match": {"transitions": {"k_prog": 0.028}}}`) ou un dossier
+de JSON portant les mêmes noms que ceux de `config/`. Un chemin inexistant
+provoque une erreur. Ces surcharges s'appliquent au benchmark lancé.
+
 Fusion récursive des objets ; remplacement intégral des tableaux et scalaires.
 Retirer récursivement uniquement `_note`, pas toutes les clés commençant par
 `_` : `_autres` porte une règle de génération d'attributs.
