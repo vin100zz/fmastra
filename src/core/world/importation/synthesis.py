@@ -23,18 +23,6 @@ def expected_wage(value: int, cfg: Config) -> int:
     return max(budget.wages.weekly_minimum, round(value * budget.wages.annual_value_share / budget.weeks_per_year))
 
 
-def estimate_level(value: int, wage: int, age: int, position: Position, cfg: Config) -> float:
-    rules = cfg.import_settings
-    if value <= 0 and wage > 0:
-        value = round(wage * cfg.management.budgets.weeks_per_year / cfg.management.budgets.wages.annual_value_share)
-    if value <= 0:
-        return rules.missing_values.fallback_level
-    valuation = cfg.management.valuation
-    baseline = valuation.base_euros * age_value_factor(age, cfg) * valuation.position_scarcity[position]
-    level = valuation.reference_level + log(value / baseline) / valuation.exponent
-    return clamp(level, rules.player_synthesis.level.min, rules.player_synthesis.level.max)
-
-
 def club_strength(capacity: int, cfg: Config, rng: Random) -> tuple[float, float]:
     rules = cfg.import_settings.club_synthesis
     capacity = max(capacity, rules.capacity_reference.min)

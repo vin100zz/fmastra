@@ -37,13 +37,20 @@ def test_views_pagination_and_no_rng_or_potential_leak(client):
     first, second = client.get("/api/joueurs").json(), client.get("/api/joueurs?page=2").json()
     assert len(first["items"]) == len(second["items"]) == 30
     assert not {row["id"] for row in first["items"]} & {row["id"] for row in second["items"]}
-    assert first["total"] == 25911
+    assert first["total"] == len(world.players)
     values = [row['value'] for row in first['items'] + second['items']]
     assert values == sorted(values, reverse=True)
     assert all(row['nationalities'] and row['nationality_names'] for row in first['items'])
     ascending = client.get('/api/joueurs?tri=value&ordre=asc').json()['items']
     assert [row['value'] for row in ascending] == sorted(row['value'] for row in ascending)
     club_rows = client.get('/api/clubs').json()['items']
+    assert all({'training_facilities', 'youth_recruitment'} <= row.keys() for row in club_rows)
+    psg = client.get('/api/clubs/868').json()
+    assert (psg['training_facilities'], psg['youth_recruitment']) == (20, 19)
+    mbappe = client.get('/api/joueurs/85139014').json()
+    assert mbappe['attributes_imported'] and mbappe['position_ratings']['BU'] == 18
+    assert mbappe['attributes']['finition'] == 90
+    assert 'source_potential_ability' not in mbappe and 'source_current_ability' not in mbappe
     assert [row['reputation'] for row in club_rows] == sorted((row['reputation'] for row in club_rows), reverse=True)
     squad = client.get(f'/api/clubs/{club_id}/effectif?tri=goals').json()['items']
     assert all({'appearances','minutes','goals','assists','yellows','reds','average','value'} <= row.keys() for row in squad)

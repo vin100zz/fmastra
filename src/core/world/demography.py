@@ -30,8 +30,9 @@ def draw_level(world: World, club: Club | None, rng: Random) -> tuple[int, float
     cfg = world.config
     rules, academy = cfg.demography.generation, cfg.demography.academies
     age = rng.randint(rules.min_age, rules.max_age)
-    if club and club.competition_id:
-        mean = academy.base_mean + academy.reputation_weight * club.reputation + academy.academy_weight * club.academy
+    if club:
+        recruitment = club.youth_recruitment * 5 if club.youth_recruitment is not None else club.academy
+        mean = academy.base_mean + academy.reputation_weight * club.reputation + academy.academy_weight * recruitment
         potential = rng.gauss(mean, academy.potential_noise)
     else:
         potential = rules.min_potential + rules.potential_amplitude * rng.betavariate(rules.potential_alpha, rules.potential_beta)

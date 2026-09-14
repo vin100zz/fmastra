@@ -1,6 +1,7 @@
 """Source-neutral typed import records passed across the I/O boundary."""
 from dataclasses import dataclass
 from core.domain.date import Date
+from core.domain.players import Attributes, Position
 
 
 @dataclass(frozen=True, slots=True)
@@ -10,6 +11,8 @@ class SourceClub:
     nation: str
     division_id: int
     capacity: int
+    training_facilities: int | None
+    youth_recruitment: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,3 +26,10 @@ class SourcePlayer:
     value: int
     born: Date
     end: Date | None
+    attributes: Attributes
+    current_ability: int
+    potential_ability: int
+    position_ratings: dict[Position, int]
+    given_name: str = ""
+    surname: str = ""
+    common_name: str = ""

@@ -52,6 +52,8 @@ def player_detail(world: World, player: Player) -> dict:
     result = player_row(world, player)
     result.update({"born": player.born.iso(), "nationalities": [world.nation_names.get(nation, nation) for nation in player.nationalities],
                    "secondary_positions": list(player.secondary_positions), "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
+                   "attributes_imported": player.source_current_ability is not None,
+                   "position_ratings": player.position_ratings,
                    "potential_estimate": asdict(estimate_potential(player, world.date, world.seed, world.config)),
                    "form": player.form, "morale": player.morale, "value": market_value(player, world),
                    "discipline": [{"competition": world.competitions[cid].name, **asdict(item)} for cid, item in player.discipline.items()]})
@@ -77,7 +79,9 @@ def club_detail(world: World, club_id: int) -> dict:
     return {"id": club.id, "name": club.name, "nation": world.nation_names.get(club.nation, club.nation),
             "competition_id": club.competition_id, "competition": world.competitions[club.competition_id].name if club.competition_id else None,
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
-            "academy": round(club.academy, 1), "formation": club.formation, "squad_size": len(club.player_ids), "standing": standing}
+            "academy": round(club.academy, 1), "training_facilities": club.training_facilities,
+            "youth_recruitment": club.youth_recruitment,
+            "formation": club.formation, "squad_size": len(club.player_ids), "standing": standing}
 
 
 def transfers(world: World, club_id: int | None = None, player_id: int | None = None, season: int | None = None) -> list[dict]:

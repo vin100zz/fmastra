@@ -1,18 +1,18 @@
 {
-  "_note": "Parametres de synthese provisoire (v0) : data/clubs.csv et data/players.csv (export d'un jeu tiers) ne contiennent ni attributs de joueur, ni potentiel, ni reputation/budget de club. Ces valeurs sont approchees ici a partir de Value/Wage/Stad Cap, en reutilisant autant que possible ia_gestion.json et attributs.json plutot que de dupliquer des coefficients. A retirer/remplacer si l'utilisateur fournit une vraie source (voir docs/modele-donnees.md).",
+  "_note": "Export UTF-8 avec attributs reels 1-20, CA/PA 1-200 et aptitudes par poste. Les sections de synthese joueur sont conservees uniquement pour relire les anciennes configurations.",
   "format_source": {
-    "encodage": "cp1252",
+    "encodage": "utf-8-sig",
     "separateur": ";",
-    "format_date": "%d.%m.%Y",
+    "format_date": "%Y-%m-%d",
     "identifiant_club_agent_libre": -1,
-    "marqueur_date_absente": "-",
+    "marqueur_date_absente": "",
     "unite_salaire": "euros_par_semaine"
   },
   "selection_effectifs": {
-    "_note": "Tous les clubs, actifs et dormants. Reserver les meilleurs gardiens, puis completer par note globale a etat neutre. Synthese individuelle avec graine derivee de l'ID, independante de l'ordre CSV.",
+    "_note": "Attributs fournis, note globale ponderee selon le poste principal. Deux gardiens reserves si disponibles, puis niveau decroissant et ID croissant.",
     "joueurs_max_par_club": 30,
     "gardiens_reserves_si_disponibles": 2,
-    "critere": "note_globale_synthetisee",
+    "critere": "note_globale_attributs",
     "departage": "identifiant_croissant",
     "joueurs_ecartes": "non_importes",
     "agents_libres": "tous_conserves"
@@ -31,23 +31,35 @@
     "courbe_age_hors_domaine": "prolonger_valeur_extremite"
   },
   "synthese_attributs": {
-    "_note": "Niveau estime en inversant grossierement ia_gestion.valorisation (Value -> niveau), puis attributs generes comme un regen via attributs.profils_generation.",
-    "niveau": {"min": 35, "max": 99},
+    "_note": "Ancien schema conserve pour compatibilite des sauvegardes. Ces coefficients ne sont plus utilises lors de l import.",
+    "niveau": {
+      "min": 35,
+      "max": 99
+    },
     "marge_potentiel_defaut": 3,
     "marge_potentiel_jeune_max": 15,
     "marge_potentiel_age_seuil": 21
   },
   "synthese_club": {
-    "_note": "Reputation/centre de formation approches depuis Stad Cap (echelle log). Budgets derives de ia_gestion.budgets a partir de cette reputation.",
-    "stad_cap_reference": {"min": 2000, "max": 90000},
-    "reputation": {"min": 15, "max": 95},
+    "_note": "Reputation encore estimee depuis la capacite. La note de recrutement des jeunes vient de YouthRecruitment (fois 5 pour le moteur), ou 50/100 si inconnue.",
+    "stad_cap_reference": {
+      "min": 2000,
+      "max": 90000
+    },
+    "reputation": {
+      "min": 15,
+      "max": 95
+    },
     "reputation_bruit_ecart_type": 5.0,
-    "note_centre_formation": {"min": 15, "max": 90},
+    "note_centre_formation": {
+      "min": 15,
+      "max": 90
+    },
     "note_centre_formation_facteur_reputation": 0.55,
     "note_centre_formation_bruit_ecart_type": 10.0
   },
   "postes": {
-    "_note": "Notation du jeu source (ex. 'AM RL, ST') parsee par core/world/importation/source_positions.py. Une notation non reconnue bloque l'import ; aucun poste par defaut silencieux.",
+    "_note": "Aptitudes Position_* de 1 a 20, affinite = note / 20. Le meilleur poste est principal, avec le libelle Position pour departager les egalites.",
     "affinite_secondaire_defaut": 0.6
   }
 }

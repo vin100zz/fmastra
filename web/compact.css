@@ -9,3 +9,5 @@ th,td{padding:7px 9px;font-size:12px}th{font-size:9px}th button{padding:0;font-s
 @media(min-width:951px){.sidebar{width:200px;padding-left:14px;padding-right:14px}.workspace{margin-left:200px}.brand{font-size:14px;gap:8px}.brand-mark{width:34px;height:35px;font-size:26px}.brand small{font-size:6px}}
 @media(max-width:950px){main{padding:16px}.topbar{padding:12px}.grid,.grid.equal{gap:10px}}
 @media(max-width:650px){main{padding:14px 10px}.topbar{height:auto;padding:12px}.job-bar{top:0}.sidebar{padding:14px 12px 8px}.sidebar nav{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:9px}.sidebar nav>a{font-size:11px;padding:7px;margin:0}.sidebar-bottom{top:13px;right:12px}.time-controls{margin-top:10px}.page-heading{align-items:start}h1{font-size:22px}.card-head,.card-body{padding:11px}.hero h2{font-size:20px}.stat-card strong{font-size:21px}.tabs{gap:15px}.financial-summary .stat-card strong{font-size:22px}}
+
+.club-facilities{display:flex;flex-wrap:wrap;gap:6px 18px}.club-facilities b{color:var(--ink);margin-left:4px}.position-ratings{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}

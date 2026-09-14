@@ -40,6 +40,8 @@ class Club:
     previous_rank: int | None = None
     season_spent: int = 0
     season_sales: int = 0
+    training_facilities: int | None = None
+    youth_recruitment: int | None = None
 
 
 @dataclass(slots=True)

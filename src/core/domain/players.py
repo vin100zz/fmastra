@@ -90,6 +90,9 @@ class Player:
     appearances: int = 0
     rating_sum: float = 0
     rating_count: int = 0
+    source_current_ability: int | None = None
+    source_potential_ability: int | None = None
+    position_ratings: dict[Position, int] = field(default_factory=dict)
 
     @property
     def nation(self) -> str:
@@ -100,4 +103,6 @@ class Player:
         return (self.injury is None or self.injury.end <= date) and not (discipline and discipline.suspended_matches)
 
     def affinity(self, position: Position) -> float:
+        if self.position_ratings:
+            return self.position_ratings.get(position, 1) / 20
         return 1.0 if position == self.position else self.secondary_positions.get(position, 0.0)

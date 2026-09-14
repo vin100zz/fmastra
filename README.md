@@ -108,28 +108,40 @@ simulé** :
 
 | Grandeur | Valeur |
 |---|---|
-| Clubs fournis (hors en-tête) | 26 759 |
-| Joueurs fournis (hors en-tête) | 32 369 |
-| Joueurs importés après limitation | 25 911 |
+| Clubs fournis (hors en-tête) | 1 394 |
+| Joueurs fournis (hors en-tête) | 14 404 |
+| Joueurs importés après limitation | 14 404 |
 | Clubs **actifs** (simulés) | 96 |
 | Joueurs dans les clubs actifs après import | 2 880 |
-| Joueurs dans les clubs dormants après import | 20 223 |
-| Agents libres importés | 2 808 |
+| Joueurs dans les clubs dormants après import | 11 338 |
+| Agents libres importés | 186 |
 | Matches par saison | 1 752 |
 | Regens par an | calculés sur les sorties et les flux, aucun quota fixe |
 
 **Import : au maximum les 30 meilleurs joueurs de chaque club, actif ou dormant.**
-Le classement utilise la note globale synthétisée, pondérée par poste, à état
+Le classement utilise la note globale calculée à partir des attributs fournis, pondérée par poste, à état
 neutre. Réserver deux places aux meilleurs gardiens si la source en contient
 au moins deux, puis compléter par niveau ; départager les égalités par ID.
 Les joueurs écartés ne sont ni importés, ni transformés en agents libres.
 Les agents libres déjà présents dans le CSV sont conservés sans plafond collectif.
+L'export utilise UTF-8, des dates ISO et des attributs sur 20. Les 13 attributs
+utilisés par le moteur sont importés directement, sans estimation depuis la valeur.
+La marge de progression vaut `(PotentialAbility - CurrentAbility) / 2` sur
+l'échelle interne de 100, ajoutée au niveau pondéré et plafonnée à 100.
+Les aptitudes `Position_*` déterminent le poste principal et l'aisance à chaque poste.
+
+Les notes `TrainingFacilities` et `YouthRecruitment` sont affichées sur 20 dans
+la liste et la fiche des clubs. YouthRecruitment améliore les chances d'obtenir
+des regens à fort potentiel ; TrainingFacilities reste informatif.
+Ces données sont lues à la création d'une nouvelle partie. Les anciennes
+sauvegardes restent chargeables et conservent leurs joueurs et installations.
+
 Les CSV sources restent inchangés. Voir `config/import.json` et le contrat
 d'import dans `docs/modele-donnees.md`. Après import, le plafond reste 30 ; le
 profil nominal visé par l'IA est de 24 joueurs, avec stabilisation progressive
 par le marché. La démographie tient compte de cette transition.
 
-Cette asymétrie est une chance, pas une contrainte : **les 26 663 clubs non
+Cette asymétrie est une chance, pas une contrainte : **les 1 298 clubs non
 simulés constituent le marché extérieur**. Sans eux, l'économie des 5
 championnats serait fermée et aucun club ne recruterait à l'étranger ou en
 division inférieure.

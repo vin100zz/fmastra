@@ -28,9 +28,16 @@ def test_save_restore_rng_and_config(config, tmp_path):
     legacy["schema_version"] = 2
     for name in ("finance_history", "finance_history_since", "movement_history_since"):
         legacy["world"].pop(name)
+    for player in legacy['world']['players'].values():
+        for name in ('source_current_ability', 'source_potential_ability', 'position_ratings'): player.pop(name)
+    for club in legacy['world']['clubs'].values():
+        for name in ('training_facilities', 'youth_recruitment'): club.pop(name)
     store.path_for("legacy").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("legacy")
     assert migrated.finance_history == {}
+    assert migrated.clubs[868].youth_recruitment is None
+    assert migrated.players[85139014].source_current_ability is None
+    assert not migrated.players[85139014].position_ratings
     assert migrated.finance_history_since == world.date
     assert migrated.rngs["matches"].getstate() == world.rngs["matches"].getstate()
     engine = AnalyticalEngine()

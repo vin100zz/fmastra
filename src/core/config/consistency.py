@@ -96,9 +96,9 @@ def validate_consistency(cfg: Config) -> None:
     require(all(len(pair) == 2 and pair[0] < pair[1] for pair in buckets), "Invalid level classes")
     require(all(left[1] == right[0] for left, right in zip(buckets, buckets[1:])), "Level classes overlap or leave gaps")
     require(cfg.world.season.tiebreakers == ("points", "difference_buts", "buts_pour", "confrontation_directe"), "Unsupported v1 tiebreaking order")
-    policies = ((cfg.import_settings.source_format.date_format, "%d.%m.%Y"),
-                (cfg.import_settings.source_format.wage_unit, "euros_par_semaine"),
-                (cfg.import_settings.squad_selection.criterion, "note_globale_synthetisee"),
+    require(cfg.import_settings.source_format.date_format in ("%d.%m.%Y", "%Y-%m-%d"), "Unsupported import date format")
+    require(cfg.import_settings.squad_selection.criterion in ("note_globale_synthetisee", "note_globale_attributs"), "Unsupported squad selection")
+    policies = ((cfg.import_settings.source_format.wage_unit, "euros_par_semaine"),
                 (cfg.import_settings.squad_selection.tiebreaker, "identifiant_croissant"),
                 (cfg.import_settings.squad_selection.excluded_players, "non_importes"),
                 (cfg.import_settings.squad_selection.free_agents, "tous_conserves"),

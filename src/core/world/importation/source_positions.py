@@ -1,10 +1,27 @@
 """Parse the source's compositional role grammar without a 250-entry lookup."""
 from core.domain.players import Position
 
+# Side midfielders and wingbacks share the corresponding engine roles.
+POSITION_COLUMNS = {
+    Position.GOALKEEPER: ("Goalkeeper",),
+    Position.CENTER_BACK: ("DefenderCentral", "Sweeper"),
+    Position.LEFT_BACK: ("DefenderLeft", "WingbackLeft"),
+    Position.RIGHT_BACK: ("DefenderRight", "WingbackRight"),
+    Position.DEFENSIVE_MIDFIELDER: ("DefensiveMidfielderCentral",),
+    Position.CENTRAL_MIDFIELDER: ("MidfielderCentral",),
+    Position.ATTACKING_MIDFIELDER: ("AttackingMidfielderCentral",),
+    Position.LEFT_WINGER: ("AttackingMidfielderLeft", "MidfielderLeft"),
+    Position.RIGHT_WINGER: ("AttackingMidfielderRight", "MidfielderRight"),
+    Position.STRIKER: ("AttackerCentral",),
+}
+
 
 def parse_positions(source: str) -> tuple[Position, ...]:
     result: list[Position] = []
     for group in source.split(","):
+        compact = group.strip()
+        if compact in ("DC", "DL", "DR", "WBL", "WBR", "MC", "ML", "MR", "AMC", "AML", "AMR"):
+            group = compact[:-1] + " " + compact[-1]
         pieces = group.strip().split()
         if not pieces:
             raise ValueError(f"Empty source position: {source!r}")

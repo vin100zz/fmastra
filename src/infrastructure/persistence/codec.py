@@ -68,6 +68,13 @@ def decode(value: Any) -> Any:
         return result
     if "$type" in value:
         cls = ENTITIES[value["$type"]]
+        if cls is Club:
+            for name in ("training_facilities", "youth_recruitment"):
+                value["fields"].setdefault(name, None)
+        if cls is Player:
+            for name in ("source_current_ability", "source_potential_ability"):
+                value["fields"].setdefault(name, None)
+            value["fields"].setdefault("position_ratings", {"$map": []})
         if cls is World and "offers" not in value["fields"]:
             value["fields"]["offers"] = {"$map": []}
         if cls is World:
