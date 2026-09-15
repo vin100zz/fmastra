@@ -25,7 +25,8 @@ indique un agent libre, sans contrat. Une DivisionUID absente indique un club do
 La date initiale reste le 1er juillet 2025, définie par la configuration.
 
 - Clubs : UID, ShortName (Name en repli), Nation, DivisionUID, StadiumCapacity,
-  TrainingFacilities et YouthRecruitment.
+  TrainingFacilities, YouthRecruitment, HomeKitID, HomeKitMajorColorRGB,
+  HomeKitMinorColorRGB et HomeKitThirdColorRGB.
 - Joueurs : UID, Name, FirstName, LastName, CommonName, Nation, Position,
   ClubUID, WeeklyWage, Value, DateOfBirth, ContractEnd, CurrentAbility,
   PotentialAbility, les attributs et les colonnes Position_* ci-dessous.
@@ -90,6 +91,12 @@ TrainingFacilities et YouthRecruitment sont conservés et affichés sur 20.
 Les valeurs -1, 0 ou absentes signifient inconnues (tiret dans l'UI).
 TrainingFacilities n'a aucun effet sur la progression, les finances ou les regens.
 
+HomeKitID et les trois couleurs RGB du maillot domicile (HomeKitMajorColorRGB,
+HomeKitMinorColorRGB, HomeKitThirdColorRGB) sont conservés tels quels pour
+l'affichage ; ce sont des couleurs hexadécimales (`#RRGGBB`), sans effet sur
+la simulation. Absents pour certains clubs (colonnes vides dans l'export,
+soit `HasHomeKitData=False`), ils restent alors None plutôt que devinés.
+
 Pour un regen rattaché à un club actif ou dormant, le potentiel est tiré autour de
 `moyenne_base + poids_reputation * reputation + poids_note_centre * YouthRecruitment * 5`,
 avec le bruit configuré. À réputation et effectif égaux, un meilleur recrutement
@@ -105,7 +112,7 @@ mais ne sont plus utilisés par l'import actuel.
 Les nouvelles données s'appliquent aux nouvelles parties. Les sauvegardes de
 versions 1 à 3 restent lisibles ; leurs attributs ne sont pas remplacés à la lecture
 et les installations absentes restent inconnues. Les nouvelles sauvegardes sont
-au format 4 et conservent CA, PA, aptitudes et installations.
+au format 5 et conservent CA, PA, aptitudes et installations. Le format 4 reste lisible. Les mouvements conservent désormais la date de naissance ; les promotions archivent aussi les notes, la fourchette de potentiel observée, les nationalités et les informations contractuelles à la promotion. Une ancienne fiche absente n'est pas reconstituée artificiellement.
 
 ## Entités et état à conserver
 
@@ -117,7 +124,7 @@ seul l'affichage les arrondit, afin de conserver les petites progressions.
 |---|---|
 | `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, forme, moral, fragilité et ego stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur |
 | `Contract` | salaire hebdomadaire entier, signature et échéance, rôle/temps de jeu attendu, origine réelle ou synthétique |
-| `Club` | ID, noms, nation, division source, compétition simulée optionnelle, statut, capacité connue ou absente, réputation, centre, formation, personnalité, revenus de référence et facteur initial de financement, budget, plafond salarial, solde |
+| `Club` | ID, noms, nation, division source, compétition simulée optionnelle, statut, capacité connue ou absente, réputation, centre, formation, personnalité, revenus de référence et facteur initial de financement, budget, plafond salarial, solde, kit domicile (ID et couleurs, optionnels) |
 | `ClubPersonality` | goût du risque, préférence jeunes, agressivité salariale, patience ; tirés une fois |
 | `Competition` | ID, pays, niveau, clubs, journées, références aux règles |
 | `Match` | ID, compétition, journée, date, clubs, résultat optionnel |

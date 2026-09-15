@@ -29,14 +29,16 @@ L'interface comprend le tableau de bord, les classements, calendriers,
 statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
 les comptes rendus et les compositions. L'utilisateur reste observateur.
 
-La liste des joueurs affiche toutes leurs nationalités et leur valeur estimée,
+La liste des joueurs affiche toutes leurs nationalités, leur valeur et une fourchette de potentiel estimé à côté du niveau actuel,
 avec un tri initial par valeur décroissante. Les clubs sont triés par réputation
 décroissante. L'effectif affiche aussi les matchs, minutes, buts, passes décisives,
 cartons et note moyenne réalisés avec ce club pendant la saison courante.
-Les minutes sont affichées sans décimales.
+Les minutes sont affichées sans décimales et ne figurent plus dans le tableau de carrière. Les historiques du club et du championnat donnent le classement complet de chaque saison, avec la dernière saison dépliée.
 
 **Mercato mondial**, dans le menu principal, regroupe les transferts, fins de
 contrat, retraites et promotions de tous les clubs, par saison et avec pagination.
+Toutes les colonnes de l'historique des mouvements sont triables par clic, dans les deux sens, avant pagination. Le tri est conservé lors du changement de saison. Les données absentes restent à la fin ; le potentiel est trié par le milieu de sa fourchette estimée.
+L'onglet promotions reprend les informations de la liste des joueurs. Les nouvelles promotions archivent les données au moment de l'événement ; pour les anciennes, les données actuelles sont identifiées comme telles, ou signalées manquantes après une retraite.
 L'interface utilise une présentation compacte et des tableaux défilants sur les
 petits écrans pour conserver l'accès à toutes les colonnes.
 
@@ -50,10 +52,10 @@ Sur la fiche d'un club, **Finances** présente les revenus et dépenses par
 saison : revenus structurels, salaires, fonctionnement, indemnités de transfert
 et arrondis comptables, avec les soldes d'ouverture et de clôture. Les flux
 réguliers sont regroupés par mois. **Transferts** distingue les arrivées,
-départs transférés, fins de contrat, retraites et jeunes promus. Les flèches
+départs transférés, fins de contrat, retraites et jeunes promus. Les arrivées sont à gauche, les départs à droite, avec leurs montants totaux. Les âges des regens et retraités sont ceux au moment du mouvement ; une donnée non archivée est indiquée par un tiret. Les flèches
 **Précédent / Suivant** permettent de parcourir les saisons dans ces deux onglets.
 Pour une ancienne sauvegarde, les comptes détaillés commencent à la mise à jour ;
-les données historiques manquantes sont signalées.
+les données historiques manquantes sont signalées. Les dates de naissance des retraités peuvent être récupérées dans le CSV uniquement si son empreinte correspond exactement à celle de l'import initial.
 
 Le bouton **▶ Auto** enchaîne les prochaines journées de championnat, avec
 sauvegarde après chaque avance. **⏸ Pause** arrête l'enchaînement après le

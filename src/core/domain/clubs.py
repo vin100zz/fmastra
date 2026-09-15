@@ -42,6 +42,10 @@ class Club:
     season_sales: int = 0
     training_facilities: int | None = None
     youth_recruitment: int | None = None
+    home_kit_id: int | None = None
+    home_kit_major_color: str | None = None
+    home_kit_minor_color: str | None = None
+    home_kit_third_color: str | None = None
 
 
 @dataclass(slots=True)

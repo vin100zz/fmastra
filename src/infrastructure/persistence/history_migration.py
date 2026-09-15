@@ -4,6 +4,23 @@ from core.domain.world import World, TransferRecord
 from core.world.finances import financial_season
 
 
+def recover_birthdates(world: World, source_path) -> None:
+    """Backfill facts only when the CSV is exactly the original import source."""
+    import csv
+    from hashlib import sha256
+    from io import StringIO
+    from core.domain.date import Date
+    missing = {row.player_id for row in world.transfers if row.born is None and row.player_id in world.retired}
+    if not missing or not source_path.is_file(): return
+    raw = source_path.read_bytes()
+    if sha256(raw).hexdigest() != world.source_hashes.get('players.csv'): return
+    reader = csv.DictReader(StringIO(raw.decode(world.config.import_settings.source_format.encoding)), delimiter=';')
+    if not {'UID', 'DateOfBirth'} <= set(reader.fieldnames or []): return
+    birthdays = {int(row['UID']): Date.parse(row['DateOfBirth']) for row in reader if int(row['UID']) in missing}
+    world.transfers = [replace(row, born=birthdays[row.player_id]) if row.born is None and row.player_id in birthdays else row
+                       for row in world.transfers]
+
+
 def upgrade_history(world: World) -> None:
     if world.finance_history_since is None: world.finance_history_since = world.date
     if world.movement_history_since is not None: return

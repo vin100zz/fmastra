@@ -33,6 +33,10 @@ def facility(row: dict, key: str) -> int | None:
     return bounded(row, key, 1, 20)
 
 
+def hex_color(row: dict, key: str) -> str | None:
+    return row[key] or None
+
+
 def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[SourcePlayer], dict[str, str]]:
     fmt = cfg.import_settings.source_format
     if fmt.wage_unit != "euros_par_semaine":
@@ -49,7 +53,10 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
             yield from csv.DictReader(handle, delimiter=fmt.delimiter)
     clubs = [SourceClub(int(row["UID"]), row.get("ShortName") or row["Name"], nations[row["Nation"]],
                         int(row["DivisionUID"] or -1), int(row["StadiumCapacity"] or 0),
-                        facility(row, "TrainingFacilities"), facility(row, "YouthRecruitment"))
+                        facility(row, "TrainingFacilities"), facility(row, "YouthRecruitment"),
+                        int(row["HomeKitID"]) if row["HomeKitID"] else None,
+                        hex_color(row, "HomeKitMajorColorRGB"), hex_color(row, "HomeKitMinorColorRGB"),
+                        hex_color(row, "HomeKitThirdColorRGB"))
              for row in rows("clubs.csv")]
     players = []
     for row in rows("players.csv"):

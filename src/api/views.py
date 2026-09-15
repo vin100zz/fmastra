@@ -35,6 +35,7 @@ def player_row(world: World, player: Player) -> dict:
     contract = player.contract
     return {"id": player.id, "name": player.name, "position": player.position.value,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
+            "potential_estimate": asdict(estimate_potential(player, world.date, world.seed, world.config)),
             "nationalities": list(player.nationalities),
             "nationality_names": [world.nation_names.get(code, code) for code in player.nationalities],
             "value": market_value(player, world),
@@ -67,10 +68,12 @@ def match_row(world: World, match: Match) -> dict:
             "score": [match.result.home_goals, match.result.away_goals] if match.result else None}
 
 
-def table(world: World, competition_id: int) -> list[dict]:
+def table(world: World, competition_id: int, season: int | None = None) -> list[dict]:
     competition = world.competitions[competition_id]
+    matches = ([world.matches[mid] for mid in competition.match_ids] if season is None else
+               [match for match in world.matches.values() if match.season == season and match.competition_id == competition_id])
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:]}
-            for index, row in enumerate(standings(competition, [world.matches[mid] for mid in competition.match_ids], world.config))]
+            for index, row in enumerate(standings(competition, matches, world.config))]
 
 
 def club_detail(world: World, club_id: int) -> dict:
@@ -92,8 +95,27 @@ def transfers(world: World, club_id: int | None = None, player_id: int | None = 
 
 
 def transfer_row(world: World, row) -> dict:
+    player = world.players.get(row.player_id)
+    born = row.born or (player.born if player else None)
+    if born is None:
+        born = next((item.born for item in world.transfers if item.player_id == row.player_id and item.born), None)
     return {"date": row.date.iso(), "player_id": row.player_id, "player": player_name(world, row.player_id),
-            "source": club_ref(world, row.source_id), "target": club_ref(world, row.target_id), "fee": row.fee, "kind": row.kind}
+            "source": club_ref(world, row.source_id), "target": club_ref(world, row.target_id), "fee": row.fee, "kind": row.kind,
+            "age": born.age_on(row.date) if born else None}
+
+
+def academy_player_row(world: World, row) -> dict:
+    snapshot = row.snapshot
+    if snapshot:
+        return {"id": row.player_id, "name": player_name(world, row.player_id), "age": snapshot.born.age_on(row.date),
+                "position": snapshot.position, "nationalities": snapshot.nationalities,
+                "nationality_names": [world.nation_names.get(code, code) for code in snapshot.nationalities],
+                "rating": snapshot.rating, "potential_estimate": {"lower": snapshot.potential_lower, "upper": snapshot.potential_upper},
+                "wage": snapshot.weekly_wage, "value": snapshot.value, "contract_end": snapshot.contract_end.iso() if snapshot.contract_end else None,
+                "club": club_ref(world, row.target_id), "fitness": snapshot.fitness, "data_at": "promotion"}
+    if row.player_id in world.players:
+        return {**player_row(world, world.players[row.player_id]), "data_at": "current"}
+    return {"id": row.player_id, "name": player_name(world, row.player_id), "nationalities": [], "data_at": "unknown"}
 
 
 def squad_rows(world: World, club_id: int) -> list[dict]:

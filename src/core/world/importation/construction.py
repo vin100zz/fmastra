@@ -82,7 +82,9 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         clubs[row.id] = Club(row.id, row.name, row.nation, row.division_id, row.division_id if active else None,
                              ClubStatus.ACTIVE if active else ClubStatus.DORMANT, row.capacity if row.capacity > 0 else None,
                              reputation, academy, rng.choice(tuple(cfg.formations.formations)), personality,
-                             training_facilities=row.training_facilities, youth_recruitment=row.youth_recruitment)
+                             training_facilities=row.training_facilities, youth_recruitment=row.youth_recruitment,
+                             home_kit_id=row.home_kit_id, home_kit_major_color=row.home_kit_major_color,
+                             home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color)
     grouped: dict[int | None, list[Player]] = defaultdict(list)
     corrections = Counter()
     seen = set()

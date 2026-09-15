@@ -15,9 +15,9 @@ from infrastructure.config.loader import config_fingerprint
 from .codec import encode, decode
 from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
-from .history_migration import upgrade_history
+from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 class SaveError(ValueError):
@@ -63,7 +63,7 @@ class SaveStore:
                 world, fingerprint = decode(payload["world"]), payload["config_hash"]
             else:
                 payload = ADAPTER.validate_json(raw)
-                if payload.schema_version not in (2, 3, SCHEMA_VERSION):
+                if payload.schema_version not in (2, 3, 4, SCHEMA_VERSION):
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
                 world, fingerprint = payload.world, payload.config_hash
             if not isinstance(world, World) or config_fingerprint(world.config) != fingerprint:
@@ -72,6 +72,7 @@ class SaveStore:
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
             validate_consistency(world.config)
             upgrade_history(world)
+            recover_birthdates(world, self.directory.parent / 'data' / 'players.csv')
             validate_world(world)
             return world
         except (OSError, KeyError, TypeError, ValueError, EOFError) as exc:

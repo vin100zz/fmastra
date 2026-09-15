@@ -11,16 +11,19 @@ export function movementsHistory(data){
  const transferRows=(rows,incoming)=>table(['DATE','JOUEUR',incoming?'PROVENANCE':'DESTINATION','MONTANT'],rows.map(row=>[
   date(row.date),playerLink(row.player_id,row.player),clubLink(incoming?row.source:row.target),row.fee?money(row.fee):'Libre (0 €)',
  ]));
- const playerRows=rows=>rows.length?table(['DATE','JOUEUR'],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player)])):empty('Aucun mouvement enregistré pour cette saison.');
+ const playerRows=(rows,withAge=false)=>rows.length?table(['DATE','JOUEUR',...(withAge?['ÂGE']:[])],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player),...(withAge?[row.age==null?'<span title="Âge non archivé">—</span>':`${row.age} ans`]:[])])):empty('Aucun mouvement enregistré pour cette saison.');
  const groups=data.sections;
  const partial=data.history_since>`${data.season}-07-01`?`<div class="notice">Les archives de fins de contrat, retraites et promotions antérieures au ${date(data.history_since)} peuvent être incomplètes dans cette ancienne partie.</div>`:'';
- return seasonNavigation(data)+partial+
-  card(`Arrivées · ${groups.arrivals.length}`,transferRows(groups.arrivals,true))+
-  card(`Départs transférés · ${groups.departures.length}`,transferRows(groups.departures,false))+
+ const total=(key,rows)=>money(data[key]??rows.reduce((sum,row)=>sum+(row.fee||0),0));
+ return seasonNavigation(data)+partial+`<p class="muted">Âges au moment du départ ou de la promotion.</p><div class="transfer-columns"><section aria-label="Arrivées"><div class="movement-heading"><h2>Arrivées</h2><strong>Total : ${total('arrival_total',groups.arrivals)}</strong></div>`+
+  card(`Transferts entrants · ${groups.arrivals.length}`,transferRows(groups.arrivals,true))+
+  card(`Jeunes promus du centre de formation · ${groups.academy.length}`,playerRows(groups.academy,true))+
+  `</section><section aria-label="Départs"><div class="movement-heading"><h2>Départs</h2><strong>Total : ${total('departure_total',groups.departures)}</strong></div>`+
+  card(`Transferts sortants · ${groups.departures.length}`,transferRows(groups.departures,false))+
   card(`Départs libres en fin de contrat · ${groups.release.length}`,playerRows(groups.release))+
-  card(`Départs à la retraite · ${groups.retirement.length}`,playerRows(groups.retirement))+
-  card(`Jeunes promus du centre de formation · ${groups.academy.length}`,playerRows(groups.academy))+
-  (groups.departure_unknown.length?card('Anciens départs — motif non archivé',playerRows(groups.departure_unknown)):'');
+  card(`Départs à la retraite · ${groups.retirement.length}`,playerRows(groups.retirement,true))+
+  (groups.departure_unknown.length?card('Anciens départs — motif non archivé',playerRows(groups.departure_unknown)):'')+'</section></div>';
+
 }
 
 export function financialHistory(data){

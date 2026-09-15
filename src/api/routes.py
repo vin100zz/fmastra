@@ -89,9 +89,10 @@ def router(service: GameService) -> APIRouter:
             return v.paginate(rows, page)
 
     @api.get("/monde/transferts")
-    def global_transfers(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer", page: int = Query(1, ge=1)) -> dict:
+    def global_transfers(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer", page: int = Query(1, ge=1),
+                         tri: str | None = None, ordre: Literal['asc', 'desc'] = 'desc') -> dict:
         from .club_history import world_movements
-        with service.reading() as world: return world_movements(world, saison, type, page)
+        with service.reading() as world: return world_movements(world, saison, type, page, tri, ordre)
 
     @api.get("/competitions")
     def competitions() -> list[dict]:
@@ -158,7 +159,8 @@ def router(service: GameService) -> APIRouter:
                 for year, _ in reversed(world.champions.get(competition.id, [])):
                     positions = standings(competition, [match for match in world.matches.values() if match.season == year], world.config)
                     rank = next(index + 1 for index, row in enumerate(positions) if row.club_id == club_id)
-                    rows.append({"season": year, "rank": rank, "champion": rank == 1})
+                    rows.append({"season": year, "rank": rank, "champion": rank == 1,
+                                 "standings": v.table(world, competition.id, year)})
             return v.paginate(rows, page)
 
     @api.get("/competitions/{competition_id}/classement")
@@ -185,7 +187,8 @@ def router(service: GameService) -> APIRouter:
         from .statistics import leaders
         with service.reading() as world:
             world.competitions[competition_id]
-            return v.paginate([{"season": year, "champion": v.club_ref(world, winner), "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None)}
+            return v.paginate([{"season": year, "champion": v.club_ref(world, winner), "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None),
+                                "standings": v.table(world, competition_id, year)}
                                for year, winner in reversed(world.champions.get(competition_id, []))], page)
 
     @api.get("/joueurs")

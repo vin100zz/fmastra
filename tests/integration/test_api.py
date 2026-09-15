@@ -58,6 +58,11 @@ def test_views_pagination_and_no_rng_or_potential_leak(client):
         history = client.get(f'/api/monde/transferts?type={kind}').json()
         assert history['type'] == kind and history['season'] == world.season
     assert client.get('/api/monde/transferts?type=invalid').status_code == 422
+    for kind, sort in (('transfer', 'fee'), ('retirement', 'name'), ('academy', 'potential_estimate')):
+        data = client.get(f'/api/monde/transferts?type={kind}&tri={sort}&ordre=asc').json()
+        assert data['sort'] == sort and data['order'] == 'asc'
+    assert client.get('/api/monde/transferts?tri=invalid').status_code == 422
+    assert client.get('/api/monde/transferts?ordre=invalid').status_code == 422
     assert client.get('/api/monde/transferts?saison=1900').status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
     assert client.get("/api/joueurs?page=0").status_code == 422

@@ -15,6 +15,9 @@ test('displays the three additional movement sections and escapes imported names
  for(const label of ['Départs libres en fin de contrat','Départs à la retraite','Jeunes promus du centre de formation'])assert.ok(html.includes(label));
  assert.doesNotMatch(html,/<script>/);
  assert.match(html,/&lt;script&gt;/);
+ assert.ok(html.indexOf('aria-label="Arrivées"') < html.indexOf('Jeunes promus'));
+ assert.ok(html.indexOf('Jeunes promus') < html.indexOf('aria-label="Départs"'));
+ assert.match(html,/ÂGE/);assert.match(html,/Total :/);
 });
 
 test('missing financial history is explained without claiming zero spending',()=>{

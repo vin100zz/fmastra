@@ -13,6 +13,10 @@ class SourceClub:
     capacity: int
     training_facilities: int | None
     youth_recruitment: int | None
+    home_kit_id: int | None
+    home_kit_major_color: str | None
+    home_kit_minor_color: str | None
+    home_kit_third_color: str | None
 
 
 @dataclass(frozen=True, slots=True)

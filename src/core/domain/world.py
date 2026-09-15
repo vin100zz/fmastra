@@ -8,7 +8,7 @@ from core.config.model import Config
 from .clubs import Club, Competition
 from .date import Date
 from .matches import Match
-from .players import Player
+from .players import Player, Position
 from .offers import TransferOffer
 from .finance import FinanceSeason
 
@@ -30,6 +30,20 @@ class SeasonRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class MovementSnapshot:
+    born: Date
+    nationalities: tuple[str, ...]
+    position: Position
+    rating: float
+    potential_lower: float
+    potential_upper: float
+    weekly_wage: int
+    value: int
+    contract_end: Date | None
+    fitness: float
+
+
+@dataclass(frozen=True, slots=True)
 class TransferRecord:
     date: Date
     player_id: int
@@ -38,6 +52,8 @@ class TransferRecord:
     fee: int
     kind: str = "transfer"
     season: int | None = None
+    born: Date | None = None
+    snapshot: MovementSnapshot | None = None
 
 
 @dataclass(slots=True)

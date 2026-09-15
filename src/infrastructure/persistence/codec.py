@@ -11,14 +11,14 @@ from core.domain.date import Date
 from core.domain.players import Attributes, Contract, Discipline, Injury, Player, Position
 from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition
 from core.domain.matches import Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats
-from core.domain.world import World, JournalEntry, SeasonRecord, TransferRecord
+from core.domain.world import World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot
 from core.domain.offers import TransferOffer
 from core.domain.finance import FinanceSeason, MonthlyFinance
 from infrastructure.config.loader import config_payload, decode_config
 
 ENTITIES = {cls.__name__: cls for cls in (Date, Attributes, Contract, Discipline, Injury, Player,
             Club, ClubPersonality, Competition, Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats,
-            World, JournalEntry, SeasonRecord, TransferRecord, TransferOffer, FinanceSeason, MonthlyFinance)}
+            World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot, TransferOffer, FinanceSeason, MonthlyFinance)}
 ENUMS = {cls.__name__: cls for cls in (Position, ClubStatus)}
 
 
@@ -69,7 +69,8 @@ def decode(value: Any) -> Any:
     if "$type" in value:
         cls = ENTITIES[value["$type"]]
         if cls is Club:
-            for name in ("training_facilities", "youth_recruitment"):
+            for name in ("training_facilities", "youth_recruitment", "home_kit_id",
+                        "home_kit_major_color", "home_kit_minor_color", "home_kit_third_color"):
                 value["fields"].setdefault(name, None)
         if cls is Player:
             for name in ("source_current_ability", "source_potential_ability"):
@@ -81,6 +82,8 @@ def decode(value: Any) -> Any:
             for name, default in (("finance_history", {"$map": []}), ("finance_history_since", None), ("movement_history_since", None)):
                 value["fields"].setdefault(name, default)
         if cls is TransferRecord:
+            value["fields"].setdefault("born", None)
+            value["fields"].setdefault("snapshot", None)
             value["fields"].setdefault("kind", "transfer")
             value["fields"].setdefault("season", None)
         expected = {field.name for field in fields(cls)}
