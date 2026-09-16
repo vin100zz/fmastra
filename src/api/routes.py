@@ -233,8 +233,7 @@ def router(service: GameService) -> APIRouter:
     def player_history(player_id: int, page: int = Query(1, ge=1)) -> dict:
         with service.reading() as world:
             if player_id not in world.players and player_id not in world.retired: raise KeyError(player_id)
-            return {"records": v.paginate(v.records(world, player_id), page),
-                    "transfers": v.paginate(v.transfers(world, player_id=player_id), page),
+            return {"career": v.career(world, player_id),
                     "trajectory": v.paginate([{"season": year, "rating": rating} for year, rating in reversed(world.trajectories.get(player_id, []))], page)}
 
     @api.get("/matches/{match_id}")

@@ -137,10 +137,38 @@ def squad_rows(world: World, club_id: int) -> list[dict]:
     return list(rows.values())
 
 
-def records(world: World, player_id: int) -> list[dict]:
-    return [{**asdict(row), "club": club_ref(world, row.club_id), "competition": world.competitions[row.competition_id].name,
-             "average": row.rating_sum / row.rating_count if row.rating_count else None}
-            for row in sorted(world.records.values(), key=lambda row: (-row.season, row.club_id)) if row.player_id == player_id]
+def career(world: World, player_id: int) -> dict:
+    player_records = [row for row in world.records.values() if row.player_id == player_id]
+    rows = {(row.season, row.club_id): {"season": row.season, "club": club_ref(world, row.club_id),
+                                        "competition": world.competitions[row.competition_id].name,
+                                        "matches": row.matches, "goals": row.goals, "assists": row.assists,
+                                        "average": round(row.rating_sum / row.rating_count, 2) if row.rating_count else None}
+            for row in player_records}
+    moves = sorted((row for row in world.transfers if row.player_id == player_id and row.season is not None), key=lambda row: row.date)
+    fees: dict[tuple[int, int], int] = {}
+    order: dict[tuple[int, int], tuple[int, bool]] = {}
+    targeted = {move.target_id for move in moves if move.target_id is not None}
+    for move in moves:
+        if move.target_id is not None:
+            key = (move.season, move.target_id)
+            fees[key] = fees.get(key, 0) + move.fee
+            order[key] = (move.date.ordinal(), True)
+        # A source club never reached as a target is where the player was before the earliest tracked transfer.
+        if move.source_id is not None and move.source_id not in targeted:
+            order.setdefault((move.season, move.source_id), (move.date.ordinal(), False))
+    for key in order:
+        if key in rows: continue
+        season, club_id = key
+        club = world.clubs.get(club_id)
+        rows[key] = {"season": season, "club": club_ref(world, club_id),
+                     "competition": world.competitions[club.competition_id].name if club and club.competition_id else None,
+                     "matches": 0, "goals": 0, "assists": 0, "average": None}
+    items = [{**rows[key], "fee": fees.get(key)} for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
+    rating_count = sum(row.rating_count for row in player_records)
+    totals = {"fee": sum(fees.values()), "matches": sum(row.matches for row in player_records),
+              "goals": sum(row.goals for row in player_records), "assists": sum(row.assists for row in player_records),
+              "average": round(sum(row.rating_sum for row in player_records) / rating_count, 2) if rating_count else None}
+    return {"items": items, "totals": totals}
 
 
 def match_detail(world: World, match: Match) -> dict:
