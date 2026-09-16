@@ -23,7 +23,8 @@ def paginate(items: list, page: int, size: int = 30) -> dict:
 
 def club_ref(world: World, club_id: int | None) -> dict | None:
     club = world.clubs.get(club_id)
-    return {"id": club.id, "name": club.name} if club else None
+    return {"id": club.id, "name": club.name, "major_color": club.home_kit_major_color,
+            "minor_color": club.home_kit_minor_color} if club else None
 
 
 def player_name(world: World, player_id: int | None) -> str | None:
@@ -84,7 +85,9 @@ def club_detail(world: World, club_id: int) -> dict:
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
             "academy": round(club.academy, 1), "training_facilities": club.training_facilities,
             "youth_recruitment": club.youth_recruitment,
-            "formation": club.formation, "squad_size": len(club.player_ids), "standing": standing}
+            "formation": club.formation, "squad_size": len(club.player_ids), "standing": standing,
+            "major_color": club.home_kit_major_color, "minor_color": club.home_kit_minor_color,
+            "third_color": club.home_kit_third_color}
 
 
 def transfers(world: World, club_id: int | None = None, player_id: int | None = None, season: int | None = None) -> list[dict]:

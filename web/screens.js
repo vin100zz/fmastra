@@ -1,6 +1,6 @@
 import {monthlySalary,salarySearchParams} from './salaries.js';
 import {financialHistory,movementsHistory} from './club-history.js';
-import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,transferTable,query} from './ui.js';
+import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,transferTable,query,safeColor,contrastText} from './ui.js';
 
 export async function dashboard(state,leagues){
  const featured=leagues[0];
@@ -19,7 +19,9 @@ export async function clubsScreen(params){
 export async function clubScreen(id,section,params){
  const club=await api(`/clubs/${id}`); section=section||'squad';
  const menu=[['squad','Effectif'],...(club.active?[['calendar','Calendrier']]:[]),['finances','Finances'],['transfers','Transferts'],...(club.active?[['history','Historique']]:[])];
- const title=`<div class="page-heading"><div class="identity"><div class="crest">${initials(club.name)}</div><div><span class="eyebrow">${e(club.nation)} · ${club.active?'CLUB ACTIF':'MARCHÉ EXTÉRIEUR'}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : information uniquement, sans effet sur la simulation">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
+ const major=safeColor(club.major_color), minor=safeColor(club.minor_color)||major;
+ const crestStyle=major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:'';
+ const title=`<div class="page-heading"><div class="identity"><div class="crest"${crestStyle}>${initials(club.name)}</div><div><span class="eyebrow">${e(club.nation)} · ${club.active?'CLUB ACTIF':'MARCHÉ EXTÉRIEUR'}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : information uniquement, sans effet sur la simulation">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
  let content='';
  if(section==='squad'){const data=await api(`/clubs/${id}/effectif?${params}`); content=card(`Effectif · ${club.squad_size} joueurs`,playerTable(data,false,params.get('tri')||'rating',params.get('ordre')||'desc'),`<span class="legend">${['GB','DC','MC','BU'].map(position).join('')}</span>`);}
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${params}`); content=card('Calendrier de la saison',fixtures(data,true)+pager(data));}

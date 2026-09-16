@@ -8,3 +8,5 @@ reports/
 .coverage
 .ruff_cache/
 *.log
+.idea/
+.claude/

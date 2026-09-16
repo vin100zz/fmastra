@@ -7,7 +7,10 @@ export const money = value => new Intl.NumberFormat('fr-FR', {style:'currency',c
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
 export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
 export const season = value => `${value} / ${value+1}`;
-export const clubLink = club => club ? `<a href="#/club/${club.id}">${escape(club.name)}</a>` : '<span class="muted">Libre</span>';
+export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
+export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
+export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
+export const clubLink = club => club ? `<a href="#/club/${club.id}" class="club-link">${kitDot(club)}${escape(club.name)}</a>` : '<span class="muted">Libre</span>';
 export const playerLink = (id, name) => `<a href="#/player/${id}">${escape(name || 'Joueur archivé')}</a>`;
 export const group = role => role === 'GB' ? 'gk' : ['DC','DL','DR'].includes(role) ? 'def' : ['BU','AILG','AILD'].includes(role) ? 'att' : 'mid';
 export const position = value => `<span class="position ${group(value)}">${escape(value)}</span>`;
