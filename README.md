@@ -90,8 +90,8 @@ calibrage connues. Les sections suivantes restent la spécification de référen
 ## Périmètre de la v1
 
 **Inclus**
-- 5 championnats simulés : France, Espagne, Italie, Angleterre, Allemagne
-- Première division uniquement pour chacun (~96 clubs actifs)
+- 11 championnats simulés : 3 divisions françaises, 2 en Espagne, Italie, Angleterre et Allemagne (216 clubs actifs)
+- Promotions et relégations au 1er juillet : 3 clubs dans chaque sens entre niveaux adjacents
 - Saison complète en championnat, matches aller-retour
 - Effectifs, contrats, mercato, progression et déclin des joueurs
 - Génération de joueurs (regens), fatigue, blessures, suspensions
@@ -99,11 +99,30 @@ calibrage connues. Les sections suivantes restent la spécification de référen
 
 **Hors périmètre v1** (mais l'architecture doit les rendre possibles)
 - Contrôle d'un club par l'utilisateur
-- Divisions inférieures actives, promotion et relégation
 - Coupes nationales et compétitions européennes
 - Prêts, clauses libératoires, agents
 
 ## Données et volumes
+
+Cette évolution nécessite une nouvelle partie. Au 1er juillet, les trois premiers
+montent et les trois derniers descendent entre divisions adjacentes. La première
+division n'a aucune montée. Les trois derniers du dernier niveau simulé rejoignent
+la réserve non simulée ; trois clubs de cette réserve montent par tirage sans remise,
+pondéré par `max(1, réputation)²`. Les groupes du niveau inférieur sont réunis.
+Les mouvements sont calculés avant leur application : aucun double changement de
+niveau ni remontée immédiate le même été. Les équipes réserves montent librement.
+
+Le National compte 18 clubs, sans exemptions. Les divisions de 22 et 24 clubs
+disposent de journées en semaine. Les classements indiquent les places de montée
+et de descente ; les historiques conservent le championnat et les participants
+de chaque saison, y compris pour un club devenu dormant.
+
+Les effectifs incomplets à l'entrée en simulation sont complétés par des joueurs
+générés jusqu'aux minima de joueurs et de gardiens. À l'import, des places sont
+réservées aux gardiens manquants avant la sélection des meilleurs joueurs. Pour
+un promu dont l'effectif est plein, un joueur de champ excédentaire peut être
+libéré pour accueillir un gardien. Les compléments sont comptés dans le rapport
+d'import et enregistrés dans les mouvements des clubs.
 
 L'utilisateur fournit un jeu de données **bien plus large que le périmètre
 simulé** :
@@ -112,12 +131,13 @@ simulé** :
 |---|---|
 | Clubs fournis (hors en-tête) | 1 394 |
 | Joueurs fournis (hors en-tête) | 14 404 |
-| Joueurs importés après limitation | 14 404 |
-| Clubs **actifs** (simulés) | 96 |
-| Joueurs dans les clubs actifs après import | 2 880 |
-| Joueurs dans les clubs dormants après import | 11 338 |
+| Joueurs conservés de la source | 14 401 |
+| Joueurs générés pour compléter les effectifs initiaux | 39 |
+| Clubs **actifs** (simulés) | 216 |
+| Joueurs dans les clubs actifs après import et complément | 6 405 |
+| Joueurs dans les clubs dormants après import | 7 849 |
 | Agents libres importés | 186 |
-| Matches par saison | 1 752 |
+| Matches par saison | 4 064 |
 | Regens par an | calculés sur les sorties et les flux, aucun quota fixe |
 
 **Import : au maximum les 30 meilleurs joueurs de chaque club, actif ou dormant.**
@@ -143,7 +163,7 @@ d'import dans `docs/modele-donnees.md`. Après import, le plafond reste 30 ; le
 profil nominal visé par l'IA est de 24 joueurs, avec stabilisation progressive
 par le marché. La démographie tient compte de cette transition.
 
-Cette asymétrie est une chance, pas une contrainte : **les 1 298 clubs non
+Cette asymétrie est une chance, pas une contrainte : **les 1 178 clubs non
 simulés constituent le marché extérieur**. Sans eux, l'économie des 5
 championnats serait fermée et aucun club ne recruterait à l'étranger ou en
 division inférieure.
@@ -193,7 +213,7 @@ la formule métier. Voir `docs/configuration.md`.
 
 ## Conséquence architecturale du mode observateur
 
-L'utilisateur étant observateur, **les 96 clubs actifs sont pilotés par l'IA**.
+L'utilisateur étant observateur, **les 216 clubs actifs sont pilotés par l'IA**.
 Toute décision de club passe par une interface unique :
 
 ```python

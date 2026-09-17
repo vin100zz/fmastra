@@ -13,21 +13,29 @@ from core.domain.matches import Match
 def schedule(competition: Competition, season: int, next_id: int, cfg: Config, rng: Random) -> list[Match]:
     clubs = sorted(competition.club_ids)
     rng.shuffle(clubs)
+    if len(clubs) < 2:
+        raise ValueError("A league requires at least two clubs")
+    if len(clubs) % 2:
+        clubs.append(None)  # One club rests each round in odd-sized leagues.
     size = len(clubs)
-    if size < 2 or size % 2:
-        raise ValueError("A v1 league requires an even number of clubs")
     rules = cfg.world.season
     first = Date(season, rules.start_month, rules.start_day)
     last = Date(season + 1, rules.end_month, rules.end_day)
-    slots = (last.ordinal() - first.ordinal()) // rules.days_between_rounds
+    span = last.ordinal() - first.ordinal()
+    spacing = rules.days_between_rounds
+    slots = list(range(0, span + 1, spacing))
     rounds = 2 * (size - 1)
-    if slots < rounds - 1:
+    if len(slots) < rounds and spacing > 1:
+        # Add midweek slots only when weekly rounds do not fit before summer.
+        slots = sorted(set(slots) | set(range(spacing // 2, span + 1, spacing)))
+    if len(slots) < rounds:
         raise ValueError("Season window cannot fit the league")
-    dates = [first.add_days(round(index * slots / (rounds - 1)) * rules.days_between_rounds) for index in range(rounds)]
+    dates = [first.add_days(slots[round(index * (len(slots) - 1) / (rounds - 1))]) for index in range(rounds)]
     fixtures: list[list[tuple[int, int]]] = []
     rotating = clubs[:]
     for index in range(size - 1):
-        pairs = [(rotating[i], rotating[-i - 1]) for i in range(size // 2)]
+        pairs = [(rotating[i], rotating[-i - 1]) for i in range(size // 2)
+                 if rotating[i] is not None and rotating[-i - 1] is not None]
         if index % 2:
             pairs = [(away, home) for home, away in pairs]
         fixtures.append(pairs)

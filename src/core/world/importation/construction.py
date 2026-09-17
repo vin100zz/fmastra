@@ -74,6 +74,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         if row.id in clubs: raise ValueError(f"Duplicate club ID {row.id}")
         rng = stream(seed, "import-club", row.id)
         reputation, academy = club_strength(row.capacity, cfg, rng)
+        if row.reputation is not None:
+            reputation = row.reputation / 100
         academy = row.youth_recruitment * 5 if row.youth_recruitment is not None else 50
         rules = cfg.management.personality
         personality = ClubPersonality(*(rng.uniform(getattr(rules, name).min, getattr(rules, name).max)
@@ -84,7 +86,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                              reputation, academy, rng.choice(tuple(cfg.formations.formations)), personality,
                              training_facilities=row.training_facilities, youth_recruitment=row.youth_recruitment,
                              home_kit_id=row.home_kit_id, home_kit_major_color=row.home_kit_major_color,
-                             home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color)
+                             home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color,
+                             division_id=row.division_id)
     grouped: dict[int | None, list[Player]] = defaultdict(list)
     corrections = Counter()
     seen = set()
@@ -104,7 +107,10 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         if club_id is None:
             retained = sorted(squad, key=lambda player: player.id)
         else:
-            retained, removed = select_squad(squad, selection.max_players, selection.reserved_goalkeepers)
+            missing_keepers = max(0, selection.reserved_goalkeepers - sum(player.position == Position.GOALKEEPER for player in squad))
+            # Reserve space for missing keepers before applying the normal import cap.
+            limit = selection.max_players - (missing_keepers if clubs[club_id].competition_id is not None else 0)
+            retained, removed = select_squad(squad, limit, selection.reserved_goalkeepers)
             excluded.extend(removed)
             clubs[club_id].player_ids = [player.id for player in retained]
         players.update((player.id, player) for player in retained)
@@ -114,12 +120,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         if len(ids) != league.club_count:
             raise ValueError(f"{league.name}: expected {league.club_count} clubs, found {len(ids)}")
         competitions[league.division_id] = Competition(league.division_id, league.name, league.nation, league.level, ids)
-    guard = cfg.management.guardrails
     for club in clubs.values():
         squad = [players[player_id] for player_id in club.player_ids]
-        if club.competition_id is not None:
-            if len(squad) < guard.min_squad or sum(player.position == Position.GOALKEEPER for player in squad) < guard.min_goalkeepers:
-                raise ValueError(f"{club.name}: insufficient contracted squad or goalkeepers")
         initial_finances(club, squad, cfg, leagues[club.competition_id].club_count if club.competition_id else None)
         if club.wage_bill > club.wage_cap:
             raise ValueError(f"{club.name}: starting wages exceed funding")
@@ -131,6 +133,13 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     world.excluded_player_ids = sorted(excluded)
     world.last_annual_review = season
     world.rngs = {name: stream(seed, name) for name in ("matches", "market", "states", "progression", "demography")}
+    from core.world.squads import complete_squads
+    corrections["squad_completion_players"] = complete_squads(world, [club.id for club in world.active_clubs()])
+    players = world.players
+    from core.world.promotion import reserve_clubs
+    for pool in cfg.world.promotion_relegation.reserves:
+        if len(reserve_clubs(world, pool.division_ids)) < cfg.world.promotion_relegation.club_count:
+            raise ValueError(f"{pool.nation}: insufficient clubs in the non-simulated reserve")
     for competition in competitions.values():
         matches = schedule(competition, season, world.next_id, cfg, stream(seed, "calendar", season, competition.id))
         competition.match_ids = [match.id for match in matches]
@@ -149,7 +158,7 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                             "free_agents": len(grouped[None]), "active_clubs": len(world.active_clubs()),
                             "missing_capacities": sum(row.capacity <= 0 for row in source_clubs),
                             "missing_youth_recruitment": sum(row.youth_recruitment is None for row in source_clubs),
-                            "attributes_from_source": len(players), **corrections}
+                            "attributes_from_source": len(source_players) - len(excluded), **corrections}
     for player in players.values(): world.trajectories[player.id] = [(season, player.rating)]
     world.finance_history_since = world.movement_history_since = world.date
     return world

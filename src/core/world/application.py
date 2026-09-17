@@ -1,10 +1,11 @@
 """The only entry point for applying decisions to an existing world."""
 from core.domain.players import Discipline
+from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
 from core.domain.matches import MatchResult
 from .finances import book_cash, book_daily_cash
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
-                     FinancePosted, BudgetRenewed, SeasonOpened, DateAdvanced, OffersUpdated)
+                     FinancePosted, BudgetRenewed, DivisionsChanged, SeasonOpened, DateAdvanced, OffersUpdated)
 
 
 def apply(world: World, event: WorldEvent) -> bool:
@@ -76,6 +77,25 @@ def apply(world: World, event: WorldEvent) -> bool:
         club.income, club.wage_cap, club.transfer_budget = event.income, event.wage_cap, event.transfer_budget
         club.previous_rank = event.rank
         club.season_spent = club.season_sales = 0
+    elif isinstance(event, DivisionsChanged):
+        for movement in event.movements:
+            if movement.source_id is not None:
+                world.competitions[movement.source_id].club_ids.remove(movement.club_id)
+        for movement in event.movements:
+            club = world.clubs[movement.club_id]
+            club.competition_id, club.division_id = movement.target_id, movement.division_id
+            club.status = ClubStatus.ACTIVE if movement.target_id is not None else ClubStatus.DORMANT
+            target = world.competitions.get(movement.target_id)
+            source = world.competitions.get(movement.source_id)
+            if target is not None:
+                target.club_ids.append(club.id)
+            promoted = target is not None and (source is None or target.level < source.level)
+            destination = target.name if target else "division non simulée"
+            kind = "promotion" if promoted else "relegation"
+            action = "promu" if promoted else "relégué"
+            world.journal.append(JournalEntry(world.date, kind, f"{club.name} est {action} en {destination}.", club.id))
+        for competition in world.competitions.values():
+            competition.club_ids.sort()
     elif isinstance(event, SeasonOpened):
         previous = world.season
         world.season = event.year

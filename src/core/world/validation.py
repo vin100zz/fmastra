@@ -2,6 +2,7 @@
 from math import isfinite
 
 from core.domain.world import World
+from core.domain.clubs import ClubStatus
 from core.engine.abilities import overall
 
 
@@ -52,9 +53,24 @@ def validate_world(world: World) -> None:
     if set(world.players) & set(world.retired): raise ValueError("A retired player is still active")
     if world.next_id <= max((*world.players, *world.retired, *world.matches), default=0):
         raise ValueError("Next identifier would reuse an existing entity")
+    competition_clubs = set()
     for competition in world.competitions.values():
+        if len(set(competition.club_ids)) != len(competition.club_ids) or competition_clubs & set(competition.club_ids):
+            raise ValueError("Duplicate competition membership")
+        competition_clubs.update(competition.club_ids)
         if any(cid not in world.clubs or world.clubs[cid].competition_id != competition.id for cid in competition.club_ids):
             raise ValueError("Competition/club mismatch")
+        configured = next((league for league in cfg.world.competitions if league.division_id == competition.id), None)
+        if configured and len(competition.club_ids) != configured.club_count:
+            raise ValueError("Competition size changed")
+    if competition_clubs != {club.id for club in world.active_clubs()}:
+        raise ValueError("Missing competition membership")
+    for club in world.clubs.values():
+        active = club.competition_id is not None
+        if active != (club.status == ClubStatus.ACTIVE):
+            raise ValueError("Club status disagrees with competition membership")
+        if active and club.division_id is not None and club.division_id != club.competition_id:
+            raise ValueError("Club division disagrees with competition membership")
     for match in world.matches.values():
         if match.home_id == match.away_id or match.home_id not in world.clubs or match.away_id not in world.clubs:
             raise ValueError("Invalid fixture")

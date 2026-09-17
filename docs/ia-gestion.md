@@ -1,6 +1,6 @@
 # IA de gestion et économie
 
-Les 96 clubs actifs sont pilotés par `AIController`. Les coefficients sont dans
+Les 216 clubs actifs sont pilotés par `AIController`. Les coefficients sont dans
 `config/ia_gestion.json`. Les décisions renvoient des intentions ; l'applicateur
 est seul responsable des mutations et vérifie à nouveau les contraintes.
 

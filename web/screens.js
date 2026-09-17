@@ -19,7 +19,7 @@ function leagueSummaryCard(league,data){
 export async function dashboard(leagues){
  const ordered=[...leagues].sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
  const summaries=await Promise.all(ordered.map(league=>leagueSummary(league.id)));
- return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Votre regard sur les cinq grands championnats.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+`<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
+ return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Onze championnats, cinq pays et une nouvelle saison à conquérir.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+`<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
 }
 
 export async function clubsScreen(params){
@@ -32,7 +32,7 @@ export async function clubsScreen(params){
 
 export async function clubScreen(id,section,params){
  const club=await api(`/clubs/${id}`); section=section||'squad';
- const menu=[['squad','Effectif'],...(club.active?[['calendar','Calendrier']]:[]),['finances','Finances'],['transfers','Transferts'],...(club.active?[['history','Historique']]:[])];
+ const menu=[['squad','Effectif'],...(club.active?[['calendar','Calendrier']]:[]),['finances','Finances'],['transfers','Transferts'],['history','Historique']];
  const major=safeColor(club.major_color), minor=safeColor(club.minor_color)||major;
  const crestStyle=major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:'';
  const title=`<div class="page-heading"><div class="identity"><div class="crest"${crestStyle}>${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div><div><span class="eyebrow">${nationBadge(club.nation_code,{full:true})} · ${club.active?'CLUB ACTIF':'MARCHÉ EXTÉRIEUR'}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : information uniquement, sans effet sur la simulation">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
@@ -41,7 +41,7 @@ export async function clubScreen(id,section,params){
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${params}`); content=card('Calendrier de la saison',fixtures(data,true)+pager(data));}
  else if(section==='transfers'){const data=await api(`/clubs/${id}/transferts?${params}`);content=movementsHistory(data);}
  else if(section==='finances'){const data=await api(`/clubs/${id}/finances?${params}`); content=`<div class="stat-grid">${stat('Budget transferts',money(Math.max(0,data.transfer_budget-data.reserved_transfer_budget)),'Disponible hors offres en cours')}${stat('Solde',money(data.balance),'Trésorerie du club')}${stat('Revenus annuels',money(data.income),'Estimation structurelle')}${stat('Masse salariale',monthlySalary(data.wage_bill),'Par mois (moyenne)')}</div><div class="grid equal">${card('Engagements salariaux',`<div class="card-body">${fact('Masse salariale',monthlySalary(data.wage_bill)+' / mois')}${fact('Plafond',monthlySalary(data.wage_cap)+' / mois')}${fact('Offres en cours',monthlySalary(data.reserved_wages)+' / mois')}<div class="meter"><span style="width:${Math.min(100,100*data.wage_bill/Math.max(1,data.wage_cap))}%"></span></div><p>${Math.round(100*data.wage_bill/Math.max(1,data.wage_cap))}% du plafond utilisé</p></div>`)}${card('Activité de la saison',`<div class="card-body">${fact('Budget réservé aux offres',money(data.reserved_transfer_budget))}${fact('Achats',money(data.season_spent))}${fact('Ventes',money(data.season_sales))}${fact('Balance des transferts',money(data.season_sales-data.season_spent))}</div>`)}</div>`;content+=financialHistory(data.history);}
- else {const data=await api(`/clubs/${id}/historique?${params}`);content=card('Les saisons du club',table(['SAISON','CLASSEMENT','PALMARÈS'],data.items.map(row=>[season(row.season),`${row.rank}${row.rank===1?'er':'e'}`,row.champion?'✦ Champion':'—']))+pager(data))+seasonArchives(data);}
+ else {const data=await api(`/clubs/${id}/historique?${params}`);content=card('Les saisons du club',table(['SAISON','CHAMPIONNAT','CLASSEMENT','PALMARÈS'],data.items.map(row=>[season(row.season),e(row.competition),`${row.rank}${row.rank===1?'er':'e'}`,row.champion?'✦ Champion':'—']))+pager(data))+seasonArchives(data);}
  return title+(!club.active?'<div class="notice">Club dormant : effectif et marché simulés, sans calendrier ni statistiques de match.</div>':'')+tabs(`#/club/${id}`,menu,section)+content;
 }
 

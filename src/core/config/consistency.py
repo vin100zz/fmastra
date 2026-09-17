@@ -79,8 +79,20 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.engine.timing.possession_gamma_shape > 0, "Gamma shape must be positive")
     require(cfg.world.season.days_between_rounds > 0, "Round spacing must be positive")
     require(len({league.division_id for league in cfg.world.competitions}) == len(cfg.world.competitions), "Duplicate competitions")
+    movement = cfg.world.promotion_relegation
+    require(movement.club_count > 0 and movement.reputation_exponent > 0, "Invalid promotion rules")
+    nations = {league.nation for league in cfg.world.competitions}
+    require(len(movement.reserves) == len(nations)
+            and {pool.nation for pool in movement.reserves} == nations, "Each pyramid needs one reserve")
+    reserve_ids = [did for pool in movement.reserves for did in pool.division_ids]
+    require(all(pool.division_ids for pool in movement.reserves), "Empty reserve division list")
+    require(len(set(reserve_ids)) == len(reserve_ids), "Duplicate reserve divisions")
+    require(not set(reserve_ids) & {league.division_id for league in cfg.world.competitions}, "A reserve cannot be simulated")
+    for nation in nations:
+        levels = sorted(league.level for league in cfg.world.competitions if league.nation == nation)
+        require(levels == list(range(1, len(levels) + 1)), "League levels must be consecutive from one")
     for league in cfg.world.competitions:
-        require(league.club_count >= 2 and league.club_count % 2 == 0, "v1 requires even-sized leagues")
+        require(league.club_count >= 2 * movement.club_count, "A league needs distinct promotion and relegation places")
     require(not cfg.states.suspensions.reset_after_threshold, "Cumulative yellow counters cannot reset at each threshold")
     require(cfg.engine.timing.match_seconds == 2 * cfg.world.match_rules.half_seconds, "Match durations disagree")
     require(cfg.demography.potential_estimate.convergence_age > cfg.demography.potential_estimate.start_age, "Invalid estimate convergence")

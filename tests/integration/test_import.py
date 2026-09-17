@@ -16,18 +16,24 @@ def imported(config):
 
 @pytest.mark.slow
 def test_real_source_import(imported, config):
-    assert len(imported.players) == 14404
-    assert len(imported.active_clubs()) == 96
-    assert imported.import_summary["active_players"] == 2880
+    assert len(imported.players) == 14440
+    assert len(imported.competitions) == 11
+    assert len(imported.active_clubs()) == 216
+    assert imported.import_summary["active_players"] == 6405
+    assert imported.import_summary["squad_completion_players"] == 39
     assert imported.import_summary["free_agents"] == 186
-    assert len(imported.excluded_player_ids) == 0
-    assert len(imported.matches) == 1752
+    assert len(imported.excluded_player_ids) == 3
+    assert len(imported.matches) == 4064
+    assert len(imported.competitions[18].club_ids) == 18
+    assert imported.clubs[825].competition_id == 18  # Cannes completes the National.
+    assert len(imported.competitions[18].match_ids) == 306
     assert all(len(club.player_ids) <= 30 for club in imported.clubs.values())
     assert all(club.wage_bill <= club.wage_cap for club in imported.clubs.values())
     assert all(player.rating <= player.potential <= 100 for player in imported.players.values())
     assert not set(imported.players) & set(imported.excluded_player_ids)
     for club in imported.active_clubs():
         assert sum(imported.players[pid].position == "GB" for pid in club.player_ids) >= 2
+        assert len(club.player_ids) >= config.management.guardrails.min_squad
 
 
 def test_calendar_pairs_and_dates(imported):
@@ -69,7 +75,8 @@ def test_supplied_attributes_abilities_and_positions(imported, config):
     from dataclasses import replace
     from core.world.importation.construction import create_player
     from core.domain.players import Position
-    _, rows, _ = read_sources(ROOT / "data", config)
+    clubs, rows, _ = read_sources(ROOT / "data", config)
+    assert all(imported.clubs[row.id].reputation == row.reputation / 100 for row in clubs)
     source = next(row for row in rows if row.id == 85139014)
     player = imported.players[source.id]
     assert player.attributes.get("finition") == 18 * 5

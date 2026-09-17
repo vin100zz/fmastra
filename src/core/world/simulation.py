@@ -16,6 +16,8 @@ from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
 from .finances import structural_income
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
+from .promotion import promotion_event
+from .squads import complete_squads
 
 
 def market_window(world: World) -> str | None:
@@ -45,18 +47,28 @@ def target_date(world: World, until: str) -> Date:
 
 def annual_review(world: World) -> None:
     cfg = world.config
-    rankings, champions = {}, {}
+    rankings, champions, tables = {}, {}, {}
     for competition in world.competitions.values():
         rows = standings(competition, [world.matches[mid] for mid in competition.match_ids], cfg)
+        tables[competition.id] = rows
         champions[competition.id] = rows[0].club_id
         rankings.update({row.club_id: index + 1 for index, row in enumerate(rows)})
+    movements = promotion_event(world, tables)
+    incoming = {move.club_id for move in movements.movements if move.source_id is None}
+    apply(world, movements)
     for event in retirement_events(world): apply(world, event)
     for club in world.clubs.values():
         rank = rankings.get(club.id)
         income = round(structural_income(club, cfg, rank) * club.funding_factor)
         rules = cfg.management.budgets
-        # Existing signed wages are honored; no further wage growth until revenues catch up.
-        cap = max(club.wage_bill, round(income * rules.wage_income_share / rules.weeks_per_year))
+        # Honor existing wages and reserve the minimum intake for newly active clubs.
+        minimum_wages = club.wage_bill
+        if club.id in incoming:
+            guard = cfg.management.guardrails
+            missing = max(0, guard.min_squad - len(club.player_ids),
+                          guard.min_goalkeepers - sum(world.players[pid].position == "GB" for pid in club.player_ids))
+            minimum_wages += missing * cfg.demography.academies.base_weekly_wage
+        cap = max(minimum_wages, round(income * rules.wage_income_share / rules.weeks_per_year))
         budget = max(0, round(income * rules.transfer_income_share + club.balance * rules.transfer_balance_share))
         apply(world, BudgetRenewed(club.id, income, cap, budget, rank))
     matches, next_id = [], world.next_id
@@ -65,6 +77,7 @@ def annual_review(world: World) -> None:
         matches.extend(fixtures)
         next_id += len(fixtures)
     apply(world, SeasonOpened(world.date.year, matches, champions))
+    complete_squads(world, list(incoming))
     for event in cohort_events(world): apply(world, event)
     ensure_minimums(world)
 

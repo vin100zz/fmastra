@@ -1,14 +1,31 @@
 {
-  "version_config": 2,
+  "version_config": 3,
   "date_debut_partie": {"annee": 2025, "mois": 7, "jour": 1},
-  "_note": "Perimetre simule et calendrier. Les clubs hors de ce perimetre sont dormants. division_id identifie la premiere division dans les donnees fournies (data/clubs.csv, colonne 'Division ID') ; le nom de la ligue n'y est pas fiable pour le filtrage.",
+  "_note": "division_id correspond a DivisionUID dans data/clubs.csv. Les groupes du niveau inferieur non simule forment une reserve commune. Le National compte 18 clubs dans les donnees fournies.",
   "competitions_simulees": [
     {"pays": "FRA", "nom": "Ligue 1", "niveau": 1, "nb_clubs": 18, "division_id": 16},
+    {"pays": "FRA", "nom": "Ligue 2", "niveau": 2, "nb_clubs": 18, "division_id": 17},
+    {"pays": "FRA", "nom": "National", "niveau": 3, "nb_clubs": 18, "division_id": 18},
     {"pays": "ESP", "nom": "La Liga", "niveau": 1, "nb_clubs": 20, "division_id": 67},
+    {"pays": "ESP", "nom": "La Liga 2", "niveau": 2, "nb_clubs": 22, "division_id": 68},
     {"pays": "ITA", "nom": "Serie A", "niveau": 1, "nb_clubs": 20, "division_id": 32},
+    {"pays": "ITA", "nom": "Serie B", "niveau": 2, "nb_clubs": 20, "division_id": 33},
     {"pays": "ENG", "nom": "Premier League", "niveau": 1, "nb_clubs": 20, "division_id": 11},
-    {"pays": "GER", "nom": "Bundesliga", "niveau": 1, "nb_clubs": 18, "division_id": 22}
+    {"pays": "ENG", "nom": "Championship", "niveau": 2, "nb_clubs": 24, "division_id": 12},
+    {"pays": "GER", "nom": "Bundesliga", "niveau": 1, "nb_clubs": 18, "division_id": 22},
+    {"pays": "GER", "nom": "Bundesliga 2", "niveau": 2, "nb_clubs": 18, "division_id": 23}
   ],
+  "promotion_relegation": {
+    "nb_clubs": 3,
+    "exposant_reputation": 2.0,
+    "reserves": [
+      {"pays": "FRA", "division_ids": [19, 914522, 914523]},
+      {"pays": "GER", "division_ids": [35010926]},
+      {"pays": "ITA", "division_ids": [43127172, 43127173, 43127174]},
+      {"pays": "ESP", "division_ids": [2000048844, 2000048846]},
+      {"pays": "ENG", "division_ids": [13]}
+    ]
+  },
   "saison": {
     "debut_mois": 8, "debut_jour": 10,
     "fin_mois": 5, "fin_jour": 25,

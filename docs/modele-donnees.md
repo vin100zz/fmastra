@@ -3,8 +3,8 @@
 ## Périmètre et volumes
 
 L'export actuel contient 1 394 clubs et 14 404 joueurs. Les divisions sont
-identifiées par `DivisionUID` : 96 clubs actifs, 2 880 joueurs actifs,
-11 338 joueurs dans les 1 298 clubs dormants et 186 agents libres.
+identifiées par `DivisionUID` : 216 clubs actifs dans 11 compétitions, 6 405 joueurs
+actifs après complément, 7 849 joueurs dans les 1 178 clubs dormants et 186 agents libres.
 Les clubs dormants participent au marché et à la génération de joueurs, sans matches.
 Ces volumes sont des observations, pas des constantes du moteur.
 
@@ -105,14 +105,19 @@ Une donnée absente à l'import utilise un repli neutre de 50/100 ; les ancienne
 sauvegardes sans ce champ utilisent leur ancienne note de centre.
 Les cohortes restent bornées par la population et les places disponibles.
 
-La réputation et les finances demeurent estimées. Les paramètres de synthèse
+La réputation provient de `Reputation`, divisée par 100 pour l'échelle du moteur.
+Les finances demeurent estimées. Les paramètres de synthèse
 joueur dans import.json sont conservés pour relire les anciennes configurations,
 mais ne sont plus utilisés par l'import actuel.
 
-Les nouvelles données s'appliquent aux nouvelles parties. Les sauvegardes de
-versions 1 à 3 restent lisibles ; leurs attributs ne sont pas remplacés à la lecture
-et les installations absentes restent inconnues. Les nouvelles sauvegardes sont
-au format 5 et conservent CA, PA, aptitudes et installations. Le format 4 reste lisible. Les mouvements conservent désormais la date de naissance ; les promotions archivent aussi les notes, la fourchette de potentiel observée, les nationalités et les informations contractuelles à la promotion. Une ancienne fiche absente n'est pas reconstituée artificiellement.
+Les nouvelles données et la pyramide de championnats demandent une nouvelle partie.
+Les sauvegardes actuelles restent au format 5 et incluent la configuration du monde
+version 3, CA, PA, aptitudes, installations et division courante des clubs.
+Les migrations historiques des entités restent présentes, mais les anciennes
+configurations sans règles de promotion ne sont pas compatibles. Les mouvements
+conservent la date de naissance ; les promotions de jeunes archivent aussi les notes,
+la fourchette de potentiel observée, les nationalités et les informations contractuelles.
+Une ancienne fiche absente n'est pas reconstituée artificiellement.
 
 ## Entités et état à conserver
 
@@ -157,11 +162,11 @@ ne compare le nombre importé à un ancien ordre de grandeur de 2 400 joueurs.
 ## Calendrier et ordre du jour
 
 Chaque championnat produit des aller-retour avec une réception et un déplacement
-contre chaque autre club. Les dates candidates sont espacées du minimum
-`jours_entre_journees`, entre le début et la fin de saison configurés ; répartir
-les journées aussi régulièrement que possible sur ces dates. Les journées
-libres sont possibles : ne pas imposer simultanément un intervalle strict de
-sept jours et une date finale incompatible. Refuser une fenêtre trop courte.
+contre chaque autre club. Les dates candidates suivent `jours_entre_journees`,
+entre le début et la fin de saison configurés. Si nécessaire, des créneaux à
+mi-intervalle sont ajoutés pour les grandes divisions ; les journées sont réparties
+aussi régulièrement que possible. Un championnat impair comporte une exemption
+par journée. Refuser une fenêtre trop courte même avec ces créneaux supplémentaires.
 Le départage applique les critères configurés, puis un départage stable par ID
 si l'égalité persiste. Ces règles communes simplifiées ne prétendent pas
 reproduire les règlements spécifiques des cinq pays.
@@ -174,6 +179,17 @@ mensuelle consomme les minutes du mois terminé avant remise à zéro du compteu
 Chaque échéance garde une marque de dernière exécution pour ne pas être rejouée
 après chargement. Le premier jour d'une partie n'exécute pas un bilan annuel
 fictif : ses cibles viennent de l'import, sans cohorte additionnelle.
+
+Au 1er juillet, `promotion_event` calcule tous les mouvements sur les classements
+terminés puis `DivisionsChanged` les applique avant les nouveaux calendriers.
+La réserve de chaque pays est identifiée par les `division_ids` configurés, sans
+filtrage par nationalité du club. Le tirage de trois clubs sans remise utilise un
+flux dérivé de la graine, de l'année et du pays, avec poids `max(1, réputation)²`.
+La `source_division_id` reste l'origine importée ; `division_id` suit la division
+courante, même hors simulation. Les clubs relégués rejoignent le premier groupe
+de la réserve commune et sont éligibles dès l'été suivant. Les archives reconstruisent
+les participants à partir des rencontres de leur saison, jamais de l'effectif actuel
+du championnat. La configuration du monde passe en version 3 : nouvelle partie requise.
 
 ## Historique et persistance
 

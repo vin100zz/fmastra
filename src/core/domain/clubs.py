@@ -46,6 +46,7 @@ class Club:
     home_kit_major_color: str | None = None
     home_kit_minor_color: str | None = None
     home_kit_third_color: str | None = None
+    division_id: int | None = None
 
 
 @dataclass(slots=True)

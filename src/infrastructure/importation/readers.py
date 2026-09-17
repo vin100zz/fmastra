@@ -56,7 +56,8 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
                         facility(row, "TrainingFacilities"), facility(row, "YouthRecruitment"),
                         int(row["HomeKitID"]) if row["HomeKitID"] else None,
                         hex_color(row, "HomeKitMajorColorRGB"), hex_color(row, "HomeKitMinorColorRGB"),
-                        hex_color(row, "HomeKitThirdColorRGB"))
+                        hex_color(row, "HomeKitThirdColorRGB"),
+                        bounded(row, "Reputation", 0, 10000) if row.get("Reputation") else None)
              for row in rows("clubs.csv")]
     players = []
     for row in rows("players.csv"):

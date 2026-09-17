@@ -22,6 +22,19 @@ class WorldConfigCompetitionsItem:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class WorldConfigPromotionRelegationReservesItem:
+    nation: str = Field(alias="pays")
+    division_ids: tuple[int, ...] = Field(alias="division_ids")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class WorldConfigPromotionRelegation:
+    club_count: int = Field(alias="nb_clubs")
+    reputation_exponent: float = Field(alias="exposant_reputation")
+    reserves: tuple[WorldConfigPromotionRelegationReservesItem, ...] = Field(alias="reserves")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class WorldConfigSeason:
     start_month: int = Field(alias="debut_mois")
     start_day: int = Field(alias="debut_jour")
@@ -99,6 +112,7 @@ class WorldConfig:
     version: int = Field(alias="version_config")
     start_date: WorldConfigStartDate = Field(alias="date_debut_partie")
     competitions: tuple[WorldConfigCompetitionsItem, ...] = Field(alias="competitions_simulees")
+    promotion_relegation: WorldConfigPromotionRelegation = Field(alias="promotion_relegation")
     season: WorldConfigSeason = Field(alias="saison")
     market: WorldConfigMarket = Field(alias="mercato")
     key_dates: WorldConfigKeyDates = Field(alias="dates_cles")

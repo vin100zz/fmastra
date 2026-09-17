@@ -7,10 +7,11 @@ Les commandes d'installation et de benchmark figurent dans le README.
 
 ## Fonctionnalités disponibles
 
-- Import des 26 759 clubs et de 25 911 joueurs après sélection des 30 meilleurs
-  par club, avec deux places réservées aux gardiens présents dans la source.
+- Import des 1 394 clubs et de 14 401 joueurs après sélection des 30 meilleurs
+  par club, puis génération de 39 joueurs pour compléter les effectifs actifs.
+  Deux places sont réservées aux gardiens, y compris lorsqu'ils manquent à la source.
   Les CSV d'origine ne sont pas modifiés.
-- Cinq championnats, 96 clubs actifs, 1 752 rencontres aller-retour par saison.
+- Onze championnats, 216 clubs actifs, 4 064 rencontres aller-retour par saison.
   Les autres clubs participent au marché extérieur sans disputer de rencontres.
 - Composition automatique, moteur par possessions, tirs et xG, coups de pied
   arrêtés, cartons, blessures et remplacements. Un gardien expulsé peut être
@@ -111,7 +112,6 @@ ne garantit pas la reproduction de son niveau réel.
   du code non commité : les rapports actuels enregistrent configuration,
   sources, graine, version Python et révision Git.
 
-Le mode joueur, les coupes, les divisions inférieures actives, les prêts et la
-promotion/relégation restent hors périmètre. Les anciennes rencontres sont
+Le mode joueur, les coupes et les prêts restent hors périmètre. Les anciennes rencontres sont
 compactées après deux saisons ; les résultats et archives de carrière restent
 consultables, mais leur détail événementiel n'est pas conservé indéfiniment.

@@ -69,6 +69,7 @@ def decode(value: Any) -> Any:
     if "$type" in value:
         cls = ENTITIES[value["$type"]]
         if cls is Club:
+            value["fields"].setdefault("division_id", None)
             for name in ("training_facilities", "youth_recruitment", "home_kit_id",
                         "home_kit_major_color", "home_kit_minor_color", "home_kit_third_color"):
                 value["fields"].setdefault(name, None)

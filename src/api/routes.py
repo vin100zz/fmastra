@@ -162,17 +162,17 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/clubs/{club_id}/historique")
     def club_history(club_id: int, page: int = Query(1, ge=1)) -> dict:
-        from core.world.calendar import standings
         with service.reading() as world:
-            club = world.clubs[club_id]
+            world.clubs[club_id]
             rows = []
-            if club.competition_id:
-                competition = world.competitions[club.competition_id]
-                for year, _ in reversed(world.champions.get(competition.id, [])):
-                    positions = standings(competition, [match for match in world.matches.values() if match.season == year], world.config)
-                    rank = next(index + 1 for index, row in enumerate(positions) if row.club_id == club_id)
-                    rows.append({"season": year, "rank": rank, "champion": rank == 1,
-                                 "standings": v.table(world, competition.id, year)})
+            seasons = {(match.season, match.competition_id) for match in world.matches.values()
+                       if match.season < world.season and club_id in (match.home_id, match.away_id)}
+            for year, competition_id in sorted(seasons, reverse=True):
+                positions = v.table(world, competition_id, year)
+                rank = next(row["rank"] for row in positions if row["club_id"] == club_id)
+                rows.append({"season": year, "rank": rank, "champion": rank == 1,
+                             "competition_id": competition_id, "competition": world.competitions[competition_id].name,
+                             "standings": positions})
             return v.paginate(rows, page)
 
     @api.get("/competitions/{competition_id}/classement")

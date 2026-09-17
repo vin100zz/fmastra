@@ -471,6 +471,7 @@ MAPS = {
     "demographie.cible_postes": "FrozenMap[float]",
     "demographie.generation.postes_secondaires_possibles": "FrozenMap[tuple[str, ...]]",
 }
+WORDS.update({"promotion_relegation": "promotion_relegation", "exposant_reputation": "reputation_exponent"})
 
 
 def clean(value: object) -> object:

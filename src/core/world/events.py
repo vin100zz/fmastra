@@ -68,6 +68,19 @@ class BudgetRenewed:
 
 
 @dataclass(frozen=True, slots=True)
+class ClubDivisionChanged:
+    club_id: int
+    source_id: int | None
+    target_id: int | None
+    division_id: int
+
+
+@dataclass(frozen=True, slots=True)
+class DivisionsChanged:
+    movements: tuple[ClubDivisionChanged, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class SeasonOpened:
     year: int
     matches: list[Match]
@@ -84,4 +97,4 @@ class OffersUpdated:
     offers: list[TransferOffer]
 
 
-WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | SeasonOpened | DateAdvanced | OffersUpdated
+WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated
