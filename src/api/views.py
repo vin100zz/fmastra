@@ -52,7 +52,7 @@ def player_row(world: World, player: Player) -> dict:
 
 def player_detail(world: World, player: Player) -> dict:
     result = player_row(world, player)
-    result.update({"born": player.born.iso(), "nationalities": [world.nation_names.get(nation, nation) for nation in player.nationalities],
+    result.update({"born": player.born.iso(),
                    "secondary_positions": list(player.secondary_positions), "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
                    "attributes_imported": player.source_current_ability is not None,
                    "position_ratings": player.position_ratings,
@@ -80,7 +80,7 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
 def club_detail(world: World, club_id: int) -> dict:
     club = world.clubs[club_id]
     standing = next((row for row in table(world, club.competition_id) if row["club_id"] == club.id), None) if club.competition_id else None
-    return {"id": club.id, "name": club.name, "nation": world.nation_names.get(club.nation, club.nation),
+    return {"id": club.id, "name": club.name, "nation_code": club.nation, "nation": world.nation_names.get(club.nation, club.nation),
             "competition_id": club.competition_id, "competition": world.competitions[club.competition_id].name if club.competition_id else None,
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
             "academy": round(club.academy, 1), "training_facilities": club.training_facilities,

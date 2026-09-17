@@ -12,6 +12,7 @@ from core.domain.date import Date
 from core.world.simulation import target_date, market_window
 from .service import GameService
 from . import views as v
+from .nations import build_nation_table
 
 
 class Command(BaseModel):
@@ -98,6 +99,10 @@ def router(service: GameService) -> APIRouter:
     def competitions() -> list[dict]:
         with service.reading() as world:
             return [{"id": item.id, "name": item.name, "nation": item.nation, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+
+    @api.get("/nations")
+    def nations() -> dict[str, dict]:
+        with service.reading() as world: return build_nation_table(world.nation_names)
 
     @api.get("/clubs")
     def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = None,

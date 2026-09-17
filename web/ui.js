@@ -11,6 +11,10 @@ export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
 export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
+let nations={};
+export const setNations = data => nations=data||{};
+export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); const flag=info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:''; return `<span class="nation" title="${escape(info?.name||code||'')}">${flag}${escape(label)}</span>`;};
+export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 export const clubLink = club => club ? `<a href="#/club/${club.id}" class="club-link">${kitDot(club)}${escape(club.name)}</a>` : '<span class="muted">Libre</span>';
 export const playerLink = (id, name) => `<a href="#/player/${id}">${escape(name || 'Joueur archivé')}</a>`;
 export const group = role => role === 'GB' ? 'gk' : ['DC','DL','DR'].includes(role) ? 'def' : ['BU','AILG','AILD'].includes(role) ? 'att' : 'mid';
@@ -30,7 +34,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  const rows=data.items.map(player=>{
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
-   nation:`<span title="${escape((player.nationality_names||player.nationalities||[player.nation]).join(', '))}">${escape((player.nationalities||[player.nation]).map((code,index)=>code?.startsWith('X')?(player.nationality_names?.[index]||code):code).join(' / ')||'—')}</span>`,
+   nation:nationBadges(player.nationalities||[player.nation]),
    age:player.age??'—',rating:player.rating==null?'—':`<span class="rating">${level(player.rating)}</span>`,potential_estimate:player.potential_estimate?`<span title="Potentiel estimé sur 200">${Math.floor(player.potential_estimate.lower*2)}–${Math.ceil(player.potential_estimate.upper*2)}</span>`:'—',club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:player.value==null?'—':money(player.value),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ Blessé</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
