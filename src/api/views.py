@@ -77,7 +77,8 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
         competition = replace(competition, club_ids=sorted({cid for match in matches for cid in (match.home_id, match.away_id)}))
     count = world.config.world.promotion_relegation.club_count
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
-             "movement": ("promotion" if competition.level > 1 and index < count else
+             "movement": ("champion" if competition.level == 1 and index == 0 else
+                          "promotion" if competition.level > 1 and index < count else
                           "relegation" if index >= len(competition.club_ids) - count else None)}
             for index, row in enumerate(standings(competition, matches, world.config))]
 
