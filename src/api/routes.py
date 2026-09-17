@@ -32,6 +32,13 @@ class NewGame(Command):
     graine: int = Field(default=2025, ge=0, le=2**63 - 1, strict=True)
 
 
+POSITION_ORDER = ["GB", "DL", "DR", "DC", "MDC", "MC", "MOC", "AILG", "AILD", "BU"]
+
+
+def position_rank(position: str) -> int:
+    return POSITION_ORDER.index(position) if position in POSITION_ORDER else len(POSITION_ORDER)
+
+
 def router(service: GameService) -> APIRouter:
     api = APIRouter(prefix="/api")
 
@@ -121,11 +128,11 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return v.club_detail(world, club_id)
 
     @api.get("/clubs/{club_id}/effectif")
-    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] = "rating",
-              ordre: Literal["asc", "desc"] = "desc") -> dict:
+    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] = "position",
+              ordre: Literal["asc", "desc"] = "asc") -> dict:
         with service.reading() as world:
             rows = v.squad_rows(world, club_id)
-            rows.sort(key=lambda row: (row[tri] or "" if tri == "contract_end" else row[tri], row["id"]), reverse=ordre == "desc")
+            rows.sort(key=lambda row: (position_rank(row["position"]) if tri == "position" else (row[tri] or "" if tri == "contract_end" else row[tri]), row["id"]), reverse=ordre == "desc")
             return v.paginate(rows, page)
 
     @api.get("/clubs/{club_id}/calendrier")
@@ -219,7 +226,7 @@ def router(service: GameService) -> APIRouter:
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
                 value = {"rating": player.rating, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
-                         "position": player.position, "wage": player.contract.weekly_wage if player.contract else 0,
+                         "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,
                          "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else ""}[tri]
                 return value, player.id
