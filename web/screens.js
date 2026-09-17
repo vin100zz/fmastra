@@ -1,4 +1,5 @@
 import {monthlySalary,salarySearchParams} from './salaries.js';
+import {cupSummaryCard,cupScreen} from './cups.js';
 import {financialHistory,movementsHistory} from './club-history.js';
 import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,level,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationBadges,nationName} from './ui.js';
 
@@ -27,10 +28,14 @@ export async function dashboard(leagues){
 }
 
 export async function countryScreen(nation,leagues){
- const ordered=leagues.filter(league=>league.nation===nation).sort((a,b)=>a.level-b.level);
+ const ordered=leagues.filter(league=>league.nation===nation&&league.kind!=='cup').sort((a,b)=>a.level-b.level);
  if(!ordered.length)throw new Error('Pays introuvable.');
  const totalClubs=ordered.reduce((sum,league)=>sum+league.clubs,0);
- return heading(nation,nationName(nation),`${ordered.length} championnat${ordered.length>1?'s':''} · ${totalClubs} clubs`)+await leagueSummariesSection(ordered);
+ const cup=leagues.find(item=>item.nation===nation&&item.kind==='cup');
+ const [summaries,cupData]=await Promise.all([Promise.all(ordered.map(league=>leagueSummary(league.id))),cup?api(`/competitions/${cup.id}/coupe`):null]);
+ const cards=ordered.map((league,index)=>leagueSummaryCard(league,summaries[index]));
+ if(cup)cards.splice(1,0,cupSummaryCard(cup,cupData));
+ return heading(nation,nationName(nation),`${ordered.length} championnats${cup?' · 1 coupe':''} · ${totalClubs} clubs en championnat`)+`<div class="league-summaries">${cards.join('')}</div>`;
 }
 
 export async function clubsScreen(params){
@@ -53,10 +58,12 @@ export async function clubScreen(id,section,params){
  else if(section==='transfers'){const data=await api(`/clubs/${id}/transferts?${params}`);content=movementsHistory(data);}
  else if(section==='finances'){const data=await api(`/clubs/${id}/finances?${params}`); content=`<div class="stat-grid">${stat('Budget transferts',money(Math.max(0,data.transfer_budget-data.reserved_transfer_budget)),'Disponible hors offres en cours')}${stat('Solde',money(data.balance),'Trésorerie du club')}${stat('Revenus annuels',money(data.income),'Estimation structurelle')}${stat('Masse salariale',monthlySalary(data.wage_bill),'Par mois (moyenne)')}</div><div class="grid equal">${card('Engagements salariaux',`<div class="card-body">${fact('Masse salariale',monthlySalary(data.wage_bill)+' / mois')}${fact('Plafond',monthlySalary(data.wage_cap)+' / mois')}${fact('Offres en cours',monthlySalary(data.reserved_wages)+' / mois')}<div class="meter"><span style="width:${Math.min(100,100*data.wage_bill/Math.max(1,data.wage_cap))}%"></span></div><p>${Math.round(100*data.wage_bill/Math.max(1,data.wage_cap))}% du plafond utilisé</p></div>`)}${card('Activité de la saison',`<div class="card-body">${fact('Budget réservé aux offres',money(data.reserved_transfer_budget))}${fact('Achats',money(data.season_spent))}${fact('Ventes',money(data.season_sales))}${fact('Balance des transferts',money(data.season_sales-data.season_spent))}</div>`)}</div>`;content+=financialHistory(data.history);}
  else {const data=await api(`/clubs/${id}/historique?${params}`);content=card('Les saisons du club',table(['SAISON','CHAMPIONNAT','CLASSEMENT','PALMARÈS'],data.items.map(row=>[season(row.season),e(row.competition),`${row.rank}${row.rank===1?'er':'e'}`,row.champion?'✦ Champion':'—']))+pager(data))+seasonArchives(data);}
- return title+(!club.active?'<div class="notice">Club dormant : effectif et marché simulés, sans calendrier ni statistiques de match.</div>':'')+tabs(`#/club/${id}`,menu,section)+content;
+ return title+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+tabs(`#/club/${id}`,menu,section)+content;
 }
 
 export async function leagueScreen(id,section,params,leagues){
+ const competition=leagues.find(item=>item.id===Number(id));
+ if(competition?.kind==='cup')return cupScreen(competition,section,params);
  const league=leagues.find(item=>item.id===Number(id)); if(!league)throw new Error('Championnat introuvable.');section=section||'table';
  let content='';
  if(section==='table'){const data=await api(`/competitions/${id}/classement?${params}`);content=card('Classement général',standingsTable(data),'<span class="muted">3 points pour une victoire</span>');}

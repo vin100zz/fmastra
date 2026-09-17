@@ -18,6 +18,7 @@ class SourceClub:
     home_kit_minor_color: str | None
     home_kit_third_color: str | None
     reputation: int | None = None
+    is_reserve: bool = False
 
 
 @dataclass(frozen=True, slots=True)

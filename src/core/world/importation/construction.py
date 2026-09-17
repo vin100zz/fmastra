@@ -10,7 +10,6 @@ from core.domain.players import Contract, Player, Position
 from core.domain.world import World
 from core.engine.abilities import overall
 from core.randomness import stream
-from core.world.calendar import schedule
 from core.world.finances import initial_finances
 from .records import SourceClub, SourcePlayer
 from .selection import select_squad
@@ -69,6 +68,14 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     initial = cfg.world.start_date
     date = Date(initial.year, initial.month, initial.day)
     leagues = {league.division_id: league for league in cfg.world.competitions}
+    # Competition membership takes precedence over nationality for border clubs.
+    division_nations = defaultdict(Counter)
+    for row in source_clubs:
+        if row.division_id > 0 and not row.is_reserve:
+            division_nations[row.division_id][row.nation] += 1
+    affiliations = {did: min(counts, key=lambda nation: (-counts[nation], nation)) for did, counts in division_nations.items()}
+    affiliations.update({did: pool.nation for pool in cfg.world.promotion_relegation.reserves for did in pool.division_ids})
+    affiliations.update({league.division_id: league.nation for league in cfg.world.competitions})
     clubs: dict[int, Club] = {}
     for row in sorted(source_clubs, key=lambda item: item.id):
         if row.id in clubs: raise ValueError(f"Duplicate club ID {row.id}")
@@ -87,7 +94,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                              training_facilities=row.training_facilities, youth_recruitment=row.youth_recruitment,
                              home_kit_id=row.home_kit_id, home_kit_major_color=row.home_kit_major_color,
                              home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color,
-                             division_id=row.division_id)
+                             division_id=row.division_id, is_reserve=row.is_reserve,
+                             cup_nation=affiliations.get(row.division_id, row.nation))
     grouped: dict[int | None, list[Player]] = defaultdict(list)
     corrections = Counter()
     seen = set()
@@ -140,11 +148,12 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     for pool in cfg.world.promotion_relegation.reserves:
         if len(reserve_clubs(world, pool.division_ids)) < cfg.world.promotion_relegation.club_count:
             raise ValueError(f"{pool.nation}: insufficient clubs in the non-simulated reserve")
-    for competition in competitions.values():
-        matches = schedule(competition, season, world.next_id, cfg, stream(seed, "calendar", season, competition.id))
-        competition.match_ids = [match.id for match in matches]
-        world.matches.update((match.id, match) for match in matches)
-        world.next_id += len(matches)
+    from core.world.cups import initialize_cups, season_fixtures
+    initialize_cups(world)
+    for match in season_fixtures(world, season):
+        world.matches[match.id] = match
+        world.competitions[match.competition_id].match_ids.append(match.id)
+        world.next_id = max(world.next_id, match.id + 1)
     active_players = [player for player in players.values() if player.club_id and clubs[player.club_id].competition_id]
     nations = Counter(player.nation for player in active_players)
     world.nation_targets = {nation: count / len(active_players) for nation, count in sorted(nations.items())}

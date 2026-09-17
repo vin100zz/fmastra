@@ -1,5 +1,5 @@
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import pytest
 
 from core.engine.match import PossessionEngine
@@ -37,3 +37,12 @@ def test_empty_zone_and_coordinate_involution(config):
     for zone in range(4):
         for lane in range(3):
             assert mirror(*mirror(zone, lane, config), config) == (zone, lane)
+
+
+def test_neutral_ground_removes_both_home_bonuses(config):
+    home, away = synthetic_lineup(config, 1), synthetic_lineup(config, 2)
+    no_bonus = replace(config,
+        engine=replace(config.engine, transitions=replace(config.engine.transitions, home_bonus=0)),
+        formations=replace(config.formations, block_height=replace(config.formations.block_height, initial_home_bonus=0)))
+    engine = PossessionEngine()
+    assert engine.simulate(home, away, config, stream(452), neutral=True) == engine.simulate(home, away, no_bonus, stream(452))

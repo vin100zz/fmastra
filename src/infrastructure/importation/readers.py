@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 
 from core.config.model import Config
@@ -37,6 +38,16 @@ def hex_color(row: dict, key: str) -> str | None:
     return row[key] or None
 
 
+def reserve_team(row: dict) -> bool:
+    """Some standalone B-team exports incorrectly point MainTeamUID at themselves."""
+    if (row.get("MainTeamUID", "") not in ("", "0", "-1", row["UID"])
+            or row.get("TeamTypeCode", "0") not in ("", "0")):
+        return True
+    name = row.get("ShortName") or row["Name"]
+    return bool(re.search(r"\s(?:B|C|II|III|2|U[- ]?23|U[- ]?21)$", name, re.IGNORECASE)
+                or row["UID"] in {"1737"})  # Real Madrid Castilla, named without a B suffix.
+
+
 def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[SourcePlayer], dict[str, str]]:
     fmt = cfg.import_settings.source_format
     if fmt.wage_unit != "euros_par_semaine":
@@ -57,7 +68,8 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
                         int(row["HomeKitID"]) if row["HomeKitID"] else None,
                         hex_color(row, "HomeKitMajorColorRGB"), hex_color(row, "HomeKitMinorColorRGB"),
                         hex_color(row, "HomeKitThirdColorRGB"),
-                        bounded(row, "Reputation", 0, 10000) if row.get("Reputation") else None)
+                        bounded(row, "Reputation", 0, 10000) if row.get("Reputation") else None,
+                        reserve_team(row))
              for row in rows("clubs.csv")]
     players = []
     for row in rows("players.csv"):

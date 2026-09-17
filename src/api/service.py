@@ -1,7 +1,7 @@
 """Serialize commands outside request threads, publishing coherent day boundaries."""
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -38,6 +38,7 @@ class GameService:
         self.world: World | None = None
         self.lock = RLock()
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="simulation")
+        self.save_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="autosave")
         self.jobs: dict[str, Job] = {}
         self.commands: dict[str, tuple[str, dict, str]] = {}
         self.active: str | None = None
@@ -70,6 +71,7 @@ class GameService:
 
     def _run(self, job: Job, payload: dict) -> None:
         advancing = False
+        pending_save: Future | None = None
         try:
             with self.lock: job.status = "running"
             if job.command in ("create", "load"):
@@ -94,7 +96,9 @@ class GameService:
                         job.progress = (index + 1) / days * .95
                     if world.date.day == 1: self.store.save(world, "autosave")
                 validate_world(world)
-                self.store.save(world, "autosave")
+                # Nothing else mutates `world` in this job; the write can safely continue after we
+                # report success, as long as `active` stays held so no other job starts touching it.
+                pending_save = self.save_executor.submit(self.store.save, world, "autosave")
             with self.lock:
                 job.status, job.progress = "done", 1
                 job.date = self.world.date.iso()
@@ -103,7 +107,17 @@ class GameService:
                 self.recovery_required |= advancing
                 job.status, job.error = "failed", f"{type(exc).__name__} : {exc}"
         finally:
-            with self.lock: self.active = None
+            if pending_save is None:
+                with self.lock: self.active = None
+            else:
+                pending_save.add_done_callback(self._finish_save)
+
+    def _finish_save(self, future: Future) -> None:
+        with self.lock:
+            if future.exception() is not None:
+                self.recovery_required = True
+            self.active = None
 
     def close(self) -> None:
         self.executor.shutdown(wait=True)
+        self.save_executor.shutdown(wait=True)

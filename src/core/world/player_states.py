@@ -72,8 +72,11 @@ def match_event(world: World, match: Match, result: MatchResult) -> MatchPlayed:
     cfg, rng = world.config, world.rngs["states"]
     injuries, suspensions, forms = {}, {}, {}
     for event in result.events:
-        if event.kind == "injury": injuries[event.player_id] = draw_injury(world.date, cfg, rng)
+        if event.kind == "injury" and event.player_id not in result.temporary_players:
+            injuries[event.player_id] = draw_injury(world.date, cfg, rng)
     for pid, stats in result.player_stats.items():
+        if pid in result.temporary_players:
+            continue
         player = world.players[pid]
         if stats.rating is not None:
             rules = cfg.states.form

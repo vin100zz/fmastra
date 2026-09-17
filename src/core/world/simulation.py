@@ -7,9 +7,8 @@ from core.ai.market import propose_transfers
 from core.domain.date import Date
 from core.domain.world import World
 from core.engine.match import PossessionEngine
-from core.randomness import stream
 from .application import apply
-from .calendar import schedule, standings
+from .calendar import standings
 from .contracts import expiry_events, renewal_events
 from .demography import retirement_events, cohort_events
 from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
@@ -18,6 +17,8 @@ from .player_states import daily_player_events, monthly_player_events, match_eve
 from .market import settle_offers, open_offers, ensure_minimums
 from .promotion import promotion_event
 from .squads import complete_squads
+from .cups import season_fixtures, progress_cups
+from .cup_matches import cup_lineup, decide_winner
 
 
 def market_window(world: World) -> str | None:
@@ -49,6 +50,10 @@ def annual_review(world: World) -> None:
     cfg = world.config
     rankings, champions, tables = {}, {}, {}
     for competition in world.competitions.values():
+        if competition.kind == "cup":
+            if not any(year == world.season for year, _ in world.champions.get(competition.id, [])):
+                raise ValueError(f"{competition.name}: cup is not complete")
+            continue
         rows = standings(competition, [world.matches[mid] for mid in competition.match_ids], cfg)
         tables[competition.id] = rows
         champions[competition.id] = rows[0].club_id
@@ -71,11 +76,7 @@ def annual_review(world: World) -> None:
         cap = max(minimum_wages, round(income * rules.wage_income_share / rules.weeks_per_year))
         budget = max(0, round(income * rules.transfer_income_share + club.balance * rules.transfer_balance_share))
         apply(world, BudgetRenewed(club.id, income, cap, budget, rank))
-    matches, next_id = [], world.next_id
-    for competition in world.competitions.values():
-        fixtures = schedule(competition, world.date.year, next_id, cfg, stream(world.seed, "calendar", world.date.year, competition.id))
-        matches.extend(fixtures)
-        next_id += len(fixtures)
+    matches = season_fixtures(world, world.date.year)
     apply(world, SeasonOpened(world.date.year, matches, champions))
     complete_squads(world, list(incoming))
     for event in cohort_events(world): apply(world, event)
@@ -103,12 +104,23 @@ def advance_day(world: World) -> None:
     engine = PossessionEngine()
     for match in sorted((match for match in world.matches.values() if match.date == world.date and match.result is None), key=lambda item: item.id):
         lineups = []
+        temporary = {}
+        is_cup = world.competitions[match.competition_id].kind == "cup"
         for club_id in (match.home_id, match.away_id):
+            if is_cup:
+                lineup, names = cup_lineup(world, match, club_id)
+                lineups.append(lineup)
+                temporary.update(names)
+                continue
             club = world.clubs[club_id]
             context = LineupContext(club, [world.players[pid] for pid in club.player_ids], match.competition_id, world.date)
             lineups.append(controller.select_lineup(context))
-        result = engine.simulate(*lineups, cfg, world.rngs["matches"])
+        result = engine.simulate(*lineups, cfg, world.rngs["matches"], neutral=match.neutral)
+        if is_cup:
+            result.temporary_players = temporary
+            decide_winner(world, match, result, lineups)
         apply(world, match_event(world, match, result))
+    progress_cups(world)
     start = Date(world.season, review.month, review.day)
     days = start.add_years(1).ordinal() - start.ordinal()
     costs = cfg.management.budgets.accounting.other_cost_share

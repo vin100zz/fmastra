@@ -13,3 +13,6 @@
 @media(max-width:650px){.season-navigation{gap:6px;font-size:12px}.season-navigation button{padding:9px 8px}.season-navigation strong{font-size:11px}}
 @media(max-width:650px){.time-controls{display:grid;grid-template-columns:1fr 1fr}.time-controls select{grid-column:1/-1;width:100%}}
 @media(max-width:650px){.sidebar-bottom{display:block;position:absolute;right:16px;top:17px;margin:0;padding:0}.sidebar-bottom>a{font-size:11px;gap:6px;margin:0;padding:9px}.sidebar-bottom small,.sidebar-bottom .version{display:none}}
+
+/* Domestic cups and match-only players. */
+.cup-fixtures{max-height:460px;overflow:auto}.cup-round>summary{padding:18px 22px;cursor:pointer;font-weight:700;display:flex;justify-content:space-between;gap:12px}.cup-winner{padding:14px 22px;font-weight:700}.temporary-player{color:#7b8186}.pitch-player.temporary-player .shirt{background:#8a9193;color:white}.shootout-score{display:block;font-size:11px;font-weight:600;white-space:nowrap;margin-top:4px}.big-score .shootout-score{font-size:17px}

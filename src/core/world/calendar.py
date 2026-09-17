@@ -10,7 +10,8 @@ from core.domain.date import Date
 from core.domain.matches import Match
 
 
-def schedule(competition: Competition, season: int, next_id: int, cfg: Config, rng: Random) -> list[Match]:
+def schedule(competition: Competition, season: int, next_id: int, cfg: Config, rng: Random,
+             reserved_dates: list[Date] | None = None) -> list[Match]:
     clubs = sorted(competition.club_ids)
     rng.shuffle(clubs)
     if len(clubs) < 2:
@@ -25,9 +26,12 @@ def schedule(competition: Competition, season: int, next_id: int, cfg: Config, r
     spacing = rules.days_between_rounds
     slots = list(range(0, span + 1, spacing))
     rounds = 2 * (size - 1)
+    def available(offset: int) -> bool:
+        return all(abs(first.ordinal() + offset - day.ordinal()) >= 3 for day in reserved_dates or [])
+    slots = [offset for offset in slots if available(offset)]
     if len(slots) < rounds and spacing > 1:
         # Add midweek slots only when weekly rounds do not fit before summer.
-        slots = sorted(set(slots) | set(range(spacing // 2, span + 1, spacing)))
+        slots = sorted(set(slots) | {offset for offset in range(spacing // 2, span + 1, spacing) if available(offset)})
     if len(slots) < rounds:
         raise ValueError("Season window cannot fit the league")
     dates = [first.add_days(slots[round(index * (len(slots) - 1) / (rounds - 1))]) for index in range(rounds)]

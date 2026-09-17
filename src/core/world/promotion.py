@@ -17,7 +17,7 @@ def promotion_event(world: World, tables: dict[int, list[Standing]]) -> Division
     count = rules.club_count
     moves = []
     for reserve in sorted(rules.reserves, key=lambda pool: pool.nation):
-        leagues = sorted((league for league in world.competitions.values() if league.nation == reserve.nation),
+        leagues = sorted((league for league in world.competitions.values() if league.kind == "league" and league.nation == reserve.nation),
                          key=lambda league: league.level)
         if not leagues:
             continue

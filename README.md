@@ -57,7 +57,7 @@ départs transférés, fins de contrat, retraites et jeunes promus. Les arrivée
 Pour une ancienne sauvegarde, les comptes détaillés commencent à la mise à jour ;
 les données historiques manquantes sont signalées. Les dates de naissance des retraités peuvent être récupérées dans le CSV uniquement si son empreinte correspond exactement à celle de l'import initial.
 
-Le bouton **▶ Auto** enchaîne les prochaines journées de championnat, avec
+Le bouton **▶ Auto** enchaîne les prochaines dates de matchs, championnat et coupe, avec
 sauvegarde après chaque avance. **⏸ Pause** arrête l'enchaînement après le
 calcul en cours. Une erreur ou le rechargement de la page arrête aussi ce mode.
 
@@ -93,16 +93,44 @@ calibrage connues. Les sections suivantes restent la spécification de référen
 - 11 championnats simulés : 3 divisions françaises, 2 en Espagne, Italie, Angleterre et Allemagne (216 clubs actifs)
 - Promotions et relégations au 1er juillet : 3 clubs dans chaque sens entre niveaux adjacents
 - Saison complète en championnat, matches aller-retour
+- Une coupe nationale annuelle par pays simulé : 64 équipes premières, six tours à élimination directe
 - Effectifs, contrats, mercato, progression et déclin des joueurs
 - Génération de joueurs (regens), fatigue, blessures, suspensions
 - **L'utilisateur est observateur** : il ne dirige aucun club, il consulte
 
 **Hors périmètre v1** (mais l'architecture doit les rendre possibles)
 - Contrôle d'un club par l'utilisateur
-- Coupes nationales et compétitions européennes
+- Compétitions européennes
 - Prêts, clauses libératoires, agents
 
 ## Données et volumes
+
+Les coupes nationales nécessitent une nouvelle partie. Les équipes premières de
+D1 et D2 sont qualifiées automatiquement ; les places restantes sont tirées sans
+remise parmi les autres clubs du même système de championnats, avec une probabilité
+pondérée par `max(1, réputation)²`. Les équipes réserves sont exclues, y compris
+lorsqu’elles jouent en D2. Les clubs gallois des divisions anglaises et Andorra
+suivent leur championnat. L’import conserve l’appartenance et identifie les réserves
+par les métadonnées d’équipe, les suffixes B/II/U23 et le cas particulier de Castilla.
+
+Les six tours vont de décembre à fin mai ; les dates sont réservées avant de placer
+les journées de championnat, avec au moins trois jours entre les rencontres. Chaque
+tour fait l’objet d’un nouveau tirage intégral, domicile compris. La finale se joue
+sur terrain neutre, après le championnat. Une égalité à 90 minutes est départagée
+directement aux tirs au but, dont les buts restent séparés du score et des statistiques.
+Un double forfait exceptionnel est résolu par un tirage administratif explicite.
+
+Un participant qui ne peut pas aligner onze joueurs disponibles, dont un gardien,
+reçoit des renforts temporaires pour ce seul match. Leur niveau est proche de la
+moyenne de l’effectif, ou de la réputation si le club n’a aucun joueur. Ils sont
+affichés en grisé, sans fiche, contrat ni statistiques de carrière. Leur identité
+et leurs actions restent conservées dans les comptes rendus de coupe archivés.
+
+La page pays place la coupe entre la D1 et la D2 et affiche les résultats du dernier
+tour (les affiches à venir avant décembre). « Voir la coupe » ouvre les six tours,
+les buteurs et le palmarès. Les matchs figurent aussi dans le calendrier des clubs.
+Les suspensions sont propres à chaque compétition ; aucune prime de coupe n’est
+ajoutée. Les sélections et tirages sont reproductibles après sauvegarde et reprise.
 
 Cette évolution nécessite une nouvelle partie. Au 1er juillet, les trois premiers
 montent et les trois derniers descendent entre divisions adjacentes. La première

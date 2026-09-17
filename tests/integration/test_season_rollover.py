@@ -17,18 +17,21 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def finish_season(world):
     # Controlled final scores isolate the rollover from the match engine.
-    for league in world.competitions.values():
-        for mid in league.match_ids:
-            match = world.matches[mid]
+    from core.world.cups import progress_cups
+    for _ in range(6):
+        for match in list(world.matches.values()):
+            if match.result:
+                continue
             match.result = MatchResult(3 if match.home_id < match.away_id else 0,
-                                       0 if match.home_id < match.away_id else 3, 'test')
+                                       0 if match.home_id < match.away_id else 3, 'test', winner_id=min(match.home_id, match.away_id))
+        progress_cups(world)
     world.date = Date(world.season + 1, 6, 30)
 
 
 def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
     world = import_world(ROOT / 'data', config, 123)
     finish_season(world)
-    previous = {lid: table(world, lid) for lid in world.competitions}
+    previous = {lid: table(world, lid) for lid, c in world.competitions.items() if c.kind == 'league'}
     assert not any(row['movement'] == 'promotion' for row in previous[16])
     assert sum(row['movement'] == 'promotion' for row in previous[17]) == 3
     assert all(sum(row['movement'] == 'relegation' for row in rows) == 3 for rows in previous.values())
@@ -44,8 +47,12 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         assert len(candidate.active_clubs()) == 216
         assert candidate.clubs[relegated].competition_id is None
         assert candidate.clubs[promoted].competition_id == 16
-        assert sum(match.season == 2026 for match in candidate.matches.values()) == 4064
+        assert sum(match.season == 2026 for match in candidate.matches.values()) == 4064 + 5 * 32
         for lid, league in candidate.competitions.items():
+            if league.kind == 'cup':
+                assert len(candidate.champions[lid]) == 1
+                assert len(league.club_ids) == 64 and len(league.match_ids) == 32
+                continue
             assert table(candidate, lid, 2025) == previous[lid]
             assert candidate.champions[lid] == [(2025, previous[lid][0]['club_id'])]
             assert all(row['played'] == 0 for row in table(candidate, lid))

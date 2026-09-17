@@ -82,6 +82,9 @@ class MatchResult:
     away_bench: list[int] = field(default_factory=list)
     duration: int = 0
     status: str = "played"
+    penalties: tuple[int, int] | None = None
+    winner_id: int | None = None
+    temporary_players: dict[int, str] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -94,3 +97,4 @@ class Match:
     home_id: int
     away_id: int
     result: MatchResult | None = None
+    neutral: bool = False

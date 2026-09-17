@@ -18,6 +18,8 @@ from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
 SCHEMA_VERSION = 5
+# Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
+COMPRESSION_LEVEL = 3
 
 
 class SaveError(ValueError):
@@ -42,7 +44,7 @@ class SaveStore:
         try:
             with tempfile.NamedTemporaryFile(dir=self.directory, prefix=".save-", suffix=".tmp", delete=False) as handle:
                 temporary = Path(handle.name)
-                with gzip.GzipFile(fileobj=handle, mode="wb", compresslevel=6, mtime=0) as archive:
+                with gzip.GzipFile(fileobj=handle, mode="wb", compresslevel=COMPRESSION_LEVEL, mtime=0) as archive:
                     archive.write(raw)
                 handle.flush()
                 os.fsync(handle.fileno())

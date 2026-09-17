@@ -55,6 +55,30 @@ def validate_world(world: World) -> None:
         raise ValueError("Next identifier would reuse an existing entity")
     competition_clubs = set()
     for competition in world.competitions.values():
+        if competition.kind == "cup":
+            if len(competition.club_ids) != 64 or len(set(competition.club_ids)) != 64:
+                raise ValueError("A domestic cup requires exactly 64 distinct clubs")
+            if any(cid not in world.clubs or world.clubs[cid].is_reserve for cid in competition.club_ids):
+                raise ValueError("Invalid domestic cup participant")
+            if len(competition.round_dates) != 6 or competition.round_dates != sorted(set(competition.round_dates)):
+                raise ValueError("Invalid cup dates")
+            for round_number in range(1, 7):
+                matches = [world.matches[mid] for mid in competition.match_ids if world.matches[mid].round_number == round_number]
+                if not matches:
+                    if any(world.matches[mid].round_number > round_number for mid in competition.match_ids):
+                        raise ValueError("Missing cup round")
+                    continue
+                ids = [cid for match in matches for cid in (match.home_id, match.away_id)]
+                if len(matches) != 64 // 2 ** round_number or len(ids) != len(set(ids)):
+                    raise ValueError("Invalid knockout round")
+                expected = (set(competition.club_ids) if round_number == 1 else
+                            {world.matches[mid].result.winner_id for mid in competition.match_ids
+                             if world.matches[mid].round_number == round_number - 1 and world.matches[mid].result})
+                if set(ids) != expected:
+                    raise ValueError("Cup participants do not match previous winners")
+                if any(m.date != competition.round_dates[round_number - 1] or m.neutral != (round_number == 6) for m in matches):
+                    raise ValueError("Invalid cup fixture")
+            continue
         if len(set(competition.club_ids)) != len(competition.club_ids) or competition_clubs & set(competition.club_ids):
             raise ValueError("Duplicate competition membership")
         competition_clubs.update(competition.club_ids)
@@ -74,3 +98,19 @@ def validate_world(world: World) -> None:
     for match in world.matches.values():
         if match.home_id == match.away_id or match.home_id not in world.clubs or match.away_id not in world.clubs:
             raise ValueError("Invalid fixture")
+        if world.competitions[match.competition_id].kind == "cup" and match.result:
+            result = match.result
+            if result.winner_id not in (match.home_id, match.away_id):
+                raise ValueError("Cup match without a winner")
+            if result.penalties:
+                home, away = result.penalties
+                if result.home_goals != result.away_goals or home == away or min(home, away) < 0:
+                    raise ValueError("Invalid shootout score")
+                if result.winner_id != (match.home_id if home > away else match.away_id):
+                    raise ValueError("Shootout winner mismatch")
+            elif result.home_goals == result.away_goals and result.status != "double_forfeit":
+                raise ValueError("Drawn cup match without a shootout")
+            elif result.home_goals != result.away_goals and result.winner_id != (match.home_id if result.home_goals > result.away_goals else match.away_id):
+                raise ValueError("Cup winner mismatch")
+            if any(pid >= 0 or pid in world.players for pid in result.temporary_players):
+                raise ValueError("Temporary cup player entered the world roster")

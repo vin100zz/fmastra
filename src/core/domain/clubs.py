@@ -1,6 +1,7 @@
 """Club and competition state."""
 from dataclasses import dataclass, field
 from enum import StrEnum
+from .date import Date
 
 
 class ClubStatus(StrEnum):
@@ -47,6 +48,8 @@ class Club:
     home_kit_minor_color: str | None = None
     home_kit_third_color: str | None = None
     division_id: int | None = None
+    is_reserve: bool = False
+    cup_nation: str | None = None
 
 
 @dataclass(slots=True)
@@ -57,3 +60,5 @@ class Competition:
     level: int
     club_ids: list[int]
     match_ids: list[int] = field(default_factory=list)
+    kind: str = "league"
+    round_dates: list[Date] = field(default_factory=list)

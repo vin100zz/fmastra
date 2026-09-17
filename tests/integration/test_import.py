@@ -17,13 +17,13 @@ def imported(config):
 @pytest.mark.slow
 def test_real_source_import(imported, config):
     assert len(imported.players) == 14440
-    assert len(imported.competitions) == 11
+    assert len(imported.competitions) == 16
     assert len(imported.active_clubs()) == 216
     assert imported.import_summary["active_players"] == 6405
     assert imported.import_summary["squad_completion_players"] == 39
     assert imported.import_summary["free_agents"] == 186
     assert len(imported.excluded_player_ids) == 3
-    assert len(imported.matches) == 4064
+    assert len(imported.matches) == 4064 + 5 * 32
     assert len(imported.competitions[18].club_ids) == 18
     assert imported.clubs[825].competition_id == 18  # Cannes completes the National.
     assert len(imported.competitions[18].match_ids) == 306
@@ -38,6 +38,8 @@ def test_real_source_import(imported, config):
 
 def test_calendar_pairs_and_dates(imported):
     for competition in imported.competitions.values():
+        if competition.kind != "league":
+            continue
         matches = [imported.matches[mid] for mid in competition.match_ids]
         pairs = Counter((match.home_id, match.away_id) for match in matches)
         assert len(pairs) == len(competition.club_ids) * (len(competition.club_ids) - 1)

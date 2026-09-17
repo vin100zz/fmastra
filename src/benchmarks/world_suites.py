@@ -21,7 +21,7 @@ def snapshot(world: World, elapsed: float) -> dict:
     clubs = world.active_clubs()
     rankings = sorted(clubs, key=lambda club: (-club.reputation, club.id))
     elite = [player for player in active if player.rating >= 80]
-    top_ids = {club.id for competition in world.competitions.values() for club in sorted(
+    top_ids = {club.id for competition in world.competitions.values() if competition.kind == "league" for club in sorted(
         (world.clubs[cid] for cid in competition.club_ids), key=lambda item: (-item.reputation, item.id))[:3]}
     return {"season": world.season, "date": world.date.iso(), "active": total, "population": len(world.players),
             "external": len(world.players) - total, "free": sum(player.club_id is None for player in world.players.values()),

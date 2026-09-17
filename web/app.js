@@ -35,8 +35,12 @@ async function render(){const version=++renderVersion;const {parts,params}=route
  }catch(error){autoplay.pause();if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
 
 async function command(path,payload,automatic=false){
- if(state.job||submitting)return false;
- if(!automatic)autoplay.pause();
+ // state.job also mirrors the server's busy flag (refreshed after every job), which stays
+ // true while our own trailing autosave finishes; only the manual click path should honor it.
+ if(!automatic){
+  if(state.job||submitting)return false;
+  autoplay.pause();
+ }
  submitting=true;
  busyButtons();
  try{
@@ -46,7 +50,11 @@ async function command(path,payload,automatic=false){
   state.job=job.id;
   pollJob(job.id);
   return true;
- }catch(error){autoplay.pause();toast(error.message,true);return false;}
+ }catch(error){
+  // The previous advance's background autosave can still hold the server briefly; let autoplay retry it.
+  if(automatic&&error.status===409)return 'retry';
+  autoplay.pause();toast(error.message,true);return false;
+ }
  finally{submitting=false;busyButtons();}
 }
 async function pollJob(id){

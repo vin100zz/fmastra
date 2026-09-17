@@ -11,6 +11,7 @@ from core.world.estimates import estimate_potential
 from core.ai.market import market_value
 from core.world.calendar import standings
 from core.world.finances import financial_season
+from core.world.cups import ROUND_NAMES
 
 
 def normalized(value: str) -> str:
@@ -66,11 +67,18 @@ def match_row(world: World, match: Match) -> dict:
     return {"id": match.id, "date": match.date.iso(), "round": match.round_number,
             "season": match.season, "competition_id": match.competition_id,
             "home": club_ref(world, match.home_id), "away": club_ref(world, match.away_id),
-            "score": [match.result.home_goals, match.result.away_goals] if match.result else None}
+            "score": [match.result.home_goals, match.result.away_goals] if match.result else None,
+            "penalties": match.result.penalties if match.result else None,
+            "winner_id": match.result.winner_id if match.result else None,
+            "neutral": match.neutral,
+            "round_label": (ROUND_NAMES[match.round_number - 1] if world.competitions[match.competition_id].kind == "cup"
+                            else f"Journée {match.round_number}")}
 
 
 def table(world: World, competition_id: int, season: int | None = None) -> list[dict]:
     competition = world.competitions[competition_id]
+    if competition.kind == "cup":
+        return []
     matches = ([world.matches[mid] for mid in competition.match_ids] if season is None else
                [match for match in world.matches.values() if match.season == season and match.competition_id == competition_id])
     if season is not None:
@@ -145,11 +153,23 @@ def squad_rows(world: World, club_id: int) -> list[dict]:
 
 def career(world: World, player_id: int) -> dict:
     player_records = [row for row in world.records.values() if row.player_id == player_id]
-    rows = {(row.season, row.club_id): {"season": row.season, "club": club_ref(world, row.club_id),
-                                        "competition": world.competitions[row.competition_id].name,
-                                        "matches": row.matches, "goals": row.goals, "assists": row.assists,
-                                        "average": round(row.rating_sum / row.rating_count, 2) if row.rating_count else None}
-            for row in player_records}
+    rows = {}
+    for record in player_records:
+        key = (record.season, record.club_id)
+        rows.setdefault(key, {"season": record.season, "club": club_ref(world, record.club_id),
+                             "competitions": [], "matches": 0, "goals": 0, "assists": 0,
+                             "rating_sum": 0, "rating_count": 0})
+        row = rows[key]
+        name = world.competitions[record.competition_id].name
+        if name not in row["competitions"]:
+            row["competitions"].append(name)
+        for field in ("matches", "goals", "assists", "rating_sum", "rating_count"):
+            row[field] += getattr(record, field)
+    for row in rows.values():
+        row["competition"] = " · ".join(row.pop("competitions"))
+        count = row.pop("rating_count")
+        total = row.pop("rating_sum")
+        row["average"] = round(total / count, 2) if count else None
     moves = sorted((row for row in world.transfers if row.player_id == player_id and row.season is not None), key=lambda row: row.date)
     fees: dict[tuple[int, int], int] = {}
     order: dict[tuple[int, int], tuple[int, bool]] = {}
@@ -180,7 +200,7 @@ def career(world: World, player_id: int) -> dict:
 def match_detail(world: World, match: Match) -> dict:
     data = match_row(world, match)
     data["competition"] = world.competitions[match.competition_id].name
-    data["capacity"] = world.clubs[match.home_id].capacity
+    data["capacity"] = None if match.neutral else world.clubs[match.home_id].capacity
     result = match.result
     if result is None:
         data["result"] = None
@@ -188,15 +208,20 @@ def match_detail(world: World, match: Match) -> dict:
     detail = {"engine": result.engine, "status": result.status, "duration": result.duration,
               "home_stats": asdict(result.home_stats) if result.home_stats else None,
               "away_stats": asdict(result.away_stats) if result.away_stats else None}
-    detail["events"] = [{**asdict(event), "player": player_name(world, event.player_id),
-                         "secondary": player_name(world, event.secondary_id)} for event in result.events]
+    def name(pid):
+        return result.temporary_players.get(pid) or player_name(world, pid)
+    detail["events"] = [{**asdict(event), "player": name(event.player_id),
+                         "secondary": name(event.secondary_id),
+                         "temporary": event.player_id in result.temporary_players,
+                         "secondary_temporary": event.secondary_id in result.temporary_players} for event in result.events]
     for side in ("home", "away"):
         lineup = getattr(result, f"{side}_lineup")
         bench = getattr(result, f"{side}_bench")
-        detail[f"{side}_lineup"] = [{"id": pid, "name": player_name(world, pid), "position": position,
+        detail[f"{side}_lineup"] = [{"id": pid, "name": name(pid), "position": position,
+                                       "temporary": pid in result.temporary_players,
                                        "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None}
                                       for pid, position in lineup]
-        detail[f"{side}_bench"] = [{"id": pid, "name": player_name(world, pid),
+        detail[f"{side}_bench"] = [{"id": pid, "name": name(pid), "temporary": pid in result.temporary_players,
                                       "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None} for pid in bench]
     data["result"] = detail
     return data

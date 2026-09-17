@@ -15,7 +15,7 @@ from .zones import refresh, involved_player, mirror
 
 
 class PossessionEngine:
-    def simulate(self, home: Lineup, away: Lineup, cfg: Config, rng: Random) -> MatchResult:
+    def simulate(self, home: Lineup, away: Lineup, cfg: Config, rng: Random, *, neutral: bool = False) -> MatchResult:
         teams = (TeamState.from_lineup(home, cfg), TeamState.from_lineup(away, cfg))
         controller = AIController(cfg, rng)
         log = MatchLog()
@@ -23,7 +23,7 @@ class PossessionEngine:
         difference = lineup_strength(home, cfg) - lineup_strength(away, cfg)
         for side, team in enumerate(teams):
             team.block_height = clamp((difference if side == 0 else -difference) * heights.initial_strength_sensitivity
-                                      + (heights.initial_home_bonus if side == 0 else 0), heights.min, heights.max)
+                                      + (heights.initial_home_bonus if side == 0 and not neutral else 0), heights.min, heights.max)
             team.initial_block = team.block_height
             refresh(team, cfg)
         if any(len(team.active) < cfg.world.match_rules.min_players for team in teams):
@@ -62,7 +62,7 @@ class PossessionEngine:
                 attacker.stats.possession_seconds += dt
                 attacker.stats.lane_attacks[lane] += 1
                 log.emit("possession", attacker, zone=zone, lane=lane)
-                outcome = play_possession(attacker, defender, zone, lane, counter, owner == 0, log, cfg, rng)
+                outcome = play_possession(attacker, defender, zone, lane, counter, owner == 0 and not neutral, log, cfg, rng)
                 if any(len(team.active) < cfg.world.match_rules.min_players for team in teams):
                     return self._forfeit(teams, home, away, log, cfg)
                 # Exactly one named participant is assessed per possession.

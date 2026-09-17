@@ -105,7 +105,30 @@ def router(service: GameService) -> APIRouter:
     @api.get("/competitions")
     def competitions() -> list[dict]:
         with service.reading() as world:
-            return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+            return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level,
+                     "kind": item.kind, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+
+    @api.get("/competitions/{competition_id}/coupe")
+    def cup_view(competition_id: int, saison: int | None = None) -> dict:
+        from core.world.cups import ROUND_NAMES
+        with service.reading() as world:
+            cup = world.competitions[competition_id]
+            if cup.kind != "cup":
+                raise ValueError("Cette compétition n’est pas une coupe")
+            year = world.season if saison is None else saison
+            matches = sorted((m for m in world.matches.values() if m.competition_id == cup.id and m.season == year), key=lambda m: (m.round_number, m.id))
+            rounds = []
+            for number, label in enumerate(ROUND_NAMES, 1):
+                fixtures = [m for m in matches if m.round_number == number]
+                day = fixtures[0].date if fixtures else cup.round_dates[number - 1] if year == world.season else None
+                rounds.append({"number": number, "label": label, "date": day.iso() if day else None,
+                               "items": [v.match_row(world, m) for m in fixtures],
+                               "complete": bool(fixtures) and all(m.result for m in fixtures)})
+            latest = max((m.round_number for m in matches if m.result), default=None)
+            winner = next((cid for season, cid in world.champions.get(cup.id, []) if season == year), None)
+            return {"id": cup.id, "name": cup.name, "season": year, "rounds": rounds,
+                    "latest_round": latest, "winner": v.club_ref(world, winner),
+                    "seasons": sorted({m.season for m in world.matches.values() if m.competition_id == cup.id}, reverse=True)}
 
     @api.get("/nations")
     def nations() -> dict[str, dict]:
@@ -166,7 +189,8 @@ def router(service: GameService) -> APIRouter:
             world.clubs[club_id]
             rows = []
             seasons = {(match.season, match.competition_id) for match in world.matches.values()
-                       if match.season < world.season and club_id in (match.home_id, match.away_id)}
+                       if match.season < world.season and club_id in (match.home_id, match.away_id)
+                       and world.competitions[match.competition_id].kind == "league"}
             for year, competition_id in sorted(seasons, reverse=True):
                 positions = v.table(world, competition_id, year)
                 rank = next(row["rank"] for row in positions if row["club_id"] == club_id)

@@ -22,6 +22,8 @@ def run_season_suite(world: World, iterations: int, seed: int) -> list[Measureme
     samples = {key: [] for key in ("champion", "bottom", "deviation", "scorer", "correlation", "strongest")}
     for iteration in range(iterations):
         for competition in world.competitions.values():
+            if competition.kind != "league":
+                continue
             goals = Counter()
             matches = []
             for mid in competition.match_ids:
