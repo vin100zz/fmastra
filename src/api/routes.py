@@ -100,7 +100,7 @@ def router(service: GameService) -> APIRouter:
             return [{"id": item.id, "name": item.name, "nation": item.nation, "clubs": len(item.club_ids)} for item in world.competitions.values()]
 
     @api.get("/clubs")
-    def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = "actif",
+    def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = None,
               recherche: str = "", page: int = Query(1, ge=1), tri: Literal["nom", "reputation", "effectif"] = "reputation") -> dict:
         with service.reading() as world:
             rows = [club for club in world.clubs.values() if (competition is None or club.competition_id == competition)

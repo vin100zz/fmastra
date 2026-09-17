@@ -17,5 +17,8 @@ export function salarySearchParams(params){
   const value=result.get(name);
   if(value!==null&&value!=='')result.set(name,String(round(Number(value)*12/weeksPerYear)));
  }
+ // Niveau is shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
+ const niveau=result.get('niveau_min');
+ if(niveau!==null&&niveau!=='')result.set('niveau_min',String(Number(niveau)/2));
  return result;
 }

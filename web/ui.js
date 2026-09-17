@@ -5,6 +5,7 @@ export const minutes = value => new Intl.NumberFormat('fr-FR',{maximumFractionDi
 export const facilityRating = value => value == null ? '—' : `${number(value)} / 20`;
 export const money = value => new Intl.NumberFormat('fr-FR', {style:'currency',currency:'EUR',maximumFractionDigits:0,maximumSignificantDigits:2,notation:Math.abs(value)>=1e6?'compact':'standard'}).format(value ?? 0);
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
+export const level = value => value==null ? null : Math.round(value*2);
 export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
@@ -30,7 +31,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
    nation:`<span title="${escape((player.nationality_names||player.nationalities||[player.nation]).join(', '))}">${escape((player.nationalities||[player.nation]).map((code,index)=>code?.startsWith('X')?(player.nationality_names?.[index]||code):code).join(' / ')||'—')}</span>`,
-   age:player.age??'—',rating:player.rating==null?'—':`<span class="rating">${number(player.rating)}</span>`,potential_estimate:player.potential_estimate?`<span title="Potentiel estimé sur 100">${Math.floor(player.potential_estimate.lower)}–${Math.ceil(player.potential_estimate.upper)}</span>`:'—',club:player.data_at==='unknown'?'—':clubLink(player.club),
+   age:player.age??'—',rating:player.rating==null?'—':`<span class="rating">${level(player.rating)}</span>`,potential_estimate:player.potential_estimate?`<span title="Potentiel estimé sur 200">${Math.floor(player.potential_estimate.lower*2)}–${Math.ceil(player.potential_estimate.upper*2)}</span>`:'—',club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:player.value==null?'—':money(player.value),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ Blessé</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],

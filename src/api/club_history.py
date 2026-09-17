@@ -30,7 +30,7 @@ def movements(world: World, club_id: int, season: int | None, page: int) -> dict
 
 def world_movements(world: World, season: int | None, kind: str, page: int, sort: str | None = None, order: str = 'desc') -> dict:
     nav = navigation(world, season)
-    sort = sort or ('promotion_date' if kind == 'academy' else 'date')
+    sort = sort or ('promotion_date' if kind == 'academy' else 'fee' if kind == 'transfer' else 'date')
     allowed = ({'position', 'name', 'nation', 'age', 'rating', 'potential_estimate', 'club', 'value', 'wage',
                 'contract_end', 'fitness', 'promotion_date', 'academy_club', 'data_at'} if kind == 'academy' else
                {'date', 'name', 'source', 'target', 'fee'} if kind == 'transfer' else {'date', 'name', 'source'})
@@ -60,7 +60,11 @@ def world_movements(world: World, season: int | None, kind: str, page: int, sort
         details = v.academy_player_row(world, row) if kind == 'academy' else {}
         value = key(row, details)
         (missing if value is None else known).append((row, details, value))
-    known.sort(key=lambda item: (item[2], item[0].date, item[0].player_id), reverse=order == 'desc')
+    if sort == 'fee':
+        known.sort(key=lambda item: v.normalized(v.player_name(world, item[0].player_id) or ''))
+        known.sort(key=lambda item: item[2], reverse=order == 'desc')
+    else:
+        known.sort(key=lambda item: (item[2], item[0].date, item[0].player_id), reverse=order == 'desc')
     data = v.paginate(known + missing, page, 50)
     data['items'] = [{**v.transfer_row(world, row), **({'details': details} if kind == 'academy' else {})} for row, details, _ in data['items']]
     return {**data, **nav, 'type': kind, 'sort': sort, 'order': order, 'history_since': (world.movement_history_since or world.date).iso()}
