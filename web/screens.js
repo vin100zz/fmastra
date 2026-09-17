@@ -17,9 +17,9 @@ function leagueSummaryCard(league,data){
 }
 
 export async function dashboard(leagues){
- const ordered=[...leagues].sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
+ const ordered=leagues.filter(league=>league.level===1).sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
  const summaries=await Promise.all(ordered.map(league=>leagueSummary(league.id)));
- return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Onze championnats, cinq pays et une nouvelle saison à conquérir.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+`<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
+ return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Cinq championnats, cinq pays et une nouvelle saison à conquérir.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+`<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
 }
 
 export async function clubsScreen(params){

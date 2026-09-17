@@ -105,7 +105,7 @@ def router(service: GameService) -> APIRouter:
     @api.get("/competitions")
     def competitions() -> list[dict]:
         with service.reading() as world:
-            return [{"id": item.id, "name": item.name, "nation": item.nation, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+            return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level, "clubs": len(item.club_ids)} for item in world.competitions.values()]
 
     @api.get("/nations")
     def nations() -> dict[str, dict]:
