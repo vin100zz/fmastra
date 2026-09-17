@@ -9,7 +9,6 @@
 <body>
   <aside class="sidebar">
     <a href="#/" class="brand"><span class="brand-mark">T<span>•</span></span><span>TOUCHLINE<small>FOOTBALL MANAGER LIGHT</small></span></a>
-    <div class="observer"><span class="live-dot"></span> MODE OBSERVATEUR</div>
     <nav aria-label="Navigation principale">
       <p class="nav-label">LE MONDE DU FOOTBALL</p>
       <a href="#/" data-nav="home"><span>◫</span>Vue d’ensemble</a>
@@ -19,7 +18,7 @@
       <p class="nav-label">CHAMPIONNATS</p>
       <div id="leagues-nav"></div>
     </nav>
-    <div class="sidebar-bottom"><a href="#/saves" data-nav="saves"><span>▣</span> Ma partie</a><small>5 pays. 96 clubs. Une histoire à écrire.</small><span class="version">SIMULATION LOCALE · V0.1</span></div>
+    <div class="sidebar-bottom"><a href="#/saves" data-nav="saves"><span>▣</span> Ma partie</a></div>
   </aside>
   <div class="workspace">
     <header class="topbar"><div class="date-block"><span class="eyebrow" id="season-label">VOTRE UNIVERS FOOTBALL</span><strong id="game-date">Bienvenue sur le banc de touche</strong></div>
@@ -27,7 +26,6 @@
     </header>
     <div id="job-bar" class="job-bar" hidden><span id="job-label">Simulation en cours…</span><progress id="job-progress" max="1" value="0"></progress></div>
     <main id="main" tabindex="-1"><div class="loading">Chargement de votre univers…</div></main>
-    <footer>Données importées et évolutions simulées. Finances estimées. Usage personnel.</footer>
   </div>
   <div id="toast" role="status" aria-live="polite" hidden></div>
   <dialog id="confirm-dialog"><form method="dialog"><span class="eyebrow">NOUVEAU DÉPART</span><h2>Créer un nouvel univers ?</h2><p>La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.</p><div class="actions"><button value="cancel">Annuler</button><button class="primary" value="confirm">Créer la partie</button></div></form></dialog>

@@ -2,6 +2,9 @@ import {monthlySalary,salarySearchParams} from './salaries.js';
 import {financialHistory,movementsHistory} from './club-history.js';
 import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,level,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText} from './ui.js';
 
+const HOME_TABS=[['','Vue d’ensemble'],['journal','Journal']];
+const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
+
 async function leagueSummary(id){
  const [standings,upcoming,scorers]=await Promise.all([api(`/competitions/${id}/classement`),api(`/competitions/${id}/calendrier`),api(`/competitions/${id}/statistiques?type=buteurs`)]);
  const lastRound=upcoming.round>1?await api(`/competitions/${id}/calendrier?journee=${upcoming.round-1}`):null;
@@ -9,15 +12,14 @@ async function leagueSummary(id){
 }
 
 function leagueSummaryCard(league,data){
- const content=`<div class="league-summary-grid"><div><h3>Classement</h3>${standingsTable({...data.standings,items:data.standings.items.slice(0,8)},true)}</div><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
+ const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>Classement</h3><div class="standings-scroll">${standingsTable(data.standings,true)}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
  return card(`${e(league.nation)} · ${e(league.name)}`,content,`<a href="#/league/${league.id}">Voir le championnat →</a>`);
 }
 
-export async function dashboard(state,leagues){
- const featured=leagues[0];
- const [ranking,calendar,journal,summaries]=await Promise.all([api(`/competitions/${featured.id}/classement`),api(`/competitions/${featured.id}/calendrier`),api('/monde/journal'),Promise.all(leagues.map(league=>leagueSummary(league.id)))]);
- const journalHtml=journal.items.length?journal.items.slice(0,9).map(item=>`<div class="journal-row"><span class="journal-icon">${({result:'⚽',transfer:'⇄',injury:'✚',season:'◇',academy:'↗'})[item.kind]||'•'}</span><div><p><a href="${item.match_id?`#/match/${item.match_id}`:item.player_id?`#/player/${item.player_id}`:'#/'}">${e(item.text)}</a></p><small>${date(item.date)}</small></div></div>`).join(''):empty('Faites avancer le temps pour voir les premiers événements.','Une nouvelle saison se prépare');
- return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Votre regard sur les cinq grands championnats.',`<span class="pill">● Univers synchronisé</span>`)+`<div class="grid"><div>${card(featured.name,standingsTable({...ranking,items:ranking.items.slice(0,6)},true),`<a href="#/league/${featured.id}">Classement complet →</a>`)}${card(`Journée ${calendar.round}`,fixtures(calendar),`<a href="#/league/${featured.id}/calendar">Calendrier →</a>`)}</div><div>${card('Le journal du jour',journalHtml,`<a href="#/journal">Tout voir →</a>`)}</div></div><h2 class="section-title">Les 5 championnats</h2><div class="league-summaries">${leagues.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
+export async function dashboard(leagues){
+ const ordered=[...leagues].sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
+ const summaries=await Promise.all(ordered.map(league=>leagueSummary(league.id)));
+ return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Votre regard sur les cinq grands championnats.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+`<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
 }
 
 export async function clubsScreen(params){
@@ -79,4 +81,4 @@ export async function playerScreen(id,section,params){
  return title+tabs(`#/player/${id}`,player.retired?[['history','Carrière']]:[['profile','Profil'],['history','Carrière']],section)+content;
 }
 
-export async function journalScreen(params){const data=await api(`/monde/journal?${params}`);return heading('AU FIL DES JOURS','Journal du monde','Résultats, mouvements et nouvelles des effectifs.')+`<form class="filters" data-filter><input type="date" name="date" value="${e(params.get('date'))}" aria-label="Date du journal"><button>Afficher</button></form>`+card('Les événements',table(['DATE','ÉVÉNEMENT'],data.items.map(item=>[date(item.date),`<a href="${item.match_id?`#/match/${item.match_id}`:item.player_id?`#/player/${item.player_id}`:'#/journal'}">${e(item.text)}</a>`]))+pager(data));}
+export async function journalScreen(params){const data=await api(`/monde/journal?${params}`);return heading('AU FIL DES JOURS','Journal du monde','Résultats, mouvements et nouvelles des effectifs.')+tabs('#',HOME_TABS,'journal')+`<form class="filters" data-filter><input type="date" name="date" value="${e(params.get('date'))}" aria-label="Date du journal"><button>Afficher</button></form>`+card('Les événements',table(['DATE','ÉVÉNEMENT'],data.items.map(item=>[date(item.date),`<a href="${item.match_id?`#/match/${item.match_id}`:item.player_id?`#/player/${item.player_id}`:'#/journal'}">${e(item.text)}</a>`]))+pager(data));}
