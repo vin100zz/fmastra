@@ -54,6 +54,7 @@ def create_app(root: Path | None = None, saves: Path | None = None) -> FastAPI:
         return JSONResponse({"detail": str(exc)}, status_code=422)
 
     app.include_router(router(service))
+    if (root / "web" / "clubs").exists(): app.mount("/crests", StaticFiles(directory=root / "web" / "clubs"), name="crests")
     if (root / "web").exists(): app.mount("/", StaticFiles(directory=root / "web", html=True), name="web")
     return app
 
