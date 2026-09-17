@@ -42,7 +42,7 @@ class SaveStore:
         try:
             with tempfile.NamedTemporaryFile(dir=self.directory, prefix=".save-", suffix=".tmp", delete=False) as handle:
                 temporary = Path(handle.name)
-                with gzip.GzipFile(fileobj=handle, mode="wb", compresslevel=1, mtime=0) as archive:
+                with gzip.GzipFile(fileobj=handle, mode="wb", compresslevel=6, mtime=0) as archive:
                     archive.write(raw)
                 handle.flush()
                 os.fsync(handle.fileno())

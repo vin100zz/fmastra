@@ -108,7 +108,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.competitions[match.competition_id].match_ids.append(match.id)
             world.next_id = max(world.next_id, match.id + 1)
         for match in world.matches.values():
-            if match.season < event.year - 1 and match.result and match.result.engine != "archived":
+            if match.season < event.year and match.result and match.result.engine != "archived":
                 match.result = MatchResult(match.result.home_goals, match.result.away_goals, "archived", status=match.result.status)
         for player in world.players.values():
             world.trajectories.setdefault(player.id, []).append((event.year, player.rating))
