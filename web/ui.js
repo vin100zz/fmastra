@@ -13,6 +13,7 @@ export const contrastText = hex => {const color=safeColor(hex); if(!color) retur
 export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
 let nations={};
 export const setNations = data => nations=data||{};
+export const nationName = code => nations[code]?.name || code || '—';
 export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); const flag=info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:''; return `<span class="nation" title="${escape(info?.name||code||'')}">${flag}${escape(label)}</span>`;};
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 export const clubLink = club => club ? `<a href="#/club/${club.id}" class="club-link">${kitDot(club)}${escape(club.name)}</a>` : '<span class="muted">Libre</span>';

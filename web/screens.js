@@ -1,9 +1,9 @@
 import {monthlySalary,salarySearchParams} from './salaries.js';
 import {financialHistory,movementsHistory} from './club-history.js';
-import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,level,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationBadges} from './ui.js';
+import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,level,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationBadges,nationName} from './ui.js';
 
 const HOME_TABS=[['','Vue d’ensemble'],['journal','Journal']];
-const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
+export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
 
 async function leagueSummary(id){
  const [standings,upcoming,scorers]=await Promise.all([api(`/competitions/${id}/classement`),api(`/competitions/${id}/calendrier`),api(`/competitions/${id}/statistiques?type=buteurs`)]);
@@ -16,10 +16,21 @@ function leagueSummaryCard(league,data){
  return card(`${e(league.nation)} · ${e(league.name)}`,content,`<a href="#/league/${league.id}">Voir le championnat →</a>`);
 }
 
+async function leagueSummariesSection(ordered){
+ const summaries=await Promise.all(ordered.map(league=>leagueSummary(league.id)));
+ return `<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
+}
+
 export async function dashboard(leagues){
  const ordered=leagues.filter(league=>league.level===1).sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
- const summaries=await Promise.all(ordered.map(league=>leagueSummary(league.id)));
- return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Cinq championnats, cinq pays et une nouvelle saison à conquérir.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+`<div class="league-summaries">${ordered.map((league,index)=>leagueSummaryCard(league,summaries[index])).join('')}</div>`;
+ return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Cinq championnats, cinq pays et une nouvelle saison à conquérir.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+await leagueSummariesSection(ordered);
+}
+
+export async function countryScreen(nation,leagues){
+ const ordered=leagues.filter(league=>league.nation===nation).sort((a,b)=>a.level-b.level);
+ if(!ordered.length)throw new Error('Pays introuvable.');
+ const totalClubs=ordered.reduce((sum,league)=>sum+league.clubs,0);
+ return heading(nation,nationName(nation),`${ordered.length} championnat${ordered.length>1?'s':''} · ${totalClubs} clubs`)+await leagueSummariesSection(ordered);
 }
 
 export async function clubsScreen(params){
