@@ -94,13 +94,13 @@ calibrage connues. Les sections suivantes restent la spécification de référen
 - Promotions et relégations au 1er juillet : 3 clubs dans chaque sens entre niveaux adjacents
 - Saison complète en championnat, matches aller-retour
 - Une coupe nationale annuelle par pays simulé : 64 équipes premières, six tours à élimination directe
+- Trois coupes d’Europe annuelles : C1, C3 et C4, 36 clubs chacune, phase de ligue puis élimination directe
 - Effectifs, contrats, mercato, progression et déclin des joueurs
 - Génération de joueurs (regens), fatigue, blessures, suspensions
 - **L'utilisateur est observateur** : il ne dirige aucun club, il consulte
 
 **Hors périmètre v1** (mais l'architecture doit les rendre possibles)
 - Contrôle d'un club par l'utilisateur
-- Compétitions européennes
 - Prêts, clauses libératoires, agents
 
 ## Données et volumes
@@ -131,6 +131,29 @@ tour (les affiches à venir avant décembre). « Voir la coupe » ouvre les six 
 les buteurs et le palmarès. Les matchs figurent aussi dans le calendrier des clubs.
 Les suspensions sont propres à chaque compétition ; aucune prime de coupe n’est
 ajoutée. Les sélections et tirages sont reproductibles après sauvegarde et reprise.
+
+**Coupes d’Europe**, dans le menu de gauche, donne accès aux classements complets,
+aux huit journées de ligue, aux tours éliminatoires, aux buteurs et au palmarès
+des C1, C3 et C4. Chaque édition compte 36 clubs et 189 matchs. Les huit premiers
+rejoignent les huitièmes ; les places 9–16 affrontent les places 17–24 en barrage,
+avec retour chez les mieux classés. En huitièmes, les qualifiés directs affrontent
+les vainqueurs des barrages et reçoivent au retour. Chaque tour a un nouveau tirage.
+La finale est unique et neutre ; une égalité au cumul mène directement aux tirs
+au but, sans règle des buts à l’extérieur.
+
+Les quotas viennent de `data/qualifs_europe.csv`. La première saison utilise un
+tirage pondéré par réputation ; ensuite les pays simulés qualifient leurs clubs
+par le classement de D1 et la coupe nationale. La place du vainqueur de coupe
+est incluse dans le quota C3. Les tenants européens ne disposent d’aucune place
+automatique. Les clubs étrangers et les effectifs incomplets utilisent les
+renforts temporaires déjà employés en coupe nationale.
+
+Le calendrier réserve les mercredis européens de septembre à mai et les dates
+des coupes nationales avant de placer les championnats. Ceux-ci finissent au plus
+tard le 18 mai ; les finales nationales précèdent les trois finales européennes
+du 30 mai. L’écart minimal entre deux rencontres est de trois jours, y compris
+pour un vainqueur de coupe issu d’une division à 24 clubs. Cette évolution
+nécessite une nouvelle partie. Voir `docs/europe.md` pour les règles détaillées.
 
 Cette évolution nécessite une nouvelle partie. Au 1er juillet, les trois premiers
 montent et les trois derniers descendent entre divisions adjacentes. La première

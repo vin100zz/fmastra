@@ -62,3 +62,4 @@ class Competition:
     match_ids: list[int] = field(default_factory=list)
     kind: str = "league"
     round_dates: list[Date] = field(default_factory=list)
+    code: str | None = None

@@ -64,14 +64,19 @@ def player_detail(world: World, player: Player) -> dict:
 
 
 def match_row(world: World, match: Match) -> dict:
+    from core.world.europe import aggregate_score, round_label
+    competition = world.competitions[match.competition_id]
     return {"id": match.id, "date": match.date.iso(), "round": match.round_number,
             "season": match.season, "competition_id": match.competition_id,
+            "competition": competition.name, "aggregate": aggregate_score(world, match),
+            "first_leg_id": match.first_leg_id,
             "home": club_ref(world, match.home_id), "away": club_ref(world, match.away_id),
             "score": [match.result.home_goals, match.result.away_goals] if match.result else None,
             "penalties": match.result.penalties if match.result else None,
             "winner_id": match.result.winner_id if match.result else None,
             "neutral": match.neutral,
-            "round_label": (ROUND_NAMES[match.round_number - 1] if world.competitions[match.competition_id].kind == "cup"
+            "round_label": (round_label(world, match.round_number) if competition.kind == "europe" else
+                            ROUND_NAMES[match.round_number - 1] if competition.kind == "cup"
                             else f"Journée {match.round_number}")}
 
 
@@ -84,6 +89,13 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
     if season is not None:
         competition = replace(competition, club_ids=sorted({cid for match in matches for cid in (match.home_id, match.away_id)}))
     count = world.config.world.promotion_relegation.club_count
+    if competition.kind == "europe":
+        rules = world.config.world.europe
+        return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference,
+                 "rank": index + 1, "form": row.form[-5:],
+                 "movement": "direct" if index < rules.direct_places else
+                             "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
+                for index, row in enumerate(standings(competition, matches, world.config))]
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
              "movement": ("champion" if competition.level == 1 and index == 0 else
                           "promotion" if competition.level > 1 and index < count else

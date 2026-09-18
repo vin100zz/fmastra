@@ -1,5 +1,6 @@
 import {monthlySalary,salarySearchParams} from './salaries.js';
 import {cupSummaryCard,cupScreen} from './cups.js';
+import {europeScreen} from './europe.js';
 import {financialHistory,movementsHistory} from './club-history.js';
 import {api,escape as e,number as n,minutes as mins,money,facilityRating,attributeScore,level,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationBadges,nationName} from './ui.js';
 
@@ -48,7 +49,7 @@ export async function clubsScreen(params){
 
 export async function clubScreen(id,section,params){
  const club=await api(`/clubs/${id}`); section=section||'squad';
- const menu=[['squad','Effectif'],...(club.active?[['calendar','Calendrier']]:[]),['finances','Finances'],['transfers','Transferts'],['history','Historique']];
+ const menu=[['squad','Effectif'],['calendar','Calendrier'],['finances','Finances'],['transfers','Transferts'],['history','Historique']];
  const major=safeColor(club.major_color), minor=safeColor(club.minor_color)||major;
  const crestStyle=major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:'';
  const title=`<div class="page-heading"><div class="identity"><div class="crest"${crestStyle}>${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div><div><span class="eyebrow">${nationBadge(club.nation_code,{full:true})} · ${club.active?'CLUB ACTIF':'MARCHÉ EXTÉRIEUR'}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : information uniquement, sans effet sur la simulation">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
@@ -64,6 +65,7 @@ export async function clubScreen(id,section,params){
 export async function leagueScreen(id,section,params,leagues){
  const competition=leagues.find(item=>item.id===Number(id));
  if(competition?.kind==='cup')return cupScreen(competition,section,params);
+ if(competition?.kind==='europe')return europeScreen(competition.code,section,params,leagues);
  const league=leagues.find(item=>item.id===Number(id)); if(!league)throw new Error('Championnat introuvable.');section=section||'table';
  let content='';
  if(section==='table'){const data=await api(`/competitions/${id}/classement?${params}`);content=card('Classement général',standingsTable(data),'<span class="muted">3 points pour une victoire</span>');}

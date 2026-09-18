@@ -64,7 +64,8 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
 
 
 def construct_world(source_clubs: list[SourceClub], source_players: list[SourcePlayer], cfg: Config,
-                    seed: int, nation_names: dict[str, str]) -> World:
+                    seed: int, nation_names: dict[str, str],
+                    european_quotas: dict[str, tuple[int, int, int]] | None = None) -> World:
     initial = cfg.world.start_date
     date = Date(initial.year, initial.month, initial.day)
     leagues = {league.division_id: league for league in cfg.world.competitions}
@@ -150,6 +151,10 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
             raise ValueError(f"{pool.nation}: insufficient clubs in the non-simulated reserve")
     from core.world.cups import initialize_cups, season_fixtures
     initialize_cups(world)
+    from core.world.europe import initialize_europe, qualify_europe
+    world.european_quotas = european_quotas or {}
+    initialize_europe(world)
+    qualify_europe(world, season)
     for match in season_fixtures(world, season):
         world.matches[match.id] = match
         world.competitions[match.competition_id].match_ids.append(match.id)

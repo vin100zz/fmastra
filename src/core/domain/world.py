@@ -97,6 +97,7 @@ class World:
     finance_history: dict[int, dict[int, FinanceSeason]] = field(default_factory=dict)
     finance_history_since: Date | None = None
     movement_history_since: Date | None = None
+    european_quotas: dict[str, tuple[int, int, int]] = field(default_factory=dict)
 
     def active_clubs(self) -> list[Club]:
         return [club for club in self.clubs.values() if club.competition_id is not None]

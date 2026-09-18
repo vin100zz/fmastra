@@ -43,7 +43,7 @@ def test_eligibility_and_all_reserved_dates(imported):
                      for cid in league.club_ids if not imported.clubs[cid].is_reserve}
         assert mandatory <= set(cup.club_ids)
         assert participants(imported, cup, imported.season) == cup.club_ids
-        assert cup.round_dates[0].month == 12 and cup.round_dates[-1] == Date(2026, 5, 31)
+        assert cup.round_dates[0].month == 12 and cup.round_dates[-1] == Date(2026, 5, 27)
         for league in imported.competitions.values():
             if league.kind != "league" or league.nation != cup.nation:
                 continue

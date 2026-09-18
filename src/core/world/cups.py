@@ -19,16 +19,8 @@ def initialize_cups(world: World) -> None:
 
 
 def cup_dates(world: World, season: int) -> list[Date]:
-    rules = world.config.world.season
-    first = Date(season, rules.start_month, rules.start_day)
-    # Between the weekly league slots, leaving three days on either side.
-    origin = first.add_days(3)
-    dates = []
-    for month in (12, 1, 2, 3, 4):
-        target = Date(season if month == 12 else season + 1, month, 10)
-        dates.append(origin.add_days(7 * round((target.ordinal() - origin.ordinal()) / 7)))
-    dates.append(Date(season + 1, rules.end_month, rules.end_day).add_days(6))
-    return dates
+    from .europe_calendar import competition_dates
+    return competition_dates(world, season, domestic=True)
 
 
 def participants(world: World, cup: Competition, season: int) -> list[int]:
@@ -61,7 +53,10 @@ def draw(world: World, cup: Competition, season: int, round_number: int,
 
 
 def season_fixtures(world: World, season: int) -> list[Match]:
+    from .europe import league_fixtures
+    from .europe_calendar import competition_dates
     cups = {c.nation: c for c in world.competitions.values() if c.kind == "cup"}
+    european_dates = competition_dates(world, season) if world.european_quotas else []
     for cup in cups.values():
         cup.club_ids = participants(world, cup, season)
         cup.round_dates = cup_dates(world, season)
@@ -69,10 +64,14 @@ def season_fixtures(world: World, season: int) -> list[Match]:
     for competition in world.competitions.values():
         if competition.kind == "cup":
             matches = draw(world, competition, season, 1, competition.club_ids, next_id)
+        elif competition.kind == "europe":
+            competition.round_dates = european_dates.copy()
+            matches = league_fixtures(world, competition, season, next_id)
         else:
             cup = cups.get(competition.nation)
+            reserved = (cup.round_dates if cup else []) + european_dates
             matches = schedule(competition, season, next_id, world.config,
-                               stream(world.seed, "calendar", season, competition.id), cup.round_dates if cup else None)
+                               stream(world.seed, "calendar", season, competition.id), reserved)
         fixtures.extend(matches)
         next_id += len(matches)
     return fixtures

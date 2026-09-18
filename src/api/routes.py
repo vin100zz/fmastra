@@ -106,7 +106,13 @@ def router(service: GameService) -> APIRouter:
     def competitions() -> list[dict]:
         with service.reading() as world:
             return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level,
-                     "kind": item.kind, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+                     "kind": item.kind, "code": item.code, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+
+    @api.get("/competitions/{competition_id}/europe")
+    def europe_view(competition_id: int, saison: int | None = None) -> dict:
+        from .europe import european_view
+        with service.reading() as world:
+            return european_view(world, competition_id, saison)
 
     @api.get("/competitions/{competition_id}/coupe")
     def cup_view(competition_id: int, saison: int | None = None) -> dict:
@@ -214,9 +220,9 @@ def router(service: GameService) -> APIRouter:
             return {**data, "round": selected, "rounds": rounds}
 
     @api.get("/competitions/{competition_id}/statistiques")
-    def statistics(competition_id: int, type: Literal["buteurs", "passeurs", "notes", "cartons", "clean_sheets"] = "buteurs", page: int = Query(1, ge=1)) -> dict:
+    def statistics(competition_id: int, type: Literal["buteurs", "passeurs", "notes", "cartons", "clean_sheets"] = "buteurs", page: int = Query(1, ge=1), saison: int | None = None) -> dict:
         from .statistics import leaders
-        with service.reading() as world: return v.paginate(leaders(world, competition_id, type), page)
+        with service.reading() as world: return v.paginate(leaders(world, competition_id, type, saison), page)
 
     @api.get("/competitions/{competition_id}/historique")
     def history(competition_id: int, page: int = Query(1, ge=1)) -> dict:

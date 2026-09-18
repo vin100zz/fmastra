@@ -98,3 +98,4 @@ class Match:
     away_id: int
     result: MatchResult | None = None
     neutral: bool = False
+    first_leg_id: int | None = None

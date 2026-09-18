@@ -1,4 +1,5 @@
 /* Dense default layout: preserve readable type while reducing empty space. */
+.europe-cups{flex-wrap:wrap}.europe-legend{display:flex;gap:18px;flex-wrap:wrap}.europe-direct{background:#edf6ef}.europe-playoff{background:#fff9e9}.qualification-direct{color:#28613c;font-weight:600}.qualification-playoff{color:#84601d;font-size:11px}.aggregate-score{display:block;font-size:10px;font-weight:400;white-space:nowrap}.big-score .aggregate-score{font-size:14px}
 body{font-size:13px}main{padding:20px 24px 28px;max-width:none}.topbar{height:72px;padding:12px 24px}.job-bar{top:72px}.date-block strong{font-size:15px;margin-top:4px}
 .page-heading{margin-bottom:14px;gap:12px;align-items:center}h1{font-size:25px;margin:4px 0 5px}h2{margin-bottom:12px}.identity{gap:12px}.crest{width:104px;height:104px;font-size:32px}.avatar{width:44px;height:48px;font-size:17px}
 .card{margin-bottom:14px;border-radius:8px}.card-head{padding:12px 14px;gap:10px}.card-head h2{font-size:14px}.card-body{padding:14px}.grid,.grid.equal{gap:14px}.tabs{margin-bottom:14px;gap:20px}.tabs a{padding:9px 0}.season-navigation{margin:12px 0}

@@ -19,6 +19,7 @@ from .promotion import promotion_event
 from .squads import complete_squads
 from .cups import season_fixtures, progress_cups
 from .cup_matches import cup_lineup, decide_winner
+from .europe import qualify_europe, progress_europe, decide_european_winner
 
 
 def market_window(world: World) -> str | None:
@@ -50,7 +51,7 @@ def annual_review(world: World) -> None:
     cfg = world.config
     rankings, champions, tables = {}, {}, {}
     for competition in world.competitions.values():
-        if competition.kind == "cup":
+        if competition.kind in ("cup", "europe"):
             if not any(year == world.season for year, _ in world.champions.get(competition.id, [])):
                 raise ValueError(f"{competition.name}: cup is not complete")
             continue
@@ -58,6 +59,7 @@ def annual_review(world: World) -> None:
         tables[competition.id] = rows
         champions[competition.id] = rows[0].club_id
         rankings.update({row.club_id: index + 1 for index, row in enumerate(rows)})
+    qualify_europe(world, world.date.year, tables)
     movements = promotion_event(world, tables)
     incoming = {move.club_id for move in movements.movements if move.source_id is None}
     apply(world, movements)
@@ -105,7 +107,8 @@ def advance_day(world: World) -> None:
     for match in sorted((match for match in world.matches.values() if match.date == world.date and match.result is None), key=lambda item: item.id):
         lineups = []
         temporary = {}
-        is_cup = world.competitions[match.competition_id].kind == "cup"
+        kind = world.competitions[match.competition_id].kind
+        is_cup = kind in ("cup", "europe")
         for club_id in (match.home_id, match.away_id):
             if is_cup:
                 lineup, names = cup_lineup(world, match, club_id)
@@ -118,9 +121,13 @@ def advance_day(world: World) -> None:
         result = engine.simulate(*lineups, cfg, world.rngs["matches"], neutral=match.neutral)
         if is_cup:
             result.temporary_players = temporary
-            decide_winner(world, match, result, lineups)
+            if kind == "europe":
+                decide_european_winner(world, match, result, lineups)
+            else:
+                decide_winner(world, match, result, lineups)
         apply(world, match_event(world, match, result))
     progress_cups(world)
+    progress_europe(world)
     start = Date(world.season, review.month, review.day)
     days = start.add_years(1).ordinal() - start.ordinal()
     costs = cfg.management.budgets.accounting.other_cost_share

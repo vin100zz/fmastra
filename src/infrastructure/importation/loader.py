@@ -5,11 +5,12 @@ from core.config.model import Config
 from core.domain.world import World
 from core.world.importation.construction import construct_world
 from .readers import read_sources
+from .europe import read_quotas
 
 
 def import_world(directory: Path, cfg: Config, seed: int) -> World:
     clubs, players, nations = read_sources(directory, cfg)
-    world = construct_world(clubs, players, cfg, seed, nations)
+    world = construct_world(clubs, players, cfg, seed, nations, read_quotas(directory, nations, cfg))
     world.source_hashes = {name: sha256((directory / name).read_bytes()).hexdigest()
-                           for name in ("clubs.csv", "players.csv", "nations.csv")}
+                           for name in ("clubs.csv", "players.csv", "nations.csv", "qualifs_europe.csv")}
     return world

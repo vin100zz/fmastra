@@ -108,6 +108,23 @@ class WorldConfigMatchRules:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class EuropeanRules:
+    club_count: int
+    league_rounds: int
+    pot_count: int
+    direct_places: int
+    playoff_places: int
+    reputation_exponent: float
+    min_rest_days: int
+    draw_attempts: int
+    league_weekday: int
+    cup_weekday: int
+    dates: tuple[tuple[int, int], ...]
+    domestic_dates: tuple[tuple[int, int], ...]
+    tiebreakers: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class WorldConfig:
     version: int = Field(alias="version_config")
     start_date: WorldConfigStartDate = Field(alias="date_debut_partie")
@@ -117,3 +134,4 @@ class WorldConfig:
     market: WorldConfigMarket = Field(alias="mercato")
     key_dates: WorldConfigKeyDates = Field(alias="dates_cles")
     match_rules: WorldConfigMatchRules = Field(alias="regles_match")
+    europe: EuropeanRules = Field(alias="europe")

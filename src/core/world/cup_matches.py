@@ -39,8 +39,9 @@ def cup_lineup(world: World, match: Match, club_id: int) -> tuple[Lineup, dict[i
     return select_lineup(LineupContext(club, available, match.competition_id, match.date), cfg), temporary
 
 
-def decide_winner(world: World, match: Match, result: MatchResult, lineups: list[Lineup]) -> None:
-    if result.home_goals != result.away_goals:
+def decide_winner(world: World, match: Match, result: MatchResult, lineups: list[Lineup],
+                  force_shootout: bool = False) -> None:
+    if not force_shootout and result.home_goals != result.away_goals:
         result.winner_id = match.home_id if result.home_goals > result.away_goals else match.away_id
         return
     rng = stream(world.seed, "cup-penalties", match.season, match.id)

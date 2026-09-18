@@ -41,6 +41,16 @@ def _walk(value: object, path: str = "config") -> None:
 
 def validate_consistency(cfg: Config) -> None:
     _walk(cfg)
+    europe = cfg.world.europe
+    require((europe.club_count, europe.league_rounds, europe.pot_count,
+             europe.direct_places, europe.playoff_places) == (36, 8, 4, 8, 16), "Unsupported European format")
+    require(europe.reputation_exponent > 0 and europe.draw_attempts > 0, "Invalid European draw settings")
+    require(0 <= europe.league_weekday <= 6 and 0 <= europe.cup_weekday <= 6, "Invalid calendar weekday")
+    require(europe.min_rest_days == 3, "The weekly calendar requires three days between matches")
+    require(len(europe.dates) == 17 and len(europe.domestic_dates) == 6, "Invalid cup calendar size")
+    require(europe.tiebreakers == ("points", "difference_buts", "buts_pour"), "Invalid European standings rules")
+    for month, day in europe.dates + europe.domestic_dates:
+        Date(2025, month, day)
     date = cfg.world.start_date
     Date(date.year, date.month, date.day)
     positions = set(cfg.attributes.overall)

@@ -54,7 +54,15 @@ def validate_world(world: World) -> None:
     if world.next_id <= max((*world.players, *world.retired, *world.matches), default=0):
         raise ValueError("Next identifier would reuse an existing entity")
     competition_clubs = set()
+    european_clubs = set()
     for competition in world.competitions.values():
+        if competition.kind == "europe":
+            from .europe_validation import validate_europe
+            validate_europe(world, competition)
+            if european_clubs & set(competition.club_ids):
+                raise ValueError("Club qualified for multiple European competitions")
+            european_clubs.update(competition.club_ids)
+            continue
         if competition.kind == "cup":
             if len(competition.club_ids) != 64 or len(set(competition.club_ids)) != 64:
                 raise ValueError("A domestic cup requires exactly 64 distinct clubs")
@@ -98,6 +106,11 @@ def validate_world(world: World) -> None:
     for match in world.matches.values():
         if match.home_id == match.away_id or match.home_id not in world.clubs or match.away_id not in world.clubs:
             raise ValueError("Invalid fixture")
+        if world.competitions[match.competition_id].kind == "europe":
+            from .europe_validation import validate_european_result
+            validate_european_result(world, match)
+        if match.result and any(pid >= 0 or pid in world.players for pid in match.result.temporary_players):
+            raise ValueError("Temporary player entered the world roster")
         if world.competitions[match.competition_id].kind == "cup" and match.result:
             result = match.result
             if result.winner_id not in (match.home_id, match.away_id):

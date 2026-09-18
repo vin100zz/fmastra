@@ -21,13 +21,14 @@ def schedule(competition: Competition, season: int, next_id: int, cfg: Config, r
     size = len(clubs)
     rules = cfg.world.season
     first = Date(season, rules.start_month, rules.start_day)
+    first = first.add_days((cfg.world.europe.league_weekday - (first.ordinal() - 1) % 7) % 7)
     last = Date(season + 1, rules.end_month, rules.end_day)
     span = last.ordinal() - first.ordinal()
     spacing = rules.days_between_rounds
     slots = list(range(0, span + 1, spacing))
     rounds = 2 * (size - 1)
     def available(offset: int) -> bool:
-        return all(abs(first.ordinal() + offset - day.ordinal()) >= 3 for day in reserved_dates or [])
+        return all(abs(first.ordinal() + offset - day.ordinal()) >= cfg.world.europe.min_rest_days for day in reserved_dates or [])
     slots = [offset for offset in slots if available(offset)]
     if len(slots) < rounds and spacing > 1:
         # Add midweek slots only when weekly rounds do not fit before summer.
@@ -71,7 +72,8 @@ class Standing:
 
 def standings(competition: Competition, matches: list[Match], cfg: Config) -> list[Standing]:
     rows = {club_id: Standing(club_id) for club_id in competition.club_ids}
-    played = [match for match in matches if match.result and match.competition_id == competition.id]
+    played = [match for match in matches if match.result and match.competition_id == competition.id
+              and (competition.kind != "europe" or match.round_number <= cfg.world.europe.league_rounds)]
     for match in sorted(played, key=lambda item: (item.date, item.id)):
         result = match.result
         if result.status == "double_forfeit":
@@ -96,7 +98,7 @@ def standings(competition: Competition, matches: list[Match], cfg: Config) -> li
                 row.form += "D"
     def key(row: Standing) -> tuple:
         values = []
-        for criterion in cfg.world.season.tiebreakers:
+        for criterion in (cfg.world.europe.tiebreakers if competition.kind == "europe" else cfg.world.season.tiebreakers):
             if criterion == "points": values.append(-row.points)
             elif criterion == "difference_buts": values.append(-row.difference)
             elif criterion == "buts_pour": values.append(-row.goals_for)

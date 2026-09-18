@@ -18,13 +18,20 @@ ROOT = Path(__file__).resolve().parents[2]
 def finish_season(world):
     # Controlled final scores isolate the rollover from the match engine.
     from core.world.cups import progress_cups
+    from core.world.europe import progress_europe, decide_european_winner
     for _ in range(6):
-        for match in list(world.matches.values()):
+        for match in sorted(world.matches.values(), key=lambda m: (m.date, m.id)):
             if match.result:
                 continue
-            match.result = MatchResult(3 if match.home_id < match.away_id else 0,
-                                       0 if match.home_id < match.away_id else 3, 'test', winner_id=min(match.home_id, match.away_id))
+            result = MatchResult(3 if match.home_id < match.away_id else 0,
+                                 0 if match.home_id < match.away_id else 3, 'test')
+            if world.competitions[match.competition_id].kind == 'europe':
+                decide_european_winner(world, match, result, [])
+            else:
+                result.winner_id = min(match.home_id, match.away_id)
+            match.result = result
         progress_cups(world)
+        progress_europe(world)
     world.date = Date(world.season + 1, 6, 30)
 
 
@@ -47,8 +54,13 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         assert len(candidate.active_clubs()) == 216
         assert candidate.clubs[relegated].competition_id is None
         assert candidate.clubs[promoted].competition_id == 16
-        assert sum(match.season == 2026 for match in candidate.matches.values()) == 4064 + 5 * 32
+        assert sum(match.season == 2026 for match in candidate.matches.values()) == 4064 + 5 * 32 + 3 * 144
         for lid, league in candidate.competitions.items():
+            if league.kind == 'europe':
+                assert len(candidate.champions[lid]) == 1
+                assert len(league.club_ids) == 36 and len(league.match_ids) == 144
+                assert all(row['played'] == 0 for row in table(candidate, lid))
+                continue
             if league.kind == 'cup':
                 assert len(candidate.champions[lid]) == 1
                 assert len(league.club_ids) == 64 and len(league.match_ids) == 32

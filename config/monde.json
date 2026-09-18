@@ -28,10 +28,19 @@
   },
   "saison": {
     "debut_mois": 8, "debut_jour": 10,
-    "fin_mois": 5, "fin_jour": 25,
+    "fin_mois": 5, "fin_jour": 18,
     "jours_entre_journees": 7,
     "points_victoire": 3, "points_nul": 1, "points_defaite": 0,
     "criteres_departage": ["points", "difference_buts", "buts_pour", "confrontation_directe"]
+  },
+  "europe": {
+    "club_count": 36, "league_rounds": 8, "pot_count": 4,
+    "direct_places": 8, "playoff_places": 16,
+    "reputation_exponent": 2.0, "min_rest_days": 3, "draw_attempts": 500,
+    "league_weekday": 6, "cup_weekday": 2,
+    "dates": [[9,17],[10,1],[10,22],[11,5],[11,26],[12,17],[1,14],[1,28],[2,11],[2,25],[3,11],[3,25],[4,8],[4,22],[5,6],[5,13],[5,30]],
+    "domestic_dates": [[12,3],[1,7],[2,4],[3,4],[4,15],[5,24]],
+    "tiebreakers": ["points", "difference_buts", "buts_pour"]
   },
   "mercato": {
     "ete": {"debut_mois": 6, "debut_jour": 10, "fin_mois": 8, "fin_jour": 31},
