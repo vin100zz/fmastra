@@ -7,7 +7,8 @@ import {europeScreen} from './europe.js';
 
 let state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false;
 const main=document.querySelector('#main');
-const autoplay=createAutoAdvance({advance:()=>command('/monde/avancer',{jusqu_a:'journee'},true),onChange:()=>busyButtons()});
+const autoplay=createAutoAdvance({advance:()=>command('/monde/avancer',{jusqu_a:'journee'},true),onChange:()=>busyButtons(),
+ onStalled:()=>toast('Avance automatique interrompue : le serveur reste occupé (sauvegarde de fond trop longue).',true)});
 const busyButtons=()=>{
  const busy=Boolean(state.job)||submitting;
  document.querySelectorAll('[data-command],#advance,#advance-mode').forEach(element=>element.disabled=busy||autoplay.playing||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
@@ -91,7 +92,10 @@ async function pollJob(id){
    if(['done','failed'].includes(job.status)){
     state.job=null;
     polling=null;
-    document.querySelector('#job-bar').hidden=true;
+    // Chained autoplay jobs keep the bar up between journées instead of hiding/reshowing it every
+    // ~1s, which produced a jarring flicker as the sticky bar toggled in and out of the layout.
+    const continuing=job.status==='done'&&job.command==='advance'&&autoplay.playing;
+    if(!continuing)document.querySelector('#job-bar').hidden=true;
     if(job.status==='failed'){autoplay.pause();toast(job.error,true);}
     else if(!autoplay.playing)toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
     await render();
