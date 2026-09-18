@@ -9,6 +9,15 @@ test('standings show promotion and relegation places from the API',()=>{
  assert.equal((html.match(/title="Place de relégation"/g)||[]).length,1);
 });
 
+test('standings give European qualification places a blue background, matching promotion/relegation backgrounds',()=>{
+ const rows=[{rank:1,movement:'champion'},{rank:2,movement:'europe'},{rank:3,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
+ const html=standingsTable({items:rows});
+ assert.match(html,/<tr class="qualified-europe">/);
+ assert.match(html,/<tr class="promoted">/);
+ assert.match(html,/<tr class="relegated">/);
+ assert.equal((html.match(/class="qualification-europe"/g)||[]).length,1);
+});
+
 const player={id:1,name:'Test',position:'BU',age:20,nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};
 test('player list shows multiple nationalities and value with selected sorting',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'},POR:{name:'Portugal',display_code:'POR',flag:'pt'},XOP:{name:'Angola',display_code:'Angola',flag:'ao'}});
