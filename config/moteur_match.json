@@ -11,8 +11,8 @@
   "transitions": {
     "progression_bias": 0.0,
     "creation_bias": -1.90,
-    "k_prog": 0.028,
-    "k_occ": 0.023,
+    "k_prog": 0.040,
+    "k_occ": 0.030,
     "bonus_domicile": 0.30
   },
   "densite": {
@@ -31,8 +31,8 @@
     "xg_base_centre": 0.103,
     "xg_base_frappe": 0.150,
     "multiplicateur_contre": 1.6,
-    "sensibilite_tireur_gardien": 0.019,
-    "poids_gardien_sur_tete": {"sortie": 0.5, "arret": 0.5},
+    "sensibilite_tireur_gardien": 0.055,
+    "poids_gardien_sur_tete": {"sortie": 0.8, "arret": 0.2},
     "probabilite_tir_cadre_base": 0.35,
     "sensibilite_cadrage": 0.015,
     "niveau_reference_cadrage": 70.0,

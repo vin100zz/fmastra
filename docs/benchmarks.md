@@ -1,5 +1,12 @@
 # Benchmarks
 
+Dernier réglage des matches avec les CSV actuels :
+[recalibration du 18 septembre 2026](calibration-2026-09-18.md), après le
+[diagnostic du 17 septembre](calibration-2026-09-17.md).
+Le réglage améliore les confrontations PSG–Toulouse et City–Burnley ; le Clasico
+reste hors cible. Les statistiques synthétiques et l'équilibre des formations
+passent les critères mesurés.
+
 ## Statut des cibles
 
 Les valeurs de `config/benchmarks.json` sont des **hypothèses de calibrage**.
