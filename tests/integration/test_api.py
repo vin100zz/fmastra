@@ -94,3 +94,14 @@ def test_commands_are_serialized_and_idempotent(client, monkeypatch):
     release.set()
     service.executor.submit(lambda: None).result(timeout=5)
     assert client.get(f'/api/travaux/{first.json()["id"]}').json()["status"] == "done"
+
+
+def test_delete_slot(client):
+    service = client.app.state.game
+    service.store.save(service.world, "to-delete")
+    assert any(row["slot"] == "to-delete" for row in client.get("/api/partie/slots").json())
+    response = client.post("/api/partie/supprimer", json={"slot": "to-delete"})
+    assert response.status_code == 200 and response.json() == {"slot": "to-delete"}
+    assert not any(row["slot"] == "to-delete" for row in client.get("/api/partie/slots").json())
+    assert client.post("/api/partie/supprimer", json={"slot": "to-delete"}).status_code == 400
+    assert client.post("/api/partie/supprimer", json={"slot": "../outside"}).status_code == 422

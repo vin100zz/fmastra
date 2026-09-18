@@ -55,3 +55,13 @@ def test_bad_slot_and_corrupt_save(tmp_path):
     with pytest.raises(SaveError): store.path_for("../escape")
     (tmp_path / "bad.json.gz").write_bytes(b"not a gzip archive")
     with pytest.raises(SaveError): store.load("bad")
+
+
+def test_delete_slot(tmp_path):
+    store = SaveStore(tmp_path)
+    store.path_for("test").write_bytes(b"data")
+    assert any(slot["slot"] == "test" for slot in store.slots())
+    store.delete("test")
+    assert not any(slot["slot"] == "test" for slot in store.slots())
+    with pytest.raises(SaveError): store.delete("test")
+    with pytest.raises(SaveError): store.delete("../escape")

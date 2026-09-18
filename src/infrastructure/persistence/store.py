@@ -80,6 +80,13 @@ class SaveStore:
         except (OSError, KeyError, TypeError, ValueError, EOFError) as exc:
             raise SaveError(f"Impossible de charger {slot} : {exc}") from exc
 
+    def delete(self, slot: str) -> None:
+        target = self.path_for(slot)
+        try:
+            target.unlink()
+        except FileNotFoundError as exc:
+            raise SaveError(f"Sauvegarde introuvable : {slot}") from exc
+
     def slots(self) -> list[dict[str, object]]:
         if not self.directory.exists():
             return []

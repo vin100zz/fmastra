@@ -81,6 +81,12 @@ def router(service: GameService) -> APIRouter:
     def slots() -> list[dict]:
         return service.store.slots()
 
+    @api.post("/partie/supprimer")
+    def delete(command: Slot) -> dict:
+        with service.lock:
+            service.store.delete(command.slot)
+        return {"slot": command.slot}
+
     @api.get("/partie/rapport-import")
     def import_report() -> dict:
         with service.reading() as world:

@@ -141,6 +141,7 @@ GET  /api/matches/{id}                    compte rendu complet
 
 POST /api/partie/sauvegarder              {slot: str}
 POST /api/partie/charger                  {slot: str}
+POST /api/partie/supprimer                {slot: str}
 GET  /api/partie/slots
 POST /api/partie/creer                   graine et date/config initiales explicites
 GET  /api/partie/rapport-import          volumes et corrections de la création
