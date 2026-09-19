@@ -114,8 +114,10 @@ signaler explicitement plutôt que d'afficher des sections vides.
 ## Endpoints
 
 ```
-GET  /api/monde/etat                     date, saison, prochaines échéances
+GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping)
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "jour" | "journee" | "fin_mercato"} -> travail_id
+POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
+POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
 GET  /api/travaux/{id}                  statut, progression, erreur éventuelle
 GET  /api/monde/journal?date=             événements du jour
 

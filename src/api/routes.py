@@ -46,7 +46,8 @@ def router(service: GameService) -> APIRouter:
     def state() -> dict:
         with service.lock:
             world = service.world
-            data = {"exists": world is not None, "job": service.active, "recovery_required": service.recovery_required}
+            data = {"exists": world is not None, "job": service.active, "recovery_required": service.recovery_required,
+                    "auto": service.auto_status()}
             if world and not service.recovery_required:
                 data.update({"date": world.date.iso(), "season": world.season, "seed": world.seed,
                              "next_match": target_date(world, "journee").iso(), "market": market_window(world),
@@ -58,6 +59,14 @@ def router(service: GameService) -> APIRouter:
     @api.post("/monde/avancer", status_code=202)
     def advance(command: Advance) -> dict:
         return service.submit("advance", command.commande_id, {"until": command.jusqu_a})
+
+    @api.post("/monde/auto/demarrer", status_code=202)
+    def auto_start(command: Command) -> dict:
+        return service.submit("auto", command.commande_id, {})
+
+    @api.post("/monde/auto/arreter")
+    def auto_stop() -> dict:
+        return service.stop_auto()
 
     @api.get("/travaux/{job_id}")
     def job(job_id: str) -> dict:

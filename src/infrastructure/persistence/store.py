@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import os
 import platform
@@ -11,13 +12,23 @@ from pathlib import Path
 
 from core.domain.world import World
 from core.world.validation import validate_world
-from infrastructure.config.loader import config_fingerprint
+from infrastructure.config.loader import config_fingerprint, config_payload
 from .codec import encode, decode
 from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 8
+# Market rules introduced by each schema version, newest first, with the value
+# an older embedded configuration receives from the model defaults.
+MIGRATION_DEFAULTS = (
+    (8, {"profondeur_effectif_min": 16, "profondeur_effectif_max": 20,
+         "reputation_profondeur_min": 50.0, "reputation_profondeur_max": 80.0, "poids_profondeur_vente": 0.75,
+         "tolerance_baisse_reputation": 5.0, "marge_niveau_joueur": 2.0, "moral_depart_force": 0.5,
+         "talents_visibles": 10, "jours_encheres": 2}),
+    (7, {"gain_qualite_min_recrutement": 3.0}),
+    (6, {"stabilite_apres_arrivee_jours": 180}),
+)
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
 
@@ -63,12 +74,14 @@ class SaveStore:
             if b'"schema_version":1,' in raw[:100] or b'"schema_version": 1,' in raw[:100]:
                 payload = json.loads(raw)
                 world, fingerprint = decode(payload["world"]), payload["config_hash"]
+                version = 1
             else:
                 payload = ADAPTER.validate_json(raw)
-                if payload.schema_version not in (2, 3, 4, SCHEMA_VERSION):
+                if payload.schema_version not in (2, 3, 4, 5, 6, 7, SCHEMA_VERSION):
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
                 world, fingerprint = payload.world, payload.config_hash
-            if not isinstance(world, World) or config_fingerprint(world.config) != fingerprint:
+                version = payload.schema_version
+            if not isinstance(world, World) or not _config_matches(world, fingerprint, version):
                 raise SaveError("Sauvegarde incohérente : configuration ou racine invalide.")
             if not {"matches", "market", "states", "progression", "demography"}.issubset(world.rngs):
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
@@ -92,3 +105,19 @@ class SaveStore:
             return []
         return [{"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size,
                  "modified": path.stat().st_mtime} for path in sorted(self.directory.glob("*.json.gz"))]
+
+
+def _config_matches(world: World, fingerprint: str, version: int) -> bool:
+    if config_fingerprint(world.config) == fingerprint: return True
+    # Verify each historical configuration before accepting only its explicit
+    # migration defaults. Existing/custom rules must retain their fingerprint.
+    if version >= SCHEMA_VERSION: return False
+    previous = config_payload(world.config)
+    rules = previous["ia_gestion"]["mercato"]
+    for introduced, defaults in MIGRATION_DEFAULTS:
+        if version >= introduced: continue
+        if any(rules[key] != default for key, default in defaults.items()): return False
+        for key in defaults: del rules[key]
+        raw = json.dumps(previous, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        if hashlib.sha256(raw.encode("utf-8")).hexdigest() == fingerprint: return True
+    return False

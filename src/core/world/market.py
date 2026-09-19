@@ -4,26 +4,43 @@ from collections import defaultdict
 
 from core.domain.world import World
 from core.domain.offers import TransferOffer
-from core.ai.market import propose_transfers, player_offer_score, seller_accepts
+from core.ai.market import propose_transfers, player_offer_score, seller_accepts, can_sell
 from .events import OffersUpdated, PlayerSigned
 from .application import apply
+from .transfer_rules import recent_arrival_ids, accepts_move
 
 
-def settle_offers(world: World, open_market: bool) -> None:
+def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
     pending = []
     accepted = defaultdict(list)
+    rejected = defaultdict(set)
     cfg, rng = world.config, world.rngs["market"]
+    settled = recent_arrival_ids(world)
+    # A player's offers are decided together once the oldest has been open for the
+    # auction period, so rivals arriving in the meantime can outbid it.
+    today = world.date.ordinal()
+    opened: dict[int, int] = {}
+    for offer in world.offers.values():
+        opened[offer.player_id] = min(opened.get(offer.player_id, today), offer.created.ordinal())
     for offer in sorted(world.offers.values(), key=lambda item: item.key):
         if not open_market: continue
-        if offer.created >= world.date:
+        if offer.created >= world.date or opened[offer.player_id] + cfg.management.market.auction_days > today:
             pending.append(offer)
             continue
         player = world.players.get(offer.player_id)
-        if player is None or player.club_id != offer.source_id: continue
+        if player is None or player.club_id != offer.source_id or player.id in settled:
+            rejected[offer.target_id].add(offer.player_id)
+            continue
+        buyer = world.clubs.get(offer.target_id)
+        if buyer is None or not accepts_move(player, buyer, world):
+            rejected[offer.target_id].add(offer.player_id)
+            continue
         seller = world.clubs.get(offer.source_id)
         if seller and not seller_accepts(player, seller, offer.fee, world, rng):
             if not offer.countered and offer.fee < offer.ceiling:
                 pending.append(replace(offer, fee=offer.ceiling, countered=True))
+            else:
+                rejected[offer.target_id].add(offer.player_id)
             continue
         accepted[offer.player_id].append(offer)
     # Reservations are released before final constraints are checked by the applicator.
@@ -32,12 +49,18 @@ def settle_offers(world: World, open_market: bool) -> None:
         highest = max(offer.score for offer in offers)
         tied = sorted((offer for offer in offers if offer.score == highest), key=lambda item: item.key)
         offer = tied[rng.randrange(len(tied))]
-        apply(world, PlayerSigned(player_id, offer.source_id, offer.target_id, offer.contract, offer.fee))
+        seller = world.clubs.get(offer.source_id)
+        still_sellable = seller is None or can_sell(world.players[player_id], seller, world)
+        signed = still_sellable and apply(world, PlayerSigned(player_id, offer.source_id, offer.target_id, offer.contract, offer.fee))
+        for other in offers:
+            if other.key != offer.key or not signed:
+                rejected[other.target_id].add(player_id)
+    return dict(rejected)
 
 
-def open_offers(world: World, open_market: bool) -> None:
+def open_offers(world: World, open_market: bool, rejected: dict[int, set[int]] | None = None) -> None:
     cfg, rng = world.config, world.rngs["market"]
-    proposed = propose_transfers(world, rng, emergency=not open_market)
+    proposed = propose_transfers(world, rng, emergency=not open_market, rejected=rejected)
     if not open_market:
         # Emergency free-agent recruitment protects the contractual minimum.
         for event in proposed:

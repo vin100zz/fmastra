@@ -2,22 +2,21 @@ import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,card,stat,heading,empty,toast,setNations,nationName} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,playerScreen,journalScreen,LEAGUE_ORDER} from './screens.js';
 import {matchScreen} from './match.js';
-import {createAutoAdvance} from './auto-advance.js';
 import {europeScreen} from './europe.js';
 
 let state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false;
 const main=document.querySelector('#main');
-const autoplay=createAutoAdvance({advance:()=>command('/monde/avancer',{jusqu_a:'journee'},true),onChange:()=>busyButtons(),
- onStalled:()=>toast('Avance automatique interrompue : le serveur reste occupé (sauvegarde de fond trop longue).',true)});
+// The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
 const busyButtons=()=>{
  const busy=Boolean(state.job)||submitting;
- document.querySelectorAll('[data-command],#advance,#advance-mode').forEach(element=>element.disabled=busy||autoplay.playing||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
+ const auto=Boolean(state.auto?.running),stopping=Boolean(state.auto?.stopping);
+ document.querySelectorAll('[data-command],#advance,#advance-mode').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
  const button=document.querySelector('#autoplay');
- button.disabled=!autoplay.playing&&(busy||!state.exists||Boolean(state.recovery_required));
- button.textContent=autoplay.playing?'⏸ Pause':'▶ Auto';
- button.setAttribute('aria-pressed',String(autoplay.playing));
- button.setAttribute('aria-label',autoplay.playing?'Mettre en pause les journées automatiques':'Passer les journées automatiquement');
- button.title=autoplay.playing?'Arrêter après la journée en cours':'Enchaîner automatiquement les prochaines journées';
+ button.disabled=stopping||(!auto&&(busy||!state.exists||Boolean(state.recovery_required)));
+ button.textContent=stopping?'⏸ Arrêt…':auto?'⏸ Pause':'▶ Auto';
+ button.setAttribute('aria-pressed',String(auto));
+ button.setAttribute('aria-label',auto?'Mettre en pause les journées automatiques':'Passer les journées automatiquement');
+ button.title=auto?'Arrêter après le jour en cours':'Enchaîner automatiquement les prochaines journées';
 };
 function routeParts(){const [path,search='']=location.hash.slice(1).split('?');return {parts:(path||'/').split('/').filter(Boolean),params:new URLSearchParams(search)};}
 function changeParams(values){const path=location.hash.split('?')[0]||'#/';location.hash=`${path}?${new URLSearchParams(values)}`;}
@@ -55,15 +54,10 @@ async function render(){const version=++renderVersion;const {parts,params}=route
  try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section]=parts;switch(screen){case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id,section,params);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'journal':html=await journalScreen(params);break;default:html=await dashboard(leagues);}}
  if(version!==renderVersion)return;main.innerHTML=html;const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
- }catch(error){autoplay.pause();if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
+ }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
 
-async function command(path,payload,automatic=false){
- // state.job also mirrors the server's busy flag (refreshed after every job), which stays
- // true while our own trailing autosave finishes; only the manual click path should honor it.
- if(!automatic){
-  if(state.job||submitting)return false;
-  autoplay.pause();
- }
+async function command(path,payload){
+ if(state.job||submitting)return false;
  submitting=true;
  busyButtons();
  try{
@@ -74,9 +68,7 @@ async function command(path,payload,automatic=false){
   pollJob(job.id);
   return true;
  }catch(error){
-  // The previous advance's background autosave can still hold the server briefly; let autoplay retry it.
-  if(automatic&&error.status===409)return 'retry';
-  autoplay.pause();toast(error.message,true);return false;
+  toast(error.message,true);return false;
  }
  finally{submitting=false;busyButtons();}
 }
@@ -84,34 +76,41 @@ async function pollJob(id){
  if(polling===id)return;
  polling=id;
  document.querySelector('#job-bar').hidden=false;
+ const progress=document.querySelector('#job-progress');
+ let seenDate;
  try{
   while(polling===id){
    const job=await api(`/travaux/${id}`);
-   document.querySelector('#job-progress').value=job.progress;
-   document.querySelector('#job-label').textContent=`${({create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation'})[job.command]}… ${job.date?date(job.date):''} ${Math.round(job.progress*100)}%`;
+   const open=job.command==='auto';
+   // An auto job has no end to measure against: show an indeterminate bar instead of a percentage.
+   if(open)progress.removeAttribute('value');else progress.value=job.progress;
+   document.querySelector('#job-label').textContent=`${({create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation',auto:'Simulation automatique'})[job.command]}… ${job.date?date(job.date):''} ${open?'':Math.round(job.progress*100)+'%'}`;
    if(['done','failed'].includes(job.status)){
     state.job=null;
     polling=null;
-    // Chained autoplay jobs keep the bar up between journées instead of hiding/reshowing it every
-    // ~1s, which produced a jarring flicker as the sticky bar toggled in and out of the layout.
-    const continuing=job.status==='done'&&job.command==='advance'&&autoplay.playing;
-    if(!continuing)document.querySelector('#job-bar').hidden=true;
-    if(job.status==='failed'){autoplay.pause();toast(job.error,true);}
-    else if(!autoplay.playing)toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
+    document.querySelector('#job-bar').hidden=true;
+    if(job.status==='failed')toast(job.error,true);
+    else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
     await render();
-    if(job.status==='done'&&job.command==='advance')autoplay.complete();
     return;
    }
+   // The server keeps simulating while the user browses: refresh the current screen at each new date.
+   if(open&&seenDate!==undefined&&job.date!==seenDate)await render();
+   seenDate=job.date;
    await new Promise(resolve=>setTimeout(resolve,700));
   }
- }catch(error){polling=null;autoplay.pause();toast('Suivi interrompu : rechargez la page pour retrouver le travail en cours.',true);}
+ }catch(error){polling=null;toast('Suivi interrompu : rechargez la page pour retrouver le travail en cours.',true);}
 }
 
-document.querySelector('#autoplay').addEventListener('click',()=>{
- if(autoplay.playing){autoplay.pause();toast(state.job||submitting?'Pause demandée : la journée en cours se termine.':'Avance automatique en pause.');}
- else if(state.exists&&!state.recovery_required&&!state.job&&!submitting)autoplay.start();
+document.querySelector('#autoplay').addEventListener('click',async()=>{
+ if(state.auto?.running){
+  try{state.auto=await api('/monde/auto/arreter',{});busyButtons();toast('Pause demandée : le jour en cours se termine.');}
+  catch(error){toast(error.message,true);}
+ }
+ else if(state.exists&&!state.recovery_required&&!state.job&&!submitting&&await command('/monde/auto/demarrer',{})){
+  state.auto={running:true,stopping:false,job:state.job};busyButtons();
+ }
 });
-window.addEventListener('pagehide',()=>autoplay.pause());
 
 document.querySelector('#advance').addEventListener('click',()=>command('/monde/avancer',{jusqu_a:document.querySelector('#advance-mode').value}));
 function applyFilter(form){const values=Object.fromEntries(new FormData(form));Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}

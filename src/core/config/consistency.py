@@ -41,6 +41,17 @@ def _walk(value: object, path: str = "config") -> None:
 
 def validate_consistency(cfg: Config) -> None:
     _walk(cfg)
+    require(cfg.management.market.arrival_stability_days >= 0, "Arrival stability days must be nonnegative")
+    require(cfg.management.market.minimum_quality_gain >= 0, "Recruitment quality gain must be nonnegative")
+    market, profile = cfg.management.market, cfg.management.target_profile
+    require(cfg.world.match_rules.players_on_pitch <= market.min_squad_depth
+            and market.max_squad_depth <= cfg.world.match_rules.players_on_pitch + profile.rotation_places,
+            "Squad depth must cover the starters and stay within the rotation places")
+    require(0 <= market.depth_sale_weight <= 1, "Depth sale weight must be within [0, 1]")
+    require(market.reputation_drop_tolerance >= 0, "Reputation drop tolerance must be nonnegative")
+    require(0 <= market.forced_exit_morale <= 1, "Forced exit morale must be within [0, 1]")
+    require(market.visible_talents >= 0, "Visible talents must be nonnegative")
+    require(market.auction_days >= 1, "Offers must stay open at least one day")
     europe = cfg.world.europe
     require((europe.club_count, europe.league_rounds, europe.pot_count,
              europe.direct_places, europe.playoff_places) == (36, 8, 4, 8, 16), "Unsupported European format")

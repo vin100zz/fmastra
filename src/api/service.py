@@ -5,7 +5,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from threading import RLock
+from threading import Event, RLock
 from typing import Iterator
 from uuid import uuid4
 
@@ -43,6 +43,12 @@ class GameService:
         self.commands: dict[str, tuple[str, dict, str]] = {}
         self.active: str | None = None
         self.recovery_required = False
+        # Auto mode is one long job on the simulation thread; `auto_stop` is the only way to end it.
+        self.auto_job: str | None = None
+        self.auto_stop = Event()
+        # Seconds between two journées. Beyond pacing, the wait lets request threads take the world
+        # lock, which is not fair: without it the loop could re-acquire it before any reader wakes.
+        self.auto_delay = 0.8
 
     @contextmanager
     def reading(self) -> Iterator[World]:
@@ -66,8 +72,22 @@ class GameService:
             self.jobs[job.id] = job
             self.commands[command_id] = (kind, payload.copy(), job.id)
             self.active = job.id
+            if kind == "auto":
+                self.auto_stop.clear()
+                self.auto_job = job.id
             self.executor.submit(self._run, job, payload)
             return asdict(job)
+
+    def auto_status(self) -> dict:
+        with self.lock:
+            running = self.auto_job is not None
+            return {"running": running, "stopping": running and self.auto_stop.is_set(), "job": self.auto_job}
+
+    def stop_auto(self) -> dict:
+        """A control signal, not a command: it must work while the auto job holds `active`."""
+        with self.lock:
+            if self.auto_job is not None: self.auto_stop.set()
+            return self.auto_status()
 
     def _run(self, job: Job, payload: dict) -> None:
         advancing = False
@@ -83,6 +103,29 @@ class GameService:
                     self.recovery_required = False
             elif job.command == "save":
                 self.store.save(self.world, payload["slot"])
+            elif job.command == "auto":
+                world = self.world
+                moved, saved_on = False, None
+                while not self.auto_stop.is_set():
+                    destination = target_date(world, "journee")
+                    while world.date.ordinal() < destination.ordinal():
+                        with self.lock:
+                            advancing = True
+                            advance_day(world)
+                            advancing = False
+                            job.date = world.date.iso()
+                        moved = True
+                        # Synchronous on purpose: a background write would race with the next day.
+                        if world.date.day == 1:
+                            self.store.save(world, "autosave")
+                            saved_on = world.date.ordinal()
+                        # Stops at a day boundary, the coherent point; also yields the lock to readers.
+                        if self.auto_stop.wait(0.005): break
+                    else:
+                        self.auto_stop.wait(self.auto_delay)
+                if moved:
+                    validate_world(world)
+                    if saved_on != world.date.ordinal(): self.store.save(world, "autosave")
             else:
                 world = self.world
                 destination = target_date(world, payload["until"])
@@ -108,7 +151,9 @@ class GameService:
                 job.status, job.error = "failed", f"{type(exc).__name__} : {exc}"
         finally:
             if pending_save is None:
-                with self.lock: self.active = None
+                with self.lock:
+                    self.active = None
+                    if self.auto_job == job.id: self.auto_job = None
             else:
                 pending_save.add_done_callback(self._finish_save)
 
@@ -119,5 +164,6 @@ class GameService:
             self.active = None
 
     def close(self) -> None:
+        self.auto_stop.set()  # an unbounded auto job would otherwise block the shutdown forever
         self.executor.shutdown(wait=True)
         self.save_executor.shutdown(wait=True)

@@ -472,6 +472,26 @@ MAPS = {
     "demographie.generation.postes_secondaires_possibles": "FrozenMap[tuple[str, ...]]",
 }
 WORDS.update({"promotion_relegation": "promotion_relegation", "exposant_reputation": "reputation_exponent"})
+WORDS["stabilite_apres_arrivee_jours"] = "arrival_stability_days"
+WORDS["gain_qualite_min_recrutement"] = "minimum_quality_gain"
+WORDS.update({"profondeur_effectif_min": "min_squad_depth", "profondeur_effectif_max": "max_squad_depth",
+              "reputation_profondeur_min": "min_depth_reputation", "reputation_profondeur_max": "max_depth_reputation",
+              "tolerance_baisse_reputation": "reputation_drop_tolerance", "marge_niveau_joueur": "player_level_margin",
+              "moral_depart_force": "forced_exit_morale", "talents_visibles": "visible_talents",
+              "jours_encheres": "auction_days", "poids_profondeur_vente": "depth_sale_weight"})
+# Explicit compatibility defaults for configurations embedded in older saves.
+DEFAULTS = {"ia_gestion.mercato.stabilite_apres_arrivee_jours": 180,
+            "ia_gestion.mercato.gain_qualite_min_recrutement": 3.0,
+            "ia_gestion.mercato.profondeur_effectif_min": 16,
+            "ia_gestion.mercato.profondeur_effectif_max": 20,
+            "ia_gestion.mercato.reputation_profondeur_min": 50.0,
+            "ia_gestion.mercato.reputation_profondeur_max": 80.0,
+            "ia_gestion.mercato.poids_profondeur_vente": 0.75,
+            "ia_gestion.mercato.tolerance_baisse_reputation": 5.0,
+            "ia_gestion.mercato.marge_niveau_joueur": 2.0,
+            "ia_gestion.mercato.moral_depart_force": 0.5,
+            "ia_gestion.mercato.talents_visibles": 10,
+            "ia_gestion.mercato.jours_encheres": 2}
 
 
 def clean(value: object) -> object:
@@ -514,10 +534,11 @@ def generate(domain: str, name: str) -> str:
             return f"tuple[{element}, ...]"
         if isinstance(value, dict):
             fields = []
-            for key, item in value.items():
+            for key, item in sorted(value.items(), key=lambda pair: path + "." + pair[0] in DEFAULTS):
                 field = WORDS.get(key, key)
                 annotation = infer(item, path + "." + key, class_name + camel(field))
-                fields.append(f'    {field}: {annotation} = Field(alias="{key}")')
+                default = f"default={DEFAULTS[path + '.' + key]!r}, " if path + "." + key in DEFAULTS else ""
+                fields.append(f'    {field}: {annotation} = Field({default}alias="{key}")')
             declarations.append("@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)\n"
                                 + f"class {class_name}:\n" + "\n".join(fields) + "\n")
             return class_name

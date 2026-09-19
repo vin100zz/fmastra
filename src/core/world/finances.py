@@ -58,3 +58,17 @@ def initial_finances(club: Club, players: list[Player], cfg: Config, league_size
     club.wage_bill = wages
     club.balance = round(club.income * rules.initial_funding.cash_reserve_months / 12)
     club.transfer_budget = round(club.income * rules.transfer_income_share + club.balance * rules.transfer_balance_share)
+
+
+def annual_funding_factor(club: Club, cfg: Config, base_income: int) -> float:
+    """Retire initial wage support as its purpose disappears, never refill it.
+
+    Imported payroll can greatly exceed the synthetic economy's wages. The
+    original subsidy must not become perpetual windfall income after those
+    contracts end. Existing payroll retains the initial configured headroom;
+    later recruitment cannot increase an already reduced funding factor.
+    """
+    rules = cfg.management.budgets
+    required_income = club.wage_bill * rules.weeks_per_year * rules.initial_funding.wage_headroom / rules.wage_income_share
+    required_factor = max(rules.initial_funding.min_funding_factor, required_income / max(1, base_income))
+    return min(club.funding_factor, required_factor)

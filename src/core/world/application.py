@@ -4,6 +4,7 @@ from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
 from core.domain.matches import MatchResult
 from .finances import book_cash, book_daily_cash
+from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
                      FinancePosted, BudgetRenewed, DivisionsChanged, SeasonOpened, DateAdvanced, OffersUpdated)
 
@@ -75,6 +76,7 @@ def apply(world: World, event: WorldEvent) -> bool:
     elif isinstance(event, BudgetRenewed):
         club = world.clubs[event.club_id]
         club.income, club.wage_cap, club.transfer_budget = event.income, event.wage_cap, event.transfer_budget
+        if event.funding_factor is not None: club.funding_factor = event.funding_factor
         club.previous_rank = event.rank
         club.season_spent = club.season_sales = 0
     elif isinstance(event, DivisionsChanged):
@@ -139,6 +141,7 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         player.contract = event.contract
         return True
     if event.source_id == event.target_id or len(club.player_ids) >= guard.max_squad: return False
+    if player.id in recent_arrival_ids(world): return False
     reservations = [offer for offer in world.offers.values() if offer.target_id == club.id and offer.player_id != player.id]
     reserved_money = sum(offer.ceiling for offer in reservations)
     if event.fee + reserved_money > club.transfer_budget or club.balance - event.fee - reserved_money < guard.min_balance: return False

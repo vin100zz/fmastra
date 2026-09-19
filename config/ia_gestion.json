@@ -69,6 +69,18 @@
     }
   },
   "mercato": {
+    "stabilite_apres_arrivee_jours": 250,
+    "gain_qualite_min_recrutement": 3.0,
+    "profondeur_effectif_min": 16,
+    "profondeur_effectif_max": 20,
+    "reputation_profondeur_min": 50.0,
+    "reputation_profondeur_max": 80.0,
+    "poids_profondeur_vente": 0.75,
+    "tolerance_baisse_reputation": 5.0,
+    "marge_niveau_joueur": 2.0,
+    "moral_depart_force": 0.5,
+    "talents_visibles": 10,
+    "jours_encheres": 2,
     "daily_proposal_probability": 0.06,
     "max_candidates_scanned": 120,
     "weekly_review_days": 7,

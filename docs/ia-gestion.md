@@ -50,6 +50,18 @@ Une bonne doublure a donc une utilité positive même si elle n'améliore pas le
 meilleur onze. Les modulations jeunesse/risque s'appliquent ensuite ; elles ne
 remplacent pas la valorisation de la profondeur.
 
+Pour la vente, le club ne juge pas seulement son onze : il protège son effectif
+utile, les `profondeur` meilleures places (titulaires et rotation), car la
+rotation se joue toute la saison. La profondeur va de `profondeur_effectif_min`
+(16) à `profondeur_effectif_max` (20) selon la réputation du club, entre
+`reputation_profondeur_min` et `reputation_profondeur_max` : la réputation fixe
+les revenus, elle représente donc ici la taille et la richesse. Le coût de
+départ de `can_sell` pèse alors chacune de ces places au moins à
+`poids_profondeur_vente` (0,75), au lieu du poids de rotation (0,45). Perdre un
+joueur de rotation sans relève proche coûte presque autant que perdre un
+titulaire, et la vente est refusée si la perte dépasse `poids_doublure` fois son
+niveau. Le recrutement garde les poids gradués titulaire, rotation et doublure.
+
 Le profil nominal vaut onze titulaires plus les rotations et doublures
 configurées (24 joueurs avec les paramètres initiaux). Le plafond dur reste
 30, y compris pour les regens. Les 30 joueurs importés ne sont pas tous des
@@ -71,8 +83,11 @@ Après sélection des joueurs importés :
    salariale et la marge de plafond initiale configurées.
 3. Fixer un facteur de financement égal au maximum du minimum configuré et du
    rapport revenus nécessaires / revenus structurels.
-4. Stocker ce facteur au club. Il multiplie les revenus structurels futurs mais
-   n'est **jamais recalculé pour financer un nouveau recrutement**.
+4. Stocker ce facteur au club. Au bilan annuel, il peut uniquement diminuer,
+   vers le facteur nécessaire pour financer les salaires actuels avec la marge
+   initiale configurée (et le minimum configuré). Il n'augmente jamais pour
+   financer de nouveaux achats. La baisse des anciens salaires importés ne
+   doit pas laisser une subvention permanente sans charges correspondantes.
 5. Initialiser le solde avec la réserve de trésorerie configurée.
 
 Ce financement synthétique est signalé dans l'import. Il préserve les salaires
@@ -114,11 +129,69 @@ score du joueur, puis tirage déterministe sur offres ordonnées. Si une
 contrainte finale échoue, annuler les réservations et réévaluer au tour suivant.
 Une mutation ne peut transférer deux fois le même joueur.
 
-Les vendeurs utilisent la valeur décotée, le surplus et leur patience. Le
-joueur compare salaire, minutes projetées, réputation et ambition normalisés,
-avec le bruit configuré. Les clubs libres de recruter traitent aussi les agents
-libres dès l'ouverture de la fenêtre ; ils n'ont pas de vendeur à consulter.
-Les négociations inachevées à la clôture expirent et libèrent leurs réservations.
+Les vendeurs utilisent la valeur décotée, le surplus et leur patience. Entre
+plusieurs offres, le joueur compare salaire, minutes projetées, réputation et
+ambition normalisés, avec le bruit configuré. Les clubs libres de recruter
+traitent aussi les agents libres dès l'ouverture de la fenêtre ; ils n'ont pas
+de vendeur à consulter. Les négociations inachevées à la clôture expirent et
+libèrent leurs réservations.
+
+Le joueur peut aussi refuser. Il ne descend pas vers un club nettement moins
+réputé que le sien (baisse supérieure à `tolerance_baisse_reputation`, 5 points)
+dont le niveau visé, calculé comme dans `profil_cible` (niveau de base plus poids
+fois réputation), est inférieur à sa note de plus de `marge_niveau_joueur`
+(2 points) : ce club est en dessous de lui. Un club de son niveau, un mouvement
+latéral ou une montée restent acceptés, ainsi que tout club pour un agent libre.
+Seul un moral inférieur ou égal à `moral_depart_force` (0,5) lève le refus. Le
+contrôle s'applique à la recherche, où un club ne cible pas un joueur qui
+refuserait, et au règlement : un refus libère les réservations et déclenche la
+recherche d'une alternative, comme un refus du vendeur.
+
+Un joueur convoité doit avoir de la concurrence. Chaque club connaît, pour
+chaque poste, les `talents_visibles` (10) meilleurs joueurs vendables en plus de
+son échantillon aléatoire de `max_candidates_scanned` candidats, sinon un
+joueur fort à un poste peu fourni n'atteint un acheteur que par hasard. Les
+offres d'un même joueur sont décidées ensemble lorsque la plus ancienne est
+ouverte depuis `jours_encheres` jours (2) : les rivaux qui arrivent entre-temps
+sont départagés par le score du joueur, où la réputation du club pèse.
+
+À l'ouverture de chaque fenêtre, chaque club évalue son effectif et peut ouvrir
+jusqu'à `negociations_actives_max` dossiers sur des postes différents (trois).
+Les besoins utilisent une affectation unique aux places de titulaire, rotation
+et doublure, avec les postes secondaires et les décotes de niveau configurées.
+Les cibles en cours sont intégrées à l'effectif projeté : pas de doublon au même
+poste ni de budget ou de salaire promis plusieurs fois. Les revues ultérieures
+divisent `daily_proposal_probability` par le nombre de places de négociation
+disponibles, afin que les dossiers multiples ne triplent pas la fréquence.
+Un poste renforcé reste traité jusqu'à la prochaine fenêtre : le club ne
+rachète pas plusieurs améliorations successives au même poste. Un manque réel
+de joueurs pour la formation, de gardiens ou d'effectif minimal peut rouvrir
+le dossier. Le plan est reconstitué depuis l'historique des transferts, y compris
+après rechargement et lorsque la fenêtre estivale traverse le bilan annuel.
+
+La shortlist est constituée après les contrôles de disponibilité, de salaire
+et de prix. Un poste sans candidat viable n'empêche pas d'examiner les suivants.
+Le plafond offert et le prix demandé partagent le même calcul, incluant le coût
+du départ pour le vendeur. L'offre initiale reste négociable jusqu'à ce plafond.
+Un refus définitif ou une concurrence perdue libère les réservations et permet
+une recherche immédiate d'alternative, en excluant le joueur refusé pour ce tour
+et sans ouvrir davantage de dossiers que le nombre de pistes perdues.
+
+Hors urgence d'effectif, le gain de qualité doit être positif et atteindre
+`gain_qualite_min_recrutement` (3 points pondérés par défaut). Un club déjà au
+niveau cible ne recrute pas uniquement parce qu'il est riche. Un vendeur à
+l'effectif nominal ou inférieur conserve un joueur si son départ coûte plus
+que sa contribution de doublure ; il doit d'abord préparer sa relève. Les
+salaires proposés ne sont jamais inférieurs au contrat en cours.
+
+Un joueur refuse de changer à nouveau de club pendant les
+`mercato.stabilite_apres_arrivee_jours` jours suivant son arrivée (180 par défaut).
+La date vient du dernier transfert vers son club actuel, y compris une signature
+gratuite ; une prolongation ne redémarre pas le délai. La règle couvre les clubs
+actifs et dormants, les recherches, les offres en attente et leur application.
+Un joueur libéré peut signer immédiatement. Les dates de contrat synthétiques
+à l'import et les promotions du centre ne sont pas des transferts. Les parties
+existantes utilisent leur historique enregistré ; le passé n'est pas modifié.
 
 ## Clubs dormants
 

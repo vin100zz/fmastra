@@ -1,5 +1,6 @@
+import time
 from pathlib import Path
-from threading import Event
+from threading import Event, Thread
 
 import pytest
 from fastapi.testclient import TestClient
@@ -105,3 +106,64 @@ def test_delete_slot(client):
     assert not any(row["slot"] == "to-delete" for row in client.get("/api/partie/slots").json())
     assert client.post("/api/partie/supprimer", json={"slot": "to-delete"}).status_code == 400
     assert client.post("/api/partie/supprimer", json={"slot": "../outside"}).status_code == 422
+
+
+def wait_until(predicate, timeout=90):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate(): return True
+        time.sleep(0.02)
+    return False
+
+
+def test_auto_mode_runs_on_the_server_until_stopped(client, monkeypatch):
+    service = client.app.state.game
+    saves = []
+    monkeypatch.setattr(service.store, "save", lambda world, slot: saves.append((slot, world.date.iso())))
+    monkeypatch.setattr(service, "auto_delay", 0)
+    start_date = service.world.date
+    assert client.get("/api/monde/etat").json()["auto"] == {"running": False, "stopping": False, "job": None}
+    assert client.post("/api/monde/auto/arreter").json()["running"] is False  # stopping nothing is harmless
+
+    started = client.post("/api/monde/auto/demarrer", json={"commande_id": "auto-1"})
+    assert started.status_code == 202
+    job_id = started.json()["id"]
+    assert client.post("/api/monde/auto/demarrer", json={"commande_id": "auto-1"}).json()["id"] == job_id
+    assert client.post("/api/monde/auto/demarrer", json={"commande_id": "auto-2"}).status_code == 409
+    assert client.post("/api/monde/avancer", json={"jusqu_a": "jour"}).status_code == 409
+    assert client.post("/api/partie/sauvegarder", json={"slot": "during-auto"}).status_code == 409
+
+    assert wait_until(lambda: service.jobs[job_id].date is not None)
+    assert client.get("/api/monde/etat").json()["auto"] == {"running": True, "stopping": False, "job": job_id}
+    assert client.get("/api/clubs").status_code == 200  # other screens stay reachable while the world advances
+
+    stopping = client.post("/api/monde/auto/arreter").json()
+    assert stopping == {"running": True, "stopping": True, "job": job_id}
+    assert client.post("/api/monde/auto/arreter").json() == stopping
+    assert wait_until(lambda: service.jobs[job_id].status == "done" and service.active is None)
+
+    assert service.jobs[job_id].error is None and not service.recovery_required
+    assert client.get("/api/monde/etat").json()["auto"]["running"] is False
+    assert service.world.date.ordinal() > start_date.ordinal()
+    assert saves and saves[-1] == ("autosave", service.world.date.iso())
+    assert client.post("/api/monde/avancer", json={"jusqu_a": "jour"}).status_code == 202  # commands are accepted again
+    assert wait_until(lambda: service.active is None)
+
+
+def test_closing_the_service_ends_a_running_auto_job(config, tmp_path, monkeypatch):
+    app = create_app(ROOT, tmp_path)
+    service = app.state.game
+    service.world = import_world(ROOT / "data", config, 778)
+    monkeypatch.setattr(service, "auto_delay", 0)
+    client = TestClient(app)
+    job_id = client.post("/api/monde/auto/demarrer", json={}).json()["id"]
+    assert wait_until(lambda: service.jobs[job_id].date is not None)
+    closer = Thread(target=service.close)
+    closer.start()
+    try:
+        closer.join(30)
+        assert not closer.is_alive()
+    finally:
+        service.auto_stop.set()  # a regression must fail this test, not leave the simulation thread running
+        closer.join(30)
+    assert service.jobs[job_id].status == "done"

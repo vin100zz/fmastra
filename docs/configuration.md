@@ -55,6 +55,23 @@ Refuser les champs absents, inconnus ou invalides. Un repli explicitement
 configuré pour une valeur CSV manquante n'est pas un défaut de schéma : une
 clé de configuration absente reste une erreur.
 
+Exception de compatibilité explicite : `ia_gestion.mercato.stabilite_apres_arrivee_jours`
+vaut 180 si absent, pour les configurations antérieures à cette règle. Ce délai
+est un entier positif ou nul ; zéro désactive la période de stabilité.
+De même, `ia_gestion.mercato.gain_qualite_min_recrutement` vaut 3.0 si absent
+dans une ancienne configuration. C'est le gain minimal non négatif de qualité
+pondérée de l'effectif exigé hors urgence ; un gain nul reste insuffisant.
+
+Les configurations antérieures à la version 8 des sauvegardes reçoivent aussi
+les valeurs par défaut de `ia_gestion.mercato` pour la profondeur d'effectif
+(`profondeur_effectif_min` 16, `profondeur_effectif_max` 20, bornes de réputation
+50 et 80, `poids_profondeur_vente` 0,75), le consentement du joueur
+(`tolerance_baisse_reputation` 5, `marge_niveau_joueur` 2, `moral_depart_force`
+0,5), la visibilité des talents (`talents_visibles` 10) et la durée des enchères
+(`jours_encheres` 2). La profondeur couvre au moins les titulaires et au plus les
+places de rotation ; `poids_profondeur_vente` et `moral_depart_force` restent
+dans [0, 1] et `jours_encheres` vaut au moins 1.
+
 ## Cohérence
 
 - Somme des poids des composites, notes globales et distributions : 1 à la

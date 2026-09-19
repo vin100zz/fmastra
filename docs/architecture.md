@@ -89,6 +89,8 @@ commandes d'écriture passent par une file et un verrou communs.
 Une simulation longue est un travail suivi par l'API, hors de sa boucle de
 requêtes. Les lectures utilisent la dernière vue cohérente publiée ; une
 seconde commande d'avancement est refusée tant que la première est active.
+Le mode Auto est un travail de ce type, sans fin propre : il occupe la file jusqu'à
+un signal d'arrêt (hors file, pour pouvoir passer), lu entre deux jours simulés.
 Un ID de commande reconnaît une relance après interruption réseau.
 
 Écrire les sauvegardes dans un fichier temporaire du même répertoire, puis

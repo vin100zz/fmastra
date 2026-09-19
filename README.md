@@ -57,12 +57,19 @@ départs transférés, fins de contrat, retraites et jeunes promus. Les arrivée
 Pour une ancienne sauvegarde, les comptes détaillés commencent à la mise à jour ;
 les données historiques manquantes sont signalées. Les dates de naissance des retraités peuvent être récupérées dans le CSV uniquement si son empreinte correspond exactement à celle de l'import initial.
 
-Le bouton **▶ Auto** enchaîne les prochaines dates de matchs, championnat et coupe, avec
-sauvegarde après chaque avance. **⏸ Pause** arrête l'enchaînement après le
-calcul en cours. Une erreur ou le rechargement de la page arrête aussi ce mode.
+Le bouton **▶ Auto** enchaîne les prochaines dates de matchs, championnat et coupe.
+Le mode tourne sur le serveur, pas dans la page : on peut naviguer entre les écrans,
+recharger ou fermer l'onglet sans l'interrompre, et l'écran affiché suit les nouvelles
+dates. Il ne s'arrête que sur **⏸ Pause**, sur une erreur ou à l'arrêt du serveur.
+Pendant qu'il tourne, les autres commandes (avancer, sauvegarder, charger, créer) sont
+refusées. La sauvegarde automatique a lieu à chaque changement de mois puis à l'arrêt,
+pas après chaque journée : un plantage brutal peut donc perdre jusqu'à un mois simulé.
+La pause prend effet à la fin du jour en cours. Les lectures attendent la fin du jour
+simulé : sur un jour d'une centaine de matchs (quelques secondes), l'affichage d'un
+écran peut être retardé d'autant.
 
 Les sauvegardes sont dans `saves/`. Le slot `autosave` est remplacé après chaque
-commande d'avance et chaque changement de mois. Utiliser un slot nommé dans
+commande d'avance (et à l'arrêt du mode Auto) et chaque changement de mois. Utiliser un slot nommé dans
 « Ma partie » pour conserver plusieurs univers. Le chargement restitue la
 configuration de la sauvegarde, même si les JSON du dépôt ont changé.
 

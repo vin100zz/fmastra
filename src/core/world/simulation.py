@@ -12,7 +12,7 @@ from .calendar import standings
 from .contracts import expiry_events, renewal_events
 from .demography import retirement_events, cohort_events
 from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
-from .finances import structural_income
+from .finances import structural_income, annual_funding_factor
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .promotion import promotion_event
@@ -66,7 +66,9 @@ def annual_review(world: World) -> None:
     for event in retirement_events(world): apply(world, event)
     for club in world.clubs.values():
         rank = rankings.get(club.id)
-        income = round(structural_income(club, cfg, rank) * club.funding_factor)
+        base_income = structural_income(club, cfg, rank)
+        funding_factor = annual_funding_factor(club, cfg, base_income)
+        income = round(base_income * funding_factor)
         rules = cfg.management.budgets
         # Honor existing wages and reserve the minimum intake for newly active clubs.
         minimum_wages = club.wage_bill
@@ -77,7 +79,7 @@ def annual_review(world: World) -> None:
             minimum_wages += missing * cfg.demography.academies.base_weekly_wage
         cap = max(minimum_wages, round(income * rules.wage_income_share / rules.weeks_per_year))
         budget = max(0, round(income * rules.transfer_income_share + club.balance * rules.transfer_balance_share))
-        apply(world, BudgetRenewed(club.id, income, cap, budget, rank))
+        apply(world, BudgetRenewed(club.id, income, cap, budget, rank, funding_factor))
     matches = season_fixtures(world, world.date.year)
     apply(world, SeasonOpened(world.date.year, matches, champions))
     complete_squads(world, list(incoming))
@@ -100,8 +102,8 @@ def advance_day(world: World) -> None:
         for event in renewal_events(world): apply(world, event)
     open_market = market_window(world) is not None
     for _ in range(cfg.world.market.rounds_per_day):
-        settle_offers(world, open_market)
-        open_offers(world, open_market)
+        rejected = settle_offers(world, open_market)
+        open_offers(world, open_market, rejected)
     controller = AIController(cfg, world.rngs["matches"])
     engine = PossessionEngine()
     for match in sorted((match for match in world.matches.values() if match.date == world.date and match.result is None), key=lambda item: item.id):

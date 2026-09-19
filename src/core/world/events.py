@@ -65,6 +65,7 @@ class BudgetRenewed:
     wage_cap: int
     transfer_budget: int
     rank: int | None
+    funding_factor: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

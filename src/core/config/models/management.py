@@ -121,6 +121,18 @@ class ManagementConfigMarket:
     counteroffer_ratio: float = Field(alias="ratio_contre_offre")
     player_score: ManagementConfigMarketPlayerScore = Field(alias="score_joueur")
     dormant_clubs: ManagementConfigMarketDormantClubs = Field(alias="clubs_dormants")
+    arrival_stability_days: int = Field(default=180, alias="stabilite_apres_arrivee_jours")
+    minimum_quality_gain: float = Field(default=3.0, alias="gain_qualite_min_recrutement")
+    min_squad_depth: int = Field(default=16, alias="profondeur_effectif_min")
+    max_squad_depth: int = Field(default=20, alias="profondeur_effectif_max")
+    min_depth_reputation: float = Field(default=50.0, alias="reputation_profondeur_min")
+    max_depth_reputation: float = Field(default=80.0, alias="reputation_profondeur_max")
+    depth_sale_weight: float = Field(default=0.75, alias="poids_profondeur_vente")
+    reputation_drop_tolerance: float = Field(default=5.0, alias="tolerance_baisse_reputation")
+    player_level_margin: float = Field(default=2.0, alias="marge_niveau_joueur")
+    forced_exit_morale: float = Field(default=0.5, alias="moral_depart_force")
+    visible_talents: int = Field(default=10, alias="talents_visibles")
+    auction_days: int = Field(default=2, alias="jours_encheres")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

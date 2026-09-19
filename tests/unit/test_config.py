@@ -47,3 +47,11 @@ def test_override_does_not_mutate_base(config):
     assert original == snapshot
     assert decode_config(changed).engine.transitions.progression_sensitivity == .06
     assert "_autres" in config.attributes.generation_profiles.profiles["GB"]
+
+
+def test_arrival_stability_configuration(config):
+    raw = config_payload(config)
+    raw["ia_gestion"]["mercato"]["stabilite_apres_arrivee_jours"] = -1
+    with pytest.raises(ConfigError): decode_config(raw)
+    del raw["ia_gestion"]["mercato"]["stabilite_apres_arrivee_jours"]
+    assert decode_config(raw).management.market.arrival_stability_days == 180
