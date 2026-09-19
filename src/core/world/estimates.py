@@ -1,4 +1,4 @@
-"""The only observation service allowed to read true potential."""
+"""Noisy potential observations: the only view of true potential that club decisions may use."""
 from dataclasses import dataclass
 from functools import lru_cache
 

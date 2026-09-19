@@ -172,7 +172,7 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return v.club_detail(world, club_id)
 
     @api.get("/clubs/{club_id}/effectif")
-    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] = "position",
+    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] = "position",
               ordre: Literal["asc", "desc"] = "asc") -> dict:
         with service.reading() as world:
             rows = v.squad_rows(world, club_id)
@@ -253,7 +253,7 @@ def router(service: GameService) -> APIRouter:
                 niveau_min: float = Query(1, ge=1, le=100), nation: str | None = None, club: int | None = None,
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
-                page: int = Query(1, ge=1), tri: Literal["rating", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value"] = "value",
+                page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value"] = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
@@ -270,7 +270,7 @@ def router(service: GameService) -> APIRouter:
                 selected.append(player)
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
-                value = {"rating": player.rating, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
+                value = {"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
                          "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,
                          "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else ""}[tri]

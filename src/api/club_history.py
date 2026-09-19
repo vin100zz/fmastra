@@ -31,7 +31,7 @@ def movements(world: World, club_id: int, season: int | None, page: int) -> dict
 def world_movements(world: World, season: int | None, kind: str, page: int, sort: str | None = None, order: str = 'desc') -> dict:
     nav = navigation(world, season)
     sort = sort or ('promotion_date' if kind == 'academy' else 'fee' if kind == 'transfer' else 'date')
-    allowed = ({'position', 'name', 'nation', 'age', 'rating', 'potential_estimate', 'club', 'value', 'wage',
+    allowed = ({'position', 'name', 'nation', 'age', 'rating', 'potential', 'club', 'value', 'wage',
                 'contract_end', 'fitness', 'promotion_date', 'academy_club', 'data_at'} if kind == 'academy' else
                {'date', 'name', 'source', 'target', 'fee'} if kind == 'transfer' else {'date', 'name', 'source'})
     if sort not in allowed or order not in ('asc', 'desc'): raise ValueError('Tri des mouvements invalide.')
@@ -49,9 +49,6 @@ def world_movements(world: World, season: int | None, kind: str, page: int, sort
         if sort == 'fee': return row.fee
         if sort == 'nation': return v.normalized(' / '.join(details.get('nationality_names', []))) or None
         if sort == 'club': return v.normalized(details['club']['name']) if details.get('club') else ('libre' if details.get('data_at') != 'unknown' else None)
-        if sort == 'potential_estimate':
-            estimate = details.get('potential_estimate')
-            return (estimate['lower'] + estimate['upper']) / 2 if estimate else None
         if sort == 'data_at': return {'promotion': 'a la promotion', 'current': 'actuelles', 'unknown': 'non archivees'}[details['data_at']]
         value = details.get(sort)
         return v.normalized(value) if isinstance(value, str) else value

@@ -1,4 +1,4 @@
-"""Public read models; true potential and simulation RNGs never leave this layer."""
+"""Public read models; simulation RNGs never leave this layer."""
 from __future__ import annotations
 
 from dataclasses import asdict, replace
@@ -7,7 +7,6 @@ import unicodedata
 from core.domain.world import World
 from core.domain.players import Player, ATTRIBUTE_NAMES
 from core.domain.matches import Match
-from core.world.estimates import estimate_potential
 from core.ai.market import market_value
 from core.world.calendar import standings
 from core.world.finances import financial_season
@@ -37,7 +36,7 @@ def player_row(world: World, player: Player) -> dict:
     contract = player.contract
     return {"id": player.id, "name": player.name, "position": player.position.value,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
-            "potential_estimate": asdict(estimate_potential(player, world.date, world.seed, world.config)),
+            "potential": round(player.potential, 1),
             "nationalities": list(player.nationalities),
             "nationality_names": [world.nation_names.get(code, code) for code in player.nationalities],
             "value": market_value(player, world),
@@ -57,7 +56,6 @@ def player_detail(world: World, player: Player) -> dict:
                    "secondary_positions": list(player.secondary_positions), "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
                    "attributes_imported": player.source_current_ability is not None,
                    "position_ratings": player.position_ratings,
-                   "potential_estimate": asdict(estimate_potential(player, world.date, world.seed, world.config)),
                    "form": player.form, "morale": player.morale, "value": market_value(player, world),
                    "discipline": [{"competition": world.competitions[cid].name, **asdict(item)} for cid, item in player.discipline.items()]})
     return result
@@ -138,10 +136,14 @@ def transfer_row(world: World, row) -> dict:
 def academy_player_row(world: World, row) -> dict:
     snapshot = row.snapshot
     if snapshot:
+        potential = snapshot.potential
+        if potential is None and row.player_id in world.players:
+            # Snapshots archived before the exact value was stored; a player's potential never changes.
+            potential = world.players[row.player_id].potential
         return {"id": row.player_id, "name": player_name(world, row.player_id), "age": snapshot.born.age_on(row.date),
                 "position": snapshot.position, "nationalities": snapshot.nationalities,
                 "nationality_names": [world.nation_names.get(code, code) for code in snapshot.nationalities],
-                "rating": snapshot.rating, "potential_estimate": {"lower": snapshot.potential_lower, "upper": snapshot.potential_upper},
+                "rating": snapshot.rating, "potential": None if potential is None else round(potential, 1),
                 "wage": snapshot.weekly_wage, "value": snapshot.value, "contract_end": snapshot.contract_end.iso() if snapshot.contract_end else None,
                 "club": club_ref(world, row.target_id), "fitness": snapshot.fitness, "data_at": "promotion"}
     if row.player_id in world.players:

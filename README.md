@@ -29,15 +29,15 @@ L'interface comprend le tableau de bord, les classements, calendriers,
 statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
 les comptes rendus et les compositions. L'utilisateur reste observateur.
 
-La liste des joueurs affiche toutes leurs nationalités, leur valeur et une fourchette de potentiel estimé à côté du niveau actuel,
+La liste des joueurs affiche toutes leurs nationalités, leur valeur et leur potentiel exact à côté du niveau actuel, tous deux sous forme de badges sur 200 dont la couleur suit une même échelle (rouge jusqu'à 70, jaune à 110, vert à partir de 150),
 avec un tri initial par valeur décroissante. Les clubs sont triés par réputation
 décroissante. L'effectif affiche aussi les matchs, minutes, buts, passes décisives,
-cartons et note moyenne réalisés avec ce club pendant la saison courante.
+cartons et note moyenne réalisés avec ce club pendant la saison courante, ainsi que le potentiel exact de chaque joueur ; la colonne du potentiel est triable, comme celle du niveau. Sur la fiche d'un joueur, le niveau et le potentiel s'affichent dans l'en-tête du bloc des attributs.
 Les minutes sont affichées sans décimales et ne figurent plus dans le tableau de carrière. Les historiques du club et du championnat donnent le classement complet de chaque saison, avec la dernière saison dépliée.
 
 **Mercato mondial**, dans le menu principal, regroupe les transferts, fins de
 contrat, retraites et promotions de tous les clubs, par saison et avec pagination.
-Toutes les colonnes de l'historique des mouvements sont triables par clic, dans les deux sens, avant pagination. Le tri est conservé lors du changement de saison. Les données absentes restent à la fin ; le potentiel est trié par le milieu de sa fourchette estimée.
+Toutes les colonnes de l'historique des mouvements sont triables par clic, dans les deux sens, avant pagination. Le tri est conservé lors du changement de saison. Les données absentes restent à la fin, y compris le potentiel des anciennes promotions dont le joueur a pris sa retraite.
 L'onglet promotions reprend les informations de la liste des joueurs. Les nouvelles promotions archivent les données au moment de l'événement ; pour les anciennes, les données actuelles sont identifiées comme telles, ou signalées manquantes après une retraite.
 L'interface utilise une présentation compacte et des tableaux défilants sur les
 petits écrans pour conserver l'accès à toutes les colonnes.

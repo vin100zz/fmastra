@@ -82,6 +82,8 @@ def decode(value: Any) -> Any:
         if cls is World:
             for name, default in (("finance_history", {"$map": []}), ("finance_history_since", None), ("movement_history_since", None)):
                 value["fields"].setdefault(name, default)
+        if cls is MovementSnapshot:
+            value["fields"].setdefault("potential", None)
         if cls is TransferRecord:
             value["fields"].setdefault("born", None)
             value["fields"].setdefault("snapshot", None)

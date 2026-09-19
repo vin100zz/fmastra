@@ -61,7 +61,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             estimate = estimate_potential(player, world.date, world.seed, world.config)
             snapshot = MovementSnapshot(player.born, player.nationalities, player.position, player.rating,
                                         estimate.lower, estimate.upper, player.contract.weekly_wage,
-                                        market_value(player, world), player.contract.end, player.fitness)
+                                        market_value(player, world), player.contract.end, player.fitness, player.potential)
             world.transfers.append(TransferRecord(world.date, player.id, None, player.club_id, 0, "academy", world.season,
                                                  born=player.born, snapshot=snapshot))
         if event.class_fallback:

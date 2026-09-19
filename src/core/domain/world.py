@@ -41,6 +41,7 @@ class MovementSnapshot:
     value: int
     contract_end: Date | None
     fitness: float
+    potential: float | None = None  # Absent from snapshots archived before the exact value was shown.
 
 
 @dataclass(frozen=True, slots=True)

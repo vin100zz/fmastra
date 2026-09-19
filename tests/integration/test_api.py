@@ -20,7 +20,27 @@ def client(config, tmp_path_factory):
         yield client
 
 
-def test_views_pagination_and_no_rng_or_potential_leak(client):
+def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club_id = next(iter(world.active_clubs())).id
+    squad = client.get(f'/api/clubs/{club_id}/effectif?tri=potential&ordre=desc').json()['items']
+    assert squad and all(row['potential'] == round(world.players[row['id']].potential, 1) for row in squad)
+    assert 'potential_estimate' not in squad[0]
+    assert [row['potential'] for row in squad] == sorted((row['potential'] for row in squad), reverse=True)
+    ascending = client.get('/api/joueurs?tri=potential&ordre=asc').json()['items']
+    assert [row['potential'] for row in ascending] == sorted(row['potential'] for row in ascending)
+    top = client.get('/api/joueurs?tri=potential&ordre=desc').json()['items']
+    assert top[0]['potential'] == max(round(player.potential, 1) for player in world.players.values())
+    player = world.players[squad[0]['id']]
+    detail = client.get(f'/api/joueurs/{player.id}').json()
+    assert detail['potential'] == round(player.potential, 1) and detail['rating'] <= detail['potential']
+    assert 'potential_estimate' not in detail and 'source_potential_ability' not in detail
+    assert client.get('/api/joueurs?tri=invalid').status_code == 422
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_views_pagination_and_no_rng_leak(client):
     world = client.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}
     club_id = next(iter(world.active_clubs())).id
@@ -34,7 +54,6 @@ def test_views_pagination_and_no_rng_or_potential_leak(client):
     for route in routes:
         response = client.get("/api" + route)
         assert response.status_code == 200, (route, response.text)
-        assert '"potential":' not in response.text
     first, second = client.get("/api/joueurs").json(), client.get("/api/joueurs?page=2").json()
     assert len(first["items"]) == len(second["items"]) == 30
     assert not {row["id"] for row in first["items"]} & {row["id"] for row in second["items"]}
@@ -59,7 +78,7 @@ def test_views_pagination_and_no_rng_or_potential_leak(client):
         history = client.get(f'/api/monde/transferts?type={kind}').json()
         assert history['type'] == kind and history['season'] == world.season
     assert client.get('/api/monde/transferts?type=invalid').status_code == 422
-    for kind, sort in (('transfer', 'fee'), ('retirement', 'name'), ('academy', 'potential_estimate')):
+    for kind, sort in (('transfer', 'fee'), ('retirement', 'name'), ('academy', 'potential')):
         data = client.get(f'/api/monde/transferts?type={kind}&tri={sort}&ordre=asc').json()
         assert data['sort'] == sort and data['order'] == 'asc'
     assert client.get('/api/monde/transferts?tri=invalid').status_code == 422

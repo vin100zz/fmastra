@@ -8,7 +8,7 @@ test('all movement tabs expose sortable columns and the selected direction',asyn
   for(const [type,sort,keys] of [
    ['transfer','fee',['date','name','source','target','fee']],
    ['retirement','name',['date','name','source']],
-   ['academy','potential_estimate',['position','name','nation','age','rating','potential_estimate','club','value','wage','contract_end','fitness','promotion_date','academy_club','data_at']],
+   ['academy','potential',['position','name','nation','age','rating','potential','club','value','wage','contract_end','fitness','promotion_date','academy_club','data_at']],
   ]){
    let requested;
    globalThis.fetch=async url=>{requested=url;return {ok:true,json:async()=>({season:2027,previous_season:2026,next_season:null,history_since:'2025-07-01',sort,order:'asc',page:1,page_size:50,total:1,items:[{date:'2027-07-01',player_id:1,player:'Joueur',kind:type,fee:30000,details:{id:1,name:'Joueur',nationalities:[],data_at:'unknown'}}]})};};

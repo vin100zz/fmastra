@@ -30,8 +30,9 @@ au même joueur sur un même mois.
 
 ## Potentiel estimé
 
-Seule la progression et la génération accèdent au potentiel réel. IA et API
-reçoivent une estimation produite par un service dédié.
+La progression, la génération et l'API (affichage du potentiel exact) accèdent
+au potentiel réel. L'IA des clubs reçoit une estimation produite par un service
+dédié.
 
 L'écart-type diminue avec l'âge depuis `age_debut_convergence` jusqu'à
 `age_convergence`, avec un minimum non nul ; la réputation de l'observateur le
@@ -43,8 +44,8 @@ borné entre niveau connu et maximum d'attribut. La fourchette est centrée sur
 Conserver le biais et la période d'observation. Des consultations répétées ou
 un rechargement de page ne provoquent pas de nouveau tirage. Le potentiel reste
 incertain après l'âge de convergence ; le minimum de bruit évite sa révélation
-exacte. Une estimation publique stable sert à la fiche observateur ; chaque
-club dispose de la sienne. L'API n'expose ni le biais ni la valeur vraie.
+exacte dans les décisions des clubs. Chaque club dispose de sa propre
+estimation ; l'API n'expose pas le biais d'estimation.
 
 ## Population cible et cohorte
 

@@ -34,8 +34,9 @@ Les commandes d'installation et de benchmark figurent dans le README.
 Le serveur local utilise un seul processus et une file de commandes. Une
 nouvelle partie ou un chargement ne remplace le monde courant qu'après succès.
 Une erreur pendant une journée impose une reprise depuis une sauvegarde.
-L'API ne révèle pas le potentiel réel : les fiches montrent une estimation
-stable et leur consultation ne consomme pas d'aléatoire.
+L'API expose le potentiel exact des joueurs (sur 200 à l'affichage) ; seules les
+décisions des clubs s'appuient sur une estimation bruitée. Leur consultation ne
+consomme pas d'aléatoire.
 
 ## Vérifications et mesures
 

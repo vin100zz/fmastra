@@ -6,6 +6,9 @@ export const facilityRating = value => value == null ? '—' : `${number(value)}
 export const money = value => new Intl.NumberFormat('fr-FR', {style:'currency',currency:'EUR',maximumFractionDigits:0,maximumSignificantDigits:2,notation:Math.abs(value)>=1e6?'compact':'standard'}).format(value ?? 0);
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
 export const level = value => value==null ? null : Math.round(value*2);
+// Red at 70 or less, yellow at 110 (the median player), green at 150 or more, out of 200; shared by level and potential.
+export const levelHue = score => {const clamped=Math.max(70,Math.min(150,score)); return Math.round(clamped<=110?(clamped-70)/40*50:50+(clamped-110)/40*70);};
+export const levelBadge = (value, title) => value==null ? '—' : `<span class="rating graded" style="--hue:${levelHue(level(value))}" title="${escape(title)}">${level(value)}</span>`;
 export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
@@ -31,12 +34,12 @@ export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sect
 export function table(headers, rows, footer, rowClasses) {return rows.length ? `<div class="table-scroll"><table><thead><tr>${headers.map(item=>`<th>${item}</th>`).join('')}</tr></thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}">${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();}
 export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
 export function playerTable(data, withClub=false, sorted='rating', order='desc', options={}) {
- const columns=[['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],...(withClub?[['potential_estimate','POT. EST.'],['club','CLUB']]:[]),['value','VALEUR'],['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['minutes','MIN.'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ const columns=[['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['minutes','MIN.'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
  const rows=data.items.map(player=>{
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
    nation:nationBadges(player.nationalities||[player.nation]),
-   age:player.age??'—',rating:player.rating==null?'—':`<span class="rating">${level(player.rating)}</span>`,potential_estimate:player.potential_estimate?`<span title="Potentiel estimé sur 200">${Math.floor(player.potential_estimate.lower*2)}–${Math.ceil(player.potential_estimate.upper*2)}</span>`:'—',club:player.data_at==='unknown'?'—':clubLink(player.club),
+   age:player.age??'—',rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:player.value==null?'—':money(player.value),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ Blessé</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
@@ -44,7 +47,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
   };
   return columns.map(([key])=>cells[key]);
  });
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false||(key==='potential_estimate'&&!options.academy)?label:`<button data-sort="${key}">${label} ${key===sorted?(order==='desc'?'↓':'↑'):''}</button>`),rows)}</div>`+pager(data);
+ return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:`<button data-sort="${key}">${label} ${key===sorted?(order==='desc'?'↓':'↑'):''}</button>`),rows)}</div>`+pager(data);
 }
 export function standingsTable(data, compact=false) {
  const rowClasses=data.items.map(row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'?'promoted':'');

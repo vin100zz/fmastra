@@ -39,7 +39,7 @@ def test_academy_sort_uses_archived_values_before_pagination_and_keeps_unknown_l
     apply(world, PlayerGenerated(young))
     original = world.transfers[0]
     world.transfers = [replace(original, player_id=1000+i, snapshot=replace(original.snapshot,
-                        value=(i*17)%61, rating=40+i/2, potential_lower=50+i/2, potential_upper=60+i/2)) for i in range(60)]
+                        value=(i*17)%61, rating=40+i/2, potential_lower=50+i/2, potential_upper=60+i/2, potential=55+i/2)) for i in range(60)]
     world.transfers.append(replace(original, player_id=9000, snapshot=None))
     states = {name: rng.getstate() for name, rng in world.rngs.items()}
     for order in ('asc', 'desc'):
@@ -48,10 +48,10 @@ def test_academy_sort_uses_archived_values_before_pagination_and_keeps_unknown_l
         assert details[-1]['data_at'] == 'unknown'
         values = [item['value'] for item in details[:-1]]
         assert values == sorted(values, reverse=order == 'desc')
-    for key in ('position','name','nation','age','rating','potential_estimate','club','value','wage','contract_end','fitness','promotion_date','academy_club','data_at'):
+    for key in ('position','name','nation','age','rating','potential','club','value','wage','contract_end','fitness','promotion_date','academy_club','data_at'):
         assert world_movements(world, 2025, 'academy', 1, key)['total'] == 61
     assert {name: rng.getstate() for name, rng in world.rngs.items()} == states
-    with pytest.raises(ValueError): world_movements(world, 2025, 'academy', 1, 'potential')
+    with pytest.raises(ValueError): world_movements(world, 2025, 'academy', 1, 'potential_estimate')
     with pytest.raises(ValueError): world_movements(world, 2025, 'retirement', 1, 'fee')
 
 
@@ -125,7 +125,7 @@ def test_academy_snapshot_survives_progression_and_retirement(config):
     before = world_movements(world, 2025, 'academy', 1)['items'][0]['details']
     assert before['age'] == 17 and before['data_at'] == 'promotion'
     assert before['wage'] == 1000 and before['nationalities']
-    assert before['potential_estimate']['lower'] >= young.rating
+    assert before['potential'] == round(young.potential, 1) >= young.rating
     young.rating = 99
     young.contract.weekly_wage = 9000
     world.date, world.season = Date(2030, 7, 1), 2030
@@ -138,6 +138,35 @@ def test_academy_snapshot_survives_progression_and_retirement(config):
     assert decode(encoded).snapshot is None
     saved = ADAPTER.validate_json(ADAPTER.dump_json(SaveEnvelope(5, 'test', '3.12', '', world), by_alias=True))
     assert saved.world.transfers[0].snapshot == world.transfers[0].snapshot
+
+
+def test_academy_potential_is_exact_sorted_and_recovered_for_snapshots_archived_earlier(config):
+    from api.club_history import world_movements
+    from infrastructure.persistence.codec import encode, decode
+    world = mini_world(config)
+    young = replace(world.players[102], id=999, potential=88.5)
+    assert apply(world, PlayerGenerated(young))
+    record = world.transfers[0]
+    assert record.snapshot.potential == 88.5
+    details = lambda: world_movements(world, 2025, 'academy', 1)['items'][0]['details']
+    assert details()['potential'] == 88.5
+    legacy = replace(record, snapshot=replace(record.snapshot, potential=None))
+    world.transfers = [legacy]
+    assert details()['potential'] == 88.5  # A player still in the world keeps the same potential.
+    del world.players[999]
+    world.retired[999] = young.name
+    assert details()['potential'] is None
+    assert world_movements(world, 2025, 'academy', 1, 'potential')['total'] == 1
+    encoded = encode(record.snapshot)
+    del encoded['fields']['potential']
+    assert decode(encoded).potential is None
+    ranked = [replace(record, player_id=1000 + i, snapshot=replace(record.snapshot, potential=60 + (i * 7) % 40)) for i in range(5)]
+    world.transfers = ranked + [replace(record, player_id=2000, snapshot=None)]
+    for order in ('asc', 'desc'):
+        rows = world_movements(world, 2025, 'academy', 1, 'potential', order)['items']
+        values = [row['details'].get('potential') for row in rows]
+        assert values[-1] is None
+        assert values[:-1] == sorted(values[:-1], reverse=order == 'desc')
 
 
 def test_archived_standings_only_use_selected_season_and_competition(config):

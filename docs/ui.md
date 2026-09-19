@@ -13,7 +13,7 @@ des routes d'action et une gestion de l'attente, en préservant les vues de lect
 Afficher à la création le rapport d'import : au maximum 30 joueurs par club,
 classement par niveau estimé avec places réservées aux gardiens, joueurs écartés,
 agents libres et corrections de données. Les niveaux, potentiels et finances
-issus de la synthèse sont signalés comme estimés, sans exposer le potentiel réel.
+issus de la synthèse sont signalés comme estimés.
 
 ## Principes
 
@@ -54,7 +54,7 @@ d'observation.
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | liste triable : poste, nom, âge, note, salaire, fin de contrat, état (blessé, suspendu, fatigue) |
+| Effectif | liste triable : poste, nom, âge, note, potentiel exact, salaire, fin de contrat, état (blessé, suspendu, fatigue) |
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
@@ -78,7 +78,7 @@ En-tête : nom, pays, compétition, réputation, classement actuel, forme sur le
 |---|---|
 | Identité | nom, nationalité, âge, date de naissance, poste, postes secondaires |
 | Caractéristiques | les 13 attributs, groupés par famille, avec barres |
-| Potentiel | **fourchette d'estimation**, jamais la valeur réelle |
+| Niveau et potentiel | badges (niveau actuel, potentiel exact, sur 200) dans l'en-tête du bloc des attributs |
 | État | blessure en cours et durée, fatigue, suspension, forme, moral |
 | Contrat | club, salaire hebdomadaire, date de fin, valeur de marché estimée |
 | Saison en cours | matches, minutes, buts, passes, note moyenne, cartons |
