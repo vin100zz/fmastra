@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from core.config.model import Config
-from core.domain.matches import Lineup, LineupSlot, MatchEvent, PlayerMatchStats, TeamStats
+from core.domain.matches import Lineup, LineupSlot, MatchEvent, PlayerMatchStats, TeamStats, PlayingTimePriority
 from core.domain.players import Player, Position
 
 
@@ -27,6 +27,9 @@ class TeamState:
     zones: dict[str, list[list[float]]] = field(default_factory=dict)
     next_refresh: float = 0
     next_substitution: float = 0
+    next_rotation: float = 0
+    starters: set[int] = field(default_factory=set)
+    playing_time: dict[int, PlayingTimePriority] = field(default_factory=dict)
 
     @classmethod
     def from_lineup(cls, lineup: Lineup, cfg: Config) -> TeamState:
@@ -36,7 +39,8 @@ class TeamState:
                    {pid: player.fitness for pid, player in players.items()}, players,
                    individual={slot.player.id: PlayerMatchStats(final_fitness=slot.player.fitness) for slot in lineup.slots},
                    block_height=lineup.block_height, initial_block=lineup.block_height,
-                   next_substitution=cfg.states.substitutions.first_evaluation_minute * 60)
+                   next_substitution=cfg.states.substitutions.first_evaluation_minute * 60,
+                   starters={slot.player.id for slot in lineup.slots}, playing_time=dict(lineup.playing_time))
 
     def goalkeeper(self) -> LineupSlot:
         if not self.active:

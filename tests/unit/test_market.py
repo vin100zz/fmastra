@@ -219,11 +219,11 @@ def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, v
         rules = payload["world"]["fields"]["config"]["$config"]
     else:
         rules = payload["world"]["config"]
-    from infrastructure.persistence.store import MIGRATION_DEFAULTS
-    for introduced, defaults in MIGRATION_DEFAULTS:
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, SCHEMA_VERSION
+    for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if version < introduced:
-            for key in defaults: del rules["ia_gestion"]["mercato"][key]
-    if version < 8:
+            for key in defaults: del rules[config_path[0]][config_path[1]][key]
+    if version < SCHEMA_VERSION:
         raw = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         payload["config_hash"] = hashlib.sha256(raw.encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))

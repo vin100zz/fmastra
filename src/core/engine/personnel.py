@@ -22,12 +22,15 @@ def ensure_keeper(team: TeamState, cfg: Config) -> None:
 
 
 def substitutions(team: TeamState, log: MatchLog, cfg: Config, controller: "AIController",
-                  forced_id: int | None = None, halftime: bool = False) -> int:
+                  forced_id: int | None = None, halftime: bool = False, goal_difference: int = 0) -> int:
     if team.windows >= cfg.world.match_rules.substitution_windows and not halftime:
         return 0
     changes = 0
+    rotation_allowed = forced_id is None and not halftime and log.second >= team.next_rotation
     while True:
-        decision = controller.decide_substitution(team, forced_id)
+        decision = controller.decide_substitution(team, forced_id, minute=log.second / 60,
+                                                  goal_difference=goal_difference,
+                                                  allow_rotation=rotation_allowed and changes < cfg.states.substitutions.rotations_per_window)
         if decision is None:
             break
         outgoing = next(slot for slot in team.active if slot.player.id == decision.outgoing_id)
@@ -41,6 +44,7 @@ def substitutions(team: TeamState, log: MatchLog, cfg: Config, controller: "AICo
         forced_id = None
     if changes:
         if not halftime: team.windows += 1
+        team.next_rotation = log.second + cfg.states.substitutions.rotation_interval * 60
         refresh(team, cfg)
     return changes
 

@@ -13,6 +13,12 @@ class LineupSlot:
     position: Position
 
 
+@dataclass(frozen=True, slots=True)
+class PlayingTimePriority:
+    satisfaction: float = 0
+    development: float = 0
+
+
 @dataclass(slots=True)
 class Lineup:
     club_id: int
@@ -20,6 +26,7 @@ class Lineup:
     slots: list[LineupSlot]
     bench: list[Player]
     block_height: float = 0
+    playing_time: dict[int, PlayingTimePriority] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

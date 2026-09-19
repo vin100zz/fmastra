@@ -65,3 +65,31 @@ def test_delete_slot(tmp_path):
     assert not any(slot["slot"] == "test" for slot in store.slots())
     with pytest.raises(SaveError): store.delete("test")
     with pytest.raises(SaveError): store.delete("../escape")
+
+
+def test_old_save_receives_rotation_rules_without_accepting_tampered_config(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "rotation")
+    legacy = json.loads(gzip.decompress(store.path_for("rotation").read_bytes()))
+    legacy["schema_version"] = 8
+    rules = legacy["world"]["config"]
+    for key in MIGRATION_DEFAULTS[0][2]:
+        del rules["etats"]["remplacements"][key]
+    raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
+    store.path_for("rotation").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    restored = store.load("rotation")
+    assert restored.config.states.substitutions.playing_time_weight == 8
+    assert restored.players == world.players
+    assert restored.rngs["matches"].getstate() == world.rngs["matches"].getstate()
+    store.save(restored, "upgraded")
+    assert store.load("upgraded").config == restored.config
+    rules["etats"]["remplacements"]["poids_deficit_temps_jeu"] = 99.0
+    store.path_for("rotation").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    with pytest.raises(SaveError, match="configuration"):
+        store.load("rotation")

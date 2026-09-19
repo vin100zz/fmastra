@@ -117,8 +117,7 @@ def advance_day(world: World) -> None:
                 lineups.append(lineup)
                 temporary.update(names)
                 continue
-            club = world.clubs[club_id]
-            context = LineupContext(club, [world.players[pid] for pid in club.player_ids], match.competition_id, world.date)
+            context = LineupContext.from_world(world, club_id, match.competition_id, world.date)
             lineups.append(controller.select_lineup(context))
         result = engine.simulate(*lineups, cfg, world.rngs["matches"], neutral=match.neutral)
         if is_cup:

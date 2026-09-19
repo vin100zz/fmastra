@@ -244,6 +244,17 @@ intervalle_evaluation_minutes=evaluation_interval
 seuil_fatigue_declenchement=fitness_threshold
 seuil_fatigue_joueur_averti=booked_fitness_threshold
 ecart_niveau_acceptable_remplacant=replacement_gap
+gain_minimum_rotation=rotation_min_gain
+poids_deficit_temps_jeu=playing_time_weight
+poids_developpement_jeunes=development_weight
+marge_potentiel_reference=potential_margin_reference
+minutes_utiles_minimum=min_useful_minutes
+intervalle_rotation_minutes=rotation_interval
+rotations_par_fenetre=rotations_per_window
+affinite_minimum_rotation=rotation_min_affinity
+facteur_rotation_match_serre=close_game_rotation_factor
+facteur_rotation_equipe_menee=trailing_rotation_factor
+facteur_ecart_avantage_confortable=comfortable_gap_factor
 minutes_restantes_ajustement_tactique=tactical_minutes
 ecart_buts_ajustement_defensif=defensive_goal_margin
 valorisation=valuation
@@ -491,7 +502,18 @@ DEFAULTS = {"ia_gestion.mercato.stabilite_apres_arrivee_jours": 180,
             "ia_gestion.mercato.marge_niveau_joueur": 2.0,
             "ia_gestion.mercato.moral_depart_force": 0.5,
             "ia_gestion.mercato.talents_visibles": 10,
-            "ia_gestion.mercato.jours_encheres": 2}
+            "ia_gestion.mercato.jours_encheres": 2,
+            "etats.remplacements.gain_minimum_rotation": 10.0,
+            "etats.remplacements.poids_deficit_temps_jeu": 8.0,
+            "etats.remplacements.poids_developpement_jeunes": 10.0,
+            "etats.remplacements.marge_potentiel_reference": 20.0,
+            "etats.remplacements.minutes_utiles_minimum": 15,
+            "etats.remplacements.intervalle_rotation_minutes": 10,
+            "etats.remplacements.rotations_par_fenetre": 2,
+            "etats.remplacements.affinite_minimum_rotation": 0.5,
+            "etats.remplacements.facteur_rotation_match_serre": 0.5,
+            "etats.remplacements.facteur_rotation_equipe_menee": 0.25,
+            "etats.remplacements.facteur_ecart_avantage_confortable": 2.0}
 
 
 def clean(value: object) -> object:

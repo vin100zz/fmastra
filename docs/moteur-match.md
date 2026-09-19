@@ -39,6 +39,40 @@ mi-temps ne consomment pas les fenêtres de jeu, mais les joueurs remplacés
 comptent dans le maximum total. L'IA peut effectuer plusieurs changements dans
 une même fenêtre. Un blessé peut sortir dès la première minute.
 
+### Utilisation du banc
+
+Les blessures et les seuils de fatigue restent prioritaires. À partir de la
+55e minute, l'IA peut aussi changer un titulaire pour améliorer le niveau
+effectif de l'équipe, donner des minutes à un joueur sous-utilisé ou développer
+un jeune. Ces motifs peuvent déclencher un changement avant les seuils de
+fatigue. Le gardien ne fait pas l'objet d'une rotation ordinaire.
+
+Avant le match, le déficit de temps de jeu compare les minutes de la saison aux
+attentes liées au rang du joueur à son poste, comme pour le moral. Sans match
+déjà disputé, aucun déficit n'est inventé. La priorité de développement dépend
+de l'âge, de la marge au potentiel **estimé par le club**, des minutes du mois
+et de la préférence du club pour les jeunes. Ces priorités servent aussi à
+choisir le banc parmi des joueurs de niveau comparable, avec un gardien de
+réserve et une recherche de couverture des postes. Elles ne modifient pas le
+choix des titulaires.
+
+En match, le gain de niveau effectif tient compte de la fraîcheur. Les bonus
+de temps de jeu pèsent pleinement avec au moins deux buts d'avance, pour moitié
+dans un match à égalité ou avec un but d'avance, et pour un quart lorsque
+l'équipe est menée. Un avantage confortable autorise une baisse sportive
+limitée ; autrement, le changement doit au moins maintenir le niveau effectif.
+L'écart avec le titulaire reposé et l'affinité au poste limitent les choix.
+
+Les rotations sont regroupées par deux au maximum, espacées d'au moins dix
+minutes, et doivent laisser au moins quinze minutes réglementaires à jouer.
+Une entrée récente n'est pas annulée pour donner du temps de jeu à quelqu'un
+d'autre ; une blessure ou une fatigue critique peut néanmoins justifier sa
+sortie. Les urgences ne sont pas limitées par cette taille de groupe ou ce
+délai. Le plafond de cinq joueurs et les trois fenêtres restent applicables.
+Il n'existe pas de quota minimal de changements. Tous les coefficients sont
+dans `etats.remplacements` ; les sauvegardes antérieures reçoivent les nouveaux
+paramètres par défaut au chargement.
+
 Mettre à jour la fraîcheur aux paliers configurés, en fractionnant le calcul
 si une possession traverse un palier. Recalculer les agrégats sur remplacement,
 expulsion, sortie sur blessure, changement de poste ou formation et palier de

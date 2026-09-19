@@ -78,7 +78,7 @@ class PossessionEngine:
                     return self._forfeit(teams, home, away, log, cfg)
                 for side, team in enumerate(teams):
                     if log.second >= team.next_substitution:
-                        substitutions(team, log, cfg, controller)
+                        substitutions(team, log, cfg, controller, goal_difference=team.goals - teams[1 - side].goals)
                         team.next_substitution = log.second + cfg.states.substitutions.evaluation_interval * 60
                     trailing = max(0, teams[1 - side].goals - team.goals)
                     fraction = clamp((log.second - (rules.match_seconds - heights.late_match_minutes * 60)) /

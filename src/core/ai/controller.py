@@ -21,8 +21,11 @@ class AIController:
     def select_lineup(self, context: LineupContext) -> Lineup:
         return select_lineup(context, self.cfg)
 
-    def decide_substitution(self, state: TeamState, forced_id: int | None = None) -> Substitution | None:
-        return choose_substitution(state, self.cfg, forced_id)
+    def decide_substitution(self, state: TeamState, forced_id: int | None = None, *,
+                            minute: float = 0, goal_difference: int = 0,
+                            allow_rotation: bool = True) -> Substitution | None:
+        return choose_substitution(state, self.cfg, forced_id, minute=minute,
+                                   goal_difference=goal_difference, allow_rotation=allow_rotation)
 
     def evaluate_needs(self, club: Club, players: list[Player]) -> list["Need"]:
         from .market import needs_for

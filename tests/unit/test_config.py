@@ -55,3 +55,17 @@ def test_arrival_stability_configuration(config):
     with pytest.raises(ConfigError): decode_config(raw)
     del raw["ia_gestion"]["mercato"]["stabilite_apres_arrivee_jours"]
     assert decode_config(raw).management.market.arrival_stability_days == 180
+
+
+@pytest.mark.parametrize("key,value", [
+    ("gain_minimum_rotation", 0), ("poids_deficit_temps_jeu", -1),
+    ("marge_potentiel_reference", 0), ("minutes_utiles_minimum", 0),
+    ("intervalle_rotation_minutes", 0), ("rotations_par_fenetre", 0),
+    ("affinite_minimum_rotation", 1.5),
+    ("facteur_rotation_equipe_menee", 2.0), ("facteur_ecart_avantage_confortable", 0.5),
+])
+def test_invalid_rotation_rules(config, key, value):
+    raw = config_payload(config)
+    raw["etats"]["remplacements"][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)

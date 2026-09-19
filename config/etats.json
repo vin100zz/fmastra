@@ -62,6 +62,17 @@
     "seuil_fatigue_joueur_averti": 0.60,
     "ecart_niveau_acceptable_remplacant": 6.0,
     "minutes_restantes_ajustement_tactique": 20,
-    "ecart_buts_ajustement_defensif": 2
+    "ecart_buts_ajustement_defensif": 2,
+    "gain_minimum_rotation": 10.0,
+    "poids_deficit_temps_jeu": 8.0,
+    "poids_developpement_jeunes": 10.0,
+    "marge_potentiel_reference": 20.0,
+    "minutes_utiles_minimum": 15,
+    "intervalle_rotation_minutes": 10,
+    "rotations_par_fenetre": 2,
+    "affinite_minimum_rotation": 0.5,
+    "facteur_rotation_match_serre": 0.5,
+    "facteur_rotation_equipe_menee": 0.25,
+    "facteur_ecart_avantage_confortable": 2.0
   }
 }

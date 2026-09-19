@@ -110,6 +110,17 @@ class StatesConfigSubstitutions:
     replacement_gap: float = Field(alias="ecart_niveau_acceptable_remplacant")
     tactical_minutes: int = Field(alias="minutes_restantes_ajustement_tactique")
     defensive_goal_margin: int = Field(alias="ecart_buts_ajustement_defensif")
+    rotation_min_gain: float = Field(default=10.0, alias="gain_minimum_rotation")
+    playing_time_weight: float = Field(default=8.0, alias="poids_deficit_temps_jeu")
+    development_weight: float = Field(default=10.0, alias="poids_developpement_jeunes")
+    potential_margin_reference: float = Field(default=20.0, alias="marge_potentiel_reference")
+    min_useful_minutes: int = Field(default=15, alias="minutes_utiles_minimum")
+    rotation_interval: int = Field(default=10, alias="intervalle_rotation_minutes")
+    rotations_per_window: int = Field(default=2, alias="rotations_par_fenetre")
+    rotation_min_affinity: float = Field(default=0.5, alias="affinite_minimum_rotation")
+    close_game_rotation_factor: float = Field(default=0.5, alias="facteur_rotation_match_serre")
+    trailing_rotation_factor: float = Field(default=0.25, alias="facteur_rotation_equipe_menee")
+    comfortable_gap_factor: float = Field(default=2.0, alias="facteur_ecart_avantage_confortable")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

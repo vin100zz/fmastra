@@ -1,5 +1,6 @@
 """Lineup and bench decisions with unique player assignments."""
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from core.config.model import Config
 from core.domain.clubs import Club
@@ -8,6 +9,10 @@ from core.domain.matches import Lineup, LineupSlot
 from core.domain.players import Player, Position
 from core.engine.abilities import overall, state_multiplier
 from .assignment import maximize_assignment
+from .playing_time import playing_time_priorities, rotation_bonus
+
+if TYPE_CHECKING:
+    from core.domain.world import World
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,6 +21,15 @@ class LineupContext:
     players: list[Player]
     competition_id: int
     date: Date
+    seed: int = 0
+    games_played: int = 0
+
+    @classmethod
+    def from_world(cls, world: "World", club_id: int, competition_id: int, date: Date) -> "LineupContext":
+        club = world.clubs[club_id]
+        games = sum(match.result is not None and match.season == world.season
+                    and club_id in (match.home_id, match.away_id) for match in world.matches.values())
+        return cls(club, [world.players[pid] for pid in club.player_ids], competition_id, date, world.seed, games)
 
 
 def select_lineup(context: LineupContext, cfg: Config) -> Lineup:
@@ -62,8 +76,34 @@ def select_lineup(context: LineupContext, cfg: Config) -> Lineup:
             chosen.remove(slot.player.id)
             chosen.add(replacement.id)
             slots[index] = LineupSlot(replacement, slot.position)
+    priorities = playing_time_priorities(context.players, context.club, context.date,
+                                        context.seed, context.games_played, cfg)
     remaining = sorted((player for player in players if player.id not in chosen), key=lambda player: (-player.rating * player.fitness, player.id))
     keepers = [player for player in remaining if player.position == Position.GOALKEEPER][:1]
-    keeper_ids = {player.id for player in keepers}
-    bench = (keepers + [player for player in remaining if player.id not in keeper_ids])[:cfg.world.match_rules.bench_size]
-    return Lineup(context.club.id, formation, slots, bench)
+    bench = keepers[:cfg.world.match_rules.bench_size]
+    candidates = [player for player in remaining if player.position != Position.GOALKEEPER]
+    outfield_roles = set(slot.position for slot in slots if slot.position != Position.GOALKEEPER)
+    covered = set()
+    rules = cfg.states.substitutions
+    while candidates and len(bench) < cfg.world.match_rules.bench_size:
+        options = []
+        for role in sorted(outfield_roles):
+            suitable = [p for p in candidates if p.affinity(role) >= rules.rotation_min_affinity]
+            if not suitable:
+                continue
+            quality = {p.id: overall(p.attributes, role, cfg) * state_multiplier(p, role, cfg) for p in suitable}
+            best = max(quality.values())
+            for player in suitable:
+                if quality[player.id] < best - rules.replacement_gap:
+                    continue
+                score = quality[player.id] + rotation_bonus(priorities[player.id], cfg)
+                if role not in covered:
+                    score += rules.replacement_gap
+                options.append((score, -player.id, role, player))
+        if not options:
+            break
+        _, _, role, player = max(options, key=lambda option: option[:3])
+        bench.append(player)
+        candidates.remove(player)
+        covered.add(role)
+    return Lineup(context.club.id, formation, slots, bench, playing_time=priorities)

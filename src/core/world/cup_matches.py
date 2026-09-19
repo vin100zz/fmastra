@@ -1,5 +1,6 @@
 """Match-only reinforcement players and knockout resolution, without roster mutations."""
 from statistics import mean
+from dataclasses import replace
 
 from core.ai.selection import LineupContext, select_lineup
 from core.domain.date import Date
@@ -18,10 +19,11 @@ def cup_lineup(world: World, match: Match, club_id: int) -> tuple[Lineup, dict[i
     level = mean(p.rating for p in squad) if squad else club.reputation
     rng = stream(world.seed, "cup-reinforcements", match.season, match.id, club_id)
     temporary = {}
+    context = LineupContext.from_world(world, club_id, match.competition_id, match.date)
     positions = [Position(role) for role in cfg.formations.formations[club.formation]]
     names = world.identity_pool.get(club.nation) or [("Joueur", "temporaire")]
     while len(available) < cfg.world.match_rules.players_on_pitch or not any(p.position == Position.GOALKEEPER for p in available):
-        selected = select_lineup(LineupContext(club, available, match.competition_id, match.date), cfg)
+        selected = select_lineup(replace(context, players=available), cfg)
         missing = positions[len(selected.slots):]
         position = Position.GOALKEEPER if not any(p.position == Position.GOALKEEPER for p in available) else (missing[0] if missing else Position.CENTER_BACK)
         # Negative IDs belong only to this match's snapshot and cannot enter the market.
@@ -36,7 +38,7 @@ def cup_lineup(world: World, match: Match, club_id: int) -> tuple[Lineup, dict[i
                         cfg.states.injuries.fragility_min, 0, club.id, None)
         temporary[pid] = player.name
         available.append(player)
-    return select_lineup(LineupContext(club, available, match.competition_id, match.date), cfg), temporary
+    return select_lineup(replace(context, players=squad + [p for p in available if p.id in temporary]), cfg), temporary
 
 
 def decide_winner(world: World, match: Match, result: MatchResult, lineups: list[Lineup],

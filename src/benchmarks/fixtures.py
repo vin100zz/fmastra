@@ -30,5 +30,4 @@ def fixture_lineup(world: World, club: int | str, synthetic_id: int) -> Lineup:
             raise ValueError(f"Unknown synthetic fixture: {club}")
         return synthetic_lineup(world.config, synthetic_id)
     entity = world.clubs[club]
-    return select_lineup(LineupContext(entity, [world.players[pid] for pid in entity.player_ids],
-                                      entity.competition_id, world.date), world.config)
+    return select_lineup(LineupContext.from_world(world, entity.id, entity.competition_id, world.date), world.config)

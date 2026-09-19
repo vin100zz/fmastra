@@ -124,6 +124,18 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.management.market.max_negotiations > 0 and cfg.management.market.shortlist_size > 0, "Invalid negotiation capacity")
     require(0 < cfg.management.market.counteroffer_ratio <= 1, "Counteroffer ratio must be in (0,1]")
     require(cfg.states.substitutions.evaluation_interval > 0 and cfg.engine.rating_refresh.fitness_interval > 0, "Refresh intervals must be positive")
+    substitutions = cfg.states.substitutions
+    require(substitutions.rotation_min_gain > 0 and substitutions.potential_margin_reference > 0,
+            "Rotation gain and potential reference must be positive")
+    require(substitutions.playing_time_weight >= 0 and substitutions.development_weight >= 0
+            and substitutions.replacement_gap >= 0, "Rotation weights and quality gap must be nonnegative")
+    require(0 < substitutions.min_useful_minutes < cfg.engine.timing.match_seconds / 60
+            and substitutions.rotation_interval > 0 and substitutions.rotations_per_window >= 1,
+            "Rotation timing and batch size must be positive")
+    require(0 < substitutions.rotation_min_affinity <= 1 and substitutions.defensive_goal_margin > 0,
+            "Invalid rotation affinity or comfortable lead")
+    require(0 <= substitutions.trailing_rotation_factor <= substitutions.close_game_rotation_factor <= 1
+            and substitutions.comfortable_gap_factor >= 1, "Invalid rotation context factors")
     buckets = cfg.demography.cohort.level_buckets
     require(bool(buckets) and buckets[0][0] == cfg.attributes.bounds.min and buckets[-1][1] == cfg.attributes.bounds.max, "Level classes must cover attribute bounds")
     require(all(len(pair) == 2 and pair[0] < pair[1] for pair in buckets), "Invalid level classes")
