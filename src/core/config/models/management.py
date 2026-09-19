@@ -19,14 +19,22 @@ class ManagementConfigValuationContractDiscountItem:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigValuationLevelCurveItem:
+    level: float = Field(alias="niveau")
+    value: int = Field(alias="valeur")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigValuation:
-    base_euros: int = Field(alias="base_euros")
-    exponent: float = Field(alias="exposant")
-    reference_level: int = Field(alias="niveau_reference")
     potential_weight: float = Field(alias="poids_potentiel_sur_niveau")
     age_curve: tuple[ManagementConfigValuationAgeCurveItem, ...] = Field(alias="courbe_age")
     contract_discount: tuple[ManagementConfigValuationContractDiscountItem, ...] = Field(alias="decote_fin_contrat")
     position_scarcity: FrozenMap[float] = Field(alias="rarete_poste")
+    level_curve: tuple[ManagementConfigValuationLevelCurveItem, ...] = Field(default=(), alias="courbe_niveau")
+    # Exponential law of configurations saved before `courbe_niveau`; used only while that curve is empty.
+    base_euros: int = Field(default=1_000_000, alias="base_euros")
+    exponent: float = Field(default=0.115, alias="exposant")
+    reference_level: int = Field(default=55, alias="niveau_reference")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

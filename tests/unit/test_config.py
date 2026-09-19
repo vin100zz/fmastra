@@ -91,3 +91,56 @@ def test_star_departure_rules_default_for_older_configurations(config):
     rules = decode_config(raw).management.market
     assert (rules.club_outgrown_margin, rules.ambition_base, rules.ambition_ego_weight) == (10.0, 0.6, 0.4)
     assert (rules.frustration_span, rules.leave_threshold, rules.frustration_morale_weight) == (15.0, 0.3, 0.6)
+
+
+def test_level_curve_passes_through_points_and_interpolates_geometrically(config):
+    from math import sqrt
+    from core.world.importation.synthesis import level_value
+    curve = config.management.valuation.level_curve
+    assert len(curve) >= 2
+    for row in curve:
+        assert level_value(row.level, config) == pytest.approx(row.value)
+    for left, right in zip(curve, curve[1:]):
+        assert level_value((left.level + right.level) / 2, config) == pytest.approx(sqrt(left.value * right.value))
+
+
+def test_level_curve_continues_past_its_ends_with_the_nearest_slope(config):
+    from core.world.importation.synthesis import level_value
+    curve = config.management.valuation.level_curve
+    assert level_value(curve[-1].level + 5, config) > curve[-1].value * 1.2
+    assert 0 < level_value(curve[0].level - 5, config) < curve[0].value
+
+
+def test_star_values_reach_realistic_amounts(config):
+    from core.domain.players import Position
+    from core.world.importation.synthesis import intrinsic_value
+    # The exponential valuation capped the best player near 56 M€, a third of real prices.
+    star = intrinsic_value(88, 25, Position("MOC"), config)
+    assert 150_000_000 <= star <= 300_000_000
+    assert intrinsic_value(70, 28, Position("DC"), config) == 18_000_000
+    assert intrinsic_value(60, 28, Position("DC"), config) < 1_000_000
+
+
+@pytest.mark.parametrize("curve", [
+    [{"niveau": 60, "valeur": 1_000_000}],
+    [{"niveau": 60, "valeur": 1_000_000}, {"niveau": 60, "valeur": 2_000_000}],
+    [{"niveau": 70, "valeur": 1_000_000}, {"niveau": 60, "valeur": 2_000_000}],
+    [{"niveau": 60, "valeur": 2_000_000}, {"niveau": 70, "valeur": 1_000_000}],
+    [{"niveau": 60, "valeur": 0}, {"niveau": 70, "valeur": 1_000_000}],
+])
+def test_invalid_level_curve_is_rejected(config, curve):
+    raw = config_payload(config)
+    raw["ia_gestion"]["valorisation"]["courbe_niveau"] = curve
+    with pytest.raises(ConfigError):
+        decode_config(raw)
+
+
+def test_older_configurations_keep_the_exponential_valuation(config):
+    from math import exp
+    from core.world.importation.synthesis import level_value
+    raw = config_payload(config)
+    del raw["ia_gestion"]["valorisation"]["courbe_niveau"]
+    older = decode_config(raw)
+    assert older.management.valuation.level_curve == ()
+    for level in (55, 70, 88):
+        assert level_value(level, older) == pytest.approx(1_000_000 * exp(0.115 * (level - 55)))

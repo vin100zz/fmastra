@@ -6,12 +6,31 @@ est seul responsable des mutations et vérifie à nouveau les contraintes.
 
 ## Valeur et salaire
 
-La valeur intrinsèque est l'exponentielle de niveau décrite par `valorisation`,
-modulée par l'âge et la rareté du poste. Le niveau utilise les attributs de base,
-sans forme, fatigue ou moral. Pour la prime de potentiel, employer le centre de
-l'estimation propre à l'observateur, jamais le potentiel réel. Les facteurs
-segmentés d'âge sont interpolés entre les centres des segments ; prolonger les
-valeurs extrêmes hors domaine.
+La valeur intrinsèque suit la courbe de niveau `courbe_niveau` de `valorisation`
+(valeur en euros d'un joueur de 27-29 ans à un poste neutre), modulée par l'âge et
+la rareté du poste. La courbe est interpolée géométriquement entre ses points, donc
+convexe ; au-delà de ses extrémités, la pente du segment voisin se prolonge. Le
+niveau utilise les attributs de base, sans forme, fatigue ou moral. Pour la prime de
+potentiel, employer le centre de l'estimation propre à l'observateur, jamais le
+potentiel réel. Les facteurs segmentés d'âge sont interpolés entre les centres des
+segments ; prolonger les valeurs extrêmes hors domaine.
+
+Calibrage : la courbe de niveau et les facteurs d'âge sont ajustés sur la colonne
+`Value` du CSV source (hors les valeurs sentinelles à 348 M€), à l'import, pour les
+joueurs des clubs actifs. À niveau égal, un joueur de 27-29 ans vaut environ 0,5 M€
+à 60, 3 M€ à 65, 18 M€ à 70, 46 M€ à 75, 85 M€ à 80 et 140 M€ à 85 ; les meilleurs
+joueurs du monde dépassent 200 M€. Un ancien joueur perd sa valeur bien plus vite
+qu'avant (0,34 à 32-33 ans, 0,12 à 34-35 ans). Le poids du potentiel (0,75) reste
+adapté aux jeunes avec cette courbe. Le rapport valeur source / valeur du jeu
+vaut environ 1,0 en médiane sur l'ensemble des joueurs. Les postes (`rarete_poste`)
+n'ont pas été recalés : l'écart de niveau entre postes de la source est mêlé à des
+différences d'échelle de note.
+
+Les valeurs d'indemnité suivent : le prix demandé vaut la valeur décotée multipliée
+par le seuil vendeur, donc les grands transferts atteignent plusieurs dizaines de
+millions pour un joueur de haut niveau. Les salaires attendus (fraction annuelle de
+la valeur) restent inférieurs aux salaires source à tous les niveaux : un joueur
+transféré garde de toute façon son salaire actuel au minimum.
 
 Séparer valeur intrinsèque et indemnité de transfert. Cette dernière applique
 la décote de durée contractuelle. Un agent libre coûte zéro indemnité, mais

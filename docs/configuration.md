@@ -79,6 +79,15 @@ défaut de l'ambition des joueurs (`ia_gestion.mercato`) : `marge_depassement_cl
 ou nulle, `ambition_base` et les poids restent dans [0, 1] (le poids de l'ego est
 positif ou nul), l'écart de frustration est strictement positif.
 
+Les configurations antérieures à la version 11 des sauvegardes n'ont pas de
+`ia_gestion.valorisation.courbe_niveau` : la courbe vaut alors une liste vide et la
+valorisation reste l'exponentielle d'origine (`base_euros` 1 000 000, `exposant`
+0,115, `niveau_reference` 55, valeurs par défaut du modèle) avec la courbe d'âge
+enregistrée dans la sauvegarde. Une partie déjà commencée garde donc ses valeurs ;
+une nouvelle partie utilise la courbe de niveau. Une courbe non vide compte au moins
+deux points, strictement croissants en `niveau`, avec des `valeur` strictement
+positives et jamais décroissantes.
+
 ## Cohérence
 
 - Somme des poids des composites, notes globales et distributions : 1 à la

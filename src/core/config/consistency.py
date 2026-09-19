@@ -98,6 +98,10 @@ def validate_consistency(cfg: Config) -> None:
                   cfg.management.valuation.age_curve):
         for left, right in zip(curve, curve[1:]):
             require(right.min_age == left.max_age + 1, "Age curve has a gap or overlap")
+    levels = cfg.management.valuation.level_curve
+    require(len(levels) != 1 and all(row.value > 0 for row in levels)
+            and all(left.level < right.level and left.value <= right.value for left, right in zip(levels, levels[1:])),
+            "Valuation level curve needs two or more points, increasing in level and never decreasing in value")
     require(isclose(sum(cfg.demography.position_targets.values()), 1, abs_tol=1e-6), "Position targets must sum to 1")
     require(isclose(sum(item.share for item in cfg.states.injuries.severities), 1, abs_tol=1e-6), "Injury shares must sum to 1")
     require(cfg.engine.set_pieces.corner_probability + cfg.engine.set_pieces.free_kick_probability <= 1, "Set-piece probabilities overlap")

@@ -195,7 +195,7 @@ def test_recent_arrivals_are_not_approached_by_active_or_external_clubs(config, 
     assert not propose_transfers(world, Random(2))
 
 
-@pytest.mark.parametrize("version", [1, 2, 5, 6, 7, 8, 9])
+@pytest.mark.parametrize("version", [1, 2, 5, 6, 7, 8, 9, 10])
 def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, version):
     import gzip
     import hashlib

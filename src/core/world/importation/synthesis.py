@@ -12,10 +12,23 @@ def age_value_factor(age: int, cfg: Config) -> float:
     return interpolate(points, age)
 
 
-def intrinsic_value(level: float, age: int, position: Position, cfg: Config) -> int:
+def level_value(level: float, cfg: Config) -> float:
+    """Value in euros of a level for a prime-age player at a neutral position.
+
+    The configured curve is interpolated geometrically, so value stays convex
+    between points; past its ends, the slope of the nearest segment continues.
+    """
     value = cfg.management.valuation
-    return round(value.base_euros * exp(value.exponent * (level - value.reference_level))
-                 * age_value_factor(age, cfg) * value.position_scarcity[position])
+    if not value.level_curve:
+        return value.base_euros * exp(value.exponent * (level - value.reference_level))
+    points = [(row.level, log(row.value)) for row in value.level_curve]
+    index = next((i for i in range(1, len(points)) if level <= points[i][0]), len(points) - 1)
+    (x0, y0), (x1, y1) = points[index - 1], points[index]
+    return exp(y0 + (y1 - y0) * (level - x0) / (x1 - x0))
+
+
+def intrinsic_value(level: float, age: int, position: Position, cfg: Config) -> int:
+    return round(level_value(level, cfg) * age_value_factor(age, cfg) * cfg.management.valuation.position_scarcity[position])
 
 
 def expected_wage(value: int, cfg: Config) -> int:

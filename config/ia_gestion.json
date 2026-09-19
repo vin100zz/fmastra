@@ -1,18 +1,29 @@
 {
   "valorisation": {
-    "_note": "Convexite en talent indispensable : un joueur a 90 vaut ~5x un joueur a 75.",
-    "base_euros": 1000000,
-    "exposant": 0.115,
-    "niveau_reference": 55,
+    "_note": "Convexite en talent indispensable. Valeur d'un joueur de 27-29 ans a un poste neutre, interpolee geometriquement entre points (pente du dernier segment prolongee au-dela). Calee sur la valeur du CSV source : un 80 vaut ~85 M, un 70 ~18 M, un 60 ~0,5 M. Les facteurs d'age viennent du meme calage (les 34 ans et plus valent bien moins que les 30 ans).",
+    "courbe_niveau": [
+      {"niveau": 40, "valeur": 10000},
+      {"niveau": 50, "valeur": 40000},
+      {"niveau": 55, "valeur": 100000},
+      {"niveau": 60, "valeur": 550000},
+      {"niveau": 65, "valeur": 2800000},
+      {"niveau": 70, "valeur": 18000000},
+      {"niveau": 75, "valeur": 46000000},
+      {"niveau": 80, "valeur": 85000000},
+      {"niveau": 85, "valeur": 140000000},
+      {"niveau": 90, "valeur": 200000000}
+    ],
     "poids_potentiel_sur_niveau": 0.75,
     "courbe_age": [
-      {"age_min": 16, "age_max": 20, "facteur": 1.45},
-      {"age_min": 21, "age_max": 23, "facteur": 1.35},
-      {"age_min": 24, "age_max": 26, "facteur": 1.15},
+      {"age_min": 16, "age_max": 18, "facteur": 0.85},
+      {"age_min": 19, "age_max": 20, "facteur": 1.15},
+      {"age_min": 21, "age_max": 23, "facteur": 1.50},
+      {"age_min": 24, "age_max": 26, "facteur": 1.10},
       {"age_min": 27, "age_max": 29, "facteur": 1.00},
       {"age_min": 30, "age_max": 31, "facteur": 0.70},
-      {"age_min": 32, "age_max": 33, "facteur": 0.42},
-      {"age_min": 34, "age_max": 45, "facteur": 0.18}
+      {"age_min": 32, "age_max": 33, "facteur": 0.34},
+      {"age_min": 34, "age_max": 35, "facteur": 0.12},
+      {"age_min": 36, "age_max": 45, "facteur": 0.05}
     ],
     "decote_fin_contrat": [
       {"mois_max": 6,  "facteur": 0.15},
