@@ -4,27 +4,27 @@ Most nations in ``data/nations.csv`` only carry an internal placeholder code (``
 rather than a real football federation code, and neither is an ISO 3166-1 alpha-2 code, which the
 vendored flag-icons SVGs (``web/flags/<iso2>.svg``) are keyed by. This module derives a stable
 3-letter display code for every nation (reusing the real federation code where one exists) and a
-best-effort ISO alpha-2 code from a hand-maintained lookup, for the frontend to build the flag's
-URL from. A handful of contested or non-ISO entries (Crimée, Pays Basque, Zanzibar, the former
+best-effort flag-icons code (ISO alpha-2, or ``gb-eng``/``gb-sct``/``gb-wls``/``gb-nir`` for the
+home nations) from a hand-maintained lookup, for the frontend to build the flag's URL from. A handful of contested or non-ISO entries (Crimée, Pays Basque, Zanzibar, the former
 R.D.A.) are left without a flag rather than guessing.
 """
 from __future__ import annotations
 
 import unicodedata
 
-# Nation code -> ISO 3166-1 alpha-2, for flag emoji. Home nations (ENG/SCO/WAL/NIR) fall back to
-# the United Kingdom flag since their own subdivision flags are not reliably supported everywhere.
+# Nation code -> flag-icons code (ISO 3166-1 alpha-2, or the ISO 3166-2 style ``GB-ENG`` for the home
+# nations, which have their own SVGs in ``web/flags``). "X1B" (Grande-Bretagne) keeps the plain GB flag.
 ISO_ALPHA2: dict[str, str] = {
-    "RSA": "ZA", "ALB": "AL", "ALG": "DZ", "GER": "DE", "ENG": "GB", "KSA": "SA", "ARG": "AR",
+    "RSA": "ZA", "ALB": "AL", "ALG": "DZ", "GER": "DE", "ENG": "GB-ENG", "KSA": "SA", "ARG": "AR",
     "AUS": "AU", "AUT": "AT", "BEL": "BE", "BIH": "BA", "BRA": "BR", "BUL": "BG", "CMR": "CM",
     "CAN": "CA", "CHI": "CL", "CHN": "CN", "COL": "CO", "KOR": "KR", "CRO": "HR", "CIV": "CI",
     "DEN": "DK", "ESP": "ES", "FIN": "FI", "FRA": "FR", "GHA": "GH", "GRE": "GR", "HUN": "HU",
-    "IRN": "IR", "IRL": "IE", "NIR": "GB", "ISL": "IS", "ISR": "IL", "ITA": "IT", "JPN": "JP",
+    "IRN": "IR", "IRL": "IE", "NIR": "GB-NIR", "ISL": "IS", "ISR": "IL", "ITA": "IT", "JPN": "JP",
     "KVX": "XK", "MKD": "MK", "MLI": "ML", "MAR": "MA", "MEX": "MX", "MNE": "ME", "NGA": "NG",
-    "NOR": "NO", "NZL": "NZ", "PAR": "PY", "WAL": "GB", "NED": "NL", "POL": "PL", "POR": "PT",
+    "NOR": "NO", "NZL": "NZ", "PAR": "PY", "WAL": "GB-WLS", "NED": "NL", "POL": "PL", "POR": "PT",
     "PER": "PE", "QAT": "QA", "ROU": "RO", "RUS": "RU", "CZE": "CZ", "SRB": "RS", "SVK": "SK",
     "SVN": "SI", "SUI": "CH", "SWE": "SE", "SEN": "SN", "TUN": "TN", "TUR": "TR", "UKR": "UA",
-    "URU": "UY", "VEN": "VE", "SCO": "GB", "EGY": "EG", "ECU": "EC", "USA": "US", "GDR": "DE",
+    "URU": "UY", "VEN": "VE", "SCO": "GB-SCT", "EGY": "EG", "ECU": "EC", "USA": "US", "GDR": "DE",
     "X00": "AF", "X01": "AD", "X02": "AO", "X03": "AI", "X04": "AG", "X05": "AM", "X06": "AW",
     "X07": "AZ", "X08": "BS", "X09": "BH", "X0A": "BD", "X0B": "BB", "X0C": "BM", "X0D": "BT",
     "X0E": "MM", "X0F": "BY", "X0G": "BO", "X0H": "BQ", "X0I": "BW", "X0J": "BN", "X0K": "BF",

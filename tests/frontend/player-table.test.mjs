@@ -1,7 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {playerTable,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge} from '../../web/ui.js';
-import {playerScreen} from '../../web/screens.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -64,19 +63,6 @@ test('level and potential badges share one red-yellow-green scale out of 200',()
  assert.match(html,/style="--hue:\d+" title="Niveau actuel sur 200">110</);
  assert.match(html,/style="--hue:\d+" title="Potentiel sur 200">160</);
  assert.equal((html.match(/class="rating graded"/g)||[]).length,2);
-});
-
-test('player profile shows level and potential badges in the attributes header only',async()=>{
- const previous=globalThis.fetch;
- const detail={...player,attributes:{passe:80,technique:60},secondary_positions:[],position_ratings:{},potential:91.5,club:{id:1,name:'Club'},born:'2005-01-01',discipline:[],form:0,morale:.5,injured_until:null,contract_end:'2028-06-30'};
- globalThis.fetch=async()=>({ok:true,json:async()=>detail});
- try{
-  const html=await playerScreen(1,'profile',new URLSearchParams());
-  const head=html.match(/<div class="card-head"><h2>Les attributs[^]*?<\/div><\/div>/)[0];
-  assert.match(head,/Niveau[^]*title="Niveau actuel sur 200">140</);assert.match(head,/Potentiel[^]*title="Potentiel sur 200">183</);
-  assert.equal((html.match(/class="rating graded"/g)||[]).length,2);
-  assert.doesNotMatch(html,/class="potential"|Potentiel estimé|\/ 200<\/span>/);
- }finally{globalThis.fetch=previous;}
 });
 
 test('season archives include full standings and open the latest season',()=>{

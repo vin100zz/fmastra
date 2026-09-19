@@ -6,9 +6,14 @@ export const facilityRating = value => value == null ? '—' : `${number(value)}
 export const money = value => new Intl.NumberFormat('fr-FR', {style:'currency',currency:'EUR',maximumFractionDigits:0,maximumSignificantDigits:2,notation:Math.abs(value)>=1e6?'compact':'standard'}).format(value ?? 0);
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
 export const level = value => value==null ? null : Math.round(value*2);
-// Red at 70 or less, yellow at 110 (the median player), green at 150 or more, out of 200; shared by level and potential.
-export const levelHue = score => {const clamped=Math.max(70,Math.min(150,score)); return Math.round(clamped<=110?(clamped-70)/40*50:50+(clamped-110)/40*70);};
-export const levelBadge = (value, title) => value==null ? '—' : `<span class="rating graded" style="--hue:${levelHue(level(value))}" title="${escape(title)}">${level(value)}</span>`;
+// Red (hue 0) at `low` or less, yellow (50) at `mid`, green (120) at `high` or more.
+const gradeHue = (value, low, mid, high) => {const clamped=Math.max(low,Math.min(high,value)); return Math.round(clamped<=mid?(clamped-low)/(mid-low)*50:50+(clamped-mid)/(high-mid)*70);};
+// Level and potential are out of 200 (the median player is 110); attributes and position ratings are out of 20 (median 10).
+export const levelHue = score => gradeHue(score,70,110,150);
+export const scoreHue = score => gradeHue(score,4,10,16);
+const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</span>`;
+export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
+export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
 export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
@@ -17,7 +22,10 @@ export const kitDot = club => {const major=safeColor(club?.major_color); if(!maj
 let nations={};
 export const setNations = data => nations=data||{};
 export const nationName = code => nations[code]?.name || code || '—';
-export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); const flag=info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:''; return `<span class="nation" title="${escape(info?.name||code||'')}">${flag}${escape(label)}</span>`;};
+const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:'';
+export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return `<span class="nation" title="${escape(info?.name||code||'')}">${flagImage(info)}${escape(label)}</span>`;};
+// The flag alone, named in its tooltip, for compact cells; empty when the nation or its flag is unknown.
+export const nationFlag = code => nations[code]?.flag ? `<span class="nation" title="${escape(nations[code].name||code)}">${flagImage(nations[code])}</span>` : '';
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 export const clubLink = club => club ? `<a href="#/club/${club.id}" class="club-link">${kitDot(club)}${escape(club.name)}</a>` : '<span class="muted">Libre</span>';
 export const playerLink = (id, name) => id<0?`<span class="temporary-player" title="Joueur temporaire, uniquement pour ce match">${escape(name || 'Joueur temporaire')} <small>(temp.)</small></span>`:`<a href="#/player/${id}">${escape(name || 'Joueur archivé')}</a>`;

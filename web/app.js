@@ -1,6 +1,7 @@
 import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,card,stat,heading,empty,toast,setNations,nationName} from './ui.js';
-import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,playerScreen,journalScreen,LEAGUE_ORDER} from './screens.js';
+import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,journalScreen,LEAGUE_ORDER} from './screens.js';
+import {playerScreen} from './player.js';
 import {matchScreen} from './match.js';
 import {europeScreen} from './europe.js';
 
@@ -51,7 +52,7 @@ async function render(){const version=++renderVersion;const {parts,params}=route
  const active=document.activeElement;
  const focusName=active&&main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active.name:null;
  const selection=focusName&&'selectionStart' in active?[active.selectionStart,active.selectionEnd]:null;
- try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section]=parts;switch(screen){case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id,section,params);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'journal':html=await journalScreen(params);break;default:html=await dashboard(leagues);}}
+ try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section]=parts;switch(screen){case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'journal':html=await journalScreen(params);break;default:html=await dashboard(leagues);}}
  if(version!==renderVersion)return;main.innerHTML=html;const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
  }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}

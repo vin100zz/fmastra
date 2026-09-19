@@ -74,15 +74,25 @@ En-tête : nom, pays, compétition, réputation, classement actuel, forme sur le
 
 ### Joueur
 
-| Section | Contenu |
+Une seule page, sans onglets (un joueur retraité n'affiche que son historique).
+Les blocs Attributs, Aptitudes par poste et Évolution du niveau occupent une même
+ligne de trois colonnes (deux colonnes puis une seule sur écrans étroits) ; l'état et
+la carrière sont dessous. Sans aptitude à afficher, l'état prend la place du terrain
+dans la ligne du haut et la carrière reste seule dessous.
+
+| Bloc | Contenu |
 |---|---|
-| Identité | nom, nationalité, âge, date de naissance, poste, postes secondaires |
-| Caractéristiques | les 13 attributs, groupés par famille, avec barres |
-| Niveau et potentiel | badges (niveau actuel, potentiel exact, sur 200) dans l'en-tête du bloc des attributs |
+| En-tête | nom, nationalités, poste et postes secondaires, âge, club ; date de naissance, salaire mensuel, fin de contrat, valeur de marché estimée |
+| Attributs | les 13 attributs en badges de 1 à 20, avec le niveau (Niv.) et le potentiel exact (Pot.), sur 200, dans l'en-tête du bloc |
 | État | blessure en cours et durée, fatigue, suspension, forme, moral |
-| Contrat | club, salaire hebdomadaire, date de fin, valeur de marché estimée |
-| Saison en cours | matches, minutes, buts, passes, note moyenne, cartons |
-| Historique | une ligne par saison, club et compétition ; transferts avec montants ; courbe annuelle de la note globale |
+| Évolution du niveau | courbe annuelle du niveau, sur 200, avec axe gradué ; chaque point reprend les couleurs du club de la saison (dernier club de la saison en cas de transfert) et son infobulle donne saison, club et niveau |
+| Aptitudes par poste | carte de terrain : niveau de 10 à 20 aux seuls postes où il atteint 10, poste principal entouré |
+| Carrière | une ligne par saison et club : transfert, division du championnat, précédée du drapeau de son pays, et code de la coupe d'Europe (pas de coupe nationale), matches, buts, passes, note |
+
+Les textes du graphe ont la même taille que le reste de l'interface. Les niveaux,
+potentiels, attributs et aptitudes par poste sont des badges dont la couleur va du
+rouge au jaune puis au vert : sur 200, rouge jusqu'à 70, jaune à 110, vert à partir
+de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
 
 ### Match
 

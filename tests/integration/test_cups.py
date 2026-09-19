@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from api.app import create_app
 from api.views import career, match_detail
 from benchmarks.fixtures import synthetic_lineup
+from core.domain.clubs import Competition
 from core.domain.date import Date
 from core.domain.matches import MatchResult, MatchEvent
 from core.domain.world import SeasonRecord
@@ -169,7 +170,26 @@ def test_career_keeps_league_and_cup_statistics(imported):
     data = career(world, player.id)
     row = data["items"][0]
     assert row["matches"] == 6 and row["goals"] == 5 and row["average"] == 7.33
-    assert "Ligue 1" in row["competition"] and cup.name in row["competition"]
+    assert row["competition"] == "Ligue 1"  # National cups count in the totals but are not named.
+    assert row["competition_nation"] == "FRA"
+
+
+def test_career_names_league_then_european_code_and_falls_back_to_the_clubs_league(imported):
+    world = deepcopy(imported, {id(imported.config): imported.config})
+    player = next(p for p in world.players.values() if p.club_id == 868)
+    cup = next(c for c in world.competitions.values() if c.kind == "cup" and c.nation == "FRA")
+    world.competitions[-101] = Competition(-101, "Ligue des champions", "EUR", 0, [], kind="europe", code="C1")
+    world.records = {"europe": SeasonRecord(2025, player.id, 868, -101, matches=2),
+                     "league": SeasonRecord(2025, player.id, 868, 16, matches=4),
+                     "cup": SeasonRecord(2025, player.id, 868, cup.id, matches=2)}
+    row = career(world, player.id)["items"][0]
+    assert (row["competition"], row["competition_nation"]) == ("Ligue 1 · C1", "FRA")  # The flag is the league's, not the European cup's.
+    world.records = {"cup": SeasonRecord(2025, player.id, 868, cup.id, matches=2)}
+    row = career(world, player.id)["items"][0]
+    assert row["competition"] == "Ligue 1" and row["competition_nation"] == "FRA" and row["matches"] == 2
+    world.records = {"europe": SeasonRecord(2025, player.id, 868, -101, matches=2)}
+    row = career(world, player.id)["items"][0]
+    assert (row["competition"], row["competition_nation"]) == ("C1", None)
 
 
 def test_reserve_identification():

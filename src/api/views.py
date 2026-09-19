@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict, replace
 import unicodedata
 
+from core.domain.clubs import Competition
 from core.domain.world import World
 from core.domain.players import Player, ATTRIBUTE_NAMES
 from core.domain.matches import Match
@@ -167,22 +168,32 @@ def squad_rows(world: World, club_id: int) -> list[dict]:
     return list(rows.values())
 
 
+def club_league(world: World, club_id: int | None) -> Competition | None:
+    club = world.clubs.get(club_id)
+    return world.competitions[club.competition_id] if club and club.competition_id else None
+
+
 def career(world: World, player_id: int) -> dict:
     player_records = [row for row in world.records.values() if row.player_id == player_id]
     rows = {}
     for record in player_records:
         key = (record.season, record.club_id)
         rows.setdefault(key, {"season": record.season, "club": club_ref(world, record.club_id),
-                             "competitions": [], "matches": 0, "goals": 0, "assists": 0,
+                             "competitions": {}, "matches": 0, "goals": 0, "assists": 0,
                              "rating_sum": 0, "rating_count": 0})
         row = rows[key]
-        name = world.competitions[record.competition_id].name
-        if name not in row["competitions"]:
-            row["competitions"].append(name)
+        competition = world.competitions[record.competition_id]
+        # A row names the league division and the European cup code; national cups stay in the totals only.
+        label = competition.name if competition.kind == "league" else competition.code if competition.kind == "europe" else None
+        if label: row["competitions"][label] = competition.kind == "europe"
+        if competition.kind == "league": row["nation"] = competition.nation
         for field in ("matches", "goals", "assists", "rating_sum", "rating_count"):
             row[field] += getattr(record, field)
-    for row in rows.values():
-        row["competition"] = " · ".join(row.pop("competitions"))
+    for (_, club_id), row in rows.items():
+        labels = row.pop("competitions")
+        league = club_league(world, club_id)
+        row["competition"] = " · ".join(sorted(labels, key=labels.get)) or (league.name if league else None)
+        row["competition_nation"] = row.pop("nation", None) or (league.nation if league and not labels else None)
         count = row.pop("rating_count")
         total = row.pop("rating_sum")
         row["average"] = round(total / count, 2) if count else None
@@ -201,9 +212,9 @@ def career(world: World, player_id: int) -> dict:
     for key in order:
         if key in rows: continue
         season, club_id = key
-        club = world.clubs.get(club_id)
+        league = club_league(world, club_id)
         rows[key] = {"season": season, "club": club_ref(world, club_id),
-                     "competition": world.competitions[club.competition_id].name if club and club.competition_id else None,
+                     "competition": league.name if league else None, "competition_nation": league.nation if league else None,
                      "matches": 0, "goals": 0, "assists": 0, "average": None}
     items = [{**rows[key], "fee": fees.get(key)} for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
     rating_count = sum(row.rating_count for row in player_records)
