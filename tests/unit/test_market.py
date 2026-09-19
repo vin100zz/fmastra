@@ -195,7 +195,7 @@ def test_recent_arrivals_are_not_approached_by_active_or_external_clubs(config, 
     assert not propose_transfers(world, Random(2))
 
 
-@pytest.mark.parametrize("version", [1, 2, 5, 6, 7, 8])
+@pytest.mark.parametrize("version", [1, 2, 5, 6, 7, 8, 9])
 def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, version):
     import gzip
     import hashlib
@@ -231,6 +231,7 @@ def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, v
     assert restored.config.management.market.arrival_stability_days == (180 if version < 6 else config.management.market.arrival_stability_days)
     assert restored.config.management.market.minimum_quality_gain == 3.0
     assert restored.config.management.market.auction_days == 2
+    assert (restored.config.management.market.club_outgrown_margin, restored.config.management.market.leave_threshold) == (10.0, 0.3)
     assert (restored.config.management.market.min_squad_depth, restored.config.management.market.max_squad_depth) == (16, 20)
     assert player.id in recent_arrival_ids(restored)
     assert not apply(restored, PlayerSigned(player.id, 1, 2, player.contract, 60000))
@@ -379,14 +380,28 @@ def test_sale_of_important_player_requires_cover_in_thin_squad(config):
     assert can_sell(player, seller, world)
 
 
+def club_within_reach_of(player, config):
+    """A reputation whose target level the player exceeds by less than the tolerated margin."""
+    profile, rules = config.management.target_profile, config.management.market
+    return (player.rating - rules.club_outgrown_margin - profile.base_level) / profile.reputation_weight + 1
+
+
+def add_star(world, seller, level=95, position=None):
+    star = synthetic_lineup(world.config, 90, level=level).slots[0].player
+    star.id, star.club_id, star.contract = 850, seller.id, Contract(1000, Date(2028, 6, 30), Date(2025, 7, 1))
+    if position is not None: star.position = position
+    world.players[star.id] = star
+    seller.player_ids.append(star.id)
+    return star
+
+
 def test_sale_of_important_player_requires_cover_even_with_surplus_squad(config):
     from core.ai.market import can_sell, nominal_size
     world = mini_world(config)
     seller = world.clubs[2]
-    star = synthetic_lineup(config, 90, level=95).slots[0].player
-    star.id, star.club_id, star.contract = 850, seller.id, Contract(1000, Date(2028, 6, 30), Date(2025, 7, 1))
-    world.players[star.id] = star
-    seller.player_ids.append(star.id)
+    star = add_star(world, seller)
+    # The club aims high enough that the star is one of its own: cover is required.
+    seller.reputation = club_within_reach_of(star, config)
     # Fill the squad above nominal size with low-value, non-goalkeeper backups:
     # a numerical surplus elsewhere must not excuse leaving the star uncovered.
     for pid in range(800, 806):
@@ -630,3 +645,145 @@ def test_best_sellable_players_reach_every_club_despite_random_scanning(config):
     for seed in range(8):
         targets = {p.player_id for p in propose_transfers(world, Random(seed)) if p.target_id == club.id}
         assert star.id in targets, seed
+
+
+def test_star_far_above_a_small_club_is_sellable_but_only_at_his_price(config):
+    from core.ai.market import can_sell, asking_price, seller_accepts
+    world = mini_world(config)
+    seller = world.clubs[2]
+    star = add_star(world, seller)
+    seller.reputation = 50
+    assert can_sell(star, seller, world)
+    quote = asking_price(star, seller, world)
+    assert not seller_accepts(star, seller, quote - 1, world, Random(1))
+    assert seller_accepts(star, seller, quote, world, Random(1))
+    # The same player at a club whose ambitions he does not exceed is still protected.
+    seller.reputation = club_within_reach_of(star, config)
+    assert not can_sell(star, seller, world)
+
+
+def test_outgrown_star_still_cannot_leave_below_squad_minimums(config):
+    from core.ai.market import can_sell
+    from core.domain.players import Position
+    world = mini_world(config)
+    seller = world.clubs[2]
+    seller.reputation = 50
+    star = add_star(world, seller, position=Position.STRIKER)
+    assert can_sell(star, seller, world)
+    guard = config.management.guardrails
+    squad = list(seller.player_ids)
+    seller.player_ids = squad[-guard.min_squad:]
+    assert not can_sell(star, seller, world)
+    seller.player_ids = squad
+    # A star goalkeeper stays while he is one of the minimum number of keepers.
+    for pid in squad:
+        if world.players[pid].position == Position.GOALKEEPER: world.players[pid].position = Position.CENTER_BACK
+    star.position = Position.GOALKEEPER
+    for pid in range(901, 901 + guard.min_goalkeepers - 1):
+        world.players[pid] = replace(world.players[201], id=pid, position=Position.GOALKEEPER)
+        seller.player_ids.append(pid)
+    assert not can_sell(star, seller, world)
+    world.players[999] = replace(world.players[201], id=999, position=Position.GOALKEEPER)
+    seller.player_ids.append(999)
+    assert can_sell(star, seller, world)
+
+
+def test_buyers_bid_for_a_star_stuck_at_a_small_club(config):
+    from core.ai.market import propose_transfers, needs_for
+    world = recruitment_world(config)
+    buyer = world.clubs[1]
+    priority = needs_for(buyer, [world.players[pid] for pid in buyer.player_ids], world.config)[0].position
+    star = add_star(world, world.clubs[2], position=priority)
+    world.clubs[2].reputation = 50
+    bids = [p for p in propose_transfers(world, Random(1)) if p.player_id == star.id]
+    assert bids and all(p.target_id == 1 for p in bids)
+    # A club that can hold him keeps its star: nobody may even bid.
+    world.clubs[2].reputation = club_within_reach_of(star, config)
+    assert not [p for p in propose_transfers(world, Random(1)) if p.player_id == star.id]
+
+
+def restless_setup(config, rating=94, reputation=59, ego=0.0):
+    world = mini_world(config)
+    player, club = world.players[201], world.clubs[2]
+    player.rating, player.ego, club.reputation = rating, ego, reputation
+    return world, player, club
+
+
+def test_player_beyond_a_small_club_wants_to_leave_even_with_a_modest_ego(config):
+    from core.world.transfer_rules import frustration, wants_to_leave
+    world, player, club = restless_setup(config)
+    assert wants_to_leave(player, world)
+    assert frustration(player, world) < 1
+    # Ego raises the restlessness; a smaller club raises it too; both are bounded by 1.
+    calm = frustration(player, world)
+    player.ego = 1.0
+    assert calm < frustration(player, world) <= 1
+    player.ego = 0.0
+    club.reputation = 40
+    assert frustration(player, world) > calm
+
+
+def test_player_within_reach_of_his_club_or_without_one_is_not_restless(config):
+    from core.world.transfer_rules import frustration, wants_to_leave, target_level
+    world, player, club = restless_setup(config, ego=1.0)
+    rules = config.management.market
+    player.rating = target_level(club, config) + rules.club_outgrown_margin
+    assert frustration(player, world) == 0 and not wants_to_leave(player, world)
+    player.rating += 1
+    assert frustration(player, world) > 0  # restless, not yet keen to leave
+    assert not wants_to_leave(player, world)
+    world, player, club = restless_setup(config)
+    player.club_id = None
+    assert frustration(player, world) == 0.0
+
+
+def test_restless_star_does_not_step_down_even_when_very_unhappy(config):
+    from core.world.transfer_rules import accepts_move
+    world, player, source = restless_setup(config)
+    target = world.clubs[1]
+    target.reputation = 40
+    player.morale = 0.3
+    assert source.reputation - target.reputation > config.management.market.reputation_drop_tolerance
+    assert accepts_move(player, target, world) is False
+    target.reputation = 75  # a bigger club is welcome
+    assert accepts_move(player, target, world) is True
+
+
+def test_restless_star_accepts_only_a_clearly_bigger_club(config):
+    from core.world.transfer_rules import accepts_move
+    world, player, source = restless_setup(config)
+    target = world.clubs[1]
+    band = config.management.market.reputation_drop_tolerance
+    for gain, allowed in ((-15, False), (0, False), (band, False), (band + 0.5, True), (30, True)):
+        target.reputation = source.reputation + gain
+        assert accepts_move(player, target, world) is allowed, gain
+    # A player who is not restless still takes a lateral move.
+    player.rating = 70
+    target.reputation = source.reputation
+    assert accepts_move(player, target, world) is True
+
+
+def renewal_setup(config, reputation):
+    from core.ai.market import expected_wage, market_value
+    world, player, club = restless_setup(config, reputation=reputation, ego=0.2)
+    club.wage_cap = 10 ** 9
+    wage = expected_wage(market_value(player, world, club, False), world.config)
+    player.contract = Contract(wage, world.date.add_days(180), Date(2024, 7, 1))
+    club.wage_bill += wage
+    player.morale = 0.9
+    return world, player
+
+
+def test_restless_star_refuses_to_extend_and_loses_morale_while_a_settled_one_extends(config):
+    from core.world.contracts import renewal_events
+    from core.world.events import PlayerChanged, PlayerSigned
+    world, player = renewal_setup(config, reputation=50)
+    events = renewal_events(world)
+    restless_morale = next(e.morale for e in events if isinstance(e, PlayerChanged) and e.player_id == player.id)
+    assert not [e for e in events if isinstance(e, PlayerSigned) and e.player_id == player.id]
+    world, player = renewal_setup(config, reputation=100)
+    events = renewal_events(world)
+    settled_morale = next(e.morale for e in events if isinstance(e, PlayerChanged) and e.player_id == player.id)
+    assert [e for e in events if isinstance(e, PlayerSigned) and e.player_id == player.id]
+    assert restless_morale < player.morale - 0.01 < settled_morale + 0.01
+    assert restless_morale < settled_morale

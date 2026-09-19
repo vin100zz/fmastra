@@ -78,8 +78,9 @@ def test_old_save_receives_rotation_rules_without_accepting_tampered_config(conf
     legacy = json.loads(gzip.decompress(store.path_for("rotation").read_bytes()))
     legacy["schema_version"] = 8
     rules = legacy["world"]["config"]
-    for key in MIGRATION_DEFAULTS[0][2]:
-        del rules["etats"]["remplacements"][key]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 8:
+            for key in defaults: del rules[path[0]][path[1]][key]
     raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
     store.path_for("rotation").write_bytes(gzip.compress(json.dumps(legacy).encode()))

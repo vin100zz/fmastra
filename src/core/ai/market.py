@@ -15,7 +15,7 @@ from core.engine.abilities import overall
 from core.math import clamp
 from core.world.estimates import estimate_potential
 from core.world.events import PlayerSigned
-from core.world.transfer_rules import recent_arrival_ids, accepts_move
+from core.world.transfer_rules import recent_arrival_ids, accepts_move, outgrown_by
 from core.world.importation.synthesis import intrinsic_value, expected_wage
 from .assignment import maximize_assignment
 
@@ -154,6 +154,11 @@ def can_sell(player: Player, seller: Club, world: World) -> bool:
     if len(seller.player_ids) <= guard.min_squad: return False
     if player.position == Position.GOALKEEPER and sum(
         world.players[pid].position == Position.GOALKEEPER for pid in seller.player_ids) <= guard.min_goalkeepers: return False
+    # A player far above what the club aims at cannot be kept as cover: he is an asset
+    # sold at his price, which funds a replacement. Without this, the better the player,
+    # the wider the gap to his replacement, and the best players of small clubs would
+    # be unsellable for good. The asking price still applies in `seller_accepts`.
+    if outgrown_by(player, seller, cfg) > 0: return True
     squad = [world.players[pid] for pid in seller.player_ids]
     loss = (squad_quality(squad, seller, cfg, deep=True)
             - squad_quality([p for p in squad if p.id != player.id], seller, cfg, deep=True))

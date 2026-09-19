@@ -69,3 +69,25 @@ def test_invalid_rotation_rules(config, key, value):
     raw["etats"]["remplacements"][key] = value
     with pytest.raises(ConfigError):
         decode_config(raw)
+
+
+@pytest.mark.parametrize("key,value", [
+    ("marge_depassement_club", -1), ("ambition_base", 1.5), ("ambition_base", -0.1),
+    ("ambition_poids_ego", -1), ("ecart_frustration_maximale", 0),
+    ("seuil_depart_souhaite", 1.5), ("poids_frustration_moral", 2),
+])
+def test_invalid_star_departure_rules(config, key, value):
+    raw = config_payload(config)
+    raw["ia_gestion"]["mercato"][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)
+
+
+def test_star_departure_rules_default_for_older_configurations(config):
+    raw = config_payload(config)
+    for key in ("marge_depassement_club", "ambition_base", "ambition_poids_ego",
+                "ecart_frustration_maximale", "seuil_depart_souhaite", "poids_frustration_moral"):
+        del raw["ia_gestion"]["mercato"][key]
+    rules = decode_config(raw).management.market
+    assert (rules.club_outgrown_margin, rules.ambition_base, rules.ambition_ego_weight) == (10.0, 0.6, 0.4)
+    assert (rules.frustration_span, rules.leave_threshold, rules.frustration_morale_weight) == (15.0, 0.3, 0.6)

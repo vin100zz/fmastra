@@ -1,7 +1,9 @@
 """Player willingness to move, based on actual arrivals rather than renewals."""
+from core.config.model import Config
 from core.domain.clubs import Club
 from core.domain.players import Player
 from core.domain.world import World
+from core.math import clamp
 
 
 def recent_arrival_ids(world: World) -> set[int]:
@@ -28,6 +30,41 @@ def recent_arrival_ids(world: World) -> set[int]:
     return recent
 
 
+def target_level(club: Club, cfg: Config) -> float:
+    """The level a club aims at, the same profile clubs use to size their ambitions."""
+    profile = cfg.management.target_profile
+    return profile.base_level + profile.reputation_weight * club.reputation
+
+
+def outgrown_by(player: Player, club: Club, cfg: Config) -> float:
+    """Points by which a player exceeds his club's target level beyond the tolerated margin.
+
+    Zero for a player the club can still hold. Above zero the club is beneath him:
+    it can no longer count on keeping him, only sell him well (see `can_sell`),
+    and he grows restless (see `frustration`).
+    """
+    return max(0.0, player.rating - target_level(club, cfg) - cfg.management.market.club_outgrown_margin)
+
+
+def frustration(player: Player, world: World) -> float:
+    """Restlessness in [0, 1] of a player whose club is beneath him.
+
+    The overshoot beyond the tolerated margin, as a share of `frustration_span`,
+    scaled by his ambition. Ambition has a floor, so even a modest character
+    resents being by far the best player of a small club; ego raises it.
+    """
+    club = world.clubs.get(player.club_id) if player.club_id is not None else None
+    if club is None: return 0.0
+    rules = world.config.management.market
+    ambition = clamp(rules.ambition_base + rules.ambition_ego_weight * player.ego, 0, 1)
+    return ambition * clamp(outgrown_by(player, club, world.config) / rules.frustration_span, 0, 1)
+
+
+def wants_to_leave(player: Player, world: World) -> bool:
+    """A restless player refuses to renew and accepts only a clearly bigger club."""
+    return frustration(player, world) >= world.config.management.market.leave_threshold
+
+
 def accepts_move(player: Player, target: Club, world: World) -> bool:
     """A player who would lower their standing refuses, unless desperate to leave.
 
@@ -36,11 +73,17 @@ def accepts_move(player: Player, target: Club, world: World) -> bool:
     ambitions) is below the player's own rating: such a club is beneath them. A
     club at or near their level, a lateral move or a step up is always acceptable,
     and so is any club for a free agent. Only very low morale overrides a refusal.
+
+    A player who wants to leave because his club is beneath him is the exception
+    on both counts: he is not looking for a lateral move, so only a club whose
+    reputation is higher by more than the same tolerance band is an escape, and no
+    morale makes him accept a smaller one.
     """
     source = world.clubs.get(player.club_id) if player.club_id is not None else None
     if source is None or source.id == target.id: return True
-    rules, profile = world.config.management.market, world.config.management.target_profile
+    rules = world.config.management.market
+    if wants_to_leave(player, world):
+        return target.reputation - source.reputation > rules.reputation_drop_tolerance
     if source.reputation - target.reputation <= rules.reputation_drop_tolerance: return True
-    target_level = profile.base_level + profile.reputation_weight * target.reputation
-    if player.rating <= target_level + rules.player_level_margin: return True
+    if player.rating <= target_level(target, world.config) + rules.player_level_margin: return True
     return player.morale <= rules.forced_exit_morale

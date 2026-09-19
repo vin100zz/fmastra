@@ -131,4 +131,6 @@ satisfaction contractuelle, chaque composante normalisée à [0, 1], puis dériv
 vers cette cible. Les attentes de minutes sont proratisées aux matches déjà
 joués ; sans attente, employer une valeur neutre. L'effet en match vaut
 1 + amplitude × (2 × moral - 1), borné par construction à l'amplitude configurée.
-Le moral alimente aussi les demandes de contrat et de départ.
+Le moral alimente aussi les demandes de contrat et de départ. La cible du moral
+retranche en outre la frustration d'ambition du joueur dont le club est en dessous
+de son niveau (`docs/ia-gestion.md`, « Ambition »).

@@ -133,6 +133,12 @@ class ManagementConfigMarket:
     forced_exit_morale: float = Field(default=0.5, alias="moral_depart_force")
     visible_talents: int = Field(default=10, alias="talents_visibles")
     auction_days: int = Field(default=2, alias="jours_encheres")
+    club_outgrown_margin: float = Field(default=10.0, alias="marge_depassement_club")
+    ambition_base: float = Field(default=0.6, alias="ambition_base")
+    ambition_ego_weight: float = Field(default=0.4, alias="ambition_poids_ego")
+    frustration_span: float = Field(default=15.0, alias="ecart_frustration_maximale")
+    leave_threshold: float = Field(default=0.3, alias="seuil_depart_souhaite")
+    frustration_morale_weight: float = Field(default=0.6, alias="poids_frustration_moral")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

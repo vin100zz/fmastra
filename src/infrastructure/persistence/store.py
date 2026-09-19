@@ -18,10 +18,13 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    (10, ("ia_gestion", "mercato"), {
+         "marge_depassement_club": 10.0, "ambition_base": 0.6, "ambition_poids_ego": 0.4,
+         "ecart_frustration_maximale": 15.0, "seuil_depart_souhaite": 0.3, "poids_frustration_moral": 0.6}),
     (9, ("etats", "remplacements"), {
          "gain_minimum_rotation": 10.0, "poids_deficit_temps_jeu": 8.0,
          "poids_developpement_jeunes": 10.0, "marge_potentiel_reference": 20.0,
@@ -84,7 +87,7 @@ class SaveStore:
                 version = 1
             else:
                 payload = ADAPTER.validate_json(raw)
-                if payload.schema_version not in (2, 3, 4, 5, 6, 7, 8, SCHEMA_VERSION):
+                if payload.schema_version not in (2, 3, 4, 5, 6, 7, 8, 9, SCHEMA_VERSION):
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
                 world, fingerprint = payload.world, payload.config_hash
                 version = payload.schema_version

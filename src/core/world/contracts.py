@@ -4,6 +4,7 @@ from core.math import clamp
 from collections import Counter
 from core.ai.market import market_value, expected_wage, contract_for, nominal_size, squad_quality
 from .events import PlayerReleased, PlayerSigned, PlayerChanged
+from .transfer_rules import frustration, wants_to_leave
 
 
 def expiry_events(world: World) -> list[PlayerReleased]:
@@ -42,8 +43,12 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged]:
         satisfaction = rules.wage_weight * salary_satisfaction + rules.playing_time_weight * playing_satisfaction + rules.club_weight * min(1, club.reputation / max(1, player.rating))
         moral = cfg.states.moral
         target = moral.playing_time_weight * playing_satisfaction + moral.contract_weight * salary_satisfaction + moral.results_weight * satisfaction
+        # Playing every match and earning a fair wage does not settle a player whose club is beneath him.
+        target -= cfg.management.market.frustration_morale_weight * frustration(player, world)
         events.append(PlayerChanged(player.id, morale=clamp(player.morale + moral.drift_speed * (target - player.morale), moral.min, moral.max)))
         if remaining >= rules.renewal_months and satisfaction >= rules.satisfaction_threshold: continue
+        # A player who wants a bigger club does not extend; he plays out his contract or is sold.
+        if wants_to_leave(player, world): continue
         # Keep useful squad members, including backups; surplus expiry creates a market.
         indispensable_keeper = player.position == "GB" and rank < cfg.management.guardrails.min_goalkeepers
         useful = player.id in useful_ids or indispensable_keeper or len(club.player_ids) <= cfg.management.guardrails.min_squad

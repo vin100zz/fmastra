@@ -72,6 +72,13 @@ les valeurs par défaut de `ia_gestion.mercato` pour la profondeur d'effectif
 places de rotation ; `poids_profondeur_vente` et `moral_depart_force` restent
 dans [0, 1] et `jours_encheres` vaut au moins 1.
 
+Les configurations antérieures à la version 10 reçoivent de même les valeurs par
+défaut de l'ambition des joueurs (`ia_gestion.mercato`) : `marge_depassement_club`
+10, `ambition_base` 0,6, `ambition_poids_ego` 0,4, `ecart_frustration_maximale` 15,
+`seuil_depart_souhaite` 0,3 et `poids_frustration_moral` 0,6. La marge est positive
+ou nulle, `ambition_base` et les poids restent dans [0, 1] (le poids de l'ego est
+positif ou nul), l'écart de frustration est strictement positif.
+
 ## Cohérence
 
 - Somme des poids des composites, notes globales et distributions : 1 à la

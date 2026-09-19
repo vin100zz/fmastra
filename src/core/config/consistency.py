@@ -52,6 +52,12 @@ def validate_consistency(cfg: Config) -> None:
     require(0 <= market.forced_exit_morale <= 1, "Forced exit morale must be within [0, 1]")
     require(market.visible_talents >= 0, "Visible talents must be nonnegative")
     require(market.auction_days >= 1, "Offers must stay open at least one day")
+    require(market.club_outgrown_margin >= 0, "Club outgrown margin must be nonnegative")
+    require(0 <= market.ambition_base <= 1 and market.ambition_ego_weight >= 0,
+            "Ambition base must be within [0, 1] and its ego weight nonnegative")
+    require(market.frustration_span > 0, "Frustration span must be positive")
+    require(0 <= market.leave_threshold <= 1, "Leave threshold must be within [0, 1]")
+    require(0 <= market.frustration_morale_weight <= 1, "Frustration morale weight must be within [0, 1]")
     europe = cfg.world.europe
     require((europe.club_count, europe.league_rounds, europe.pot_count,
              europe.direct_places, europe.playoff_places) == (36, 8, 4, 8, 16), "Unsupported European format")

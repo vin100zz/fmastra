@@ -62,6 +62,16 @@ joueur de rotation sans relève proche coûte presque autant que perdre un
 titulaire, et la vente est refusée si la perte dépasse `poids_doublure` fois son
 niveau. Le recrutement garde les poids gradués titulaire, rotation et doublure.
 
+Cette protection ne vaut que pour un joueur que le club peut encore retenir. Un
+joueur dont le niveau dépasse le niveau visé par son club (`profil_cible`, comme
+pour `accepts_move`) de plus de `marge_depassement_club` (10 points) est hors de
+portée de ses ambitions : plus il est fort, plus l'écart avec son remplaçant est
+grand, et le veto de couverture le rendrait invendable pour toujours, au lieu de
+le faire partir dans un club à sa mesure. Ce joueur est un actif que le club vend à
+son prix : `can_sell` ne refuse plus que pour l'effectif minimal et les gardiens
+requis, et `seller_accepts` exige toujours le prix demandé, qui finance la relève. Un
+joueur de rang ordinaire, ou le meilleur d'un grand club, reste protégé.
+
 Le profil nominal vaut onze titulaires plus les rotations et doublures
 configurées (24 joueurs avec les paramètres initiaux). Le plafond dur reste
 30, y compris pour les regens. Les 30 joueurs importés ne sont pas tous des
@@ -136,7 +146,10 @@ traitent aussi les agents libres dès l'ouverture de la fenêtre ; ils n'ont pas
 de vendeur à consulter. Les négociations inachevées à la clôture expirent et
 libèrent leurs réservations.
 
-Le joueur peut aussi refuser. Il ne descend pas vers un club nettement moins
+Le joueur peut aussi refuser. Un joueur qui veut partir (voir « Contrats, moral et
+départs ») ne cherche pas un mouvement latéral : il n'accepte qu'un club dont la
+réputation dépasse la sienne de plus de `tolerance_baisse_reputation`, et aucun
+moral ne lui fait accepter moins. Autrement, il ne descend pas vers un club nettement moins
 réputé que le sien (baisse supérieure à `tolerance_baisse_reputation`, 5 points)
 dont le niveau visé, calculé comme dans `profil_cible` (niveau de base plus poids
 fois réputation), est inférieur à sa note de plus de `marge_niveau_joueur`
@@ -220,6 +233,25 @@ Le plafond salarial s'applique aussi aux renouvellements. À échéance inclusiv
 le joueur est libéré le lendemain si aucun nouveau contrat n'est signé.
 Les attentes et la satisfaction alimentent aussi le moral et les demandes de
 transfert. Un joueur ne disparaît pas à cause d'un refus de renouvellement.
+
+**Ambition.** Jouer tous les matchs pour un salaire correct ne suffit pas à un joueur
+que son club ne peut plus contenter. Le dépassement `d` est l'écart entre son niveau
+et le niveau visé par le club, au-delà de `marge_depassement_club` (voir le
+mercato). La frustration vaut `ambition × min(1, d / ecart_frustration_maximale)`,
+avec `ambition = ambition_base + ambition_poids_ego × ego` (bornée à 1) : un
+caractère modeste s'agace aussi d'être de loin le meilleur d'un petit club, l'ego
+l'aggrave. Elle est évaluée chaque semaine :
+
+- elle retranche `poids_frustration_moral × frustration` de la cible du moral, qui
+  converge ensuite à la vitesse de dérive habituelle ;
+- au-dessus de `seuil_depart_souhaite`, le joueur veut partir : il ne prolonge pas
+  son contrat, qu'il termine ou qu'il quitte par transfert, et `accepts_move` ne lui
+  laisse que les clubs nettement plus réputés que le sien (voir le mercato).
+
+Le club le vend s'il reçoit son prix (règle d'invendabilité levée ci-dessus). S'il ne
+reçoit aucune offre, le joueur arrive libre en fin de contrat et signe où son
+salaire et sa réputation le mènent. Les joueurs libres, sans club, n'ont pas de
+frustration.
 
 ## Composition et remplacements
 
