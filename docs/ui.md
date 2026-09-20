@@ -159,7 +159,7 @@ dans la ligne du haut et la carrière reste seule dessous.
 | Attributs | les 13 attributs en badges de 1 à 20, avec le niveau (Niv.) et le potentiel exact (Pot.), sur 200, dans l'en-tête du bloc |
 | État | blessure en cours et durée, fatigue, suspension, forme, moral |
 | Évolution du niveau | courbe annuelle du niveau, sur 200, avec axe gradué ; chaque point reprend les couleurs du club de la saison (dernier club de la saison en cas de transfert) et son infobulle donne saison, club et niveau |
-| Aptitudes par poste | carte de terrain : niveau de 10 à 20 aux seuls postes où il atteint 10, poste principal entouré |
+| Aptitudes par poste | carte de terrain, à la même taille que celle du dernier onze aligné d'un club (maillots et libellés compris) : niveau de 10 à 20 aux seuls postes où il atteint 10, poste principal entouré |
 | Carrière | une ligne par saison et club : transfert, division du championnat, précédée du drapeau de son pays, et code de la coupe d'Europe (pas de coupe nationale), matches, buts, passes, note |
 
 Les textes du graphe ont la même taille que le reste de l'interface. Les niveaux,
