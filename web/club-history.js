@@ -1,4 +1,4 @@
-import {escape as e,number as n,date,season,playerLink,clubLink,card,stat,fact,table,sortableTable,pager,empty,money} from './ui.js';
+import {escape as e,date,season,playerLink,clubLink,card,stat,fact,sortableTable,pager,empty,money,leadersCards} from './ui.js';
 
 const euros=value=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
 
@@ -48,10 +48,8 @@ export function seasonsHistory(data){
  const seasons=card('Les saisons du club',sortableTable(['SAISON','CHAMPIONNAT','CLASSEMENT','COUPE NATIONALE','COUPE D’EUROPE','PALMARÈS'],data.items.map(row=>[
   season(row.season),e(row.competition??'—'),rank(row),cupRun(row.cup),europeRun(row.europe),row.champion?'✦ Champion':'—',
  ]),data.items.map(row=>[row.season,row.competition??'',row.rank??'',row.cup?.level??'',row.europe?.level??'',row.champion?1:0]),{ascending:[2]})+(data.total>data.page_size?pager(data):''));
- const leaderCard=(title,rows)=>card(title,rows.length?table(['#','JOUEUR','MATCHS','BUTS'],rows.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,n(row.matches),n(row.goals)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'));
  const transferCard=(title,rows,incoming)=>card(title,rows.length?transferRows(rows,incoming):empty('Aucun transfert payant enregistré.','Pas encore de transfert'));
  const {leaders,transfers}=data;
- return seasons+'<p class="muted">Joueurs : toutes compétitions et toutes saisons confondues, saison en cours incluse. Transferts : indemnités les plus élevées, hors départs libres.</p>'+
-  `<div class="transfer-columns"><section aria-label="Joueurs les plus utilisés">${leaderCard(`Joueurs les plus utilisés · ${leaders.matches.length}`,leaders.matches)}</section><section aria-label="Meilleurs buteurs">${leaderCard(`Meilleurs buteurs · ${leaders.goals.length}`,leaders.goals)}</section></div>`+
+ return seasons+leadersCards(leaders,'Toutes compétitions et toutes saisons confondues, saison en cours incluse.')+'<p class="muted">Indemnités les plus élevées, hors départs libres.</p>'+
   `<div class="transfer-columns"><section aria-label="Plus gros transferts entrants">${transferCard(`Plus gros transferts entrants · ${transfers.arrivals.length}`,transfers.arrivals,true)}</section><section aria-label="Plus gros transferts sortants">${transferCard(`Plus gros transferts sortants · ${transfers.departures.length}`,transfers.departures,false)}</section></div>`;
 }

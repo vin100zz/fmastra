@@ -57,6 +57,9 @@ def test_views_pagination_and_no_rng_leak(client):
     for route in routes:
         response = client.get("/api" + route)
         assert response.status_code == 200, (route, response.text)
+    for competition_id in (league_id, next(c.id for c in world.competitions.values() if c.kind == "cup"), next(c.id for c in world.competitions.values() if c.kind == "europe")):
+        leaders = client.get(f"/api/competitions/{competition_id}/historique").json()["leaders"]
+        assert set(leaders) == {"matches", "goals"} and len(leaders["matches"]) <= 15 and len(leaders["goals"]) <= 15
     first, second = client.get("/api/joueurs").json(), client.get("/api/joueurs?page=2").json()
     assert len(first["items"]) == len(second["items"]) == 30
     assert not {row["id"] for row in first["items"]} & {row["id"] for row in second["items"]}

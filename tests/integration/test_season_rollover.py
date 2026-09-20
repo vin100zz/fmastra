@@ -116,6 +116,7 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
         assert response.json()['items'][0]['standings'] == previous[18]
+        assert response.json()['leaders'] == {'matches': [], 'goals': []}  # Controlled scores leave no player record.
         # An archived knockout match still shows its score and winner, with no detail to list.
         cup_match = next(m for m in world.matches.values() if m.season == 2025 and world.competitions[m.competition_id].kind == 'cup')
         response = client.get(f'/api/matches/{cup_match.id}')

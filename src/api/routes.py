@@ -257,12 +257,13 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/competitions/{competition_id}/historique")
     def history(competition_id: int, page: int = Query(1, ge=1)) -> dict:
-        from .statistics import leaders
+        from .statistics import leaders, competition_leaders
         with service.reading() as world:
             world.competitions[competition_id]
-            return v.paginate([{"season": year, "champion": v.club_ref(world, winner), "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None),
-                                "standings": v.table(world, competition_id, year)}
-                               for year, winner in reversed(world.champions.get(competition_id, []))], page)
+            seasons = v.paginate([{"season": year, "champion": v.club_ref(world, winner), "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None),
+                                   "standings": v.table(world, competition_id, year)}
+                                  for year, winner in reversed(world.champions.get(competition_id, []))], page)
+            return {**seasons, "leaders": competition_leaders(world, competition_id)}
 
     @api.get("/joueurs")
     def players(recherche: str = "", poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),

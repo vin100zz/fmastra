@@ -121,3 +121,9 @@ export const query = values => {const result=new URLSearchParams();Object.entrie
 export function seasonArchives(data){
  return data.items.map((row,index)=>`<details class="card season-archive" ${index===0?'open':''}><summary>Saison ${season(row.season)} · Classement complet</summary>${standingsTable({items:row.standings||[]},false,true)}</details>`).join('');
 }
+
+// The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).
+export function leadersCards(leaders,note='Toutes saisons confondues, saison en cours incluse.'){
+ const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR','MATCHS','BUTS'],rows.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,number(row.matches),number(row.goals)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
+ return `<p class="muted">${escape(note)}</p><div class="transfer-columns">${list('Joueurs les plus utilisés',leaders.matches)}${list('Meilleurs buteurs',leaders.goals)}</div>`;
+}

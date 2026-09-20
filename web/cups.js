@@ -1,4 +1,4 @@
-import {api,escape as e,date,season,clubLink,playerLink,number as n,fixtures,empty,card,heading,tabs,table,pager} from './ui.js';
+import {api,escape as e,date,season,clubLink,playerLink,number as n,fixtures,empty,card,heading,tabs,table,pager,leadersCards} from './ui.js';
 
 export function cupSummaryCard(cup,data){
  const round=data.rounds.find(item=>item.number===(data.latest_round||1));
@@ -15,7 +15,7 @@ export async function cupScreen(cup,section,params,lead=''){
  let content;
  if(section==='history'){
   const history=await api(`/competitions/${cup.id}/historique?${params}`);
-  content=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[season(row.season),clubLink(row.champion)]))+pager(history));
+  content=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[season(row.season),clubLink(row.champion)]))+pager(history))+leadersCards(history.leaders);
  }else if(section==='stats'){
   const stats=await api(`/competitions/${cup.id}/statistiques?type=buteurs&${params}`);
   content=card('Meilleurs buteurs · Saison en cours',table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]))+pager(stats));

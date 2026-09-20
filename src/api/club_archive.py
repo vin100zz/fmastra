@@ -4,8 +4,9 @@ from core.domain.world import World
 from core.world.cups import ROUND_NAMES
 from core.world.europe import KNOCKOUT_NAMES
 from . import views as v
+from .statistics import career_leaders
 
-LISTED_PLAYERS, LISTED_TRANSFERS = 15, 10
+LISTED_TRANSFERS = 10
 EUROPE_STAGES = ("Phase de ligue", *KNOCKOUT_NAMES)
 
 
@@ -56,19 +57,7 @@ def seasons(world: World, club_id: int) -> list[dict]:
 
 def leaders(world: World, club_id: int) -> dict:
     """The players with the most matches and the most goals for the club, every competition and season included."""
-    totals: dict[int, dict] = {}
-    for record in world.records.values():
-        if record.club_id == club_id:
-            total = totals.setdefault(record.player_id, {"matches": 0, "goals": 0})
-            total["matches"] += record.matches
-            total["goals"] += record.goals
-    def top(key: str, order) -> list[dict]:
-        ranked = sorted((pid for pid, total in totals.items() if total[key] > 0),
-                        key=lambda pid: (*order(totals[pid]), v.normalized(v.player_name(world, pid) or ""), pid))
-        return [{"player_id": pid, "player": v.player_name(world, pid), **totals[pid]} for pid in ranked[:LISTED_PLAYERS]]
-    # A tie on matches goes to the better scorer; a tie on goals to the player who needed fewer matches; then the name.
-    return {"matches": top("matches", lambda total: (-total["matches"], -total["goals"])),
-            "goals": top("goals", lambda total: (-total["goals"], total["matches"]))}
+    return career_leaders(world, (record for record in world.records.values() if record.club_id == club_id))
 
 
 def biggest_transfers(world: World, club_id: int) -> dict:

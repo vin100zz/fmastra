@@ -124,7 +124,13 @@ financier, saisons du club et classements archivés) se trient aussi.
 | Classement | position, J, V, N, D, BP, BC, différence, points, forme |
 | Calendrier | matches par journée, avec résultats |
 | Statistiques | meilleurs buteurs, passeurs, meilleures notes moyennes, clean sheets, cartons |
-| Historique | champions par saison, meilleur buteur par saison |
+| Historique | champions par saison, meilleur buteur par saison, puis les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat, puis les classements archivés |
+
+L'onglet Palmarès d'une coupe nationale ou d'une coupe d'Europe (vainqueurs par saison) se termine par
+les mêmes deux classements de 15 joueurs. Ils additionnent toutes les saisons, la saison en cours
+comprise, et tous les clubs qu'un joueur a servis dans cette seule compétition (les matches et
+buts d'une autre compétition ne comptent pas) ; l'égalité se départage comme pour l'historique
+d'un club.
 
 ### Palmarès
 
@@ -213,7 +219,7 @@ GET  /api/competitions
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=
 GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
-GET  /api/competitions/{id}/historique
+GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=

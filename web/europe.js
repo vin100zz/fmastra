@@ -1,4 +1,4 @@
-import {api,escape as e,season,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable} from './ui.js';
+import {api,escape as e,season,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
 
 const SECTIONS=[['table','Classement'],['calendar','Phase de ligue'],['knockout','Phase finale'],['stats','Statistiques'],['history','Palmarès']];
 
@@ -25,7 +25,7 @@ export async function europeScreen(code,section,params,competitions){
   content=card(`Meilleurs buteurs · ${season(data.season)}`,table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]))+pager(stats));
  }else{
   const history=await api(`/competitions/${cup.id}/historique?page=${params.get('page')||1}`);
-  content=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[`<a href="#/europe/${cup.code}/knockout?saison=${row.season}">${season(row.season)}</a>`,clubLink(row.champion)]))+pager(history));
+  content=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[`<a href="#/europe/${cup.code}/knockout?saison=${row.season}">${season(row.season)}</a>`,clubLink(row.champion)]))+pager(history))+leadersCards(history.leaders);
  }
  return heading('EUROPE','Coupes d’Europe','36 clubs par coupe · 8 matchs de ligue · Finale unique sur terrain neutre')+nav+menu+selector+
   (data.winner?`<div class="notice cup-winner">🏆 ${e(cup.name)} : ${clubLink(data.winner)}</div>`:'')+content;
