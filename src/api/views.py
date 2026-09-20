@@ -7,7 +7,7 @@ import unicodedata
 from core.domain.clubs import Competition
 from core.domain.world import World
 from core.domain.players import Player, ATTRIBUTE_NAMES
-from core.domain.matches import Match
+from core.domain.matches import Match, MatchResult
 from core.ai.market import market_value
 from core.world.calendar import standings
 from core.world.finances import financial_season
@@ -117,6 +117,14 @@ def club_detail(world: World, club_id: int) -> dict:
             "third_color": club.home_kit_third_color}
 
 
+def finance_summary(world: World, club_id: int) -> dict:
+    club = world.clubs[club_id]
+    data = {name: getattr(club, name) for name in ("balance", "income", "transfer_budget", "wage_bill", "wage_cap", "season_spent", "season_sales")}
+    data["reserved_transfer_budget"] = sum(offer.ceiling for offer in world.offers.values() if offer.target_id == club_id)
+    data["reserved_wages"] = sum(offer.contract.weekly_wage for offer in world.offers.values() if offer.target_id == club_id)
+    return data
+
+
 def transfers(world: World, club_id: int | None = None, player_id: int | None = None, season: int | None = None) -> list[dict]:
     rows = [item for item in world.transfers if (club_id is None or club_id in (item.source_id, item.target_id))
             and (player_id is None or item.player_id == player_id)
@@ -224,6 +232,18 @@ def career(world: World, player_id: int) -> dict:
     return {"items": items, "totals": totals}
 
 
+def match_player_name(world: World, result: MatchResult, player_id: int | None) -> str | None:
+    return result.temporary_players.get(player_id) or player_name(world, player_id)
+
+
+def lineup_rows(world: World, result: MatchResult, side: str) -> list[dict]:
+    """The starting eleven of one side, with the positions and ratings of that match."""
+    return [{"id": pid, "name": match_player_name(world, result, pid), "position": position,
+             "temporary": pid in result.temporary_players,
+             "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None}
+            for pid, position in getattr(result, f"{side}_lineup")]
+
+
 def match_detail(world: World, match: Match) -> dict:
     data = match_row(world, match)
     data["competition"] = world.competitions[match.competition_id].name
@@ -235,20 +255,14 @@ def match_detail(world: World, match: Match) -> dict:
     detail = {"engine": result.engine, "status": result.status, "duration": result.duration,
               "home_stats": asdict(result.home_stats) if result.home_stats else None,
               "away_stats": asdict(result.away_stats) if result.away_stats else None}
-    def name(pid):
-        return result.temporary_players.get(pid) or player_name(world, pid)
-    detail["events"] = [{**asdict(event), "player": name(event.player_id),
-                         "secondary": name(event.secondary_id),
+    detail["events"] = [{**asdict(event), "player": match_player_name(world, result, event.player_id),
+                         "secondary": match_player_name(world, result, event.secondary_id),
                          "temporary": event.player_id in result.temporary_players,
                          "secondary_temporary": event.secondary_id in result.temporary_players} for event in result.events]
     for side in ("home", "away"):
-        lineup = getattr(result, f"{side}_lineup")
         bench = getattr(result, f"{side}_bench")
-        detail[f"{side}_lineup"] = [{"id": pid, "name": name(pid), "position": position,
-                                       "temporary": pid in result.temporary_players,
-                                       "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None}
-                                      for pid, position in lineup]
-        detail[f"{side}_bench"] = [{"id": pid, "name": name(pid), "temporary": pid in result.temporary_players,
+        detail[f"{side}_lineup"] = lineup_rows(world, result, side)
+        detail[f"{side}_bench"] = [{"id": pid, "name": match_player_name(world, result, pid), "temporary": pid in result.temporary_players,
                                       "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None} for pid in bench]
     data["result"] = detail
     return data

@@ -39,6 +39,20 @@ def position_rank(position: str) -> int:
     return POSITION_ORDER.index(position) if position in POSITION_ORDER else len(POSITION_ORDER)
 
 
+def squad_sort_key(world, column: str):
+    """Orders the squad table by what a column shows, not by the raw value behind it."""
+    if column == "position": return lambda row: position_rank(row["position"])
+    if column == "name": return lambda row: v.normalized(row["name"])
+    if column == "contract_end": return lambda row: row["contract_end"] or ""
+    if column == "fitness":
+        # The cell reads "Blessé", then "N match(s)" of suspension, then a percentage.
+        return lambda row: (0 if row["injured_until"] else 1 if row["suspension"] else 2, row["fitness"])
+    if column == "nation":
+        codes = build_nation_table(world.nation_names)
+        return lambda row: [codes.get(code, {}).get("display_code", code) for code in row["nationalities"]]
+    return lambda row: row[column]
+
+
 def router(service: GameService) -> APIRouter:
     api = APIRouter(prefix="/api")
 
@@ -176,8 +190,14 @@ def router(service: GameService) -> APIRouter:
               ordre: Literal["asc", "desc"] = "asc") -> dict:
         with service.reading() as world:
             rows = v.squad_rows(world, club_id)
-            rows.sort(key=lambda row: (position_rank(row["position"]) if tri == "position" else (row[tri] or "" if tri == "contract_end" else row[tri]), row["id"]), reverse=ordre == "desc")
+            sort_key = squad_sort_key(world, tri)
+            rows.sort(key=lambda row: (sort_key(row), row["id"]), reverse=ordre == "desc")
             return v.paginate(rows, page)
+
+    @api.get("/clubs/{club_id}/apercu")
+    def club_overview(club_id: int) -> dict:
+        from .club_overview import overview
+        with service.reading() as world: return overview(world, club_id)
 
     @api.get("/clubs/{club_id}/calendrier")
     def club_calendar(club_id: int, page: int = Query(1, ge=1)) -> dict:
@@ -190,10 +210,7 @@ def router(service: GameService) -> APIRouter:
     def finances(club_id: int, saison: int | None = None) -> dict:
         from .club_history import finances as history
         with service.reading() as world:
-            club = world.clubs[club_id]
-            data = {name: getattr(club, name) for name in ("balance", "income", "transfer_budget", "wage_bill", "wage_cap", "season_spent", "season_sales")}
-            data["reserved_transfer_budget"] = sum(offer.ceiling for offer in world.offers.values() if offer.target_id == club_id)
-            data["reserved_wages"] = sum(offer.contract.weekly_wage for offer in world.offers.values() if offer.target_id == club_id)
+            data = v.finance_summary(world, club_id)
             data["history"] = history(world, club_id, saison)
             return data
 

@@ -23,7 +23,11 @@ requêtes pour reconstituer une page.
 
 **Filtrage, tri et pagination côté serveur.** Ne jamais renvoyer tous les joueurs
 au navigateur. Toute liste est paginée, y compris la recherche de joueurs qui
-porte sur l'ensemble des clubs, actifs et dormants.
+porte sur l'ensemble des clubs, actifs et dormants. Seules les courtes listes
+renvoyées en entier (les transferts ou le journal financier d'une saison, les
+classements archivés, les saisons d'un club sur la page affichée) se trient dans
+le navigateur ; le choix survit aux
+rafraîchissements de l'écran.
 
 **Code couleur constant.** Gardien, défense, milieu, attaque gardent la même
 teinte partout, de la liste d'effectif au terrain. C'est ce qui permet de lire
@@ -54,7 +58,7 @@ d'observation.
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | liste triable : poste, nom, âge, note, potentiel exact, salaire, fin de contrat, état (blessé, suspendu, fatigue) |
+| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), matches, buts, passes, cartons, note moyenne |
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
@@ -62,6 +66,23 @@ d'observation.
 
 En-tête : nom, pays, compétition, réputation, classement actuel, forme sur les
 5 derniers matches.
+
+L'onglet Effectif est le point d'entrée du club. Quatre petits blocs précèdent la
+liste, sur une seule ligne (deux par deux sous 1330 px, empilés sur téléphone),
+chacun renvoyant vers l'onglet ou le match qu'il résume :
+
+| Bloc | Contenu | Lien |
+|---|---|---|
+| Calendrier | 5 derniers matches (résultat coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne), puis 3 prochains, sans intertitres | onglet Calendrier |
+| Finances | budget de transferts disponible (hors offres en cours), masse salariale mensuelle, plafond et part utilisée | onglet Finances |
+| Transferts | les 3 dernières arrivées et les 3 derniers départs de la saison en cours (joueur, club et montant sur une ligne) avec totaux ; les autres mouvements (jeunes promus, fins de contrat, retraites) sont comptés | onglet Transferts |
+| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur le terrain du compte rendu (noms réduits au nom de famille), avec les notes du match | compositions du match |
+
+Toutes les colonnes de la liste se trient, sur ce qu'elles affichent : le nom sans
+tenir compte des accents ou des majuscules, les nationalités par leur code affiché,
+l'état du plus indisponible (blessé, puis suspendu) au plus frais. Il n'y a pas de
+colonne de minutes jouées. Les tableaux des autres onglets (transferts, journal
+financier, saisons du club et classements archivés) se trient aussi.
 
 ### Compétition
 
@@ -133,6 +154,7 @@ GET  /api/monde/journal?date=             événements du jour
 
 GET  /api/clubs?competition=&statut=actif|dormant&recherche=&page=&tri=
 GET  /api/clubs/{id}                      en-tête + résumé
+GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
 GET  /api/clubs/{id}/effectif
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances

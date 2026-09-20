@@ -5,8 +5,11 @@ from threading import Event, Thread
 import pytest
 from fastapi.testclient import TestClient
 
+from api import views as v
 from api.app import create_app
-from core.world.simulation import advance_day
+from api.nations import build_nation_table
+from core.domain.players import Discipline, Injury
+from core.world.simulation import advance_day, target_date
 from infrastructure.importation.loader import import_world
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -48,7 +51,7 @@ def test_views_pagination_and_no_rng_leak(client):
     player_id = world.clubs[club_id].player_ids[0]
     match_id = world.competitions[league_id].match_ids[0]
     routes = ["/monde/etat", "/monde/journal", "/partie/rapport-import", "/partie/slots", "/clubs", "/clubs?statut=dormant&page=2", "/competitions",
-              f"/clubs/{club_id}", *[f"/clubs/{club_id}/{section}" for section in ("effectif", "calendrier", "finances", "transferts", "historique")],
+              f"/clubs/{club_id}", *[f"/clubs/{club_id}/{section}" for section in ("effectif", "calendrier", "finances", "transferts", "historique", "apercu")],
               *[f"/competitions/{league_id}/{section}" for section in ("classement", "calendrier", "statistiques", "historique")],
               "/joueurs?page=2", "/joueurs?tri=contract_end&ordre=asc", f"/joueurs/{player_id}", f"/joueurs/{player_id}/historique", f"/matches/{match_id}"]
     for route in routes:
@@ -186,3 +189,80 @@ def test_closing_the_service_ends_a_running_auto_job(config, tmp_path, monkeypat
         service.auto_stop.set()  # a regression must fail this test, not leave the simulation thread running
         closer.join(30)
     assert service.jobs[job_id].status == "done"
+
+
+@pytest.fixture(scope="module")
+def played(config, tmp_path_factory):
+    """A world where the first active club has played six matches, so it has a last five to show."""
+    app = create_app(ROOT, tmp_path_factory.mktemp("api-played"))
+    world = import_world(ROOT / "data", config, 779)
+    club_id = next(iter(world.active_clubs())).id
+    while sum(match.result is not None and club_id in (match.home_id, match.away_id) for match in world.matches.values()) < 6:
+        destination = target_date(world, "journee")
+        while world.date < destination: advance_day(world)
+    app.state.game.world = world
+    with TestClient(app) as client:
+        yield client
+
+
+def test_club_overview_summarises_calendar_finances_transfers_and_last_lineup(played):
+    world = played.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club = next(iter(world.active_clubs()))
+    overview = played.get(f"/api/clubs/{club.id}/apercu").json()
+    last, coming = overview["calendar"]["last"], overview["calendar"]["next"]
+    assert len(last) == 5 and len(coming) == 3
+    assert all(row["score"] and club.id in (row["home"]["id"], row["away"]["id"]) for row in last)
+    assert [row["date"] for row in last] == sorted((row["date"] for row in last), reverse=True)
+    assert all(row["score"] is None and row["date"] >= world.date.iso() for row in coming)
+    assert [row["date"] for row in coming] == sorted(row["date"] for row in coming)
+    for row in last:
+        home = row["home"]["id"] == club.id
+        goals, conceded = row["score"] if home else row["score"][::-1]
+        assert row["outcome"] == ("V" if goals > conceded else "D" if goals < conceded else "N")
+    finances = played.get(f"/api/clubs/{club.id}/finances").json()
+    assert overview["finances"] == {key: finances[key] for key in overview["finances"]}
+    assert {"transfer_budget", "reserved_transfer_budget", "wage_bill", "wage_cap"} <= overview["finances"].keys()
+    movements = played.get(f"/api/clubs/{club.id}/transferts").json()["sections"]
+    assert overview["transfers"]["season"] == world.season
+    for side in ("arrivals", "departures"):
+        assert overview["transfers"][side]["count"] == len(movements[side])
+        assert overview["transfers"][side]["items"] == movements[side][:len(overview["transfers"][side]["items"])]
+    assert overview["transfers"]["others"] == {kind: len(movements[kind]) for kind in ("academy", "release", "retirement")}
+    lineup = overview["lineup"]
+    assert lineup["match"]["id"] == last[0]["id"] and len(lineup["players"]) == 11
+    detail = played.get(f"/api/matches/{lineup['match']['id']}").json()["result"]
+    assert lineup["players"] == detail[f"{lineup['side']}_lineup"]
+    assert played.get("/api/clubs/999999999/apercu").status_code == 404
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_club_overview_before_any_match_has_no_lineup(client):
+    world = client.app.state.game.world
+    club = next(iter(world.active_clubs()))
+    overview = client.get(f"/api/clubs/{club.id}/apercu").json()
+    assert overview["calendar"]["last"] == [] and len(overview["calendar"]["next"]) == 3
+    assert overview["lineup"] is None
+
+
+def test_squad_sorts_by_what_each_column_shows(played):
+    world = played.app.state.game.world
+    club = world.clubs[next(iter(world.active_clubs())).id]
+    hurt, banned = (world.players[player_id] for player_id in club.player_ids[:2])
+    hurt.injury = Injury(world.date, world.date.add_days(20), "minor")
+    banned.discipline[club.competition_id] = Discipline(suspended_matches=2)
+    def rows(sort, order="asc"):
+        return played.get(f"/api/clubs/{club.id}/effectif?tri={sort}&ordre={order}").json()["items"]
+    condition = rows("fitness")
+    assert [row["id"] for row in condition[:2]] == [hurt.id, banned.id]
+    assert [row["fitness"] for row in condition[2:]] == sorted(row["fitness"] for row in condition[2:])
+    assert [row["id"] for row in rows("fitness", "desc")][-2:] == [banned.id, hurt.id]
+    accented, plain = (world.players[player_id] for player_id in club.player_ids[2:4])
+    accented.name, plain.name = "Élie Test", "Zack Test"
+    names = [row["name"] for row in rows("name")]
+    assert names == sorted(names, key=v.normalized) and names.index("Élie Test") < names.index("Zack Test")
+    codes = build_nation_table(world.nation_names)
+    nations = [[codes[code]["display_code"] for code in row["nationalities"]] for row in rows("nation")]
+    assert nations == sorted(nations)
+    for sort in ("position", "age", "rating", "potential", "value", "wage", "contract_end", "appearances", "goals", "assists", "yellows", "reds", "average"):
+        assert played.get(f"/api/clubs/{club.id}/effectif?tri={sort}&ordre=desc").status_code == 200

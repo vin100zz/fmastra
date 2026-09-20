@@ -34,15 +34,43 @@ export const position = value => `<span class="position ${group(value)}">${escap
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
 export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
-export const card = (title, content, action='') => `<section class="card"><div class="card-head"><h2>${escape(title)}</h2>${action}</div>${content}</section>`;
+export const card = (title, content, action='', className='') => `<section class="card${className?` ${className}`:''}"><div class="card-head"><h2>${escape(title)}</h2>${action}</div>${content}</section>`;
 export const stat = (label, value, hint='') => `<div class="stat-card"><span class="label">${escape(label)}</span><strong>${escape(value)}</strong><small>${escape(hint)}</small></div>`;
 export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</span><strong>${value}</strong></div>`;
 export const heading = (overline,title,subtitle='',extra='') => `<div class="page-heading"><div><span class="eyebrow">${escape(overline)}</span><h1>${escape(title)}</h1><p>${escape(subtitle)}</p></div>${extra}</div>`;
 export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
-export function table(headers, rows, footer, rowClasses) {return rows.length ? `<div class="table-scroll"><table><thead><tr>${headers.map(item=>`<th>${item}</th>`).join('')}</tr></thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}">${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();}
+export function table(headers, rows, footer, rowClasses, sort) {
+ const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
+ const cell=(cell,index,column)=>sort?`<td data-value="${escape(sort.values[index][column]??'')}">${cell}</td>`:`<td>${cell}</td>`;
+ const first=index=>sort?.ascending?.includes(index)?' data-first="asc"':'';
+ return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}><thead><tr>${headers.map((item,index)=>`<th${first(index)}>${head(item)}</th>`).join('')}</tr></thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
+}
+// A short list shown whole, sorted in the browser: `values` holds the raw value behind each cell ('' when unknown);
+// `ascending` lists the columns whose first click runs from smallest to largest (ranks), the others start from the largest.
+export const sortableTable = (headers, rows, values, {footer, rowClasses, ascending}={}) => table(headers,rows,footer,rowClasses,{values,ascending});
+const collator = new Intl.Collator('fr',{sensitivity:'base',numeric:true});
+export const compareValues = (a, b) => {const x=Number(a),y=Number(b); return Number.isFinite(x)&&Number.isFinite(y)?x-y:collator.compare(a,b);};
+const cellValue = (row, column) => row.cells[column].dataset.value;
+export function nextDirection(table, column) {
+ const head=table.tHead.rows[0].cells[column],current=head.getAttribute('aria-sort');
+ if(current)return current==='ascending'?'desc':'asc';
+ if(head.dataset.first)return head.dataset.first;
+ return [...table.tBodies[0].rows].every(row=>cellValue(row,column)===''||Number.isFinite(Number(cellValue(row,column))))?'desc':'asc';
+}
+export function sortTable(table, column, direction) {
+ const rows=[...table.tBodies[0].rows],sign=direction==='asc'?1:-1;
+ // Unknown values stay last in either direction; ties keep the order the page came in.
+ const known=rows.filter(row=>cellValue(row,column)!==''),unknown=rows.filter(row=>cellValue(row,column)==='');
+ known.sort((a,b)=>sign*compareValues(cellValue(a,column),cellValue(b,column))||a.dataset.row-b.dataset.row);
+ table.tBodies[0].append(...known,...unknown);
+ [...table.tHead.rows[0].cells].forEach((head,index)=>index===column?head.setAttribute('aria-sort',direction==='asc'?'ascending':'descending'):head.removeAttribute('aria-sort'));
+}
+// The active column carries its direction, so a click never has to guess it from the URL; text columns start A→Z.
+export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label} ${key===sorted?(order==='desc'?'↓':'↑'):''}</button>`;
 export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
+const textColumns=['position','name','nation','club','academy_club'];
 export function playerTable(data, withClub=false, sorted='rating', order='desc', options={}) {
- const columns=[['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['minutes','MIN.'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ const columns=[['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
  const rows=data.items.map(player=>{
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
@@ -51,22 +79,37 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    value:player.value==null?'—':money(player.value),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ Blessé</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
-   appearances:player.appearances,minutes:minutes(player.minutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
+   appearances:player.appearances,goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
   };
   return columns.map(([key])=>cells[key]);
  });
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:`<button data-sort="${key}">${label} ${key===sorted?(order==='desc'?'↓':'↑'):''}</button>`),rows)}</div>`+pager(data);
+ return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows)}</div>`+pager(data);
 }
-export function standingsTable(data, compact=false) {
+export function standingsTable(data, compact=false, sortable=false) {
  const rowClasses=data.items.map(row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'?'promoted':'');
  const icon=row=>row.movement==='direct'?' <span class="qualification-direct" title="Place de qualification directe en huitièmes">A</span>':row.movement==='playoff'?' <span class="qualification-playoff" title="Place de barrage">Barrage</span>':row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='europe'?' <span class="qualification-europe" title="Place qualificative pour la Coupe d’Europe">Europe</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
- return table(compact?['#','CLUB','J','DIFF.','PTS']:['#','CLUB','J','V','N','D','BP','BC','DIFF.','PTS','FORME'],data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club)}</span>${icon(row)}`,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference>0?`+${row.difference}`:row.difference,`<b>${row.points}</b>`,...(compact?[]:[form(row.form)])]),undefined,rowClasses);
+ const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club)}</span>${icon(row)}`,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference>0?`+${row.difference}`:row.difference,`<b>${row.points}</b>`,...(compact?[]:[form(row.form)])]);
+ const headers=compact?['#','CLUB','J','DIFF.','PTS']:['#','CLUB','J','V','N','D','BP','BC','DIFF.','PTS','FORME'];
+ // Form sorts by the points of the last five matches.
+ const points=row=>[...row.form].reduce((sum,letter)=>sum+(letter==='V'?3:letter==='N'?1:0),0);
+ const values=()=>data.items.map(row=>[row.rank,row.club?.name,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference,row.points,...(compact?[]:[points(row)])]);
+ return table(headers,cells,undefined,rowClasses,sortable?{values:values(),ascending:[0]}:undefined);
 }
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}<div class="fixture"><div class="home">${clubLink(match.home)}</div><a class="score ${match.score?'':'pending'}" href="#/match/${match.id}">${match.score?match.score.join(' – '):'À venir'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</a><div>${clubLink(match.away)}</div></div>`;}).join('');}
+// `compact` names players by surname, for a pitch a few hundred pixels wide.
+export function pitch(lineup,label='Composition initiale',{compact=false}={}){
+ const bands={GB:90,DC:75,DL:69,DR:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
+ // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
+ const line=player=>['DL','DC','DR'].includes(player.position)?'defence':bands[player.position]??45;
+ const lateral={DL:0,DC:1,DR:2};
+ const rows={};lineup.forEach(player=>(rows[line(player)]??=[]).push(player));
+ Object.values(rows).forEach(row=>row.sort((a,b)=>(lateral[a.position]??1)-(lateral[b.position]??1)));
+ return `<div class="pitch" aria-label="${escape(label)}">${lineup.map(player=>{const row=rows[line(player)];const y=bands[player.position]??45;let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;return `<${player.temporary?'span':'a'} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player ${group(player.position)} ${player.temporary?'temporary-player':''}" style="left:${x}%;top:${y}%"><span class="shirt">${player.stats?.rating?number(player.stats.rating):player.position}</span><small>${escape(compact?player.name.split(/\s+/).at(-1):player.name)}${player.temporary?' (temp.)':''}</small></${player.temporary?'span':'a'}>`;}).join('')}</div>`;
+}
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};
 export function toast(message,error=false){const element=document.querySelector('#toast');element.textContent=message;element.classList.toggle('error',error);element.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>element.hidden=true,error?9000:4500);}
 export const query = values => {const result=new URLSearchParams();Object.entries(values).forEach(([key,value])=>{if(value!==''&&value!==null&&value!==undefined)result.set(key,value);});return result.toString();};
 
 export function seasonArchives(data){
- return data.items.map((row,index)=>`<details class="card season-archive" ${index===0?'open':''}><summary>Saison ${season(row.season)} · Classement complet</summary>${standingsTable({items:row.standings||[]})}</details>`).join('');
+ return data.items.map((row,index)=>`<details class="card season-archive" ${index===0?'open':''}><summary>Saison ${season(row.season)} · Classement complet</summary>${standingsTable({items:row.standings||[]},false,true)}</details>`).join('');
 }

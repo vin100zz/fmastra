@@ -1,4 +1,4 @@
-import {escape as e,date,season,playerLink,clubLink,card,stat,fact,table,empty,money} from './ui.js';
+import {escape as e,date,season,playerLink,clubLink,card,stat,fact,sortableTable,empty,money} from './ui.js';
 
 const euros=value=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
 
@@ -8,10 +8,10 @@ export function seasonNavigation(data){
 }
 
 export function movementsHistory(data){
- const transferRows=(rows,incoming)=>table(['DATE','JOUEUR',incoming?'PROVENANCE':'DESTINATION','MONTANT'],rows.map(row=>[
+ const transferRows=(rows,incoming)=>sortableTable(['DATE','JOUEUR',incoming?'PROVENANCE':'DESTINATION','MONTANT'],rows.map(row=>[
   date(row.date),playerLink(row.player_id,row.player),clubLink(incoming?row.source:row.target),row.fee?money(row.fee):'Libre (0 €)',
- ]));
- const playerRows=(rows,withAge=false)=>rows.length?table(['DATE','JOUEUR',...(withAge?['ÂGE']:[])],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player),...(withAge?[row.age==null?'<span title="Âge non archivé">—</span>':`${row.age} ans`]:[])])):empty('Aucun mouvement enregistré pour cette saison.');
+ ]),rows.map(row=>[row.date,row.player,(incoming?row.source:row.target)?.name??'Libre',row.fee||0]));
+ const playerRows=(rows,withAge=false)=>rows.length?sortableTable(['DATE','JOUEUR',...(withAge?['ÂGE']:[])],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player),...(withAge?[row.age==null?'<span title="Âge non archivé">—</span>':`${row.age} ans`]:[])]),rows.map(row=>[row.date,row.player,...(withAge?[row.age]:[])])):empty('Aucun mouvement enregistré pour cette saison.');
  const groups=data.sections;
  const partial=data.history_since>`${data.season}-07-01`?`<div class="notice">Les archives de fins de contrat, retraites et promotions antérieures au ${date(data.history_since)} peuvent être incomplètes dans cette ancienne partie.</div>`:'';
  const total=(key,rows)=>money(data[key]??rows.reduce((sum,row)=>sum+(row.fee||0),0));
@@ -35,5 +35,5 @@ export function financialHistory(data){
  return nav+note+`<div class="stat-grid financial-summary">${stat('Total des revenus',euros(data.revenue),'Saison sélectionnée')}${stat('Total des dépenses',euros(data.expenses),'Saison sélectionnée')}${stat('Résultat de trésorerie',euros(data.net),'Revenus moins dépenses')}${stat('Solde en fin de période',euros(data.closing_balance),'Après les écritures enregistrées')}</div>`+
   `<div class="grid equal">${card('Tous les revenus',`<div class="card-body">${fact('Revenus structurels',euros(t.income))}${fact('Ventes de joueurs',euros(t.transfer_income))}${fact('Régularisations positives',euros(t.rounding_income))}</div>`)}${card('Toutes les dépenses',`<div class="card-body">${fact('Salaires',euros(t.wages))}${fact('Frais de fonctionnement',euros(t.operating_costs))}${fact('Achats de joueurs',euros(t.transfer_expenses))}${fact('Régularisations négatives',euros(t.rounding_expenses))}</div>`)}</div>`+
   card('Journal financier',`<div class="card-body">${fact('Solde au début de la période enregistrée',euros(data.opening_balance))}<p>Revenus structurels, salaires et fonctionnement sont regroupés par mois. Chaque indemnité de transfert est détaillée. Les budgets et offres réservées ne sont pas des dépenses tant qu'ils ne sont pas payés.</p></div>`+
-   table(['PÉRIODE / DATE','OPÉRATION','REVENUS','DÉPENSES'],data.entries.map(row=>[row.monthly?e(monthly(row.date)):date(row.date),e(row.label)+(row.player_id?` · ${playerLink(row.player_id,row.player)}`:''),row.revenue?euros(row.revenue):'—',row.expense?euros(row.expense):'—'])));
+   sortableTable(['PÉRIODE / DATE','OPÉRATION','REVENUS','DÉPENSES'],data.entries.map(row=>[row.monthly?e(monthly(row.date)):date(row.date),e(row.label)+(row.player_id?` · ${playerLink(row.player_id,row.player)}`:''),row.revenue?euros(row.revenue):'—',row.expense?euros(row.expense):'—']),data.entries.map(row=>[row.date,row.label,row.revenue,row.expense])));
 }
