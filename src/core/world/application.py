@@ -2,7 +2,7 @@
 from core.domain.players import Discipline
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
-from core.domain.matches import MatchResult
+from core.domain.matches import MatchResult, TRANSIENT_EVENT_KINDS
 from .finances import book_cash, book_daily_cash
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
@@ -110,9 +110,8 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.competitions[match.competition_id].match_ids.append(match.id)
             world.next_id = max(world.next_id, match.id + 1)
         for match in world.matches.values():
-            if (match.season < event.year and match.result and match.result.engine != "archived"
-                    and world.competitions[match.competition_id].kind == "league"):
-                match.result = MatchResult(match.result.home_goals, match.result.away_goals, "archived", status=match.result.status)
+            if match.season < event.year and match.result and match.result.engine != "archived":
+                match.result = _archived(match.result)
         for player in world.players.values():
             world.trajectories.setdefault(player.id, []).append((event.year, player.rating))
             player.season_minutes = player.season_goals = player.season_assists = player.appearances = 0
@@ -170,10 +169,18 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     return True
 
 
+def _archived(result: MatchResult) -> MatchResult:
+    """Score only, plus the knockout outcome that bracket and qualification checks still read."""
+    return MatchResult(result.home_goals, result.away_goals, "archived", status=result.status,
+                       penalties=result.penalties, winner_id=result.winner_id)
+
+
 def _apply_match(world: World, event: MatchPlayed) -> None:
     match = world.matches[event.match_id]
     if match.result is not None: raise ValueError("A match cannot be applied twice")
     match.result = event.result
+    # Full engine logs made up most of a save; the views only list the kinds that remain.
+    event.result.events = [item for item in event.result.events if item.kind not in TRANSIENT_EVENT_KINDS]
     for club_id in (match.home_id, match.away_id):
         for pid in world.clubs[club_id].player_ids:
             discipline = world.players[pid].discipline.get(match.competition_id)

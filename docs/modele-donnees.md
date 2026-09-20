@@ -193,8 +193,19 @@ du championnat. La configuration du monde passe en version 3 : nouvelle partie r
 
 ## Historique et persistance
 
-Garder le détail des matches de la saison courante et précédente, puis les
-scores, classements et agrégats. Une carrière est agrégée par **joueur, saison,
+Garder le détail des matches de la saison courante seulement. À l'ouverture de la
+saison suivante, tous les matches terminés (championnats, coupes nationales et
+coupes d'Europe) sont archivés : score, statut et, pour les rencontres à élimination,
+vainqueur et tirs au but, que la validation du monde relit au chargement. Compositions,
+statistiques, notes et renforts temporaires du match sont alors abandonnés.
+
+Même dans la saison courante, seuls les événements qu'une vue peut afficher sont
+stockés : possession, perte de balle, corner et coup franc sont retirés à
+l'application du match (`TRANSIENT_EVENT_KINDS`). Les statistiques d'équipe
+comptent déjà corners et coups francs ; buts, tirs, cartons, remplacements,
+blessures et tirs au but restent stockés.
+
+Une carrière est agrégée par **joueur, saison,
 club et compétition** : un transfert en cours de saison produit plusieurs lignes.
 Conserver minutes, buts, passes, cartons, somme des notes et nombre de notes
 pour calculer les moyennes sans moyenne de moyennes.

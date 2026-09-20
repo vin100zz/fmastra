@@ -191,7 +191,9 @@ extension devra ajouter attribution, tirage et cibles dédiés ensemble.
 Chaque événement porte seconde de jeu, période, index stable à seconde égale,
 équipe, joueurs, zone/couloir et identifiant de possession/tentative si pertinent.
 Le journal distingue changement de possession, tentative, issue de tir, corner,
-coup franc, faute, carton, blessure, remplacement et fin de période.
+coup franc, faute, carton, blessure, remplacement et fin de période. Le monde ne
+stocke pas les changements de possession, pertes de balle, corners ni coups francs
+(`TRANSIENT_EVENT_KINDS`) : les statistiques d'équipe les comptent déjà.
 
 Pour un but, la passe décisive est attribuée au dernier passeur nommé de la même
 possession, différent du buteur ; pas d'assist sur un coup franc direct ou une

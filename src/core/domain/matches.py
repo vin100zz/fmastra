@@ -29,6 +29,11 @@ class Lineup:
     playing_time: dict[int, PlayingTimePriority] = field(default_factory=dict)
 
 
+# The engine logs these for its own bookkeeping. TeamStats already counts corners and
+# free kicks, and no view lists them, so a stored result keeps every other kind.
+TRANSIENT_EVENT_KINDS = frozenset({"possession", "turnover", "corner", "free_kick"})
+
+
 @dataclass(frozen=True, slots=True)
 class MatchEvent:
     second: int

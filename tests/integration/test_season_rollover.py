@@ -44,6 +44,9 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
     assert all(sum(row['movement'] == 'relegation' for row in rows) == 3 for rows in previous.values())
     relegated = previous[18][-1]['club_id']
     promoted = previous[17][0]['club_id']
+    outcomes = {m.id: (m.result.home_goals, m.result.away_goals, m.result.status, m.result.winner_id, m.result.penalties)
+                for m in world.matches.values()}
+    assert {world.competitions[m.competition_id].kind for m in world.matches.values()} == {'league', 'cup', 'europe'}
     store = SaveStore(tmp_path)
     store.save(world, 'june')
     restored = store.load('june')
@@ -55,6 +58,13 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         assert candidate.clubs[relegated].competition_id is None
         assert candidate.clubs[promoted].competition_id == 16
         assert sum(match.season == 2026 for match in candidate.matches.values()) == 4064 + 5 * 32 + 3 * 144
+        # Every finished match is archived, cups and European ties included, without losing who went through.
+        finished = [m for m in candidate.matches.values() if m.season == 2025]
+        assert len(finished) == len(outcomes) and all(m.result.engine == 'archived' for m in finished)
+        assert {m.id: (m.result.home_goals, m.result.away_goals, m.result.status, m.result.winner_id, m.result.penalties)
+                for m in finished} == outcomes
+        assert any(candidate.competitions[m.competition_id].kind == 'cup' and m.result.winner_id for m in finished)
+        assert any(candidate.competitions[m.competition_id].kind == 'europe' and m.result.winner_id for m in finished)
         for lid, league in candidate.competitions.items():
             if league.kind == 'europe':
                 assert len(candidate.champions[lid]) == 1
@@ -96,6 +106,13 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
         assert response.json()['items'][0]['standings'] == previous[18]
+        # An archived knockout match still shows its score and winner, with no detail to list.
+        cup_match = next(m for m in world.matches.values() if m.season == 2025 and world.competitions[m.competition_id].kind == 'cup')
+        response = client.get(f'/api/matches/{cup_match.id}')
+        assert response.status_code == 200
+        detail = response.json()
+        assert detail['winner_id'] == cup_match.result.winner_id and detail['result']['home_stats'] is None
+        assert detail['result']['events'] == []
 
     # The next day must not replay movements or archive a second champion.
     memberships = {lid: list(league.club_ids) for lid, league in world.competitions.items()}

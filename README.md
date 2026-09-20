@@ -131,7 +131,9 @@ Un participant qui ne peut pas aligner onze joueurs disponibles, dont un gardien
 reçoit des renforts temporaires pour ce seul match. Leur niveau est proche de la
 moyenne de l’effectif, ou de la réputation si le club n’a aucun joueur. Ils sont
 affichés en grisé, sans fiche, contrat ni statistiques de carrière. Leur identité
-et leurs actions restent conservées dans les comptes rendus de coupe archivés.
+et leurs actions restent conservées dans le compte rendu tant que la saison est en
+cours ; une fois la saison archivée, seuls le score, le vainqueur et les tirs au but
+subsistent.
 
 La page pays place la coupe entre la D1 et la D2 et affiche les résultats du dernier
 tour (les affiches à venir avant décembre). « Voir la coupe » ouvre les six tours,
