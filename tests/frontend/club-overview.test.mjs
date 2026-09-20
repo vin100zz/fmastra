@@ -1,9 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {clubOverview} from '../../web/club-overview.js';
-import {pitch} from '../../web/ui.js';
+import {pitch,kitShirtStyle,contrastRatio} from '../../web/ui.js';
 
-const club={id:7,name:'Lens',competition:'Ligue 1'};
+const club={id:7,name:'Lens',competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
 const ref=(id,name)=>({id,name,major_color:'#aa0000',minor_color:'#ffcc00'});
 const match=(id,home,away,extra={})=>({id,date:'2029-12-30',competition:'Ligue 1',round_label:'Journée 19',home:ref(...home),away:ref(...away),score:null,penalties:null,...extra});
 const move=(id,name,fee)=>({date:'2029-08-01',player_id:id,player:name,source:ref(9,'Nice'),target:ref(7,'Lens'),fee});
@@ -83,6 +83,8 @@ test('the last eleven reuses the match pitch, and its absence is explained',()=>
  assert.equal((html.match(/class="pitch-player /g)||[]).length,11);
  assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1\/lineups"/);
  assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
+ // shirts wear the club's primary colour, ratings its secondary one
+ assert.equal((html.match(/<span class="shirt" style="background:#cc0000;color:#ffd700">6,5<\/span>/g)||[]).length,11);
  // the small pitch names players by surname, the full name stays in the tooltip
  assert.match(html,/<small>Nom&lt;1&gt;<\/small>/);assert.match(html,/title="Prénom Nom&lt;1&gt;"/);assert.doesNotMatch(html,/<script>|Nom<1>/);
 });
@@ -94,4 +96,22 @@ test('the pitch spreads full-backs and centre-backs on one line, from left to ri
  assert.deepEqual(placed.map(([,left])=>left),[11,30.5,50,69.5,89]);
  const pair=[...pitch(['BU','BU'].map((position,index)=>({id:index,name:'B',position}))).matchAll(/left:([\d.]+)%/g)].map(match=>Number(match[1]));
  assert.deepEqual(pair,[35,65]);
+});
+
+test('the mini pitch shirts players in the club kit and keeps the number readable',()=>{
+ const line=[{id:1,name:'Ada Un',position:'GB',stats:{rating:7}},{id:-2,name:'Bob Deux',position:'BU',temporary:true,stats:{rating:6}},{id:3,name:'Cy Trois',position:'MC'}];
+ const shirts=html=>[...html.matchAll(/<span class="shirt"([^>]*)>/g)].map(match=>match[1]);
+ const red=' style="background:#cc0000;color:#ffd700"';
+ assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}})),[red,'',red]);
+ // no kit (the match page): the colour still comes from the position
+ assert.deepEqual(shirts(pitch(line)),['','','']);
+ // the secondary colour is always kept; a halo appears only when it is too close to the primary one to read
+ assert.ok(contrastRatio('#cc0000','#ffd700')>=3&&contrastRatio('#f8f8f8','#f8c028')<3);
+ assert.equal(kitShirtStyle('#cc0000','#ffd700'),'background:#cc0000;color:#ffd700');
+ assert.equal(kitShirtStyle('#f8f8f8','#f8c028'),'background:#f8f8f8;color:#f8c028;text-shadow:0 0 2px #1c2b22,0 0 2px #1c2b22,0 0 3px #1c2b22');
+ assert.match(kitShirtStyle('#101010','#121212'),/color:#121212;text-shadow:0 0 2px #ffffff/);
+ // a missing secondary colour reuses the primary one, so it gets the halo too; an unsafe colour is never written out
+ assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/background:#204080;color:#204080;text-shadow:0 0 2px #ffffff/);
+ assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'red;background:url(x)',minor:'#ffffff'}})),['','','']);
+ assert.deepEqual(shirts(pitch(line,'x',{kit:{major:null,minor:null}})),['','','']);
 });

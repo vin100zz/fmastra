@@ -76,7 +76,7 @@ chacun renvoyant vers l'onglet ou le match qu'il résume :
 | Calendrier | 5 derniers matches (résultat coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne), puis 3 prochains, sans intertitres | onglet Calendrier |
 | Finances | budget de transferts disponible (hors offres en cours), masse salariale mensuelle, plafond et part utilisée | onglet Finances |
 | Transferts | les 3 dernières arrivées et les 3 derniers départs de la saison en cours (joueur, club et montant sur une ligne) avec totaux ; les autres mouvements (jeunes promus, fins de contrat, retraites) sont comptés | onglet Transferts |
-| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur le terrain du compte rendu (noms réduits au nom de famille), avec les notes du match | compositions du match |
+| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur le terrain du compte rendu (noms réduits au nom de famille) ; maillot en couleur primaire du club, note du match en couleur secondaire (avec un halo quand elle se lit mal sur la primaire) | compositions du match |
 
 Toutes les colonnes de la liste se trient, sur ce qu'elles affichent : le nom sans
 tenir compte des accents ou des majuscules, les nationalités par leur code affiché,

@@ -18,6 +18,11 @@ export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-F
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
+const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.03928?value/12.92:((value+.055)/1.055)**2.4); return .2126*r+.7152*g+.0722*b;};
+export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
+// A shirt in a club's kit: the primary colour for the shirt, the secondary one for its number, with a halo (dark on a light
+// number, light on a dark one) when the two are too close to read.
+export const kitShirtStyle = (major, minor) => `background:${major};color:${minor}${contrastRatio(major,minor)<3?`;text-shadow:${[2,2,3].map(blur=>`0 0 ${blur}px ${contrastText(minor)}`).join(',')}`:''}`;
 export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
 let nations={};
 export const setNations = data => nations=data||{};
@@ -96,15 +101,17 @@ export function standingsTable(data, compact=false, sortable=false) {
  return table(headers,cells,undefined,rowClasses,sortable?{values:values(),ascending:[0]}:undefined);
 }
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}<div class="fixture"><div class="home">${clubLink(match.home)}</div><a class="score ${match.score?'':'pending'}" href="#/match/${match.id}">${match.score?match.score.join(' – '):'À venir'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</a><div>${clubLink(match.away)}</div></div>`;}).join('');}
-// `compact` names players by surname, for a pitch a few hundred pixels wide.
-export function pitch(lineup,label='Composition initiale',{compact=false}={}){
+// `compact` names players by surname, for a pitch a few hundred pixels wide; `kit` ({major, minor} hex colours) shirts them in a club's colours
+// instead of one colour per position (match-only players keep their grey shirt).
+export function pitch(lineup,label='Composition initiale',{compact=false,kit=null}={}){
+ const colors=safeColor(kit?.major)?{major:kit.major,minor:safeColor(kit.minor)||kit.major}:null;
  const bands={GB:90,DC:75,DL:69,DR:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
  // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
  const line=player=>['DL','DC','DR'].includes(player.position)?'defence':bands[player.position]??45;
  const lateral={DL:0,DC:1,DR:2};
  const rows={};lineup.forEach(player=>(rows[line(player)]??=[]).push(player));
  Object.values(rows).forEach(row=>row.sort((a,b)=>(lateral[a.position]??1)-(lateral[b.position]??1)));
- return `<div class="pitch" aria-label="${escape(label)}">${lineup.map(player=>{const row=rows[line(player)];const y=bands[player.position]??45;let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;return `<${player.temporary?'span':'a'} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player ${group(player.position)} ${player.temporary?'temporary-player':''}" style="left:${x}%;top:${y}%"><span class="shirt">${player.stats?.rating?number(player.stats.rating):player.position}</span><small>${escape(compact?player.name.split(/\s+/).at(-1):player.name)}${player.temporary?' (temp.)':''}</small></${player.temporary?'span':'a'}>`;}).join('')}</div>`;
+ return `<div class="pitch" aria-label="${escape(label)}">${lineup.map(player=>{const row=rows[line(player)];const y=bands[player.position]??45;let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;return `<${player.temporary?'span':'a'} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player ${group(player.position)} ${player.temporary?'temporary-player':''}" style="left:${x}%;top:${y}%"><span class="shirt"${colors&&!player.temporary?` style="${kitShirtStyle(colors.major,colors.minor)}"`:''}>${player.stats?.rating?number(player.stats.rating):player.position}</span><small>${escape(compact?player.name.split(/\s+/).at(-1):player.name)}${player.temporary?' (temp.)':''}</small></${player.temporary?'span':'a'}>`;}).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};
 export function toast(message,error=false){const element=document.querySelector('#toast');element.textContent=message;element.classList.toggle('error',error);element.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>element.hidden=true,error?9000:4500);}

@@ -47,7 +47,7 @@ function lineupBlock(club,lineup){
  if(!lineup)return card('Dernier onze aligné',empty('Le club n’a pas encore de composition enregistrée.','Aucun match joué'),'','lineup-card');
  const {match}=lineup,home=match.home.id===club.id,opponent=home?match.away:match.home;
  const result=`<a class="lineup-match" href="#/match/${match.id}/lineups"><span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span><span>${home?'contre':'à'} ${kitDot(opponent)}${e(opponent.name)}<small>${shortDate(match.date)} · ${e(match.competition)} · ${e(match.round_label)}</small></span></a>`;
- return card('Dernier onze aligné',result+pitch(lineup.players,`Onze aligné par ${club.name}`,{compact:true}),`<a href="#/match/${match.id}/lineups" aria-label="Voir le match">Voir →</a>`,'lineup-card');
+ return card('Dernier onze aligné',result+pitch(lineup.players,`Onze aligné par ${club.name}`,{compact:true,kit:{major:club.major_color,minor:club.minor_color}}),`<a href="#/match/${match.id}/lineups" aria-label="Voir le match">Voir →</a>`,'lineup-card');
 }
 
 export function clubOverview(club,data){
