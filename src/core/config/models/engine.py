@@ -56,6 +56,10 @@ class EngineConfigChance:
     on_target_reference: float = Field(alias="niveau_reference_cadrage")
     probability_min: float = Field(alias="borne_probabilite_min")
     probability_max: float = Field(alias="borne_probabilite_max")
+    delivery_sensitivity: float = Field(default=0.02, alias="sensibilite_livraison")
+    cross_reference: float = Field(default=45.6, alias="niveau_reference_centre")
+    set_piece_reference: float = Field(default=55.3, alias="niveau_reference_cpa")
+    free_kick_reference: float = Field(default=58.8, alias="niveau_reference_coup_franc")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -90,7 +94,12 @@ class EngineConfigCards:
     booked_caution_multiplier: float = Field(alias="booked_caution_multiplier")
     red_probability: float = Field(alias="probabilite_rouge_direct_par_turnover_defensif")
     defense_zone_weight: float = Field(alias="poids_zone_defense")
-    tackling_weight: float = Field(alias="poids_agressivite_tacle")
+    aggression_weight: float = Field(alias="poids_agressivite_tacle")
+    aggression_min: float = Field(default=0.25, alias="agressivite_min")
+    aggression_max: float = Field(default=2.0, alias="agressivite_max")
+    aggression_source_low: float = Field(default=4.0, alias="agressivite_note_basse")
+    aggression_source_reference: float = Field(default=10.5, alias="agressivite_note_reference")
+    aggression_source_high: float = Field(default=17.0, alias="agressivite_note_haute")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

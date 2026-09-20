@@ -9,12 +9,19 @@ from core.domain.date import Date, next_annual_date
 from core.domain.players import Contract, Player, Position
 from core.domain.world import World
 from core.engine.abilities import overall
+from core.math import interpolate
 from core.randomness import stream
 from core.world.finances import initial_finances
 from .records import SourceClub, SourcePlayer
 from .selection import select_squad
 from .source_positions import parse_positions
 from .synthesis import club_strength, expected_wage, intrinsic_value
+
+
+def source_trait(note: float, low: float, reference: float, high: float,
+                 minimum: float, neutral: float, maximum: float) -> float:
+    """Piecewise-linear conversion of a source note: `reference` lands on `neutral`, the ends on the bounds."""
+    return interpolate(((low, minimum), (reference, neutral), (high, maximum)), note)
 
 
 def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, corrections: Counter) -> Player:
@@ -52,15 +59,23 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
             wage = expected_wage(intrinsic_value(rating, age, positions[0], cfg), cfg)
             corrections["missing_wages"] += 1
         contract = Contract(wage, end, date)
-    injuries = cfg.states.injuries
-    contracts = cfg.management.contracts
+    injuries, contracts, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
+    fragility = (source_trait(row.injury_proneness, injuries.fragility_source_low, injuries.fragility_source_reference,
+                              injuries.fragility_source_high, injuries.fragility_min,
+                              (injuries.fragility_min + injuries.fragility_max) / 2, injuries.fragility_max)
+                 if row.injury_proneness is not None else rng.uniform(injuries.fragility_min, injuries.fragility_max))
+    ego = (source_trait(row.ambition, contracts.ego_source_low, contracts.ego_source_reference, contracts.ego_source_high,
+                        contracts.ego_min, (contracts.ego_min + contracts.ego_max) / 2, contracts.ego_max)
+           if row.ambition is not None else rng.uniform(contracts.ego_min, contracts.ego_max))
+    aggression = (source_trait(row.aggression, cards.aggression_source_low, cards.aggression_source_reference,
+                               cards.aggression_source_high, cards.aggression_min, 1.0, cards.aggression_max)
+                  if row.aggression is not None else 1.0)
     return Player(row.id, row.common_name or f"{given_name} {surname}".strip(), surname, given_name, row.nations,
                   row.born, positions[0], {position: row.position_ratings[position] / 20 for position in positions[1:] if row.position_ratings[position] > 1},
                   attributes, rating, potential, cfg.states.fitness.initial, cfg.states.form.initial,
-                  cfg.states.moral.initial, rng.uniform(injuries.fragility_min, injuries.fragility_max),
-                  rng.uniform(contracts.ego_min, contracts.ego_max), None if free else row.club_id, contract,
+                  cfg.states.moral.initial, fragility, ego, None if free else row.club_id, contract,
                   source_current_ability=row.current_ability, source_potential_ability=row.potential_ability,
-                  position_ratings=dict(row.position_ratings))
+                  position_ratings=dict(row.position_ratings), aggression=aggression)
 
 
 def construct_world(source_clubs: list[SourceClub], source_players: list[SourcePlayer], cfg: Config,

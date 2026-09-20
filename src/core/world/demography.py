@@ -71,11 +71,13 @@ def generate_player(world: World, player_id: int, club: Club | None, position: P
         release = cfg.world.key_dates.contract_release
         end = Date(world.date.year + academy.contract_years, release.month, release.day).add_days(-1)
         contract = Contract(academy.base_weekly_wage, end, world.date, "backup", True)
-    injury, agreements = cfg.states.injuries, cfg.management.contracts
+    injury, agreements, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
     return Player(player_id, f"{given} {surname}".strip(), surname, given, (nation,), born, position, secondary,
                   attributes, overall(attributes, position, cfg), potential, cfg.states.fitness.initial,
                   cfg.states.form.initial, cfg.states.moral.initial, rng.uniform(injury.fragility_min, injury.fragility_max),
-                  rng.uniform(agreements.ego_min, agreements.ego_max), club.id if club else None, contract)
+                  rng.uniform(agreements.ego_min, agreements.ego_max), club.id if club else None, contract,
+                  # Peaked at the neutral factor, like the imported population.
+                  aggression=rng.triangular(cards.aggression_min, cards.aggression_max, 1.0))
 
 
 def cohort_events(world: World) -> list[PlayerGenerated]:

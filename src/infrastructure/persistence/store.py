@@ -1,8 +1,10 @@
 """Atomic gzip JSON saves and safe named slots."""
 from __future__ import annotations
 
+import csv
 import gzip
 import hashlib
+import io
 import json
 import os
 import platform
@@ -13,15 +15,24 @@ from pathlib import Path
 from core.domain.world import World
 from core.world.validation import validate_world
 from infrastructure.config.loader import config_fingerprint, config_payload
+from infrastructure.importation.readers import ATTRIBUTE_COLUMNS, note
 from .codec import encode, decode
 from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Player traits read from the source, delivery quality and foul propensity. `poids_agressivite_tacle` keeps
+    # its older value in an older save: as an exponent of 0.006 the foul propensity is practically neutral there.
+    (12, ("etats", "blessures"), {"fragilite_note_basse": 2.3, "fragilite_note_reference": 8.3, "fragilite_note_haute": 14.3}),
+    (12, ("ia_gestion", "contrats"), {"ego_note_basse": 8.4, "ego_note_reference": 12.4, "ego_note_haute": 16.4}),
+    (12, ("moteur_match", "occasion"), {"sensibilite_livraison": 0.02, "niveau_reference_centre": 45.6,
+                                        "niveau_reference_cpa": 55.3, "niveau_reference_coup_franc": 58.8}),
+    (12, ("moteur_match", "cartons"), {"agressivite_min": 0.25, "agressivite_max": 2.0, "agressivite_note_basse": 4.0,
+                                       "agressivite_note_reference": 10.5, "agressivite_note_haute": 17.0}),
     # An empty curve keeps the exponential valuation the older save was played with.
     (11, ("ia_gestion", "valorisation"), {"courbe_niveau": []}),
     (10, ("ia_gestion", "mercato"), {
@@ -41,6 +52,11 @@ MIGRATION_DEFAULTS = (
     (7, ("ia_gestion", "mercato"), {"gain_qualite_min_recrutement": 3.0}),
     (6, ("ia_gestion", "mercato"), {"stabilite_apres_arrivee_jours": 180}),
 )
+# Attributes `centre` and `cpa` were appended at schema 12. Players whose source row is unavailable receive the level
+# generation gives their position: rating plus these offsets, as in `profils_generation` of that version.
+LEGACY_ATTRIBUTE_COUNT = 13
+DELIVERY_OFFSETS = {"GB": (-25, -25), "DC": (-27, -37), "DL": (1, -17), "DR": (-2, -24), "MDC": (-19, -20),
+                    "MC": (-14, -16), "MOC": (-10, -11), "AILG": (-6, -15), "AILD": (-4, -15), "BU": (-20, -25)}
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
 
@@ -88,8 +104,11 @@ class SaveStore:
                 world, fingerprint = decode(payload["world"]), payload["config_hash"]
                 version = 1
             else:
+                found = re.search(rb'"schema_version":\s*(\d+)', raw[:100])
+                if found and int(found.group(1)) < SCHEMA_VERSION:
+                    raw = _extend_attribute_vectors(raw, self.directory.parent / "data" / "players.csv")
                 payload = ADAPTER.validate_json(raw)
-                if payload.schema_version not in (2, 3, 4, 5, 6, 7, 8, 9, 10, SCHEMA_VERSION):
+                if payload.schema_version not in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, SCHEMA_VERSION):
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
                 world, fingerprint = payload.world, payload.config_hash
                 version = payload.schema_version
@@ -117,6 +136,32 @@ class SaveStore:
             return []
         return [{"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size,
                  "modified": path.stat().st_mtime} for path in sorted(self.directory.glob("*.json.gz"))]
+
+
+def _source_delivery(world: dict, source_path: Path, wanted: set[int]) -> dict[int, list[float]]:
+    """`centre` and `cpa` of imported players, read back only from the exact CSV the game was imported from."""
+    if not source_path.is_file(): return {}
+    raw = source_path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != world.get("source_hashes", {}).get("players.csv"): return {}
+    source = world["config"]["import"]["format_source"]
+    reader = csv.DictReader(io.StringIO(raw.decode(source["encodage"])), delimiter=source["separateur"])
+    return {int(row["UID"]): [note(row, *ATTRIBUTE_COLUMNS[name]) * 5 for name in ("centre", "cpa")]
+            for row in reader if int(row["UID"]) in wanted}
+
+
+def _extend_attribute_vectors(raw: bytes, source_path: Path) -> bytes:
+    """Schema 12 appended `centre` and `cpa` to every attribute vector; vectors already extended are left alone."""
+    document = json.loads(raw)
+    world = document["world"]
+    stale = [player for player in world["players"].values() if len(player["attributes"]["values"]) == LEGACY_ATTRIBUTE_COUNT]
+    if not stale: return raw
+    imported = _source_delivery(world, source_path, {player["id"] for player in stale})
+    bounds = world["config"]["attributs"]["bornes"]
+    for player in stale:
+        extra = imported.get(player["id"]) or [min(bounds["max"], max(bounds["min"], player["rating"] + offset))
+                                               for offset in DELIVERY_OFFSETS[player["position"]]]
+        player["attributes"]["values"].extend(extra)
+    return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 def _config_matches(world: World, fingerprint: str, version: int) -> bool:

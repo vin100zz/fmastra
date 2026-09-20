@@ -7,7 +7,7 @@ from core.math import clamp, sigmoid, logit
 from .local_state import MatchLog, TeamState
 from .personnel import dismiss
 from .shots import resolve_shot
-from .zones import gap, involved_player, mirror, choose_lane
+from .zones import foul_committer, gap, involved_player, mirror, choose_lane
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,10 +44,9 @@ def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: i
             neighbors = [candidate for candidate in (lane - 1, lane + 1) if 0 <= candidate < len(cfg.involvement.lanes)]
             lane = choose_lane(attacker, defender, zone, cfg, rng, neighbors)
     defensive_zone, defensive_lane = mirror(zone, lane, cfg)
-    tackler = involved_player(defender, defensive_zone, defensive_lane, False, cfg, rng)
+    tackler = foul_committer(defender, defensive_zone, defensive_lane, cfg, rng)
     cards = cfg.engine.cards
     modifier = cards.defense_zone_weight if defensive_zone == 0 else 1
-    modifier *= 1 + cards.tackling_weight * tackler.player.attributes.get("tacle") / cfg.attributes.bounds.max
     yellow_modifier = modifier * (cards.booked_caution_multiplier if defender.individual[tackler.player.id].yellows else 1)
     card = rng.random()
     if card < cards.red_probability * modifier:

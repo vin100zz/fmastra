@@ -39,3 +39,7 @@ class SourcePlayer:
     given_name: str = ""
     surname: str = ""
     common_name: str = ""
+    # Source notes on the CSV's 1-20 scale; None when the export lacks the column.
+    injury_proneness: float | None = None
+    ambition: float | None = None
+    aggression: float | None = None

@@ -94,3 +94,56 @@ def test_old_save_receives_rotation_rules_without_accepting_tampered_config(conf
     store.path_for("rotation").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     with pytest.raises(SaveError, match="configuration"):
         store.load("rotation")
+
+
+def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_from_the_position_level(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    import shutil
+    from infrastructure.config.loader import config_payload, decode_config
+    from infrastructure.persistence.store import DELIVERY_OFFSETS, LEGACY_ATTRIBUTE_COUNT, MIGRATION_DEFAULTS
+    # An older save embeds an older configuration: no weight for `centre` and `cpa` in the overall rating.
+    raw = config_payload(config)
+    raw["attributs"]["liste"]["techniques"] = [name for name in raw["attributs"]["liste"]["techniques"] if name not in ("centre", "cpa")]
+    for weights in raw["attributs"]["note_globale"].values():
+        released = weights.pop("centre", 0) + weights.pop("cpa", 0)
+        if released: weights[next(iter(weights))] += released
+    world = import_world(ROOT / "data", decode_config(raw), 14)
+    config = world.config
+    saves = tmp_path / "saves"
+    store = SaveStore(saves)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 11
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 11:
+            for key in defaults: del rules[path[0]][path[1]][key]
+    legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    for player in legacy["world"]["players"].values():
+        del player["attributes"]["values"][LEGACY_ATTRIBUTE_COUNT:]
+        del player["aggression"]
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    # Without the exact source file every player receives the level generation gives his position.
+    fallback = store.load("old")
+    bounds = config.attributes.bounds
+    for player in fallback.players.values():
+        expected = [min(bounds.max, max(bounds.min, player.rating + offset)) for offset in DELIVERY_OFFSETS[player.position.value]]
+        assert list(player.attributes.values[LEGACY_ATTRIBUTE_COUNT:]) == expected
+        assert player.attributes.values[:LEGACY_ATTRIBUTE_COUNT] == world.players[player.id].attributes.values[:LEGACY_ATTRIBUTE_COUNT]
+        assert player.aggression == 1.0
+    # With the file the game was imported from, imported players get exactly their source values.
+    (tmp_path / "data").mkdir()
+    shutil.copy(ROOT / "data" / "players.csv", tmp_path / "data" / "players.csv")
+    migrated = store.load("old")
+    from infrastructure.importation.readers import read_sources
+    _, rows, _ = read_sources(ROOT / "data", config)
+    source = {row.id: row.attributes.values[LEGACY_ATTRIBUTE_COUNT:] for row in rows}
+    assert sum(pid in source for pid in world.players) > 0.99 * len(world.players)
+    for pid, player in migrated.players.items():
+        # Players generated at import have no source row and keep the position level.
+        assert player.attributes.values[LEGACY_ATTRIBUTE_COUNT:] == (source[pid] if pid in source else fallback.players[pid].attributes.values[LEGACY_ATTRIBUTE_COUNT:])
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").players == migrated.players
+

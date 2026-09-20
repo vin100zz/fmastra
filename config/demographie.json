@@ -27,6 +27,7 @@
     "poids_declin_par_attribut": {
       "vitesse": 1.60, "endurance": 1.45,
       "tacle": 1.00, "finition": 0.90, "technique": 0.85, "passe": 0.75, "jeu_tete": 0.90,
+      "centre": 0.40, "cpa": 0.40,
       "reflexes": 1.10, "sorties": 0.90, "relance": 0.70,
       "placement": 0.25, "vision": 0.20, "sang_froid": 0.15
     },

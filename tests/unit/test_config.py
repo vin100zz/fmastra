@@ -144,3 +144,33 @@ def test_older_configurations_keep_the_exponential_valuation(config):
     assert older.management.valuation.level_curve == ()
     for level in (55, 70, 88):
         assert level_value(level, older) == pytest.approx(1_000_000 * exp(0.115 * (level - 55)))
+
+
+@pytest.mark.parametrize("domain,section,key,value", [
+    ("moteur_match", "cartons", "agressivite_min", 0), ("moteur_match", "cartons", "agressivite_min", 1.5),
+    ("moteur_match", "cartons", "agressivite_max", 0.9), ("moteur_match", "cartons", "poids_agressivite_tacle", -1),
+    ("moteur_match", "cartons", "agressivite_note_reference", 2.0),
+    ("moteur_match", "occasion", "sensibilite_livraison", -0.01),
+    ("etats", "blessures", "fragilite_note_reference", 20.0), ("ia_gestion", "contrats", "ego_note_reference", 3.0),
+])
+def test_invalid_trait_and_delivery_rules(config, domain, section, key, value):
+    raw = config_payload(config)
+    raw[domain][section][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)
+
+
+def test_trait_and_delivery_rules_default_for_older_configurations(config):
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    raw = config_payload(config)
+    added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 12]
+    assert added
+    for (domain, section), defaults in added:
+        for key in defaults: del raw[domain][section][key]
+    older = decode_config(raw)
+    # The model defaults, the save migration and the shipped configuration describe the same rules.
+    assert older == config
+    restored = config_payload(older)
+    for (domain, section), defaults in added:
+        assert {key: restored[domain][section][key] for key in defaults} == defaults
+

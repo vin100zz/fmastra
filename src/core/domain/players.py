@@ -20,8 +20,10 @@ class Position(StrEnum):
     STRIKER = "BU"
 
 
+# New attributes are appended: the first thirteen keep their index in saved vectors.
 ATTRIBUTE_NAMES = ("passe", "technique", "finition", "tacle", "jeu_tete", "vision",
-                   "placement", "sang_froid", "vitesse", "endurance", "reflexes", "sorties", "relance")
+                   "placement", "sang_froid", "vitesse", "endurance", "reflexes", "sorties", "relance",
+                   "centre", "cpa")
 ATTRIBUTE_INDEX = {name: index for index, name in enumerate(ATTRIBUTE_NAMES)}
 
 
@@ -93,6 +95,8 @@ class Player:
     source_current_ability: int | None = None
     source_potential_ability: int | None = None
     position_ratings: dict[Position, int] = field(default_factory=dict)
+    # Propensity to commit fouls, stable like fragility and ego; 1.0 is the neutral factor.
+    aggression: float = 1.0
 
     @property
     def nation(self) -> str:

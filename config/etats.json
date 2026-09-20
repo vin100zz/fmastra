@@ -13,10 +13,11 @@
     "fatigue_retour_de_blessure": 0.5
   },
   "blessures": {
-    "_note": "Risque evalue sur un joueur implique nomme par possession, pas sur chaque membre du onze. Valeurs initiales a calibrer sur la suite blessures.",
+    "_note": "Risque evalue sur un joueur implique nomme par possession, pas sur chaque membre du onze. Valeurs initiales a calibrer sur la suite blessures. A l'import, la fragilite vient de la note InjuryProneness : note_basse -> fragilite_min, note_reference -> milieu de la plage, note_haute -> fragilite_max.",
     "probabilite_base_par_possession": 0.0025,
     "facteur_fatigue_max": 1.9,
     "fragilite_min": 0.6, "fragilite_max": 1.8,
+    "fragilite_note_basse": 2.3, "fragilite_note_reference": 8.3, "fragilite_note_haute": 14.3,
     "probabilite_quotidienne_hors_match": 0.00025,
     "gravites": [
       {"nom": "legere",    "part": 0.58, "jours_min": 3,   "jours_max": 10},

@@ -43,10 +43,13 @@ La date initiale reste le 1er juillet 2025, définie par la configuration.
 
 ## Attributs et progression
 
-Le moteur utilise 13 attributs. Chacun vient directement de la note source sur
-20, multipliée par 5 pour le stockage interne sur 100, puis réaffichée sur 20.
+Le moteur utilise 15 attributs. Chacun vient directement de la note source sur
+20 (la moyenne de deux notes pour `cpa`), multipliée par 5 pour le stockage interne
+sur 100, puis réaffichée sur 20.
 Aucune génération ni recentrage à partir de Value ou WeeklyWage n'est appliqué.
-Les autres attributs de l'export ne sont pas encore utilisés par le moteur.
+Trois autres colonnes alimentent des traits stables du joueur : `InjuryProneness`
+(fragilité), `Ambition` (ego), `Aggression` et `Dirtiness` (agressivité), voir
+`docs/attributs.md`. Les autres attributs de l'export ne sont pas utilisés par le moteur.
 
 | Attribut du moteur | Colonne CSV |
 |---|---|
@@ -63,6 +66,8 @@ Les autres attributs de l'export ne sont pas encore utilisés par le moteur.
 | reflexes | Reflexes |
 | sorties | RushingOut |
 | relance | Kicking |
+| centre | Crossing |
+| cpa | moyenne de Corners et FreeKicks |
 
 Les notes doivent être dans [1,20]. CA et PA doivent satisfaire
 `1 <= CurrentAbility <= PotentialAbility <= 200` ; une valeur invalide bloque
@@ -127,7 +132,7 @@ seul l'affichage les arrondit, afin de conserver les petites progressions.
 
 | Entité | Éléments indispensables |
 |---|---|
-| `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, forme, moral, fragilité et ego stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur |
+| `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, forme, moral, fragilité, ego et agressivité stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur |
 | `Contract` | salaire hebdomadaire entier, signature et échéance, rôle/temps de jeu attendu, origine réelle ou synthétique |
 | `Club` | ID, noms, nation, division source, compétition simulée optionnelle, statut, capacité connue ou absente, réputation, centre, formation, personnalité, revenus de référence et facteur initial de financement, budget, plafond salarial, solde, kit domicile (ID et couleurs, optionnels) |
 | `ClubPersonality` | goût du risque, préférence jeunes, agressivité salariale, patience ; tirés une fois |

@@ -3,36 +3,59 @@ from random import Random
 
 from core.config.model import Config
 from core.math import clamp, logit, sigmoid, weighted_choice
+from core.domain.matches import LineupSlot
 from core.domain.players import Position
 from .abilities import weighted_rating, state_multiplier
 from .local_state import MatchLog, TeamState
 from .zones import involved_player
 
 
+def set_piece_taker(team: TeamState) -> LineupSlot:
+    """The team's dead-ball specialist: best `cpa` on the pitch, goalkeeper excluded; ties go to the lowest id."""
+    candidates = [slot for slot in team.active if slot.position != Position.GOALKEEPER] or team.active
+    return max(candidates, key=lambda slot: (slot.player.attributes.get("cpa"), -slot.player.id))
+
+
+def delivery_quality(slot: LineupSlot, attribute: str, team: TeamState, cfg: Config) -> float:
+    return slot.player.attributes.get(attribute) * state_multiplier(slot.player, slot.position, cfg, team.fitness[slot.player.id])
+
+
+def delivered_xg(xg: float, quality: float, reference: float, cfg: Config) -> float:
+    """A better delivery makes the same chance more dangerous; the reference level leaves the average unchanged."""
+    rules = cfg.engine.chance
+    return sigmoid(logit(clamp(xg, rules.probability_min, rules.probability_max)) + rules.delivery_sensitivity * (quality - reference))
+
+
 def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int, counter: bool,
                  kind: str, passer: int | None, log: MatchLog, cfg: Config, rng: Random) -> bool:
     rules = cfg.engine.chance
     header = kind in ("cross", "corner")
+    free_kick_edge = 0.0
     if kind == "corner":
-        candidates = [slot for slot in attacker.active if slot.position != Position.GOALKEEPER]
+        taker = set_piece_taker(attacker)
+        # The specialist is at the flag: he cannot also be the man rising at the far post.
+        outfield = [slot for slot in attacker.active if slot.position != Position.GOALKEEPER]
+        candidates = [slot for slot in outfield if slot is not taker] or outfield
         shooter = weighted_choice(candidates, [slot.player.attributes.get("jeu_tete") for slot in candidates], rng)
-        xg = cfg.engine.set_pieces.corner_xg
+        xg = delivered_xg(cfg.engine.set_pieces.corner_xg, delivery_quality(taker, "cpa", attacker, cfg), rules.set_piece_reference, cfg)
         passer = None
     elif kind == "free_kick":
-        shooter = weighted_choice(attacker.active, [weighted_rating(slot.player.attributes, cfg.attributes.composites.shooting)
-                                                    for slot in attacker.active], rng)
+        shooter = set_piece_taker(attacker)
+        free_kick_edge = delivery_quality(shooter, "cpa", attacker, cfg) - rules.free_kick_reference
         xg, passer = cfg.engine.set_pieces.free_kick_xg, None
     elif header:
         crosser = involved_player(attacker, zone, lane, True, cfg, rng)
         passer = crosser.player.id
         shooter = involved_player(attacker, zone, len(cfg.involvement.lanes) // 2, True, cfg, rng, passer)
-        xg = rules.cross_xg
+        xg = delivered_xg(rules.cross_xg, delivery_quality(crosser, "centre", attacker, cfg), rules.cross_reference, cfg)
     else:
         shooter = involved_player(attacker, zone, lane, True, cfg, rng)
         xg = rules.shot_xg * (rules.counter_multiplier if counter else 1)
     keeper = defender.goalkeeper()
     shooting_weights = cfg.attributes.composites.heading if header else cfg.attributes.composites.shooting
-    shot_quality = weighted_rating(shooter.player.attributes, shooting_weights) * state_multiplier(shooter.player, shooter.position, cfg, attacker.fitness[shooter.player.id])
+    # The dead-ball specialist strikes a direct free kick with his own shot, plus the points his skill exceeds the reference.
+    shot_quality = (weighted_rating(shooter.player.attributes, shooting_weights)
+                    * state_multiplier(shooter.player, shooter.position, cfg, attacker.fitness[shooter.player.id]) + free_kick_edge)
     keeper_quality = weighted_rating(keeper.player.attributes, cfg.attributes.composites.saving)
     if header:
         weights = rules.header_keeper_weights

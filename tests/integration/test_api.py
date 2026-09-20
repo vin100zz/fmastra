@@ -275,6 +275,10 @@ def test_squad_sorts_by_what_each_column_shows(played):
     world = played.app.state.game.world
     club = world.clubs[next(iter(world.active_clubs())).id]
     hurt, banned = (world.players[player_id] for player_id in club.player_ids[:2])
+    # The six simulated matches may have injured or suspended others: only these two must be unavailable.
+    for player_id in club.player_ids:
+        world.players[player_id].injury = None
+        world.players[player_id].discipline.clear()
     hurt.injury = Injury(world.date, world.date.add_days(20), "minor")
     banned.discipline[club.competition_id] = Discipline(suspended_matches=2)
     def rows(sort, order="asc"):

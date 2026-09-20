@@ -106,6 +106,14 @@ def validate_consistency(cfg: Config) -> None:
     require(isclose(sum(item.share for item in cfg.states.injuries.severities), 1, abs_tol=1e-6), "Injury shares must sum to 1")
     require(cfg.engine.set_pieces.corner_probability + cfg.engine.set_pieces.free_kick_probability <= 1, "Set-piece probabilities overlap")
     require(cfg.engine.chance.probability_min > 0 and cfg.engine.chance.probability_max < 1, "Logit bounds must be open")
+    require(cfg.engine.chance.delivery_sensitivity >= 0, "Delivery sensitivity must be nonnegative")
+    injuries, contracts, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
+    for label, notes in (("Fragility", (injuries.fragility_source_low, injuries.fragility_source_reference, injuries.fragility_source_high)),
+                         ("Ego", (contracts.ego_source_low, contracts.ego_source_reference, contracts.ego_source_high)),
+                         ("Foul propensity", (cards.aggression_source_low, cards.aggression_source_reference, cards.aggression_source_high))):
+        require(notes[0] < notes[1] < notes[2], f"{label} source notes must increase from low to high")
+    require(0 < cards.aggression_min <= 1 <= cards.aggression_max, "Foul propensity must be positive and bracket the neutral factor 1")
+    require(cards.aggression_weight >= 0, "Foul propensity exponent must be nonnegative")
     require(cfg.engine.density.reference > 0 and cfg.engine.timing.possession_mean > 0, "Invalid engine scale")
     require(cfg.engine.timing.possession_gamma_shape > 0, "Gamma shape must be positive")
     require(cfg.world.season.days_between_rounds > 0, "Round spacing must be positive")

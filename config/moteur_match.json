@@ -35,6 +35,10 @@
     "poids_gardien_sur_tete": {"sortie": 0.8, "arret": 0.2},
     "probabilite_tir_cadre_base": 0.35,
     "sensibilite_cadrage": 0.015,
+    "sensibilite_livraison": 0.02,
+    "niveau_reference_centre": 45.6,
+    "niveau_reference_cpa": 55.3,
+    "niveau_reference_coup_franc": 58.8,
     "niveau_reference_cadrage": 70.0,
     "borne_probabilite_min": 0.000001,
     "borne_probabilite_max": 0.999999
@@ -61,11 +65,15 @@
     "niveau_reference": 70.0
   },
   "cartons": {
+    "_note": "Le fautif est tire parmi les joueurs de champ selon implication x agressivite ** poids_agressivite_tacle. agressivite = (Aggression + Dirtiness) / 2 converti en facteur entre agressivite_min et agressivite_max, 1.0 a la note de reference.",
     "probabilite_jaune_par_turnover_defensif": 0.018,
     "booked_caution_multiplier": 0.12,
     "probabilite_rouge_direct_par_turnover_defensif": 0.0003,
     "poids_zone_defense": 1.4,
-    "poids_agressivite_tacle": 0.006
+    "poids_agressivite_tacle": 1.0,
+    "agressivite_min": 0.25,
+    "agressivite_max": 2.0,
+    "agressivite_note_basse": 4.0, "agressivite_note_reference": 10.5, "agressivite_note_haute": 17.0
   },
   "recalcul_notes": {
     "_note": "Les agregats de zone ne sont recalcules qu'a ces evenements",

@@ -212,7 +212,7 @@ neutre. Réserver deux places aux meilleurs gardiens si la source en contient
 au moins deux, puis compléter par niveau ; départager les égalités par ID.
 Les joueurs écartés ne sont ni importés, ni transformés en agents libres.
 Les agents libres déjà présents dans le CSV sont conservés sans plafond collectif.
-L'export utilise UTF-8, des dates ISO et des attributs sur 20. Les 13 attributs
+L'export utilise UTF-8, des dates ISO et des attributs sur 20. Les 15 attributs
 utilisés par le moteur sont importés directement, sans estimation depuis la valeur.
 La marge de progression vaut `(PotentialAbility - CurrentAbility) / 2` sur
 l'échelle interne de 100, ajoutée au niveau pondéré et plafonnée à 100.
@@ -359,7 +359,7 @@ API ne consomment jamais les RNG de simulation. Voir `docs/architecture.md`.
 | `docs/configuration.md` | Catalogue des fichiers config, chargement, validation |
 | `docs/benchmarks.md` | Harnais de calibrage et cibles |
 | `docs/modele-donnees.md` | Entités, actif/dormant, persistance, données fournies |
-| `docs/attributs.md` | Les 13 attributs et leurs composites |
+| `docs/attributs.md` | Les 15 attributs, les traits stables et leurs composites |
 | `docs/moteur-match.md` | Simulation par possessions, zones, couloirs, formations |
 | `docs/etats-joueur.md` | Fatigue, blessures, suspensions |
 | `docs/ia-gestion.md` | Valorisation, besoins, mercato, contrats |

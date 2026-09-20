@@ -169,6 +169,8 @@ par tentative, même si le tir est non cadré ou arrêté.
 - Frappe : composite de tir contre composite d'arrêt.
 - Tête sur centre ou corner : composite de tête contre combinaison des
   composites de sortie et d'arrêt du gardien, pondérée dans la configuration.
+  Le xG de l'action dépend de sa livraison : qualité du centreur (`centre`) ou du
+  tireur de corner (`cpa`), voir `docs/attributs.md`.
 - Probabilité de but = sigmoïde(logit(xG) + sensibilité × écart des composites).
 - Probabilité de cadrage = maximum de la probabilité de but et d'une sigmoïde
   du logit de cadrage de base corrigé du niveau du tireur.
@@ -180,9 +182,11 @@ un arrêt est un tir cadré sans but ; les catégories ne créent pas deux tirs.
 Les qualités sont comparées individuellement, jamais diluées dans le onze.
 
 Les corners et coups francs sont des branches de turnover, résolues avec des
-probabilités exclusives (leur somme ne peut dépasser 1). Un corner choisit un
-receveur parmi les joueurs de champ pondérés par la tête. Un coup franc direct
-utilise un tireur pondéré par le composite de tir. Le gardien est nommé.
+probabilités exclusives (leur somme ne peut dépasser 1). Le tireur de corner et de
+coup franc est le meilleur `cpa` du terrain, gardien exclu. Un corner choisit un
+receveur parmi les autres joueurs de champ pondérés par la tête ; son xG dépend du
+`cpa` du tireur. Un coup franc direct est frappé par le spécialiste avec son propre
+composite de tir, majoré des points de `cpa` au-delà de la référence. Le gardien est nommé.
 Les penalties ne sont pas une branche séparée du moteur simplifié v1 ; une
 extension devra ajouter attribution, tirage et cibles dédiés ensemble.
 
@@ -205,6 +209,11 @@ joueur entré puis blessé conserve ses minutes. Score, buts, tirs, arrêts et x
 sont déduits des tentatives et issues reliées, sans compter un événement de but
 comme une seconde tentative. Les compositions initiales et le banc sont stockés
 avant mutation de l'état local.
+
+Cartons : la faute est commise par un joueur de champ tiré selon son implication
+défensive multipliée par `agressivité ** poids_agressivite_tacle` (gardien exclu tant
+qu'il reste un joueur de champ) ; la probabilité de carton ne dépend que de la zone et
+des avertissements déjà reçus. Un tacleur adroit n'est donc pas plus sanctionné.
 
 Notes : base et contributions d'événements dans `notes_joueurs`, puis bornes.
 Une expulsion est pénalisée une fois, distinctement des jaunes déjà reçus.

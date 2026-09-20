@@ -167,6 +167,9 @@ class ManagementConfigContracts:
     ego_min: float = Field(alias="ego_min")
     ego_max: float = Field(alias="ego_max")
     duration_by_age: tuple[ManagementConfigContractsDurationByAgeItem, ...] = Field(alias="duree_proposee_par_age")
+    ego_source_low: float = Field(default=8.4, alias="ego_note_basse")
+    ego_source_reference: float = Field(default=12.4, alias="ego_note_reference")
+    ego_source_high: float = Field(default=16.4, alias="ego_note_haute")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

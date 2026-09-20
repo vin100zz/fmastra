@@ -170,7 +170,22 @@ cartons=cards
 probabilite_jaune_par_turnover_defensif=yellow_probability
 probabilite_rouge_direct_par_turnover_defensif=red_probability
 poids_zone_defense=defense_zone_weight
-poids_agressivite_tacle=tackling_weight
+poids_agressivite_tacle=aggression_weight
+fragilite_note_basse=fragility_source_low
+fragilite_note_reference=fragility_source_reference
+fragilite_note_haute=fragility_source_high
+ego_note_basse=ego_source_low
+ego_note_reference=ego_source_reference
+ego_note_haute=ego_source_high
+sensibilite_livraison=delivery_sensitivity
+niveau_reference_centre=cross_reference
+niveau_reference_cpa=set_piece_reference
+niveau_reference_coup_franc=free_kick_reference
+agressivite_min=aggression_min
+agressivite_max=aggression_max
+agressivite_note_basse=aggression_source_low
+agressivite_note_reference=aggression_source_reference
+agressivite_note_haute=aggression_source_high
 recalcul_notes=rating_refresh
 palier_fatigue_minutes=fitness_interval
 sur_remplacement=on_substitution
@@ -513,7 +528,22 @@ DEFAULTS = {"ia_gestion.mercato.stabilite_apres_arrivee_jours": 180,
             "etats.remplacements.affinite_minimum_rotation": 0.5,
             "etats.remplacements.facteur_rotation_match_serre": 0.5,
             "etats.remplacements.facteur_rotation_equipe_menee": 0.25,
-            "etats.remplacements.facteur_ecart_avantage_confortable": 2.0}
+            "etats.remplacements.facteur_ecart_avantage_confortable": 2.0,
+            "etats.blessures.fragilite_note_basse": 2.3,
+            "etats.blessures.fragilite_note_reference": 8.3,
+            "etats.blessures.fragilite_note_haute": 14.3,
+            "ia_gestion.contrats.ego_note_basse": 8.4,
+            "ia_gestion.contrats.ego_note_reference": 12.4,
+            "ia_gestion.contrats.ego_note_haute": 16.4,
+            "moteur_match.occasion.sensibilite_livraison": 0.02,
+            "moteur_match.occasion.niveau_reference_centre": 45.6,
+            "moteur_match.occasion.niveau_reference_cpa": 55.3,
+            "moteur_match.occasion.niveau_reference_coup_franc": 58.8,
+            "moteur_match.cartons.agressivite_min": 0.25,
+            "moteur_match.cartons.agressivite_max": 2.0,
+            "moteur_match.cartons.agressivite_note_basse": 4.0,
+            "moteur_match.cartons.agressivite_note_reference": 10.5,
+            "moteur_match.cartons.agressivite_note_haute": 17.0}
 
 
 def clean(value: object) -> object:

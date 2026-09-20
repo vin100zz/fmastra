@@ -78,7 +78,9 @@ Mesurer aussi la dangerosité par attaque axiale ou latérale, séparément du v
 
 Toutes les formations configurées contre toutes les autres, avec autant de
 matches dans chaque sens domicile/extérieur. Chaque côté reçoit le même vivier
-synthétique : attributs identiques, assez de joueurs et affinités identiques
+synthétique : attributs identiques (au niveau du scénario, sauf `centre` et `cpa`,
+fixés à `AVERAGE_DELIVERY` : un onze moyen, pas des livreurs d'élite, voir
+`docs/calibration-2026-09-20.md`), assez de joueurs et affinités identiques
 pour les postes testés, afin d'isoler les matrices de formation. Le sélectionneur
 ne doit pas introduire un biais de qualité du onze dans ce benchmark.
 

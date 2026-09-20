@@ -1,13 +1,15 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 8` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 12` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
 
-La version 1 de développement utilisait un codage JSON balisé. Elle reste
-lisible par `codec.py` : l'absence de carnet d'offres est migrée vers un carnet
-vide. Au prochain enregistrement, elle est écrite en version 8. Les sauvegardes
+La version 1 de développement utilisait un codage JSON balisé, lisible par
+`codec.py` : l'absence de carnet d'offres était migrée vers un carnet vide. Depuis
+la v12 elle ne l'est plus si ses joueurs n'ont que 13 attributs (voir plus bas) ;
+recharger d'abord la partie avec une version antérieure pour la réécrire en JSON typé.
+Au prochain enregistrement d'une sauvegarde lisible, elle est écrite en version 12. Les sauvegardes
 v2 antérieures au carnet d'offres utilisent également sa valeur vide par défaut.
 
 La v3 ajoute les comptes mensuels par club et saison, ainsi que le motif et
@@ -42,6 +44,24 @@ v2 à v7 reçoivent leurs valeurs par défaut après vérification de l'empreint
 la configuration d'origine ; une valeur personnalisée déjà présente, ou toute
 autre modification, est refusée. Les offres en cours sont décidées selon la
 nouvelle durée d'enchères ; aucun mouvement passé n'est modifié.
+
+La v9 à la v11 ajoutent des paramètres de rotation, d'ambition et de valorisation
+(`MIGRATION_DEFAULTS` dans `store.py` en fait foi).
+
+La v12 ajoute deux attributs (`centre`, `cpa`), le trait `aggression` du joueur et
+quatorze paramètres de config (conversion des notes source en fragilité, ego et
+agressivité, livraison). Le vecteur d'attributs de chaque joueur passe de 13 à 15
+valeurs, les deux nouvelles étant ajoutées à la fin pour conserver les indices.
+À la lecture d'une sauvegarde antérieure, avant tout typage, `centre` et `cpa` sont
+relus dans `data/players.csv` si son empreinte est exactement celle de l'import
+(`source_hashes`) ; les joueurs absents du fichier (regens, joueurs générés) et tous les
+joueurs sans fichier reçoivent leur note globale plus le décalage de leur poste,
+c'est-à-dire ce que la génération leur aurait donné sans bruit. Les vecteurs déjà à 15
+valeurs ne sont pas touchés. `aggression` vaut 1 (neutre) et la fragilité et l'ego déjà
+tirés sont conservés. La configuration embarquée n'est complétée que des nouveaux
+paramètres, après vérification de l'empreinte d'origine ; `poids_agressivite_tacle`
+garde son ancienne valeur (0,006), donc l'agressivité reste neutre dans une partie déjà
+commencée. Le format v1 (JSON balisé) n'est pas étendu.
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de

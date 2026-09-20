@@ -18,9 +18,10 @@ Le même attribut sert à plusieurs endroits avec des poids différents. La vite
 pèse lourd en contre, peu en progression placée, pas du tout sur un tir.
 Les duels de tir utilisent les composites individuels ; endurance, vision,
 vitesse et relance peuvent aussi moduler les règles explicitement décrites de
-fatigue, changement de couloir, contre ou remise en jeu. Aucun attribut décoratif.
+fatigue, changement de couloir, contre ou remise en jeu. `centre` et `cpa` fixent le xG
+de l'action de leur exécutant. Aucun attribut décoratif.
 
-## Les 13 attributs
+## Les 15 attributs
 
 Échelle 1-100. Conserver des flottants en mémoire pour préserver les évolutions
 mensuelles ; toute valeur affichée est arrondie à un entier.
@@ -34,6 +35,8 @@ mensuelles ; toute valeur affichée est arrondie à un entier.
 | `finition` | résolution du tir |
 | `tacle` | défense, toutes zones |
 | `jeu_tete` | centres, coups de pied arrêtés |
+| `centre` | qualité du centre : xG de la tête qui suit |
+| `cpa` | qualité des coups de pied arrêtés : tireur et xG des corners, tir des coups francs directs |
 
 ### Mentaux
 
@@ -63,13 +66,34 @@ concernent pas et sa valorisation par l'IA est absurde.
 
 ## Ce qui est délibérément exclu
 
-Agressivité, leadership, esprit d'équipe, flair, pied faible, marquage distinct
-de l'interception, spécialiste corners distinct du spécialiste coups francs.
+Leadership, esprit d'équipe, flair, pied faible, marquage distinct de
+l'interception, spécialiste corners distinct du spécialiste coups francs (une seule
+compétence `cpa`, moyenne de Corners et FreeKicks, corrélées à 0,78), duels aériens
+entre joueurs nommés, tirs de loin, dribble.
 
 **Règle d'ajout** : pour ajouter un attribut, il faut pouvoir nommer en une
 phrase la transition exacte qu'il modifie et son poids dans le composite. Sinon
 il est décoratif — il apparaîtra sur la fiche du joueur sans jamais changer un
 résultat.
+
+## Traits stables (ni attributs, ni états)
+
+Trois valeurs propres au joueur, fixées une fois, conservées dans la sauvegarde et
+**jamais modifiées par la progression** : elles décrivent un caractère, pas un niveau.
+
+| Trait | Source à l'import | Effet |
+|---|---|---|
+| `fragility` | note `InjuryProneness` | multiplie le risque de blessure (voir `docs/etats-joueur.md`) |
+| `ego` | note `Ambition` | demandes de contrat et frustration d'ambition (voir `docs/ia-gestion.md`) |
+| `aggression` | moyenne des notes `Aggression` et `Dirtiness` | poids du joueur dans le tirage du fautif, donc de ses cartons |
+
+Chaque note source est convertie par morceaux : la note basse vaut le minimum, la
+note de référence (la moyenne de la source) la valeur neutre, la note haute le maximum.
+La moyenne reste ainsi celle des anciens tirages uniformes et les calibrages des
+blessures et des contrats ne bougent pas. Les regens tirent leurs traits : fragilité
+et ego uniformes, agressivité triangulaire centrée sur le facteur neutre 1.
+Si la colonne manque à la source, l'import retombe sur l'ancien tirage (fragilité,
+ego) ou sur le facteur neutre (agressivité).
 
 ## États (multiplicateurs, pas des attributs)
 
@@ -106,6 +130,27 @@ comp_tir = 0.60*finition + 0.25*sang_froid + 0.15*technique
 comp_arret = 0.70*reflexes + 0.30*placement
 ```
 
+### Livraison : centre et coups de pied arrêtés (individuel)
+
+`centre` et `cpa` ne forment pas un composite : ils décrivent la qualité du geste,
+pas le duel qui suit. Une meilleure livraison rend la même occasion plus dangereuse.
+
+```python
+qualite = attribut * fraicheur * forme * moral * affinite       # comme un composite
+xg_centre = sigmoide(logit(xg_base_centre) + s * (qualite_centreur - niveau_reference_centre))
+xg_corner = sigmoide(logit(xg_base_corner) + s * (qualite_tireur - niveau_reference_cpa))
+tir_coup_franc = composite_tir_tireur + (qualite_cpa_tireur - niveau_reference_coup_franc)
+```
+
+`s` vaut `occasion.sensibilite_livraison` (0,02 par point, soit environ ±25 % de xG
+pour un écart d'un écart-type). Les niveaux de référence sont des qualités
+**effectives** mesurées sur de vrais effectifs, fatigue comprise : un joueur à la
+référence laisse le taux moyen de but inchangé. Le tireur de corner et de coup franc
+est le meilleur `cpa` du terrain, gardien exclu (égalité : plus petit ID) ; le tireur
+de corner ne peut pas être aussi le receveur. Le coup franc n'a pas de xG modulé :
+le tireur frappe avec son propre composite de tir, majoré des points de `cpa` au-delà
+de la référence, contre le composite d'arrêt du gardien.
+
 ### Centre et tête (individuel)
 
 ```python
@@ -122,7 +167,8 @@ Distinction structurante, à respecter strictement :
 | Progression | agrégat de zone (collectif) |
 | Création d'occasion | agrégat de zone (collectif) |
 | Tir | **deux joueurs nommés** : tireur contre gardien |
-| Tête sur centre | **deux joueurs nommés** : réceptionneur contre gardien |
+| Tête sur centre | **deux joueurs nommés** : réceptionneur contre gardien ; le centreur fixe le xG |
+| Corner, coup franc direct | l'exécutant fixe le xG (corner) ou le tir (coup franc) |
 
 Si le tir est résolu sur un agrégat, un buteur à 90 de finition disparaît dans la
 moyenne de l'équipe. Le tireur est tiré au sort, pondéré par son implication dans
@@ -217,6 +263,17 @@ Décalages par rapport au niveau cible, en points :
 | MOC | vision +14, technique +12, passe +8 | tacle −15 |
 | AIL | vitesse +14, technique +12 | tacle −12, jeu_tete −8 |
 | BU | finition +16, sang_froid +10, jeu_tete +6 | tacle −18, placement −10 |
+
+Les décalages `centre` et `cpa` sont relevés sur les joueurs des clubs actifs
+(moyenne de l'attribut moins moyenne de la note globale du poste) :
+
+| Poste | centre | cpa | Poste | centre | cpa |
+|---|---:|---:|---|---:|---:|
+| DC | −27 | −37 | MOC | −10 | −11 |
+| DL | +1 | −17 | AILG | −6 | −15 |
+| DR | −2 | −24 | AILD | −4 | −15 |
+| MDC | −19 | −20 | BU | −20 | −25 |
+| MC | −14 | −16 | GB | −25 | −25 (`_autres`) |
 
 Ajouter ensuite le bruit gaussien configuré. Recentrer le profil obtenu en
 retranchant l'écart entre sa note globale pondérée et le niveau cible, puis

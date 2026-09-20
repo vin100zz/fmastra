@@ -13,9 +13,12 @@ from core.world.importation.source_positions import POSITION_COLUMNS
 from .nations import ALIASES
 
 # Preserve supplied notes: the engine's 1-100 storage is five times the CSV note.
-ATTRIBUTE_COLUMNS = dict(zip(ATTRIBUTE_NAMES, (
-    "Passing", "Technique", "Finishing", "Tackling", "Heading", "Creativity",
-    "Positioning", "Composure", "Pace", "Stamina", "Reflexes", "RushingOut", "Kicking")))
+# An attribute fed by several columns takes their mean: dead-ball skill is Corners and FreeKicks (r = 0.78).
+ATTRIBUTE_COLUMNS = {
+    "passe": ("Passing",), "technique": ("Technique",), "finition": ("Finishing",), "tacle": ("Tackling",),
+    "jeu_tete": ("Heading",), "vision": ("Creativity",), "placement": ("Positioning",),
+    "sang_froid": ("Composure",), "vitesse": ("Pace",), "endurance": ("Stamina",), "reflexes": ("Reflexes",),
+    "sorties": ("RushingOut",), "relance": ("Kicking",), "centre": ("Crossing",), "cpa": ("Corners", "FreeKicks")}
 
 
 def source_date(value: str) -> Date:
@@ -27,6 +30,15 @@ def bounded(row: dict, key: str, low: int, high: int) -> int:
     if not low <= value <= high:
         raise ValueError(f"{row.get('UID')}: {key} outside [{low}, {high}]: {value}")
     return value
+
+
+def note(row: dict, *keys: str) -> float:
+    return sum(bounded(row, key, 1, 20) for key in keys) / len(keys)
+
+
+def optional_note(row: dict, *keys: str) -> float | None:
+    """Mean of source notes that only feed personality traits; None when the export lacks a column."""
+    return None if any(not row.get(key) for key in keys) else note(row, *keys)
 
 
 def facility(row: dict, key: str) -> int | None:
@@ -82,8 +94,10 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
             row["Position"], int(row["ClubUID"] or fmt.free_agent_club_id),
             int(row["WeeklyWage"] or 0), int(row["Value"] or 0), source_date(row["DateOfBirth"]),
             source_date(row["ContractEnd"]) if row["ContractEnd"] else None,
-            Attributes(tuple(bounded(row, ATTRIBUTE_COLUMNS[name], 1, 20) * 5 for name in ATTRIBUTE_NAMES)),
-            ca, pa, ratings, row["FirstName"], row["LastName"], row["CommonName"]))
+            Attributes(tuple(note(row, *ATTRIBUTE_COLUMNS[name]) * 5 for name in ATTRIBUTE_NAMES)),
+            ca, pa, ratings, row["FirstName"], row["LastName"], row["CommonName"],
+            injury_proneness=optional_note(row, "InjuryProneness"), ambition=optional_note(row, "Ambition"),
+            aggression=optional_note(row, "Aggression", "Dirtiness")))
     if len({club.id for club in clubs}) != len(clubs) or len({player.id for player in players}) != len(players):
         raise ValueError("Duplicate source ID")
     return clubs, players, names

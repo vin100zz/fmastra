@@ -45,7 +45,8 @@ def monthly_player_events(world: World) -> list[PlayerChanged]:
     cfg, rng = world.config, world.rngs["progression"]
     rules = cfg.demography.progression
     changes = []
-    decay_vectors = {position: tuple(rules.decline_weights[name] / sum(weight * rules.decline_weights[key]
+    # An older embedded configuration has no decline weight for attributes added since: they do not decline.
+    decay_vectors = {position: tuple(rules.decline_weights.get(name, 0.0) / sum(weight * rules.decline_weights[key]
                        for key, weight in cfg.attributes.overall[position].items()) for name in ATTRIBUTE_NAMES)
                      for position in Position}
     for player in world.players.values():

@@ -32,8 +32,9 @@ ce mécanisme. Ne pas ajouter artificiellement des matches hors périmètre.
 champ des deux équipes pondérés par leur implication dans la zone pertinente
 (et le gardien lorsqu'il intervient dans l'action). Évaluer une seule fois le
 risque de base × (facteur de fatigue - fraîcheur) × fragilité × intensité.
-Borner la probabilité. La fragilité est tirée à l'import ou à la génération,
-conservée et sauvegardée ; les consultations ne la retirent pas.
+Borner la probabilité. La fragilité vient, à l'import, de la note `InjuryProneness` (convertie de façon à
+conserver la moyenne de 1,2) ; les regens la tirent à la génération. Elle est conservée
+et sauvegardée ; les consultations ne la retirent pas.
 
 Hors match, effectuer le tirage quotidien configuré pour les joueurs actifs
 non blessés, y compris les remplaçants. Le régime dormant/libre ne simule pas
@@ -69,7 +70,10 @@ elle seule la cible annuelle. Ajuster fréquence et gravité ensemble ; rapporte
 
 ## Cartons et suspensions
 
-Les fautes/cartons sont attribués à un défenseur nommé dans le repère miroir.
+Les fautes/cartons sont attribués à un joueur de champ nommé de l'équipe qui défend,
+dans le repère miroir, tiré selon son implication défensive et son agressivité
+(`docs/attributs.md`, traits stables). Le gardien n'est jamais tiré s'il reste un
+joueur de champ.
 Les probabilités sont dans le moteur ; jaune et rouge direct sont des issues
 exclusives d'un même tirage. Un second jaune provoque une expulsion, distincte
 d'un rouge direct dans les statistiques mais incluse dans le total des expulsions.

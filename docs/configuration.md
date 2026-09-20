@@ -88,6 +88,18 @@ une nouvelle partie utilise la courbe de niveau. Une courbe non vide compte au m
 deux points, strictement croissants en `niveau`, avec des `valeur` strictement
 positives et jamais décroissantes.
 
+Les configurations antérieures à la version 12 reçoivent les valeurs par défaut des
+traits lus dans la source et de la livraison : `etats.blessures.fragilite_note_*`
+(2,3 / 8,3 / 14,3), `ia_gestion.contrats.ego_note_*` (8,4 / 12,4 / 16,4),
+`moteur_match.cartons.agressivite_*` (facteur 0,25 à 2 ; notes 4 / 10,5 / 17) et
+`moteur_match.occasion` (`sensibilite_livraison` 0,02, `niveau_reference_centre` 45,6,
+`niveau_reference_cpa` 55,3, `niveau_reference_coup_franc` 58,8). Les trois notes de
+chaque conversion sont strictement croissantes ; `agressivite_min` est strictement
+positif et au plus 1, `agressivite_max` au moins 1. Une ancienne partie garde
+`poids_agressivite_tacle` à 0,006 : devenu l'exposant de la propension à fauter, il
+rend l'agressivité pratiquement neutre pour elle. Ses joueurs reçoivent `centre` et
+`cpa` à la migration (`migrations/README.md`).
+
 ## Cohérence
 
 - Somme des poids des composites, notes globales et distributions : 1 à la

@@ -3,7 +3,7 @@ from time import perf_counter
 
 from core.engine.match import PossessionEngine
 from core.randomness import stream
-from .fixtures import synthetic_lineup
+from .fixtures import AVERAGE_DELIVERY, synthetic_lineup
 from .report import Measurement
 
 
@@ -18,8 +18,8 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
             score, total = 0.0, 0
             for other in cfg.formations.formations:
                 for side in (0, 1):
-                    home = synthetic_lineup(cfg, 1, formation if side == 0 else other)
-                    away = synthetic_lineup(cfg, 2, other if side == 0 else formation)
+                    home = synthetic_lineup(cfg, 1, formation if side == 0 else other, delivery=AVERAGE_DELIVERY)
+                    away = synthetic_lineup(cfg, 2, other if side == 0 else formation, delivery=AVERAGE_DELIVERY)
                     for index in range(iterations):
                         result = engine.simulate(home, away, cfg, stream(seed, formation, other, side, index))
                         goals, conceded = (result.home_goals, result.away_goals) if side == 0 else (result.away_goals, result.home_goals)
@@ -28,7 +28,7 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
             bounds = cfg.benchmarks.formations
             measurements.append(Measurement(formation, score / total, bounds.min_balance_score, bounds.max_balance_score, total))
         return measurements
-    home, away = synthetic_lineup(cfg, 1), synthetic_lineup(cfg, 2)
+    home, away = synthetic_lineup(cfg, 1, delivery=AVERAGE_DELIVERY), synthetic_lineup(cfg, 2, delivery=AVERAGE_DELIVERY)
     totals = {key: 0.0 for key in ("possessions", "shots", "xg", "goals", "yellows", "reds", "set_goals", "home_advantage")}
     started = perf_counter()
     for index in range(iterations):

@@ -58,6 +58,9 @@ class StatesConfigInjuries:
     severities: tuple[StatesConfigInjuriesSeveritiesItem, ...] = Field(alias="gravites")
     permanent_penalty: StatesConfigInjuriesPermanentPenalty = Field(alias="penalite_permanente")
     injury_return_form: float = Field(alias="forme_retour_de_blessure")
+    fragility_source_low: float = Field(default=2.3, alias="fragilite_note_basse")
+    fragility_source_reference: float = Field(default=8.3, alias="fragilite_note_reference")
+    fragility_source_high: float = Field(default=14.3, alias="fragilite_note_haute")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

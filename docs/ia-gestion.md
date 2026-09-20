@@ -244,7 +244,8 @@ pas un quota imposé par le moteur de résolution.
 à l'attente, minutes jouées par rapport aux minutes attendues **à cette date**,
 attractivité du club. Si aucune minute n'est encore attendue, le ratio de temps
 de jeu est neutre, pas une division par zéro ou une comparaison à une saison
-complète. Le rôle contractuel et l'ego individuel sont stockés.
+complète. Le rôle contractuel et l'ego individuel sont stockés ; à l'import l'ego vient
+de la note `Ambition` de la source, sur une échelle qui garde la moyenne de 0,5.
 
 Ouvrir une négociation en cas d'insatisfaction ou d'échéance proche. Valoriser
 la conservation du joueur avec le score de départ, pas avec un ajout en double.

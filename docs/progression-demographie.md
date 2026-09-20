@@ -19,7 +19,9 @@ Prolonger les courbes par leur valeur extrême hors de leur domaine.
 
 Répartir le déclin sur les attributs selon les poids configurés, normalisés par
 les poids de note globale du poste, pour que l'effet global corresponde au taux
-voulu. Les physiques déclinent davantage que placement, vision et sang-froid.
+voulu. Les physiques déclinent davantage que placement, vision et sang-froid ; `centre` et
+`cpa` vieillissent lentement (poids 0,40). Une ancienne configuration sans poids pour
+un attribut n'en fait pas décliner.
 Appliquer le bruit mensuel puis les bornes ; plafonner tout gain net à la marge
 réelle au potentiel. Les blessures peuvent ajouter une pénalité permanente.
 
@@ -122,6 +124,8 @@ une population qui dérive.
    globale corresponde au niveau cible. Le plafonnement peut réduire l'écart
    effectif ; vérifier après génération niveau <= potentiel.
 6. ID unique, identité avec homonymes autorisés, contrat de centre si financé.
+   Fragilité et ego uniformes dans leurs bornes ; agressivité triangulaire (mode 1, le
+   facteur neutre) dans ses bornes, comme la population importée.
 
 La correction de niveau agit sur les poids des classes de niveau initial,
 pas en multipliant les attributs après coup. Réaliser un tirage conditionnel

@@ -9,7 +9,7 @@ from core.ai.selection import LineupContext, select_lineup
 from core.ai.substitutions import choose_substitution
 from core.domain.date import Date
 from core.domain.matches import PlayingTimePriority
-from core.domain.players import Position
+from core.domain.players import ATTRIBUTE_NAMES, Position
 from core.engine.local_state import MatchLog, TeamState
 from core.engine.match import PossessionEngine
 from core.engine.personnel import substitutions, injure
@@ -31,7 +31,7 @@ def test_playing_time_and_youth_can_trigger_without_exhaustion(config):
 
 def test_comfortable_lead_allows_useful_minutes_for_slightly_weaker_youngster(config):
     team = TeamState.from_lineup(synthetic_lineup(config, 1), config)
-    candidate = replace(team.bench[-1], attributes=replace(team.bench[-1].attributes, values=(68.0,) * 13), rating=68)
+    candidate = replace(team.bench[-1], attributes=replace(team.bench[-1].attributes, values=(68.0,) * len(ATTRIBUTE_NAMES)), rating=68)
     team.bench = [candidate]
     team.playing_time[candidate.id] = PlayingTimePriority(1, 1)
     assert choose_substitution(team, config, minute=60) is None
@@ -57,7 +57,7 @@ def test_rotation_protects_positions_quality_and_goalkeepers(config):
     assert choose_substitution(team, config, minute=60, goal_difference=3) is None
     candidate.position_ratings = {}
     candidate.secondary_positions = {role: 1 for role in Position}
-    candidate.attributes = replace(candidate.attributes, values=(30.0,) * 13)
+    candidate.attributes = replace(candidate.attributes, values=(30.0,) * len(ATTRIBUTE_NAMES))
     assert choose_substitution(team, config, minute=60, goal_difference=3) is None
 
 
@@ -119,7 +119,7 @@ def test_bench_can_include_overlooked_youngster_without_changing_starting_eleven
     club = world.clubs[1]
     players = [world.players[pid] for pid in club.player_ids]
     youngster = replace(players[-1], id=999, born=Date(2007, 1, 1), rating=68,
-                        attributes=replace(players[-1].attributes, values=(68.0,) * 13))
+                        attributes=replace(players[-1].attributes, values=(68.0,) * len(ATTRIBUTE_NAMES)))
     players.append(youngster)
     context = LineupContext(club, players, 16, world.date, world.seed, 10)
     from core.world.estimates import PotentialEstimate

@@ -2,7 +2,7 @@ import {monthlySalary} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {api,escape as e,number as n,money,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges} from './ui.js';
 
-const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance'};
+const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
 // The central column is spaced by at least 15% so that shirts and labels of a 360px pitch do not overlap.
 const PITCH={GB:[50,92],DC:[50,77],DL:[15,70],DR:[85,70],MDC:[50,62],MC:[50,47],MOC:[50,32],AILG:[15,22],AILD:[85,22],BU:[50,9]};

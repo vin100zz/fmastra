@@ -4,6 +4,7 @@ from random import Random
 
 from core.config.model import Config
 from core.domain.matches import LineupSlot
+from core.domain.players import Position
 from core.math import weighted_choice, clamp
 from .abilities import weighted_rating, state_multiplier
 from .local_state import TeamState
@@ -70,3 +71,11 @@ def involved_player(team: TeamState, zone: int, lane: int, attack: bool, cfg: Co
     if not choices:
         choices = team.active
     return weighted_choice(choices, [involvement(slot, zone, lane, attack, cfg) for slot in choices], rng)
+
+
+def foul_committer(team: TeamState, zone: int, lane: int, cfg: Config, rng: Random) -> LineupSlot:
+    """Fouls come from outfield players, weighted by their involvement and their propensity to foul."""
+    choices = [slot for slot in team.active if slot.position != Position.GOALKEEPER] or team.active
+    weight = cfg.engine.cards.aggression_weight
+    return weighted_choice(choices, [involvement(slot, zone, lane, False, cfg) * slot.player.aggression ** weight
+                                     for slot in choices], rng)
