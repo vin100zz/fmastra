@@ -102,7 +102,17 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
             assert response.status_code == 200
             row = response.json()['items'][0]
             assert row['competition_id'] == league and row['season'] == 2025
-            assert row['standings'] == previous[league]
+            assert 'standings' not in row
+            assert row['rank'] == next(item['rank'] for item in previous[league] if item['club_id'] == cid)
+        # Cup and European runs come from the archived matches: the winners of the finals carry the title.
+        for kind, code in (('cup', None), ('europe', 'C1')):
+            competition = next(c for c in world.competitions.values() if c.kind == kind and c.code == code)
+            winner = world.champions[competition.id][0][1]
+            row = client.get(f'/api/clubs/{winner}/historique').json()['items'][0]
+            assert row['season'] == 2025 and row['cup' if kind == 'cup' else 'europe']['winner'] is True
+            assert row['cup' if kind == 'cup' else 'europe']['level'] == 7
+        body = client.get(f'/api/clubs/{promoted}/historique').json()
+        assert set(body) == {'items', 'total', 'page', 'page_size', 'leaders', 'transfers'}
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
         assert response.json()['items'][0]['standings'] == previous[18]

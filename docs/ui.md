@@ -82,10 +82,23 @@ entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la co
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
-| Historique | classements passés, palmarès, transferts marquants |
+| Historique | une ligne par saison terminée (championnat, rang, coupe nationale, coupe d'Europe, titre), les 15 joueurs les plus utilisés et les 15 meilleurs buteurs du club, ses 10 plus gros transferts entrants et sortants |
 
 En-tête : nom, pays, compétition, réputation, classement actuel, forme sur les
 5 derniers matches.
+
+L'onglet Historique ne reprend pas les classements complets (ils restent dans l'historique de
+la compétition) et n'affiche pas de compteur « N résultats » sous le tableau ; la pagination
+n'apparaît qu'au-delà de 30 saisons. Chaque saison terminée donne le niveau atteint en coupe
+nationale (32es de finale à finale, ou « Vainqueur ») et en coupe d'Europe (phase de ligue,
+barrages, huitièmes, quarts, demi-finales, finale, ou « Vainqueur ») ; les deux manches d'une
+confrontation comptent pour un seul tour, et « — » signale une coupe non jouée. Un club sans
+championnat simulé garde les lignes de ses saisons de coupe. Les colonnes se trient, les coupes
+par profondeur du parcours. Dessous, deux classements de 15 joueurs (matches, puis buts) additionnent
+toutes les compétitions et toutes les saisons, saison en cours comprise, pour ce seul club ; à
+égalité de matches, le meilleur buteur passe devant, à égalité de buts celui qui a joué le moins.
+Enfin, les 10 plus gros transferts payants du club (arrivées, puis départs) sont classés par
+indemnité décroissante, les plus récents en premier à montant égal ; les départs libres sont exclus.
 
 L'onglet Effectif est le point d'entrée du club. Quatre petits blocs précèdent la
 liste, sur une seule ligne (deux par deux sous 1330 px, empilés sur téléphone),
@@ -194,7 +207,7 @@ GET  /api/clubs/{id}/effectif
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances
 GET  /api/clubs/{id}/transferts?saison=
-GET  /api/clubs/{id}/historique
+GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, coupe, Europe) + leaders {matches, goals} + transfers {arrivals, departures}
 
 GET  /api/competitions
 GET  /api/competitions/{id}/classement

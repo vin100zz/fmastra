@@ -1,4 +1,4 @@
-import {escape as e,date,season,playerLink,clubLink,card,stat,fact,sortableTable,empty,money} from './ui.js';
+import {escape as e,number as n,date,season,playerLink,clubLink,card,stat,fact,table,sortableTable,pager,empty,money} from './ui.js';
 
 const euros=value=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
 
@@ -7,10 +7,11 @@ export function seasonNavigation(data){
  return `<nav class="season-navigation" aria-label="Navigation entre les saisons">${button(data.previous_season,'← Précédent')}<strong>Saison ${season(data.season)}</strong>${button(data.next_season,'Suivant →')}</nav>`;
 }
 
+const transferRows=(rows,incoming)=>sortableTable(['DATE','JOUEUR',incoming?'PROVENANCE':'DESTINATION','MONTANT'],rows.map(row=>[
+ date(row.date),playerLink(row.player_id,row.player),clubLink(incoming?row.source:row.target),row.fee?money(row.fee):'Libre (0 €)',
+]),rows.map(row=>[row.date,row.player,(incoming?row.source:row.target)?.name??'Libre',row.fee||0]));
+
 export function movementsHistory(data){
- const transferRows=(rows,incoming)=>sortableTable(['DATE','JOUEUR',incoming?'PROVENANCE':'DESTINATION','MONTANT'],rows.map(row=>[
-  date(row.date),playerLink(row.player_id,row.player),clubLink(incoming?row.source:row.target),row.fee?money(row.fee):'Libre (0 €)',
- ]),rows.map(row=>[row.date,row.player,(incoming?row.source:row.target)?.name??'Libre',row.fee||0]));
  const playerRows=(rows,withAge=false)=>rows.length?sortableTable(['DATE','JOUEUR',...(withAge?['ÂGE']:[])],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player),...(withAge?[row.age==null?'<span title="Âge non archivé">—</span>':`${row.age} ans`]:[])]),rows.map(row=>[row.date,row.player,...(withAge?[row.age]:[])])):empty('Aucun mouvement enregistré pour cette saison.');
  const groups=data.sections;
  const partial=data.history_since>`${data.season}-07-01`?`<div class="notice">Les archives de fins de contrat, retraites et promotions antérieures au ${date(data.history_since)} peuvent être incomplètes dans cette ancienne partie.</div>`:'';
@@ -36,4 +37,21 @@ export function financialHistory(data){
   `<div class="grid equal">${card('Tous les revenus',`<div class="card-body">${fact('Revenus structurels',euros(t.income))}${fact('Ventes de joueurs',euros(t.transfer_income))}${fact('Régularisations positives',euros(t.rounding_income))}</div>`)}${card('Toutes les dépenses',`<div class="card-body">${fact('Salaires',euros(t.wages))}${fact('Frais de fonctionnement',euros(t.operating_costs))}${fact('Achats de joueurs',euros(t.transfer_expenses))}${fact('Régularisations négatives',euros(t.rounding_expenses))}</div>`)}</div>`+
   card('Journal financier',`<div class="card-body">${fact('Solde au début de la période enregistrée',euros(data.opening_balance))}<p>Revenus structurels, salaires et fonctionnement sont regroupés par mois. Chaque indemnité de transfert est détaillée. Les budgets et offres réservées ne sont pas des dépenses tant qu'ils ne sont pas payés.</p></div>`+
    sortableTable(['PÉRIODE / DATE','OPÉRATION','REVENUS','DÉPENSES'],data.entries.map(row=>[row.monthly?e(monthly(row.date)):date(row.date),e(row.label)+(row.player_id?` · ${playerLink(row.player_id,row.player)}`:''),row.revenue?euros(row.revenue):'—',row.expense?euros(row.expense):'—']),data.entries.map(row=>[row.date,row.label,row.revenue,row.expense])));
+}
+
+// A run in a cup is its furthest round, or the title; `level` (empty without a run) orders the column.
+const cupRun=run=>run?(run.winner?`✦ ${e(run.label)}`:e(run.label)):'—';
+const europeRun=run=>run?`<span title="${e(run.competition)}">${e(run.code)} · ${run.winner?`✦ ${e(run.label)}`:e(run.label)}</span>`:'—';
+
+export function seasonsHistory(data){
+ const rank=row=>row.rank==null?'—':`${row.rank}${row.rank===1?'er':'e'}`;
+ const seasons=card('Les saisons du club',sortableTable(['SAISON','CHAMPIONNAT','CLASSEMENT','COUPE NATIONALE','COUPE D’EUROPE','PALMARÈS'],data.items.map(row=>[
+  season(row.season),e(row.competition??'—'),rank(row),cupRun(row.cup),europeRun(row.europe),row.champion?'✦ Champion':'—',
+ ]),data.items.map(row=>[row.season,row.competition??'',row.rank??'',row.cup?.level??'',row.europe?.level??'',row.champion?1:0]),{ascending:[2]})+(data.total>data.page_size?pager(data):''));
+ const leaderCard=(title,rows)=>card(title,rows.length?table(['#','JOUEUR','MATCHS','BUTS'],rows.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,n(row.matches),n(row.goals)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'));
+ const transferCard=(title,rows,incoming)=>card(title,rows.length?transferRows(rows,incoming):empty('Aucun transfert payant enregistré.','Pas encore de transfert'));
+ const {leaders,transfers}=data;
+ return seasons+'<p class="muted">Joueurs : toutes compétitions et toutes saisons confondues, saison en cours incluse. Transferts : indemnités les plus élevées, hors départs libres.</p>'+
+  `<div class="transfer-columns"><section aria-label="Joueurs les plus utilisés">${leaderCard(`Joueurs les plus utilisés · ${leaders.matches.length}`,leaders.matches)}</section><section aria-label="Meilleurs buteurs">${leaderCard(`Meilleurs buteurs · ${leaders.goals.length}`,leaders.goals)}</section></div>`+
+  `<div class="transfer-columns"><section aria-label="Plus gros transferts entrants">${transferCard(`Plus gros transferts entrants · ${transfers.arrivals.length}`,transfers.arrivals,true)}</section><section aria-label="Plus gros transferts sortants">${transferCard(`Plus gros transferts sortants · ${transfers.departures.length}`,transfers.departures,false)}</section></div>`;
 }

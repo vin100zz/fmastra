@@ -231,19 +231,10 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/clubs/{club_id}/historique")
     def club_history(club_id: int, page: int = Query(1, ge=1)) -> dict:
+        from .club_archive import history
         with service.reading() as world:
             world.clubs[club_id]
-            rows = []
-            seasons = {(match.season, match.competition_id) for match in world.matches.values()
-                       if match.season < world.season and club_id in (match.home_id, match.away_id)
-                       and world.competitions[match.competition_id].kind == "league"}
-            for year, competition_id in sorted(seasons, reverse=True):
-                positions = v.table(world, competition_id, year)
-                rank = next(row["rank"] for row in positions if row["club_id"] == club_id)
-                rows.append({"season": year, "rank": rank, "champion": rank == 1,
-                             "competition_id": competition_id, "competition": world.competitions[competition_id].name,
-                             "standings": positions})
-            return v.paginate(rows, page)
+            return history(world, club_id, page)
 
     @api.get("/competitions/{competition_id}/classement")
     def standings(competition_id: int, page: int = Query(1, ge=1)) -> dict:
