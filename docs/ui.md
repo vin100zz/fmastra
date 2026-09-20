@@ -113,6 +113,19 @@ financier, saisons du club et classements archivés) se trient aussi.
 | Statistiques | meilleurs buteurs, passeurs, meilleures notes moyennes, clean sheets, cartons |
 | Historique | champions par saison, meilleur buteur par saison |
 
+### Palmarès
+
+Le lien **Palmarès** du menu de gauche (`#/honours`) réunit sur une page les vainqueurs
+de toutes les compétitions, sur toutes les saisons archivées. Une rangée de blocs par
+groupe : d'abord les trois coupes d'Europe (C1, C3, C4), puis chaque pays dans l'ordre
+du menu (France, Angleterre, Espagne, Italie, Allemagne) avec un bloc par division, de
+la D1 vers le bas, suivi du bloc de la coupe nationale. Chaque bloc est un tableau
+saison / champion, la saison la plus récente en premier, qui défile dans le bloc quand
+il s'allonge, et renvoie par « Historique → » à l'onglet de la compétition. Une
+compétition sans vainqueur (début de partie, ou coupe en cours) garde son bloc, avec
+un message. Le champion d'un championnat n'est connu qu'à la clôture de la saison ;
+celui d'une coupe, à la fin de sa finale.
+
 ### Joueur
 
 Une seule page, sans onglets (un joueur retraité n'affiche que son historique).
@@ -171,6 +184,7 @@ POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; ench
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
 GET  /api/travaux/{id}                  statut, progression, erreur éventuelle
 GET  /api/monde/journal?date=             événements du jour
+GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {europe, countries}
 
 GET  /api/clubs?competition=&statut=actif|dormant&recherche=&page=&tri=
 GET  /api/clubs/{id}                      en-tête + résumé

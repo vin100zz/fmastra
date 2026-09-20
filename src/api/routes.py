@@ -126,6 +126,11 @@ def router(service: GameService) -> APIRouter:
         from .club_history import world_movements
         with service.reading() as world: return world_movements(world, saison, type, page, tri, ordre)
 
+    @api.get("/monde/palmares")
+    def honours() -> dict:
+        from .honours import honours as world_honours
+        with service.reading() as world: return world_honours(world)
+
     @api.get("/competitions")
     def competitions() -> list[dict]:
         with service.reading() as world:

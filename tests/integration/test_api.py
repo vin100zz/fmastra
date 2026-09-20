@@ -50,7 +50,7 @@ def test_views_pagination_and_no_rng_leak(client):
     league_id = world.clubs[club_id].competition_id
     player_id = world.clubs[club_id].player_ids[0]
     match_id = world.competitions[league_id].match_ids[0]
-    routes = ["/monde/etat", "/monde/journal", "/partie/rapport-import", "/partie/slots", "/clubs", "/clubs?statut=dormant&page=2", "/competitions",
+    routes = ["/monde/etat", "/monde/journal", "/monde/palmares", "/partie/rapport-import", "/partie/slots", "/clubs", "/clubs?statut=dormant&page=2", "/competitions",
               f"/clubs/{club_id}", *[f"/clubs/{club_id}/{section}" for section in ("effectif", "calendrier", "finances", "transferts", "historique", "apercu")],
               *[f"/competitions/{league_id}/{section}" for section in ("classement", "calendrier", "statistiques", "historique")],
               "/joueurs?page=2", "/joueurs?tri=contract_end&ordre=asc", f"/joueurs/{player_id}", f"/joueurs/{player_id}/historique", f"/matches/{match_id}"]
@@ -99,6 +99,29 @@ def test_views_pagination_and_no_rng_leak(client):
     assert {'release', 'retirement', 'academy'} <= movements['sections'].keys()
     assert client.post("/api/partie/sauvegarder", json={"slot": "../outside"}).status_code == 422
     assert client.post("/api/monde/avancer", json={"jusqu_a":"jour"}, headers={"Origin":"https://untrusted.example"}).status_code == 403
+
+
+def test_honours_show_every_competition_with_the_champions_of_all_seasons(client, monkeypatch):
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    data = client.get('/api/monde/palmares').json()
+    blocks = data['europe'] + [item for country in data['countries'] for item in country['competitions']]
+    assert [item['code'] for item in data['europe']] == ['C1', 'C3', 'C4']
+    assert sorted(item['id'] for item in blocks) == sorted(world.competitions)
+    assert {country['code'] for country in data['countries']} == {'FRA', 'ENG', 'ESP', 'ITA', 'GER'}
+    assert all(item['items'] == [] for item in blocks)
+    france = next(country for country in data['countries'] if country['code'] == 'FRA')
+    assert [(item['name'], item['kind']) for item in france['competitions']] == [
+        ('Ligue 1', 'league'), ('Ligue 2', 'league'), ('National', 'league'), ('Coupe de France', 'cup')]
+    first, second = (club.id for club in list(world.clubs.values())[:2])
+    division = next(item['id'] for item in france['competitions'] if item['name'] == 'Ligue 1')
+    monkeypatch.setitem(world.champions, division, [(2025, first), (2026, second)])
+    monkeypatch.setitem(world.champions, -101, [(2025, second)])
+    data = client.get('/api/monde/palmares').json()
+    top = next(item for country in data['countries'] for item in country['competitions'] if item['id'] == division)
+    assert [(row['season'], row['champion']['id']) for row in top['items']] == [(2026, second), (2025, first)]
+    assert [(row['season'], row['champion']['id']) for row in data['europe'][0]['items']] == [(2025, second)]
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
 def test_commands_are_serialized_and_idempotent(client, monkeypatch):
