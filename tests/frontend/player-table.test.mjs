@@ -15,7 +15,8 @@ test('standings give European qualification places a blue background, matching p
  assert.match(html,/<tr class="qualified-europe">/);
  assert.match(html,/<tr class="promoted">/);
  assert.match(html,/<tr class="relegated">/);
- assert.equal((html.match(/class="qualification-europe"/g)||[]).length,1);
+ // the background says it all: no "Europe" text next to the club
+ assert.doesNotMatch(html,/qualification-europe|Europe</);
 });
 
 const player={id:1,name:'Test',position:'BU',age:20,nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};

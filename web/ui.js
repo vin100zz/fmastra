@@ -43,7 +43,8 @@ export const card = (title, content, action='', className='') => `<section class
 export const stat = (label, value, hint='') => `<div class="stat-card"><span class="label">${escape(label)}</span><strong>${escape(value)}</strong><small>${escape(hint)}</small></div>`;
 export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</span><strong>${value}</strong></div>`;
 // `lead` (the block stepping between peers) sits at the left of the title.
-export const heading = (overline,title,subtitle='',extra='',lead='') => {const text=`<div><span class="eyebrow">${escape(overline)}</span><h1>${escape(title)}</h1><p>${escape(subtitle)}</p></div>`;return `<div class="page-heading">${lead?`<div class="heading-with-lead">${lead}${text}</div>`:text}${extra}</div>`;};
+// A page title on its own: the name of the left-menu entry it belongs to, with neither line above nor below.
+export const heading = (title,extra='',lead='') => {const text=`<div><h1>${escape(title)}</h1></div>`;return `<div class="page-heading">${lead?`<div class="heading-with-lead">${lead}${text}</div>`:text}${extra}</div>`;};
 export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
 export function table(headers, rows, footer, rowClasses, sort) {
  const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
@@ -93,7 +94,8 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
 }
 export function standingsTable(data, compact=false, sortable=false) {
  const rowClasses=data.items.map(row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'?'promoted':'');
- const icon=row=>row.movement==='direct'?' <span class="qualification-direct" title="Place de qualification directe en huitièmes">A</span>':row.movement==='playoff'?' <span class="qualification-playoff" title="Place de barrage">Barrage</span>':row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='europe'?' <span class="qualification-europe" title="Place qualificative pour la Coupe d’Europe">Europe</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
+ // Direct, play-off and European places are told by the row background alone (see rowClasses); only the icons below mark a row.
+ const icon=row=>row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
  const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club)}</span>${icon(row)}`,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference>0?`+${row.difference}`:row.difference,`<b>${row.points}</b>`,...(compact?[]:[form(row.form)])]);
  const headers=compact?['#','CLUB','J','DIFF.','PTS']:['#','CLUB','J','V','N','D','BP','BC','DIFF.','PTS','FORME'];
  // Form sorts by the points of the last five matches.

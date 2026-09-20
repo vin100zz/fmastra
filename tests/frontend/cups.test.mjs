@@ -26,13 +26,14 @@ test('country places the cup between the first and second divisions',async()=>{
   const html=await countryScreen('FRA',[{id:17,name:'Ligue 2',nation:'FRA',level:2,clubs:18},cup,{id:16,name:'Ligue 1',nation:'FRA',level:1,clubs:18}]);
   assert.ok(html.indexOf('FRA · Ligue 1')<html.indexOf('Coupe de France'));
   assert.ok(html.indexOf('Coupe de France')<html.indexOf('FRA · Ligue 2'));
-  assert.match(html,/36 clubs en championnat/);
+  // the title is the left-menu entry alone, with no line above or below it
+  assert.match(html,/^<div class="page-heading"><div><h1>FRA<\/h1><\/div><\/div>/);
   const screen=await cupScreen(cup,'calendar',new URLSearchParams());
   assert.match(screen,/Tirage à venir/);
   assert.equal((screen.match(/class="fixture"/g)||[]).length,32);
   // the block stepping between competitions sits in the header, left of the cup's name
   const led=await cupScreen(cup,'calendar',new URLSearchParams(),'<div class="entity-nav"></div>');
-  assert.match(led,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"><\/div><div><span class="eyebrow">FRA<\/span><h1>Coupe de France<\/h1>/);
+  assert.match(led,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"><\/div><div><h1>Coupe de France<\/h1>/);
   assert.doesNotMatch(screen,/heading-with-lead/);
  }finally{globalThis.fetch=previous;}
 });

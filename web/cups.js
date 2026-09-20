@@ -24,5 +24,5 @@ export async function cupScreen(cup,section,params,lead=''){
   if(data.winner)content+=`<div class="notice cup-winner">🏆 Vainqueur : ${clubLink(data.winner)}</div>`;
   content+=data.rounds.map(round=>`<details class="card cup-round" ${round.number===(data.latest_round||1)?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures(round):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
  }
- return heading(cup.nation,cup.name,'64 clubs · Match unique · Tirs au but en cas d’égalité','',lead)+tabs(`#/league/${cup.id}`,menu,section)+content;
+ return heading(cup.name,'',lead)+tabs(`#/league/${cup.id}`,menu,section)+content;
 }

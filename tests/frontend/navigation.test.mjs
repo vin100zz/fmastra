@@ -81,13 +81,13 @@ test('names are escaped wherever they appear',()=>{
 });
 
 test('a heading carries the block at the left of its title, and is unchanged without one',()=>{
- const plain=heading('FRA','Ligue 1','18 clubs');
- assert.equal(plain,'<div class="page-heading"><div><span class="eyebrow">FRA</span><h1>Ligue 1</h1><p>18 clubs</p></div></div>');
+ const plain=heading('Ligue 1');
+ assert.equal(plain,'<div class="page-heading"><div><h1>Ligue 1</h1></div></div>');
  const lead=competitionNavigation(group([{id:16,name:'Ligue 1',kind:'league'},{id:17,name:'Ligue 2',kind:'league'}],0,{kind:'country',code:'FRA',name:'France'}));
- const html=heading('FRA','Ligue 1','18 clubs','<span class="pill">extra</span>',lead);
+ const html=heading('Ligue 1','<span class="pill">extra</span>',lead);
  assert.match(html,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"/);
- assert.ok(html.indexOf('class="entity-nav"')<html.indexOf('class="eyebrow"'));
- assert.match(html,/<h1>Ligue 1<\/h1><p>18 clubs<\/p><\/div><\/div><span class="pill">extra<\/span><\/div>$/);
+ assert.ok(html.indexOf('class="entity-nav"')<html.indexOf('<h1>'));
+ assert.match(html,/<h1>Ligue 1<\/h1><\/div><\/div><span class="pill">extra<\/span><\/div>$/);
  // the page title is read from the h1: the block must stay outside it
  assert.equal(html.match(/<h1>(.*?)<\/h1>/)[1],'Ligue 1');
 });

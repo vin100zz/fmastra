@@ -54,6 +54,16 @@ d'observation.
 
 ## Écrans
 
+### Titres de page
+
+Une page n'affiche que son titre, sans ligne au-dessus ni au-dessous. Ce titre est
+celui de son entrée dans le menu de gauche : Vue d'ensemble, Clubs, Joueurs, Mercato
+mondial, Palmarès, Coupes d'Europe, Ma partie, ou le nom du pays pour la page d'un
+pays. Le Journal, onglet de Vue d'ensemble, porte ce même titre et allume la même
+entrée du menu. Les pages championnat et coupe nationale portent le nom de la
+compétition. Les fiches club et joueur gardent leur en-tête d'identité (nationalités,
+poste, âge, club, stade), qui présente des données et non un titre.
+
 ### Navigation entre pairs
 
 Les fiches club, joueur, championnat et coupe nationale portent, dans l'en-tête et à

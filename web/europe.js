@@ -4,7 +4,7 @@ const SECTIONS=[['table','Classement'],['calendar','Phase de ligue'],['knockout'
 
 export async function europeScreen(code,section,params,competitions){
  const cups=competitions.filter(item=>item.kind==='europe').sort((a,b)=>a.code.localeCompare(b.code));
- if(!cups.length)return heading('EUROPE','Coupes d’Europe')+empty('Créez une nouvelle partie pour découvrir les trois compétitions.');
+ if(!cups.length)return heading('Coupes d’Europe')+empty('Créez une nouvelle partie pour découvrir les trois compétitions.');
  const cup=cups.find(item=>item.code===code||String(item.id)===String(code))||cups[0];
  section=SECTIONS.some(([key])=>key===section)?section:'table';
  const data=await api(`/competitions/${cup.id}/europe?${params}`);
@@ -27,6 +27,6 @@ export async function europeScreen(code,section,params,competitions){
   const history=await api(`/competitions/${cup.id}/historique?page=${params.get('page')||1}`);
   content=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[`<a href="#/europe/${cup.code}/knockout?saison=${row.season}">${season(row.season)}</a>`,clubLink(row.champion)]))+pager(history))+leadersCards(history.leaders);
  }
- return heading('EUROPE','Coupes d’Europe','36 clubs par coupe · 8 matchs de ligue · Finale unique sur terrain neutre')+nav+menu+selector+
+ return heading('Coupes d’Europe')+nav+menu+selector+
   (data.winner?`<div class="notice cup-winner">🏆 ${e(cup.name)} : ${clubLink(data.winner)}</div>`:'')+content;
 }

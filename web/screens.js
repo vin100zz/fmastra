@@ -27,18 +27,17 @@ async function leagueSummariesSection(ordered){
 
 export async function dashboard(leagues){
  const ordered=leagues.filter(league=>league.level===1).sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
- return heading('LE MONDE DU FOOTBALL','Vue d’ensemble','Cinq championnats, cinq pays et une nouvelle saison à conquérir.',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+await leagueSummariesSection(ordered);
+ return heading('Vue d’ensemble',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+await leagueSummariesSection(ordered);
 }
 
 export async function countryScreen(nation,leagues){
  const ordered=leagues.filter(league=>league.nation===nation&&league.kind!=='cup').sort((a,b)=>a.level-b.level);
  if(!ordered.length)throw new Error('Pays introuvable.');
- const totalClubs=ordered.reduce((sum,league)=>sum+league.clubs,0);
  const cup=leagues.find(item=>item.nation===nation&&item.kind==='cup');
  const [summaries,cupData]=await Promise.all([Promise.all(ordered.map(league=>leagueSummary(league.id))),cup?api(`/competitions/${cup.id}/coupe`):null]);
  const cards=ordered.map((league,index)=>leagueSummaryCard(league,summaries[index]));
  if(cup)cards.splice(1,0,cupSummaryCard(cup,cupData));
- return heading(nation,nationName(nation),`${ordered.length} championnats${cup?' · 1 coupe':''} · ${totalClubs} clubs en championnat`)+`<div class="league-summaries">${cards.join('')}</div>`;
+ return heading(nationName(nation))+`<div class="league-summaries">${cards.join('')}</div>`;
 }
 
 export async function clubsScreen(params){
@@ -46,7 +45,7 @@ export async function clubsScreen(params){
  const data=await api(`/clubs?${query(values)}`);
  const sorted=values.tri||'reputation',order=values.ordre||'desc';
  const sortHeader=(key,label)=>sortButton(key,label,sorted,order,key==='nom'?'asc':'desc');
- return heading('EXPLORER','Les clubs','Des grandes affiches aux talents du marché extérieur.')+`<form class="filters" data-filter><input type="search" name="recherche" value="${e(values.recherche)}" placeholder="Rechercher un club…" aria-label="Rechercher un club"><select name="statut" aria-label="Statut"><option value="">Tous les clubs</option><option value="actif" ${values.statut==='actif'?'selected':''}>Clubs actifs</option><option value="dormant" ${values.statut==='dormant'?'selected':''}>Clubs dormants</option></select></form>`+card(`${n(data.total)} clubs`,table([sortHeader('nom','CLUB'),'PAYS','CHAMPIONNAT',sortHeader('reputation','RÉPUTATION'),'ENTRAÎNEMENT','RECRUTEMENT JEUNES',sortHeader('effectif','EFFECTIF'),'FORMATION'],data.items.map(club=>[`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),e(club.competition||'Marché extérieur'),`<span class="rating">${n(club.reputation)}</span>`,club.training_facilities==null?'—':n(club.training_facilities),club.youth_recruitment==null?'—':n(club.youth_recruitment),club.squad_size,e(club.formation)]))+pager(data));
+ return heading('Clubs')+`<form class="filters" data-filter><input type="search" name="recherche" value="${e(values.recherche)}" placeholder="Rechercher un club…" aria-label="Rechercher un club"><select name="statut" aria-label="Statut"><option value="">Tous les clubs</option><option value="actif" ${values.statut==='actif'?'selected':''}>Clubs actifs</option><option value="dormant" ${values.statut==='dormant'?'selected':''}>Clubs dormants</option></select></form>`+card(`${n(data.total)} clubs`,table([sortHeader('nom','CLUB'),'PAYS','CHAMPIONNAT',sortHeader('reputation','RÉPUTATION'),'ENTRAÎNEMENT','RECRUTEMENT JEUNES',sortHeader('effectif','EFFECTIF'),'FORMATION'],data.items.map(club=>[`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),e(club.competition||'Marché extérieur'),`<span class="rating">${n(club.reputation)}</span>`,club.training_facilities==null?'—':n(club.training_facilities),club.youth_recruitment==null?'—':n(club.youth_recruitment),club.squad_size,e(club.formation)]))+pager(data));
 }
 
 export async function clubScreen(id,section,params){
@@ -80,14 +79,14 @@ async function leagueContent(league,section,params,lead){
  else if(section==='calendar'){const data=await api(`/competitions/${id}/calendrier?${params}`);content=card('Les rencontres',fixtures(data)+pager(data),`<form data-filter class="round-select"><select name="journee" aria-label="Journée">${data.rounds.map(round=>`<option value="${round}" ${data.round===round?'selected':''}>Journée ${round}</option>`).join('')}</select><button>Afficher</button></form>`);}
  else if(section==='stats'){const category=params.get('type')||'buteurs';const data=await api(`/competitions/${id}/statistiques?${query({...Object.fromEntries(params),type:category})}`);content=`<form class="filters" data-filter><select name="type" aria-label="Statistique">${[['buteurs','Meilleurs buteurs'],['passeurs','Meilleurs passeurs'],['notes','Meilleures notes'],['cartons','Cartons jaunes'],['clean_sheets','Clean sheets par club']].map(([key,label])=>`<option value="${key}" ${category===key?'selected':''}>${label}</option>`).join('')}</select><button>Afficher</button></form>`+card('Les leaders',table(['#',category==='clean_sheets'?'CLUB':'JOUEUR','CLUB','TOTAL'],data.items.map((row,index)=>[(data.page-1)*data.page_size+index+1,row.id?playerLink(row.id,row.name):clubLink(row.club),clubLink(row.club),`<b>${n(row.value)}</b>`]))+pager(data));}
  else{const data=await api(`/competitions/${id}/historique?${params}`);content=card('Le palmarès',table(['SAISON','CHAMPION','MEILLEUR BUTEUR','BUTS'],data.items.map(row=>[season(row.season),clubLink(row.champion),row.scorer?playerLink(row.scorer.id,row.scorer.name):'—',row.scorer?.value??'—']))+pager(data))+leadersCards(data.leaders)+seasonArchives(data);}
- return heading(e(league.nation),league.name,`${league.clubs} clubs · Championnat aller-retour`,'',lead)+tabs(`#/league/${id}`,[['table','Classement'],['calendar','Calendrier'],['stats','Statistiques'],['history','Historique']],section)+content;
+ return heading(league.name,'',lead)+tabs(`#/league/${id}`,[['table','Classement'],['calendar','Calendrier'],['stats','Statistiques'],['history','Historique']],section)+content;
 }
 
 export async function playersScreen(params){
  const data=await api(`/joueurs?${salarySearchParams(params)}`);const value=key=>e(params.get(key));
  const select=(key,label,items)=>`<select name="${key}" aria-label="${label}"><option value="">${label}</option>${items.map(([id,name])=>`<option value="${id}" ${params.get(key)===id?'selected':''}>${name}</option>`).join('')}</select>`;
  const filter=`<form data-filter><div class="filters"><input name="recherche" type="search" value="${value('recherche')}" placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur">${select('poste','Tous les postes',['GB','DC','DL','DR','MDC','MC','MOC','AILG','AILD','BU'].map(role=>[role,role]))}${select('statut_club','Tous les clubs',[['actif','Clubs actifs'],['dormant','Clubs dormants']])}${select('contrat','Tous les contrats',[['libre','Agents libres'],['sous_contrat','Sous contrat']])}</div><details class="filters"><summary>Filtres avancés</summary><div class="filters"><label>Âge minimum <input name="age_min" type="number" min="0" max="100" value="${value('age_min')}"></label><label>Âge maximum <input name="age_max" type="number" min="0" max="100" value="${value('age_max')}"></label><label>Niveau minimum <input name="niveau_min" type="number" min="1" max="200" value="${value('niveau_min')}"></label><label>Nation (code) <input name="nation" value="${value('nation')}" placeholder="FRA"></label><label>Club (ID) <input name="club" type="number" value="${value('club')}"></label><label>Salaire min. (€/mois) <input name="salaire_min" type="number" min="0" value="${value('salaire_min')}"></label><label>Salaire max. (€/mois) <input name="salaire_max" type="number" min="0" value="${value('salaire_max')}"></label></div></details></form>`;
- return heading('LE VIVIER MONDIAL','Explorer les joueurs',`${n(data.total)} joueurs correspondent à votre recherche.`)+filter+card('Les joueurs',playerTable(data,true,params.get('tri')||'value',params.get('ordre')||'desc'));
+ return heading('Joueurs')+filter+card('Les joueurs',playerTable(data,true,params.get('tri')||'value',params.get('ordre')||'desc'));
 }
 
-export async function journalScreen(params){const data=await api(`/monde/journal?${params}`);return heading('AU FIL DES JOURS','Journal du monde','Résultats, mouvements et nouvelles des effectifs.')+tabs('#',HOME_TABS,'journal')+`<form class="filters" data-filter><input type="date" name="date" value="${e(params.get('date'))}" aria-label="Date du journal"><button>Afficher</button></form>`+card('Les événements',table(['DATE','ÉVÉNEMENT'],data.items.map(item=>[date(item.date),`<a href="${item.match_id?`#/match/${item.match_id}`:item.player_id?`#/player/${item.player_id}`:'#/journal'}">${e(item.text)}</a>`]))+pager(data));}
+export async function journalScreen(params){const data=await api(`/monde/journal?${params}`);return heading('Vue d’ensemble')+tabs('#',HOME_TABS,'journal')+`<form class="filters" data-filter><input type="date" name="date" value="${e(params.get('date'))}" aria-label="Date du journal"><button>Afficher</button></form>`+card('Les événements',table(['DATE','ÉVÉNEMENT'],data.items.map(item=>[date(item.date),`<a href="${item.match_id?`#/match/${item.match_id}`:item.player_id?`#/player/${item.player_id}`:'#/journal'}">${e(item.text)}</a>`]))+pager(data));}

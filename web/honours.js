@@ -17,7 +17,7 @@ const row=(title,competitions)=>`<section class="honours-row" style="--blocks:${
 export async function honoursScreen(){
  const data=await api('/monde/palmares');
  const countries=[...data.countries].sort((a,b)=>rank(a.code)-rank(b.code)||a.code.localeCompare(b.code));
- return heading('COMPÉTITIONS','Palmarès','Les vainqueurs de chaque compétition, saison après saison.')
+ return heading('Palmarès')
   +(data.europe.length?row('Coupes d’Europe',data.europe):'')
   +countries.map(country=>row(nationBadge(country.code,{full:true}),country.competitions)).join('');
 }
