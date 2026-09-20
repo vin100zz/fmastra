@@ -11,8 +11,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from core.domain.date import Date
 from core.world.simulation import target_date, market_window
 from .service import GameService
+from . import navigation as nav
 from . import views as v
 from .nations import build_nation_table
+from .views import position_rank
 
 
 class Command(BaseModel):
@@ -30,13 +32,6 @@ class Slot(Command):
 
 class NewGame(Command):
     graine: int = Field(default=2025, ge=0, le=2**63 - 1, strict=True)
-
-
-POSITION_ORDER = ["GB", "DL", "DR", "DC", "MDC", "MC", "MOC", "AILG", "AILD", "BU"]
-
-
-def position_rank(position: str) -> int:
-    return POSITION_ORDER.index(position) if position in POSITION_ORDER else len(POSITION_ORDER)
 
 
 def squad_sort_key(world, column: str):
@@ -137,6 +132,10 @@ def router(service: GameService) -> APIRouter:
             return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level,
                      "kind": item.kind, "code": item.code, "clubs": len(item.club_ids)} for item in world.competitions.values()]
 
+    @api.get("/competitions/{competition_id}/navigation")
+    def competition_navigation(competition_id: int) -> dict:
+        with service.reading() as world: return nav.competition_navigation(world, competition_id)
+
     @api.get("/competitions/{competition_id}/europe")
     def europe_view(competition_id: int, saison: int | None = None) -> dict:
         from .europe import european_view
@@ -184,6 +183,10 @@ def router(service: GameService) -> APIRouter:
     @api.get("/clubs/{club_id}")
     def club(club_id: int) -> dict:
         with service.reading() as world: return v.club_detail(world, club_id)
+
+    @api.get("/clubs/{club_id}/navigation")
+    def club_navigation(club_id: int) -> dict:
+        with service.reading() as world: return nav.club_navigation(world, club_id)
 
     @api.get("/clubs/{club_id}/effectif")
     def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] = "position",
@@ -302,6 +305,10 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world:
             if player_id in world.retired: return {"id": player_id, "name": world.retired[player_id], "retired": True}
             return v.player_detail(world, world.players[player_id])
+
+    @api.get("/joueurs/{player_id}/navigation")
+    def player_navigation(player_id: int) -> dict | None:
+        with service.reading() as world: return nav.player_navigation(world, player_id)
 
     @api.get("/joueurs/{player_id}/historique")
     def player_history(player_id: int, page: int = Query(1, ge=1)) -> dict:

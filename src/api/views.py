@@ -18,6 +18,13 @@ def normalized(value: str) -> str:
     return "".join(character for character in unicodedata.normalize("NFKD", value.casefold()) if not unicodedata.combining(character))
 
 
+POSITION_ORDER = ["GB", "DL", "DR", "DC", "MDC", "MC", "MOC", "AILG", "AILD", "BU"]
+
+
+def position_rank(position: str) -> int:
+    return POSITION_ORDER.index(position) if position in POSITION_ORDER else len(POSITION_ORDER)
+
+
 def paginate(items: list, page: int, size: int = 30) -> dict:
     return {"items": items[(page - 1) * size:page * size], "total": len(items), "page": page, "page_size": size}
 

@@ -266,3 +266,56 @@ def test_squad_sorts_by_what_each_column_shows(played):
     assert nations == sorted(nations)
     for sort in ("position", "age", "rating", "potential", "value", "wage", "contract_end", "appearances", "goals", "assists", "yellows", "reds", "average"):
         assert played.get(f"/api/clubs/{club.id}/effectif?tri={sort}&ordre=desc").status_code == 200
+
+
+def test_clubs_navigate_within_their_division_or_else_their_country(client):
+    world = client.app.state.game.world
+    playing = next(club for club in world.clubs.values() if club.competition_id == 16)
+    data = client.get(f"/api/clubs/{playing.id}/navigation").json()
+    names = [item["name"] for item in data["items"]]
+    assert data["scope"] == {"kind": "division", "id": 16, "name": "Ligue 1"} and data["total"] == len(names) == 18
+    assert names == sorted(names, key=v.normalized) and data["items"][data["index"]]["id"] == playing.id
+    assert {item["id"] for item in data["items"]} == set(world.competitions[16].club_ids)
+    # Stepping forward from the first club visits the whole division once.
+    visited, step = [], data["items"][0]["id"]
+    while step is not None:
+        visited.append(step)
+        step = (client.get(f"/api/clubs/{step}/navigation").json()["next"] or {}).get("id")
+    assert visited == [item["id"] for item in data["items"]]
+    dormant = next(club for club in world.clubs.values() if club.competition_id is None)
+    data = client.get(f"/api/clubs/{dormant.id}/navigation").json()
+    country = [club for club in world.clubs.values() if club.nation == dormant.nation]
+    assert data["scope"]["kind"] == "country" and data["scope"]["code"] == dormant.nation and data["total"] == len(country)
+    assert {item["id"] for item in data["items"]} == {club.id for club in country}
+    assert client.get("/api/clubs/999999/navigation").status_code == 404
+
+
+def test_players_navigate_within_their_club_and_retirees_have_none(client):
+    world = client.app.state.game.world
+    club = next(iter(world.active_clubs()))
+    member = world.players[club.player_ids[5]]
+    data = client.get(f"/api/joueurs/{member.id}/navigation").json()
+    assert data["scope"] == {"kind": "club", "id": club.id, "name": club.name} and data["total"] == len(club.player_ids)
+    assert {item["id"] for item in data["items"]} == set(club.player_ids)
+    assert data["items"][data["index"]] == {"id": member.id, "name": member.name, "position": member.position.value}
+    assert data["items"][0]["position"] == "GB"
+    free_agent = next(player for player in world.players.values() if player.club_id is None)
+    assert client.get(f"/api/joueurs/{free_agent.id}/navigation").json() is None
+    world.retired[987654] = "Ancien Joueur"
+    try:
+        assert client.get("/api/joueurs/987654/navigation").json() is None
+    finally:
+        del world.retired[987654]
+    assert client.get("/api/joueurs/999999/navigation").status_code == 404
+
+
+def test_competitions_navigate_within_their_country(client):
+    world = client.app.state.game.world
+    league = next(item for item in world.competitions.values() if item.nation == "FRA" and item.level == 1)
+    data = client.get(f"/api/competitions/{league.id}/navigation").json()
+    assert [item["name"] for item in data["items"]] == ["Ligue 1", "Ligue 2", "National", "Coupe de France"]
+    assert data["scope"]["code"] == "FRA" and data["previous"] is None and data["next"]["name"] == "Ligue 2"
+    cup = next(item for item in data["items"] if item["kind"] == "cup")
+    ending = client.get(f"/api/competitions/{cup['id']}/navigation").json()
+    assert ending["previous"]["name"] == "National" and ending["next"] is None and ending["items"] == data["items"]
+    assert client.get("/api/competitions/999999/navigation").status_code == 404

@@ -54,6 +54,26 @@ d'observation.
 
 ## Écrans
 
+### Navigation entre pairs
+
+Les fiches club, joueur, championnat et coupe nationale portent, dans l'en-tête et à
+gauche du nom, un petit bloc vertical qui n'ajoute aucune ligne : un triangle haut
+(pair précédent), un menu ☰ (tous les pairs) et un triangle bas (pair suivant). Le
+menu est une liste flottante de liens, ouverte sur l'élément courant, avec « n / total » en
+tête ; elle se ferme sur un clic ailleurs, sur un choix ou sur Échap, et reste ouverte
+quand le mode Auto redessine l'écran. Le premier et le dernier n'ont pas de lien de leur
+côté : leur triangle est grisé. Un groupe d'un seul élément n'affiche pas le bloc.
+
+| Fiche | Groupe parcouru | Ordre |
+|---|---|---|
+| Club | clubs de la même division ; sans division, tous les clubs du pays | alphabétique, sans accents ni casse |
+| Joueur | effectif du club du joueur (rien pour un retraité ou un agent libre) | poste (gardiens d'abord), puis nom |
+| Compétition | compétitions du même pays | divisions de la plus haute à la plus basse, puis coupe |
+
+Changer de club conserve l'onglet ouvert (Finances reste sur Finances). Les clubs
+homonymes de la source (un club et son doublon sans joueurs) affichent leur effectif
+entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la couleur de son poste. Les coupes d'Europe gardent leurs onglets de coupe.
+
 ### Club
 
 | Onglet | Contenu |
@@ -155,6 +175,7 @@ GET  /api/monde/journal?date=             événements du jour
 GET  /api/clubs?competition=&statut=actif|dormant&recherche=&page=&tri=
 GET  /api/clubs/{id}                      en-tête + résumé
 GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
+GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
 GET  /api/clubs/{id}/effectif
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances
@@ -166,10 +187,12 @@ GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=
 GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
 GET  /api/competitions/{id}/historique
+GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=
 GET  /api/joueurs/{id}
 GET  /api/joueurs/{id}/historique
+GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
 GET  /api/matches/{id}                    compte rendu complet
 

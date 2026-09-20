@@ -1,4 +1,5 @@
 import {monthlySalary} from './salaries.js';
+import {playerNavigation} from './navigation.js';
 import {api,escape as e,number as n,money,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges} from './ui.js';
 
 const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance'};
@@ -36,8 +37,8 @@ export function levelChart(points) {
  return `<div class="level-chart" role="img" aria-label="Évolution annuelle du niveau, sur 200"><div class="plot">${lines}${axis}${marks}</div></div>`;
 }
 
-function header(player) {
- const identity=`<div class="identity"><div class="avatar">${initials(player.name)}</div><div><span class="eyebrow">${player.retired?'CARRIÈRE ARCHIVÉE':nationBadges(player.nationalities,{full:true})}</span><h1>${e(player.name)}</h1><p>${player.retired?'Retraité':`${position(player.position)}<span class="secondary-positions" title="Postes secondaires">${player.secondary_positions.map(position).join('')}</span> ${player.age} ans · ${clubLink(player.club)}`}</p></div></div>`;
+function header(player, lead='') {
+ const identity=`<div class="identity">${lead}<div class="avatar">${initials(player.name)}</div><div><span class="eyebrow">${player.retired?'CARRIÈRE ARCHIVÉE':nationBadges(player.nationalities,{full:true})}</span><h1>${e(player.name)}</h1><p>${player.retired?'Retraité':`${position(player.position)}<span class="secondary-positions" title="Postes secondaires">${player.secondary_positions.map(position).join('')}</span> ${player.age} ans · ${clubLink(player.club)}`}</p></div></div>`;
  if(player.retired)return `<div class="page-heading player-heading">${identity}</div>`;
  const facts=[['Né le',date(player.born)],['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)]];
  return `<div class="page-heading player-heading">${identity}<dl class="player-facts">${facts.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl></div>`;
@@ -54,7 +55,7 @@ function profile(player, chart, career) {
 }
 
 export async function playerScreen(id) {
- const [player,history]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`)]);
+ const [player,history,neighbours]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`)]);
  // The latest club of each season: career rows are listed newest first.
  const clubs=new Map();for(const row of history.career.items)if(!clubs.has(row.season))clubs.set(row.season,row.club);
  const points=[...history.trajectory.items].reverse().map(point=>({...point,club:clubs.get(point.season)}));
@@ -62,5 +63,5 @@ export async function playerScreen(id) {
  const totals=history.career.totals;
  const footer=['Total','',totals.fee?money(totals.fee):'—','',`${n(totals.matches)}`,`${n(totals.goals)}`,`${n(totals.assists)}`,totals.average?n(totals.average):'—'];
  const career=card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,row.matches,row.goals,row.assists,row.average?n(row.average):'—']),footer));
- return header(player)+(player.retired?chart+career:profile(player,chart,career));
+ return header(player,playerNavigation(neighbours))+(player.retired?chart+career:profile(player,chart,career));
 }

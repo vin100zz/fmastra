@@ -29,6 +29,8 @@ L'interface comprend le tableau de bord, les classements, calendriers,
 statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
 les comptes rendus et les compositions. L'utilisateur reste observateur.
 
+Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, et les compétitions du même pays de la première division à la coupe. Le passage d'un club à l'autre garde l'onglet ouvert.
+
 La liste des joueurs affiche toutes leurs nationalités, leur valeur et leur potentiel exact à côté du niveau actuel, tous deux sous forme de badges sur 200 dont la couleur suit une même échelle (rouge jusqu'à 70, jaune à 110, vert à partir de 150),
 avec un tri initial par valeur décroissante. Les clubs sont triés par réputation
 décroissante. L'effectif affiche aussi les matchs, minutes, buts, passes décisives,

@@ -9,9 +9,12 @@ const detail={id:1,name:'Test Joueur',position:'DR',secondary_positions:['MC'],a
 const history={career:{items:[{season:2025,club:{id:1,name:'Club'},fee:null,competition:'Serie A · C1',matches:4,goals:1,assists:0,average:6.5}],totals:{fee:0,matches:4,goals:1,assists:0,average:6.5}},
  trajectory:{items:[{season:2026,rating:60},{season:2025,rating:55}]}};
 
-async function render(player=detail){
+const squad={scope:{kind:'club',id:1,name:'Club'},index:1,total:3,items:[{id:5,name:'Gardien Test',position:'GB'},{id:1,name:'Test Joueur',position:'DR'},{id:6,name:'Buteur Test',position:'BU'}],
+ previous:{id:5,name:'Gardien Test',position:'GB'},next:{id:6,name:'Buteur Test',position:'BU'}};
+
+async function render(player=detail,navigation=squad){
  const previous=globalThis.fetch,urls=[];
- globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>url.endsWith('/historique')?history:player};};
+ globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>url.endsWith('/navigation')?navigation:url.endsWith('/historique')?history:player};};
  try{return {html:await playerScreen(1),urls};}finally{globalThis.fetch=previous;}
 }
 
@@ -59,7 +62,7 @@ test('position pitch places ratings of 10 or more on the field and outlines the 
 
 test('player page merges profile and career without tabs, stat cards or identity block',async()=>{
  const {html,urls}=await render();
- assert.deepEqual(urls.sort(),['/api/joueurs/1','/api/joueurs/1/historique']);
+ assert.deepEqual(urls.sort(),['/api/joueurs/1','/api/joueurs/1/historique','/api/joueurs/1/navigation']);
  assert.doesNotMatch(html,/class="tabs"|stat-card|Identité et contrat|Aptitudes par poste[^]*Matchs|Note moyenne/);
  for(const label of ['Attributs','Aptitudes par poste','État du joueur','Évolution du niveau','La carrière'])assert.ok(html.includes(label),label);
  assert.ok(html.indexOf('Attributs')<html.indexOf('La carrière')&&html.indexOf('Évolution du niveau')<html.indexOf('La carrière'));
@@ -81,6 +84,22 @@ test('player page puts attributes, pitch and level chart on one three-column row
   assert.ok(top.indexOf('Attributs')<top.indexOf('État du joueur')&&top.indexOf('État du joueur')<top.indexOf('Évolution du niveau'));
   assert.match(without,/La carrière/);
  }
+});
+
+test('player page steps through the squad above the header, and shows nothing without a club',async()=>{
+ const {html}=await render();
+ // in the header, at the left of the avatar and the name, not on a row of its own
+ const at=html.indexOf('class="entity-nav"');
+ assert.ok(html.indexOf('class="page-heading player-heading"')<html.indexOf('<div class="identity"><div class="entity-nav"')&&at<html.indexOf('class="avatar"'));
+ assert.match(html,/href="#\/player\/5" rel="prev"/);assert.match(html,/href="#\/player\/6" rel="next"/);
+ assert.match(html,/<a href="#\/player\/1" aria-current="true"><span class="position def">DR<\/span><span>Test Joueur<\/span><\/a>/);
+ assert.equal(html.match(/<h1>(.*?)<\/h1>/)[1],'Test Joueur');
+ for(const navigation of [null,{...squad,total:1,items:[squad.items[1]],previous:null,next:null}]){
+  const alone=(await render(detail,navigation)).html;
+  assert.doesNotMatch(alone,/entity-nav/);assert.match(alone,/Test Joueur/);
+ }
+ const retired=(await render({id:1,name:'Ancien',retired:true},null)).html;
+ assert.doesNotMatch(retired,/entity-nav/);assert.match(retired,/CARRIÈRE ARCHIVÉE/);
 });
 
 test('level chart points use the latest club of each season from the career',async()=>{

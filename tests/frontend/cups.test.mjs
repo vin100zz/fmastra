@@ -30,6 +30,10 @@ test('country places the cup between the first and second divisions',async()=>{
   const screen=await cupScreen(cup,'calendar',new URLSearchParams());
   assert.match(screen,/Tirage à venir/);
   assert.equal((screen.match(/class="fixture"/g)||[]).length,32);
+  // the block stepping between competitions sits in the header, left of the cup's name
+  const led=await cupScreen(cup,'calendar',new URLSearchParams(),'<div class="entity-nav"></div>');
+  assert.match(led,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"><\/div><div><span class="eyebrow">FRA<\/span><h1>Coupe de France<\/h1>/);
+  assert.doesNotMatch(screen,/heading-with-lead/);
  }finally{globalThis.fetch=previous;}
 });
 

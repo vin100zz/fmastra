@@ -8,7 +8,7 @@ export function cupSummaryCard(cup,data){
  return card(cup.name,body,`<a href="#/league/${cup.id}">Voir la coupe →</a>`);
 }
 
-export async function cupScreen(cup,section,params){
+export async function cupScreen(cup,section,params,lead=''){
  section=section||'calendar';
  const data=await api(`/competitions/${cup.id}/coupe?${params}`);
  const menu=[['calendar','Les tours'],['stats','Statistiques'],['history','Palmarès']];
@@ -24,5 +24,5 @@ export async function cupScreen(cup,section,params){
   if(data.winner)content+=`<div class="notice cup-winner">🏆 Vainqueur : ${clubLink(data.winner)}</div>`;
   content+=data.rounds.map(round=>`<details class="card cup-round" ${round.number===(data.latest_round||1)?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures(round):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
  }
- return heading(cup.nation,cup.name,'64 clubs · Match unique · Tirs au but en cas d’égalité')+tabs(`#/league/${cup.id}`,menu,section)+content;
+ return heading(cup.nation,cup.name,'64 clubs · Match unique · Tirs au but en cas d’égalité','',lead)+tabs(`#/league/${cup.id}`,menu,section)+content;
 }

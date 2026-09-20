@@ -42,7 +42,8 @@ export const empty = (text='Les données apparaîtront au fil de la saison.', ti
 export const card = (title, content, action='', className='') => `<section class="card${className?` ${className}`:''}"><div class="card-head"><h2>${escape(title)}</h2>${action}</div>${content}</section>`;
 export const stat = (label, value, hint='') => `<div class="stat-card"><span class="label">${escape(label)}</span><strong>${escape(value)}</strong><small>${escape(hint)}</small></div>`;
 export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</span><strong>${value}</strong></div>`;
-export const heading = (overline,title,subtitle='',extra='') => `<div class="page-heading"><div><span class="eyebrow">${escape(overline)}</span><h1>${escape(title)}</h1><p>${escape(subtitle)}</p></div>${extra}</div>`;
+// `lead` (the block stepping between peers) sits at the left of the title.
+export const heading = (overline,title,subtitle='',extra='',lead='') => {const text=`<div><span class="eyebrow">${escape(overline)}</span><h1>${escape(title)}</h1><p>${escape(subtitle)}</p></div>`;return `<div class="page-heading">${lead?`<div class="heading-with-lead">${lead}${text}</div>`:text}${extra}</div>`;};
 export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
 export function table(headers, rows, footer, rowClasses, sort) {
  const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;

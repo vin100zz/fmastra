@@ -29,3 +29,16 @@ th,td{padding:7px 9px;font-size:12px}th{font-size:9px}th button{padding:0;font-s
 
 /* Client-sorted tables: the header button shows its direction through aria-sort. */
 th button.sort-toggle{font-weight:inherit;text-transform:inherit}th button.sort-toggle:hover{color:var(--green);background:none}th[aria-sort=ascending] button:after{content:" ↑"}th[aria-sort=descending] button:after{content:" ↓"}
+
+/* Stepping between peers, at the left of a page header: triangle up (previous), menu (every member), triangle down (next). */
+.heading-with-lead{display:flex;align-items:center;gap:12px;min-width:0}
+.entity-nav{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;flex:none}
+.entity-step,.entity-menu>summary{display:grid;place-items:center;width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--white);color:var(--green);cursor:pointer}
+.entity-step svg,.entity-menu>summary svg{width:9px;height:9px;fill:currentColor}
+a.entity-step:hover,.entity-menu>summary:hover,.entity-menu[open]>summary{background:#eaf3ec;border-color:var(--green-light)}
+span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
+.entity-menu>summary{list-style:none}.entity-menu>summary::-webkit-details-marker{display:none}
+.entity-menu-panel{position:absolute;z-index:3;top:calc(100% + 6px);left:0;width:280px;max-width:calc(100vw - 32px);max-height:min(60vh,420px);overflow:auto;background:var(--white);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #1a2d2a26}
+.entity-menu-scope{position:sticky;top:0;margin:0;padding:9px 14px 7px;background:var(--white);border-bottom:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:650;letter-spacing:1px;text-transform:uppercase}
+.entity-menu-panel ul{margin:0;padding:4px;list-style:none}
+.entity-menu-panel li a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:5px;color:var(--ink);font-size:12px}.entity-menu-panel li a:hover{background:#f1f6f1}.entity-menu-panel li a[aria-current]{background:#e6f1ea;color:var(--green);font-weight:700}.entity-menu-panel .position{flex:none}
