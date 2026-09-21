@@ -76,6 +76,7 @@ def test_views_pagination_and_no_rng_leak(client):
     mbappe = client.get('/api/joueurs/85139014').json()
     assert mbappe['attributes_imported'] and mbappe['position_ratings']['BU'] == 18
     assert mbappe['attributes']['finition'] == 90
+    assert mbappe['attribute_weights'] == dict(world.config.attributes.overall[mbappe['position']])  # the main position, not BU
     assert 'source_potential_ability' not in mbappe and 'source_current_ability' not in mbappe
     assert [row['reputation'] for row in club_rows] == sorted((row['reputation'] for row in club_rows), reverse=True)
     squad = client.get(f'/api/clubs/{club_id}/effectif?tri=goals').json()['items']

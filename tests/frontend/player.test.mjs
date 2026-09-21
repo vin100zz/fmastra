@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {scoreHue,scoreBadge,setNations} from '../../web/ui.js';
-import {playerScreen,levelChart,positionPitch} from '../../web/player.js';
+import {playerScreen,levelChart,positionPitch,attributeGroups} from '../../web/player.js';
 
 const detail={id:1,name:'Test Joueur',position:'DR',secondary_positions:['MC'],age:19,nationalities:['FRA'],nationality_names:['France'],club:{id:1,name:'Club'},
  born:'2005-01-01',wage:12000,contract_end:'2028-06-30',value:1314589,rating:70,potential:91.5,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],
@@ -153,3 +153,66 @@ test('retired players keep only their level history and career',async()=>{
  assert.match(html,/CARRIÈRE ARCHIVÉE/);assert.match(html,/Évolution du niveau/);assert.match(html,/La carrière/);
  assert.doesNotMatch(html,/Attributs|player-facts|État du joueur/);
 });
+
+const ALL=['passe','technique','finition','tacle','jeu_tete','vision','placement','sang_froid','vitesse','endurance','reflexes','sorties','relance','centre','cpa'];
+const everything=Object.fromEntries(ALL.map((key,index)=>[key,20+index*5]));
+const WEIGHTS={GB:{reflexes:.40,sorties:.25,placement:.20,relance:.15},DC:{tacle:.28,placement:.28,jeu_tete:.20,vitesse:.14,passe:.10},
+ BU:{finition:.38,sang_froid:.20,technique:.16,jeu_tete:.14,vitesse:.12}};
+const of=position=>({...detail,position,attributes:everything,attribute_weights:WEIGHTS[position]});
+const names=section=>section.items.map(item=>item.key);
+
+test('a goalkeeper gets Gardien and Général, Placement joins his craft, and the rest is folded away',()=>{
+ const {sections,others}=attributeGroups(of('GB'));
+ assert.deepEqual(sections.map(section=>section.title),['Gardien','Général']);
+ assert.deepEqual(names(sections[0]),['reflexes','sorties','placement','relance']);// Placement joins the goalkeeper's craft
+ assert.deepEqual(names(sections[1]),['passe','vitesse','endurance']);
+ assert.deepEqual(others.map(item=>item.key).sort(),['centre','cpa','finition','jeu_tete','sang_froid','tacle','technique','vision']);
+});
+
+test('an outfield player never sees goalkeeper attributes, nor a fold, and Placement stays a defensive skill',()=>{
+ const {sections,others}=attributeGroups(of('DC'));
+ assert.deepEqual(sections.map(section=>section.title),['Défense','Attaque','Général']);
+ assert.deepEqual(names(sections[0]),['tacle','placement']);
+ assert.equal(others.length,0);
+ assert.ok(!sections.some(section=>names(section).some(key=>['reflexes','sorties','relance'].includes(key))));
+});
+
+test('sections and the attributes inside them keep one fixed order whatever the position',()=>{
+ const layout=position=>attributeGroups(of(position)).sections.map(section=>[section.title,...names(section)]);
+ assert.deepEqual(layout('DC'),layout('BU'));
+ assert.deepEqual(layout('BU'),[['Défense','tacle','placement'],['Attaque','finition','sang_froid','technique','vision','jeu_tete','centre','cpa'],['Général','passe','vitesse','endurance']]);
+});
+
+test('every attribute is shown exactly once, in a section or in the fold',()=>{
+ for(const position of ['GB','DC','BU']){
+  const {sections,others}=attributeGroups(of(position));
+  const shown=[...sections.flatMap(names),...others.map(item=>item.key)];
+  const hidden=position==='GB'?[]:['reflexes','sorties','relance'];
+  assert.deepEqual([...shown,...hidden].sort(),[...ALL].sort(),position);
+ }
+});
+
+test('an answer without weights still renders every section in its default order',()=>{
+ const {sections}=attributeGroups({...detail,position:'MC',attributes:everything});
+ assert.deepEqual(sections.map(section=>section.title),['Défense','Attaque','Général']);
+ assert.ok(sections.every(section=>section.items.every(item=>item.weight===0)));
+});
+
+test('the card titles its sections and marks the key attributes of the position with their weight',async()=>{
+ const {html}=await render(of('BU'));
+ const card=html.match(/<section class="card"><div class="card-head"><h2>Attributs[^]*?<\/section>/)[0];
+ assert.deepEqual([...card.matchAll(/<h3>([^<]+)<\/h3>/g)].map(match=>match[1]),['Défense','Attaque','Général']);
+ assert.match(card,/class="attribute key" title="Compte pour 38 % de la note du poste"><span>Finition<\/span>/);
+ assert.match(card,/class="attribute"><span>Vision<\/span>/);
+ assert.doesNotMatch(card,/attribute-others|Réflexes/);
+});
+
+test('a goalkeeper card folds the other attributes closed by default',async()=>{
+ const {html}=await render(of('GB'));
+ const card=html.match(/<section class="card"><div class="card-head"><h2>Attributs[^]*?<\/section>/)[0];
+ assert.deepEqual([...card.matchAll(/<h3>([^<]+)<\/h3>/g)].map(match=>match[1]),['Gardien','Général']);
+ assert.match(card,/<details class="attribute-others"><summary>Autres attributs \(8\)<\/summary>/);
+ assert.doesNotMatch(card,/<details[^>]* open/);
+ assert.match(card,/class="attribute key"[^>]*><span>Placement<\/span>/);
+});
+

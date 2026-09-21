@@ -145,3 +145,11 @@ def test_a_lone_goalkeeper_can_still_be_the_fouler(config):
     team = team_with(config)
     team.active[:] = [team.active[0]]
     assert foul_committer(team, 0, 1, config, stream(1)) is team.active[0]
+
+
+def test_player_page_sections_partition_the_attributes():
+    source = (ROOT / "web" / "player.js").read_text("utf-8")
+    block = re.search(r"const ATTRIBUTE_SECTIONS=\[(.*?)\];", source, re.S).group(1)
+    listed = [name for group in re.findall(r"attributes:\[([^\]]*)\]", block) for name in re.findall(r"'(\w+)'", group)]
+    assert sorted(listed) == sorted(ATTRIBUTE_NAMES)  # each attribute in exactly one section
+

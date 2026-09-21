@@ -62,6 +62,8 @@ def player_detail(world: World, player: Player) -> dict:
     result = player_row(world, player)
     result.update({"born": player.born.iso(),
                    "secondary_positions": list(player.secondary_positions), "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
+                   # Weight of each attribute in the rating of his main position: the page orders and marks attributes with it.
+                   "attribute_weights": dict(world.config.attributes.overall[player.position]),
                    "attributes_imported": player.source_current_ability is not None,
                    "position_ratings": player.position_ratings,
                    "form": player.form, "morale": player.morale, "value": market_value(player, world),

@@ -49,3 +49,10 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 .honours-blocks{display:grid;grid-template-columns:repeat(var(--blocks),minmax(0,1fr));gap:12px}.honours-block{margin:0;min-width:0}
 .honours-block .table-scroll{max-height:340px}.honours-block thead th{position:sticky;top:0}.honours-block .empty{padding:24px 14px}
 @media(max-width:1100px){.honours-blocks{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.honours-blocks{grid-template-columns:1fr}}
+
+/* Player attributes: one block per section; the main position's key attributes in bold with a dot; the rest folded away. */
+.attribute-group+.attribute-group,.attribute-others{margin-top:16px}
+.attribute-group h3{margin:0 0 4px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:650}
+.grid.thirds .attribute-group .attributes-grid,.attribute-others .attributes-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.attribute.key>span:first-child{font-weight:700}.attribute.key>span:first-child:after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--green);vertical-align:middle}
+.attribute-others summary{cursor:pointer;font-size:11px;color:var(--muted)}.attribute-others .attributes-grid{margin-top:8px}

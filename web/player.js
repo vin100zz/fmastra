@@ -3,6 +3,45 @@ import {playerNavigation} from './navigation.js';
 import {api,escape as e,number as n,money,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges} from './ui.js';
 
 const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
+// What an attribute is for decides its section; sections and attributes always come in the same order, whatever the
+// position. The main position only marks the attributes weighing most in its rating (`attribute_weights`, from the game
+// rules). Placement is part of a goalkeeper's craft
+// (30% of a save, 40% of a claim), so it moves from Défense to Gardien for him.
+const ATTRIBUTE_SECTIONS=[
+ {key:'goalkeeper',title:'Gardien',attributes:['reflexes','sorties','relance']},
+ {key:'defense',title:'Défense',attributes:['tacle','placement']},
+ {key:'attack',title:'Attaque',attributes:['finition','sang_froid','technique','vision','jeu_tete','centre','cpa']},
+ {key:'general',title:'Général',attributes:['passe','vitesse','endurance']}];
+// An attribute weighing at least this share of the main position's rating is a key one for that position.
+const KEY_WEIGHT=.14;
+
+// Goalkeeper attributes mean nothing for an outfield player and the reverse: the irrelevant section is hidden, and for a
+// goalkeeper its attributes stay reachable in a fold.
+export function attributeGroups(player) {
+ const keeper=player.position==='GB',weights=player.attribute_weights||{};
+ const listed=name=>{
+  const own=ATTRIBUTE_SECTIONS.find(section=>section.key===name).attributes.filter(key=>!(keeper&&key==='placement'));
+  return keeper&&name==='goalkeeper'?[...own.slice(0,2),'placement',...own.slice(2)]:own;
+ };
+ const items=name=>listed(name).filter(key=>key in player.attributes)
+  .map(key=>({key,value:player.attributes[key],weight:weights[key]||0}));
+ const names=keeper?['goalkeeper','general']:['defense','attack','general'];
+ return {sections:names.map(name=>({key:name,title:ATTRIBUTE_SECTIONS.find(section=>section.key===name).title,items:items(name)})).filter(section=>section.items.length),
+  others:keeper?[...items('defense'),...items('attack')]:[]};
+}
+
+function attributeItem({key,value,weight}) {
+ const important=weight>=KEY_WEIGHT;
+ return `<div class="attribute${important?' key':''}"${important?` title="Compte pour ${Math.round(weight*100)} % de la note du poste"`:''}><span>${ATTRIBUTES[key]}</span>${scoreBadge(attributeScore(value))}</div>`;
+}
+
+function attributesBody(player) {
+ const {sections,others}=attributeGroups(player);
+ const grid=list=>`<div class="attributes-grid">${list.map(attributeItem).join('')}</div>`;
+ const fold=others.length?`<details class="attribute-others"><summary>Autres attributs (${others.length})</summary>${grid(others)}</details>`:'';
+ return `<div class="card-body">${sections.map(section=>`<div class="attribute-group"><h3>${section.title}</h3>${grid(section.items)}</div>`).join('')}${fold}</div>`;
+}
+
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
 // The central column is spaced by at least 15% so that shirts and labels of a 360px pitch do not overlap.
 const PITCH={GB:[50,92],DC:[50,77],DL:[15,70],DR:[85,70],MDC:[50,62],MC:[50,47],MOC:[50,32],AILG:[15,22],AILD:[85,22],BU:[50,9]};
@@ -47,7 +86,7 @@ function header(player, lead='') {
 
 function profile(player, chart, career) {
  const levels=`<div class="level-summary"><span>Niv. ${levelBadge(player.rating,'Niveau actuel sur 200')}</span><span>Pot. ${levelBadge(player.potential,'Potentiel sur 200')}</span></div>`;
- const attributes=card('Attributs',`<div class="card-body"><div class="attributes-grid">${Object.entries(player.attributes).map(([key,value])=>`<div class="attribute"><span>${ATTRIBUTES[key]}</span>${scoreBadge(attributeScore(value))}</div>`).join('')}</div></div>`,levels);
+ const attributes=card('Attributs',attributesBody(player),levels);
  const pitch=positionPitch(player.position_ratings||{},player.position);
  const positions=pitch?card('Aptitudes par poste',pitch):'';
  const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match(s) de suspension`)).join('')}</div>`);
