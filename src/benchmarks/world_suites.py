@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
-from statistics import mean
+from statistics import mean, pstdev
 from time import perf_counter
 import json
 
@@ -38,6 +38,15 @@ def snapshot(world: World, elapsed: float) -> dict:
             "elapsed_seconds": elapsed}
 
 
+def reputation_row(world: World, held: dict[int, float]) -> dict:
+    """How far club reputation moved since `held` and what shape it has, over the clubs playing this season."""
+    active = world.active_clubs()
+    changes = [abs(club.reputation - held[club.id]) for club in active]
+    return {"reputation_mean": mean(club.reputation for club in active), "reputation_spread": pstdev(club.reputation for club in active),
+            "reputation_change": mean(changes), "reputation_max_change": max(changes),
+            "reputation_top10": [club.id for club in sorted(world.clubs.values(), key=lambda club: (-club.reputation, club.id))[:10]]}
+
+
 def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_path: Path | None) -> tuple[list[Measurement], list[dict]]:
     cfg = world.config
     rows, injuries, outside, long_injuries, unavailable, days = [], 0, 0, 0, 0, 0
@@ -47,6 +56,7 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
     store = SaveStore((report_path.parent if report_path else Path("reports")) / "benchmark-saves")
     for index in range(warmup + seasons):
         started = perf_counter()
+        held = {cid: club.reputation for cid, club in world.clubs.items()}
         boundary = Date(world.season + 1, cfg.world.key_dates.population_review.month, cfg.world.key_dates.population_review.day)
         while world.date < boundary:
             advance_day(world)
@@ -66,6 +76,7 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
                 max_save_seconds = max(max_save_seconds, perf_counter() - save_start)
                 validate_world(world)
         row = snapshot(world, perf_counter() - started)
+        row.update(reputation_row(world, held))
         row["warmup"] = index < warmup
         rows.append(row)
         for club in world.active_clubs():
@@ -101,6 +112,19 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
             keys = set().union(*(row[axis] for row in observed))
             drift = max(abs(mean(row[axis].get(key, 0) for row in first) - mean(row[axis].get(key, 0) for row in last)) for key in keys)
             measures.append(Measurement(f"{axis}_max_share_drift", drift, 0, tolerance, seasons))
+        economy = cfg.benchmarks.economy
+        spread_first = mean(row["reputation_spread"] for row in first)
+        measures.extend([
+            Measurement("reputation_mean_window_drift", abs(mean(row["reputation_mean"] for row in last) - mean(row["reputation_mean"] for row in first)),
+                        0, economy.reputation_mean_drift, seasons),
+            Measurement("reputation_spread_window_drift", abs(mean(row["reputation_spread"] for row in last) - spread_first) / spread_first,
+                        0, economy.reputation_spread_drift, seasons),
+            Measurement("reputation_mean_annual_change", mean(row["reputation_change"] for row in observed),
+                        economy.min_reputation_change, economy.max_reputation_change, seasons),
+            Measurement("reputation_largest_annual_jump", max(row["reputation_max_change"] for row in observed), 0, economy.max_reputation_jump, seasons)])
+        if len(observed) > 1:
+            kept = mean(len(set(before["reputation_top10"]) & set(after["reputation_top10"])) / 10 for before, after in zip(observed, observed[1:]))
+            measures.append(Measurement("reputation_top10_persistence", kept, economy.min_top_ten_persistence, 1.0, seasons))
         measures.extend([Measurement("active_mean_age", mean(row["age"] for row in observed), rules.mean_age.min, rules.mean_age.max, seasons),
                          Measurement("permanently_negative_clubs", len(permanent), 0, cfg.benchmarks.economy.permanently_negative_clubs.max, seasons),
                          Measurement("minimum_squad", min(row["min_squad"] for row in observed), cfg.management.guardrails.min_squad, cfg.management.guardrails.max_squad, seasons),

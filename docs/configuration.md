@@ -16,7 +16,7 @@ les deux, pas résolue silencieusement par l'implémentation.
 
 | Fichier | Contenu |
 |---|---|
-| `config/monde.json` | date initiale, périmètre, calendrier, mercato, règles de match |
+| `config/monde.json` | date initiale, périmètre, calendrier, mercato, règles de match, révision annuelle de la réputation |
 | `config/import.json` | format source, sélection des 30 meilleurs, valeurs manquantes, synthèse |
 | `config/attributs.json` | attributs, composites, notes globales, profils de génération |
 | `config/implications.json` | matrices d'implication verticale et latérale |

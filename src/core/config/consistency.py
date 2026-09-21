@@ -120,6 +120,20 @@ def validate_consistency(cfg: Config) -> None:
     require(len({league.division_id for league in cfg.world.competitions}) == len(cfg.world.competitions), "Duplicate competitions")
     movement = cfg.world.promotion_relegation
     require(movement.club_count > 0 and movement.reputation_exponent > 0, "Invalid promotion rules")
+    reputation = cfg.world.reputation
+    require(0 < reputation.smoothing <= 1, "Reputation smoothing must be within (0, 1]")
+    require(0 <= reputation.honours.decay < 1, "Honours decay must be within [0, 1)")
+    require(min(reputation.division_gain, reputation.rank_spread, reputation.max_rise, reputation.ceiling_margin) >= 0,
+            "Reputation gains, spread, rise and ceiling margin must be nonnegative")
+    require(reputation.ceiling_min_level >= 1, "Reputation ceilings start at level 1 or below")
+    require(0 <= reputation.bounds.min < reputation.bounds.max <= cfg.attributes.bounds.max,
+            "Reputation bounds must lie within the attribute scale")
+    european_codes = {"C1", "C3", "C4"}
+    require(set(reputation.european_qualification) <= european_codes and set(reputation.honours.european_cup) <= european_codes,
+            "Unknown European competition in the reputation rules")
+    require(min((*reputation.european_qualification.values(), *reputation.honours.european_cup.values(),
+                 *reputation.honours.league_by_level, reputation.honours.national_cup)) >= 0,
+            "Reputation bonuses must be nonnegative")
     nations = {league.nation for league in cfg.world.competitions}
     require(len(movement.reserves) == len(nations)
             and {pool.nation for pool in movement.reserves} == nations, "Each pyramid needs one reserve")

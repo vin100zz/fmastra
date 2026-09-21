@@ -190,4 +190,6 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                             "attributes_from_source": len(source_players) - len(excluded), **corrections}
     for player in players.values(): world.trajectories[player.id] = [(season, player.rating)]
     world.finance_history_since = world.movement_history_since = world.date
+    from core.world.reputation import initialize_reputation
+    initialize_reputation(world)
     return world

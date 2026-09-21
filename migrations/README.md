@@ -63,6 +63,14 @@ paramètres, après vérification de l'empreinte d'origine ; `poids_agressivite_
 garde son ancienne valeur (0,006), donc l'agressivité reste neutre dans une partie déjà
 commencée. Le format v1 (JSON balisé) n'est pas étendu.
 
+La v13 ajoute la révision annuelle de la réputation : la section `monde.reputation`, `Club.reputation_anchor`,
+`World.reputation_ceilings` et `World.reputation_history` (`docs/reputation.md`). À la lecture d'une sauvegarde
+antérieure, la configuration embarquée reçoit les valeurs par défaut de la section, absente d'une partie plus
+ancienne, après vérification de l'empreinte d'origine. Au chargement, l'ancre de chaque club devient sa
+réputation courante (constante jusque-là), le plafond de chaque division la médiane des ancres de ses équipes
+premières d'après `source_division_id`, et l'historique reçoit un premier point à la saison en cours. La
+première révision a lieu au prochain 1er juillet.
+
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de
 changer les modèles. Modifier les coefficients du dossier `config` n'altère pas

@@ -32,15 +32,23 @@ def european_run(world: World, matches: list[Match], club_id: int) -> dict | Non
             "level": stage + 1 + int(won), "winner": won}
 
 
+def reputation_held(held: dict[int, float], year: int) -> dict | None:
+    """Reputation the club had when the season opened, and how far it moved from the season before."""
+    if year not in held: return None
+    return {"value": round(held[year], 1), "change": round(held[year] - held[year - 1], 1) if year - 1 in held else None}
+
+
 def seasons(world: World, club_id: int) -> list[dict]:
     """One row per finished season in which the club played a league, its national cup or a European cup, latest first."""
     finished: dict[int, dict[int, list[Match]]] = {}
     for match in world.matches.values():
         if match.season < world.season and club_id in (match.home_id, match.away_id):
             finished.setdefault(match.season, {}).setdefault(match.competition_id, []).append(match)
+    held = dict(world.reputation_history.get(club_id, []))
     rows = []
     for year in sorted(finished, reverse=True):
-        row = {"season": year, "rank": None, "champion": False, "competition_id": None, "competition": None, "cup": None, "europe": None}
+        row = {"season": year, "rank": None, "champion": False, "competition_id": None, "competition": None, "cup": None, "europe": None,
+               "reputation": reputation_held(held, year)}
         for competition_id, matches in finished[year].items():
             competition = world.competitions[competition_id]
             if competition.kind == "league":

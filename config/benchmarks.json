@@ -77,7 +77,14 @@
     "clubs_solde_negatif_permanent": {"max": 0},
     "part_transferts_depuis_dormants": {"min": 0.25, "max": 0.40},
     "derive_masse_salariale_reelle_sur_horizon_max": 0.25,
-    "saisons_consecutives_solde_negatif_permanent": 3
+    "saisons_consecutives_solde_negatif_permanent": 3,
+    "_note": "Reputation des clubs sur les saisons observees : derive de la moyenne (points) et de la dispersion (relative) des clubs actifs entre la premiere et la derniere fenetre, variation annuelle moyenne (points), plus grand saut annuel, et part du top 10 mondial conservee d'une saison a l'autre.",
+    "derive_reputation_moyenne_max": 3.0,
+    "derive_reputation_dispersion_max": 0.25,
+    "variation_reputation_annuelle_min": 0.5,
+    "variation_reputation_annuelle_max": 3.0,
+    "variation_reputation_saut_max": 20.0,
+    "persistance_top10_reputation_min": 0.6
   },
   "blessures": {
     "par_club_par_saison": {"min": 12.0, "max": 18.0},

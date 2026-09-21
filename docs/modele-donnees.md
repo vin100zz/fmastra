@@ -110,7 +110,9 @@ Une donnée absente à l'import utilise un repli neutre de 50/100 ; les ancienne
 sauvegardes sans ce champ utilisent leur ancienne note de centre.
 Les cohortes restent bornées par la population et les places disponibles.
 
-La réputation provient de `Reputation`, divisée par 100 pour l'échelle du moteur.
+La réputation provient de `Reputation`, divisée par 100 pour l'échelle du moteur. Elle sert d'ancre à une
+révision annuelle (`docs/reputation.md`) ; `Club.reputation_anchor` la conserve, `World.reputation_ceilings`
+fige la médiane de chaque division et `World.reputation_history` garde la valeur de chaque saison.
 Les finances demeurent estimées. Les paramètres de synthèse
 joueur dans import.json sont conservés pour relire les anciennes configurations,
 mais ne sont plus utilisés par l'import actuel.

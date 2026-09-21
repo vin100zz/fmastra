@@ -81,6 +81,7 @@ def test_old_save_receives_rotation_rules_without_accepting_tampered_config(conf
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if introduced > 8:
             for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]  # A section introduced whole is absent, not empty.
     raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
     store.path_for("rotation").write_bytes(gzip.compress(json.dumps(legacy).encode()))
@@ -120,6 +121,7 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if introduced > 11:
             for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]  # A section introduced whole is absent, not empty.
     legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     for player in legacy["world"]["players"].values():
         del player["attributes"]["values"][LEGACY_ATTRIBUTE_COUNT:]

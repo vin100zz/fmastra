@@ -498,6 +498,9 @@ MAPS = {
     "demographie.generation.postes_secondaires_possibles": "FrozenMap[tuple[str, ...]]",
 }
 WORDS.update({"promotion_relegation": "promotion_relegation", "exposant_reputation": "reputation_exponent"})
+WORDS.update({"derive_reputation_moyenne_max": "reputation_mean_drift", "derive_reputation_dispersion_max": "reputation_spread_drift",
+              "variation_reputation_annuelle_min": "min_reputation_change", "variation_reputation_annuelle_max": "max_reputation_change",
+              "variation_reputation_saut_max": "max_reputation_jump", "persistance_top10_reputation_min": "min_top_ten_persistence"})
 WORDS["stabilite_apres_arrivee_jours"] = "arrival_stability_days"
 WORDS["gain_qualite_min_recrutement"] = "minimum_quality_gain"
 WORDS.update({"profondeur_effectif_min": "min_squad_depth", "profondeur_effectif_max": "max_squad_depth",
@@ -506,7 +509,13 @@ WORDS.update({"profondeur_effectif_min": "min_squad_depth", "profondeur_effectif
               "moral_depart_force": "forced_exit_morale", "talents_visibles": "visible_talents",
               "jours_encheres": "auction_days", "poids_profondeur_vente": "depth_sale_weight"})
 # Explicit compatibility defaults for configurations embedded in older saves.
-DEFAULTS = {"ia_gestion.mercato.stabilite_apres_arrivee_jours": 180,
+DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
+            "benchmarks.economie.derive_reputation_dispersion_max": 0.25,
+            "benchmarks.economie.variation_reputation_annuelle_min": 0.5,
+            "benchmarks.economie.variation_reputation_annuelle_max": 3.0,
+            "benchmarks.economie.variation_reputation_saut_max": 20.0,
+            "benchmarks.economie.persistance_top10_reputation_min": 0.6,
+            "ia_gestion.mercato.stabilite_apres_arrivee_jours": 180,
             "ia_gestion.mercato.gain_qualite_min_recrutement": 3.0,
             "ia_gestion.mercato.profondeur_effectif_min": 16,
             "ia_gestion.mercato.profondeur_effectif_max": 20,

@@ -359,6 +359,7 @@ API ne consomment jamais les RNG de simulation. Voir `docs/architecture.md`.
 | `docs/configuration.md` | Catalogue des fichiers config, chargement, validation |
 | `docs/benchmarks.md` | Harnais de calibrage et cibles |
 | `docs/modele-donnees.md` | Entités, actif/dormant, persistance, données fournies |
+| `docs/reputation.md` | Révision annuelle de la réputation des clubs |
 | `docs/attributs.md` | Les 15 attributs, les traits stables et leurs composites |
 | `docs/moteur-match.md` | Simulation par possessions, zones, couloirs, formations |
 | `docs/etats-joueur.md` | Fatigue, blessures, suspensions |

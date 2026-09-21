@@ -99,6 +99,10 @@ class World:
     finance_history_since: Date | None = None
     movement_history_since: Date | None = None
     european_quotas: dict[str, tuple[int, int, int]] = field(default_factory=dict)
+    # Median import reputation of each division: nation -> level -> value. Frozen at import, it caps what a club can hold below the top flight.
+    reputation_ceilings: dict[str, dict[int, float]] = field(default_factory=dict)
+    # Reputation held when each season opened: club -> [(season, reputation)], oldest first.
+    reputation_history: dict[int, list[tuple[int, float]]] = field(default_factory=dict)
 
     def active_clubs(self) -> list[Club]:
         return [club for club in self.clubs.values() if club.competition_id is not None]

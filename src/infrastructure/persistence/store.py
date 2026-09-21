@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 from core.domain.world import World
+from core.world.reputation import initialize_reputation
 from core.world.validation import validate_world
 from infrastructure.config.loader import config_fingerprint, config_payload
 from infrastructure.importation.readers import ATTRIBUTE_COLUMNS, note
@@ -21,10 +22,20 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    (13, ("benchmarks", "economie"), {
+         "derive_reputation_moyenne_max": 3.0, "derive_reputation_dispersion_max": 0.25, "variation_reputation_annuelle_min": 0.5,
+         "variation_reputation_annuelle_max": 3.0, "variation_reputation_saut_max": 20.0, "persistance_top10_reputation_min": 0.6}),
+    # Yearly reputation revision: an older save is given the rules it is revised with from its next July on.
+    (13, ("monde", "reputation"), {
+         "lissage": 0.4, "gain_par_division": 6.0, "amplitude_classement": 3.0, "marge_plafond": 0.0,
+         "niveau_min_plafond": 2, "hausse_max": 15.0, "bornes": {"min": 1.0, "max": 100.0},
+         "qualification_europe": {"C1": 3.0, "C3": 1.5, "C4": 0.75},
+         "palmares": {"decroissance": 0.7, "championnat_par_niveau": [4.0, 1.5, 0.5], "coupe_nationale": 2.0,
+                      "coupe_europe": {"C1": 6.0, "C3": 3.0, "C4": 1.5}}}),
     # Player traits read from the source, delivery quality and foul propensity. `poids_agressivite_tacle` keeps
     # its older value in an older save: as an exponent of 0.006 the foul propensity is practically neutral there.
     (12, ("etats", "blessures"), {"fragilite_note_basse": 2.3, "fragilite_note_reference": 8.3, "fragilite_note_haute": 14.3}),
@@ -108,7 +119,7 @@ class SaveStore:
                 if found and int(found.group(1)) < SCHEMA_VERSION:
                     raw = _extend_attribute_vectors(raw, self.directory.parent / "data" / "players.csv")
                 payload = ADAPTER.validate_json(raw)
-                if payload.schema_version not in (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, SCHEMA_VERSION):
+                if not 2 <= payload.schema_version <= SCHEMA_VERSION:
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
                 world, fingerprint = payload.world, payload.config_hash
                 version = payload.schema_version
@@ -118,6 +129,7 @@ class SaveStore:
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
             validate_consistency(world.config)
             upgrade_history(world)
+            initialize_reputation(world)
             recover_birthdates(world, self.directory.parent / 'data' / 'players.csv')
             validate_world(world)
             return world
@@ -175,6 +187,7 @@ def _config_matches(world: World, fingerprint: str, version: int) -> bool:
         rules = previous[path[0]][path[1]]
         if any(rules[key] != default for key, default in defaults.items()): return False
         for key in defaults: del rules[key]
+        if not rules: del previous[path[0]][path[1]]  # A whole section that did not exist yet.
         raw = json.dumps(previous, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         if hashlib.sha256(raw.encode("utf-8")).hexdigest() == fingerprint: return True
     return False

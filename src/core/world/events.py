@@ -69,6 +69,12 @@ class BudgetRenewed:
 
 
 @dataclass(frozen=True, slots=True)
+class ReputationRevised:
+    club_id: int
+    reputation: float
+
+
+@dataclass(frozen=True, slots=True)
 class ClubDivisionChanged:
     club_id: int
     source_id: int | None
@@ -98,4 +104,4 @@ class OffersUpdated:
     offers: list[TransferOffer]
 
 
-WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated
+WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated

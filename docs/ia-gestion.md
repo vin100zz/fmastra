@@ -101,6 +101,10 @@ des profils nominaux, avec une phase initiale de stabilisation.
 ## Revenus et financement initial
 
 Revenus structurels : réputation, classement précédent et coefficient du pays.
+La réputation évolue chaque 1er juillet (`docs/reputation.md`), avant le renouvellement des
+budgets : les revenus, le niveau visé, la profondeur d'effectif et l'attrait du club pour les
+joueurs suivent donc ses résultats, avec de l'inertie ; un club relégué perd ainsi des revenus
+et des joueurs devenus trop grands pour lui (`outgrown_by`).
 Avant la première saison, utiliser le milieu du classement théorique pour les
 clubs actifs ; pas de prime de classement pour les dormants. Le coefficient
 `multiplicateur_autres_pays` couvre les nations hors des cinq ligues.

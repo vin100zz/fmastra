@@ -174,3 +174,33 @@ def test_trait_and_delivery_rules_default_for_older_configurations(config):
     for (domain, section), defaults in added:
         assert {key: restored[domain][section][key] for key in defaults} == defaults
 
+
+def test_reputation_rules_default_for_configurations_without_the_section(config):
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 13]
+    assert {path for path, _ in added} == {("monde", "reputation"), ("benchmarks", "economie")}
+    raw = config_payload(config)
+    for (domain, section), defaults in added:
+        # A whole new section is absent from an older configuration; new keys of an existing one are missing.
+        if section == "reputation": del raw[domain][section]
+        else:
+            for key in defaults: del raw[domain][section][key]
+    older = decode_config(raw)
+    # The model defaults, the save migration and the shipped configuration describe the same rules.
+    assert older == config
+    restored = config_payload(older)
+    for (domain, section), defaults in added:
+        assert {key: restored[domain][section][key] for key in defaults} == defaults
+
+
+@pytest.mark.parametrize("domain,section,key,value", [
+    ("monde", "reputation", "lissage", 0), ("monde", "reputation", "lissage", 1.5),
+    ("monde", "reputation", "hausse_max", -1), ("monde", "reputation", "niveau_min_plafond", 0),
+    ("monde", "reputation", "qualification_europe", {"C2": 1.0}),
+    ("monde", "reputation", "bornes", {"min": 5.0, "max": 1.0}), ("monde", "reputation", "bornes", {"min": 0.0, "max": 150.0}),
+])
+def test_incoherent_reputation_rules_are_rejected(config, domain, section, key, value):
+    raw = config_payload(config)
+    raw[domain][section][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)

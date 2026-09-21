@@ -92,7 +92,7 @@ entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la co
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
-| Historique | une ligne par saison terminée (championnat, rang, coupe nationale, coupe d'Europe, titre), les 15 joueurs les plus utilisés et les 15 meilleurs buteurs du club, ses 10 plus gros transferts entrants et sortants |
+| Historique | une ligne par saison terminée (championnat, rang, réputation à l'ouverture et sa variation, coupe nationale, coupe d'Europe, titre), les 15 joueurs les plus utilisés et les 15 meilleurs buteurs du club, ses 10 plus gros transferts entrants et sortants |
 
 En-tête : nom, pays, compétition, réputation, classement actuel, forme sur les
 5 derniers matches.
@@ -223,7 +223,7 @@ GET  /api/clubs/{id}/effectif
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances
 GET  /api/clubs/{id}/transferts?saison=
-GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, coupe, Europe) + leaders {matches, goals} + transfers {arrivals, departures}
+GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, réputation, coupe, Europe) + leaders {matches, goals} + transfers {arrivals, departures}
 
 GET  /api/competitions
 GET  /api/competitions/{id}/classement

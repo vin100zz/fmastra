@@ -26,6 +26,23 @@
       {"pays": "ENG", "division_ids": [13]}
     ]
   },
+  "reputation": {
+    "_note": "Revision annuelle au bilan de juillet, pour tous les clubs. cible = ancre (reputation importee) + gain_par_division * (niveau de depart - niveau joue) + rang + qualification europeenne + palmares, bornee par ancre + hausse_max et par le plafond de la division jouee (mediane de l'import + marge_plafond, niveaux >= niveau_min_plafond). reputation += lissage * (cible - reputation). Sans niveau connu (nations non simulees) : ni division, ni rang, ni plafond.",
+    "lissage": 0.4,
+    "gain_par_division": 6.0,
+    "amplitude_classement": 3.0,
+    "marge_plafond": 0.0,
+    "niveau_min_plafond": 2,
+    "hausse_max": 15.0,
+    "bornes": {"min": 1.0, "max": 100.0},
+    "qualification_europe": {"C1": 3.0, "C3": 1.5, "C4": 0.75},
+    "palmares": {
+      "decroissance": 0.7,
+      "championnat_par_niveau": [4.0, 1.5, 0.5],
+      "coupe_nationale": 2.0,
+      "coupe_europe": {"C1": 6.0, "C3": 3.0, "C4": 1.5}
+    }
+  },
   "saison": {
     "debut_mois": 8, "debut_jour": 10,
     "fin_mois": 5, "fin_jour": 18,

@@ -68,8 +68,18 @@ def test_a_club_outside_the_leagues_still_gets_its_cup_seasons_and_none_for_what
     world.matches = {1: game(1, CUP, 2025, 1, 1, 8, winner=8), 2: game(2, LEAGUE, 2025, 1, 2, 3)}
     rows = seasons(world, 1)
     assert rows == [{'season': 2025, 'rank': None, 'champion': False, 'competition_id': None, 'competition': None,
-                     'cup': {'label': '32es de finale', 'level': 1, 'winner': False}, 'europe': None}]
+                     'cup': {'label': '32es de finale', 'level': 1, 'winner': False}, 'europe': None, 'reputation': None}]
     assert seasons(world, 4) == []
+
+
+def test_each_season_shows_the_reputation_held_at_its_opening_and_its_move_from_the_season_before(config):
+    world = archive_world(config)
+    world.matches = {1: game(1, LEAGUE, 2025, 1, 1, 2), 2: game(2, LEAGUE, 2026, 1, 1, 2)}
+    world.reputation_history = {1: [(2025, 60.04), (2026, 63.26), (2027, 61.0)]}
+    rows = seasons(world, 1)
+    assert [row['reputation'] for row in rows] == [{'value': 63.3, 'change': 3.2}, {'value': 60.0, 'change': None}]
+    world.reputation_history = {}
+    assert [row['reputation'] for row in seasons(world, 1)] == [None, None]
 
 
 def test_leaders_add_every_competition_and_season_for_this_club_only_and_keep_fifteen(config):

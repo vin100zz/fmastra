@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from core.config.types import FrozenMap, MODEL_CONFIG
+from core.config.types import FrozenDict, FrozenMap, MODEL_CONFIG
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class WorldConfigStartDate:
@@ -32,6 +32,34 @@ class WorldConfigPromotionRelegation:
     club_count: int = Field(alias="nb_clubs")
     reputation_exponent: float = Field(alias="exposant_reputation")
     reserves: tuple[WorldConfigPromotionRelegationReservesItem, ...] = Field(alias="reserves")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class WorldConfigReputationBounds:
+    min: float = Field(default=1.0, alias="min")
+    max: float = Field(default=100.0, alias="max")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class WorldConfigReputationHonours:
+    decay: float = Field(default=0.7, alias="decroissance")
+    league_by_level: tuple[float, ...] = Field(default=(4.0, 1.5, 0.5), alias="championnat_par_niveau")
+    national_cup: float = Field(default=2.0, alias="coupe_nationale")
+    european_cup: FrozenMap[float] = Field(default_factory=lambda: FrozenDict({"C1": 6.0, "C3": 3.0, "C4": 1.5}), alias="coupe_europe")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class WorldConfigReputation:
+    """Annual revision of club reputation; the defaults are what a save made before it was introduced receives."""
+    smoothing: float = Field(default=0.4, alias="lissage")
+    division_gain: float = Field(default=6.0, alias="gain_par_division")
+    rank_spread: float = Field(default=3.0, alias="amplitude_classement")
+    ceiling_margin: float = Field(default=0.0, alias="marge_plafond")
+    ceiling_min_level: int = Field(default=2, alias="niveau_min_plafond")
+    max_rise: float = Field(default=15.0, alias="hausse_max")
+    bounds: WorldConfigReputationBounds = Field(default_factory=WorldConfigReputationBounds, alias="bornes")
+    european_qualification: FrozenMap[float] = Field(default_factory=lambda: FrozenDict({"C1": 3.0, "C3": 1.5, "C4": 0.75}), alias="qualification_europe")
+    honours: WorldConfigReputationHonours = Field(default_factory=WorldConfigReputationHonours, alias="palmares")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -135,3 +163,4 @@ class WorldConfig:
     key_dates: WorldConfigKeyDates = Field(alias="dates_cles")
     match_rules: WorldConfigMatchRules = Field(alias="regles_match")
     europe: EuropeanRules = Field(alias="europe")
+    reputation: WorldConfigReputation = Field(default_factory=WorldConfigReputation, alias="reputation")

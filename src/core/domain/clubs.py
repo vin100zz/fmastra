@@ -50,6 +50,8 @@ class Club:
     division_id: int | None = None
     is_reserve: bool = False
     cup_nation: str | None = None
+    # Reputation at import, the size the yearly revision pulls back towards; None reads as the current reputation.
+    reputation_anchor: float | None = None
 
 
 @dataclass(slots=True)

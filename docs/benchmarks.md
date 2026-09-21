@@ -154,6 +154,15 @@ transferts entre régimes pour vérifier l'identité comptable des populations.
 - Transferts : arrivées définitives par club et fenêtre ; part depuis dormants
   parmi les arrivées ayant un club vendeur (les libres sont une ligne distincte).
 - Champions différents : par pays, sur les 25 saisons après stabilisation.
+- Réputation des clubs (`docs/reputation.md`), sur les clubs actifs, garde-fous larges
+  posés sur les premières saisons observées, à resserrer avec les 25 saisons : dérive de la
+  moyenne entre fenêtres (≤ 3 points), dérive relative de la dispersion (≤ 25 %), variation
+  annuelle moyenne en valeur absolue (0,5 à 3 points), plus grand saut annuel (≤ 20 points),
+  et part du top 10 des réputations conservée d'une saison à l'autre (≥ 0,6). Le classement
+  de la réputation ne doit pas suivre celui des championnats : une persistance basse, ou un
+  saut annuel élevé et répété, signale une inertie insuffisante. Les mesures viennent de
+  `reputation_row` (`benchmarks/world_suites.py`) ; les cibles sont dans `economie` de
+  `config/benchmarks.json`.
 
 La démographie et l'économie utilisent le monde complet, avec progression,
 contrats, minutes, états et événements nécessaires ; pas une substitution du

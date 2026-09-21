@@ -238,6 +238,12 @@ class BenchmarksConfigEconomy:
     dormant_incoming_share: BenchmarksConfigEconomyDormantIncomingShare = Field(alias="part_transferts_depuis_dormants")
     real_wage_drift: float = Field(alias="derive_masse_salariale_reelle_sur_horizon_max")
     negative_season_count: int = Field(alias="saisons_consecutives_solde_negatif_permanent")
+    reputation_mean_drift: float = Field(default=3.0, alias="derive_reputation_moyenne_max")
+    reputation_spread_drift: float = Field(default=0.25, alias="derive_reputation_dispersion_max")
+    min_reputation_change: float = Field(default=0.5, alias="variation_reputation_annuelle_min")
+    max_reputation_change: float = Field(default=3.0, alias="variation_reputation_annuelle_max")
+    max_reputation_jump: float = Field(default=20.0, alias="variation_reputation_saut_max")
+    min_top_ten_persistence: float = Field(default=0.6, alias="persistance_top10_reputation_min")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

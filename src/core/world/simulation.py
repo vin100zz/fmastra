@@ -16,6 +16,7 @@ from .finances import structural_income, annual_funding_factor
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .promotion import promotion_event
+from .reputation import reputation_events
 from .squads import complete_squads
 from .cups import season_fixtures, progress_cups
 from .cup_matches import cup_lineup, decide_winner
@@ -63,6 +64,8 @@ def annual_review(world: World) -> None:
     movements = promotion_event(world, tables)
     incoming = {move.club_id for move in movements.movements if move.source_id is None}
     apply(world, movements)
+    # After the movements and European places, before the budgets: income follows the revised reputation.
+    for event in reputation_events(world, tables, champions): apply(world, event)
     for event in retirement_events(world): apply(world, event)
     for club in world.clubs.values():
         rank = rankings.get(club.id)

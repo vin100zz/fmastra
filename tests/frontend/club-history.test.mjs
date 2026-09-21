@@ -66,3 +66,16 @@ test('leaders and transfers without data explain themselves',()=>{
  const html=seasonsHistory(seasonsData({total:0,items:[],leaders:{matches:[],goals:[]},transfers:{arrivals:[],departures:[]}}));
  assert.match(html,/Pas encore de statistiques/);assert.match(html,/Aucun transfert payant enregistré/);
 });
+
+test('the history tab shows the reputation held at each season opening and its move, with a dash when unknown',()=>{
+ const items=[{season:2026,rank:3,champion:false,competition:'Ligue 1',cup:null,europe:null,reputation:{value:88.4,change:-3.1}},
+  {season:2025,rank:1,champion:true,competition:'Ligue 1',cup:null,europe:null,reputation:{value:91.5,change:null}},
+  {season:2024,rank:2,champion:false,competition:'Ligue 1',cup:null,europe:null,reputation:null}];
+ const html=seasonsHistory(seasonsData({total:3,items}));
+ assert.ok(html.includes('RÉPUTATION'));
+ assert.match(html,/88,4 <span class="muted">\(−3,1\)<\/span>/);
+ assert.match(html,/91,5(?! <span)/);
+ assert.match(html,/data-value="88.4"/);assert.match(html,/data-value="91.5"/);
+ assert.doesNotMatch(html,/undefined|null/);
+ assert.match(seasonsHistory(seasonsData({total:1,items:[{...items[0],reputation:{value:60,change:2.4}}]})),/\(\+2,4\)/);
+});

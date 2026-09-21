@@ -6,7 +6,7 @@ from core.domain.matches import MatchResult, TRANSIENT_EVENT_KINDS
 from .finances import book_cash, book_daily_cash
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
-                     FinancePosted, BudgetRenewed, DivisionsChanged, SeasonOpened, DateAdvanced, OffersUpdated)
+                     FinancePosted, BudgetRenewed, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced, OffersUpdated)
 
 
 def apply(world: World, event: WorldEvent) -> bool:
@@ -79,6 +79,8 @@ def apply(world: World, event: WorldEvent) -> bool:
         if event.funding_factor is not None: club.funding_factor = event.funding_factor
         club.previous_rank = event.rank
         club.season_spent = club.season_sales = 0
+    elif isinstance(event, ReputationRevised):
+        world.clubs[event.club_id].reputation = event.reputation
     elif isinstance(event, DivisionsChanged):
         for movement in event.movements:
             if movement.source_id is not None:
@@ -112,6 +114,8 @@ def apply(world: World, event: WorldEvent) -> bool:
         for match in world.matches.values():
             if match.season < event.year and match.result and match.result.engine != "archived":
                 match.result = _archived(match.result)
+        for club in world.clubs.values():
+            world.reputation_history.setdefault(club.id, []).append((event.year, club.reputation))
         for player in world.players.values():
             world.trajectories.setdefault(player.id, []).append((event.year, player.rating))
             player.season_minutes = player.season_goals = player.season_assists = player.appearances = 0

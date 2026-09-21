@@ -17,6 +17,8 @@ def validate_world(world: World) -> None:
             raise ValueError("Invalid club or duplicate squad membership")
         if len(club.player_ids) > guard.max_squad:
             raise ValueError(f"{club.name}: overfull squad")
+        if not all(value is None or isfinite(value) and 0 <= value <= bounds.max for value in (club.reputation, club.reputation_anchor)):
+            raise ValueError(f"{club.name}: invalid reputation")
         wages = 0
         for player_id in club.player_ids:
             if player_id in seen or player_id not in world.players:

@@ -195,7 +195,7 @@ def test_recent_arrivals_are_not_approached_by_active_or_external_clubs(config, 
     assert not propose_transfers(world, Random(2))
 
 
-@pytest.mark.parametrize("version", [1, 2, 5, 6, 7, 8, 9, 10, 11])
+@pytest.mark.parametrize("version", [1, 2, 5, 6, 7, 8, 9, 10, 11, 12])
 def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, version):
     import gzip
     import hashlib
@@ -223,6 +223,8 @@ def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, v
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if version < introduced:
             for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            # A section introduced whole is absent from the older configuration, not empty.
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]
     if version < SCHEMA_VERSION:
         raw = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         payload["config_hash"] = hashlib.sha256(raw.encode()).hexdigest()
@@ -230,6 +232,9 @@ def test_stability_survives_loading_current_and_legacy_saves(config, tmp_path, v
     restored = store.load("recent")
     assert restored.config.management.market.arrival_stability_days == (180 if version < 6 else config.management.market.arrival_stability_days)
     assert restored.config.management.market.minimum_quality_gain == 3.0
+    assert restored.config.world.reputation == config.world.reputation
+    assert all(club.reputation_anchor == club.reputation for club in restored.clubs.values())
+    assert restored.reputation_history == {cid: [(restored.season, club.reputation)] for cid, club in restored.clubs.items()}
     assert restored.config.management.market.auction_days == 2
     assert (restored.config.management.market.club_outgrown_margin, restored.config.management.market.leave_threshold) == (10.0, 0.3)
     assert (restored.config.management.market.min_squad_depth, restored.config.management.market.max_squad_depth) == (16, 20)

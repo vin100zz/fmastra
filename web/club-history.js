@@ -1,4 +1,4 @@
-import {escape as e,date,season,playerLink,clubLink,card,stat,fact,sortableTable,pager,empty,money,leadersCards} from './ui.js';
+import {escape as e,date,season,playerLink,clubLink,card,stat,fact,sortableTable,pager,empty,money,leadersCards,number} from './ui.js';
 
 const euros=value=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
 
@@ -41,13 +41,16 @@ export function financialHistory(data){
 
 // A run in a cup is its furthest round, or the title; `level` (empty without a run) orders the column.
 const cupRun=run=>run?(run.winner?`✦ ${e(run.label)}`:e(run.label)):'—';
+// Reputation when the season opened, with its move from the season before.
+const signed=value=>`${value>0?'+':value<0?'−':''}${number(Math.abs(value))}`;
+const reputationRun=held=>held?`${number(held.value)}${held.change==null?'':` <span class="muted">(${signed(held.change)})</span>`}`:'—';
 const europeRun=run=>run?`<span title="${e(run.competition)}">${e(run.code)} · ${run.winner?`✦ ${e(run.label)}`:e(run.label)}</span>`:'—';
 
 export function seasonsHistory(data){
  const rank=row=>row.rank==null?'—':`${row.rank}${row.rank===1?'er':'e'}`;
- const seasons=card('Les saisons du club',sortableTable(['SAISON','CHAMPIONNAT','CLASSEMENT','COUPE NATIONALE','COUPE D’EUROPE','PALMARÈS'],data.items.map(row=>[
-  season(row.season),e(row.competition??'—'),rank(row),cupRun(row.cup),europeRun(row.europe),row.champion?'✦ Champion':'—',
- ]),data.items.map(row=>[row.season,row.competition??'',row.rank??'',row.cup?.level??'',row.europe?.level??'',row.champion?1:0]),{ascending:[2]})+(data.total>data.page_size?pager(data):''));
+ const seasons=card('Les saisons du club',sortableTable(['SAISON','CHAMPIONNAT','CLASSEMENT','RÉPUTATION','COUPE NATIONALE','COUPE D’EUROPE','PALMARÈS'],data.items.map(row=>[
+  season(row.season),e(row.competition??'—'),rank(row),reputationRun(row.reputation),cupRun(row.cup),europeRun(row.europe),row.champion?'✦ Champion':'—',
+ ]),data.items.map(row=>[row.season,row.competition??'',row.rank??'',row.reputation?.value??'',row.cup?.level??'',row.europe?.level??'',row.champion?1:0]),{ascending:[2]})+(data.total>data.page_size?pager(data):''));
  const transferCard=(title,rows,incoming)=>card(title,rows.length?transferRows(rows,incoming):empty('Aucun transfert payant enregistré.','Pas encore de transfert'));
  const {leaders,transfers}=data;
  return seasons+leadersCards(leaders,'Toutes compétitions et toutes saisons confondues, saison en cours incluse.')+'<p class="muted">Indemnités les plus élevées, hors départs libres.</p>'+
