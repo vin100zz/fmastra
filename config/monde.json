@@ -1,6 +1,6 @@
 {
   "version_config": 3,
-  "date_debut_partie": {"annee": 2025, "mois": 7, "jour": 1},
+  "date_debut_partie": {"annee": 2026, "mois": 7, "jour": 1},
   "_note": "division_id correspond a DivisionUID dans data/clubs.csv. Les groupes du niveau inferieur non simule forment une reserve commune. Le National compte 18 clubs dans les donnees fournies.",
   "competitions_simulees": [
     {"pays": "FRA", "nom": "Ligue 1", "niveau": 1, "nb_clubs": 18, "division_id": 16},
