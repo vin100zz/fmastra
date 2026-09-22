@@ -501,6 +501,11 @@ WORDS.update({"promotion_relegation": "promotion_relegation", "exposant_reputati
 WORDS.update({"derive_reputation_moyenne_max": "reputation_mean_drift", "derive_reputation_dispersion_max": "reputation_spread_drift",
               "variation_reputation_annuelle_min": "min_reputation_change", "variation_reputation_annuelle_max": "max_reputation_change",
               "variation_reputation_saut_max": "max_reputation_jump", "persistance_top10_reputation_min": "min_top_ten_persistence"})
+WORDS.update({"probabilite_club_national": "home_club_probability", "part_hors_tri": "unsorted_share",
+              "intensite_tri_centres": "sorting_intensity", "poids_reputation_tri": "sorting_reputation_weight",
+              "poids_age": "age_weights", "seuil_potentiel_elite": "elite_potential",
+              "exposant_nations_elite": "elite_nation_exponent", "part_plancher_nation": "nation_floor",
+              "noms_minimum_par_nation": "min_identities"})
 WORDS["stabilite_apres_arrivee_jours"] = "arrival_stability_days"
 WORDS["gain_qualite_min_recrutement"] = "minimum_quality_gain"
 WORDS.update({"profondeur_effectif_min": "min_squad_depth", "profondeur_effectif_max": "max_squad_depth",
@@ -552,7 +557,12 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "moteur_match.cartons.agressivite_max": 2.0,
             "moteur_match.cartons.agressivite_note_basse": 4.0,
             "moteur_match.cartons.agressivite_note_reference": 10.5,
-            "moteur_match.cartons.agressivite_note_haute": 17.0}
+            "moteur_match.cartons.agressivite_note_haute": 17.0,
+            "demographie.cohorte.probabilite_club_national": 0.9, "demographie.cohorte.part_hors_tri": 0.10,
+            "demographie.cohorte.intensite_tri_centres": 10.0, "demographie.cohorte.poids_reputation_tri": 0.0,
+            "demographie.generation.poids_age": (0.45, 0.35, 0.15, 0.05), "demographie.generation.seuil_potentiel_elite": 85.0,
+            "demographie.generation.exposant_nations_elite": 0.5, "demographie.generation.part_plancher_nation": 0.0002,
+            "demographie.generation.noms_minimum_par_nation": 20}
 
 
 def clean(value: object) -> object:

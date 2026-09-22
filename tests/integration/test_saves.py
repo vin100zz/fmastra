@@ -149,3 +149,32 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     store.save(migrated, "upgraded")
     assert store.load("upgraded").players == migrated.players
 
+
+
+@pytest.mark.slow
+def test_save_from_before_the_regen_targets_measures_them_on_the_players_the_source_supplied(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    world = import_world(ROOT / "data", config, 14)
+    assert any(player.source_potential_ability is None for player in world.players.values())  # Generated to complete squads.
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 13
+    for name in ("potential_targets", "external_potential_targets", "external_nation_targets"): del legacy["world"][name]
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 13:
+            for key in defaults: del rules[path[0]][path[1]][key]
+    legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    # The older configuration receives the placement rules, and the targets are what the import measured.
+    assert migrated.config == world.config
+    assert migrated.potential_targets == world.potential_targets
+    assert migrated.external_potential_targets == world.external_potential_targets
+    assert migrated.external_nation_targets == world.external_nation_targets
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").potential_targets == world.potential_targets

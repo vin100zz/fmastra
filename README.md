@@ -219,8 +219,9 @@ l'échelle interne de 100, ajoutée au niveau pondéré et plafonnée à 100.
 Les aptitudes `Position_*` déterminent le poste principal et l'aisance à chaque poste.
 
 Les notes `TrainingFacilities` et `YouthRecruitment` sont affichées sur 20 dans
-la liste et la fiche des clubs. YouthRecruitment améliore les chances d'obtenir
-des regens à fort potentiel ; TrainingFacilities reste informatif.
+la liste et la fiche des clubs. YouthRecruitment attire les meilleurs regens de l'année
+(les meilleurs choisissent d'abord les meilleurs centres, de préférence dans leur pays) ;
+TrainingFacilities reste informatif.
 Ces données sont lues à la création d'une nouvelle partie. Les anciennes
 sauvegardes restent chargeables et conservent leurs joueurs et installations.
 

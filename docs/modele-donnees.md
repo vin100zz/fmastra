@@ -102,13 +102,15 @@ l'affichage ; ce sont des couleurs hexadécimales (`#RRGGBB`), sans effet sur
 la simulation. Absents pour certains clubs (colonnes vides dans l'export,
 soit `HasHomeKitData=False`), ils restent alors None plutôt que devinés.
 
-Pour un regen rattaché à un club actif ou dormant, le potentiel est tiré autour de
-`moyenne_base + poids_reputation * reputation + poids_note_centre * YouthRecruitment * 5`,
-avec le bruit configuré. À réputation et effectif égaux, un meilleur recrutement
-augmente donc la probabilité de former de très bons jeunes sans garantir un résultat.
-Une donnée absente à l'import utilise un repli neutre de 50/100 ; les anciennes
-sauvegardes sans ce champ utilisent leur ancienne note de centre.
-Les cohortes restent bornées par la population et les places disponibles.
+Un regen est tiré sans club (nation, âge, classe de potentiel), puis placé : les meilleurs
+regens choisissent en premier, de préférence un club de leur pays et un centre à fort
+YouthRecruitment (voir `docs/progression-demographie.md`, sections Génération et
+Placement). À réputation et effectif égaux, un meilleur recrutement augmente donc la
+probabilité de former de très bons jeunes sans garantir un résultat, et il n'accroît pas
+le nombre total de regens. Une donnée absente à l'import utilise un repli neutre de
+50/100 ; les anciennes sauvegardes sans ce champ utilisent leur ancienne note de centre.
+Seul un club qui complète son propre effectif tire encore son potentiel autour de son
+académie. Les cohortes restent bornées par la population et les places disponibles.
 
 La réputation provient de `Reputation`, divisée par 100 pour l'échelle du moteur. Elle sert d'ancre à une
 révision annuelle (`docs/reputation.md`) ; `Club.reputation_anchor` la conserve, `World.reputation_ceilings`

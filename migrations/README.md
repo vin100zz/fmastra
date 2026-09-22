@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 12` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 14` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -70,6 +70,19 @@ ancienne, après vérification de l'empreinte d'origine. Au chargement, l'ancre 
 réputation courante (constante jusque-là), le plafond de chaque division la médiane des ancres de ses équipes
 premières d'après `source_division_id`, et l'historique reçoit un premier point à la saison en cours. La
 première révision a lieu au prochain 1er juillet.
+
+La v14 change la génération des regens (`docs/progression-demographie.md`) : cibles de potentiel par classe
+et cibles de nations propres aux dormants (`World.potential_targets`, `external_potential_targets`,
+`external_nation_targets`), et neuf paramètres de config (`demographie.cohorte` : `probabilite_club_national`,
+`part_hors_tri`, `intensite_tri_centres`, `poids_reputation_tri` ; `demographie.generation` : `poids_age`,
+`seuil_potentiel_elite`, `exposant_nations_elite`, `part_plancher_nation`, `noms_minimum_par_nation`). À la lecture
+d'une sauvegarde antérieure, la configuration embarquée reçoit leurs valeurs par défaut après vérification de
+l'empreinte d'origine ; ses classes (`buckets_niveau`) restent celles de la partie. Les trois cibles absentes sont
+mesurées au chargement sur les joueurs qui viennent encore de la source (`source_potential_ability` renseigné, ou tous
+les joueurs à défaut), pas sur les regens déjà générés : la queue de potentiel des regens passés n'entre pas dans les
+cibles. Les joueurs existants ne sont pas modifiés ; seuls les regens du prochain 1er juillet suivent les nouvelles
+règles. Les paramètres `potentiel_min`, `potentiel_amplitude`, `beta_*` et `candidats_max_par_classe` n'ont plus
+d'effet mais restent dans la configuration : supprimer une clé demanderait une migration dédiée.
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de

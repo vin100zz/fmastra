@@ -172,6 +172,14 @@ def validate_consistency(cfg: Config) -> None:
     require(bool(buckets) and buckets[0][0] == cfg.attributes.bounds.min and buckets[-1][1] == cfg.attributes.bounds.max, "Level classes must cover attribute bounds")
     require(all(len(pair) == 2 and pair[0] < pair[1] for pair in buckets), "Invalid level classes")
     require(all(left[1] == right[0] for left, right in zip(buckets, buckets[1:])), "Level classes overlap or leave gaps")
+    generation, cohort = cfg.demography.generation, cfg.demography.cohort
+    require(generation.min_age <= generation.max_age and len(generation.age_weights) == generation.max_age - generation.min_age + 1
+            and min(generation.age_weights) >= 0 and sum(generation.age_weights) > 0, "Generation needs one nonnegative weight per age")
+    require(0 <= cohort.home_club_probability <= 1 and 0 <= cohort.unsorted_share <= 1, "Cohort placement shares must be probabilities")
+    require(cohort.sorting_intensity >= 0 and cohort.sorting_reputation_weight >= 0, "Cohort sorting weights must be nonnegative")
+    require(0 < generation.elite_nation_exponent <= 1 and generation.nation_floor >= 0 and generation.min_identities >= 1,
+            "Invalid nation flattening, floor or name minimum")
+    require(cfg.attributes.bounds.min <= generation.elite_potential <= cfg.attributes.bounds.max, "Elite potential must lie within the attribute scale")
     require(cfg.world.season.tiebreakers == ("points", "difference_buts", "buts_pour", "confrontation_directe"), "Unsupported v1 tiebreaking order")
     require(cfg.import_settings.source_format.date_format in ("%d.%m.%Y", "%Y-%m-%d"), "Unsupported import date format")
     require(cfg.import_settings.squad_selection.criterion in ("note_globale_synthetisee", "note_globale_attributs"), "Unsupported squad selection")

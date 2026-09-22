@@ -59,8 +59,10 @@ réinjectant systématiquement tous les joueurs vendus.
 
 Conserver un comptage annuel distinct : actifs, dormants, libres, retraités.
 Les transferts entre ces populations ne créent pas de joueurs. Les cibles de
-niveaux et de nations sont établies à partir des proportions importées après
-sélection, puis stockées dans la partie ; les postes utilisent `cible_postes`.
+potentiel et de nations sont établies, séparément pour les clubs actifs et pour les
+dormants et libres, à partir des proportions importées après sélection, puis stockées
+dans la partie ; les postes utilisent `cible_postes`. `level_targets` (niveaux initiaux
+des actifs) n'est plus qu'une référence.
 Les ajustements vers ces cibles sont progressifs et seront calibrés : le
 premier CSV ne constitue pas nécessairement un régime démographique stable.
 
@@ -94,11 +96,21 @@ limite de la cohorte autorisée. Les créations ont toujours un ID neuf.
 
 ## Correction des distributions
 
-Pour chaque axe niveau, poste, nation, comparer parts observées et cibles.
-Corriger les poids de tirage par le rapport cible / observé élevé à `kappa`,
-puis renormaliser. Les classes de niveau sont semi-ouvertes, dernière borne
-incluse ; elles couvrent [1, 100]. Utiliser des effectifs cibles et un plancher
+Pour chaque axe (classe de **potentiel**, poste, nation), comparer parts observées et
+cibles. Corriger les poids de tirage par le rapport cible / observé élevé à `kappa`,
+puis renormaliser. Les classes (`buckets_niveau`) sont semi-ouvertes, dernière borne
+incluse ; elles couvrent [1, 100] et sont plus fines en haut (80-85, 85-90, 90-95,
+95-100) pour suivre la queue des stars. Utiliser des effectifs cibles et un plancher
 d'un individu au dénominateur pour les classes vides.
+
+Les cibles sont mesurées à l'import sur les joueurs que la source a fournis (pas sur
+ceux générés pour compléter un effectif), puis stockées dans la partie : part de chaque
+classe de potentiel et de chaque nation, **séparément** pour les clubs actifs
+(`potential_targets`, `nation_targets`) et pour les dormants et libres
+(`external_potential_targets`, `external_nation_targets`). Le régime dormant est plus
+faible et plus cosmopolite que l'actif : il ne se calibre pas sur lui. Une sauvegarde
+antérieure les mesure à son premier chargement, sur ses joueurs qui viennent encore de
+la source ; les regens déjà générés n'entrent pas dans la mesure.
 
 Ne pas fabriquer une table de tous les triplets niveau/poste/nation. Le contrôleur
 corrige les marges séparément ; ses courbes de réponse et limites se vérifient
@@ -108,18 +120,30 @@ une population qui dérive.
 
 ## Génération
 
-1. Nation tirée dans les poids de production dérivés de la population source,
-   avec correction démographique ; les identités proviennent des listes de noms.
-2. Poste tiré dans la cible corrigée. Pour chaque poste secondaire autorisé
-   dans la table configurée, tirage indépendant à la probabilité configurée,
-   puis affinité secondaire configurée. Aucune affinité totale gardien/champ.
-3. Âge dans la plage de génération, niveau cible issu du potentiel et du ratio
-   d'âge, avec bruit. Les gardiens ne sont pas évalués sur les mêmes poids que
-   les joueurs de champ.
-4. Pour un centre actif, potentiel normal autour de la moyenne réputation/centre,
-   avec l'écart-type configuré, borné à [1, 100]. Pour le régime externe,
-   potentiel issu de la loi bêta configurée. Ce sont deux modes exclusifs :
-   on ne superpose pas deux tirages de potentiel au même joueur.
+Les regens de l'année sont d'abord tirés **sans club**, puis placés (section suivante).
+
+1. Classe de potentiel tirée dans les poids corrigés du régime (actif ou dormant),
+   puis potentiel uniforme dans la classe. Les classes suivent la population adulte
+   du régime ; le niveau initial n'est plus conditionné à une classe. L'ancien
+   conditionnement par niveau initial, avec repli sur le meilleur de 100 candidats,
+   ne pouvait pas atteindre les classes adultes avec des joueurs de 16 à 19 ans : trois
+   regens sur quatre étaient les meilleurs de 100 tirages et la moitié avait un
+   potentiel d'au moins 85 (2 % dans les joueurs importés).
+2. Nation tirée dans les parts du régime, avec correction démographique. Un plancher
+   (`part_plancher_nation`) laisse une chance à toute nation dotée de noms. Pour un
+   potentiel d'au moins `seuil_potentiel_elite`, le mélange est aplati (part à la
+   puissance `exposant_nations_elite`) : une star sort plus souvent d'une petite
+   nation que son poids ne le suggère. Le nom vient des listes de la nation ; une
+   nation de moins de `noms_minimum_par_nation` identités emprunte le reste à
+   l'ensemble du monde, avec la probabilité manquante.
+3. Âge selon `poids_age` (16 ans 45 %, 17 ans 35 %, 18 ans 15 %, 19 ans 5 %), niveau
+   initial = potentiel × ratio d'âge × bruit, borné au potentiel : à 16 ans un regen
+   entre à 40 % de son potentiel, à 19 ans à 56 %. Les gardiens ne sont pas évalués sur
+   les mêmes poids que les joueurs de champ.
+4. Poste tiré dans la cible corrigée, sauf si le club est sous son minimum de gardiens.
+   Pour chaque poste secondaire autorisé dans la table configurée, tirage
+   indépendant à la probabilité configurée, puis affinité secondaire configurée.
+   Aucune affinité totale gardien/champ.
 5. Répartir les attributs selon le profil de poste ; recentrer pour que la note
    globale corresponde au niveau cible. Le plafonnement peut réduire l'écart
    effectif ; vérifier après génération niveau <= potentiel.
@@ -127,12 +151,36 @@ une population qui dérive.
    Fragilité et ego uniformes dans leurs bornes ; agressivité triangulaire (mode 1, le
    facteur neutre) dans ses bornes, comme la population importée.
 
-La correction de niveau agit sur les poids des classes de niveau initial,
-pas en multipliant les attributs après coup. Réaliser un tirage conditionnel
-par classes à l'aide d'un nombre borné de candidats configuré ; en l'absence
-d'un candidat dans la classe, choisir le plus proche et journaliser ce repli.
-Le calibrage doit suivre les distributions de niveau initial **et** de
-potentiel ; elles ne sont pas interchangeables.
+Un club qui complète son effectif (promu, sous ses minimums) tire ses jeunes autour de
+sa propre académie : potentiel normal autour de `moyenne_base + poids_reputation *
+reputation + poids_note_centre * YouthRecruitment * 5`, avec l'écart-type configuré. Ce
+tirage ne sert qu'à cela ; la cohorte annuelle ne l'utilise plus. `potentiel_min`,
+`potentiel_amplitude`, `beta_*` et `candidats_max_par_classe` n'ont plus d'effet et
+restent dans la configuration pour la lecture des anciennes sauvegardes.
+
+## Placement des regens
+
+Le club vient après la nation. Les meilleurs regens choisissent en premier.
+
+- **Clubs actifs** : les places sont réparties comme la cohorte l'a toujours été
+  (places et budget disponibles, `allocation_max_par_club` par club, clubs sous leur
+  minimum d'abord, place de gardien imposée à un club qui en manque). Les regens sont
+  ensuite classés par potentiel et se répartissent ces places.
+- **Dormants et libres** : pas de places tirées à l'avance. Chaque regen choisit son
+  club parmi ceux qui ont encore de la place (30 moins l'effectif, et la masse salariale
+  disponible). Sans place nulle part, il reste libre.
+- **Pays** : avec la probabilité `probabilite_club_national` (0,9), le regen ne considère
+  que les clubs de sa nation s'il en reste ; sinon tous. C'est un plafond, pas une
+  garantie : une nation sans club actif (Brésil, Pays-Bas…) envoie ses regens actifs
+  dans n'importe quel club, comme un jeune étranger recruté, et des places locales
+  épuisées ou concentrées font déborder.
+- **Centres** : le poids d'un club vaut `exp(intensite_tri_centres * rang * qualité)`, où le
+  rang va de 1 (meilleur regen) à 0 et la qualité, de 0 à 1, vient de YouthRecruitment
+  (et de la réputation avec `poids_reputation_tri`, nul par défaut). Le meilleur regen est
+  attiré fortement par les meilleurs centres, le plus faible tire au hasard. Une part
+  `part_hors_tri` des regens ignore les centres : un futur Ballon d'Or peut naître dans
+  un petit club. L'effet du tri se lit dans un même pays, la nationalité limitant les
+  clubs disponibles.
 
 ## Sorties
 

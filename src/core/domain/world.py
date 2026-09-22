@@ -86,8 +86,13 @@ class World:
     trajectories: dict[int, list[tuple[int, float]]] = field(default_factory=dict)
     retired: dict[int, str] = field(default_factory=dict)
     nation_targets: dict[str, float] = field(default_factory=dict)
-    level_targets: tuple[float, ...] = ()
+    level_targets: tuple[float, ...] = ()  # Initial-level shares of the active players at import; only a reference since regens follow potential_targets.
     external_target: int = 0
+    # What regens must look like, measured on the players the source supplied: potential shares per class of
+    # `cohorte.buckets_niveau` for the clubs playing, then the same for the dormant and free players and their nations.
+    potential_targets: tuple[float, ...] = ()
+    external_potential_targets: tuple[float, ...] = ()
+    external_nation_targets: dict[str, float] = field(default_factory=dict)
     import_summary: dict[str, int] = field(default_factory=dict)
     last_annual_review: int = 0
     nation_names: dict[str, str] = field(default_factory=dict)

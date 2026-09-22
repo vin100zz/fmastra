@@ -48,7 +48,6 @@ class PlayerReleased:
 @dataclass(frozen=True, slots=True)
 class PlayerGenerated:
     player: Player
-    class_fallback: bool = False
 
 
 @dataclass(frozen=True, slots=True)

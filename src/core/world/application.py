@@ -64,8 +64,6 @@ def apply(world: World, event: WorldEvent) -> bool:
                                         market_value(player, world), player.contract.end, player.fitness, player.potential)
             world.transfers.append(TransferRecord(world.date, player.id, None, player.club_id, 0, "academy", world.season,
                                                  born=player.born, snapshot=snapshot))
-        if event.class_fallback:
-            world.journal.append(JournalEntry(world.date, "generation_fallback", f"{player.name} : classe de niveau initial approchée après échantillonnage borné.", player.club_id, player.id))
         if player.club_id and world.clubs[player.club_id].competition_id:
             world.journal.append(JournalEntry(world.date, "academy", f"{player.name} rejoint le centre de formation.", player.club_id, player.id))
     elif isinstance(event, FinancePosted):

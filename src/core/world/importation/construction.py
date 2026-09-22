@@ -192,4 +192,6 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     world.finance_history_since = world.movement_history_since = world.date
     from core.world.reputation import initialize_reputation
     initialize_reputation(world)
+    from core.world.demography import initialize_targets
+    initialize_targets(world)
     return world

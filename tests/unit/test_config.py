@@ -204,3 +204,33 @@ def test_incoherent_reputation_rules_are_rejected(config, domain, section, key, 
     raw[domain][section][key] = value
     with pytest.raises(ConfigError):
         decode_config(raw)
+
+
+def test_regen_rules_default_for_configurations_made_before_them(config):
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 14]
+    assert {path for path, _ in added} == {("demographie", "cohorte"), ("demographie", "generation")}
+    raw = config_payload(config)
+    for (domain, section), defaults in added:
+        for key in defaults: del raw[domain][section][key]
+    older = decode_config(raw)
+    # The model defaults, the save migration and the shipped configuration describe the same rules.
+    assert older == config
+    restored = config_payload(older)
+    for (domain, section), defaults in added:
+        assert {key: restored[domain][section][key] for key in defaults} == defaults
+
+
+@pytest.mark.parametrize("section,key,value", [
+    ("cohorte", "probabilite_club_national", 1.5), ("cohorte", "part_hors_tri", -0.1),
+    ("cohorte", "intensite_tri_centres", -1), ("cohorte", "poids_reputation_tri", -0.5),
+    ("generation", "poids_age", [1.0, 1.0]), ("generation", "poids_age", [0.0, 0.0, 0.0, 0.0]),
+    ("generation", "poids_age", [1.0, -0.5, 1.0, 1.0]), ("generation", "exposant_nations_elite", 0),
+    ("generation", "exposant_nations_elite", 1.5), ("generation", "part_plancher_nation", -0.001),
+    ("generation", "noms_minimum_par_nation", 0), ("generation", "seuil_potentiel_elite", 150.0),
+])
+def test_incoherent_regen_rules_are_rejected(config, section, key, value):
+    raw = config_payload(config)
+    raw["demographie"][section][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)

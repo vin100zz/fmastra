@@ -104,6 +104,8 @@ def test_recruitment_improves_intakes_but_training_is_informational(imported):
     from statistics import mean
     from core.world.demography import draw_level, generate_player
     from core.domain.players import Position
+    # A club completing its own squad still draws its youngsters around its academy; the yearly cohort places
+    # regens by academy instead (see test_regens.py).
     for competition in (16, None):
         club = replace(imported.clubs[868], competition_id=competition, youth_recruitment=1)
         strong = replace(club, youth_recruitment=20)
@@ -111,9 +113,8 @@ def test_recruitment_improves_intakes_but_training_is_informational(imported):
         high = [draw_level(imported, strong, Random(seed))[1] for seed in range(500)]
         assert mean(high) > mean(low) + 15
         assert sum(value >= 80 for value in high) > sum(value >= 80 for value in low)
-        # Check the final bucket-constrained generation too, not only its first draw.
-        weak = [generate_player(imported, 999, club, Position.STRIKER, 'FRA', Random(seed), (40, 60)).potential for seed in range(100)]
-        best = [generate_player(imported, 999, strong, Position.STRIKER, 'FRA', Random(seed), (40, 60)).potential for seed in range(100)]
+        weak = [generate_player(imported, 999, club, Position.STRIKER, 'FRA', Random(seed)).potential for seed in range(100)]
+        best = [generate_player(imported, 999, strong, Position.STRIKER, 'FRA', Random(seed)).potential for seed in range(100)]
         assert mean(best) > mean(weak)
         assert draw_level(imported, strong, Random(12)) == draw_level(imported, replace(strong, training_facilities=1), Random(12))
 

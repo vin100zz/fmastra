@@ -66,7 +66,12 @@ class DemographyConfigCohort:
     distribution: str = Field(alias="distribution")
     excess_policy: str = Field(alias="excedent_cohorte")
     external_policy: str = Field(alias="dormants_et_libres")
-    max_class_candidates: int = Field(alias="candidats_max_par_classe")
+    max_class_candidates: int = Field(alias="candidats_max_par_classe")  # No effect since classes are drawn directly.
+    # Placement of regens, whose defaults are what a save made before it existed receives.
+    home_club_probability: float = Field(default=0.9, alias="probabilite_club_national")
+    unsorted_share: float = Field(default=0.1, alias="part_hors_tri")
+    sorting_intensity: float = Field(default=10.0, alias="intensite_tri_centres")
+    sorting_reputation_weight: float = Field(default=0.0, alias="poids_reputation_tri")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -88,6 +93,12 @@ class DemographyConfigGeneration:
     level_noise: float = Field(alias="bruit_niveau_ecart_type")
     min_age: int = Field(alias="age_min")
     max_age: int = Field(alias="age_max")
+    # One weight per age from min_age to max_age; an older save receives these, its ages were drawn uniformly.
+    age_weights: tuple[float, ...] = Field(default=(0.45, 0.35, 0.15, 0.05), alias="poids_age")
+    elite_potential: float = Field(default=85.0, alias="seuil_potentiel_elite")
+    elite_nation_exponent: float = Field(default=0.5, alias="exposant_nations_elite")
+    nation_floor: float = Field(default=0.0002, alias="part_plancher_nation")
+    min_identities: int = Field(default=20, alias="noms_minimum_par_nation")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

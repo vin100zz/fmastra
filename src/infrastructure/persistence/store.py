@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 from core.domain.world import World
+from core.world.demography import initialize_targets
 from core.world.reputation import initialize_reputation
 from core.world.validation import validate_world
 from infrastructure.config.loader import config_fingerprint, config_payload
@@ -22,10 +23,16 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Regens placed by academy and country: an older save is given the rules its next cohort is drawn with.
+    (14, ("demographie", "cohorte"), {
+         "probabilite_club_national": 0.9, "part_hors_tri": 0.10, "intensite_tri_centres": 10.0, "poids_reputation_tri": 0.0}),
+    (14, ("demographie", "generation"), {
+         "poids_age": [0.45, 0.35, 0.15, 0.05], "seuil_potentiel_elite": 85.0, "exposant_nations_elite": 0.5,
+         "part_plancher_nation": 0.0002, "noms_minimum_par_nation": 20}),
     (13, ("benchmarks", "economie"), {
          "derive_reputation_moyenne_max": 3.0, "derive_reputation_dispersion_max": 0.25, "variation_reputation_annuelle_min": 0.5,
          "variation_reputation_annuelle_max": 3.0, "variation_reputation_saut_max": 20.0, "persistance_top10_reputation_min": 0.6}),
@@ -130,6 +137,7 @@ class SaveStore:
             validate_consistency(world.config)
             upgrade_history(world)
             initialize_reputation(world)
+            initialize_targets(world)
             recover_birthdates(world, self.directory.parent / 'data' / 'players.csv')
             validate_world(world)
             return world
