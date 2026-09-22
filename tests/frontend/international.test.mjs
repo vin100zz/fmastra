@@ -17,18 +17,47 @@ test('international tables explain normalized seconds and escape nation labels',
  assert.match(editionContent(edition,'finals'),/fin des qualifications/);
 });
 
-test('nation list and camp render sortable tables with raw values',async()=>{
+const navigation={scope:{name:'Europe'},index:0,total:2,items:[{id:-1001,name:'France <test>'},{id:-1002,name:'Espagne'}],previous:null,next:{id:-1002,name:'Espagne'}};
+const editions=[{year:2028,name:'Euro 2028',qualification:{label:'Qualifié',winner:false},finals:{label:'Vainqueur',winner:true}}];
+const leaders={matches:[{player_id:5,player:'Cap <test>',matches:10,goals:2}],goals:[{player_id:6,player:'Buteur',matches:8,goals:6}]};
+
+test('nation page shows a big flag, prev/next navigation, camp status and drops the eligible-players block',async()=>{
  const previous=globalThis.fetch;
- globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/nations/')?{
-  ...nation,camp:{start:'2026-08-31',end:'2026-09-09'},squad:[{id:-1,name:'Renfort',position:'GB',rating:60,fitness:.9,caps:0,goals:0}],
-  candidates:[],matches:[],records:[]
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/navigation')?navigation:url.includes('/nations/')?{
+  ...nation,camp:{start:'2026-08-31',end:'2026-09-09',upcoming:true},squad:[{id:-1,name:'Renfort',position:'GB',rating:60,fitness:.9,caps:0,goals:0}],
+  matches:[],editions,leaders
  }:{enabled:true,nations:[nation],editions:[{year:2028,name:'Euro 2028',winner:null}]}});
  try{
   assert.match(await internationalScreen(),/data-sortable/);
   const html=await internationalScreen('nation','-1001');
+  assert.match(html,/class="crest"/);
+  assert.match(html,/entity-nav/);
+  assert.match(html,/entity-step next/);
   assert.match(html,/Rassemblement/);
   assert.match(html,/temporary-player/);
   assert.match(html,/data-value="60"/);
+  assert.doesNotMatch(html,/Joueurs éligibles/);
+  assert.match(html,/>Effectif<\/a>/);
+  assert.match(html,/>Calendrier<\/a>/);
+  assert.match(html,/>Historique<\/a>/);
+  const history=await internationalScreen('nation','-1001','history');
+  assert.match(history,/Bilan par compétition/);
+  assert.match(history,/Qualifié/);
+  assert.match(history,/✦ Vainqueur/);
+  assert.match(history,/Cap &lt;test&gt;/);
+  assert.match(history,/Buteur/);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('a nation without a current camp falls back to its last one',async()=>{
+ const previous=globalThis.fetch;
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/navigation')?navigation:url.includes('/nations/')?{
+  ...nation,camp:{start:'2026-08-31',end:'2026-09-09',upcoming:false},squad:[{id:-1,name:'Renfort',position:'GB',rating:60,fitness:.9,caps:0,goals:0}],
+  matches:[],editions:[],leaders:{matches:[],goals:[]}
+ }:{}});
+ try{
+  const html=await internationalScreen('nation','-1001');
+  assert.match(html,/Dernier rassemblement/);
  }finally{globalThis.fetch=previous;}
 });
 

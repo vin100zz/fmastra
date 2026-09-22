@@ -40,6 +40,15 @@ def player_navigation(world: World, player_id: int) -> dict | None:
                       player_id, {"kind": "club", "id": club.id, "name": club.name})
 
 
+def nation_navigation(world: World, nation_id: int) -> dict:
+    """The nations of the same confederation, alphabetically."""
+    team = world.international.nations[nation_id]
+    members = [item for item in world.international.nations.values() if item.federation == team.federation]
+    members.sort(key=lambda item: (v.normalized(item.name), item.id))
+    return navigation([{"id": item.id, "name": item.name} for item in members], nation_id,
+                      {"kind": "federation", "name": team.federation})
+
+
 def competition_navigation(world: World, competition_id: int) -> dict:
     """The competitions of the same country: divisions from the top down, then the cup."""
     competition = world.competitions[competition_id]

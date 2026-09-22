@@ -27,6 +27,12 @@ export function clubNavigation(nav,section){
   label:club=>twins.has(club.name)?`${club.name} (${club.squad} joueur${club.squad>1?'s':''})`:club.name});
 }
 
+// The nations of the same confederation. Moving keeps the open tab.
+export function nationNavigation(nav,tab) {
+ return nav?neighbours(nav,{href:nation=>`#/international/nation/${nation.id}${tab?`/${tab}`:''}`,scope:`Confédération · ${nav.scope.name}`,
+  listLabel:`Choisir une nation · ${nav.scope.name}`}):'';
+}
+
 // The squad of the player's club, goalkeepers first, each with the colour of its position.
 export function playerNavigation(nav){
  return nav?neighbours(nav,{href:player=>`#/player/${player.id}`,scope:`Effectif · ${nav.scope.name}`,listLabel:`Choisir un joueur de ${nav.scope.name}`,

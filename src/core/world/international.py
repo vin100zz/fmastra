@@ -136,6 +136,7 @@ def _release_camps(world):
         future = any(m.result is None and nid in (m.home_id, m.away_id)
                      for m in edition_matches(world, edition, 11))
         if world.date > camp.end or (camp.finals and camp.first_match_played and not future):
+            state.last_camps[nid] = camp
             del state.camps[nid]
     protected = {pid for camp in state.camps.values() for pid in camp.player_ids}
     from .application import apply

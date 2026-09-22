@@ -75,6 +75,8 @@ class InternationalState:
     temporary: dict[int, Player] = field(default_factory=dict)
     temporary_editions: dict[int, int] = field(default_factory=dict)
     camps: dict[int, NationalCamp] = field(default_factory=dict)
+    # The most recent camp released for each nation, kept after `camps` drops it so the squad stays visible between windows.
+    last_camps: dict[int, NationalCamp] = field(default_factory=dict)
     records: dict[str, InternationalRecord] = field(default_factory=dict)
     retired_careers: dict[int, InternationalCareer] = field(default_factory=dict)
     deferred_retirements: list[int] = field(default_factory=list)

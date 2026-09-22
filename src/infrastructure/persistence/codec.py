@@ -84,6 +84,8 @@ def decode(value: Any) -> Any:
             value["fields"].setdefault("position_ratings", {"$map": []})
         if cls is World and "offers" not in value["fields"]:
             value["fields"]["offers"] = {"$map": []}
+        if cls is InternationalState:
+            value["fields"].setdefault("last_camps", {"$map": []})
         if cls is World:
             value["fields"].setdefault("international", encode(InternationalState()))
             for name, default in (("finance_history", {"$map": []}), ("finance_history_since", None), ("movement_history_since", None)):
