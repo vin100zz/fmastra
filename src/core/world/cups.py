@@ -57,7 +57,7 @@ def season_fixtures(world: World, season: int) -> list[Match]:
     from .europe import league_fixtures
     from .europe_calendar import competition_dates
     cups = {c.nation: c for c in world.competitions.values() if c.kind == "cup"}
-    european_dates = competition_dates(world, season) if world.european_quotas else []
+    european_dates = competition_dates(world, season) if world.european_quota_ranges else []
     for cup in cups.values():
         cup.club_ids = participants(world, cup, season)
         cup.round_dates = cup_dates(world, season)

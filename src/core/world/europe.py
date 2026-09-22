@@ -19,17 +19,37 @@ def association(world: World, club_id: int) -> str:
 
 
 def initialize_europe(world: World) -> None:
-    if world.european_quotas:
+    if world.european_quota_ranges:
         for cid, code, name in COMPETITIONS:
             world.competitions[cid] = Competition(cid, name, "EUR", 0, [], kind="europe", code=code)
 
 
+def resolve_european_quotas(world: World, season: int) -> dict[str, tuple[int, int, int]]:
+    """Draw this season's actual quota within each nation's range, keeping each competition's total fixed."""
+    ranges = world.european_quota_ranges
+    if not ranges:
+        return {}
+    rng = stream(world.seed, "europe-quota-allocation", season)
+    resolved: dict[str, list[int]] = {nation: [] for nation in ranges}
+    for index in range(3):
+        counts = {nation: bounds[index][0] for nation, bounds in ranges.items()}
+        pool = [nation for nation, bounds in sorted(ranges.items())
+                for _ in range(bounds[index][1] - bounds[index][0])]
+        rng.shuffle(pool)
+        for nation in pool[:world.config.world.europe.club_count - sum(counts.values())]:
+            counts[nation] += 1
+        for nation in resolved:
+            resolved[nation].append(counts[nation])
+    return {nation: tuple(values) for nation, values in resolved.items()}
+
+
 def qualify_europe(world: World, season: int, tables: dict[int, list[Standing]] | None = None) -> None:
     """Allocate C1, cup + league C3, then C4, before domestic promotions occur."""
-    if not world.european_quotas:
+    if not world.european_quota_ranges:
         return
+    quotas_by_nation = resolve_european_quotas(world, season)
     selected = [[], [], []]
-    for nation, quotas in sorted(world.european_quotas.items()):
+    for nation, quotas in sorted(quotas_by_nation.items()):
         eligible = sorted(cid for cid, club in world.clubs.items()
                           if not club.is_reserve and association(world, cid) == nation)
         if len(eligible) < sum(quotas):

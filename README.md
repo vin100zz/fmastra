@@ -206,7 +206,8 @@ au but, sans règle des buts à l’extérieur.
 saisons : une rangée pour les trois coupes d’Europe, puis une rangée par pays avec ses
 divisions et sa coupe nationale.
 
-Les quotas viennent de `data/qualifs_europe.csv`. La première saison utilise un
+Les quotas viennent de `data/qualifs_europe.csv`, en plages `min-max` par pays
+tirées au sort chaque saison à total constant (36 places par coupe). La première saison utilise un
 tirage pondéré par réputation ; ensuite les pays simulés qualifient leurs clubs
 par le classement de D1 et la coupe nationale. La place du vainqueur de coupe
 est incluse dans le quota C3. Les tenants européens ne disposent d’aucune place

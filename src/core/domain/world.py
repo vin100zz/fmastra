@@ -104,7 +104,8 @@ class World:
     finance_history: dict[int, dict[int, FinanceSeason]] = field(default_factory=dict)
     finance_history_since: Date | None = None
     movement_history_since: Date | None = None
-    european_quotas: dict[str, tuple[int, int, int]] = field(default_factory=dict)
+    # Per-nation (min, max) qualification range for C1, C3, C4; the actual season quota is drawn within these bounds.
+    european_quota_ranges: dict[str, tuple[tuple[int, int], tuple[int, int], tuple[int, int]]] = field(default_factory=dict)
     # Median import reputation of each division: nation -> level -> value. Frozen at import, it caps what a club can hold below the top flight.
     reputation_ceilings: dict[str, dict[int, float]] = field(default_factory=dict)
     # Reputation held when each season opened: club -> [(season, reputation)], oldest first.

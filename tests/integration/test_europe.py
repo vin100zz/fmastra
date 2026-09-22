@@ -14,7 +14,7 @@ from core.world.calendar import Standing, standings
 from core.world.cup_matches import cup_lineup
 from core.world.cups import season_fixtures
 from core.world.europe import (COMPETITIONS, aggregate_score, association, decide_european_winner,
-                               league_fixtures, progress_europe, qualify_europe)
+                               league_fixtures, progress_europe, qualify_europe, resolve_european_quotas)
 from core.world.simulation import advance_day, target_date
 from core.world.validation import validate_world
 from infrastructure.importation.loader import import_world
@@ -50,13 +50,14 @@ def complete_round(world, number):
 
 def test_quota_pots_foreign_opponents_and_home_balance(imported):
     seen = set()
+    resolved = resolve_european_quotas(imported, imported.season)
     for index, (cid, _, _) in enumerate(COMPETITIONS):
         cup = imported.competitions[cid]
         assert len(cup.club_ids) == 36 and not seen & set(cup.club_ids)
         seen.update(cup.club_ids)
         assert all(not imported.clubs[club].is_reserve for club in cup.club_ids)
         assert Counter(association(imported, club) for club in cup.club_ids) == {
-            nation: counts[index] for nation, counts in imported.european_quotas.items() if counts[index]}
+            nation: counts[index] for nation, counts in resolved.items() if counts[index]}
         ordered = sorted(cup.club_ids, key=lambda club: (-imported.clubs[club].reputation, club))
         pots = {club: i // 9 for i, club in enumerate(ordered)}
         meetings, venues = defaultdict(list), defaultdict(Counter)
@@ -121,13 +122,15 @@ def test_domestic_cup_slot_reallocation_and_lower_division_winner(imported, winn
     world.champions[french_cup.id] = [(2025, winner)]
     # Continental title holders have no extra qualification entitlement.
     world.champions[-101] = [(2025, ranked[-1])]
+    c1n, c3n, c4n = resolve_european_quotas(world, 2026)["FRA"]
     qualify_europe(world, 2026, tables)
     selected = [{cid for cid in world.competitions[c].club_ids if association(world, cid) == "FRA"}
                 for c in (-101, -103, -104)]
-    assert selected[0] == set(ranked[:3])
-    c3 = {ranked[3], ranked[4]} if winner in selected[0] else {winner, next(cid for cid in ranked if cid not in selected[0] and cid != winner)}
+    assert selected[0] == set(ranked[:c1n])
+    remaining = [cid for cid in ranked if cid not in selected[0]]
+    c3 = set(remaining[:c3n]) if winner in selected[0] else {winner, *[cid for cid in remaining if cid != winner][:c3n - 1]}
     assert selected[1] == c3
-    assert selected[2] == {next(cid for cid in ranked if cid not in selected[0] | c3)}
+    assert selected[2] == set([cid for cid in remaining if cid not in c3][:c4n])
     assert ranked[-1] not in set.union(*selected)
 
 
@@ -224,4 +227,4 @@ def test_live_european_matchday_temporary_players_and_save(imported, tmp_path):
     store = SaveStore(tmp_path)
     store.save(world, "matchday")
     restored = store.load("matchday")
-    assert restored.matches == world.matches and restored.european_quotas == world.european_quotas
+    assert restored.matches == world.matches and restored.european_quota_ranges == world.european_quota_ranges

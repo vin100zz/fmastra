@@ -9,11 +9,17 @@ La migration des parties antérieures à cette fonctionnalité n’est pas prév
 ## Qualifications
 
 Le fichier UTF-8 `data/qualifs_europe.csv` possède les colonnes `Pays;C1;C3;C4`.
-Une cellule vide correspond à zéro place. Chaque colonne totalise 36 places.
-Le lecteur traduit les codes des associations vers les codes internes, notamment
-SLO/SVN et les codes internes de Chypre, Arménie, Azerbaïdjan, Moldavie et Lettonie.
-Les équipes réserves sont exclues. L’association du championnat prime sur la
-nationalité du club, comme pour les coupes nationales.
+Une cellule vide correspond à zéro place. Une cellule peut être un nombre fixe
+(`2`) ou une plage `min-max` (`1-2`) : chaque saison, une place tirée au sort dans
+cette plage est attribuée au pays, dans la limite de ses bornes. Le tirage est
+reproductible (dépend de la graine de la partie et de la saison) et garantit que
+chaque colonne totalise toujours exactement 36 places, quelle que soit la
+répartition retenue cette saison-là. Le lecteur traduit les codes des
+associations vers les codes internes, notamment SLO/SVN et les codes internes de
+Chypre, Arménie, Azerbaïdjan, Moldavie, Lettonie, Kosovo, Kazakhstan, les îles
+Féroé, Malte, Lituanie, Liechtenstein, Estonie, Luxembourg, Géorgie, Biélorussie
+et Andorre. Les équipes réserves sont exclues. L’association du championnat
+prime sur la nationalité du club, comme pour les coupes nationales.
 
 La première saison, les clubs des pays simulés sont tirés parmi leurs équipes
 premières de D1. Dans les autres pays, le vivier contient les équipes premières
@@ -29,9 +35,10 @@ sur les classements achevés, avant les promotions et relégations :
    Les places C3 restantes reviennent aux meilleurs clubs de D1 non encore retenus.
 3. Les meilleurs clubs de D1 encore disponibles remplissent le quota C4.
 
-Ainsi, pour la France (3/2/1), un vainqueur de coupe classé huitième donne une
-qualification C3 au quatrième et à lui-même, puis une qualification C4 au cinquième.
-S’il est déjà en C1, les quatrième et cinquième vont en C3 et le sixième en C4.
+Ainsi, pour un pays qui qualifie 3 clubs en C1 et 2 en C3 cette saison-là, un
+vainqueur de coupe classé huitième donne une qualification C3 au quatrième et à
+lui-même, puis une qualification C4 au cinquième. S’il est déjà en C1, les
+quatrième et cinquième vont en C3 et le sixième en C4.
 Un vainqueur de coupe de division inférieure conserve son droit à la C3, même
 s’il quitte les championnats simulés. Il n’existe aucun doublon entre compétitions,
 aucune qualification automatique des tenants européens et aucun reversement.

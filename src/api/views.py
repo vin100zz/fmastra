@@ -114,7 +114,11 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
                  "movement": "direct" if index < rules.direct_places else
                              "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
                 for index, row in enumerate(standings(competition, matches, world.config))]
-    european_places = sum(world.european_quotas.get(competition.nation, (0, 0, 0))) if competition.level == 1 else 0
+    european_places = 0
+    if competition.level == 1:
+        from core.world.europe import resolve_european_quotas
+        quotas = resolve_european_quotas(world, season if season is not None else world.season)
+        european_places = sum(quotas.get(competition.nation, (0, 0, 0)))
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
              "movement": ("champion" if competition.level == 1 and index == 0 else
                           "europe" if competition.level == 1 and index < european_places else
