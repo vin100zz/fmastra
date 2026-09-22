@@ -50,6 +50,8 @@ def squad_sort_key(world, column: str):
 
 def router(service: GameService) -> APIRouter:
     api = APIRouter(prefix="/api")
+    from .international import international_router
+    api.include_router(international_router(service))
 
     @api.get("/monde/etat")
     def state() -> dict:
@@ -300,7 +302,14 @@ def router(service: GameService) -> APIRouter:
     @api.get("/joueurs/{player_id}")
     def player(player_id: int) -> dict:
         with service.reading() as world:
-            if player_id in world.retired: return {"id": player_id, "name": world.retired[player_id], "retired": True}
+            if player_id in world.retired:
+                result = {"id": player_id, "name": world.retired[player_id], "retired": True}
+                career = world.international.retired_careers.get(player_id)
+                if career:
+                    result.update(asdict(career))
+                    result["national_team_id"] = next((n.id for n in world.international.nations.values() if n.code == career.national_team), None)
+                    result["international_records"] = [asdict(row) for row in world.international.records.values() if row.player_id == player_id]
+                return result
             return v.player_detail(world, world.players[player_id])
 
     @api.get("/joueurs/{player_id}/navigation")
@@ -316,6 +325,8 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/matches/{match_id}")
     def match(match_id: int) -> dict:
-        with service.reading() as world: return v.match_detail(world, world.matches[match_id])
+        with service.reading() as world:
+            match = world.matches.get(match_id) or world.international.matches[match_id]
+            return v.match_detail(world, match)
 
     return api

@@ -34,10 +34,13 @@ def market_window(world: World) -> str | None:
 def target_date(world: World, until: str) -> Date:
     if until == "jour": return world.date.add_days(1)
     if until == "journee":
-        dates = [match.date for match in world.matches.values() if match.result is None and match.date > world.date]
-        if dates: return min(dates)
+        dates = [match.date for match in (*world.matches.values(), *world.international.matches.values())
+                 if match.result is None and match.date > world.date]
         opening = world.config.world.season
-        return Date(world.season + 1, opening.start_month, opening.start_day)
+        # Next season's club fixtures do not exist until July. A known qualifier in
+        # September must not make "next match" jump over the clubs' August restart.
+        next_opening = Date(world.season + 1, opening.start_month, opening.start_day)
+        return min([*dates, next_opening])
     if until == "fin_mercato":
         dates = []
         for year in (world.date.year, world.date.year + 1):
@@ -96,6 +99,8 @@ def advance_day(world: World) -> None:
     apply(world, DateAdvanced(world.date.add_days(1)))
     for event in expiry_events(world): apply(world, event)
     for event in daily_player_events(world): apply(world, event)
+    from .international import prepare_international_day, play_international_day
+    prepare_international_day(world)
     if world.date.day == 1:
         for event in monthly_player_events(world): apply(world, event)
     review = cfg.world.key_dates.population_review
@@ -132,6 +137,7 @@ def advance_day(world: World) -> None:
         apply(world, match_event(world, match, result))
     progress_cups(world)
     progress_europe(world)
+    play_international_day(world)
     start = Date(world.season, review.month, review.day)
     days = start.add_years(1).ordinal() - start.ordinal()
     costs = cfg.management.budgets.accounting.other_cost_share

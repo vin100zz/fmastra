@@ -97,7 +97,9 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
             Attributes(tuple(note(row, *ATTRIBUTE_COLUMNS[name]) * 5 for name in ATTRIBUTE_NAMES)),
             ca, pa, ratings, row["FirstName"], row["LastName"], row["CommonName"],
             injury_proneness=optional_note(row, "InjuryProneness"), ambition=optional_note(row, "Ambition"),
-            aggression=optional_note(row, "Aggression", "Dirtiness")))
+            aggression=optional_note(row, "Aggression", "Dirtiness"),
+            international_caps=int(row.get("InternationalCaps") or 0),
+            international_goals=int(row.get("InternationalGoals") or 0)))
     if len({club.id for club in clubs}) != len(clubs) or len({player.id for player in players}) != len(players):
         raise ValueError("Duplicate source ID")
     return clubs, players, names

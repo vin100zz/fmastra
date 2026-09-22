@@ -5,6 +5,7 @@ from core.domain.matches import Match
 from core.domain.world import World, JournalEntry
 from core.randomness import stream
 from .calendar import schedule
+from .international_calendar import reserved_dates
 
 CUP_NAMES = {"FRA": "Coupe de France", "ENG": "FA Cup", "ESP": "Coupe du Roi",
              "ITA": "Coupe d’Italie", "GER": "Coupe d’Allemagne"}
@@ -69,7 +70,7 @@ def season_fixtures(world: World, season: int) -> list[Match]:
             matches = league_fixtures(world, competition, season, next_id)
         else:
             cup = cups.get(competition.nation)
-            reserved = (cup.round_dates if cup else []) + european_dates
+            reserved = (cup.round_dates if cup else []) + european_dates + reserved_dates(world, season)
             matches = schedule(competition, season, next_id, world.config,
                                stream(world.seed, "calendar", season, competition.id), reserved)
         fixtures.extend(matches)

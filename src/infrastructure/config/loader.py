@@ -12,7 +12,7 @@ from core.config.model import Config
 from core.config.consistency import ConfigError, validate_consistency
 
 FILES = ("monde", "import", "attributs", "implications", "formations", "moteur_match",
-         "etats", "ia_gestion", "demographie", "benchmarks")
+         "etats", "ia_gestion", "demographie", "benchmarks", "nations", "international")
 ADAPTER = TypeAdapter(Config)
 
 
@@ -44,7 +44,8 @@ def decode_config(payload: dict[str, Any]) -> Config:
 
 def load_config(directory: Path, overrides: Path | None = None) -> Config:
     try:
-        payload = {name: json.loads((directory / f"{name}.json").read_text("utf-8")) for name in FILES}
+        payload = {name: json.loads((directory / f"{name}.json").read_text("utf-8")) for name in FILES
+                   if name not in ("nations", "international") or (directory / f"{name}.json").exists()}
         if overrides is not None:
             if overrides.is_file():
                 payload = merge(payload, json.loads(overrides.read_text("utf-8")))

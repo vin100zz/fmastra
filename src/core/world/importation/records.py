@@ -43,3 +43,5 @@ class SourcePlayer:
     injury_proneness: float | None = None
     ambition: float | None = None
     aggression: float | None = None
+    international_caps: int = 0
+    international_goals: int = 0

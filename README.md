@@ -75,6 +75,56 @@ commande d'avance (et à l'arrêt du mode Auto) et chaque changement de mois. Ut
 « Ma partie » pour conserver plusieurs univers. Le chargement restitue la
 configuration de la sauvegarde, même si les JSON du dépôt ont changé.
 
+## Sélections nationales
+
+Les nouvelles parties activent les nations marquées `active` dans `config/nations.json`.
+Le menu **Sélections nationales** présente leurs effectifs, calendriers, groupes,
+classements des deuxièmes, phases finales et statistiques. Les anciennes sauvegardes
+restent jouables avec leur calendrier de clubs ; une nouvelle partie est nécessaire
+pour activer cette extension et importer les sélections et buts internationaux du CSV.
+
+Le Mondial 2026 est ignoré. L'Euro commence en 2028, puis revient tous les quatre ans ;
+la Coupe du monde commence en 2030, également tous les quatre ans. Chaque édition
+comporte une campagne européenne aller-retour sur deux années : septembre et novembre
+de l'année N−2, puis mars, juin et novembre de N−1, avec deux rencontres par rassemblement.
+Les calendriers de clubs réservent ces fenêtres et les périodes de repos. Les phases
+finales se jouent en juin-juillet, sur terrain neutre, avec tirs au but immédiatement
+après 90 minutes en cas d'égalité en élimination directe. Aucun organisateur n'est
+qualifié automatiquement et il n'y a pas de petite finale.
+
+Les 54 nations européennes forment six groupes de cinq et quatre groupes de six.
+Les dix premiers et les six meilleurs deuxièmes vont à l'Euro (16 équipes) ; les dix
+premiers et les quatre meilleurs deuxièmes vont au Mondial (14 places européennes).
+Pour comparer les deuxièmes, les résultats contre le sixième des groupes de six sont
+exclus. Comparaison des deuxièmes : points, différence de buts, buts marqués, puis ordre déterministe.
+Les qualifications hors Europe ne sont pas simulées : force et petite variation
+aléatoire déterminent les 5 qualifiés AmSud, 3 AmNord, 5 Afrique, 4 Asie et 1 Oceanie.
+Les phases finales ont des groupes de quatre, deux qualifiés par groupe et un tableau
+fixe premier contre deuxième. Les chapeaux suivent la force ; au Mondial un groupe
+contient au plus deux nations européennes et une de chaque autre fédération.
+
+Une liste équilibrée de 23 est annoncée à chaque rassemblement, avec trois gardiens,
+prise en compte du niveau, de la forme et de la condition, et une petite variation
+reproductible. La phase finale constitue un seul rassemblement : remplacement des
+blessés autorisé avant le premier match seulement. Fatigue et blessures sont partagées
+avec le club ; statistiques et suspensions internationales sont séparées. Les cartons
+jaunes de qualification sont remis à zéro avant les finales, les suspensions restant
+à purger sont conservées. Une retraite pendant un tournoi attend le retour du joueur.
+
+Les binationaux arbitrent entre force de la nation et chances de sélection ; leur
+première entrée en jeu officielle fixe définitivement la nation représentée.
+L'historique importé utilise la première nationalité active, sauf correspondance
+explicite dans `config/international.json`, section `historical_nations` (ID joueur
+vers code ou nom de nation). Les compteurs importés sont identifiés séparément dans
+la fiche du joueur, puis conservés après sa retraite.
+
+`strength` dans `config/nations.json` est une **estimation de jeu sur 100**, configurable,
+pas un classement officiel. Elle évolue lentement avec les résultats et les effectifs.
+Les nations incomplètes reçoivent des joueurs temporaires hors du marché, conservés
+avec leur état physique pendant la campagne. Leurs noms et statistiques restent dans
+l'historique. La configuration, les listes et les éditions sont intégrées aux sauvegardes ;
+le passage du 1er juillet ne réinitialise pas une compétition internationale.
+
 ## Vérifier et calibrer
 
 ```powershell

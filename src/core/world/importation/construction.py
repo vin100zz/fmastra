@@ -75,7 +75,9 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
                   attributes, rating, potential, cfg.states.fitness.initial, cfg.states.form.initial,
                   cfg.states.moral.initial, fragility, ego, None if free else row.club_id, contract,
                   source_current_ability=row.current_ability, source_potential_ability=row.potential_ability,
-                  position_ratings=dict(row.position_ratings), aggression=aggression)
+                  position_ratings=dict(row.position_ratings), aggression=aggression,
+                  international_caps=row.international_caps, international_goals=row.international_goals,
+                  historical_caps=row.international_caps, historical_goals=row.international_goals)
 
 
 def construct_world(source_clubs: list[SourceClub], source_players: list[SourcePlayer], cfg: Config,
@@ -170,6 +172,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     world.european_quotas = european_quotas or {}
     initialize_europe(world)
     qualify_europe(world, season)
+    from core.world.international import initialize_international
+    initialize_international(world)
     for match in season_fixtures(world, season):
         world.matches[match.id] = match
         world.competitions[match.competition_id].match_ids.append(match.id)

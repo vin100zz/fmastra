@@ -23,7 +23,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 14
+SCHEMA_VERSION = 15
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -190,6 +190,15 @@ def _config_matches(world: World, fingerprint: str, version: int) -> bool:
     # migration defaults. Existing/custom rules must retain their fingerprint.
     if version >= SCHEMA_VERSION: return False
     previous = config_payload(world.config)
+    if version < 15:
+        from core.config.models.international import InternationalConfig
+        from dataclasses import asdict
+        if not previous.get("nations") and previous.get("international") == asdict(InternationalConfig()):
+            previous.pop("nations", None)
+            previous.pop("international", None)
+        raw = json.dumps(previous, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        if hashlib.sha256(raw.encode("utf-8")).hexdigest() == fingerprint:
+            return True
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if version >= introduced: continue
         rules = previous[path[0]][path[1]]

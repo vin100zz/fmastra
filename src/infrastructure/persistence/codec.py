@@ -14,12 +14,14 @@ from core.domain.matches import Match, MatchEvent, MatchResult, PlayerMatchStats
 from core.domain.world import World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot
 from core.domain.offers import TransferOffer
 from core.domain.finance import FinanceSeason, MonthlyFinance
+from core.domain.international import NationalTeam, InternationalEdition, NationalCamp, InternationalRecord, InternationalState, InternationalCareer
 from infrastructure.config.loader import config_payload, decode_config
 
 ENTITIES = {cls.__name__: cls for cls in (Date, Attributes, Contract, Discipline, Injury, Player,
             Club, ClubPersonality, Competition, Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats,
             World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot, TransferOffer, FinanceSeason, MonthlyFinance)}
 ENUMS = {cls.__name__: cls for cls in (Position, ClubStatus)}
+ENTITIES.update({cls.__name__: cls for cls in (NationalTeam, InternationalEdition, NationalCamp, InternationalRecord, InternationalState, InternationalCareer)})
 
 
 def encode(value: Any) -> Any:
@@ -74,12 +76,16 @@ def decode(value: Any) -> Any:
                         "home_kit_major_color", "home_kit_minor_color", "home_kit_third_color"):
                 value["fields"].setdefault(name, None)
         if cls is Player:
+            for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),
+                                  ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []})):
+                value["fields"].setdefault(name, default)
             for name in ("source_current_ability", "source_potential_ability"):
                 value["fields"].setdefault(name, None)
             value["fields"].setdefault("position_ratings", {"$map": []})
         if cls is World and "offers" not in value["fields"]:
             value["fields"]["offers"] = {"$map": []}
         if cls is World:
+            value["fields"].setdefault("international", encode(InternationalState()))
             for name, default in (("finance_history", {"$map": []}), ("finance_history_since", None), ("movement_history_since", None)):
                 value["fields"].setdefault(name, default)
         if cls is MovementSnapshot:

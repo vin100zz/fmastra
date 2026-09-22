@@ -11,6 +11,7 @@ from .matches import Match
 from .players import Player, Position
 from .offers import TransferOffer
 from .finance import FinanceSeason
+from .international import InternationalState
 
 
 @dataclass(slots=True)
@@ -108,6 +109,7 @@ class World:
     reputation_ceilings: dict[str, dict[int, float]] = field(default_factory=dict)
     # Reputation held when each season opened: club -> [(season, reputation)], oldest first.
     reputation_history: dict[int, list[tuple[int, float]]] = field(default_factory=dict)
+    international: InternationalState = field(default_factory=InternationalState)
 
     def active_clubs(self) -> list[Club]:
         return [club for club in self.clubs.values() if club.competition_id is not None]

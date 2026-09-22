@@ -28,7 +28,12 @@ def retirement_events(world: World) -> list[PlayerReleased]:
         if age < rule.min_age: continue
         probability = rule.coefficient * (age - rule.min_age + 1) ** rule.exponent
         probability *= rule.level_base - rule.level_slope * player.rating / cfg.attributes.bounds.max
-        if rng.random() < clamp(probability, 0, 1): events.append(PlayerReleased(player.id, True))
+        if rng.random() < clamp(probability, 0, 1):
+            if any(player.id in camp.player_ids for camp in world.international.camps.values()):
+                if player.id not in world.international.deferred_retirements:
+                    world.international.deferred_retirements.append(player.id)
+            else:
+                events.append(PlayerReleased(player.id, True))
     return events
 
 

@@ -14,7 +14,8 @@ from core.randomness import stream
 
 def cup_lineup(world: World, match: Match, club_id: int) -> tuple[Lineup, dict[int, str]]:
     club, cfg = world.clubs[club_id], world.config
-    squad = [world.players[pid] for pid in club.player_ids]
+    called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
+    squad = [world.players[pid] for pid in club.player_ids if pid not in called_up]
     available = [p for p in squad if p.available(match.competition_id, match.date)]
     level = mean(p.rating for p in squad) if squad else club.reputation
     rng = stream(world.seed, "cup-reinforcements", match.season, match.id, club_id)

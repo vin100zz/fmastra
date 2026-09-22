@@ -7,6 +7,8 @@ from core.engine.abilities import overall
 
 
 def validate_world(world: World) -> None:
+    from .international_validation import validate_international
+    validate_international(world)
     cfg = world.config
     seen: set[int] = set()
     bounds, guard = cfg.attributes.bounds, cfg.management.guardrails

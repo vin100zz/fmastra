@@ -21,8 +21,9 @@ def draw_injury(date: Date, cfg: Config, rng: Random) -> Injury:
 def daily_player_events(world: World) -> list[PlayerChanged]:
     cfg, rng = world.config, world.rngs["states"]
     events = []
+    called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
     for player in world.players.values():
-        active = player.club_id is not None and world.clubs[player.club_id].competition_id is not None
+        active = player.id in called_up or (player.club_id is not None and world.clubs[player.club_id].competition_id is not None)
         if player.injury:
             if player.injury.end <= world.date:
                 attributes = player.attributes

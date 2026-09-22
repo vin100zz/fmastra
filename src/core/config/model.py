@@ -12,6 +12,7 @@ from .models.states import StatesConfig
 from .models.management import ManagementConfig
 from .models.demography import DemographyConfig
 from .models.benchmarks import BenchmarksConfig
+from .models.international import NationConfig, InternationalConfig
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class Config:
@@ -25,3 +26,5 @@ class Config:
     management: ManagementConfig = Field(alias="ia_gestion")
     demography: DemographyConfig = Field(alias="demographie")
     benchmarks: BenchmarksConfig = Field(alias="benchmarks")
+    nations: dict[str, NationConfig] = Field(default_factory=dict)
+    international: InternationalConfig = Field(default_factory=InternationalConfig)

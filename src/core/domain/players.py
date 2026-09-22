@@ -97,6 +97,12 @@ class Player:
     position_ratings: dict[Position, int] = field(default_factory=dict)
     # Propensity to commit fouls, stable like fragility and ego; 1.0 is the neutral factor.
     aggression: float = 1.0
+    national_team: str | None = None
+    international_caps: int = 0
+    international_goals: int = 0
+    historical_caps: int = 0
+    historical_goals: int = 0
+    international_discipline: dict[int, Discipline] = field(default_factory=dict)
 
     @property
     def nation(self) -> str:

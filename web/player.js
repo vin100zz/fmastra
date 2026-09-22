@@ -102,6 +102,13 @@ export async function playerScreen(id) {
  const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au bilan de chaque saison.'),'<span class="muted">Niveau sur 200</span>');
  const totals=history.career.totals;
  const footer=['Total','',totals.fee?money(totals.fee):'—','',`${n(totals.matches)}`,`${n(totals.goals)}`,`${n(totals.assists)}`,totals.average?n(totals.average):'—'];
- const career=card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,row.matches,row.goals,row.assists,row.average?n(row.average):'—']),footer));
+ const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,row.matches,row.goals,row.assists,row.average?n(row.average):'—']),footer));
  return header(player,playerNavigation(neighbours))+(player.retired?chart+career:profile(player,chart,career));
+}
+
+function internationalCareer(player){
+ if(player.international_caps==null)return '';
+ const nation=player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nationBadges([player.national_team],{full:true})}</a>`:'Aucune sélection représentée';
+ const records=player.international_records||[];
+ return card('Sélection nationale',`<div class="card-body">${nation} · ${n(player.international_caps)} sélections · ${n(player.international_goals)} buts<p class="note">Historique importé : ${n(player.historical_caps)} sélections, ${n(player.historical_goals)} buts.</p></div>`+table(['ÉDITION','MATCHS','BUTS','PASSES'],records.map(row=>[`<a href="#/international/${row.edition}">${row.edition}</a>`,row.matches,row.goals,row.assists])));
 }

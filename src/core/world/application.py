@@ -38,6 +38,10 @@ def apply(world: World, event: WorldEvent) -> bool:
             club.wage_bill -= player.contract.weekly_wage
         player.club_id, player.contract = None, None
         if event.retirement:
+            from core.domain.international import InternationalCareer
+            world.international.retired_careers[player.id] = InternationalCareer(
+                player.national_team, player.international_caps, player.international_goals,
+                player.historical_caps, player.historical_goals)
             world.retired[player.id] = player.name
             del world.players[player.id]
         kind = "retirement" if event.retirement else "release"

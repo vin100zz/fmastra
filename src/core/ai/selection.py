@@ -29,7 +29,8 @@ class LineupContext:
         club = world.clubs[club_id]
         games = sum(match.result is not None and match.season == world.season
                     and club_id in (match.home_id, match.away_id) for match in world.matches.values())
-        return cls(club, [world.players[pid] for pid in club.player_ids], competition_id, date, world.seed, games)
+        called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
+        return cls(club, [world.players[pid] for pid in club.player_ids if pid not in called_up], competition_id, date, world.seed, games)
 
 
 def select_lineup(context: LineupContext, cfg: Config) -> Lineup:

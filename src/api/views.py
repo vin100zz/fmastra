@@ -61,17 +61,27 @@ def player_row(world: World, player: Player) -> dict:
 def player_detail(world: World, player: Player) -> dict:
     result = player_row(world, player)
     result.update({"born": player.born.iso(),
+                   "national_team": player.national_team,
+                   "national_team_id": next((team.id for team in world.international.nations.values() if team.code == player.national_team), None),
+                   "international_caps": player.international_caps, "international_goals": player.international_goals,
+                   "historical_caps": player.historical_caps, "historical_goals": player.historical_goals,
+                   "international_records": [asdict(row) for row in world.international.records.values() if row.player_id == player.id],
                    "secondary_positions": list(player.secondary_positions), "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
                    # Weight of each attribute in the rating of his main position: the page orders and marks attributes with it.
                    "attribute_weights": dict(world.config.attributes.overall[player.position]),
                    "attributes_imported": player.source_current_ability is not None,
                    "position_ratings": player.position_ratings,
                    "form": player.form, "morale": player.morale, "value": market_value(player, world),
-                   "discipline": [{"competition": world.competitions[cid].name, **asdict(item)} for cid, item in player.discipline.items()]})
+                   "discipline": [{"competition": world.competitions[cid].name, **asdict(item)} for cid, item in player.discipline.items()]
+                       + [{"competition": edition.name, **asdict(item)} for edition in world.international.editions.values()
+                          if (item := player.international_discipline.get(edition.competition_id)) is not None]})
     return result
 
 
 def match_row(world: World, match: Match) -> dict:
+    if match.id in world.international.matches:
+        from .international import international_match_row
+        return international_match_row(world, match)
     from core.world.europe import aggregate_score, round_label
     competition = world.competitions[match.competition_id]
     return {"id": match.id, "date": match.date.iso(), "round": match.round_number,
@@ -255,8 +265,7 @@ def lineup_rows(world: World, result: MatchResult, side: str) -> list[dict]:
 
 def match_detail(world: World, match: Match) -> dict:
     data = match_row(world, match)
-    data["competition"] = world.competitions[match.competition_id].name
-    data["capacity"] = None if match.neutral else world.clubs[match.home_id].capacity
+    data["capacity"] = None if match.neutral or match.id in world.international.matches else world.clubs[match.home_id].capacity
     result = match.result
     if result is None:
         data["result"] = None
