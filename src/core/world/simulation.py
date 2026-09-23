@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from core.ai.controller import AIController
-from core.ai.selection import LineupContext
+from core.ai.selection import LineupContext, to_lineup
 from core.ai.market import propose_transfers
+from core.config.model import Config
 from core.domain.date import Date
 from core.domain.world import World
 from core.engine.match import PossessionEngine
@@ -13,6 +14,7 @@ from .contracts import expiry_events, renewal_events
 from .demography import retirement_events, cohort_events
 from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
 from .finances import structural_income, annual_funding_factor
+from .human import is_human_club, pending_lineup_match
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .promotion import promotion_event
@@ -93,25 +95,54 @@ def annual_review(world: World) -> None:
     ensure_minimums(world)
 
 
-def advance_day(world: World) -> None:
-    """No I/O, no clock reads; callers persist after this coherent boundary."""
+def advance_day(world: World, auto: bool = False) -> bool:
+    """No I/O, no clock reads; callers persist after this coherent boundary.
+
+    Returns False if the day stopped before finishing, awaiting the human club's lineup
+    (never happens when `auto` is set: Auto mode falls back to an automatic lineup instead)."""
     cfg = world.config
-    apply(world, DateAdvanced(world.date.add_days(1)))
-    for event in expiry_events(world): apply(world, event)
-    for event in daily_player_events(world): apply(world, event)
-    from .international import prepare_international_day, play_international_day
-    prepare_international_day(world)
-    if world.date.day == 1:
-        for event in monthly_player_events(world): apply(world, event)
     review = cfg.world.key_dates.population_review
-    if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
-        annual_review(world)
-    if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
-        for event in renewal_events(world): apply(world, event)
-    open_market = market_window(world) is not None
-    for _ in range(cfg.world.market.rounds_per_day):
-        rejected = settle_offers(world, open_market)
-        open_offers(world, open_market, rejected)
+    from .international import prepare_international_day, play_international_day
+    if world.pending_match_day is None:
+        apply(world, DateAdvanced(world.date.add_days(1)))
+        for event in expiry_events(world): apply(world, event)
+        for event in daily_player_events(world): apply(world, event)
+        prepare_international_day(world)
+        if world.date.day == 1:
+            for event in monthly_player_events(world): apply(world, event)
+        if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
+            annual_review(world)
+        if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
+            for event in renewal_events(world): apply(world, event)
+        open_market = market_window(world) is not None
+        for _ in range(cfg.world.market.rounds_per_day):
+            rejected = settle_offers(world, open_market)
+            open_offers(world, open_market, rejected)
+        match_id = pending_lineup_match(world)
+        if match_id is not None and not auto:
+            world.pending_match_day = world.date
+            return False
+    elif pending_lineup_match(world) is not None and not auto:
+        return False  # resumed without a lineup submitted meanwhile: keep waiting instead of auto-picking one
+    _simulate_matches(world, cfg)
+    progress_cups(world)
+    progress_europe(world)
+    play_international_day(world)
+    start = Date(world.season, review.month, review.day)
+    days = start.add_years(1).ordinal() - start.ordinal()
+    costs = cfg.management.budgets.accounting.other_cost_share
+    for club in world.clubs.values():
+        annual_net = round(club.income * (1 - costs)) - club.wage_bill * cfg.management.budgets.weeks_per_year
+        payment, remainder = divmod(annual_net + club.accounting_remainder, days)
+        apply(world, FinancePosted(club.id, payment, remainder))
+    world.pending_match_day = None
+    world.submitted_lineups.clear()
+    return True
+
+
+def _simulate_matches(world: World, cfg: Config) -> None:
+    """A human club's match uses its submitted lineup when there is one; otherwise (Auto mode,
+    or a competition without a pause point) it falls back to the same path as an AI club."""
     controller = AIController(cfg, world.rngs["matches"])
     engine = PossessionEngine()
     for match in sorted((match for match in world.matches.values() if match.date == world.date and match.result is None), key=lambda item: item.id):
@@ -120,6 +151,9 @@ def advance_day(world: World) -> None:
         kind = world.competitions[match.competition_id].kind
         is_cup = kind in ("cup", "europe")
         for club_id in (match.home_id, match.away_id):
+            if is_human_club(world, club_id) and match.id in world.submitted_lineups:
+                lineups.append(to_lineup(world, world.submitted_lineups[match.id], match.competition_id, cfg))
+                continue
             if is_cup:
                 lineup, names = cup_lineup(world, match, club_id)
                 lineups.append(lineup)
@@ -135,13 +169,3 @@ def advance_day(world: World) -> None:
             else:
                 decide_winner(world, match, result, lineups)
         apply(world, match_event(world, match, result))
-    progress_cups(world)
-    progress_europe(world)
-    play_international_day(world)
-    start = Date(world.season, review.month, review.day)
-    days = start.add_years(1).ordinal() - start.ordinal()
-    costs = cfg.management.budgets.accounting.other_cost_share
-    for club in world.clubs.values():
-        annual_net = round(club.income * (1 - costs)) - club.wage_bill * cfg.management.budgets.weeks_per_year
-        payment, remainder = divmod(annual_net + club.accounting_remainder, days)
-        apply(world, FinancePosted(club.id, payment, remainder))

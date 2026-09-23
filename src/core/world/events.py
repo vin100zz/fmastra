@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from core.domain.date import Date
 from core.domain.players import Attributes, Contract, Injury, Player
 from core.domain.matches import Match, MatchResult
-from core.domain.offers import TransferOffer
+from core.domain.offers import RenewalProposal, TransferOffer
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,4 +103,9 @@ class OffersUpdated:
     offers: list[TransferOffer]
 
 
-WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated
+@dataclass(frozen=True, slots=True)
+class RenewalProposed:
+    proposal: RenewalProposal
+
+
+WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed

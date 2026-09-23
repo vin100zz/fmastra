@@ -52,6 +52,22 @@ def real_players(world, name="France", count=20):
     return team, players[:count]
 
 
+def test_call_up_reaches_the_human_clubs_news_feed(world):
+    from core.domain.clubs import Club, ClubPersonality, ClubStatus
+    team, players = real_players(world)
+    scout = players[0]
+    club = Club(1, "Le Club", "FRA", 16, 16, ClubStatus.ACTIVE, 30000, 70, 70, "4-3-3",
+               ClubPersonality(.5, .5, .5, .5), [scout.id])
+    world.clubs[club.id] = club
+    scout.club_id = club.id
+    world.controlled_club_id = club.id
+    world.date = Date(2026, 8, 31)
+    prepare_international_day(world)
+    camp = next(c for c in world.international.camps.values() if c.nation_id == team.id)
+    assert scout.id in camp.player_ids  # only 20 real candidates compete for 23 places
+    assert any(item.kind == "call_up" and item.player_id == scout.id and item.club_id == club.id for item in world.news)
+
+
 def test_qualification_format_and_even_year_cycles(world):
     assert set(world.international.editions) == {2028}
     assert len(world.international.nations) == 211

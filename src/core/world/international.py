@@ -8,6 +8,7 @@ from core.domain.players import Discipline
 from core.domain.world import World, JournalEntry
 from core.domain.matches import TRANSIENT_EVENT_KINDS
 from core.engine.match import PossessionEngine
+from .human import record as add_news
 from core.engine.fitness import recovered_fitness
 from core.math import clamp
 from core.randomness import stream
@@ -253,7 +254,9 @@ def apply_international_result(world, edition, match, result, lineups):
             player = get_player(world, event.player_id)
             player.injury = draw_injury(world.date, cfg, rng)
             if player.id >= 0:
-                world.journal.append(JournalEntry(world.date, "injury", f"{player.name} se blesse en sélection, indisponible jusqu’au {player.injury.end.iso()}.", player.club_id, player.id))
+                text = f"{player.name} se blesse en sélection, indisponible jusqu’au {player.injury.end.iso()}."
+                world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, player.id))
+                add_news(world, "injury", text, player.club_id, player.id)
     home, away = state.nations[match.home_id], state.nations[match.away_id]
     expected = 1 / (1 + pow(10, (away.strength - home.strength) / 25))
     actual = 1 if result.home_goals > result.away_goals else 0 if result.home_goals < result.away_goals else .5

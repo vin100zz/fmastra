@@ -4,9 +4,8 @@ import {europeScreen} from './europe.js';
 import {financialHistory,movementsHistory,seasonsHistory} from './club-history.js';
 import {clubOverview} from './club-overview.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,leadersCards,facilityRating,date,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
+import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
 
-const HOME_TABS=[['','Vue d’ensemble'],['journal','Journal']];
 export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
 
 async function leagueSummary(id){
@@ -27,7 +26,7 @@ async function leagueSummariesSection(ordered){
 
 export async function dashboard(leagues){
  const ordered=leagues.filter(league=>league.level===1).sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
- return heading('Vue d’ensemble',`<span class="pill">● Univers synchronisé</span>`)+tabs('#',HOME_TABS,'')+await leagueSummariesSection(ordered);
+ return heading('Vue d’ensemble',`<span class="pill">● Univers synchronisé</span>`)+await leagueSummariesSection(ordered);
 }
 
 export async function countryScreen(nation,leagues){
@@ -88,5 +87,3 @@ export async function playersScreen(params){
  const filter=`<form data-filter><div class="filters"><input name="recherche" type="search" value="${value('recherche')}" placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur">${select('poste','Tous les postes',['GB','DC','DL','DR','MDC','MC','MOC','AILG','AILD','BU'].map(role=>[role,role]))}${select('statut_club','Tous les clubs',[['actif','Clubs actifs'],['dormant','Clubs dormants']])}${select('contrat','Tous les contrats',[['libre','Agents libres'],['sous_contrat','Sous contrat']])}</div><details class="filters"><summary>Filtres avancés</summary><div class="filters"><label>Âge minimum <input name="age_min" type="number" min="0" max="100" value="${value('age_min')}"></label><label>Âge maximum <input name="age_max" type="number" min="0" max="100" value="${value('age_max')}"></label><label>Niveau minimum <input name="niveau_min" type="number" min="1" max="200" value="${value('niveau_min')}"></label><label>Nation (code) <input name="nation" value="${value('nation')}" placeholder="FRA"></label><label>Club (ID) <input name="club" type="number" value="${value('club')}"></label><label>Salaire min. (€/mois) <input name="salaire_min" type="number" min="0" value="${value('salaire_min')}"></label><label>Salaire max. (€/mois) <input name="salaire_max" type="number" min="0" value="${value('salaire_max')}"></label></div></details></form>`;
  return heading('Joueurs')+filter+card('Les joueurs',playerTable(data,true,params.get('tri')||'value',params.get('ordre')||'desc'));
 }
-
-export async function journalScreen(params){const data=await api(`/monde/journal?${params}`);return heading('Vue d’ensemble')+tabs('#',HOME_TABS,'journal')+`<form class="filters" data-filter><input type="date" name="date" value="${e(params.get('date'))}" aria-label="Date du journal"><button>Afficher</button></form>`+card('Les événements',table(['DATE','ÉVÉNEMENT'],data.items.map(item=>[date(item.date),`<a href="${item.match_id?`#/match/${item.match_id}`:item.player_id?`#/player/${item.player_id}`:'#/journal'}">${e(item.text)}</a>`]))+pager(data));}

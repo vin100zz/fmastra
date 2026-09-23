@@ -599,6 +599,28 @@ def test_settlement_cancels_offer_the_player_refuses(config):
     assert player.club_id == seller.id and not world.offers and not world.transfers
 
 
+def test_settlement_surfaces_offers_for_the_human_seller_instead_of_deciding(config):
+    from core.ai.market import asking_price
+    from core.world.market import settle_offers
+    world = mini_world(config)
+    player, seller, buyer = world.players[201], world.clubs[2], world.clubs[1]
+    world.controlled_club_id = seller.id
+    quote = asking_price(player, seller, world)
+    offer = TransferOffer("human-seller", world.date, player.id, seller.id, buyer.id, player.contract, quote, quote, 1)
+    world.offers[offer.key] = offer
+    close_auction(world)
+    rejected = settle_offers(world, True)
+    assert not rejected  # not decided at all, not rejected
+    assert player.club_id == seller.id  # still unsold
+    pending = world.offers[offer.key]
+    assert pending.awaiting_review is True
+    assert world.news and world.news[-1].kind == "offer_received" and world.news[-1].club_id == seller.id
+    # A second settlement pass does not re-announce the same offer.
+    news_count = len(world.news)
+    settle_offers(world, True)
+    assert len(world.news) == news_count
+
+
 def extra_buyer(world, club_id):
     club = Club(club_id, f"Club {club_id}", "FRA", 16, 16, ClubStatus.ACTIVE, 30000, 70, 70, "4-3-3",
                 ClubPersonality(.5, .5, .5, .5), [], wage_cap=1000000000, transfer_budget=1000000000, balance=1000000000)
@@ -792,3 +814,22 @@ def test_restless_star_refuses_to_extend_and_loses_morale_while_a_settled_one_ex
     assert [e for e in events if isinstance(e, PlayerSigned) and e.player_id == player.id]
     assert restless_morale < player.morale - 0.01 < settled_morale + 0.01
     assert restless_morale < settled_morale
+
+
+def test_renewal_forks_to_a_pending_proposal_for_the_human_club(config):
+    from core.world.contracts import renewal_events
+    from core.world.events import RenewalProposed
+    world, player = renewal_setup(config, reputation=100)
+    world.controlled_club_id = player.club_id
+    events = renewal_events(world)
+    proposed = [e for e in events if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
+    assert proposed and proposed[0].proposal.club_id == player.club_id
+    assert not [e for e in events if isinstance(e, PlayerSigned) and e.player_id == player.id]
+    for event in events:
+        apply(world, event)
+    assert player.id in world.pending_renewals
+    assert world.pending_renewals[player.id].contract.weekly_wage >= player.contract.weekly_wage
+    assert world.news and world.news[-1].kind == "renewal_proposed" and world.news[-1].club_id == player.club_id
+    # A pending proposal is not regenerated on the next weekly pass.
+    again = renewal_events(world)
+    assert not [e for e in again if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]

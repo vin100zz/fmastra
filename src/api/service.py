@@ -57,6 +57,16 @@ class GameService:
             if self.recovery_required: raise CommandError("Simulation interrompue : rechargez la dernière sauvegarde.")
             yield self.world
 
+    @contextmanager
+    def mutating(self) -> Iterator[World]:
+        """A synchronous world write outside the job queue: fast, no simulation RNG consumed,
+        still lock-guarded and refused while a day-advance job is running."""
+        with self.lock:
+            if self.world is None: raise CommandError("Créez ou chargez une partie.")
+            if self.recovery_required: raise CommandError("Simulation interrompue : rechargez la dernière sauvegarde.")
+            if self.active: raise CommandError("Une commande est déjà en cours.")
+            yield self.world
+
     def submit(self, kind: str, command_id: str, payload: dict) -> dict:
         with self.lock:
             if command_id in self.commands:
@@ -91,6 +101,7 @@ class GameService:
 
     def _run(self, job: Job, payload: dict) -> None:
         advancing = False
+        awaiting_lineup = False
         pending_save: Future | None = None
         try:
             with self.lock: job.status = "running"
@@ -111,7 +122,7 @@ class GameService:
                     while world.date.ordinal() < destination.ordinal():
                         with self.lock:
                             advancing = True
-                            advance_day(world)
+                            advance_day(world, auto=True)  # never pauses: falls back to an automatic lineup
                             advancing = False
                             job.date = world.date.iso()
                         moved = True
@@ -133,17 +144,24 @@ class GameService:
                 for index in range(days):
                     with self.lock:
                         advancing = True
-                        advance_day(world)
+                        finished = advance_day(world)
                         advancing = False
                         job.date = world.date.iso()
                         job.progress = (index + 1) / days * .95
+                    if not finished:
+                        awaiting_lineup = True
+                        break
                     if world.date.day == 1: self.store.save(world, "autosave")
                 validate_world(world)
-                # Nothing else mutates `world` in this job; the write can safely continue after we
-                # report success, as long as `active` stays held so no other job starts touching it.
-                pending_save = self.save_executor.submit(self.store.save, world, "autosave")
+                if awaiting_lineup:
+                    # Terminal pause, not a failure: save synchronously so it survives a restart.
+                    self.store.save(world, "autosave")
+                else:
+                    # Nothing else mutates `world` in this job; the write can safely continue after we
+                    # report success, as long as `active` stays held so no other job starts touching it.
+                    pending_save = self.save_executor.submit(self.store.save, world, "autosave")
             with self.lock:
-                job.status, job.progress = "done", 1
+                job.status, job.progress = ("awaiting_lineup", job.progress) if awaiting_lineup else ("done", 1)
                 job.date = self.world.date.iso()
         except Exception as exc:
             with self.lock:

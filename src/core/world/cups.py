@@ -5,6 +5,7 @@ from core.domain.matches import Match
 from core.domain.world import World, JournalEntry
 from core.randomness import stream
 from .calendar import schedule
+from .human import record as add_news
 from .international_calendar import reserved_dates
 
 CUP_NAMES = {"FRA": "Coupe de France", "ENG": "FA Cup", "ESP": "Coupe du Roi",
@@ -94,8 +95,9 @@ def progress_cups(world: World) -> None:
             champions = world.champions.setdefault(cup.id, [])
             if not any(year == world.season for year, _ in champions):
                 champions.append((world.season, winners[0]))
-                world.journal.append(JournalEntry(world.date, "cup_winner",
-                    f"{world.clubs[winners[0]].name} remporte {cup.name}.", winners[0]))
+                text = f"{world.clubs[winners[0]].name} remporte {cup.name}."
+                world.journal.append(JournalEntry(world.date, "cup_winner", text, winners[0]))
+                add_news(world, "cup_winner", text, winners[0])
         else:
             for match in draw(world, cup, world.season, current + 1, winners, world.next_id):
                 world.matches[match.id] = match

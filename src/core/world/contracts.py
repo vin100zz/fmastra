@@ -1,9 +1,11 @@
 """Weekly renewal decisions and daily contractual expiry."""
+from core.domain.offers import RenewalProposal
 from core.domain.world import World
 from core.math import clamp
 from collections import Counter
 from core.ai.market import market_value, expected_wage, contract_for, nominal_size, squad_quality
-from .events import PlayerReleased, PlayerSigned, PlayerChanged
+from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
+from .human import is_human_club
 from .transfer_rules import frustration, wants_to_leave
 
 
@@ -12,7 +14,7 @@ def expiry_events(world: World) -> list[PlayerReleased]:
             if player.contract is not None and player.contract.end < world.date]
 
 
-def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged]:
+def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalProposed]:
     cfg = world.config
     rules = cfg.management.contracts
     events = []
@@ -63,5 +65,9 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged]:
             # A financially constrained club can still offer the existing wage.
             proposed = player.contract.weekly_wage
         if proposed < expected and satisfaction < rules.satisfaction_threshold: continue
+        if is_human_club(world, club.id):
+            if player.id not in world.pending_renewals:
+                events.append(RenewalProposed(RenewalProposal(player.id, club.id, contract_for(player, world, proposed), world.date)))
+            continue
         events.append(PlayerSigned(player.id, club.id, club.id, contract_for(player, world, proposed), 0, True))
     return events

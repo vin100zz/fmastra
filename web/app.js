@@ -1,22 +1,35 @@
 import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,card,stat,heading,empty,toast,setNations,nationName,sortTable,nextDirection} from './ui.js';
-import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,journalScreen,LEAGUE_ORDER} from './screens.js';
+import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,LEAGUE_ORDER} from './screens.js';
 import {playerScreen} from './player.js';
 import {matchScreen} from './match.js';
 import {europeScreen} from './europe.js';
 import {honoursScreen} from './honours.js';
 import {internationalScreen} from './international.js';
+import {clubSelectScreen} from './club-select.js';
+import {myClubScreen} from './my-club.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
 const sortScope=table=>`${location.hash.split('?')[0]}|${[...main.querySelectorAll('table[data-sortable]')].indexOf(table)}`;
-let state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false;
+let state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,justPlayedMatchId=null,lastFinishedJobId=null;
 const main=document.querySelector('#main');
+// Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the report).
+function onCompositionScreen(){const {parts}=routeParts();return parts[0]==='mon-club'&&parts[1]==='composition';}
+function updateAdvanceButton(){
+ const button=document.querySelector('#advance'),mode=document.querySelector('#advance-mode');
+ const jouer=state.awaiting_lineup&&onCompositionScreen();
+ button.innerHTML=jouer?'Jouer <span>→</span>':state.awaiting_lineup?'Match <span>→</span>':'Continuer <span>→</span>';
+ mode.hidden=Boolean(state.awaiting_lineup);
+}
 // The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
 const busyButtons=()=>{
- const busy=Boolean(state.job)||submitting;
+ // `polling`, not `state.job`: the server can still report a just-finished job as active for a moment
+ // (its autosave runs after the status turns "done"), which must not leave the buttons stuck disabled.
+ const busy=Boolean(polling)||submitting;
  const auto=Boolean(state.auto?.running),stopping=Boolean(state.auto?.stopping);
  document.querySelectorAll('[data-command],#advance,#advance-mode').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
+ updateAdvanceButton();
  const button=document.querySelector('#autoplay');
  button.disabled=stopping||(!auto&&(busy||!state.exists||Boolean(state.recovery_required)));
  button.textContent=stopping?'⏸ Arrêt…':auto?'⏸ Pause':'▶ Auto';
@@ -52,6 +65,14 @@ async function deleteSlot(slot){
  catch(error){toast(error.message,true);}
  finally{submitting=false;await render();}
 }
+// Synchronous, lock-guarded game actions (club choice, lineup, contracts, offers): a plain POST, not a queued job.
+async function action(path,payload,success){
+ if(polling||submitting)return false;
+ submitting=true;busyButtons();
+ try{await api(path,{...payload,commande_id:crypto.randomUUID()});if(success)toast(success);return true;}
+ catch(error){toast(error.message,true);return false;}
+ finally{submitting=false;await render();}
+}
 async function savesScreen(welcome=false){const slots=await api('/partie/slots');const intro=welcome?`<section class="hero"><div><span class="eyebrow">BIENVENUE SUR LE BANC DE TOUCHE</span><h1>Tout un monde de football.<br>À votre rythme.</h1><p>96 clubs, cinq championnats et des milliers de destins. Créez votre univers et suivez son histoire, saison après saison.</p></div><div class="hero-graphic" aria-hidden="true"></div></section>`:heading('Ma partie');let report='';if(state.exists&&!state.recovery_required){const data=await api('/partie/rapport-import');report=card('Rapport de création',`<div class="card-body"><div class="stat-grid">${stat('Joueurs retenus',n(data.counts.players))}${stat('Joueurs écartés',n(data.counts.excluded))}${stat('Joueurs actifs',n(data.counts.active_players))}${stat('Agents libres',n(data.counts.free_agents))}</div><p class="note">Au maximum ${data.max_squad} joueurs par club, dont deux places réservées aux meilleurs gardiens disponibles. Les CSV originaux restent inchangés. ${data.counts.attributes_from_source?'Les attributs et aptitudes proviennent du CSV. Les finances restent estimées.':'Cette ancienne partie utilise des attributs estimés.'}</p><details><summary>Détail des corrections à l’import</summary><pre>${e(JSON.stringify(data.counts,null,2))}</pre></details></div>`);}
 return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':''}<div class="grid equal">${card('Nouvelle partie',`<div class="card-body"><span class="eyebrow">SAISON INITIALE · 2025 / 2026</span><p>Chaque graine crée une simulation reproductible. Tous les clubs sont pilotés par l’IA.</p><form id="new-game"><label for="seed">Graine de la simulation</label><input id="seed" name="seed" type="number" min="0" max="9007199254740991" value="2025" required><div class="actions"><button class="primary" data-command="create">Créer mon univers →</button></div></form></div>`)}${card(welcome?'Reprendre une partie':'Mes sauvegardes',`<div class="card-body">${state.exists&&!state.recovery_required?`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="ma-partie"><button data-command="save">Enregistrer</button></form>`:''}${slotsHtml(slots)}</div>`)}</div>${report}</div>`;}
 
@@ -59,13 +80,15 @@ async function render(){const version=++renderVersion;const {parts,params}=route
  const active=document.activeElement;
  const focusName=active&&main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active.name:null;
  const selection=focusName&&'selectionStart' in active?[active.selectionStart,active.selectionEnd]:null;
- try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section,extra]=parts;switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'journal':html=await journalScreen(params);break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;main.innerHTML=html;if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='journal'?'home':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
+ try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section,extra]=parts;
+  if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
+  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(id,params);break;default:html=await dashboard(leagues);}}
+ if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;main.innerHTML=html;if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
  }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
 
 async function command(path,payload){
- if(state.job||submitting)return false;
+ if(polling||submitting)return false;
  submitting=true;
  busyButtons();
  try{
@@ -80,8 +103,26 @@ async function command(path,payload){
  }
  finally{submitting=false;busyButtons();}
 }
+// Submits the composition being edited, then plays the day out; pollJob redirects to the match report on success.
+async function playMatch(){
+ const form=document.querySelector('#lineup-form');
+ if(!form)return;
+ const matchId=Number(form.dataset.match);
+ const titulaires=[...form.querySelectorAll('[name^="slot-"]')].map(select=>[Number(select.value),select.dataset.position]);
+ const banc=[...form.querySelectorAll('[name^="bench-"]')].map(select=>select.value).filter(Boolean).map(Number);
+ if(titulaires.some(([id])=>!id)){toast('Chaque poste titulaire doit avoir un joueur.',true);return;}
+ if(polling||submitting)return;
+ submitting=true;busyButtons();
+ try{await api('/partie/composition',{match_id:matchId,formation:form.dataset.formation,titulaires,banc,commande_id:crypto.randomUUID()});}
+ catch(error){submitting=false;busyButtons();toast(error.message,true);return;}
+ submitting=false;
+ pendingMatchRedirect=matchId;
+ await command('/monde/avancer',{jusqu_a:'jour'});
+}
 async function pollJob(id){
- if(polling===id)return;
+ // The server can report the job as still active for a moment after status is "done" (async autosave):
+ // refreshState() then tries to poll it again — ignore that, this job's outcome was already handled.
+ if(polling===id||id===lastFinishedJobId)return;
  polling=id;
  document.querySelector('#job-bar').hidden=false;
  const progress=document.querySelector('#job-progress');
@@ -93,12 +134,20 @@ async function pollJob(id){
    // An auto job has no end to measure against: show an indeterminate bar instead of a percentage.
    if(open)progress.removeAttribute('value');else progress.value=job.progress;
    document.querySelector('#job-label').textContent=`${({create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation',auto:'Simulation automatique'})[job.command]}… ${job.date?date(job.date):''} ${open?'':Math.round(job.progress*100)+'%'}`;
-   if(['done','failed'].includes(job.status)){
+   if(['done','failed','awaiting_lineup'].includes(job.status)){
     state.job=null;
     polling=null;
+    lastFinishedJobId=id;
     document.querySelector('#job-bar').hidden=true;
-    if(job.status==='failed')toast(job.error,true);
+    if(job.status==='failed'){pendingMatchRedirect=null;toast(job.error,true);}
+    else if(job.status==='awaiting_lineup'){pendingMatchRedirect=null;toast('Un match de votre club est programmé aujourd’hui : composez votre équipe pour poursuivre.');}
     else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
+    if(job.status==='done'&&pendingMatchRedirect){const matchId=pendingMatchRedirect;pendingMatchRedirect=null;justPlayedMatchId=matchId;location.hash=`#/match/${matchId}`;return;}
+    // A normal advance always lands on Mon club, so the user sees anything needing attention; a paused match keeps its own flow above.
+    if(job.status==='done'&&job.command==='advance'){
+     if(location.hash==='#/mon-club')await render();else location.hash='#/mon-club';
+     return;
+    }
     await render();
     return;
    }
@@ -115,22 +164,39 @@ document.querySelector('#autoplay').addEventListener('click',async()=>{
   try{state.auto=await api('/monde/auto/arreter',{});busyButtons();toast('Pause demandée : le jour en cours se termine.');}
   catch(error){toast(error.message,true);}
  }
- else if(state.exists&&!state.recovery_required&&!state.job&&!submitting&&await command('/monde/auto/demarrer',{})){
+ else if(state.exists&&!state.recovery_required&&!polling&&!submitting&&await command('/monde/auto/demarrer',{})){
   state.auto={running:true,stopping:false,job:state.job};busyButtons();
  }
 });
 
-document.querySelector('#advance').addEventListener('click',()=>command('/monde/avancer',{jusqu_a:document.querySelector('#advance-mode').value}));
+document.querySelector('#advance').addEventListener('click',()=>{
+ if(state.awaiting_lineup&&!onCompositionScreen()){location.hash='#/mon-club/composition';return;}
+ if(state.awaiting_lineup)return playMatch();
+ // Closes the match screenflow (Composition → Jouer → Résultat) on its own report page: one more click, straight to Mon club.
+ const {parts}=routeParts();
+ if(justPlayedMatchId!=null&&parts[0]==='match'&&Number(parts[1])===justPlayedMatchId){justPlayedMatchId=null;location.hash='#/mon-club';return;}
+ return command('/monde/avancer',{jusqu_a:document.querySelector('#advance-mode').value});
+});
 function applyFilter(form){const values=Object.fromEntries(new FormData(form));Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
-main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element);if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});});
+main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element);if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
+ else if(element.id==='offer-form')await action('/partie/offre-sortante',{joueur_id:Number(data.get('joueur_id')),salaire_hebdo:Number(data.get('salaire_hebdo')),indemnite:Number(data.get('indemnite'))},'Offre envoyée.');
+});
 let filterTimer;
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});
 main.addEventListener('change',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('select,input[type=checkbox],input[type=radio]'))return;clearTimeout(filterTimer);applyFilter(form);});
-main.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if('tableSort' in button.dataset){const table=button.closest('table'),column=button.closest('th').cellIndex,direction=nextDirection(table,column);sortTable(table,column,direction);tableSorts.set(sortScope(table),{column,direction});return;}const {params}=routeParts();if(button.dataset.season){params.set('saison',button.dataset.season);params.delete('page');changeParams(params);}if(button.dataset.page){params.set('page',button.dataset.page);changeParams(params);}if(button.dataset.sort){params.set('ordre',button.dataset.order?(button.dataset.order==='desc'?'asc':'desc'):button.dataset.first);params.set('tri',button.dataset.sort);params.delete('page');changeParams(params);}if(button.dataset.command==='load')command('/partie/charger',{slot:button.dataset.slot});if(button.dataset.command==='delete')await deleteSlot(button.dataset.slot);if(button.id==='retry')render();});
+main.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if('tableSort' in button.dataset){const table=button.closest('table'),column=button.closest('th').cellIndex,direction=nextDirection(table,column);sortTable(table,column,direction);tableSorts.set(sortScope(table),{column,direction});return;}const {params}=routeParts();if(button.dataset.season){params.set('saison',button.dataset.season);params.delete('page');changeParams(params);}if(button.dataset.page){params.set('page',button.dataset.page);changeParams(params);}if(button.dataset.sort){params.set('ordre',button.dataset.order?(button.dataset.order==='desc'?'asc':'desc'):button.dataset.first);params.set('tri',button.dataset.sort);params.delete('page');changeParams(params);}if(button.dataset.command==='load')command('/partie/charger',{slot:button.dataset.slot});if(button.dataset.command==='delete')await deleteSlot(button.dataset.slot);
+ if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
+ if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
+ if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
+ if(button.id==='retry')render();});
 // The list of peers in a page header closes on a click elsewhere, on a choice and on Escape; opening it centres the current entry.
 document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a'))menu.removeAttribute('open');}));
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.entity-menu-panel'),current=panel.querySelector('[aria-current]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
-window.addEventListener('hashchange',()=>{render();window.scrollTo({top:0});});
+window.addEventListener('hashchange',()=>{
+ const {parts}=routeParts();
+ if(justPlayedMatchId!=null&&!(parts[0]==='match'&&Number(parts[1])===justPlayedMatchId))justPlayedMatchId=null;
+ render();window.scrollTo({top:0});
+});
 window.addEventListener('unhandledrejection',event=>toast(event.reason?.message||'Une erreur inattendue est survenue.',true));
 render();

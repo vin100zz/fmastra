@@ -29,6 +29,16 @@ class Lineup:
     playing_time: dict[int, PlayingTimePriority] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class SubmittedLineup:
+    """A human-submitted lineup, stored by player id rather than embedded Player objects
+    so it never holds a stale copy of state that keeps evolving in world.players."""
+    club_id: int
+    formation: str
+    slots: list[tuple[int, str]]  # (player_id, position)
+    bench: list[int]  # player_ids
+
+
 # The engine logs these for its own bookkeeping. TeamStats already counts corners and
 # free kicks, and no view lists them, so a stored result keeps every other kind.
 TRANSIENT_EVENT_KINDS = frozenset({"possession", "turnover", "corner", "free_kick"})

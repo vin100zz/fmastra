@@ -2,12 +2,33 @@
 from dataclasses import replace
 from collections import defaultdict
 
+from core.domain.clubs import Club
+from core.domain.players import Contract
 from core.domain.world import World
 from core.domain.offers import TransferOffer
 from core.ai.market import propose_transfers, player_offer_score, seller_accepts, can_sell
 from .events import OffersUpdated, PlayerSigned
 from .application import apply
+from .human import is_human_club, record
 from .transfer_rules import recent_arrival_ids, accepts_move
+
+
+def can_open_offer(world: World, club: Club, contract: Contract, fee: int, reserved: list[TransferOffer]) -> bool:
+    """Reservation guardrails shared by the AI recruitment scan and a human club's outgoing offer."""
+    cfg = world.config
+    if len(reserved) >= cfg.management.market.max_negotiations: return False
+    if len(club.player_ids) + len(reserved) >= cfg.management.guardrails.max_squad: return False
+    if sum(offer.ceiling for offer in reserved) + fee > club.transfer_budget: return False
+    if club.balance - sum(offer.ceiling for offer in reserved) - fee < cfg.management.guardrails.min_balance: return False
+    if sum(offer.contract.weekly_wage for offer in reserved) + contract.weekly_wage + club.wage_bill > club.wage_cap: return False
+    return True
+
+
+def resolve_accepted_offer(world: World, offer: TransferOffer) -> bool:
+    """Signs the winning offer for a player if the seller can still sell; callers reject the rest."""
+    seller = world.clubs.get(offer.source_id)
+    can_still_sell = seller is None or can_sell(world.players[offer.player_id], seller, world)
+    return can_still_sell and apply(world, PlayerSigned(offer.player_id, offer.source_id, offer.target_id, offer.contract, offer.fee))
 
 
 def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
@@ -36,6 +57,13 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
             rejected[offer.target_id].add(offer.player_id)
             continue
         seller = world.clubs.get(offer.source_id)
+        if seller and is_human_club(world, seller.id):
+            # Cleared the auction window: every live bid on this player surfaces together for review,
+            # instead of being auto-decided by seller_accepts like an AI-controlled seller.
+            if not offer.awaiting_review:
+                record(world, "offer_received", f"{buyer.name} propose {offer.fee} € pour {player.name}.", seller.id, player.id)
+            pending.append(offer if offer.awaiting_review else replace(offer, awaiting_review=True))
+            continue
         if seller and not seller_accepts(player, seller, offer.fee, world, rng):
             if not offer.countered and offer.fee < offer.ceiling:
                 pending.append(replace(offer, fee=offer.ceiling, countered=True))
@@ -49,9 +77,7 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
         highest = max(offer.score for offer in offers)
         tied = sorted((offer for offer in offers if offer.score == highest), key=lambda item: item.key)
         offer = tied[rng.randrange(len(tied))]
-        seller = world.clubs.get(offer.source_id)
-        still_sellable = seller is None or can_sell(world.players[player_id], seller, world)
-        signed = still_sellable and apply(world, PlayerSigned(player_id, offer.source_id, offer.target_id, offer.contract, offer.fee))
+        signed = resolve_accepted_offer(world, offer)
         for other in offers:
             if other.key != offer.key or not signed:
                 rejected[other.target_id].add(player_id)
@@ -70,11 +96,7 @@ def open_offers(world: World, open_market: bool, rejected: dict[int, set[int]] |
     for event in proposed:
         club = world.clubs[event.target_id]
         reserved = [offer for offer in offers if offer.target_id == club.id]
-        if len(reserved) >= cfg.management.market.max_negotiations: continue
-        if len(club.player_ids) + len(reserved) >= cfg.management.guardrails.max_squad: continue
-        if sum(offer.ceiling for offer in reserved) + event.fee > club.transfer_budget: continue
-        if club.balance - sum(offer.ceiling for offer in reserved) - event.fee < cfg.management.guardrails.min_balance: continue
-        if sum(offer.contract.weekly_wage for offer in reserved) + event.contract.weekly_wage + club.wage_bill > club.wage_cap: continue
+        if not can_open_offer(world, club, event.contract, event.fee, reserved): continue
         player = world.players[event.player_id]
         score = player_offer_score(player, club, event.contract.weekly_wage, world) + rng.gauss(0, cfg.management.market.player_score.noise)
         fee = round(event.fee * cfg.management.market.counteroffer_ratio)

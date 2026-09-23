@@ -50,7 +50,7 @@ def test_views_pagination_and_no_rng_leak(client):
     league_id = world.clubs[club_id].competition_id
     player_id = world.clubs[club_id].player_ids[0]
     match_id = world.competitions[league_id].match_ids[0]
-    routes = ["/monde/etat", "/monde/journal", "/monde/palmares", "/partie/rapport-import", "/partie/slots", "/clubs", "/clubs?statut=dormant&page=2", "/competitions",
+    routes = ["/monde/etat", "/monde/palmares", "/partie/rapport-import", "/partie/slots", "/clubs", "/clubs?statut=dormant&page=2", "/competitions",
               f"/clubs/{club_id}", *[f"/clubs/{club_id}/{section}" for section in ("effectif", "calendrier", "finances", "transferts", "historique", "apercu")],
               *[f"/competitions/{league_id}/{section}" for section in ("classement", "calendrier", "statistiques", "historique")],
               "/joueurs?page=2", "/joueurs?tri=contract_end&ordre=asc", f"/joueurs/{player_id}", f"/joueurs/{player_id}/historique", f"/matches/{match_id}"]

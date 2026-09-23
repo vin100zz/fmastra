@@ -15,6 +15,7 @@ from core.engine.abilities import overall
 from core.math import clamp
 from core.world.estimates import estimate_potential
 from core.world.events import PlayerSigned
+from core.world.human import is_human_club
 from core.world.transfer_rules import recent_arrival_ids, accepts_move, outgrown_by
 from core.world.importation.synthesis import intrinsic_value, expected_wage
 from .assignment import maximize_assignment
@@ -248,6 +249,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         return quotes[player.id]
 
     for club in world.active_clubs():
+        if is_human_club(world, club.id): continue  # the human club's outgoing offers come from its own command, not this scan
         pending = [offer for offer in world.offers.values() if offer.target_id == club.id]
         squad = [world.players[pid] for pid in club.player_ids]
         urgent = len(squad) < cfg.management.guardrails.min_squad or sum(player.position == Position.GOALKEEPER for player in squad) < cfg.management.guardrails.min_goalkeepers

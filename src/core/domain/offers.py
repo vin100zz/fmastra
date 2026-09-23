@@ -16,3 +16,13 @@ class TransferOffer:
     ceiling: int
     score: float
     countered: bool = False
+    awaiting_review: bool = False  # cleared the auction window; a human seller must accept or refuse it
+
+
+@dataclass(frozen=True, slots=True)
+class RenewalProposal:
+    """A renewal a human club's player would sign, awaiting the club's response."""
+    player_id: int
+    club_id: int
+    contract: Contract
+    created: Date

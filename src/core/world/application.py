@@ -4,14 +4,22 @@ from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
 from core.domain.matches import MatchResult, TRANSIENT_EVENT_KINDS
 from .finances import book_cash, book_daily_cash
+from .human import record as add_news
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
-                     FinancePosted, BudgetRenewed, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced, OffersUpdated)
+                     FinancePosted, BudgetRenewed, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
+                     OffersUpdated, RenewalProposed)
 
 
 def apply(world: World, event: WorldEvent) -> bool:
     if isinstance(event, OffersUpdated):
         world.offers = {offer.key: offer for offer in event.offers}
+    elif isinstance(event, RenewalProposed):
+        proposal = event.proposal
+        world.pending_renewals[proposal.player_id] = proposal
+        player = world.players[proposal.player_id]
+        add_news(world, "renewal_proposed", f"{player.name} est prêt à prolonger à {proposal.contract.weekly_wage} €/semaine.",
+              proposal.club_id, proposal.player_id)
     elif isinstance(event, DateAdvanced):
         if event.date < world.date: raise ValueError("Game time cannot move backwards")
         world.date = event.date
@@ -23,7 +31,11 @@ def apply(world: World, event: WorldEvent) -> bool:
         if event.healed: player.injury = None
         if event.injury is not None:
             player.injury = event.injury
-            world.journal.append(JournalEntry(world.date, "injury", f"{player.name} indisponible jusqu'au {event.injury.end.iso()}.", player.club_id, player.id))
+            text = f"{player.name} indisponible jusqu'au {event.injury.end.iso()}."
+            world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, player.id))
+            add_news(world, "injury", text, player.club_id, player.id)
+        if event.healed:
+            add_news(world, "injury_end", f"{player.name} est de nouveau disponible.", player.club_id, player.id)
         if event.reset_month: player.monthly_minutes = 0
     elif isinstance(event, MatchPlayed):
         _apply_match(world, event)
@@ -46,7 +58,10 @@ def apply(world: World, event: WorldEvent) -> bool:
             del world.players[player.id]
         kind = "retirement" if event.retirement else "release"
         world.transfers.append(TransferRecord(world.date, player.id, source, None, 0, kind, world.season, born=player.born))
-        world.journal.append(JournalEntry(world.date, kind, f"{player.name} : {'fin de carrière' if event.retirement else 'fin de contrat'}.", source, player.id))
+        text = f"{player.name} : {'fin de carrière' if event.retirement else 'fin de contrat'}."
+        world.journal.append(JournalEntry(world.date, kind, text, source, player.id))
+        add_news(world, kind, text, source, player.id)
+        world.pending_renewals.pop(event.player_id, None)
     elif isinstance(event, PlayerGenerated):
         player = event.player
         if player.id in world.players or player.id in world.retired: raise ValueError("Reused player ID")
@@ -69,7 +84,9 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.transfers.append(TransferRecord(world.date, player.id, None, player.club_id, 0, "academy", world.season,
                                                  born=player.born, snapshot=snapshot))
         if player.club_id and world.clubs[player.club_id].competition_id:
-            world.journal.append(JournalEntry(world.date, "academy", f"{player.name} rejoint le centre de formation.", player.club_id, player.id))
+            text = f"{player.name} rejoint le centre de formation."
+            world.journal.append(JournalEntry(world.date, "academy", text, player.club_id, player.id))
+            add_news(world, "academy", text, player.club_id, player.id)
     elif isinstance(event, FinancePosted):
         club = world.clubs[event.club_id]
         book_daily_cash(world, club, event.change)
@@ -99,7 +116,9 @@ def apply(world: World, event: WorldEvent) -> bool:
             destination = target.name if target else "division non simulée"
             kind = "promotion" if promoted else "relegation"
             action = "promu" if promoted else "relégué"
-            world.journal.append(JournalEntry(world.date, kind, f"{club.name} est {action} en {destination}.", club.id))
+            text = f"{club.name} est {action} en {destination}."
+            world.journal.append(JournalEntry(world.date, kind, text, club.id))
+            add_news(world, kind, text, club.id)
         for competition in world.competitions.values():
             competition.club_ids.sort()
     elif isinstance(event, SeasonOpened):
@@ -128,6 +147,8 @@ def apply(world: World, event: WorldEvent) -> bool:
         # Daily UI journal is bounded; durable scores, transfers and histories are separate.
         world.journal[:] = [entry for entry in world.journal if entry.date.year >= event.year - 1]
         world.journal.append(JournalEntry(world.date, "season", f"Ouverture de la saison {event.year}/{event.year + 1}."))
+        if world.controlled_club_id is not None:
+            add_news(world, "season", f"Ouverture de la saison {event.year}/{event.year + 1}.", world.controlled_club_id)
     else:
         raise TypeError(f"Unrecognized world event: {type(event)}")
     return True
@@ -171,7 +192,12 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     club.transfer_budget -= event.fee
     club.season_spent += event.fee
     world.transfers.append(TransferRecord(world.date, player.id, event.source_id, club.id, event.fee, "transfer", world.season))
-    world.journal.append(JournalEntry(world.date, "transfer", f"{player.name} rejoint {club.name}.", club.id, player.id))
+    text = f"{player.name} rejoint {club.name}."
+    world.journal.append(JournalEntry(world.date, "transfer", text, club.id, player.id))
+    add_news(world, "transfer", text, club.id, player.id)
+    if event.source_id is not None:
+        add_news(world, "transfer", text, event.source_id, player.id)
+    world.pending_renewals.pop(player.id, None)
     return True
 
 
@@ -190,7 +216,10 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
     for club_id in (match.home_id, match.away_id):
         for pid in world.clubs[club_id].player_ids:
             discipline = world.players[pid].discipline.get(match.competition_id)
-            if discipline and discipline.suspended_matches > 0: discipline.suspended_matches -= 1
+            if discipline and discipline.suspended_matches > 0:
+                discipline.suspended_matches -= 1
+                if discipline.suspended_matches == 0:
+                    add_news(world, "suspension_end", f"{world.players[pid].name} n'est plus suspendu.", club_id, pid)
     for pid, stats in event.result.player_stats.items():
         if pid in event.result.temporary_players:
             continue
@@ -208,12 +237,16 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         discipline = player.discipline.setdefault(match.competition_id, Discipline())
         discipline.yellows += stats.yellows
         discipline.suspended_matches += event.suspensions.get(pid, 0)
+        if event.suspensions.get(pid, 0):
+            add_news(world, "suspension", f"{player.name} est suspendu {event.suspensions[pid]} match(s).", player.club_id, pid, match.id)
         for threshold in world.config.states.suspensions.yellow_thresholds:
             if discipline.yellows >= threshold.yellows and threshold.yellows not in discipline.served_thresholds:
                 discipline.served_thresholds.append(threshold.yellows)
         if pid in event.injuries:
             player.injury = event.injuries[pid]
-            world.journal.append(JournalEntry(world.date, "injury", f"{player.name} se blesse en match.", player.club_id, pid, match.id))
+            text = f"{player.name} se blesse en match."
+            world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, pid, match.id))
+            add_news(world, "injury", text, player.club_id, pid, match.id)
         key = f"{match.season}:{pid}:{player.club_id}:{match.competition_id}"
         record = world.records.setdefault(key, SeasonRecord(match.season, pid, player.club_id, match.competition_id))
         record.minutes += stats.minutes
@@ -225,4 +258,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         if stats.rating is not None:
             record.rating_sum += stats.rating
             record.rating_count += 1
-    world.journal.append(JournalEntry(world.date, "result", f"{world.clubs[match.home_id].name} {event.result.home_goals}–{event.result.away_goals} {world.clubs[match.away_id].name}", match.home_id, match_id=match.id))
+    result_text = f"{world.clubs[match.home_id].name} {event.result.home_goals}–{event.result.away_goals} {world.clubs[match.away_id].name}"
+    world.journal.append(JournalEntry(world.date, "result", result_text, match.home_id, match_id=match.id))
+    for club_id in (match.home_id, match.away_id):
+        add_news(world, "result", result_text, club_id, match_id=match.id)

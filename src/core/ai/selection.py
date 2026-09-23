@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from core.config.model import Config
 from core.domain.clubs import Club
 from core.domain.date import Date
-from core.domain.matches import Lineup, LineupSlot
+from core.domain.matches import Lineup, LineupSlot, SubmittedLineup
 from core.domain.players import Player, Position
 from core.engine.abilities import overall, state_multiplier
 from .assignment import maximize_assignment
@@ -108,3 +108,29 @@ def select_lineup(context: LineupContext, cfg: Config) -> Lineup:
         candidates.remove(player)
         covered.add(role)
     return Lineup(context.club.id, formation, slots, bench, playing_time=priorities)
+
+
+def validate_lineup(context: LineupContext, lineup: SubmittedLineup, cfg: Config) -> None:
+    """Legality checks for a human-submitted lineup; raises ValueError on the first violation found."""
+    available = {player.id: player for player in context.players if player.available(context.competition_id, context.date)}
+    slot_ids = [player_id for player_id, _ in lineup.slots]
+    chosen = slot_ids + lineup.bench
+    if len(chosen) != len(set(chosen)):
+        raise ValueError("Un joueur ne peut occuper qu'une seule place.")
+    missing = [pid for pid in chosen if pid not in available]
+    if missing:
+        raise ValueError("Joueur indisponible ou hors effectif.")
+    expected = min(len(cfg.formations.formations[lineup.formation]), len(available))
+    if len(slot_ids) != expected:
+        raise ValueError("Nombre de titulaires incompatible avec la formation et l'effectif disponible.")
+    if len(lineup.bench) > cfg.world.match_rules.bench_size:
+        raise ValueError("Le banc dépasse la taille autorisée.")
+
+
+def to_lineup(world: "World", submitted: SubmittedLineup, competition_id: int, cfg: Config) -> Lineup:
+    """Reconstructs a transient Lineup from ids, with the same playing-time priorities an AI selection would carry."""
+    context = LineupContext.from_world(world, submitted.club_id, competition_id, world.date)
+    slots = [LineupSlot(world.players[player_id], Position(position)) for player_id, position in submitted.slots]
+    bench = [world.players[player_id] for player_id in submitted.bench]
+    priorities = playing_time_priorities(context.players, context.club, context.date, context.seed, context.games_played, cfg)
+    return Lineup(submitted.club_id, submitted.formation, slots, bench, playing_time=priorities)

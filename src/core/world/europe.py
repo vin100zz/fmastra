@@ -6,6 +6,7 @@ from core.randomness import stream
 from .calendar import Standing, standings
 from .cup_matches import decide_winner
 from .europe_draw import draw_matchdays
+from .human import record as add_news
 
 COMPETITIONS = ((-101, "C1", "Ligue des champions"), (-103, "C3", "Ligue Europa"),
                 (-104, "C4", "Conference League"))
@@ -185,8 +186,9 @@ def progress_europe(world: World) -> None:
             champions = world.champions.setdefault(cup.id, [])
             if not any(year == world.season for year, _ in champions):
                 champions.append((world.season, winners[0]))
-                world.journal.append(JournalEntry(world.date, "europe_winner",
-                    f"{world.clubs[winners[0]].name} remporte {cup.name}.", winners[0]))
+                text = f"{world.clubs[winners[0]].name} remporte {cup.name}."
+                world.journal.append(JournalEntry(world.date, "europe_winner", text, winners[0]))
+                add_news(world, "europe_winner", text, winners[0])
         elif current == rules.league_rounds + 2:
             direct = [row.club_id for row in standings(cup, matches, world.config)][:rules.direct_places]
             draw_knockout(world, cup, current + 1, direct, winners)

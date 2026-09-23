@@ -7,9 +7,9 @@ from random import Random
 from core.config.model import Config
 from .clubs import Club, Competition
 from .date import Date
-from .matches import Match
+from .matches import Match, SubmittedLineup
 from .players import Player, Position
-from .offers import TransferOffer
+from .offers import RenewalProposal, TransferOffer
 from .finance import FinanceSeason
 from .international import InternationalState
 
@@ -111,6 +111,11 @@ class World:
     # Reputation held when each season opened: club -> [(season, reputation)], oldest first.
     reputation_history: dict[int, list[tuple[int, float]]] = field(default_factory=dict)
     international: InternationalState = field(default_factory=InternationalState)
+    controlled_club_id: int | None = None
+    pending_match_day: Date | None = None
+    submitted_lineups: dict[int, SubmittedLineup] = field(default_factory=dict)
+    pending_renewals: dict[int, RenewalProposal] = field(default_factory=dict)
+    news: list[JournalEntry] = field(default_factory=list)
 
     def active_clubs(self) -> list[Club]:
         return [club for club in self.clubs.values() if club.competition_id is not None]
