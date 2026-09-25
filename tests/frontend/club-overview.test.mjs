@@ -83,7 +83,7 @@ test('the last eleven reuses the match pitch, and its absence is explained',()=>
  const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players};
  const html=clubOverview(club,data({lineup}));
  assert.equal((html.match(/class="pitch-player /g)||[]).length,11);
- assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1\/lineups"/);
+ assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
  assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
  // shirts wear the club's primary colour, ratings its secondary one
  assert.equal((html.match(/<span class="shirt" style="background:#cc0000;color:#ffd700">6,5<\/span>/g)||[]).length,11);

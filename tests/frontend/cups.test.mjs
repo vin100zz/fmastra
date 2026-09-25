@@ -41,17 +41,17 @@ test('country places the cup between the first and second divisions',async()=>{
 test('temporary players have no profile links on pitch, bench or timeline',async()=>{
  const previous=globalThis.fetch;
  const player={id:-123,name:'Renfort <test>',temporary:true,position:'GB',stats:{minutes:90,rating:6}};
- globalThis.fetch=async()=>({ok:true,json:async()=>({...match,competition:cup.name,neutral:true,result:{status:'played',home_stats:{},away_stats:{},home_lineup:[player],away_lineup:[],home_bench:[player],away_bench:[],events:[{kind:'penalty_scored',period:3,second:5400,team_id:1,player_id:-123,player:player.name,detail:'4–5',xg:null}]}})});
+ globalThis.fetch=async()=>({ok:true,json:async()=>({...match,competition:cup.name,neutral:true,result:{status:'played',home_stats:{},away_stats:{},home_lineup:[player],away_lineup:[],home_bench:[player],away_bench:[],events:[{kind:'goal',period:2,second:4000,team_id:1,player_id:-123,player:player.name,detail:'',xg:.3},{kind:'penalty_scored',period:3,second:5400,team_id:1,player_id:-123,player:player.name,detail:'4–5',xg:null}]}})});
  try{
-  const lineups=await matchScreen(1,'lineups');
-  const timeline=await matchScreen(1,'timeline');
-  for(const html of [lineups,timeline,playerLink(player.id,player.name)]){
-   assert.doesNotMatch(html,/href="#\/player\/-123"/);
-   assert.match(html,/temporary-player/);
-   assert.match(html,/Renfort &lt;test&gt;/);
+  const html=await matchScreen(1);
+  for(const part of [html.slice(html.indexOf('match-lineup')),html.slice(html.indexOf('Les temps forts')),playerLink(player.id,player.name)]){
+   assert.doesNotMatch(part,/href="#\/player\/-123"/);
+   assert.match(part,/temporary-player/);
+   assert.match(part,/Renfort &lt;test&gt;/);
   }
-  assert.match(lineups,/Terrain neutre/);
-  assert.match(timeline,/Tir au but réussi/);
-  assert.match(timeline,/>TAB</);
+  assert.match(html,/Terrain neutre/);
+  // one view, no tabs; the highlights keep goals but leave the shoot-out to the scoreboard
+  assert.doesNotMatch(html,/class="tabs"/);
+  assert.equal((html.match(/class="highlight-row"/g)||[]).length,1);
  }finally{globalThis.fetch=previous;}
 });

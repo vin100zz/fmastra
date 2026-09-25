@@ -100,3 +100,32 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 #lineup-form .dragging{opacity:.4}#lineup-form .drop-hover{outline:2px dashed var(--green);outline-offset:2px;background:#e3f1dc}.lineup-pitch .drop-hover{background:#ffffffb0}.lineup-squad.drop-hover{outline-offset:-2px}
 @media(max-width:900px){.lineup-layout{grid-template-columns:1fr}.lineup-pitch{max-width:440px;width:100%;margin:0 auto}.lineup-squad .table-scroll{max-height:none}}
 .drag-token{position:fixed;top:-1000px;left:0;transform:none;z-index:-1}
+
+/* Match report: both line-ups around the figures and the highlights. */
+.match-layout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.match-layout .card{margin-bottom:14px}
+@media(max-width:1329px){.match-layout{grid-template-columns:repeat(2,minmax(0,1fr))}.match-center{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}}
+@media(max-width:850px){.match-layout,.match-center{grid-template-columns:minmax(0,1fr)}}
+.match-sides{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.match-center .comparison-bar span{box-shadow:inset 0 0 0 1px #00000038}
+.match-mark{display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;line-height:1;white-space:nowrap;flex-shrink:0}
+.match-mark.booking{width:8px;height:11px;border-radius:2px;box-shadow:0 0 0 1px #0000002e}.match-mark.booking.yellow{background:#f2c230}.match-mark.booking.red{background:#d6332b}
+/* Even sizes and whole-pixel offsets, so the cross never lands on a half pixel. */
+.match-mark.injury{position:relative;width:14px;height:14px;border-radius:50%;background:var(--red)}.match-mark.injury:before,.match-mark.injury:after{content:"";position:absolute;background:#fff}.match-mark.injury:before{left:3px;right:3px;top:6px;height:2px}.match-mark.injury:after{top:3px;bottom:3px;left:6px;width:2px}
+.match-mark.goal{font-size:11px}.match-mark.sub-on{color:#1f7a3f}.match-mark.sub-off{color:var(--red)}
+.pitch-marks{position:absolute;left:calc(50% + 19px);top:-3px;display:flex;align-items:center;gap:2px;z-index:2;pointer-events:none}
+.pitch-marks .match-mark.sub-on,.pitch-marks .match-mark.sub-off{background:#fffffff0;padding:2px 3px;border-radius:3px;box-shadow:0 1px 2px #25452330}
+.bench-player{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}.bench-player.unused{opacity:.55}
+.bench-shirt{width:20px;height:20px;border-radius:4px 4px 6px 6px;display:inline-grid;place-items:center;font-size:9px;font-weight:700;background:#8a9193;color:#fff;flex-shrink:0;box-shadow:0 0 0 1px #0000003d}
+.highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);align-items:center;padding:8px 0;border-bottom:1px solid #edf0eb;font-size:12px}
+.highlight-row .minute{text-align:center;font-weight:700;color:#7d8f76}
+.highlight{display:flex;align-items:center;gap:8px;min-width:0}.highlight.home{flex-direction:row-reverse;text-align:right}
+.highlight small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.match-banner{padding:10px 18px}.match-banner .scoreboard{margin:4px 0;font-size:19px}.match-banner .scoreboard .big-score{font-size:30px;line-height:1.1}.match-banner p{margin:2px 0}
+.match-stats .card-head{padding:12px 16px}.match-stats .card-body{padding:10px 16px 12px}
+.match-stats .comparison{grid-template-columns:44px 1fr 44px;gap:10px;margin:0;padding:3px 0;font-size:11px}
+.match-stats .comparison-center{font-size:10px;line-height:1.2}.match-stats .comparison-bar{height:4px;margin-top:2px}
+.match-stats .match-sides{padding-bottom:5px;margin-bottom:3px}
+.match-banner{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr) minmax(0,230px);align-items:center;gap:16px}.match-context{text-align:left;align-self:start}.match-context p{margin:3px 0 0}
+.match-banner .scoreboard,.match-banner .scoreboard .big-score{font-size:28px;line-height:1.2}.match-banner .scoreboard{margin:0}
+@media(max-width:1100px){.match-banner{grid-template-columns:minmax(0,1fr);gap:6px}.match-banner .scoreboard{margin:0}}
+@media(max-width:650px){.match-banner .scoreboard,.match-banner .scoreboard .big-score{font-size:20px}}
