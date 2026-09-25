@@ -8,6 +8,7 @@ import {honoursScreen} from './honours.js';
 import {internationalScreen} from './international.js';
 import {clubSelectScreen} from './club-select.js';
 import {myClubScreen} from './my-club.js';
+import {compositionIssues,lineupSubmission} from './composition.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
@@ -15,11 +16,17 @@ const sortScope=table=>`${location.hash.split('?')[0]}|${[...main.querySelectorA
 let state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,justPlayedMatchId=null,lastFinishedJobId=null;
 const main=document.querySelector('#main');
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the report).
-function onCompositionScreen(){const {parts}=routeParts();return parts[0]==='mon-club'&&parts[1]==='composition';}
+const compositionHash=()=>`#/club/${state.controlled_club_id}/composition`;
+function onCompositionScreen(){const {parts}=routeParts();return parts[0]==='club'&&Number(parts[1])===state.controlled_club_id&&parts[2]==='composition';}
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),mode=document.querySelector('#advance-mode');
  const jouer=state.awaiting_lineup&&onCompositionScreen();
  button.innerHTML=jouer?'Jouer <span>→</span>':state.awaiting_lineup?'Match <span>→</span>':'Continuer <span>→</span>';
+ // An unplayable lineup greys Jouer out; it stays hoverable (aria-disabled, not disabled) so its tooltip tells what to fix.
+ const issues=jouer?compositionIssues():[];
+ button.classList.toggle('blocked',issues.length>0);
+ if(issues.length){button.setAttribute('aria-disabled','true');button.title=`Composition à corriger :\n• ${issues.join('\n• ')}`;}
+ else{button.removeAttribute('aria-disabled');button.removeAttribute('title');}
  mode.hidden=Boolean(state.awaiting_lineup);
 }
 // The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
@@ -82,7 +89,7 @@ async function render(){const version=++renderVersion;const {parts,params}=route
  const selection=focusName&&'selectionStart' in active?[active.selectionStart,active.selectionEnd]:null;
  try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section,extra]=parts;
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
-  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(id,params);break;default:html=await dashboard(leagues);}}
+  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id,section);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
  if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;main.innerHTML=html;if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
  }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
@@ -105,15 +112,12 @@ async function command(path,payload){
 }
 // Submits the composition being edited, then plays the day out; pollJob redirects to the match report on success.
 async function playMatch(){
- const form=document.querySelector('#lineup-form');
- if(!form)return;
- const matchId=Number(form.dataset.match);
- const titulaires=[...form.querySelectorAll('[name^="slot-"]')].map(select=>[Number(select.value),select.dataset.position]);
- const banc=[...form.querySelectorAll('[name^="bench-"]')].map(select=>select.value).filter(Boolean).map(Number);
- if(titulaires.some(([id])=>!id)){toast('Chaque poste titulaire doit avoir un joueur.',true);return;}
+ const lineup=lineupSubmission();
+ if(!lineup){const issues=compositionIssues();if(issues.length)toast(`Composition à corriger : ${issues.join(' · ')}`,true);return;}
+ const matchId=lineup.match_id;
  if(polling||submitting)return;
  submitting=true;busyButtons();
- try{await api('/partie/composition',{match_id:matchId,formation:form.dataset.formation,titulaires,banc,commande_id:crypto.randomUUID()});}
+ try{await api('/partie/composition',{...lineup,commande_id:crypto.randomUUID()});}
  catch(error){submitting=false;busyButtons();toast(error.message,true);return;}
  submitting=false;
  pendingMatchRedirect=matchId;
@@ -170,7 +174,7 @@ document.querySelector('#autoplay').addEventListener('click',async()=>{
 });
 
 document.querySelector('#advance').addEventListener('click',()=>{
- if(state.awaiting_lineup&&!onCompositionScreen()){location.hash='#/mon-club/composition';return;}
+ if(state.awaiting_lineup&&!onCompositionScreen()){location.hash=compositionHash();return;}
  if(state.awaiting_lineup)return playMatch();
  // Closes the match screenflow (Composition → Jouer → Résultat) on its own report page: one more click, straight to Mon club.
  const {parts}=routeParts();
@@ -189,6 +193,16 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
  if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
  if(button.id==='retry')render();});
+// Player actions open in a dialog kept inside the page, so each re-render closes it.
+main.addEventListener('click',event=>{const opener=event.target.closest('[data-open-dialog]');if(opener){main.querySelector(`#${opener.dataset.openDialog}`)?.showModal();return;}const closer=event.target.closest('[data-close-dialog]');if(closer)closer.closest('dialog')?.close();});
+// Mon club inbox: opening an entry marks it as read (a link still navigates); the page redraws only when it stays put.
+main.addEventListener('click',async event=>{
+ const entry=event.target.closest('[data-news],[data-news-read]');if(!entry)return;
+ const ids=entry.dataset.newsRead==='all'?null:[Number(entry.dataset.news)];
+ if(entry.matches('a')){entry.classList.remove('unread');api('/partie/actualites-lues',{ids}).catch(()=>{});return;}
+ try{await api('/partie/actualites-lues',{ids});}catch(error){toast(error.message,true);}
+ await render();
+});
 // The list of peers in a page header closes on a click elsewhere, on a choice and on Escape; opening it centres the current entry.
 document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a'))menu.removeAttribute('open');}));
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
@@ -198,5 +212,6 @@ window.addEventListener('hashchange',()=>{
  if(justPlayedMatchId!=null&&!(parts[0]==='match'&&Number(parts[1])===justPlayedMatchId))justPlayedMatchId=null;
  render();window.scrollTo({top:0});
 });
+document.addEventListener('lineup-change',updateAdvanceButton);
 window.addEventListener('unhandledrejection',event=>toast(event.reason?.message||'Une erreur inattendue est survenue.',true));
 render();

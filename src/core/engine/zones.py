@@ -5,7 +5,7 @@ from random import Random
 from core.config.model import Config
 from core.domain.matches import LineupSlot
 from core.domain.players import Position
-from core.math import weighted_choice, clamp
+from core.math import weighted_choice, clamp, soften
 from .abilities import weighted_rating, state_multiplier
 from .local_state import TeamState
 
@@ -54,7 +54,8 @@ def gap(attacker: TeamState, defender: TeamState, zone: int, lane: int, creation
     defense = defender.zones[defense_key][other_zone][other_lane]
     if counter:
         defense = max(0, defense - cfg.engine.turnover.lane_defense_penalty)
-    return attacker.zones[attack_key][zone][lane] - defense
+    # A mismatch between levels no football meets (60 points) must not turn every possession into a goal.
+    return soften(attacker.zones[attack_key][zone][lane] - defense, cfg.engine.transitions.max_gap)
 
 
 def choose_lane(attacker: TeamState, defender: TeamState, zone: int, cfg: Config, rng: Random,

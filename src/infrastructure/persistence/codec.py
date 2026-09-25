@@ -91,6 +91,8 @@ def decode(value: Any) -> Any:
             value["fields"].setdefault("international", encode(InternationalState()))
             for name, default in (("finance_history", {"$map": []}), ("finance_history_since", None), ("movement_history_since", None)):
                 value["fields"].setdefault(name, default)
+        if cls is JournalEntry:
+            value["fields"].setdefault("read", False)
         if cls is MovementSnapshot:
             value["fields"].setdefault("potential", None)
         if cls is TransferRecord:

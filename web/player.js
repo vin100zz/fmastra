@@ -77,12 +77,38 @@ export function levelChart(points) {
  return `<div class="level-chart" role="img" aria-label="Évolution annuelle du niveau, sur 200"><div class="plot">${lines}${axis}${marks}</div></div>`;
 }
 
-function header(player, lead='', controlledClubId) {
+function header(player, lead='', actions='') {
  const identity=`<div class="identity">${lead}<div class="avatar">${initials(player.name)}</div><div><span class="eyebrow">${player.retired?'CARRIÈRE ARCHIVÉE':nationBadges(player.nationalities,{full:true})}</span><h1>${e(player.name)}</h1><p>${player.retired?'Retraité':`${position(player.position)}<span class="secondary-positions" title="Postes secondaires">${player.secondary_positions.map(position).join('')}</span> ${player.age} ans · ${clubLink(player.club)}`}</p></div></div>`;
  if(player.retired)return `<div class="page-heading player-heading">${identity}</div>`;
  const facts=[['Né le',date(player.born)],['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)]];
- const offer=controlledClubId!=null&&player.club?.id!==controlledClubId?`<a class="pill" href="#/mon-club/transferts?joueur_id=${player.id}">Faire une offre →</a>`:'';
- return `<div class="page-heading player-heading">${identity}<dl class="player-facts">${facts.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>${offer}</div>`;
+ return `<div class="page-heading player-heading">${identity}<dl class="player-facts">${facts.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>${actions}</div>`;
+}
+
+const dialogButtons=confirm=>`<div class="actions"><button type="button" data-close-dialog>Annuler</button>${confirm}</div>`;
+
+// A bid from the controlled club: the fee and the weekly wage start at the player's value and current wage.
+function offerAction(player, state, pending) {
+ const current=pending?`<span class="pill">Offre en cours · ${money(pending.indemnite)}</span>`:'';
+ const button=`<button class="primary" type="button" data-open-dialog="offer-dialog" ${state.market?'':'disabled title="Le mercato est fermé."'}>Faire une offre</button>`;
+ const dialog=`<dialog id="offer-dialog" class="action-dialog"><form id="offer-form"><span class="eyebrow">MERCATO</span><h2>Faire une offre pour ${e(player.name)}</h2><p>Valeur de marché ${money(player.value)} · salaire actuel ${monthlySalary(player.wage)} / mois.</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Indemnité offerte (€) <input name="indemnite" type="number" min="0" step="1" value="${Math.round(player.value||0)}" required></label><label>Salaire proposé (€/semaine) <input name="salaire_hebdo" type="number" min="1" step="1" value="${Math.max(1,player.wage||0)}" required></label>${dialogButtons('<button class="primary" type="submit">Envoyer l’offre</button>')}</form></dialog>`;
+ return `<div class="player-actions">${current}${button}</div>${dialog}`;
+}
+
+// Contracts are extended on the player's terms: his pending demand is accepted or turned down.
+function contractAction(player, renewal) {
+ const button=`<button class="primary" type="button" data-open-dialog="contract-dialog" ${renewal?'':'disabled title="Le joueur n’attend pas de prolongation pour l’instant."'}>Proposer un contrat</button>`;
+ if(!renewal)return `<div class="player-actions">${button}</div>`;
+ const terms=`<div class="card-body">${fact('Salaire actuel',`${monthlySalary(renewal.salaire_actuel)} / mois`)}${fact('Salaire demandé',`${monthlySalary(renewal.salaire_propose)} / mois`)}${fact('Fin de contrat actuelle',date(renewal.fin_contrat_actuelle))}${fact('Fin de contrat proposée',date(renewal.fin_contrat_proposee))}</div>`;
+ const dialog=`<dialog id="contract-dialog" class="action-dialog"><div><span class="eyebrow">PROLONGATION</span><h2>Nouveau contrat pour ${e(player.name)}</h2><p>Le joueur est prêt à prolonger aux conditions suivantes.</p>${terms}${dialogButtons(`<button data-command="renouvellement" data-decision="refuser" data-player="${player.id}">Refuser</button><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${player.id}">Signer</button>`)}</div></dialog>`;
+ return `<div class="player-actions"><span class="pill">Prolongation en attente</span>${button}</div>${dialog}`;
+}
+
+async function playerActions(player, state) {
+ const clubId=state.controlled_club_id;
+ if(clubId==null||player.retired)return '';
+ if(player.club?.id===clubId){const contracts=await api('/ma-partie/contrats');return contractAction(player,contracts.items.find(row=>row.joueur_id===player.id));}
+ const transfers=await api('/ma-partie/transferts');
+ return offerAction(player,state,transfers.sortantes.find(offer=>offer.joueur_id===player.id));
 }
 
 function profile(player, chart, career) {
@@ -97,6 +123,7 @@ function profile(player, chart, career) {
 
 export async function playerScreen(id) {
  const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
+ const actions=await playerActions(player,state);
  // The latest club of each season: career rows are listed newest first.
  const clubs=new Map();for(const row of history.career.items)if(!clubs.has(row.season))clubs.set(row.season,row.club);
  const points=[...history.trajectory.items].reverse().map(point=>({...point,club:clubs.get(point.season)}));
@@ -104,7 +131,7 @@ export async function playerScreen(id) {
  const totals=history.career.totals;
  const footer=['Total','',totals.fee?money(totals.fee):'—','',`${n(totals.matches)}`,`${n(totals.goals)}`,`${n(totals.assists)}`,totals.average?n(totals.average):'—'];
  const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,row.matches,row.goals,row.assists,row.average?n(row.average):'—']),footer));
- return header(player,playerNavigation(neighbours),state.controlled_club_id)+(player.retired?chart+career:profile(player,chart,career));
+ return header(player,playerNavigation(neighbours),actions)+(player.retired?chart+career:profile(player,chart,career));
 }
 
 function internationalCareer(player){

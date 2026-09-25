@@ -29,6 +29,8 @@ def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: i
         chance = coefficient * gap(attacker, defender, zone, lane, creation, cfg, counter)
         chance += rules.creation_bias if creation else rules.progression_bias
         if not creation and home: chance += rules.home_bonus
+        # A side far ahead manages the score rather than chasing more goals.
+        chance -= rules.easing_per_goal * max(0, attacker.goals - defender.goals - rules.comfortable_lead)
         if rng.random() >= sigmoid(chance):
             break
         if creation:

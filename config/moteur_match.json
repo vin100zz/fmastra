@@ -13,7 +13,11 @@
     "creation_bias": -1.90,
     "k_prog": 0.040,
     "k_occ": 0.030,
-    "bonus_domicile": 0.30
+    "bonus_domicile": 0.30,
+    "_note": "ecart_note_max borne en douceur (tanh) les ecarts de note entre lignes et tireur/gardien ; au-dela de avance_confortable buts d'avance, chaque but de plus retire relachement_par_but au logit d'attaque.",
+    "ecart_note_max": 20.0,
+    "avance_confortable": 2,
+    "relachement_par_but": 0.4
   },
   "densite": {
     "_note": "facteur = (densite / reference) ** exposant. Levier principal d'equilibrage des formations.",

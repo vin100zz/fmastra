@@ -33,11 +33,13 @@ class LineupContext:
         return cls(club, [world.players[pid] for pid in club.player_ids if pid not in called_up], competition_id, date, world.seed, games)
 
 
-def select_lineup(context: LineupContext, cfg: Config) -> Lineup:
+def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None) -> Lineup:
+    """Best eleven and bench; a given `formation` is kept as is, otherwise the club's may give way to a better-suited one."""
+    forced = formation is not None
     players = sorted((player for player in context.players if player.available(context.competition_id, context.date)),
                      key=lambda player: player.id)
     formations = cfg.formations.formations
-    formation = context.club.formation
+    formation = formation or context.club.formation
     if len(players) < cfg.world.match_rules.players_on_pitch:
         # Preserve the keeper slot and strongest available outfield coverage.
         roles = [Position(role) for role in formations[formation]][:len(players)]
@@ -48,7 +50,7 @@ def select_lineup(context: LineupContext, cfg: Config) -> Lineup:
     scores = [[overall(player.attributes, role, cfg) * state_multiplier(player, role, cfg)
                for player in players] for role in roles]
     assigned = maximize_assignment(scores)
-    if any(players[index].affinity(role) == 0 for role, index in zip(roles, assigned)):
+    if not forced and any(players[index].affinity(role) == 0 for role, index in zip(roles, assigned)):
         best_key = (sum(players[index].affinity(role) > 0 for role, index in zip(roles, assigned)),
                     sum(scores[row][index] for row, index in enumerate(assigned)))
         for name, other in formations.items():
@@ -112,6 +114,8 @@ def select_lineup(context: LineupContext, cfg: Config) -> Lineup:
 
 def validate_lineup(context: LineupContext, lineup: SubmittedLineup, cfg: Config) -> None:
     """Legality checks for a human-submitted lineup; raises ValueError on the first violation found."""
+    if lineup.formation not in cfg.formations.formations:
+        raise ValueError("Tactique inconnue.")
     available = {player.id: player for player in context.players if player.available(context.competition_id, context.date)}
     slot_ids = [player_id for player_id, _ in lineup.slots]
     chosen = slot_ids + lineup.bench

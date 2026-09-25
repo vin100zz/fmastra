@@ -63,6 +63,11 @@ class OfferDecision(Command):
     decision: Literal["accepter", "refuser"]
 
 
+class NewsRead(Command):
+    # None marks the whole feed as read.
+    ids: list[int] | None = None
+
+
 def squad_sort_key(world, column: str):
     """Orders the squad table by what a column shows, not by the raw value behind it."""
     if column == "position": return lambda row: position_rank(row["position"])
@@ -75,6 +80,42 @@ def squad_sort_key(world, column: str):
         codes = build_nation_table(world.nation_names)
         return lambda row: [codes.get(code, {}).get("display_code", code) for code in row["nationalities"]]
     return lambda row: row[column]
+
+
+def lineup_player(world, player, competition_id: int) -> dict:
+    """A squad row of the lineup screen, with why the player cannot take part in this match."""
+    row = v.player_row(world, player)
+    injured = player.injury is not None and player.injury.end > world.date
+    discipline = player.discipline.get(competition_id)
+    row["unavailable"] = "injured" if injured else "suspended" if discipline and discipline.suspended_matches else None
+    row["match_suspension"] = discipline.suspended_matches if discipline else 0
+    return row
+
+
+def previous_lineup(world, match, context, formations: dict) -> dict | None:
+    """The club's last starting eleven and bench laid out on the formation they fit, players who left dropped.
+
+    Its formation is the one holding the same positions; otherwise the club's, each player on a slot of his position."""
+    club_id = context.club.id
+    played = sorted((other for other in world.matches.values() if other.result is not None and other.id != match.id
+                     and club_id in (other.home_id, other.away_id)), key=lambda other: (other.date, other.id))
+    squad = {player.id for player in context.players}
+    for other in reversed(played):
+        side = "home" if other.home_id == club_id else "away"
+        eleven = getattr(other.result, f"{side}_lineup")
+        if not eleven: continue
+        positions = sorted(position for _, position in eleven)
+        formation = next((name for name, roles in formations.items() if sorted(roles) == positions),
+                         context.club.formation if context.club.formation in formations else next(iter(formations)))
+        remaining = [(pid, position) for pid, position in eleven if pid in squad]
+        slots = []
+        for role in formations[formation]:
+            found = next((item for item in remaining if item[1] == role), None)
+            if found: remaining.remove(found)
+            slots.append((found[0] if found else None, role))
+        bench = [pid for pid in getattr(other.result, f"{side}_bench") if pid in squad][:world.config.world.match_rules.bench_size]
+        return {"formation": formation, "titulaires": slots, "banc": bench}
+    return None
 
 
 def router(service: GameService) -> APIRouter:
@@ -178,13 +219,21 @@ def router(service: GameService) -> APIRouter:
             if match is None or club_id not in (match.home_id, match.away_id):
                 raise HTTPException(404, "Match introuvable pour ce club.")
             context = LineupContext.from_world(world, club_id, match.competition_id, world.date)
-            available = [player for player in context.players if player.available(match.competition_id, world.date)]
-            suggested = select_lineup(context, world.config)
+            formations = world.config.formations.formations
+            suggestions = {}
+            for name in formations:
+                lineup = select_lineup(context, world.config, name)
+                suggestions[name] = {"titulaires": [(slot.player.id, slot.position) for slot in lineup.slots],
+                                     "banc": [player.id for player in lineup.bench]}
+            default = previous_lineup(world, match, context, formations)
+            if default is None:
+                formation = context.club.formation if context.club.formation in formations else next(iter(formations))
+                default = {"formation": formation, **suggestions[formation]}
             return {"match_id": match_id, "opponent": v.club_ref(world, match.away_id if match.home_id == club_id else match.home_id),
-                    "home": match.home_id == club_id, "players": [v.player_row(world, player) for player in available],
-                    "formations": list(world.config.formations.formations.keys()),
-                    "suggestion": {"formation": suggested.formation, "banc": [player.id for player in suggested.bench],
-                                   "titulaires": [(slot.player.id, slot.position) for slot in suggested.slots]}}
+                    "home": match.home_id == club_id, "players": [lineup_player(world, player, match.competition_id) for player in context.players],
+                    "formations": {name: list(roles) for name, roles in formations.items()},
+                    "bench_size": world.config.world.match_rules.bench_size,
+                    "default": default, "suggestions": suggestions}
 
     @api.post("/partie/renouvellement")
     def respond_renewal(command: RenewalDecision) -> dict:
@@ -293,9 +342,19 @@ def router(service: GameService) -> APIRouter:
     def news(page: int = Query(1, ge=1)) -> dict:
         with service.reading() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
-            rows = [{"date": item.date.iso(), "kind": item.kind, "text": item.text, "club_id": item.club_id,
-                     "player_id": item.player_id, "match_id": item.match_id} for item in reversed(world.news)]
-            return v.paginate(rows, page)
+            rows = [{"id": index, "date": item.date.iso(), "kind": item.kind, "text": item.text, "club_id": item.club_id,
+                     "player_id": item.player_id, "match_id": item.match_id, "read": item.read}
+                    for index, item in reversed(list(enumerate(world.news)))]
+            return {**v.paginate(rows, page), "unread": sum(not item.read for item in world.news)}
+
+    @api.post("/partie/actualites-lues")
+    def mark_news_read(command: NewsRead) -> dict:
+        # A reading flag only, outside the simulation: allowed while the auto mode runs, unlike `mutating`.
+        with service.reading() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            targets = world.news if command.ids is None else [world.news[index] for index in command.ids if 0 <= index < len(world.news)]
+            for item in targets: item.read = True
+            return {"unread": sum(not item.read for item in world.news)}
 
     @api.get("/monde/transferts")
     def global_transfers(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer", page: int = Query(1, ge=1),

@@ -1,5 +1,5 @@
 """Pure numerical helpers; constants here are mathematical, not game rules."""
-from math import exp, log
+from math import exp, log, tanh
 from collections.abc import Sequence
 from random import Random
 from typing import TypeVar
@@ -20,6 +20,11 @@ def sigmoid(value: float) -> float:
 
 def logit(value: float) -> float:
     return log(value / (1 - value))
+
+
+def soften(value: float, limit: float) -> float:
+    """Near-identity for small values, smoothly bounded by +/- limit for large ones."""
+    return limit * tanh(value / limit)
 
 
 def weighted_choice(values: Sequence[T], weights: Sequence[float], rng: Random) -> T:

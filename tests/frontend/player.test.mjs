@@ -62,7 +62,7 @@ test('position pitch places ratings of 10 or more on the field and outlines the 
 
 test('player page merges profile and career without tabs, stat cards or identity block',async()=>{
  const {html,urls}=await render();
- assert.deepEqual(urls.sort(),['/api/joueurs/1','/api/joueurs/1/historique','/api/joueurs/1/navigation']);
+ assert.deepEqual(urls.sort(),['/api/joueurs/1','/api/joueurs/1/historique','/api/joueurs/1/navigation','/api/monde/etat']);
  assert.doesNotMatch(html,/class="tabs"|stat-card|Identité et contrat|Aptitudes par poste[^]*Matchs|Note moyenne/);
  for(const label of ['Attributs','Aptitudes par poste','État du joueur','Évolution du niveau','La carrière'])assert.ok(html.includes(label),label);
  assert.ok(html.indexOf('Attributs')<html.indexOf('La carrière')&&html.indexOf('Évolution du niveau')<html.indexOf('La carrière'));

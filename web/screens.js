@@ -3,6 +3,7 @@ import {cupSummaryCard,cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {financialHistory,movementsHistory,seasonsHistory} from './club-history.js';
 import {clubOverview} from './club-overview.js';
+import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
 
@@ -48,13 +49,16 @@ export async function clubsScreen(params){
 }
 
 export async function clubScreen(id,section,params){
- const [club,neighbours]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/navigation`)]); section=section||'squad';
- const menu=[['squad','Effectif'],['calendar','Calendrier'],['finances','Finances'],['transfers','Transferts'],['history','Historique']];
+ const [club,neighbours,state]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/navigation`),api('/monde/etat')]); section=section||'squad';
+ // The club run by the user also gets its lineup form.
+ const human=state.controlled_club_id===club.id;
+ const menu=[['squad','Effectif'],...(human?[['composition','Composition']]:[]),['calendar','Calendrier'],['finances','Finances'],['transfers','Transferts'],['history','Historique']];
  const major=safeColor(club.major_color), minor=safeColor(club.minor_color)||major;
  const crestStyle=major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:'';
  const title=`<div class="page-heading"><div class="identity">${clubNavigation(neighbours,section)}<div class="crest"${crestStyle}>${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div><div><span class="eyebrow">${nationBadge(club.nation_code,{full:true})} · ${club.active?'CLUB ACTIF':'MARCHÉ EXTÉRIEUR'}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : information uniquement, sans effet sur la simulation">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
  let content='';
  if(section==='squad'){const [data,overview]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`)]); content=clubOverview(club,overview)+card(`Effectif · ${club.squad_size} joueurs`,playerTable(data,false,params.get('tri')||'position',params.get('ordre')||'asc'),`<span class="legend">${['GB','DC','MC','BU'].map(position).join('')}</span>`);}
+ else if(section==='composition'&&human)content=await compositionContent(params,state);
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${params}`); content=card('Calendrier de la saison',fixtures(data,true)+pager(data));}
  else if(section==='transfers'){const data=await api(`/clubs/${id}/transferts?${params}`);content=movementsHistory(data);}
  else if(section==='finances'){const data=await api(`/clubs/${id}/finances?${params}`); content=`<div class="stat-grid">${stat('Budget transferts',money(Math.max(0,data.transfer_budget-data.reserved_transfer_budget)),'Disponible hors offres en cours')}${stat('Solde',money(data.balance),'Trésorerie du club')}${stat('Revenus annuels',money(data.income),'Estimation structurelle')}${stat('Masse salariale',monthlySalary(data.wage_bill),'Par mois (moyenne)')}</div><div class="grid equal">${card('Engagements salariaux',`<div class="card-body">${fact('Masse salariale',monthlySalary(data.wage_bill)+' / mois')}${fact('Plafond',monthlySalary(data.wage_cap)+' / mois')}${fact('Offres en cours',monthlySalary(data.reserved_wages)+' / mois')}<div class="meter"><span style="width:${Math.min(100,100*data.wage_bill/Math.max(1,data.wage_cap))}%"></span></div><p>${Math.round(100*data.wage_bill/Math.max(1,data.wage_cap))}% du plafond utilisé</p></div>`)}${card('Activité de la saison',`<div class="card-body">${fact('Budget réservé aux offres',money(data.reserved_transfer_budget))}${fact('Achats',money(data.season_spent))}${fact('Ventes',money(data.season_sales))}${fact('Balance des transferts',money(data.season_sales-data.season_spent))}</div>`)}</div>`;content+=financialHistory(data.history);}

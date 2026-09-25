@@ -2,7 +2,7 @@
 from random import Random
 
 from core.config.model import Config
-from core.math import clamp, logit, sigmoid, weighted_choice
+from core.math import clamp, logit, sigmoid, soften, weighted_choice
 from core.domain.matches import LineupSlot
 from core.domain.players import Position
 from .abilities import weighted_rating, state_multiplier
@@ -62,7 +62,7 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
         keeper_quality = (weights.saving * keeper_quality + weights.claiming * weighted_rating(keeper.player.attributes, cfg.attributes.composites.claiming))
     keeper_quality *= state_multiplier(keeper.player, keeper.position, cfg, defender.fitness[keeper.player.id])
     xg = clamp(xg, rules.probability_min, rules.probability_max)
-    p_goal = sigmoid(logit(xg) + rules.finishing_sensitivity * (shot_quality - keeper_quality))
+    p_goal = sigmoid(logit(xg) + rules.finishing_sensitivity * soften(shot_quality - keeper_quality, cfg.engine.transitions.max_gap))
     p_target = max(p_goal, sigmoid(logit(rules.on_target_probability) + rules.on_target_sensitivity * (shot_quality - rules.on_target_reference)))
     log.shots += 1
     shot_id = log.shots

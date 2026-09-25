@@ -42,9 +42,11 @@ test('calendar lists results with their outcome and the fixtures still to play',
  // a league game needs no competition; a cup tie or a shootout is named on the opponent's line
  assert.doesNotMatch(html,/<small>Ligue 1/);
  const cup=clubOverview(club,data({calendar:{last:[match(5,[7,'Lens'],[8,'Rennes'],{competition:'Coupe de France',score:[1,1],penalties:[4,3],outcome:'V'}),match(6,[9,'Nice'],[7,'Lens'],{competition:'Coupe de France',score:[0,1],outcome:'V'})],next:[]}}));
- assert.match(cup,/Rennes<\/b><small>Coupe de France · t\.a\.b\. 4 – 3<\/small>/);
+ assert.match(cup,/Rennes<\/b><span class="competition-badge">Coupe de France<\/span><small>t\.a\.b\. 4 – 3<\/small>/);
  assert.match(cup,/title="Coupe de France · Journée 19 · Domicile · t\.a\.b\. 4 – 3"/);
- assert.match(cup,/Nice<\/b><svg class="away".*?<\/svg><small>Coupe de France<\/small>/);
+ assert.match(cup,/Nice<\/b><svg class="away".*?<\/svg><span class="competition-badge">Coupe de France<\/span><\/span>/);
+ // played matches read oldest first, like the upcoming ones
+ assert.ok(cup.indexOf('Nice')<cup.indexOf('Rennes'));
  const empty=clubOverview(club,data({calendar:{last:[],next:[]}}));
  assert.match(empty,/Aucun match joué/);assert.match(empty,/Aucun match programmé/);
 });

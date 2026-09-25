@@ -119,3 +119,57 @@ def test_outgoing_offer_and_incoming_offer_response(client):
 
 def test_news_requires_a_selected_club(client):
     assert client.get("/api/ma-partie/actualites").status_code == 400
+
+
+def test_news_stay_unread_until_opened(client):
+    from core.world.human import record
+    world = client.app.state.game.world
+    club_id = next(iter(world.active_clubs())).id
+    client.post("/api/partie/choisir-club", json={"club_id": club_id})
+    for text in ("Première", "Deuxième", "Troisième"):
+        record(world, "season", text, club_id)
+
+    news = client.get("/api/ma-partie/actualites").json()
+    assert news["unread"] == 3 and [row["read"] for row in news["items"]] == [False, False, False]
+    newest = news["items"][0]
+    assert newest["text"] == "Troisième" and newest["id"] == 2
+
+    assert client.post("/api/partie/actualites-lues", json={"ids": [newest["id"]]}).json()["unread"] == 2
+    assert world.news[2].read and not world.news[0].read
+    assert client.post("/api/partie/actualites-lues", json={}).json()["unread"] == 0
+    assert all(row["read"] for row in client.get("/api/ma-partie/actualites").json()["items"])
+
+
+def _play_until_pending(world):
+    for _ in range(400):
+        if not advance_day(world):
+            return next(match for match in world.matches.values() if match.date == world.date and match.result is None
+                        and world.controlled_club_id in (match.home_id, match.away_id))
+    pytest.fail("Le club de l'utilisateur n'a joué aucun match en 400 jours simulés.")
+
+
+def test_lineup_form_offers_every_tactic_and_starts_from_the_previous_eleven(client):
+    world = client.app.state.game.world
+    world.controlled_club_id = club_id = next(iter(world.active_clubs())).id
+    match = _play_until_pending(world)
+
+    data = client.get(f"/api/ma-partie/composition?match_id={match.id}").json()
+    assert data["formations"] == {name: list(roles) for name, roles in world.config.formations.formations.items()}
+    assert set(data["suggestions"]) == set(data["formations"])
+    for name, suggestion in data["suggestions"].items():
+        assert [position for _, position in suggestion["titulaires"]] == data["formations"][name][:len(suggestion["titulaires"])]
+    assert {player["id"] for player in data["players"]} <= set(world.clubs[club_id].player_ids)
+    assert all(player["unavailable"] in (None, "injured", "suspended") for player in data["players"])
+
+    chosen = data["suggestions"]["4-4-2"]
+    assert client.post("/api/partie/composition", json={"match_id": match.id, "formation": "inconnue",
+                                                        "titulaires": chosen["titulaires"], "banc": chosen["banc"]}).status_code == 400
+    assert client.post("/api/partie/composition", json={"match_id": match.id, "formation": "4-4-2",
+                                                        "titulaires": chosen["titulaires"], "banc": chosen["banc"]}).status_code == 200
+    advance_day(world)
+    following = _play_until_pending(world)
+
+    default = client.get(f"/api/ma-partie/composition?match_id={following.id}").json()["default"]
+    assert default["formation"] == "4-4-2"
+    squad = set(world.clubs[club_id].player_ids)
+    assert [pid for pid, _ in default["titulaires"]] == [pid if pid in squad else None for pid, _ in chosen["titulaires"]]

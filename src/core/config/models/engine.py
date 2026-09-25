@@ -22,6 +22,9 @@ class EngineConfigTransitions:
     progression_sensitivity: float = Field(alias="k_prog")
     creation_sensitivity: float = Field(alias="k_occ")
     home_bonus: float = Field(alias="bonus_domicile")
+    max_gap: float = Field(default=20.0, alias="ecart_note_max", gt=0)
+    comfortable_lead: int = Field(default=2, alias="avance_confortable")
+    easing_per_goal: float = Field(default=0.4, alias="relachement_par_but")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

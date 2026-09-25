@@ -66,6 +66,8 @@ class JournalEntry:
     club_id: int | None = None
     player_id: int | None = None
     match_id: int | None = None
+    # Only the human club's news feed uses it: an entry stays highlighted until the user opens it.
+    read: bool = False
 
 
 @dataclass(slots=True)
