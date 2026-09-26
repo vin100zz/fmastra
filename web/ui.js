@@ -22,11 +22,21 @@ export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
 const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.03928?value/12.92:((value+.055)/1.055)**2.4); return .2126*r+.7152*g+.0722*b;};
 export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
-// A shirt in a club's kit: the primary colour for the shirt, the secondary one for its number, with a halo (dark on a light
+// A shirt in a club's kit: the primary colour for the shirt, the secondary one for its number and a corner cut on the diagonal (as the kit dot), with a halo (dark on a light
 // number, light on a dark one) when the two are too close to read.
-export const kitShirtStyle = (major, minor) => `background:${major};color:${minor}${contrastRatio(major,minor)<3?`;text-shadow:${[2,2,3].map(blur=>`0 0 ${blur}px ${contrastText(minor)}`).join(',')}`:''}`;
+export const kitShirtStyle = (major, minor) => `background:linear-gradient(135deg,${major} 78%,${minor} 78%);color:${minor}${contrastRatio(major,minor)<3?`;text-shadow:${[2,2,3].map(blur=>`0 0 ${blur}px ${contrastText(minor)}`).join(',')}`:''}`;
 export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
-let nations={};
+let nations={},today=null;
+// The game date, for durations counted from today (the injury column).
+export const setToday = value => today=value;
+// Time left, rounded to the most readable unit: "3 jours", "2 semaines", "1 mois".
+export const duration = until => {
+ const days=today?Math.max(1,Math.round((new Date(`${until}T12:00:00`)-new Date(`${today}T12:00:00`))/864e5)):null;
+ if(days==null)return 'Blessé';
+ if(days<7)return `${days} jour${days>1?'s':''}`;
+ if(days<30){const weeks=Math.round(days/7);return `${weeks} semaine${weeks>1?'s':''}`;}
+ return `${Math.max(1,Math.round(days/30))} mois`;
+};
 export const setNations = data => nations=data||{};
 export const nationName = code => nations[code]?.name || code || '—';
 const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:'';
@@ -89,7 +99,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    nation:nationBadges(player.nationalities||[player.nation]),
    age:player.age??'—',rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:player.value==null?'—':money(player.value),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
-   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ Blessé</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
+   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
    appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
   };

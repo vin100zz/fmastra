@@ -6,7 +6,7 @@ const shortDate=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'sho
 const outcomeLabels={V:'Victoire',N:'Match nul',D:'Défaite'};
 
 // A red plane marks an away game (Material Design "flight" icon).
-const awayIcon='<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><title>Match à l’extérieur</title><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
+export const awayIcon='<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><title>Match à l’extérieur</title><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
 
 // One line per match: opponent, plane if away, then a badge naming the competition when it is not the club's championship.
 function matchRow(match,club){
@@ -24,7 +24,7 @@ const matchList=(matches,club,none)=>`<div class="club-matches">${matches.length
 // `link` lets another screen (Mon club) point a block elsewhere than the club's own tab.
 export function calendarBlock(club,data,link=`#/club/${club.id}/calendar`){
  // The API lists the played matches newest first; the block reads in date order, from the oldest to the next ones.
- return card('Calendrier',`<div class="card-body">${matchList([...data.last].reverse(),club,'Aucun match joué.')}${matchList(data.next,club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir →</a>`);
+ return card('Calendrier',`<div class="card-body">${matchList([...[...data.last].reverse(),...data.next],club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir →</a>`);
 }
 
 export function financeBlock(club,data,link=`#/club/${club.id}/finances`){

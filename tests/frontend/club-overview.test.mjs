@@ -86,7 +86,7 @@ test('the last eleven reuses the match pitch, and its absence is explained',()=>
  assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
  assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
  // shirts wear the club's primary colour, ratings its secondary one
- assert.equal((html.match(/<span class="shirt" style="background:#cc0000;color:#ffd700">6,5<\/span>/g)||[]).length,11);
+ assert.equal((html.match(/<span class="shirt" style="background:linear-gradient\(135deg,#cc0000 78%,#ffd700 78%\);color:#ffd700">6,5<\/span>/g)||[]).length,11);
  // the small pitch names players by surname, the full name stays in the tooltip
  assert.match(html,/<small>Nom&lt;1&gt;<\/small>/);assert.match(html,/title="Prénom Nom&lt;1&gt;"/);assert.doesNotMatch(html,/<script>|Nom<1>/);
 });
@@ -103,17 +103,17 @@ test('the pitch spreads full-backs and centre-backs on one line, from left to ri
 test('the mini pitch shirts players in the club kit and keeps the number readable',()=>{
  const line=[{id:1,name:'Ada Un',position:'GB',stats:{rating:7}},{id:-2,name:'Bob Deux',position:'BU',temporary:true,stats:{rating:6}},{id:3,name:'Cy Trois',position:'MC'}];
  const shirts=html=>[...html.matchAll(/<span class="shirt"([^>]*)>/g)].map(match=>match[1]);
- const red=' style="background:#cc0000;color:#ffd700"';
+ const red=' style="background:linear-gradient(135deg,#cc0000 78%,#ffd700 78%);color:#ffd700"';
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}})),[red,'',red]);
  // no kit (the match page): the colour still comes from the position
  assert.deepEqual(shirts(pitch(line)),['','','']);
  // the secondary colour is always kept; a halo appears only when it is too close to the primary one to read
  assert.ok(contrastRatio('#cc0000','#ffd700')>=3&&contrastRatio('#f8f8f8','#f8c028')<3);
- assert.equal(kitShirtStyle('#cc0000','#ffd700'),'background:#cc0000;color:#ffd700');
- assert.equal(kitShirtStyle('#f8f8f8','#f8c028'),'background:#f8f8f8;color:#f8c028;text-shadow:0 0 2px #1c2b22,0 0 2px #1c2b22,0 0 3px #1c2b22');
+ assert.equal(kitShirtStyle('#cc0000','#ffd700'),'background:linear-gradient(135deg,#cc0000 78%,#ffd700 78%);color:#ffd700');
+ assert.equal(kitShirtStyle('#f8f8f8','#f8c028'),'background:linear-gradient(135deg,#f8f8f8 78%,#f8c028 78%);color:#f8c028;text-shadow:0 0 2px #1c2b22,0 0 2px #1c2b22,0 0 3px #1c2b22');
  assert.match(kitShirtStyle('#101010','#121212'),/color:#121212;text-shadow:0 0 2px #ffffff/);
  // a missing secondary colour reuses the primary one, so it gets the halo too; an unsafe colour is never written out
- assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/background:#204080;color:#204080;text-shadow:0 0 2px #ffffff/);
+ assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/background:linear-gradient\(135deg,#204080 78%,#204080 78%\);color:#204080;text-shadow:0 0 2px #ffffff/);
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'red;background:url(x)',minor:'#ffffff'}})),['','','']);
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:null,minor:null}})),['','','']);
 });

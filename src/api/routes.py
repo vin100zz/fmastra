@@ -118,6 +118,17 @@ def previous_lineup(world, match, context, formations: dict) -> dict | None:
     return None
 
 
+def club_next_matches(world, count: int = 3) -> list[dict]:
+    """The controlled club's next fixtures for the top bar, each flagged when it belongs to the club's own championship."""
+    club_id = world.controlled_club_id
+    if club_id is None:
+        return []
+    league = world.clubs[club_id].competition_id
+    upcoming = sorted((match for match in world.matches.values() if not match.result and club_id in (match.home_id, match.away_id)),
+                      key=lambda match: (match.date, match.id))[:count]
+    return [{**v.match_row(world, match), "league": match.competition_id == league} for match in upcoming]
+
+
 def router(service: GameService) -> APIRouter:
     api = APIRouter(prefix="/api")
     from .international import international_router
@@ -136,7 +147,8 @@ def router(service: GameService) -> APIRouter:
                              "played": sum(match.result is not None and match.season == world.season for match in world.matches.values()),
                              "fixtures": sum(match.season == world.season for match in world.matches.values()),
                              "controlled_club_id": world.controlled_club_id,
-                             "awaiting_lineup": pending_lineup_match(world)})
+                             "awaiting_lineup": pending_lineup_match(world),
+                             "club_next_matches": club_next_matches(world)})
             return data
 
     @api.post("/monde/avancer", status_code=202)

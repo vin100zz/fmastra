@@ -80,7 +80,7 @@ function highlightsCard(match){
 
 export async function matchScreen(id){
  const match=await api(`/matches/${id}`);
- const context=`<div class="match-context"><span class="eyebrow">${e(match.competition)} · ${e(match.round_label||`Journée ${match.round}`)}</span><p>${date(match.date,true)} · ${match.neutral?'Terrain neutre':match.international?'À domicile':`${n(match.capacity)} places`} · ${match.result?'Terminé':'À venir'}</p>${match.first_leg_id?`<p><a href="#/match/${match.first_leg_id}">Voir le match aller</a></p>`:''}${match.winner_id?`<p>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</p>`:''}</div>`;
+ const context=`<div class="match-context"><span class="eyebrow">${e(match.competition)} · ${e(match.round_label||`Journée ${match.round}`)}</span><p>${date(match.date,true)}${match.neutral?' · Terrain neutre':''}</p>${match.first_leg_id?`<p><a href="#/match/${match.first_leg_id}">Voir le match aller</a></p>`:''}${match.winner_id?`<p>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</p>`:''}</div>`;
  const result=match.result;
  // The 2D summary exists only for a played match with details; its toggle takes the banner's free right column.
  const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};

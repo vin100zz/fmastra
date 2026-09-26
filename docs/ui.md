@@ -57,13 +57,18 @@ et elle remplace tous les écrans de gestion supprimés.
 Barre persistante en tête d'application :
 
 - Date courante, saison, prochaine échéance
-- Boutons : avancer d'un jour, avancer à la prochaine journée de championnat,
-  avancer à la fin de la fenêtre de mercato
+- Les trois prochains matchs du club dirigé, dans un bandeau segmenté à gauche
+  de « Continuer » : pour chacun, le délai en gros (J-6, « Auj. »), puis
+  l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
+  en bleu pour une coupe. Le prochain match a son délai et un soulignement en
+  couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px
+- Bouton « Continuer »
 - Journal des événements du jour : résultats, transferts, blessures
 
-Le mode Auto (enchaîner les journées) et le choix du thème clair ou sombre sont
-en bas du menu de gauche, sous « Ma partie » ; sur téléphone, en haut à droite
-à côté de l'icône de « Ma partie ».
+Le mode Auto (enchaîner les journées), le choix de l'avance (prochaine journée,
+demain, fin du mercato) et le choix du thème clair ou sombre sont en bas du menu
+de gauche, sous « Ma partie » ; sur téléphone, en haut à droite à côté de l'icône
+de « Ma partie ».
 
 Une avance longue renvoie un identifiant de travail et une progression.
 Désactiver les commandes incompatibles tant qu'elle est active ; les vues
