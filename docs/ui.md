@@ -29,6 +29,12 @@ classements archivés, les saisons d'un club sur la page affichée) se trient da
 le navigateur ; le choix survit aux
 rafraîchissements de l'écran.
 
+**Interface minimaliste.** Pas de texte explicatif : pas de sous-titre sous un
+titre de carte, pas de ligne qui décrit comment une donnée est calculée ou
+reconstituée. Un élément secondaire se replie derrière un bouton plutôt que
+d'occuper une barre vide, et un bouton reprend le style des autres (carré, même
+hauteur) plutôt qu'une forme propre.
+
 **Code couleur constant.** Gardien, défense, milieu, attaque gardent la même
 teinte partout, de la liste d'effectif au terrain. C'est ce qui permet de lire
 une composition en une seconde.
@@ -185,6 +191,9 @@ de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
 - xG, tirs, possession, corners, cartons
 - Fil chronologique des événements avec joueurs nommés
 - Compositions des deux équipes avec notes individuelles
+- Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D » à droite
+  du bandeau du score l'ouvre et lance la lecture, puis le replie (la lecture se
+  met en pause). Le terrain n'est construit qu'à la première ouverture.
 
 En v1 le match détaillé est simulé avant consultation. Les événements horodatés
 permettent une animation différée. Un futur match interactif demandera aussi

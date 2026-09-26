@@ -1,0 +1,90 @@
+/* Top-down match replay (match-replay.js): the pitch keeps its grass in both themes, the controls follow the theme. */
+.match-replay-card{margin-bottom:14px}
+match-replay{display:block;padding:12px 16px 14px;--pitch-a:#1f5236;--pitch-b:#235a3c;--pitch-line:#ffffffa6}
+.replay-bug{position:absolute;top:8px;left:8px;z-index:2;display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:var(--radius);background:#0b0f14e0;color:#e8ecf1;font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px #0006}
+.replay-clock{min-width:44px;padding:2px 6px;border-radius:2px;background:var(--accent);color:var(--accent-ink);font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+.replay-team{display:inline-flex;align-items:center;gap:6px}
+.replay-team i{flex:none;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1px #ffffff55}
+.replay-team abbr{display:none;text-decoration:none}
+.replay-score{font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.replay-stage{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--pitch-a)}
+.replay-pitch{display:block;width:100%;height:auto;max-height:62vh}
+.replay-stripe{fill:var(--pitch-b)}
+.replay-lines{fill:none;stroke:var(--pitch-line);stroke-width:.3}
+.replay-lines .goal{fill:#ffffff26}
+.replay-player circle{stroke-width:.45;transition:r .25s}
+.replay-player text{font-size:2.1px;font-weight:700;fill:#fff;paint-order:stroke;stroke:#000a;stroke-width:.5px;opacity:0;transition:opacity .25s}
+.replay-player{opacity:.72;transition:opacity .25s}
+.replay-player.on{opacity:1}
+.replay-player.on circle:not(.ring){r:2}
+.replay-player .ring{fill:none;stroke:var(--accent);stroke-width:.35;opacity:0;transition:opacity .2s}
+.replay-player.carrier .ring{opacity:1}
+.replay-player.on text{opacity:1}
+/* Between chances: the players leave, the pitch dims and the clock runs over it. */
+.replay-pitch>g:not(.replay-lines),.replay-ball,.replay-shadow{transition:opacity .35s}
+.replay-stage.fast .replay-pitch>g:not(.replay-lines),.replay-stage.fast .replay-ball,.replay-stage.fast .replay-shadow{opacity:0}
+.replay-stage.cut .replay-pitch>g:not(.replay-lines),.replay-stage.cut .replay-ball,.replay-stage.cut .replay-shadow{opacity:0;transition-duration:.2s}
+.replay-progress{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;background:#0b0f1480;opacity:0;pointer-events:none;transition:opacity .35s}
+.replay-stage.fast .replay-progress{opacity:1}
+.replay-progress-clock{font-size:clamp(40px,9vw,84px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.02em;text-shadow:0 2px 12px #0008}
+.replay-progress-bar{position:relative;width:min(240px,50%);height:4px;border-radius:2px;background:#ffffff33;overflow:hidden}
+.replay-progress-bar i{position:absolute;top:0;bottom:0;width:35%;border-radius:2px;background:var(--accent);animation:replay-sweep 1.1s ease-in-out infinite}
+.replay-stage.still .replay-progress-bar i{animation:none;left:0;width:100%}
+@keyframes replay-sweep{0%{left:-35%}100%{left:100%}}
+.replay-progress-label{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#e8ecf1cc}
+.replay-progress-notes{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:3.6em;margin:4px 0 0;padding:0;list-style:none;font-size:13px}
+.replay-progress-notes li{padding:3px 10px;border-radius:var(--radius);background:#0b0f14b3;border-left:3px solid var(--team);animation:replay-note .3s ease-out}
+.replay-progress-notes b{margin-right:6px;color:var(--accent)}
+@keyframes replay-note{from{opacity:0;transform:translateY(-4px)}}
+.replay-ball{fill:#fff;stroke:#111;stroke-width:.25}
+.replay-ball.faded{opacity:.65}
+.replay-shadow{fill:#0006}
+.replay-trail polyline{stroke-linecap:round;stroke-linejoin:round;fill:none}
+.replay-carry{stroke:#ffffff80;stroke-width:.3}
+.replay-pass{stroke:#ffffffb3;stroke-width:.35;stroke-dasharray:1 1}
+.replay-cross{stroke:#fff;stroke-width:.35;stroke-dasharray:.3 .9}
+.replay-shot{stroke:var(--accent);stroke-width:.6}
+.replay-banner{font-size:9px;font-weight:800;letter-spacing:.06em;fill:#fff;paint-order:stroke;stroke:#000b;stroke-width:1px;opacity:0;transition:opacity .3s}
+.replay-banner.on{opacity:1}
+.replay-caption{min-height:1.4em;margin-top:8px;padding:6px 10px;border-radius:var(--radius);background:var(--panel-2);font-size:13px;line-height:1.4}
+.replay-caption small{color:var(--muted);margin-left:6px}
+.replay-dots::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:replay-dots 1.2s steps(4) infinite}
+@keyframes replay-dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+.replay-start{position:absolute;inset:0;margin:auto;width:max-content;height:max-content;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 22px;border:0;border-radius:var(--radius);background:#0b0f14d9;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.replay-start span{font-size:26px;color:var(--accent)}
+.replay-start small{font-weight:500;color:#c3ccd7}
+.replay-start:hover span,.replay-start:focus-visible span{color:var(--accent-hover)}
+.replay-timeline{position:relative;height:22px;margin:12px 6px 4px;border-radius:2px;background:linear-gradient(var(--line),var(--line)) center/100% 2px no-repeat}
+.replay-half{position:absolute;top:4px;bottom:4px;width:1px;background:var(--muted)}
+.replay-cursor{position:absolute;top:2px;bottom:2px;width:2px;margin-left:-1px;background:var(--accent);left:0}
+.replay-marker{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;padding:0;border:1px solid var(--panel);border-radius:50%;background:var(--team);cursor:pointer}
+.replay-marker.goal{width:14px;height:14px;margin:-7px 0 0 -7px;border:2px solid var(--accent)}
+.replay-marker.current{outline:2px solid var(--ink);outline-offset:1px}
+.replay-marker[hidden]{display:none}
+.replay-controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
+.replay-controls button{min-width:34px;height:30px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font:inherit;cursor:pointer}
+.replay-controls button:hover{border-color:var(--accent)}
+.replay-speed{display:inline-flex;gap:2px;margin-left:6px}
+.replay-speed button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.replay-controls select{margin-left:auto;height:30px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font:inherit;font-size:13px}
+@media(max-width:650px){
+ match-replay{padding:10px}
+ .replay-bug{top:5px;left:5px;gap:6px;font-size:11px}
+ .replay-team .long{display:none}
+ .replay-team abbr{display:inline}
+ .replay-score{font-size:13px}
+ .replay-caption{font-size:12px}
+ .replay-controls select{margin-left:0;flex:1 1 100%}
+}
+@media(prefers-reduced-motion:reduce){.replay-dots::after{animation:none;content:'…'}.replay-progress-bar i{animation-duration:3s}}
+
+/* The banner's toggle: a regular button, pressed while the summary is open. */
+.match-actions{display:flex;justify-content:flex-end;align-self:center}
+.replay-toggle{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;white-space:nowrap}
+.replay-toggle svg{width:16px;height:16px;flex:none;fill:currentColor}
+.replay-toggle .close{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.replay-toggle .open{color:var(--accent-text)}
+.replay-toggle[aria-expanded="true"] .open,.replay-toggle[aria-expanded="false"] .close{display:none}
+.replay-toggle[aria-expanded="true"]{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.match-replay-card[hidden]{display:none}
+@media(max-width:1100px){.match-actions{justify-content:center}}

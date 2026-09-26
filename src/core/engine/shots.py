@@ -64,6 +64,9 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
     xg = clamp(xg, rules.probability_min, rules.probability_max)
     p_goal = sigmoid(logit(xg) + rules.finishing_sensitivity * soften(shot_quality - keeper_quality, cfg.engine.transitions.max_gap))
     p_target = max(p_goal, sigmoid(logit(rules.on_target_probability) + rules.on_target_sensitivity * (shot_quality - rules.on_target_reference)))
+    if header:
+        # Who put the ball in, for the replay; a corner taker gets no assist, so no other event names him.
+        log.emit("delivery", attacker, (taker if kind == "corner" else crosser).player.id, zone=zone, lane=lane, detail=kind)
     log.shots += 1
     shot_id = log.shots
     attacker.stats.shots += 1

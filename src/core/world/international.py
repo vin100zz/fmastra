@@ -6,7 +6,7 @@ from core.domain.date import Date
 from core.domain.international import NationalTeam, NationalCamp, InternationalRecord
 from core.domain.players import Discipline
 from core.domain.world import World, JournalEntry
-from core.domain.matches import TRANSIENT_EVENT_KINDS
+from core.domain.matches import stored_events
 from core.engine.match import PossessionEngine
 from .human import record as add_news
 from core.engine.fitness import recovered_fitness
@@ -203,7 +203,7 @@ def prepare_international_day(world: World) -> None:
 def apply_international_result(world, edition, match, result, lineups):
     state, cfg = world.international, world.config
     rng = stream(world.seed, "international-consequences", match.id)
-    result.events = [e for e in result.events if e.kind not in TRANSIENT_EVENT_KINDS]
+    result.events = stored_events(result.events)
     for nid in (match.home_id, match.away_id):
         # A ban is served even when the player is not called up.
         code = state.nations[nid].code

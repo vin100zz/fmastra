@@ -69,6 +69,9 @@ def test_views_pagination_and_no_rng_leak(client):
     assert all(row['nationalities'] and row['nationality_names'] for row in first['items'])
     ascending = client.get('/api/joueurs?tri=value&ordre=asc').json()['items']
     assert [row['value'] for row in ascending] == sorted(row['value'] for row in ascending)
+    cap = values[len(values) // 2]
+    capped = client.get(f'/api/joueurs?valeur_max={cap}').json()
+    assert capped['items'] and all(row['value'] <= cap for row in capped['items']) and capped['total'] < first['total']
     club_rows = client.get('/api/clubs').json()['items']
     assert all({'training_facilities', 'youth_recruitment'} <= row.keys() for row in club_rows)
     psg = client.get('/api/clubs/868').json()

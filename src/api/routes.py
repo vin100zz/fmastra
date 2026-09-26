@@ -506,7 +506,7 @@ def router(service: GameService) -> APIRouter:
                 niveau_min: float = Query(1, ge=1, le=100), nation: str | None = None, club: int | None = None,
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
-                page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value"] = "value",
+                valeur_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value"] = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
@@ -519,7 +519,8 @@ def router(service: GameService) -> APIRouter:
                     or (nation and nation not in player.nationalities) or (club is not None and player.club_id != club)
                     or (statut_club and (owner is None or (owner.competition_id is not None) != (statut_club == "actif")))
                     or (contrat and (player.contract is None) != (contrat == "libre"))
-                    or wage < salaire_min or (salaire_max is not None and wage > salaire_max)): continue
+                    or wage < salaire_min or (salaire_max is not None and wage > salaire_max)
+                    or (valeur_max is not None and v.market_value(player, world) > valeur_max)): continue
                 selected.append(player)
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id

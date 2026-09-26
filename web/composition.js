@@ -3,6 +3,7 @@ import {api,escape as e,card,empty,position,group,levelBadge,number} from './ui.
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
 
+const POSITION_ORDER=['GB','DL','DC','DR','MDC','MC','AILG','AILD','MOC','BU'];
 const LINE_Y={gk:90,def:73,dm:60,cm:47,am:33,att:15};
 const LATERAL={DL:0,AILG:0,DR:2,AILD:2};
 // Each position sits on a line of the pitch; wingers join the forwards, the attacking midfielder or the midfield,
@@ -48,6 +49,14 @@ export function place(lineup,id,target){
 export function remove(lineup,id){
  const clear=list=>list.map(item=>item===id?null:item);
  return {slots:clear(lineup.slots),bench:clear(lineup.bench)};
+}
+// The first empty place in the order of positions (GB, DL, DC, DR…), substitutes last; null when the lineup is full.
+export function nextFree(lineup,roles){
+ const slot=lineup.slots.map((id,index)=>({id,index})).filter(item=>item.id==null)
+  .sort((a,b)=>POSITION_ORDER.indexOf(roles[a.index])-POSITION_ORDER.indexOf(roles[b.index])||a.index-b.index)[0];
+ if(slot)return {kind:'slot',index:slot.index};
+ const bench=lineup.bench.indexOf(null);
+ return bench>=0?{kind:'bench',index:bench}:null;
 }
 // Switching tactics keeps each starter: first on a slot of the same position, then on the same line, then anywhere left.
 export function changeFormation(slots,fromRoles,toRoles){
@@ -104,7 +113,6 @@ function benchHtml(id,index,byId){
  return `<div class="bench-slot${player?'':' empty'}${player?.unavailable?' invalid':''}" data-bench="${index}"${player?` data-player="${player.id}" draggable="true" title="${e(player.name)}"`:''}>${player?`${position(player.position)}<span>${unavailableIcon(player)}${e(surname(player.name))}</span>`:'<span class="muted">Remplaçant</span>'}</div>`;
 }
 
-const POSITION_ORDER=['GB','DL','DC','DR','MDC','MC','AILG','AILD','MOC','BU'];
 const COLUMNS=[['selected','COMPO'],['position','POSTE'],['name','JOUEUR'],['rating','NIV.'],['potential','POT.'],['fatigue','FATIGUE'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
 // Starters come first in their pitch order, then substitutes, then the rest of the squad by position.
 function sortValue(player,key){
@@ -215,9 +223,10 @@ function install(){
   const item=event.target.closest?.('[data-player]');
   if(!item||!inside(item)||!mounted())return;
   const id=Number(item.dataset.player);
-  if(!where(editor,id))return;
   event.preventDefault();
-  update(remove(editor,id));
+  // Right click takes a selected player out, and puts an unselected one on the next free place.
+  if(where(editor,id))update(remove(editor,id));
+  else{const target=nextFree(editor,roles());if(target)update(place(editor,id,target));}
  });
  document.addEventListener('click',event=>{
   const button=event.target.closest?.('button');

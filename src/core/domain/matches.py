@@ -41,7 +41,9 @@ class SubmittedLineup:
 
 # The engine logs these for its own bookkeeping. TeamStats already counts corners and
 # free kicks, and no view lists them, so a stored result keeps every other kind.
-TRANSIENT_EVENT_KINDS = frozenset({"possession", "turnover", "corner", "free_kick"})
+TRANSIENT_EVENT_KINDS = frozenset({"possession", "progress", "delivery", "turnover", "corner", "free_kick"})
+# The replay draws the possessions that led to a shot, so their build-up survives storage.
+REPLAY_EVENT_KINDS = frozenset({"possession", "progress", "delivery", "corner", "free_kick"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,3 +123,10 @@ class Match:
     result: MatchResult | None = None
     neutral: bool = False
     first_leg_id: int | None = None
+
+
+def stored_events(events: list[MatchEvent]) -> list[MatchEvent]:
+    """The events a saved result keeps: every listed kind, plus the build-up of each chance."""
+    chances = {event.possession_id for event in events if event.kind == "shot"}
+    return [event for event in events if event.kind not in TRANSIENT_EVENT_KINDS
+            or (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances)]

@@ -1,3 +1,4 @@
+import {replayCard} from './match-replay.js';
 import {api,escape as e,number as n,date,clubLink,playerLink,empty,card,table,pitch,kitDot,safeColor,contrastText,contrastRatio,kitShirtStyle} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
@@ -46,6 +47,14 @@ function lineupCard(match,side,marks){
  return card(match[side].name,pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch})+table(['REMPLAÇANTS','ENTRÉE'],bench),'','match-lineup');
 }
 
+// Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.
+function replayTeams(match){
+ const home=kitOf(match.home,'home'),away=kitOf(match.away,'away'),[homeMajor,awayMajor]=barColors(home,away);
+ const keeper=['#f2c94c','#40c4ff','#c77dff'].find(color=>contrastRatio(color,homeMajor)>=1.6&&contrastRatio(color,awayMajor)>=1.6)||'#f2c94c';
+ const minor=(major,kit)=>major===kit.major?kit.minor:contrastText(major);
+ return {home:{name:match.home.name,major:homeMajor,minor:minor(homeMajor,home),keeper},away:{name:match.away.name,major:awayMajor,minor:minor(awayMajor,away),keeper}};
+}
+
 const sidesHead=match=>`<div class="match-sides"><span>${kitDot(match.home)}${e(match.home.name)}</span><span>${kitDot(match.away)}${e(match.away.name)}</span></div>`;
 
 function statsCard(match){
@@ -72,11 +81,13 @@ function highlightsCard(match){
 export async function matchScreen(id){
  const match=await api(`/matches/${id}`);
  const context=`<div class="match-context"><span class="eyebrow">${e(match.competition)} · ${e(match.round_label||`Journée ${match.round}`)}</span><p>${date(match.date,true)} · ${match.neutral?'Terrain neutre':match.international?'À domicile':`${n(match.capacity)} places`} · ${match.result?'Terminé':'À venir'}</p>${match.first_leg_id?`<p><a href="#/match/${match.first_leg_id}">Voir le match aller</a></p>`:''}${match.winner_id?`<p>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</p>`:''}</div>`;
- const header=`<section class="match-banner">${context}<div class="scoreboard"><div>${clubLink(match.home)}</div><div class="big-score">${match.score?match.score.join(' : '):'VS'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</div><div>${clubLink(match.away)}</div></div></section>`;
  const result=match.result;
+ // The 2D summary exists only for a played match with details; its toggle takes the banner's free right column.
+ const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
+ const header=`<section class="match-banner">${context}<div class="scoreboard"><div>${clubLink(match.home)}</div><div class="big-score">${match.score?match.score.join(' : '):'VS'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</div><div>${clubLink(match.away)}</div></div>${replay.toggle?`<div class="match-actions">${replay.toggle}</div>`:''}</section>`;
  if(!result)return header+card('Avant-match',empty('Cette rencontre sera simulée à sa date prévue.','Le coup d’envoi approche'));
  if(!result.home_stats)return header+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
  const marks=playerEvents(result.events);
  return header+(result.status!=='played'?`<div class="notice">Résultat attribué par forfait (${e(result.status)}).</div>`:'')
-  +`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${highlightsCard(match)}${statsCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;
+  +replay.panel+`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${highlightsCard(match)}${statsCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;
 }

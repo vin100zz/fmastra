@@ -2,7 +2,7 @@
 from core.domain.players import Discipline
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
-from core.domain.matches import MatchResult, TRANSIENT_EVENT_KINDS
+from core.domain.matches import MatchResult, stored_events
 from .finances import book_cash, book_daily_cash
 from .human import record as add_news
 from .transfer_rules import recent_arrival_ids
@@ -212,7 +212,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
     if match.result is not None: raise ValueError("A match cannot be applied twice")
     match.result = event.result
     # Full engine logs made up most of a save; the views only list the kinds that remain.
-    event.result.events = [item for item in event.result.events if item.kind not in TRANSIENT_EVENT_KINDS]
+    event.result.events = stored_events(event.result.events)
     for club_id in (match.home_id, match.away_id):
         for pid in world.clubs[club_id].player_ids:
             discipline = world.players[pid].discipline.get(match.competition_id)

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {pitchLayout,place,remove,changeFormation,lineupProblems,compositionContent} from '../../web/composition.js';
+import {pitchLayout,place,remove,nextFree,changeFormation,lineupProblems,compositionContent} from '../../web/composition.js';
 
 const F433=['GB','DL','DC','DC','DR','MDC','MC','MC','AILG','BU','AILD'];
 const F442=['GB','DL','DC','DC','DR','AILG','MC','MC','AILD','BU','BU'];
@@ -56,4 +56,12 @@ test('the editor starts from the previous lineup and flags unavailable players',
   assert.match(html,/Joueur 2 est blessé/);
   for(const label of ['COMPO','POSTE','JOUEUR','NIV.','POT.','FATIGUE','MJ','BUTS','PD','NOTE'])assert.ok(html.includes(`>${label}`),label);
  }finally{globalThis.fetch=previous;}
+});
+
+test('the next free place follows the order of positions, substitutes last',()=>{
+ assert.deepEqual(nextFree({slots:[1,null,2,null,null,3,4,5,null,6,7],bench:[null]},F433),{kind:'slot',index:1});
+ assert.deepEqual(nextFree({slots:[1,2,3,4,5,6,7,8,null,null,null],bench:[null]},F433),{kind:'slot',index:8});   // AILG, AILD, then BU
+ assert.deepEqual(nextFree({slots:[1,2,3,4,5,6,7,8,9,null,10],bench:[null]},F433),{kind:'slot',index:9});
+ assert.deepEqual(nextFree({slots:F433.map((_,index)=>index+1),bench:[20,null]},F433),{kind:'bench',index:1});
+ assert.equal(nextFree({slots:F433.map((_,index)=>index+1),bench:[20]},F433),null);
 });

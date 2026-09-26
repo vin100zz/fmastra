@@ -45,6 +45,8 @@ def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: i
         if rng.random() < clamp(switch, 0, 1):
             neighbors = [candidate for candidate in (lane - 1, lane + 1) if 0 <= candidate < len(cfg.involvement.lanes)]
             lane = choose_lane(attacker, defender, zone, cfg, rng, neighbors)
+        # The ball carrier who took the side into the next zone, where the play now stands.
+        log.emit("progress", attacker, passer, zone=zone, lane=lane)
     defensive_zone, defensive_lane = mirror(zone, lane, cfg)
     tackler = foul_committer(defender, defensive_zone, defensive_lane, cfg, rng)
     cards = cfg.engine.cards

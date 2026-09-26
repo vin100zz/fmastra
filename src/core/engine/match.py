@@ -61,7 +61,7 @@ class PossessionEngine:
                 attacker.stats.possessions += 1
                 attacker.stats.possession_seconds += dt
                 attacker.stats.lane_attacks[lane] += 1
-                log.emit("possession", attacker, zone=zone, lane=lane)
+                log.emit("possession", attacker, zone=zone, lane=lane, detail="counter" if counter else "")
                 outcome = play_possession(attacker, defender, zone, lane, counter, owner == 0 and not neutral, log, cfg, rng)
                 if any(len(team.active) < cfg.world.match_rules.min_players for team in teams):
                     return self._forfeit(teams, home, away, log, cfg)
