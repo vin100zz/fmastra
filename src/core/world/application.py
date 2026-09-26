@@ -31,7 +31,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         if event.healed: player.injury = None
         if event.injury is not None:
             player.injury = event.injury
-            text = f"{player.name} indisponible jusqu'au {event.injury.end.iso()}"
+            text = f"{player.name} indisponible jusqu'au {event.injury.end.day_month()}"
             world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, player.id))
             add_news(world, "injury", text, player.club_id, player.id)
         if event.healed:

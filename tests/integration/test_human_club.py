@@ -142,7 +142,9 @@ def test_news_stay_unread_until_opened(client):
     # Entries saved by older versions read as headlines too: no final full stop, "match" agreed with its number.
     record(world, "suspension", "A est suspendu 1 match(s).", club_id)
     record(world, "suspension", "B est suspendu 3 match(s).", club_id)
-    assert [row["text"] for row in client.get("/api/ma-partie/actualites").json()["items"][:2]] == ["B est suspendu 3 matchs", "A est suspendu 1 match"]
+    record(world, "injury", "C indisponible jusqu'au 2027-05-01.", club_id)
+    assert [row["text"] for row in client.get("/api/ma-partie/actualites").json()["items"][:3]] == [
+        "C indisponible jusqu'au 1er mai", "B est suspendu 3 matchs", "A est suspendu 1 match"]
 
 
 def _play_until_pending(world):

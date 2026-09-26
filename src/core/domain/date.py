@@ -4,6 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+MONTHS = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+
+
 def leap_year(year: int) -> bool:
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
@@ -29,6 +32,10 @@ class Date:
 
     def iso(self) -> str:
         return f"{self.year:04d}-{self.month:02d}-{self.day:02d}"
+
+    def day_month(self) -> str:
+        """The date as a headline reads it: "12 avril", "1er mai"."""
+        return f"{'1er' if self.day == 1 else self.day} {MONTHS[self.month - 1]}"
 
     @classmethod
     def parse(cls, value: str) -> Date:

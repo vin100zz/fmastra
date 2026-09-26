@@ -9,6 +9,7 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
+from core.domain.date import Date
 from core.domain.matches import SubmittedLineup
 from core.domain.offers import TransferOffer
 from core.world.human import pending_lineup_match
@@ -131,7 +132,8 @@ def club_next_matches(world, count: int = 3) -> list[dict]:
 
 
 def headline(text: str) -> str:
-    """News read as headlines; entries saved by older versions still carry "N match(s)" and a final full stop."""
+    """News read as headlines; entries saved by older versions still carry "N match(s)", ISO dates and a final full stop."""
+    text = re.sub(r"\d{4}-\d{2}-\d{2}", lambda found: Date.parse(found[0]).day_month(), text)
     text = re.sub(r"(\d+) match\(s\)", lambda found: f"{found[1]} match{'s' if int(found[1]) > 1 else ''}", text)
     return text[:-1] if text.endswith(".") else text
 

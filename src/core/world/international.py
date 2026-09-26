@@ -254,7 +254,7 @@ def apply_international_result(world, edition, match, result, lineups):
             player = get_player(world, event.player_id)
             player.injury = draw_injury(world.date, cfg, rng)
             if player.id >= 0:
-                text = f"{player.name} se blesse en sélection, indisponible jusqu’au {player.injury.end.iso()}"
+                text = f"{player.name} se blesse en sélection, indisponible jusqu’au {player.injury.end.day_month()}"
                 world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, player.id))
                 add_news(world, "injury", text, player.club_id, player.id)
     home, away = state.nations[match.home_id], state.nations[match.away_id]
