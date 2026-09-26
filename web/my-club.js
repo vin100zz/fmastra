@@ -6,13 +6,18 @@ const NEWS_LABELS={renewal_proposed:'Prolongation',renewal_signed:'Prolongation'
  transfer:'Transfert',release:'Fin de contrat',retirement:'Retraite',academy:'Formation',injury:'Blessure',injury_end:'Infirmerie',suspension:'Suspension',suspension_end:'Suspension',
  result:'Résultat',call_up:'Sélection',promotion:'Promotion',relegation:'Relégation',season:'Saison',cup_winner:'Trophée',europe_winner:'Trophée'};
 
-// A mailbox: newest first, unread entries highlighted until opened (or all marked as read).
+// The text of an entry with its player's name linked to his page and, for a result or an in-match injury, the match linked to its report.
+function newsText(item) {
+ let text=e(item.text);
+ if(item.match_id!=null&&item.kind==='result')return `<a href="#/match/${item.match_id}">${text}</a>`;
+ if(item.player_id!=null&&item.player){const name=e(item.player),at=text.indexOf(name);if(at>=0)text=`${text.slice(0,at)}<a href="#/player/${item.player_id}">${name}</a>${text.slice(at+name.length)}`;}
+ if(item.match_id!=null)text=text.replace(/ en match\b/,` en <a href="#/match/${item.match_id}">match</a>`);
+ return text;
+}
+
+// A mailbox: newest first, unread entries highlighted until clicked (or all marked as read); only the links inside an entry navigate.
 function inbox(news) {
- const target=item=>item.match_id!=null?`#/match/${item.match_id}`:item.player_id!=null?`#/player/${item.player_id}`:'';
- const rows=news.items.map(item=>{
-  const href=target(item),tag=href?'a':'button',attributes=href?`href="${href}"`:'type="button"';
-  return `<li><${tag} ${attributes} class="inbox-item${item.read?'':' unread'}" data-news="${item.id}"><span class="inbox-meta"><b>${e(NEWS_LABELS[item.kind]||'Actualité')}</b><small>${date(item.date)}</small></span><span class="inbox-text">${e(item.text)}</span></${tag}></li>`;
- }).join('');
+ const rows=news.items.map(item=>`<li><div class="inbox-item${item.read?'':' unread'}" data-news="${item.id}"><span class="inbox-meta"><b>${e(NEWS_LABELS[item.kind]||'Actualité')}</b><small>${date(item.date)}</small></span><span class="inbox-text">${newsText(item)}</span></div></li>`).join('');
  const action=news.unread?`<button class="inbox-read-all" type="button" data-news-read="all" title="Tout marquer comme lu">Tout lire</button>`:'';
  const title=news.unread?`Actualités · ${news.unread} non lue${news.unread>1?'s':''}`:'Actualités';
  return card(title,rows?`<ul class="inbox-list">${rows}</ul>${pager(news)}`:empty('Rien à signaler pour l’instant.','Le calme avant la tempête'),action,'inbox');

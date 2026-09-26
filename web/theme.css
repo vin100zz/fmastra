@@ -426,3 +426,23 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-comp.cup{color:var(--info)}
 @media(max-width:1200px){.next-match:nth-child(n+3){display:none}}
 @media(max-width:950px){.next-matches{display:none}}
+
+/* Inbox: a click on an entry marks it as read; only its player and match links navigate. */
+.inbox-item{cursor:pointer}
+.inbox-text a{color:var(--strong);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.inbox-text a:hover{text-decoration-color:currentColor}
+
+/* Running job: inside the top bar, never pushing the page down. The label sits in the bar's free middle,
+   the progress runs along its bottom edge in place of the accent line. */
+.topbar .job-bar{position:static!important;top:auto!important;flex:1;min-width:0;justify-content:center;gap:0;padding:0 12px!important;background:none!important;border:0!important;color:var(--muted);font-size:12px}
+#job-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .job-bar progress{position:absolute;left:0;right:0;bottom:-3px;width:100%;max-width:none;height:3px;margin:0;border:0;appearance:none;-webkit-appearance:none;background:var(--line)}
+.topbar .job-bar progress::-webkit-progress-bar{background:var(--line)}
+.topbar .job-bar progress::-webkit-progress-value{background:var(--accent);transition:width .3s}
+.topbar .job-bar progress::-moz-progress-bar{background:var(--accent)}
+/* Auto mode has no end: a band sweeps along the edge instead. */
+.topbar .job-bar progress:indeterminate{background:linear-gradient(90deg,transparent,var(--accent),transparent) no-repeat var(--line);background-size:30% 100%;animation:job-sweep 1.4s linear infinite}
+.topbar .job-bar progress:indeterminate::-webkit-progress-bar{background:transparent}
+.topbar .job-bar progress:indeterminate::-moz-progress-bar{background:transparent}
+@keyframes job-sweep{from{background-position:-40% 0}to{background-position:140% 0}}
+@media(max-width:650px){.topbar .job-bar{height:0;padding:0!important}#job-label{display:none}}

@@ -35,7 +35,7 @@ function squadCard(data){
  if(!data.camp)return card('Sélection',empty('La prochaine liste de 23 sera annoncée au début du rassemblement.','Aucun rassemblement en cours'));
  const title=`${data.camp.upcoming?'Rassemblement':'Dernier rassemblement'} du ${date(data.camp.start)} au ${date(data.camp.end)}`;
  return card(title,sortableTable(['JOUEUR','POSTE','NIVEAU','CONDITION','SÉL.','BUTS'],data.squad.map(p=>[
-  playerLink(p.id,p.name),position(p.position),levelBadge(p.rating),p.injured_until?`Blessé jusqu’au ${date(p.injured_until)}`:p.suspended?`${p.suspended} match(s) de suspension`:`${Math.round(p.fitness*100)} %`,p.caps,p.goals]),data.squad.map(p=>[p.name,p.position,p.rating,p.fitness,p.caps,p.goals])));
+  playerLink(p.id,p.name),position(p.position),levelBadge(p.rating),p.injured_until?`Blessé jusqu’au ${date(p.injured_until)}`:p.suspended?`${p.suspended} match${p.suspended>1?'s':''} de suspension`:`${Math.round(p.fitness*100)} %`,p.caps,p.goals]),data.squad.map(p=>[p.name,p.position,p.rating,p.fitness,p.caps,p.goals])));
 }
 function historyContent(data){
  const editions=card('Bilan par compétition',data.editions.length?table(['ÉDITION','QUALIFICATIONS','PHASE FINALE'],data.editions.map(row=>[e(row.name),editionRun(row.qualification),editionRun(row.finals)])):empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));

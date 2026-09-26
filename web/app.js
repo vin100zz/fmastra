@@ -208,11 +208,12 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
 // Player actions open in a dialog kept inside the page, so each re-render closes it.
 main.addEventListener('click',event=>{const opener=event.target.closest('[data-open-dialog]');if(opener){main.querySelector(`#${opener.dataset.openDialog}`)?.showModal();return;}const closer=event.target.closest('[data-close-dialog]');if(closer)closer.closest('dialog')?.close();});
-// Mon club inbox: opening an entry marks it as read (a link still navigates); the page redraws only when it stays put.
+// Mon club inbox: clicking an entry marks it as read (a link inside it still navigates); the page redraws only when it stays put.
 main.addEventListener('click',async event=>{
  const entry=event.target.closest('[data-news],[data-news-read]');if(!entry)return;
  const ids=entry.dataset.newsRead==='all'?null:[Number(entry.dataset.news)];
- if(entry.matches('a')){entry.classList.remove('unread');api('/partie/actualites-lues',{ids}).catch(()=>{});return;}
+ if(event.target.closest('a')){entry.classList.remove('unread');api('/partie/actualites-lues',{ids}).catch(()=>{});return;}
+ if(!entry.classList.contains('unread')&&!('newsRead' in entry.dataset))return;
  try{await api('/partie/actualites-lues',{ids});}catch(error){toast(error.message,true);}
  await render();
 });

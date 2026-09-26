@@ -1,6 +1,7 @@
 """Screen-oriented, paginated endpoints for the observer interface."""
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 from typing import Literal
 from uuid import uuid4
@@ -74,7 +75,7 @@ def squad_sort_key(world, column: str):
     if column == "name": return lambda row: v.normalized(row["name"])
     if column == "contract_end": return lambda row: row["contract_end"] or ""
     if column == "fitness":
-        # The cell reads "Blessé", then "N match(s)" of suspension, then a percentage.
+        # The cell reads "Blessé", then "N matchs" of suspension, then a percentage.
         return lambda row: (0 if row["injured_until"] else 1 if row["suspension"] else 2, row["fitness"])
     if column == "nation":
         codes = build_nation_table(world.nation_names)
@@ -127,6 +128,12 @@ def club_next_matches(world, count: int = 3) -> list[dict]:
     upcoming = sorted((match for match in world.matches.values() if not match.result and club_id in (match.home_id, match.away_id)),
                       key=lambda match: (match.date, match.id))[:count]
     return [{**v.match_row(world, match), "league": match.competition_id == league} for match in upcoming]
+
+
+def headline(text: str) -> str:
+    """News read as headlines; entries saved by older versions still carry "N match(s)" and a final full stop."""
+    text = re.sub(r"(\d+) match\(s\)", lambda found: f"{found[1]} match{'s' if int(found[1]) > 1 else ''}", text)
+    return text[:-1] if text.endswith(".") else text
 
 
 def router(service: GameService) -> APIRouter:
@@ -261,9 +268,9 @@ def router(service: GameService) -> APIRouter:
             if command.decision == "accepter":
                 signed = apply(world, PlayerSigned(proposal.player_id, proposal.club_id, proposal.club_id, proposal.contract, 0, True))
                 if not signed: raise HTTPException(400, "Ce renouvellement dépasse le plafond salarial du club.")
-                record(world, "renewal_signed", f"{player.name} prolonge à {proposal.contract.weekly_wage} €/semaine.", proposal.club_id, player.id)
+                record(world, "renewal_signed", f"{player.name} prolonge à {proposal.contract.weekly_wage} €/semaine", proposal.club_id, player.id)
             else:
-                record(world, "renewal_refused", f"Prolongation refusée pour {player.name}.", proposal.club_id, player.id)
+                record(world, "renewal_refused", f"Prolongation refusée pour {player.name}", proposal.club_id, player.id)
             world.pending_renewals.pop(command.joueur_id, None)
         return {"joueur_id": command.joueur_id, "decision": command.decision}
 
@@ -305,10 +312,10 @@ def router(service: GameService) -> APIRouter:
             if command.decision == "accepter":
                 signed = resolve_accepted_offer(world, offer)
                 if not signed: raise HTTPException(400, "Cette vente n'est plus possible pour le moment (effectif minimal, gardiens requis…).")
-                record(world, "offer_accepted", f"{player.name} est transféré à {world.clubs[offer.target_id].name}.", offer.source_id, player.id)
+                record(world, "offer_accepted", f"{player.name} est transféré à {world.clubs[offer.target_id].name}", offer.source_id, player.id)
                 remaining = [item for item in world.offers.values() if item.player_id != offer.player_id]
             else:
-                record(world, "offer_refused", f"Offre refusée pour {player.name}.", offer.source_id, player.id)
+                record(world, "offer_refused", f"Offre refusée pour {player.name}", offer.source_id, player.id)
                 remaining = [item for item in world.offers.values() if item.key != offer.key]
             apply(world, OffersUpdated(remaining))
         return {"offre_id": command.offre_id, "decision": command.decision}
@@ -355,8 +362,9 @@ def router(service: GameService) -> APIRouter:
     def news(page: int = Query(1, ge=1)) -> dict:
         with service.reading() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
-            rows = [{"id": index, "date": item.date.iso(), "kind": item.kind, "text": item.text, "club_id": item.club_id,
-                     "player_id": item.player_id, "match_id": item.match_id, "read": item.read}
+            rows = [{"id": index, "date": item.date.iso(), "kind": item.kind, "text": headline(item.text), "club_id": item.club_id,
+                     "player_id": item.player_id, "match_id": item.match_id, "read": item.read,
+                     "player": world.players[item.player_id].name if item.player_id in world.players else None}
                     for index, item in reversed(list(enumerate(world.news)))]
             return {**v.paginate(rows, page), "unread": sum(not item.read for item in world.news)}
 

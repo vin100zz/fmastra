@@ -99,7 +99,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    nation:nationBadges(player.nationalities||[player.nation]),
    age:player.age??'—',rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:player.value==null?'—':money(player.value),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
-   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match(s)</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
+   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
    appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
   };

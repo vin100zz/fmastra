@@ -116,7 +116,7 @@ function profile(player, chart, career) {
  const attributes=card('Attributs',attributesBody(player),levels);
  const pitch=positionPitch(player.position_ratings||{},player.position);
  const positions=pitch?card('Aptitudes par poste',pitch):'';
- const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match(s) de suspension`)).join('')}</div>`);
+ const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match${item.suspended_matches>1?'s':''} de suspension`)).join('')}</div>`);
  // Without any pitch to show, the state takes its place in the top row and the career stands alone below.
  return `<div class="grid thirds">${attributes}${positions||state}${chart}</div>${positions?`<div class="grid state-career">${state}${career}</div>`:career}`;
 }

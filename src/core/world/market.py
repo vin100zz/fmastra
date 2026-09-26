@@ -61,7 +61,7 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
             # Cleared the auction window: every live bid on this player surfaces together for review,
             # instead of being auto-decided by seller_accepts like an AI-controlled seller.
             if not offer.awaiting_review:
-                record(world, "offer_received", f"{buyer.name} propose {offer.fee} € pour {player.name}.", seller.id, player.id)
+                record(world, "offer_received", f"{buyer.name} propose {offer.fee} € pour {player.name}", seller.id, player.id)
             pending.append(offer if offer.awaiting_review else replace(offer, awaiting_review=True))
             continue
         if seller and not seller_accepts(player, seller, offer.fee, world, rng):

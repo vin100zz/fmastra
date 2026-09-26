@@ -115,7 +115,7 @@ def fill_camp(world: World, camp: NationalCamp, choices: dict[int, str], retain:
     camp.player_ids = [p.id for p in selected]
     for player in selected:
         if player.id in newcomers and player.id >= 0:
-            add_news(world, "call_up", f"{player.name} est convoqué avec {team.name}.", player.club_id, player.id)
+            add_news(world, "call_up", f"{player.name} est convoqué avec {team.name}", player.club_id, player.id)
 
 
 def camp_lineup(world: World, edition: InternationalEdition, nid: int):

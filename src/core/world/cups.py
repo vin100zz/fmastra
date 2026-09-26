@@ -95,7 +95,7 @@ def progress_cups(world: World) -> None:
             champions = world.champions.setdefault(cup.id, [])
             if not any(year == world.season for year, _ in champions):
                 champions.append((world.season, winners[0]))
-                text = f"{world.clubs[winners[0]].name} remporte {cup.name}."
+                text = f"{world.clubs[winners[0]].name} remporte {cup.name}"
                 world.journal.append(JournalEntry(world.date, "cup_winner", text, winners[0]))
                 add_news(world, "cup_winner", text, winners[0])
         else:

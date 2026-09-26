@@ -71,6 +71,8 @@ de gauche, sous « Ma partie » ; sur téléphone, en haut à droite à côté d
 de « Ma partie ».
 
 Une avance longue renvoie un identifiant de travail et une progression.
+Elle s'affiche dans la barre du haut, sans décaler la page : le libellé au
+milieu de la barre, la progression le long de son bord inférieur.
 Désactiver les commandes incompatibles tant qu'elle est active ; les vues
 lisent le dernier état cohérent validé. Une consultation ne tire aucun nouvel
 aléa de simulation. Les estimations affichées restent stables sur leur période
