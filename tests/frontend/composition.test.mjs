@@ -65,3 +65,9 @@ test('the next free place follows the order of positions, substitutes last',()=>
  assert.deepEqual(nextFree({slots:F433.map((_,index)=>index+1),bench:[20,null]},F433),{kind:'bench',index:1});
  assert.equal(nextFree({slots:F433.map((_,index)=>index+1),bench:[20]},F433),null);
 });
+
+test('the pitch names a player by surname, particles included',async()=>{
+ const {surname}=await import('../../web/ui.js');
+ assert.equal(surname('Jeffrey de Lange'),'de Lange');assert.equal(surname('Thomás De Martis'),'De Martis');
+ assert.equal(surname('Edwin van der Sar'),'van der Sar');assert.equal(surname('Mason Greenwood'),'Greenwood');assert.equal(surname('Pedri'),'Pedri');
+});

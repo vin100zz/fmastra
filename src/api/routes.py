@@ -82,9 +82,9 @@ def squad_sort_key(world, column: str):
     return lambda row: row[column]
 
 
-def lineup_player(world, player, competition_id: int) -> dict:
+def lineup_player(world, player, competition_id: int, stats: dict) -> dict:
     """A squad row of the lineup screen, with why the player cannot take part in this match."""
-    row = v.player_row(world, player)
+    row = {**v.player_row(world, player), **stats}
     injured = player.injury is not None and player.injury.end > world.date
     discipline = player.discipline.get(competition_id)
     row["unavailable"] = "injured" if injured else "suspended" if discipline and discipline.suspended_matches else None
@@ -226,11 +226,12 @@ def router(service: GameService) -> APIRouter:
                 suggestions[name] = {"titulaires": [(slot.player.id, slot.position) for slot in lineup.slots],
                                      "banc": [player.id for player in lineup.bench]}
             default = previous_lineup(world, match, context, formations)
+            stats = v.club_season_stats(world, club_id, [player.id for player in context.players])
             if default is None:
                 formation = context.club.formation if context.club.formation in formations else next(iter(formations))
                 default = {"formation": formation, **suggestions[formation]}
             return {"match_id": match_id, "opponent": v.club_ref(world, match.away_id if match.home_id == club_id else match.home_id),
-                    "home": match.home_id == club_id, "players": [lineup_player(world, player, match.competition_id) for player in context.players],
+                    "home": match.home_id == club_id, "players": [lineup_player(world, player, match.competition_id, stats[player.id]) for player in context.players],
                     "formations": {name: list(roles) for name, roles in formations.items()},
                     "bench_size": world.config.world.match_rules.bench_size,
                     "default": default, "suggestions": suggestions}

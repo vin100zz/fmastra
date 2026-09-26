@@ -35,6 +35,15 @@ reconstituée. Un élément secondaire se replie derrière un bouton plutôt que
 d'occuper une barre vide, et un bouton reprend le style des autres (carré, même
 hauteur) plutôt qu'une forme propre.
 
+**Le plus d'informations visibles sans défiler.** Barre du haut de 48 px, marges
+de 8 à 12 px, titres de carte de 32 px, lignes de tableau de 26 px et pastilles
+de 18 px. L'en-tête d'un club, d'un joueur ou d'une sélection tient sur une ligne
+(écusson réduit, nom, puis les faits séparés par des barres). Une carte ne répète
+pas l'onglet qui l'affiche ; une alerte devient un badge dans la barre d'outils
+plutôt qu'un bandeau. Sur l'écran Composition, tout tient dans la fenêtre : le
+terrain se dimensionne sur la hauteur disponible et la liste de l'effectif
+défile dans sa carte.
+
 **Code couleur constant.** Gardien, défense, milieu, attaque gardent la même
 teinte partout, de la liste d'effectif au terrain. C'est ce qui permet de lire
 une composition en une seconde.
@@ -51,6 +60,10 @@ Barre persistante en tête d'application :
 - Boutons : avancer d'un jour, avancer à la prochaine journée de championnat,
   avancer à la fin de la fenêtre de mercato
 - Journal des événements du jour : résultats, transferts, blessures
+
+Le mode Auto (enchaîner les journées) et le choix du thème clair ou sombre sont
+en bas du menu de gauche, sous « Ma partie » ; sur téléphone, en haut à droite
+à côté de l'icône de « Ma partie ».
 
 Une avance longue renvoie un identifiant de travail et une progression.
 Désactiver les commandes incompatibles tant qu'elle est active ; les vues

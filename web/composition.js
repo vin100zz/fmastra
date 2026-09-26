@@ -1,4 +1,4 @@
-import {api,escape as e,card,empty,position,group,levelBadge,number} from './ui.js';
+import {api,escape as e,card,empty,position,group,levelBadge,number,surname,appearances} from './ui.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
@@ -99,7 +99,6 @@ export function lineupSubmission(){
 
 const unavailableIcon=player=>player.unavailable==='injured'?'<span class="lineup-icon injury" title="Blessé" aria-label="Blessé">✚</span>'
  :player.unavailable==='suspended'?`<span class="lineup-icon suspension" title="Suspendu${player.match_suspension?` (${player.match_suspension} match${player.match_suspension>1?'s':''})`:''}" aria-label="Suspendu"></span>`:'';
-const surname=name=>name.split(/\s+/).at(-1);
 const fatigue=player=>Math.round((1-player.fitness)*100);
 
 function slotHtml(id,role,place,index,byId){
@@ -131,7 +130,7 @@ function squadHtml(byId){
   const spot=where(editor,player.id);
   const selected=spot?spot.kind==='slot'?position(roles()[spot.index]):'<span class="position bench">REMP</span>':'';
   const tired=fatigue(player);
-  return `<tr data-player="${player.id}" draggable="true" class="${spot?'chosen':''}${player.unavailable?' invalid':''}"><td>${selected}</td><td>${position(player.position)}</td><td class="strong"><span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span></td><td>${levelBadge(player.rating,'Niveau actuel sur 200')}</td><td>${levelBadge(player.potential,'Potentiel sur 200')}</td><td><span class="${tired>=30?'danger':''}" title="Condition physique : ${100-tired} %">${tired} %</span></td><td>${player.appearances}</td><td>${player.goals}</td><td>${player.assists}</td><td>${player.average?number(player.average):'—'}</td></tr>`;
+  return `<tr data-player="${player.id}" draggable="true" class="${spot?'chosen':''}${player.unavailable?' invalid':''}"><td>${selected}</td><td>${position(player.position)}</td><td class="strong"><span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span></td><td>${levelBadge(player.rating,'Niveau actuel sur 200')}</td><td>${levelBadge(player.potential,'Potentiel sur 200')}</td><td><span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span></td><td>${appearances(player.appearances,player.substitutes)}</td><td>${player.goals}</td><td>${player.assists}</td><td>${player.average?number(player.average):'—'}</td></tr>`;
  }).join('');
  return `<div class="table-scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
@@ -140,8 +139,10 @@ function editorHtml(){
  const byId=new Map(editor.data.players.map(player=>[player.id,player]));
  const current=roles(),layout=pitchLayout(current),problems=lineupProblems(editor,current,editor.data.players);
  const tactics=Object.keys(editor.data.formations).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
- const status=problems.length?`<ul class="lineup-problems">${problems.map(problem=>`<li>${e(problem)}</li>`).join('')}</ul>`:'';
- return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div><button type="button" data-lineup-suggest>Suggérer la meilleure composition</button></div>${status}
+ // The first problem is spelled out in the toolbar, the others counted; all of them in the tooltip.
+ const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
+ const fixture=`<span class="lineup-fixture">vs <b>${e(editor.data.opponent?.name||'?')}</b> · ${editor.data.home?'domicile':'extérieur'}</span>`;
+ return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${fixture}${status}<button type="button" data-lineup-suggest>Meilleure composition</button></div>
 <div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${editor.slots.map((id,index)=>slotHtml(id,current[index],layout[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>`;
@@ -177,8 +178,7 @@ export async function compositionContent(params, state) {
   const known=new Set(data.players.map(player=>player.id)),keep=id=>known.has(id)?id:null;
   editor.slots=editor.slots.map(keep);editor.bench=editor.bench.map(keep);
  }
- return card(`Composition · ${data.home?'À domicile':'À l’extérieur'} contre ${e(data.opponent?.name||'?')}`,
-  `<div id="lineup-form" data-match="${matchId}">${editorHtml()}</div>`,'','composition-card');
+ return `<section class="card composition-card"><div id="lineup-form" data-match="${matchId}">${editorHtml()}</div></section>`;
 }
 
 function install(){

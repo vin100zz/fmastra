@@ -4,7 +4,7 @@
 // The ball always belongs to someone. A carrier dribbles it at his feet; a pass flies to where the receiver
 // is *now*, not where he stood when it was struck, so it never lands in empty grass. Every other player
 // glides towards a target recomputed each frame from the ball, with frame-rate independent smoothing.
-import {escape as e} from './ui.js';
+import {escape as e,surname} from './ui.js';
 
 const W=105,H=68;
 // The engine's grid in a side's own frame: u from its goal (0) to the opponent's (1), v from its left to its right.
@@ -601,8 +601,8 @@ let keys=0;
 export function replayCard(match,teams){
  const result=match.result,key=String(++keys);
  const names=new Map();
- for(const player of [...result.home_lineup,...result.home_bench,...result.away_lineup,...result.away_bench])names.set(player.id,player.name?.split(/\s+/).at(-1)||'');
- for(const event of result.events){if(event.player&&!names.has(event.player_id))names.set(event.player_id,event.player.split(/\s+/).at(-1));if(event.secondary&&!names.has(event.secondary_id))names.set(event.secondary_id,event.secondary.split(/\s+/).at(-1));}
+ for(const player of [...result.home_lineup,...result.home_bench,...result.away_lineup,...result.away_bench])names.set(player.id,surname(player.name));
+ for(const event of result.events){if(event.player&&!names.has(event.player_id))names.set(event.player_id,surname(event.player));if(event.secondary&&!names.has(event.secondary_id))names.set(event.secondary_id,surname(event.secondary));}
  pending.set(key,{events:result.events,duration:result.duration,homeId:match.home.id,awayId:match.away.id,teams,names,
                   lineups:{home:result.home_lineup,away:result.away_lineup}});
  // Folded by default: the toggle sits in the match banner, the panel below it stays empty until first opened.

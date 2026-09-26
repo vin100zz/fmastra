@@ -169,7 +169,7 @@ def test_complete_competition_seeding_resume_and_api(imported, tmp_path):
             assert table(candidate, cid) == league_tables[cid]  # Knockout results never alter the league table.
             final = candidate.matches[cup.match_ids[-1]]
             assert final.neutral and final.first_leg_id is None
-            assert candidate.champions[cid] == [(2025, final.result.winner_id)]
+            assert candidate.champions[cid] == [(imported.season, final.result.winner_id)]
     assert world.matches == restored.matches
     assert world.champions == restored.champions
     app = create_app(ROOT, tmp_path / "api")

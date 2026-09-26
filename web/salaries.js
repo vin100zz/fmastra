@@ -8,7 +8,9 @@ export function roundSalary(value){
  return Math.round(value/step)*step;
 }
 
-export const monthlySalary=weekly=>currency.format(roundSalary((weekly??0)*weeksPerYear/12));
+export const monthlyAmount=weekly=>roundSalary((weekly??0)*weeksPerYear/12);
+export const monthlySalary=weekly=>currency.format(monthlyAmount(weekly));
+export const weeklyFromMonthly=monthly=>Math.round(monthly*12/weeksPerYear);
 
 export function salarySearchParams(params){
  const result=new URLSearchParams(params);
@@ -20,5 +22,8 @@ export function salarySearchParams(params){
  // Niveau is shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
  const niveau=result.get('niveau_min');
  if(niveau!==null&&niveau!=='')result.set('niveau_min',String(Number(niveau)/2));
+ // Max value is typed in millions of euros; the API filters on full euros.
+ const valeur=result.get('valeur_max');
+ if(valeur!==null&&valeur!=='')result.set('valeur_max',String(Math.round(Number(valeur)*1e6)));
  return result;
 }

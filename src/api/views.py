@@ -54,7 +54,7 @@ def player_row(world: World, player: Player) -> dict:
             "fitness": player.fitness, "injured_until": player.injury.end.iso() if player.injury else None,
             "suspension": max((item.suspended_matches for item in player.discipline.values()), default=0),
             "goals": player.season_goals, "assists": player.season_assists,
-            "appearances": player.appearances, "minutes": round(player.season_minutes),
+            "appearances": player.appearances, "substitutes": player.substitutes, "minutes": round(player.season_minutes),
             "average": round(player.rating_sum / player.rating_count, 2) if player.rating_count else None}
 
 
@@ -183,20 +183,27 @@ def academy_player_row(world: World, row) -> dict:
     return {"id": row.player_id, "name": player_name(world, row.player_id), "nationalities": [], "data_at": "unknown"}
 
 
-def squad_rows(world: World, club_id: int) -> list[dict]:
-    rows = {pid: player_row(world, world.players[pid]) for pid in world.clubs[club_id].player_ids}
-    for row in rows.values():
-        row.update(appearances=0, minutes=0, goals=0, assists=0, yellows=0, reds=0, average=0, rating_sum=0, rating_count=0)
+def club_season_stats(world: World, club_id: int, player_ids) -> dict[int, dict]:
+    """Current-season statistics of these players for this club only, whatever they did elsewhere."""
+    stats = {pid: dict(appearances=0, substitutes=0, minutes=0, goals=0, assists=0, yellows=0, reds=0, rating_sum=0, rating_count=0)
+             for pid in player_ids}
     for record in world.records.values():
-        if record.season != world.season or record.club_id != club_id or record.player_id not in rows: continue
-        row = rows[record.player_id]
+        if record.season != world.season or record.club_id != club_id or record.player_id not in stats: continue
+        row = stats[record.player_id]
         row['appearances'] += record.matches
+        row['substitutes'] += record.substitutes
         for key in ('minutes', 'goals', 'assists', 'yellows', 'reds', 'rating_sum', 'rating_count'):
             row[key] += getattr(record, key)
-    for row in rows.values():
+    for row in stats.values():
         row['average'] = round(row.pop('rating_sum') / max(1, row.pop('rating_count')), 2)
         row['minutes'] = round(row['minutes'])
-    return list(rows.values())
+    return stats
+
+
+def squad_rows(world: World, club_id: int) -> list[dict]:
+    player_ids = world.clubs[club_id].player_ids
+    stats = club_season_stats(world, club_id, player_ids)
+    return [{**player_row(world, world.players[pid]), **stats[pid]} for pid in player_ids]
 
 
 def club_league(world: World, club_id: int | None) -> Competition | None:
@@ -210,7 +217,7 @@ def career(world: World, player_id: int) -> dict:
     for record in player_records:
         key = (record.season, record.club_id)
         rows.setdefault(key, {"season": record.season, "club": club_ref(world, record.club_id),
-                             "competitions": {}, "matches": 0, "goals": 0, "assists": 0,
+                             "competitions": {}, "matches": 0, "substitutes": 0, "goals": 0, "assists": 0,
                              "rating_sum": 0, "rating_count": 0})
         row = rows[key]
         competition = world.competitions[record.competition_id]
@@ -218,7 +225,7 @@ def career(world: World, player_id: int) -> dict:
         label = competition.name if competition.kind == "league" else competition.code if competition.kind == "europe" else None
         if label: row["competitions"][label] = competition.kind == "europe"
         if competition.kind == "league": row["nation"] = competition.nation
-        for field in ("matches", "goals", "assists", "rating_sum", "rating_count"):
+        for field in ("matches", "substitutes", "goals", "assists", "rating_sum", "rating_count"):
             row[field] += getattr(record, field)
     for (_, club_id), row in rows.items():
         labels = row.pop("competitions")
@@ -246,7 +253,7 @@ def career(world: World, player_id: int) -> dict:
         league = club_league(world, club_id)
         rows[key] = {"season": season, "club": club_ref(world, club_id),
                      "competition": league.name if league else None, "competition_nation": league.nation if league else None,
-                     "matches": 0, "goals": 0, "assists": 0, "average": None}
+                     "matches": 0, "substitutes": 0, "goals": 0, "assists": 0, "average": None}
     items = [{**rows[key], "fee": fees.get(key)} for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
     rating_count = sum(row.rating_count for row in player_records)
     totals = {"fee": sum(fees.values()), "matches": sum(row.matches for row in player_records),

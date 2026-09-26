@@ -29,3 +29,10 @@ test('monthly filter bounds select exact eligible weekly wages without changing 
  assert.equal(salarySearchParams(new URLSearchParams()).has('salaire_max'),false);
  assert.equal(salarySearchParams(new URLSearchParams('salaire_max=0')).get('salaire_max'),'0');
 });
+
+test('max value is typed in millions of euros',()=>{
+ for(const [input,expected] of [['25','25000000'],['0.4','400000'],['0.29','290000'],['0','0']]){
+  assert.equal(salarySearchParams(new URLSearchParams(`valeur_max=${input}`)).get('valeur_max'),expected);
+ }
+ assert.equal(salarySearchParams(new URLSearchParams()).has('valeur_max'),false);
+});

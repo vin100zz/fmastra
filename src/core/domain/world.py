@@ -22,6 +22,8 @@ class SeasonRecord:
     competition_id: int
     minutes: float = 0
     matches: int = 0
+    # Matches played coming off the bench; the starts are `matches - substitutes`.
+    substitutes: int = 0
     goals: int = 0
     assists: int = 0
     yellows: int = 0

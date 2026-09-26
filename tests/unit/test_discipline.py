@@ -30,3 +30,18 @@ def test_new_suspension_is_not_served_by_match_that_caused_it(config):
     assert player.discipline[16].yellows == 5
     assert player.discipline[16].suspended_matches == 1
     assert suspended.discipline[16].suspended_matches == 0
+
+
+def test_appearances_tell_starts_from_substitute_entries(config):
+    world = mini_world(config)
+    starter, substitute, unused = world.players[101], world.players[102], world.players[103]
+    world.matches[10] = Match(10,16,2025,1,world.date,1,2)
+    result = MatchResult(0,0,"possession",player_stats={starter.id:PlayerMatchStats(minutes=90),substitute.id:PlayerMatchStats(minutes=20),
+                                                          unused.id:PlayerMatchStats()},
+                         home_lineup=[(starter.id,"BU")],home_bench=[substitute.id,unused.id])
+    apply(world, MatchPlayed(10,result,{}, {}, {}))
+    assert (starter.appearances, starter.substitutes) == (1, 0)
+    assert (substitute.appearances, substitute.substitutes) == (1, 1)
+    assert (unused.appearances, unused.substitutes) == (0, 0)
+    record = next(row for row in world.records.values() if row.player_id == substitute.id)
+    assert (record.matches, record.substitutes) == (1, 1)

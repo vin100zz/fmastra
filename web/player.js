@@ -1,6 +1,6 @@
-import {monthlySalary} from './salaries.js';
+import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges} from './ui.js';
+import {api,escape as e,number as n,money,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances} from './ui.js';
 
 const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
 // What an attribute is for decides its section; sections and attributes always come in the same order, whatever the
@@ -86,11 +86,11 @@ function header(player, lead='', actions='') {
 
 const dialogButtons=confirm=>`<div class="actions"><button type="button" data-close-dialog>Annuler</button>${confirm}</div>`;
 
-// A bid from the controlled club: the fee and the weekly wage start at the player's value and current wage.
+// A bid from the controlled club: the fee (in M€) and the monthly wage start at the player's rounded value and current wage.
 function offerAction(player, state, pending) {
  const current=pending?`<span class="pill">Offre en cours · ${money(pending.indemnite)}</span>`:'';
  const button=`<button class="primary" type="button" data-open-dialog="offer-dialog" ${state.market?'':'disabled title="Le mercato est fermé."'}>Faire une offre</button>`;
- const dialog=`<dialog id="offer-dialog" class="action-dialog"><form id="offer-form"><span class="eyebrow">MERCATO</span><h2>Faire une offre pour ${e(player.name)}</h2><p>Valeur de marché ${money(player.value)} · salaire actuel ${monthlySalary(player.wage)} / mois.</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Indemnité offerte (€) <input name="indemnite" type="number" min="0" step="1" value="${Math.round(player.value||0)}" required></label><label>Salaire proposé (€/semaine) <input name="salaire_hebdo" type="number" min="1" step="1" value="${Math.max(1,player.wage||0)}" required></label>${dialogButtons('<button class="primary" type="submit">Envoyer l’offre</button>')}</form></dialog>`;
+ const dialog=`<dialog id="offer-dialog" class="action-dialog"><form id="offer-form"><span class="eyebrow">MERCATO</span><h2>Faire une offre pour ${e(player.name)}</h2><p>Valeur de marché ${money(player.value)} · salaire actuel ${monthlySalary(player.wage)} / mois.</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Indemnité offerte (M€) <input name="indemnite" type="number" min="0" step="0.1" value="${Math.round((player.value||0)/1e6)}" required></label><label>Salaire proposé (€/mois) <input name="salaire_mensuel" type="number" min="1" step="1" value="${Math.max(1,monthlyAmount(player.wage))}" required></label>${dialogButtons('<button class="primary" type="submit">Envoyer l’offre</button>')}</form></dialog>`;
  return `<div class="player-actions">${current}${button}</div>${dialog}`;
 }
 
@@ -130,7 +130,7 @@ export async function playerScreen(id) {
  const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au bilan de chaque saison.'),'<span class="muted">Niveau sur 200</span>');
  const totals=history.career.totals;
  const footer=['Total','',totals.fee?money(totals.fee):'—','',`${n(totals.matches)}`,`${n(totals.goals)}`,`${n(totals.assists)}`,totals.average?n(totals.average):'—'];
- const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,row.matches,row.goals,row.assists,row.average?n(row.average):'—']),footer));
+ const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']),footer));
  return header(player,playerNavigation(neighbours),actions)+(player.retired?chart+career:profile(player,chart,career));
 }
 

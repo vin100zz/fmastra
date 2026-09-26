@@ -44,7 +44,10 @@ def test_eligibility_and_all_reserved_dates(imported):
                      for cid in league.club_ids if not imported.clubs[cid].is_reserve}
         assert mandatory <= set(cup.club_ids)
         assert participants(imported, cup, imported.season) == cup.club_ids
-        assert cup.round_dates[0].month == 12 and cup.round_dates[-1] == Date(2026, 5, 27)
+        final, rules = cup.round_dates[-1], imported.config.world.europe
+        target = Date(imported.season + 1, *rules.domestic_dates[-1])
+        assert cup.round_dates[0].month == 12 and (final.ordinal() - 1) % 7 == rules.cup_weekday
+        assert abs(final.ordinal() - target.ordinal()) <= 3
         for league in imported.competitions.values():
             if league.kind != "league" or league.nation != cup.nation:
                 continue
@@ -128,7 +131,7 @@ def test_live_round_advance_and_resume(imported, tmp_path):
             assert len(cup.match_ids) == 63
             assert Counter(candidate.matches[mid].round_number for mid in cup.match_ids) == {1: 32, 2: 16, 3: 8, 4: 4, 5: 2, 6: 1}
             final = candidate.matches[cup.match_ids[-1]]
-            assert final.neutral and candidate.champions[cup.id] == [(2025, final.result.winner_id)]
+            assert final.neutral and candidate.champions[cup.id] == [(imported.season, final.result.winner_id)]
     assert world.matches == restored.matches and world.champions == restored.champions
     app = create_app(ROOT, tmp_path / "api")
     app.state.game.world = restored
@@ -165,8 +168,8 @@ def test_career_keeps_league_and_cup_statistics(imported):
     world = deepcopy(imported, {id(imported.config): imported.config})
     player = next(p for p in world.players.values() if p.club_id == 868)
     cup = next(c for c in world.competitions.values() if c.kind == "cup" and c.nation == "FRA")
-    world.records = {"league": SeasonRecord(2025, player.id, 868, 16, matches=4, goals=2, rating_sum=28, rating_count=4),
-                     "cup": SeasonRecord(2025, player.id, 868, cup.id, matches=2, goals=3, rating_sum=16, rating_count=2)}
+    world.records = {"league": SeasonRecord(world.season, player.id, 868, 16, matches=4, goals=2, rating_sum=28, rating_count=4),
+                     "cup": SeasonRecord(world.season, player.id, 868, cup.id, matches=2, goals=3, rating_sum=16, rating_count=2)}
     data = career(world, player.id)
     row = data["items"][0]
     assert row["matches"] == 6 and row["goals"] == 5 and row["average"] == 7.33
@@ -179,15 +182,15 @@ def test_career_names_league_then_european_code_and_falls_back_to_the_clubs_leag
     player = next(p for p in world.players.values() if p.club_id == 868)
     cup = next(c for c in world.competitions.values() if c.kind == "cup" and c.nation == "FRA")
     world.competitions[-101] = Competition(-101, "Ligue des champions", "EUR", 0, [], kind="europe", code="C1")
-    world.records = {"europe": SeasonRecord(2025, player.id, 868, -101, matches=2),
-                     "league": SeasonRecord(2025, player.id, 868, 16, matches=4),
-                     "cup": SeasonRecord(2025, player.id, 868, cup.id, matches=2)}
+    world.records = {"europe": SeasonRecord(world.season, player.id, 868, -101, matches=2),
+                     "league": SeasonRecord(world.season, player.id, 868, 16, matches=4),
+                     "cup": SeasonRecord(world.season, player.id, 868, cup.id, matches=2)}
     row = career(world, player.id)["items"][0]
     assert (row["competition"], row["competition_nation"]) == ("Ligue 1 · C1", "FRA")  # The flag is the league's, not the European cup's.
-    world.records = {"cup": SeasonRecord(2025, player.id, 868, cup.id, matches=2)}
+    world.records = {"cup": SeasonRecord(world.season, player.id, 868, cup.id, matches=2)}
     row = career(world, player.id)["items"][0]
     assert row["competition"] == "Ligue 1" and row["competition_nation"] == "FRA" and row["matches"] == 2
-    world.records = {"europe": SeasonRecord(2025, player.id, 868, -101, matches=2)}
+    world.records = {"europe": SeasonRecord(world.season, player.id, 868, -101, matches=2)}
     row = career(world, player.id)["items"][0]
     assert (row["competition"], row["competition_nation"]) == ("C1", None)
 

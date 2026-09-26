@@ -64,7 +64,6 @@ a:hover{color:var(--strong)}
 .time-controls select{height:40px}
 #advance{height:44px;padding:0 16px 0 20px;font-family:var(--display);font-stretch:semi-condensed;font-size:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 #advance span{margin-left:14px}
-#autoplay{height:44px}
 #autoplay[aria-pressed="true"]{background:var(--accent);border-color:var(--accent-text);color:var(--accent-ink)}
 .pill{background:transparent;border:1px solid var(--good-line);color:var(--good);border-radius:13px;padding:5px 10px;font-size:12px;font-weight:600}
 #market-badge:not(:empty):before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}
@@ -229,7 +228,7 @@ dialog::backdrop{background:var(--backdrop)}
 .bench-slot{background:var(--panel-2);border-color:var(--line)}
 .bench-slot.invalid{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
 .lineup-squad{border-color:var(--line)}
-.lineup-squad tr.chosen{background:var(--good-soft)}
+.lineup-squad tr.chosen{background:color-mix(in srgb,var(--good-soft) 55%,transparent)}
 .lineup-squad tr.invalid td{background:var(--bad-soft)}
 #lineup-form .drop-hover{outline-color:var(--accent-text);background:var(--own-row)}
 
@@ -243,7 +242,125 @@ dialog::backdrop{background:var(--backdrop)}
  .sidebar nav a{min-height:36px;padding:0 8px!important;font-size:12px}
  .job-bar{top:0!important}
  .sidebar-bottom{border-top:0;padding-top:0;top:4px!important}
- .time-controls{grid-template-columns:1fr 1fr auto}
+ .time-controls{grid-template-columns:1fr 1fr}
+ .time-controls #advance{grid-column:1/-1}
+}
+
+/* Density: as much as possible visible without scrolling. 48 px bar, 8-12 px gaps, 26 px table rows, one-line page headers. */
+.topbar{height:48px!important;padding:0 12px 0 16px!important}
+.brand{height:48px;margin-bottom:0}
+.brand-mark{width:28px!important;height:28px!important;font-size:19px!important}
+.job-bar{top:48px!important;padding:6px 16px}
+.date-block .eyebrow{font-size:10px}
+.date-block strong{font-size:18px!important}
+.time-controls{gap:8px}
+.time-controls select{height:36px;padding:0 8px}
+#advance{height:36px;font-size:16px;padding:0 12px 0 16px}
+.nav-label{margin:12px 20px 3px!important}
+.sidebar nav a,.sidebar-bottom>a{min-height:34px}
+.sidebar-bottom{padding-top:6px}
+
+main{padding:8px 16px 12px}
+h1{font-size:26px;margin:0}
+.page-heading{margin-bottom:8px;gap:12px;align-items:center;min-height:0}
+.page-heading p{margin:0}
+/* Club, player and nation headers on one line: small crest, name, then the facts separated by bars. */
+.identity{gap:10px;align-items:center}
+.crest{width:44px;height:44px;font-size:16px}
+.avatar{width:40px;height:40px;font-size:15px}
+.identity>div:last-child{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:2px}
+.identity>div:last-child>h1{order:-1;margin:0;font-size:26px}
+.identity .eyebrow{font-size:11px}
+.identity p{margin:0;font-size:13px}
+.identity>div:last-child>p:before,.identity>div:last-child>.eyebrow:before{content:"|";color:var(--line);margin-right:12px}
+.club-facilities{gap:0 12px}
+.page-heading>div:not(.identity):not(.heading-with-lead){display:flex;align-items:center;gap:10px}
+.page-heading .pill{padding:3px 10px}
+.player-heading{flex-wrap:nowrap}
+.player-heading .identity{min-width:0}
+.player-facts{display:flex;flex-wrap:nowrap;gap:4px 18px;margin-left:auto}
+.player-facts>div{white-space:nowrap}
+.player-actions{flex-wrap:nowrap}
+.player-actions button{white-space:nowrap;padding:6px 12px}
+@media(max-width:1300px){.player-heading{flex-wrap:wrap}.player-facts{flex-wrap:wrap;margin-left:0}}
+.player-facts dt{font-size:10px}
+.player-facts dd{margin:1px 0 0;font-size:13px}
+.entity-nav{gap:1px}
+.entity-step,.entity-menu>summary{width:20px;height:15px}
+
+.tabs{margin-bottom:8px!important;overflow-x:auto;overflow-y:hidden}
+.tabs a{padding:8px 14px!important}
+
+.card{margin-bottom:10px}
+.card-head{min-height:32px;padding:0 12px!important}
+.card-head h2,.club-overview .card-head h2,.inbox .card-head h2{font-size:13px!important}
+.card-body{padding:10px 12px}
+.grid,.grid.equal,.grid.thirds,.club-overview,.my-club,.match-layout,.honours-blocks,.transfer-columns,.league-summaries{gap:10px}
+.club-overview{margin-bottom:10px}
+.stat-grid{gap:10px;margin-bottom:10px}
+.stat-card{padding:10px 12px}
+.stat-card strong{font-size:22px;margin:4px 0 2px}
+.hero{min-height:0;padding:14px 18px;margin-bottom:10px}
+.welcome .hero{padding:28px}
+.match-banner{padding:8px 14px;margin-bottom:10px}
+.notice{padding:6px 10px;margin-bottom:8px}
+.filters{margin-bottom:8px;gap:6px}
+.filters input,.filters select{padding:5px 8px}
+.pager{padding:5px 12px}
+.pager button{padding:3px 8px}
+.empty{padding:16px 12px}
+.section-title{margin:12px 0 8px}
+.season-navigation{margin:8px 0}
+
+/* Tables: 26 px rows, 26 px headers, 18 px chips. */
+th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
+td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
+.rating,.player-table .rating,.grid.thirds .attribute .rating{padding:1px 6px!important;line-height:16px;font-size:11px;min-width:30px;display:inline-block;text-align:center}
+.position,.player-table .position{padding:2px 5px!important;line-height:14px}
+.form i{width:17px;height:17px}
+.fixture{padding:5px 12px;gap:10px}
+.fixture .score{padding:3px 4px}
+.fixture-date{padding:6px 12px 3px}
+.journal-row{padding:6px 12px;gap:10px}
+.journal-icon{width:24px;height:24px}
+.timeline-row{padding:6px 12px}
+.fact{padding:5px 0}
+.attribute{margin:4px 0;padding:0}
+.highlight-row{padding:5px 0}
+.match-stats .comparison{padding:2px 0}
+
+/* Inbox: tag, text and date flow on one line; long texts wrap under the tag. */
+.my-club>.inbox{top:56px;max-height:calc(100vh - 68px)}
+.inbox-item{display:flow-root;padding:5px 10px 5px 14px}
+.inbox-meta{display:contents}
+.inbox-meta b{float:left;margin:1px 7px 0 0;line-height:17px}
+.inbox-meta small{float:right;margin:1px 0 0 8px;line-height:17px}
+.inbox-text{display:block;margin:0;font-size:12.5px;line-height:18px}
+.inbox-item.unread:before{top:11px}
+
+/* Line-up editor: the whole screen within the window: toolbar on one line, pitch sized from the height, list scrolling inside. */
+.composition-card{margin-bottom:0}
+.lineup-toolbar{justify-content:flex-start;gap:12px;padding:6px 10px;border-bottom:1px solid var(--line)}
+.lineup-toolbar [data-lineup-suggest]{margin-left:auto;padding:5px 12px}
+.tactics button{padding:5px 11px}
+.lineup-fixture{font-size:13px;color:var(--muted)}
+.lineup-fixture b{color:var(--ink)}
+.lineup-problems{display:inline-flex;align-items:center;gap:6px;margin:0;padding:3px 10px;border:1px solid;border-radius:3px;font-size:12px;font-weight:600;line-height:18px}
+.lineup-problems:before{content:"!";display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:currentColor;color:var(--panel);font-size:10px;font-weight:900}
+.lineup-field>h3{margin:8px 0 4px}
+.lineup-bench{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.bench-slot{min-height:26px;padding:2px 6px}
+.lineup-slot{width:76px;padding:2px 0}
+.lineup-slot .shirt{width:30px;height:30px}
+.lineup-squad td{padding:2px 8px!important}
+.fatigue-cell{display:inline-flex;align-items:center;gap:6px}
+.fatigue-bar{width:40px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.fatigue-bar i{display:block;height:100%;background:var(--warn)}
+.fatigue-cell.danger .fatigue-bar i{background:var(--bad)}
+@media(min-width:901px){
+ .lineup-layout{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:10px}
+ .lineup-field{width:clamp(300px,calc((100vh - 350px) * .7727),400px)}
+ .lineup-squad .table-scroll{max-height:calc(100vh - 236px)}
 }
 
 /* Light theme: same layout and accent, on white panels; pitches stay green. */
@@ -262,7 +379,22 @@ dialog::backdrop{background:var(--backdrop)}
 :root[data-theme="light"] .entity-menu-panel,:root[data-theme="light"] dialog,:root[data-theme="light"] #toast{box-shadow:0 12px 32px #1a2d3a2e}
 
 /* Theme switch in the top bar: shows the theme it leads to. */
-#theme-toggle{width:44px;height:44px;padding:0;display:grid;place-items:center;flex-shrink:0}
+/* Auto mode and theme switch, at the bottom of the sidebar under Ma partie. */
+.sidebar-tools{display:flex;gap:6px;margin:6px 8px 0}
+#autoplay{flex:1;height:34px;min-width:0;padding:0 10px;font-size:13px}
+#theme-toggle{width:34px;height:34px;padding:0;display:grid;place-items:center;flex-shrink:0}
+@media(max-width:650px){
+ .sidebar-bottom{display:flex!important;align-items:center;gap:4px}
+ .sidebar-tools{margin:0;gap:4px}
+ .sidebar-bottom>a{font-size:0!important;gap:0;min-height:32px;padding:0 8px!important}
+ #autoplay{flex:none;height:32px;min-width:72px}
+ #theme-toggle{width:32px;height:32px}
+}
 #theme-toggle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #theme-toggle .to-dark,:root[data-theme="light"] #theme-toggle .to-light{display:none}
 :root[data-theme="light"] #theme-toggle .to-dark{display:block}
+
+/* Club landing: the last line-up's pitch no longer sets a tall row above the squad. */
+.club-overview .lineup-card .pitch{flex:none;min-height:0;height:310px;margin:6px 8px 8px}
+.club-overview .card-head{min-height:30px}
+.club-overview .card-body{padding:6px 10px}

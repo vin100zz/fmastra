@@ -78,7 +78,8 @@ def decode(value: Any) -> Any:
                 value["fields"].setdefault(name, None)
         if cls is Player:
             for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),
-                                  ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []})):
+                                  ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []}),
+                                  ("substitutes", 0)):
                 value["fields"].setdefault(name, default)
             for name in ("source_current_ability", "source_potential_ability"):
                 value["fields"].setdefault(name, None)
@@ -91,6 +92,8 @@ def decode(value: Any) -> Any:
             value["fields"].setdefault("international", encode(InternationalState()))
             for name, default in (("finance_history", {"$map": []}), ("finance_history_since", None), ("movement_history_since", None)):
                 value["fields"].setdefault(name, default)
+        if cls is SeasonRecord:
+            value["fields"].setdefault("substitutes", 0)
         if cls is JournalEntry:
             value["fields"].setdefault("read", False)
         if cls is MovementSnapshot:

@@ -17,17 +17,18 @@ from core.world.transfer_rules import recent_arrival_ids
 
 
 def mini_world(config):
+    start = Date(config.world.start_date.year, config.world.start_date.month, config.world.start_date.day)
     clubs, players = {}, {}
     for cid in (1, 2):
         lineup = synthetic_lineup(config, cid)
         squad = [slot.player for slot in lineup.slots] + lineup.bench
         for player in squad:
-            player.contract = Contract(1000, Date(2028, 6, 30), Date(2025, 7, 1))
+            player.contract = Contract(1000, Date(start.year + 3, 6, 30), start)
             players[player.id] = player
         clubs[cid] = Club(cid, f"Club {cid}", "FRA", 16, 16, ClubStatus.ACTIVE, 30000, 70, 70, "4-3-3",
                           ClubPersonality(.5, .5, .5, .5), [player.id for player in squad],
                           wage_bill=len(squad)*1000, wage_cap=100000, transfer_budget=1000000, balance=2000000)
-    return World(Date(2025, 7, 1), 2025, 1, config, players, clubs, {}, {}, 1000, rngs={"market":Random(4)})
+    return World(start, start.year, 1, config, players, clubs, {}, {}, 1000, rngs={"market":Random(4)})
 
 
 def test_transfer_moves_money_membership_and_wages_once(config):
@@ -393,7 +394,7 @@ def club_within_reach_of(player, config):
 
 def add_star(world, seller, level=95, position=None):
     star = synthetic_lineup(world.config, 90, level=level).slots[0].player
-    star.id, star.club_id, star.contract = 850, seller.id, Contract(1000, Date(2028, 6, 30), Date(2025, 7, 1))
+    star.id, star.club_id, star.contract = 850, seller.id, Contract(1000, Date(world.season + 3, 6, 30), world.date)
     if position is not None: star.position = position
     world.players[star.id] = star
     seller.player_ids.append(star.id)

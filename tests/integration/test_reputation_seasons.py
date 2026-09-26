@@ -14,11 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_july_revises_every_club_and_the_history_survives_saves_and_a_second_season(config, tmp_path):
     world = import_world(ROOT / 'data', config, 123)
+    first = world.season
     start = {cid: club.reputation for cid, club in world.clubs.items()}
     levels = division_levels(config)
     assert all(club.reputation_anchor == club.reputation for club in world.clubs.values())
     assert {1, 2, 3, 4} <= set(world.reputation_ceilings['FRA']) and set(world.reputation_ceilings) >= {'ENG', 'ESP', 'GER', 'ITA'}
-    assert {cid: history for cid, history in world.reputation_history.items()} == {cid: [(2025, value)] for cid, value in start.items()}
+    assert {cid: history for cid, history in world.reputation_history.items()} == {cid: [(first, value)] for cid, value in start.items()}
 
     finish_season(world)
     tables = {lid: table(world, lid) for lid, competition in world.competitions.items() if competition.kind == 'league'}
@@ -35,7 +36,7 @@ def test_july_revises_every_club_and_the_history_survives_saves_and_a_second_sea
     assert foreign and all(club.reputation >= start[club.id] for club in foreign)
     assert any(club.reputation > start[club.id] for club in foreign)
     assert all(club.reputation_anchor == start[club.id] for club in world.clubs.values())
-    assert all(history == [(2025, start[cid]), (2026, world.clubs[cid].reputation)]
+    assert all(history == [(first, start[cid]), (first + 1, world.clubs[cid].reputation)]
                for cid, history in world.reputation_history.items())
 
     store = SaveStore(tmp_path)
@@ -49,7 +50,7 @@ def test_july_revises_every_club_and_the_history_survives_saves_and_a_second_sea
         finish_season(candidate)
         advance_day(candidate)
         validate_world(candidate)
-    assert candidate.season == 2027
-    assert all(len(history) == 3 and history[-1] == (2027, world.clubs[cid].reputation) for cid, history in world.reputation_history.items())
+    assert candidate.season == first + 2
+    assert all(len(history) == 3 and history[-1] == (first + 2, world.clubs[cid].reputation) for cid, history in world.reputation_history.items())
     assert {cid: club.reputation for cid, club in world.clubs.items()} == {cid: club.reputation for cid, club in restored.clubs.items()}
     assert world.reputation_history == restored.reputation_history

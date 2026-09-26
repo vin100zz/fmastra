@@ -139,7 +139,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.reputation_history.setdefault(club.id, []).append((event.year, club.reputation))
         for player in world.players.values():
             world.trajectories.setdefault(player.id, []).append((event.year, player.rating))
-            player.season_minutes = player.season_goals = player.season_assists = player.appearances = 0
+            player.season_minutes = player.season_goals = player.season_assists = player.appearances = player.substitutes = 0
             player.rating_sum = player.rating_count = 0
             for discipline in player.discipline.values():
                 discipline.yellows = 0
@@ -220,6 +220,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
                 discipline.suspended_matches -= 1
                 if discipline.suspended_matches == 0:
                     add_news(world, "suspension_end", f"{world.players[pid].name} n'est plus suspendu.", club_id, pid)
+    starters = {pid for pid, _ in event.result.home_lineup + event.result.away_lineup}
     for pid, stats in event.result.player_stats.items():
         if pid in event.result.temporary_players:
             continue
@@ -230,6 +231,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         player.season_goals += stats.goals
         player.season_assists += stats.assists
         player.appearances += int(stats.minutes > 0)
+        player.substitutes += int(stats.minutes > 0 and pid not in starters)
         if stats.rating is not None:
             player.rating_sum += stats.rating
             player.rating_count += 1
@@ -251,6 +253,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         record = world.records.setdefault(key, SeasonRecord(match.season, pid, player.club_id, match.competition_id))
         record.minutes += stats.minutes
         record.matches += int(stats.minutes > 0)
+        record.substitutes += int(stats.minutes > 0 and pid not in starters)
         record.goals += stats.goals
         record.assists += stats.assists
         record.yellows += stats.yellows

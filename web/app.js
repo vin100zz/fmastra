@@ -2,6 +2,7 @@ import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,card,stat,heading,empty,toast,setNations,nationName,sortTable,nextDirection} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,LEAGUE_ORDER} from './screens.js';
 import {playerScreen} from './player.js';
+import {weeklyFromMonthly} from './salaries.js';
 import {matchScreen} from './match.js';
 import {europeScreen} from './europe.js';
 import {honoursScreen} from './honours.js';
@@ -86,7 +87,7 @@ return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'
 async function render(){const version=++renderVersion;const {parts,params}=routeParts();if(!main.innerHTML||main.querySelector('.loading'))main.innerHTML='<div class="loading">Chargement…</div>';
  const active=document.activeElement;
  const focusName=active&&main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active.name:null;
- const selection=focusName&&'selectionStart' in active?[active.selectionStart,active.selectionEnd]:null;
+ const selection=focusName&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
  try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section,extra]=parts;
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
@@ -183,7 +184,7 @@ document.querySelector('#advance').addEventListener('click',()=>{
 });
 function applyFilter(form){const values=Object.fromEntries(new FormData(form));Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
 main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element);if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
- else if(element.id==='offer-form')await action('/partie/offre-sortante',{joueur_id:Number(data.get('joueur_id')),salaire_hebdo:Number(data.get('salaire_hebdo')),indemnite:Number(data.get('indemnite'))},'Offre envoyée.');
+ else if(element.id==='offer-form')await action('/partie/offre-sortante',{joueur_id:Number(data.get('joueur_id')),salaire_hebdo:weeklyFromMonthly(Number(data.get('salaire_mensuel'))),indemnite:Math.round(Number(data.get('indemnite'))*1e6)},'Offre envoyée.');
 });
 let filterTimer;
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});

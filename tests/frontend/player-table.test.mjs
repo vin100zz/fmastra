@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues} from '../../web/ui.js';
+import {playerTable,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -114,4 +114,11 @@ test('sorting orders by raw values, keeps unknown ones last and ties in page ord
  sortTable(table,1,'asc');assert.deepEqual(table.ids(),['2','3','1','0']);
  assert.equal(table.head[2].getAttribute('aria-sort'),null);assert.equal(table.head[1].getAttribute('aria-sort'),'ascending');
  table.head[0].dataset.first='asc';assert.equal(nextDirection(table,0),'asc');
+});
+
+test('appearances show the substitute entries in brackets after the starts',()=>{
+ assert.equal(appearances(15,3),'12 (3)');
+ assert.equal(appearances(12,0),'12');
+ assert.equal(appearances(12),'12');
+ assert.equal(appearances(3,3),'0 (3)');
 });

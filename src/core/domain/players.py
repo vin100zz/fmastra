@@ -90,6 +90,7 @@ class Player:
     season_goals: int = 0
     season_assists: int = 0
     appearances: int = 0
+    substitutes: int = 0
     rating_sum: float = 0
     rating_count: int = 0
     source_current_ability: int | None = None
