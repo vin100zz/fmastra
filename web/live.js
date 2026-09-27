@@ -1,6 +1,6 @@
 // The human club's match played live: the 2D pitch fed one segment at a time, the stats, the other matches of
 // the day with the table as it stands, and the Tactique panel. The screen is modal until the final whistle.
-import {api,escape as e,number as n,card,kitDot,kitShirtStyle,position,group,surname,toast} from './ui.js';
+import {api,escape as e,number as n,card,roundTitle,kitDot,kitShirtStyle,position,group,surname,toast} from './ui.js';
 import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,highlightsCard} from './match.js';
 import {pitchLayout,changeFormation} from './composition.js';
@@ -38,8 +38,9 @@ function othersHtml(second=0){
  const games=scoresAt(second);
  const rows=games.filter(game=>!game.own).map(game=>`<div class="live-game"><span>${kitDot(game.home)}${e(game.home.name)}</span><b>${game.goals[0]} – ${game.goals[1]}</b><span>${kitDot(game.away)}${e(game.away.name)}</span></div>`).join('');
  const own=view.state.side==='home'?view.state.home.id:view.state.away.id;
- const table=view.others.table?`<div class="table-scroll"><table class="live-table"><thead><tr><th>#</th><th>CLUB</th><th>PTS</th><th>J</th><th>DIFF.</th></tr></thead><tbody>${liveTable(view.others.table,games,view.others.points).map((row,index)=>`<tr class="${row.club.id===own?'own':''}"><td>${index+1}</td><td>${kitDot(row.club)}${e(row.club.name)}</td><td><b>${row.points}</b></td><td>${row.played}</td><td>${row.goals_for-row.goals_against}</td></tr>`).join('')}</tbody></table></div>`:'';
- return card(view.others.competition,`<div class="card-body">${rows}</div>${table}`,'','live-others');
+ const standings=view.others.table&&liveTable(view.others.table,games,view.others.points);
+ const table=standings?`<div class="table-scroll"><table class="live-table"><thead><tr><th>#</th><th>CLUB</th><th>PTS</th><th>V</th><th>N</th><th>D</th><th>BP</th><th>BC</th><th>DIFF.</th></tr></thead><tbody>${standings.map((row,index)=>`<tr class="${row.club.id===own?'own':''}"><td>${index+1}</td><td>${kitDot(row.club)}${e(row.club.name)}</td><td><b>${row.points}</b></td><td>${row.won}</td><td>${row.drawn}</td><td>${row.lost}</td><td>${row.goals_for}</td><td>${row.goals_against}</td><td>${row.goals_for-row.goals_against}</td></tr>`).join('')}</tbody></table></div>`:'';
+ return card(standings?roundTitle(view.others.competition,standings):view.others.competition,`<div class="card-body">${rows}</div>${table}`,'','live-others');
 }
 
 // Goals, injuries and red cards as far as the pitch has shown them: a goal once the score counts it.

@@ -5,7 +5,7 @@ import {financialHistory,movementsHistory,seasonsHistory} from './club-history.j
 import {clubOverview} from './club-overview.js';
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,standingsTable,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
+import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
 
 export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
 
@@ -16,7 +16,7 @@ async function leagueSummary(id){
 }
 
 function leagueSummaryCard(league,data){
- const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>Classement</h3><div class="standings-scroll">${standingsTable(data.standings,true)}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
+ const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>${roundTitle('Classement',data.standings.items)}</h3><div class="standings-scroll">${standingsTable(data.standings,'record')}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
  return card(`${e(league.nation)} · ${e(league.name)}`,content,`<a href="#/league/${league.id}">Voir le championnat →</a>`);
 }
 

@@ -315,7 +315,9 @@ h1{font-size:26px;margin:0}
 /* Tables: 26 px rows, 26 px headers, 18 px chips. */
 th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
 td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
-.standings-card th{padding:0 5px!important}.standings-card td{padding:3px 5px!important}
+.standings-card th,.league-summary-grid .standings-scroll th,.live-table th{padding:0 5px!important}.standings-card td,.league-summary-grid .standings-scroll td,.live-table td{padding:3px 5px!important}
+/* The table takes just the width its columns need; the last round's results get the rest. */
+@media(min-width:951px){.league-summary-grid{grid-template-columns:minmax(0,1fr) max-content}}
 .rating,.player-table .rating,.grid.thirds .attribute .rating{padding:1px 6px!important;line-height:16px;font-size:11px;min-width:30px;display:inline-block;text-align:center}
 .position,.player-table .position{padding:2px 5px!important;line-height:14px}
 .form i{width:17px;height:17px}

@@ -1,6 +1,6 @@
 import {monthlySalary} from './salaries.js';
 import {calendarBlock,financeBlock,lineupBlock} from './club-overview.js';
-import {api,escape as e,heading,card,pager,money,date,empty,playerLink,clubLink,standingsTable} from './ui.js';
+import {api,escape as e,heading,card,pager,money,date,empty,playerLink,clubLink,standingsTable,roundTitle} from './ui.js';
 
 const NEWS_LABELS={renewal_proposed:'Prolongation',renewal_signed:'Prolongation',renewal_refused:'Prolongation',offer_received:'Offre reçue',offer_accepted:'Transfert',offer_refused:'Transfert',
  transfer:'Transfert',release:'Fin de contrat',retirement:'Retraite',academy:'Formation',injury:'Blessure',injury_end:'Infirmerie',suspension:'Suspension',suspension_end:'Suspension',
@@ -27,8 +27,7 @@ function standingsBlock(club,standings) {
  if(!club.competition_id)return card('Classement',empty('Votre club ne dispute pas de championnat simulé.','Pas de classement'));
  // The user's own club stands out in the table (see .standings-card .own).
  const table=standingsTable(standings,'record').replace(`href="#/club/${club.id}" class="club-link"`,`href="#/club/${club.id}" class="club-link own"`);
- const round=Math.max(0,...standings.items.map(row=>row.played));
- return card(round?`Classement · ${round}${round===1?'re':'e'} journée`:'Classement',`<div class="standings-scroll">${table}</div>`,`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
+ return card(roundTitle('Classement',standings.items),`<div class="standings-scroll">${table}</div>`,`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
 }
 
 function marketBlock(club,transfers,contracts) {
