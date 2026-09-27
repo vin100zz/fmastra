@@ -15,6 +15,7 @@ from core.math import clamp, interpolate, weighted_choice
 from core.randomness import stream
 from core.ai.market import nominal_size
 from .events import PlayerReleased, PlayerGenerated
+from .transfer_rules import greed_trait
 
 T = TypeVar("T")
 
@@ -157,7 +158,9 @@ def generate_player(world: World, player_id: int, club: Club | None, position: P
                   cfg.states.form.initial, cfg.states.moral.initial, rng.uniform(injury.fragility_min, injury.fragility_max),
                   rng.uniform(agreements.ego_min, agreements.ego_max), club.id if club else None, contract,
                   # Peaked at the neutral factor, like the imported population.
-                  aggression=rng.triangular(cards.aggression_min, cards.aggression_max, 1.0))
+                  aggression=rng.triangular(cards.aggression_min, cards.aggression_max, 1.0),
+                  # Its own stream: the cohort's other draws stay as they were.
+                  greed=greed_trait(None, cfg, world.seed, player_id))
 
 
 def regime_of(world: World, population: Sequence[Player], total: float, shares: Sequence[float],

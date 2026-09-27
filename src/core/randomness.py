@@ -10,3 +10,10 @@ def derived_seed(seed: int, *parts: object) -> int:
 
 def stream(seed: int, *parts: object) -> Random:
     return Random(derived_seed(seed, *parts))
+
+
+def side_stream(rng: Random, *parts: object) -> Random:
+    """A stream of its own seeded from `rng`'s state without drawing from it: `rng` goes on exactly as before."""
+    twin = Random()
+    twin.setstate(rng.getstate())
+    return stream(twin.getrandbits(64), *parts)

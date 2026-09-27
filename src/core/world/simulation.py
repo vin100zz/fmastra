@@ -19,6 +19,7 @@ from .finances import structural_income, annual_funding_factor
 from .human import is_human_club, pending_lineup_match
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
+from .talks import progress_talks
 from .promotion import promotion_event
 from .reputation import reputation_events
 from .squads import complete_squads
@@ -131,6 +132,7 @@ def open_day(world: World) -> None:
         annual_review(world)
     if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
         for event in renewal_events(world): apply(world, event)
+    progress_talks(world)
     open_market = market_window(world) is not None
     for _ in range(cfg.world.market.rounds_per_day):
         rejected = settle_offers(world, open_market)

@@ -62,34 +62,37 @@ artificiellement chaque candidat évalué.
 
 - Recrutement : qualité(effectif + candidat) - qualité(effectif).
 - Conservation/renouvellement : qualité(effectif) - qualité(effectif sans joueur).
-- Vente : même coût de départ, comparé au prix, à la masse salariale libérée et
-  à la capacité de remplacement.
+- Vente : prix selon le statut du joueur dans l'effectif (voir ci-dessous).
 
 Une bonne doublure a donc une utilité positive même si elle n'améliore pas le
 meilleur onze. Les modulations jeunesse/risque s'appliquent ensuite ; elles ne
 remplacent pas la valorisation de la profondeur.
 
-Pour la vente, le club ne juge pas seulement son onze : il protège son effectif
-utile, les `profondeur` meilleures places (titulaires et rotation), car la
-rotation se joue toute la saison. La profondeur va de `profondeur_effectif_min`
-(16) à `profondeur_effectif_max` (20) selon la réputation du club, entre
-`reputation_profondeur_min` et `reputation_profondeur_max` : la réputation fixe
-les revenus, elle représente donc ici la taille et la richesse. Le coût de
-départ de `can_sell` pèse alors chacune de ces places au moins à
-`poids_profondeur_vente` (0,75), au lieu du poids de rotation (0,45). Perdre un
-joueur de rotation sans relève proche coûte presque autant que perdre un
-titulaire, et la vente est refusée si la perte dépasse `poids_doublure` fois son
-niveau. Le recrutement garde les poids gradués titulaire, rotation et doublure.
+Pour la vente, tout joueur a un prix : `can_sell` ne refuse que sous l'effectif
+minimal et les gardiens requis. Le prix demandé (`asking_price`, le minimum que le
+vendeur accepte) dépend du statut du joueur dans son effectif, de 0 à 1, le plus
+haut de trois relevés (`squad_status`) :
 
-Cette protection ne vaut que pour un joueur que le club peut encore retenir. Un
-joueur dont le niveau dépasse le niveau visé par son club (`profil_cible`, comme
-pour `accepts_move`) de plus de `marge_depassement_club` (10 points) est hors de
-portée de ses ambitions : plus il est fort, plus l'écart avec son remplaçant est
-grand, et le veto de couverture le rendrait invendable pour toujours, au lieu de
-le faire partir dans un club à sa mesure. Ce joueur est un actif que le club vend à
-son prix : `can_sell` ne refuse plus que pour l'effectif minimal et les gardiens
-requis, et `seller_accepts` exige toujours le prix demandé, qui finance la relève. Un
-joueur de rang ordinaire, ou le meilleur d'un grand club, reste protégé.
+- sa place dans la meilleure affectation du club : titulaire (1), rotation (0,6)
+  parmi les `profondeur` meilleures places, doublure (0,3) jusqu'au profil nominal,
+  aucune au-delà (0). La profondeur va de `profondeur_effectif_min` (16) à
+  `profondeur_effectif_max` (20) selon la réputation du club, entre
+  `reputation_profondeur_min` et `reputation_profondeur_max`, et l'affectation pèse
+  ces places au moins à `poids_profondeur_vente` (0,75) : la rotation se joue toute
+  la saison ;
+- ses minutes de la saison rapportées à celles du joueur le plus utilisé du club :
+  `part_minutes_pilier` (75 %) en fait un pilier (1), avec une confiance qui monte
+  jusqu'à `matchs_confiance_minutes` (10) matchs joués ;
+- pour un espoir, la marge de son potentiel estimé par le club sur son niveau :
+  `marge_potentiel_espoir` (10 points) lui vaut le statut d'un joueur de rotation.
+
+Le statut choisit un coefficient entre `coef_prix_hors_effectif` (0,45),
+`coef_prix_doublure` (0,75), `coef_prix_rotation` (1) et `coef_prix_titulaire` (1,5),
+appliqué à la valeur de marché vue par le vendeur, à `seuil_vendeur_multiplicateur`
+(moins la réduction de surplus) et à la patience du club. Un titulaire ou un pilier
+coûte donc environ deux fois sa valeur, un joueur hors de l'effectif utile sans
+potentiel part sous sa valeur : le club s'en débarrasse. Les clubs dormants gardent
+`multiplicateur_prix_demande`.
 
 Le profil nominal vaut onze titulaires plus les rotations et doublures
 configurées (24 joueurs avec les paramètres initiaux). Le plafond dur reste
@@ -207,18 +210,49 @@ après rechargement et lorsque la fenêtre estivale traverse le bilan annuel.
 
 La shortlist est constituée après les contrôles de disponibilité, de salaire
 et de prix. Un poste sans candidat viable n'empêche pas d'examiner les suivants.
-Le plafond offert et le prix demandé partagent le même calcul, incluant le coût
-du départ pour le vendeur. L'offre initiale reste négociable jusqu'à ce plafond.
+Le plafond offert et le prix demandé partagent le même calcul, selon le statut
+du joueur chez le vendeur. L'offre initiale reste négociable jusqu'à ce plafond.
 Un refus définitif ou une concurrence perdue libère les réservations et permet
 une recherche immédiate d'alternative, en excluant le joueur refusé pour ce tour
 et sans ouvrir davantage de dossiers que le nombre de pistes perdues.
 
+Le club de l'utilisateur ne passe pas par les enchères : il négocie
+(`core/world/talks.py`). Chaque offre reçoit une réponse immédiate : acceptée si
+elle atteint la demande, sinon refusée avec une contre-offre à cette demande. Au
+bout de `tours_negociation` (3) offres refusées, les discussions sont rompues
+pendant `jours_rupture_negociation` (7) jours.
+
+1. L'indemnité, avec le club vendeur, dont la demande est son prix demandé. Le
+   prix affiché et les contre-offres sont arrondis au-dessus à trois chiffres
+   significatifs, pour qu'offrir le montant affiché suffise.
+2. Une fois l'indemnité acceptée, le joueur est réservé : aucun club IA ne peut plus
+   l'acheter. Il répond de `delai_reponse_min_jours` à `delai_reponse_max_jours`
+   (1 à 3) jours plus tard, au plus tard le dernier jour de la fenêtre ; une
+   actualité ouvre alors la négociation de son salaire, sur le même principe. Un
+   agent libre commence directement par le salaire.
+3. Une fois le salaire accepté, le joueur arrive 1 à 3 jours plus tard, avec une
+   actualité, même si la fenêtre a fermé entre-temps. Une négociation salariale
+   encore ouverte à la clôture expire.
+
+L'indemnité et le salaire demandé sont réservés comme pour toute offre ; une offre
+qui dépasse le budget, la trésorerie, la masse salariale ou l'effectif est refusée
+avec la limite en cause. Une offre de l'ancienne forme, encore aux enchères dans une
+partie existante, est expliquée dans les actualités quand elle échoue (refus du
+vendeur ou du joueur, offre rivale, clôture). Les offres reçues encore en attente à
+la clôture sont signalées comme expirées.
+
 Hors urgence d'effectif, le gain de qualité doit être positif et atteindre
 `gain_qualite_min_recrutement` (3 points pondérés par défaut). Un club déjà au
-niveau cible ne recrute pas uniquement parce qu'il est riche. Un vendeur à
-l'effectif nominal ou inférieur conserve un joueur si son départ coûte plus
-que sa contribution de doublure ; il doit d'abord préparer sa relève. Les
-salaires proposés ne sont jamais inférieurs au contrat en cours.
+niveau cible ne recrute pas uniquement parce qu'il est riche.
+
+Le salaire d'un transfert est la demande du joueur (`wage_demand`), pour les clubs IA
+comme pour l'utilisateur. Elle part du plus haut de son salaire et de son salaire de
+marché. Rejoindre un club plus réputé exige une hausse de `hausse_par_point_reputation`
+(1 %) par point d'écart, jusqu'à `hausse_salaire_max` (30 %) ; un club moins réputé
+obtient une baisse de `baisse_par_point_reputation` par point, jusqu'à
+`baisse_salaire_max` (15 %). L'appât du gain du joueur (0 à 1) multiplie la hausse
+par 0,5 à 1,5 et la baisse par 1,5 à 0,5, puis ajoute une prime de
+`prime_appat_gain` (15 %) fois son appât du gain.
 
 Un joueur refuse de changer à nouveau de club pendant les
 `mercato.stabilite_apres_arrivee_jours` jours suivant son arrivée (180 par défaut).
@@ -250,6 +284,12 @@ attractivité du club. Si aucune minute n'est encore attendue, le ratio de temps
 de jeu est neutre, pas une division par zéro ou une comparaison à une saison
 complète. Le rôle contractuel et l'ego individuel sont stockés ; à l'import l'ego vient
 de la note `Ambition` de la source, sur une échelle qui garde la moyenne de 0,5.
+L'appât du gain, de 0 (le sportif avant tout) à 1 (l'argent avant tout), vient de la
+note `Loyality` de la source : `appat_gain_note_basse` (7,5) ou moins donne 1,
+`appat_gain_note_reference` (11,5) donne 0,5, `appat_gain_note_haute` (15,5) ou plus
+donne 0. Il est tiré autour de 0,5 pour un regen ou sans note. Le salaire demandé à
+une prolongation vaut le salaire de marché augmenté de `prime_appat_gain` fois
+l'appât du gain (`facteur_ego` n'est plus lu).
 
 Ouvrir une négociation en cas d'insatisfaction ou d'échéance proche. Valoriser
 la conservation du joueur avec le score de départ, pas avec un ajout en double.

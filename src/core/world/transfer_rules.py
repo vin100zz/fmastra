@@ -1,9 +1,26 @@
 """Player willingness to move, based on actual arrivals rather than renewals."""
 from core.config.model import Config
 from core.domain.clubs import Club
+from core.domain.date import Date
 from core.domain.players import Player
 from core.domain.world import World
-from core.math import clamp
+from core.math import clamp, interpolate
+from core.randomness import stream
+
+
+def greed_trait(loyalty: float | None, cfg: Config, seed: int, player_id: int) -> float:
+    """Appetite for money over sport in [0, 1]: the less loyal the source player, the greedier.
+
+    Without a source note the value is drawn, peaked at the neutral 0.5, from a stream of its own."""
+    rules = cfg.management.contracts
+    if loyalty is None: return stream(seed, "greed", player_id).triangular(0.0, 1.0, 0.5)
+    return interpolate(((rules.greed_source_low, 1.0), (rules.greed_source_reference, 0.5), (rules.greed_source_high, 0.0)), loyalty)
+
+
+def free_to_move_on(world: World, player_id: int) -> Date:
+    """The first day a player who arrived recently (see `recent_arrival_ids`) may move again."""
+    arrival = next(move.date for move in reversed(world.transfers) if move.player_id == player_id)
+    return arrival.add_days(world.config.management.market.arrival_stability_days)
 
 
 def recent_arrival_ids(world: World) -> set[int]:

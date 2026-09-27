@@ -102,6 +102,20 @@ async function action(path,payload,success){
  catch(error){toast(error.message,true);return false;}
  finally{submitting=false;await render();}
 }
+// Talks answer at once: the dialog comes back with the counter-offer until an agreement or a break-off.
+async function negotiate(kind,payload){
+ if(polling||submitting)return;
+ submitting=true;busyButtons();
+ let reply=null;
+ try{
+  reply=await api(`/partie/negociation/${kind}`,{...payload,commande_id:crypto.randomUUID()});
+  if(reply.resultat==='accepte')toast(kind==='salaire'?'Contrat accepté.':'Offre acceptée par le club.');
+  else if(reply.resultat==='rompu')toast('Les discussions sont rompues.',true);
+ }
+ catch(error){toast(error.message,true);}
+ finally{submitting=false;await render();}
+ if(reply?.resultat==='contre_offre')main.querySelector('#talks-dialog')?.showModal();
+}
 async function savesScreen(welcome=false){const slots=await api('/partie/slots');const intro=welcome?`<section class="hero"><div><span class="eyebrow">BIENVENUE SUR LE BANC DE TOUCHE</span><h1>Tout un monde de football.<br>À votre rythme.</h1><p>96 clubs, cinq championnats et des milliers de destins. Créez votre univers et suivez son histoire, saison après saison.</p></div><div class="hero-graphic" aria-hidden="true"></div></section>`:heading('Ma partie');let report='';if(state.exists&&!state.recovery_required){const data=await api('/partie/rapport-import');report=card('Rapport de création',`<div class="card-body"><div class="stat-grid">${stat('Joueurs retenus',n(data.counts.players))}${stat('Joueurs écartés',n(data.counts.excluded))}${stat('Joueurs actifs',n(data.counts.active_players))}${stat('Agents libres',n(data.counts.free_agents))}</div><p class="note">Au maximum ${data.max_squad} joueurs par club, dont deux places réservées aux meilleurs gardiens disponibles. Les CSV originaux restent inchangés. ${data.counts.attributes_from_source?'Les attributs et aptitudes proviennent du CSV. Les finances restent estimées.':'Cette ancienne partie utilise des attributs estimés.'}</p><details><summary>Détail des corrections à l’import</summary><pre>${e(JSON.stringify(data.counts,null,2))}</pre></details></div>`);}
 return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':''}<div class="grid equal">${card('Nouvelle partie',`<div class="card-body"><span class="eyebrow">SAISON INITIALE · 2025 / 2026</span><p>Chaque graine crée une simulation reproductible. Tous les clubs sont pilotés par l’IA.</p><form id="new-game"><label for="seed">Graine de la simulation</label><input id="seed" name="seed" type="number" min="0" max="9007199254740991" value="2025" required><div class="actions"><button class="primary" data-command="create">Créer mon univers →</button></div></form></div>`)}${card(welcome?'Reprendre une partie':'Mes sauvegardes',`<div class="card-body">${state.exists&&!state.recovery_required?`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="ma-partie"><button data-command="save">Enregistrer</button></form>`:''}${slotsHtml(slots)}</div>`)}</div>${report}</div>`;}
 
@@ -218,7 +232,12 @@ document.querySelector('#advance').addEventListener('click',()=>{
 });
 function applyFilter(form){const values=Object.fromEntries(new FormData(form));Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
 main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element);if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
- else if(element.id==='offer-form')await action('/partie/offre-sortante',{joueur_id:Number(data.get('joueur_id')),salaire_hebdo:weeklyFromMonthly(Number(data.get('salaire_mensuel'))),indemnite:Math.round(Number(data.get('indemnite'))*1e6)},'Offre envoyée.');
+ else if(element.id==='talks-form'){
+  // Accepting a counter-offer sends it as is (euros, or the weekly wage); the field is typed in M€ or €/month.
+  const kind=element.dataset.kind,accepted=event.submitter?.name==='accepter',typed=Number(data.get('montant'));
+  const amount=accepted?Number(event.submitter.value):kind==='salaire'?weeklyFromMonthly(typed):Math.round(typed*1e6);
+  await negotiate(kind,{joueur_id:Number(data.get('joueur_id')),[kind==='salaire'?'salaire_hebdo':'indemnite']:amount});
+ }
 });
 let filterTimer;
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});

@@ -58,6 +58,18 @@ def validate_consistency(cfg: Config) -> None:
     require(market.frustration_span > 0, "Frustration span must be positive")
     require(0 <= market.leave_threshold <= 1, "Leave threshold must be within [0, 1]")
     require(0 <= market.frustration_morale_weight <= 1, "Frustration morale weight must be within [0, 1]")
+    require(0 < market.surplus_price_factor <= market.backup_price_factor <= market.rotation_price_factor <= market.starter_price_factor,
+            "Asking price factors must be positive and rise with the squad status")
+    require(0 < market.regular_minutes_share <= 1 and market.minutes_confidence_matches >= 1 and market.prospect_margin > 0,
+            "Regulars' minutes share must be within (0, 1], with a positive confidence and prospect margin")
+    require(market.negotiation_rounds >= 1 and market.negotiation_cooldown_days >= 0,
+            "Talks need at least one round and a nonnegative cooldown")
+    require(1 <= market.min_reply_days <= market.max_reply_days, "Reply delays must be at least one day and ordered")
+    wages = cfg.management.contracts
+    require(wages.greed_source_low < wages.greed_source_reference < wages.greed_source_high,
+            "Appetite for money source notes must be increasing")
+    require(wages.greed_premium >= 0 and wages.raise_per_point >= 0 and wages.max_raise >= 0 and wages.cut_per_point >= 0
+            and 0 <= 1.5 * wages.max_cut < 1, "Wage demand steps must be nonnegative and a cut must leave a wage")
     europe = cfg.world.europe
     require((europe.club_count, europe.league_rounds, europe.pot_count,
              europe.direct_places, europe.playoff_places) == (36, 8, 4, 8, 16), "Unsupported European format")
@@ -107,6 +119,11 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.engine.set_pieces.corner_probability + cfg.engine.set_pieces.free_kick_probability <= 1, "Set-piece probabilities overlap")
     require(cfg.engine.chance.probability_min > 0 and cfg.engine.chance.probability_max < 1, "Logit bounds must be open")
     require(cfg.engine.chance.delivery_sensitivity >= 0, "Delivery sensitivity must be nonnegative")
+    ratings = cfg.engine.player_ratings
+    require(all(len(table) == len(cfg.involvement.zones) for table in (ratings.progression, ratings.recovery, ratings.loss)),
+            "Rating tables need one value per zone")
+    require(0 < ratings.dribble_share < 1 and 0 <= ratings.blocked_share <= 1, "Rating shares must be probabilities")
+    require(ratings.quality_sensitivity >= 0 and ratings.clean_sheet_minutes >= 0, "Rating attribution scales must be nonnegative")
     injuries, contracts, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
     for label, notes in (("Fragility", (injuries.fragility_source_low, injuries.fragility_source_reference, injuries.fragility_source_high)),
                          ("Ego", (contracts.ego_source_low, contracts.ego_source_reference, contracts.ego_source_high)),

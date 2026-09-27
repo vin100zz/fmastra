@@ -12,7 +12,7 @@ from core.domain.date import Date
 from core.domain.players import ATTRIBUTE_NAMES, Attributes, Position
 from core.engine.local_state import MatchLog, TeamState
 from core.engine.shots import delivered_xg, resolve_shot, set_piece_taker
-from core.engine.zones import foul_committer
+from core.engine.zones import foul_committer, refresh
 from core.randomness import stream
 from core.world.importation.construction import create_player, source_trait
 from infrastructure.importation.readers import ATTRIBUTE_COLUMNS, read_sources
@@ -34,7 +34,9 @@ def team_with(config, changes_by_index=None):
         values = list(player.attributes.values)
         for name, value in changes.items(): values[ATTRIBUTE_NAMES.index(name)] = value
         player.attributes = Attributes(tuple(values))
-    return TeamState.from_lineup(lineup, config)
+    team = TeamState.from_lineup(lineup, config)
+    refresh(team, config)
+    return team
 
 
 def test_every_engine_attribute_has_a_source_column_and_a_web_label():
@@ -108,6 +110,7 @@ def test_delivery_quality_moves_xg_and_the_reference_level_leaves_it_unchanged(c
 
 def shots(config, kind, seed, changes_by_index=None):
     attacker, defender = team_with(config, changes_by_index), TeamState.from_lineup(synthetic_lineup(config, 2), config)
+    refresh(defender, config)
     log, rng = MatchLog(), stream(seed)
     for _ in range(60):
         resolve_shot(attacker, defender, 3, 0, False, kind, None, log, config, rng)
@@ -144,6 +147,7 @@ def test_fouls_come_from_outfield_players_in_proportion_to_their_propensity(conf
 def test_a_lone_goalkeeper_can_still_be_the_fouler(config):
     team = team_with(config)
     team.active[:] = [team.active[0]]
+    refresh(team, config)
     assert foul_committer(team, 0, 1, config, stream(1)) is team.active[0]
 
 

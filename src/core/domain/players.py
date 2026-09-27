@@ -98,6 +98,8 @@ class Player:
     position_ratings: dict[Position, int] = field(default_factory=dict)
     # Propensity to commit fouls, stable like fragility and ego; 1.0 is the neutral factor.
     aggression: float = 1.0
+    # Appetite for money over sport in [0, 1], stable: what a wage demand adds on top of the market.
+    greed: float = 0.5
     national_team: str | None = None
     international_caps: int = 0
     international_goals: int = 0

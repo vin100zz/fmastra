@@ -147,6 +147,17 @@ class ManagementConfigMarket:
     frustration_span: float = Field(default=15.0, alias="ecart_frustration_maximale")
     leave_threshold: float = Field(default=0.3, alias="seuil_depart_souhaite")
     frustration_morale_weight: float = Field(default=0.6, alias="poids_frustration_moral")
+    surplus_price_factor: float = Field(default=0.45, alias="coef_prix_hors_effectif")
+    backup_price_factor: float = Field(default=0.75, alias="coef_prix_doublure")
+    rotation_price_factor: float = Field(default=1.0, alias="coef_prix_rotation")
+    starter_price_factor: float = Field(default=1.5, alias="coef_prix_titulaire")
+    regular_minutes_share: float = Field(default=0.75, alias="part_minutes_pilier")
+    minutes_confidence_matches: int = Field(default=10, alias="matchs_confiance_minutes")
+    prospect_margin: float = Field(default=10.0, alias="marge_potentiel_espoir")
+    negotiation_rounds: int = Field(default=3, alias="tours_negociation")
+    negotiation_cooldown_days: int = Field(default=7, alias="jours_rupture_negociation")
+    min_reply_days: int = Field(default=1, alias="delai_reponse_min_jours")
+    max_reply_days: int = Field(default=3, alias="delai_reponse_max_jours")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -170,6 +181,14 @@ class ManagementConfigContracts:
     ego_source_low: float = Field(default=8.4, alias="ego_note_basse")
     ego_source_reference: float = Field(default=12.4, alias="ego_note_reference")
     ego_source_high: float = Field(default=16.4, alias="ego_note_haute")
+    greed_premium: float = Field(default=0.15, alias="prime_appat_gain")
+    greed_source_low: float = Field(default=7.5, alias="appat_gain_note_basse")
+    greed_source_reference: float = Field(default=11.5, alias="appat_gain_note_reference")
+    greed_source_high: float = Field(default=15.5, alias="appat_gain_note_haute")
+    raise_per_point: float = Field(default=0.01, alias="hausse_par_point_reputation")
+    max_raise: float = Field(default=0.3, alias="hausse_salaire_max")
+    cut_per_point: float = Field(default=0.01, alias="baisse_par_point_reputation")
+    max_cut: float = Field(default=0.15, alias="baisse_salaire_max")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

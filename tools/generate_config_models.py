@@ -202,6 +202,24 @@ tir_cadre_sans_but=saved_shot
 but_encaisse_gardien=keeper_conceded
 jaune=yellow
 minutes_minimum_note=min_rating_minutes
+sensibilite_qualite=quality_sensitivity
+progression_par_zone=progression
+recuperation_par_zone=recovery
+perte_par_zone=loss
+part_dribbles=dribble_share
+sensibilite_dribble=dribble_sensitivity
+defenseur_elimine=dribbled
+passe_cle=key_pass
+participation_occasion=build_up
+tir_non_cadre=off_target
+part_non_cadres_contres=blocked_share
+contre=block
+defenseur_battu=beaten
+sans_encaisser=clean_sheet
+minutes_sans_encaisser=clean_sheet_minutes
+attendu_par_minute=expected_per_minute
+note_moyenne_poste_min=min_position_rating
+note_moyenne_poste_max=max_position_rating
 fatigue=fitness
 initiale=initial
 consommation_par_minute=cost_per_minute
@@ -515,6 +533,25 @@ WORDS.update({"profondeur_effectif_min": "min_squad_depth", "profondeur_effectif
               "tolerance_baisse_reputation": "reputation_drop_tolerance", "marge_niveau_joueur": "player_level_margin",
               "moral_depart_force": "forced_exit_morale", "talents_visibles": "visible_talents",
               "jours_encheres": "auction_days", "poids_profondeur_vente": "depth_sale_weight"})
+WORDS.update({"coef_prix_hors_effectif": "surplus_price_factor", "coef_prix_doublure": "backup_price_factor",
+              "coef_prix_rotation": "rotation_price_factor", "coef_prix_titulaire": "starter_price_factor",
+              "part_minutes_pilier": "regular_minutes_share", "matchs_confiance_minutes": "minutes_confidence_matches",
+              "marge_potentiel_espoir": "prospect_margin", "tours_negociation": "negotiation_rounds",
+              "jours_rupture_negociation": "negotiation_cooldown_days", "delai_reponse_min_jours": "min_reply_days",
+              "delai_reponse_max_jours": "max_reply_days", "prime_appat_gain": "greed_premium",
+              "appat_gain_note_basse": "greed_source_low", "appat_gain_note_reference": "greed_source_reference",
+              "appat_gain_note_haute": "greed_source_high", "hausse_par_point_reputation": "raise_per_point",
+              "hausse_salaire_max": "max_raise", "baisse_par_point_reputation": "cut_per_point",
+              "baisse_salaire_max": "max_cut"})
+# Transfer talks, asking prices by squad status and wage demands by move: schema 18.
+NEGOTIATION_DEFAULTS = {
+    "ia_gestion.mercato": {"coef_prix_hors_effectif": 0.45, "coef_prix_doublure": 0.75, "coef_prix_rotation": 1.0,
+                           "coef_prix_titulaire": 1.5, "part_minutes_pilier": 0.75, "matchs_confiance_minutes": 10,
+                           "marge_potentiel_espoir": 10.0, "tours_negociation": 3, "jours_rupture_negociation": 7,
+                           "delai_reponse_min_jours": 1, "delai_reponse_max_jours": 3},
+    "ia_gestion.contrats": {"prime_appat_gain": 0.15, "appat_gain_note_basse": 7.5, "appat_gain_note_reference": 11.5,
+                            "appat_gain_note_haute": 15.5, "hausse_par_point_reputation": 0.01, "hausse_salaire_max": 0.30,
+                            "baisse_par_point_reputation": 0.01, "baisse_salaire_max": 0.15}}
 # Explicit compatibility defaults for configurations embedded in older saves.
 DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "benchmarks.economie.derive_reputation_dispersion_max": 0.25,
@@ -551,6 +588,18 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "ia_gestion.contrats.ego_note_basse": 8.4,
             "ia_gestion.contrats.ego_note_reference": 12.4,
             "ia_gestion.contrats.ego_note_haute": 16.4,
+            "benchmarks.stats_match.note_moyenne_poste_min": 6.4, "benchmarks.stats_match.note_moyenne_poste_max": 6.6,
+            "moteur_match.notes_joueurs.sensibilite_qualite": 0.05,
+            "moteur_match.notes_joueurs.progression_par_zone": (0.0, 0.01, 0.02, 0.04),
+            "moteur_match.notes_joueurs.recuperation_par_zone": (0.07, 0.04, 0.025, 0.015),
+            "moteur_match.notes_joueurs.perte_par_zone": (-0.04, -0.03, -0.02, -0.01),
+            "moteur_match.notes_joueurs.part_dribbles": 0.3, "moteur_match.notes_joueurs.sensibilite_dribble": 0.08,
+            "moteur_match.notes_joueurs.defenseur_elimine": -0.02, "moteur_match.notes_joueurs.passe_cle": 0.1,
+            "moteur_match.notes_joueurs.participation_occasion": 0.03, "moteur_match.notes_joueurs.tir_non_cadre": -0.03,
+            "moteur_match.notes_joueurs.part_non_cadres_contres": 0.4, "moteur_match.notes_joueurs.contre": 0.05,
+            "moteur_match.notes_joueurs.defenseur_battu": -0.15, "moteur_match.notes_joueurs.victoire": 0.1,
+            "moteur_match.notes_joueurs.sans_encaisser": 0.25, "moteur_match.notes_joueurs.minutes_sans_encaisser": 60,
+            "moteur_match.notes_joueurs.attendu_par_minute": 0.0055,
             "moteur_match.occasion.sensibilite_livraison": 0.02,
             "moteur_match.occasion.niveau_reference_centre": 45.6,
             "moteur_match.occasion.niveau_reference_cpa": 55.3,
@@ -566,6 +615,7 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "demographie.generation.exposant_nations_elite": 0.5, "demographie.generation.part_plancher_nation": 0.0002,
             "demographie.generation.noms_minimum_par_nation": 20,
             "formations.hauteur_bloc.mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}
+DEFAULTS.update({f"{section}.{key}": value for section, values in NEGOTIATION_DEFAULTS.items() for key, value in values.items()})
 
 
 def clean(value: object) -> object:

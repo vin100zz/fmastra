@@ -8,6 +8,7 @@ from core.ai.selection import LineupContext, select_lineup, to_lineup, validate_
 from core.domain.matches import SubmittedLineup
 from core.domain.offers import TransferOffer
 from core.world.simulation import advance_day, market_window
+from core.world.talks import opening_obstacle
 from infrastructure.importation.loader import import_world
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,16 +84,30 @@ def test_outgoing_offer_and_incoming_offer_response(client):
     roomy = [club for club in world.active_clubs() if len(club.player_ids) < max_squad]
     club_id, other_club = roomy[0].id, roomy[1]
     client.post("/api/partie/choisir-club", json={"club_id": club_id})
-    target_player = next(pid for pid in other_club.player_ids)
+    target_player = next(pid for pid in other_club.player_ids if opening_obstacle(world, world.players[pid]) is None)
 
-    lowball = client.post("/api/partie/offre-sortante", json={"joueur_id": target_player, "salaire_hebdo": 1, "indemnite": 1})
+    # The club answers at once: a counter-offer at its asking price, which is then accepted.
+    lowball = client.post("/api/partie/negociation/indemnite", json={"joueur_id": target_player, "indemnite": 1})
     assert lowball.status_code == 200
-    assert any(offer.player_id == target_player and offer.target_id == club_id for offer in world.offers.values())
+    reply = lowball.json()
+    assert reply["resultat"] == "contre_offre" and reply["etape"] == "indemnite" and reply["contre_offre"] > 1
+    listed = client.get("/api/joueurs", params={"club": other_club.id}).json()["items"]
+    assert next(row for row in listed if row["id"] == target_player)["asking_price"] == reply["contre_offre"]
+    assert client.get(f"/api/ma-partie/negociation/{target_player}").json()["tours_restants"] == reply["tours_restants"]
+    agreed = client.post("/api/partie/negociation/indemnite", json={"joueur_id": target_player, "indemnite": reply["contre_offre"]}).json()
+    assert agreed["resultat"] == "accepte" and agreed["etape"] == "accord_club" and agreed["date_prevue"]
+    outgoing = client.get("/api/ma-partie/transferts").json()["sortantes"]
+    assert [(row["joueur_id"], row["etape"]) for row in outgoing] == [(target_player, "accord_club")]
+    # The player answers only days later.
+    early = client.post("/api/partie/negociation/salaire", json={"joueur_id": target_player, "salaire_hebdo": 1000})
+    assert early.status_code == 400
 
     own_player = min((pid for pid in world.clubs[club_id].player_ids if world.players[pid].position != "GB"),
                      key=lambda pid: world.players[pid].rating)  # the weakest backup: sellable without gutting the squad
-    refused = client.post("/api/partie/offre-sortante", json={"joueur_id": own_player, "salaire_hebdo": 1000, "indemnite": 0})
+    refused = client.post("/api/partie/negociation/indemnite", json={"joueur_id": own_player, "indemnite": 0})
     assert refused.status_code == 400  # cannot bid for your own player
+    detail = client.get(f"/api/joueurs/{own_player}").json()
+    assert 0 <= detail["greed"] <= 1 and detail["transferable"] and detail["asking_price"] > 0
 
     # Simulate an AI club's offer having cleared the auction window, awaiting the human seller's review.
     player = world.players[own_player]

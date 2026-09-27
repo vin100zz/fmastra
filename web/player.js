@@ -1,6 +1,6 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances} from './ui.js';
+import {api,escape as e,number as n,money,price,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances} from './ui.js';
 
 const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
 // What an attribute is for decides its section; sections and attributes always come in the same order, whatever the
@@ -80,18 +80,31 @@ export function levelChart(points) {
 function header(player, lead='', actions='') {
  const identity=`<div class="identity">${lead}<div class="avatar">${initials(player.name)}</div><div><span class="eyebrow">${player.retired?'CARRIÈRE ARCHIVÉE':nationBadges(player.nationalities,{full:true})}</span><h1>${e(player.name)}</h1><p>${player.retired?'Retraité':`${position(player.position)}<span class="secondary-positions" title="Postes secondaires">${player.secondary_positions.map(position).join('')}</span> ${player.age} ans · ${clubLink(player.club)}`}</p></div></div>`;
  if(player.retired)return `<div class="page-heading player-heading">${identity}</div>`;
- const facts=[['Né le',date(player.born)],['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)]];
+ const facts=[['Né le',date(player.born)],['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)],
+  ...(player.club?[['Prix minimum',player.transferable===false?'Intransférable':price(player.asking_price)]]:[])];
  return `<div class="page-heading player-heading">${identity}<dl class="player-facts">${facts.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>${actions}</div>`;
 }
 
 const dialogButtons=confirm=>`<div class="actions"><button type="button" data-close-dialog>Annuler</button>${confirm}</div>`;
 
-// A bid from the controlled club: the fee (in M€) and the monthly wage start at the player's rounded value and current wage.
-function offerAction(player, state, pending) {
- const current=pending?`<span class="pill">Offre en cours · ${money(pending.indemnite)}</span>`:'';
- const button=`<button class="primary" type="button" data-open-dialog="offer-dialog" ${state.market?'':'disabled title="Le mercato est fermé."'}>Faire une offre</button>`;
- const dialog=`<dialog id="offer-dialog" class="action-dialog"><form id="offer-form"><span class="eyebrow">MERCATO</span><h2>Faire une offre pour ${e(player.name)}</h2><p>Valeur de marché ${money(player.value)} · salaire actuel ${monthlySalary(player.wage)} / mois.</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Indemnité offerte (M€) <input name="indemnite" type="number" min="0" step="0.1" value="${Math.round((player.value||0)/1e6)}" required></label><label>Salaire proposé (€/mois) <input name="salaire_mensuel" type="number" min="1" step="1" value="${Math.max(1,monthlyAmount(player.wage))}" required></label>${dialogButtons('<button class="primary" type="submit">Envoyer l’offre</button>')}</form></dialog>`;
- return `<div class="player-actions">${current}${button}</div>${dialog}`;
+// Talks for another club's player: the fee with his club, then his wage (straight away for a free agent), each offer
+// answered at once in the dialog, which comes back with the counter-offer. Agreed steps wait a few days in a pill.
+function talksAction(player, state, talks) {
+ const actions=body=>`<div class="player-actions">${body}</div>`;
+ if(talks.etape==='accord_club')return actions(`<span class="pill">Accord avec le club · ${price(talks.indemnite)} · réponse le ${date(talks.date_prevue)}</span>`);
+ if(talks.etape==='signature')return actions(`<span class="pill">Arrivée le ${date(talks.date_prevue)} · ${monthlySalary(talks.salaire)} / mois</span>`);
+ const wage=talks.etape==='salaire'||!player.club&&!talks.etape;
+ const label=talks.etape==='salaire'?'Négocier le contrat':wage?'Proposer un contrat':'Faire une offre';
+ if(talks.obstacle)return actions(`${state.market?`<span class="pill">${e(talks.obstacle)}</span>`:''}<button class="primary" type="button" disabled title="${e(talks.obstacle)}">${label}</button>`);
+ const counter=talks.contre_offre,amount=value=>wage?`${monthlySalary(value)} / mois`:price(value);
+ const left=`${talks.tours_restants} offre${talks.tours_restants>1?'s':''} restante${talks.tours_restants>1?'s':''}`;
+ const intro=wage?`Salaire actuel ${player.club?monthlySalary(player.wage)+' / mois':'—'}`:`Prix minimum ${price(player.asking_price)} · budget ${price(talks.budget)}`;
+ const field=wage?`<label>Salaire proposé (€/mois) <input name="montant" type="number" min="1" step="1" value="${Math.max(1,monthlyAmount(counter||player.wage))}" required></label>`
+  :`<label>Indemnité proposée (M€) <input name="montant" type="number" min="0" step="0.01" value="${counter?counter/1e6:Math.round((player.value||0)/1e6)}" required></label>`;
+ const accept=counter?`<button type="submit" name="accepter" value="${counter}">Accepter ${amount(counter)}</button>`:'';
+ const dialog=`<dialog id="talks-dialog" class="action-dialog"><form id="talks-form" data-kind="${wage?'salaire':'indemnite'}"><span class="eyebrow">${wage?'CONTRAT':'MERCATO'}</span><h2>${wage?'Contrat':'Offre'} pour ${e(player.name)}</h2><p>${intro}</p>${counter?`<p><strong>${wage?e(player.name):e(player.club.name)} demande ${amount(counter)}</strong> · ${left}</p>`:''}<input type="hidden" name="joueur_id" value="${player.id}">${field}${dialogButtons(`${accept}<button class="primary" type="submit">Proposer</button>`)}</form></dialog>`;
+ const pill=counter?`<span class="pill">Contre-offre · ${amount(counter)}</span>`:'';
+ return actions(`${pill}<button class="primary" type="button" data-open-dialog="talks-dialog">${label}</button>`)+dialog;
 }
 
 // Contracts are extended on the player's terms: his pending demand is accepted or turned down.
@@ -107,8 +120,7 @@ async function playerActions(player, state) {
  const clubId=state.controlled_club_id;
  if(clubId==null||player.retired)return '';
  if(player.club?.id===clubId){const contracts=await api('/ma-partie/contrats');return contractAction(player,contracts.items.find(row=>row.joueur_id===player.id));}
- const transfers=await api('/ma-partie/transferts');
- return offerAction(player,state,transfers.sortantes.find(offer=>offer.joueur_id===player.id));
+ return talksAction(player,state,await api(`/ma-partie/negociation/${player.id}`));
 }
 
 function profile(player, chart, career) {
@@ -116,7 +128,7 @@ function profile(player, chart, career) {
  const attributes=card('Attributs',attributesBody(player),levels);
  const pitch=positionPitch(player.position_ratings||{},player.position);
  const positions=pitch?card('Aptitudes par poste',pitch):'';
- const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match${item.suspended_matches>1?'s':''} de suspension`)).join('')}</div>`);
+ const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Appât du gain',`${Math.round(1+player.greed*19)} / 20`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match${item.suspended_matches>1?'s':''} de suspension`)).join('')}</div>`);
  // Without any pitch to show, the state takes its place in the top row and the career stands alone below.
  return `<div class="grid thirds">${attributes}${positions||state}${chart}</div>${positions?`<div class="grid state-career">${state}${career}</div>`:career}`;
 }

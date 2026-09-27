@@ -59,7 +59,7 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
             departure_cost = squad_quality(squad, club, cfg) - squad_quality([item for item in squad if item.id != player.id], club, cfg)
             useful = departure_cost > 0
         if not useful: continue
-        proposed = round(expected * (1 + rules.ego_factor * player.ego))
+        proposed = round(expected * (1 + rules.greed_premium * player.greed))
         proposed = max(player.contract.weekly_wage, proposed)
         if club.wage_bill - player.contract.weekly_wage + proposed > club.wage_cap:
             # A financially constrained club can still offer the existing wage.

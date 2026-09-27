@@ -324,8 +324,8 @@ def test_shortlist_skips_unaffordable_stars_to_find_cheaper_player(config):
         star = replace(template, id=1000+index, rating=95, potential=95,
                        attributes=Attributes(tuple(95 for _ in ATTRIBUTE_NAMES)))
         world.players[star.id] = star
-    from core.ai.market import expected_wage, market_value
-    club.wage_cap = club.wage_bill + expected_wage(market_value(template, world, club, False), world.config)
+    from core.ai.market import wage_demand
+    club.wage_cap = club.wage_bill + wage_demand(template, club, world)
     club.transfer_budget = 0
     proposals = [p for p in propose_transfers(world, Random(4)) if p.target_id == club.id]
     assert [p.player_id for p in proposals] == [template.id]
@@ -361,11 +361,10 @@ def test_rejected_offer_triggers_immediate_alternative_even_without_daily_review
 
 
 def test_planned_offers_share_one_wage_and_transfer_envelope(config):
-    from core.ai.market import propose_transfers, expected_wage, market_value
+    from core.ai.market import propose_transfers, wage_demand
     world = recruitment_world(config)
     club = world.clubs[1]
-    cheapest = min(expected_wage(market_value(p, world, club, False), world.config)
-                   for p in world.players.values() if p.club_id is None)
+    cheapest = min(wage_demand(p, club, world) for p in world.players.values() if p.club_id is None)
     club.transfer_budget = 0
     club.wage_cap = club.wage_bill + cheapest
     proposals = [p for p in propose_transfers(world, Random(1)) if p.target_id == 1]
@@ -374,16 +373,52 @@ def test_planned_offers_share_one_wage_and_transfer_envelope(config):
     assert sum(p.fee for p in proposals) <= club.transfer_budget
 
 
-def test_sale_of_important_player_requires_cover_in_thin_squad(config):
-    from core.ai.market import can_sell
+def settled_squad(world, seller):
+    """Club 2's players without a prospect's margin, so their status is their place and their minutes alone."""
+    for pid in seller.player_ids: world.players[pid].potential = world.players[pid].rating
+    return [world.players[pid] for pid in seller.player_ids]
+
+
+def test_asking_price_follows_the_players_status_in_his_squad(config):
+    from core.ai.market import asking_price, can_sell, market_value, nominal_size, squad_places, squad_status
+    from core.domain.players import Attributes
     world = mini_world(config)
-    seller, player = world.clubs[2], world.players[201]
-    assert not can_sell(player, seller, world)
-    for pid in range(800, 804):
-        extra = replace(player, id=pid)
-        world.players[pid] = extra
-        seller.player_ids.append(pid)
-    assert can_sell(player, seller, world)
+    seller = world.clubs[2]
+    # Beyond the nominal squad the weakest players have no place: the first extra is the weakest of all.
+    template = world.players[203]
+    for index in range(nominal_size(config) + 2 - len(seller.player_ids)):
+        drop = 30 if index == 0 else 20
+        extra = replace(template, id=870 + index, rating=template.rating - drop, potential=template.rating - drop,
+                        attributes=Attributes(tuple(value - drop for value in template.attributes.values)))
+        world.players[extra.id] = extra
+        seller.player_ids.append(extra.id)
+    squad = settled_squad(world, seller)
+    places = squad_places(squad, seller, config)
+    starter = next(player for player in squad if player.position != "GB" and places.get(player.id, 99) < config.world.match_rules.players_on_pitch)
+    # A starter is sold, but well above his value; nothing short of the squad minimums protects him.
+    assert can_sell(starter, seller, world) and squad_status(starter, seller, world) == 1
+    assert asking_price(starter, seller, world) > 1.5 * market_value(starter, world, seller)
+    # Beyond the useful squad, a player without prospects goes below his value.
+    assert 870 not in places
+    assert squad_status(world.players[870], seller, world) < 0.1
+    assert asking_price(world.players[870], seller, world) < market_value(world.players[870], world, seller)
+    # The same player as a prospect keeps a rotation player's price.
+    world.players[870].potential = world.players[870].rating + 2 * config.management.market.prospect_margin
+    assert squad_status(world.players[870], seller, world) >= 0.6
+
+
+def test_a_player_who_plays_every_match_is_priced_as_a_starter(config):
+    from core.ai.market import asking_price, squad_places, squad_status
+    world = mini_world(config)
+    seller = world.clubs[2]
+    squad = settled_squad(world, seller)
+    places = squad_places(squad, seller, config)
+    bench = next(player for player in squad if places.get(player.id, 0) >= config.world.match_rules.players_on_pitch)
+    before = asking_price(bench, seller, world)
+    minutes = config.management.market.minutes_confidence_matches * config.engine.timing.match_seconds / 60
+    for player in squad: player.season_minutes = minutes
+    assert squad_status(bench, seller, world) == 1
+    assert asking_price(bench, seller, world) > before
 
 
 def club_within_reach_of(player, config):
@@ -401,33 +436,14 @@ def add_star(world, seller, level=95, position=None):
     return star
 
 
-def test_sale_of_important_player_requires_cover_even_with_surplus_squad(config):
-    from core.ai.market import can_sell, nominal_size
-    world = mini_world(config)
-    seller = world.clubs[2]
-    star = add_star(world, seller)
-    # The club aims high enough that the star is one of its own: cover is required.
-    seller.reputation = club_within_reach_of(star, config)
-    # Fill the squad above nominal size with low-value, non-goalkeeper backups:
-    # a numerical surplus elsewhere must not excuse leaving the star uncovered.
-    for pid in range(800, 806):
-        extra = replace(world.players[203], id=pid)
-        world.players[pid] = extra
-        seller.player_ids.append(pid)
-    assert len(seller.player_ids) > nominal_size(config)
-    assert not can_sell(star, seller, world)
-
-
-def test_simultaneous_sales_recheck_remaining_cover(config):
+def test_simultaneous_sales_recheck_squad_minimums(config):
     from core.ai.market import asking_price
     from core.world.market import settle_offers
     world = recruitment_world(config)
     seller = world.clubs[2]
-    for pid in range(800, 801):
-        extra = replace(world.players[201], id=pid)
-        world.players[pid] = extra
-        seller.player_ids.append(pid)
-        seller.wage_bill += extra.contract.weekly_wage
+    minimum = config.management.guardrails.min_squad
+    for pid in [pid for pid in seller.player_ids if pid not in (201, 203)][:len(seller.player_ids) - minimum - 1]:
+        seller.player_ids.remove(pid)
     for pid in (201, 203):
         player = world.players[pid]
         quote = asking_price(player, seller, world)
@@ -436,17 +452,29 @@ def test_simultaneous_sales_recheck_remaining_cover(config):
     close_auction(world)
     rejected = settle_offers(world, True)
     assert len(world.transfers) == 1
-    assert len(seller.player_ids) == 20
+    assert len(seller.player_ids) == minimum
     assert rejected == {1: {203}}
 
 
-def test_transfer_wage_cannot_cut_existing_contract(config):
-    from core.ai.market import recruitment_wage, propose_transfers
+def test_wage_demand_rises_for_a_bigger_club_and_may_drop_for_a_smaller_one(config):
+    from core.ai.market import wage_demand, propose_transfers
     world = recruitment_world(config)
-    player = world.players[201]
-    player.contract.weekly_wage = 2000000
-    assert recruitment_wage(player, world.clubs[1], world) == 2000000
-    world.clubs[1].wage_cap = world.clubs[1].wage_bill + 100000
+    player, buyer, seller = world.players[201], world.clubs[1], world.clubs[2]
+    player.contract.weekly_wage = 2000000  # well above his market wage: the move starts from it
+    player.greed = 0.0
+    seller.reputation, buyer.reputation = 70, 70
+    assert wage_demand(player, buyer, world) == 2000000
+    buyer.reputation = 80
+    assert wage_demand(player, buyer, world) > 2000000
+    buyer.reputation = 60
+    lower = wage_demand(player, buyer, world)
+    assert 2000000 * (1 - 1.5 * config.management.contracts.max_cut) <= lower < 2000000
+    # A greedy player concedes less and asks a premium on top.
+    player.greed = 1.0
+    assert wage_demand(player, buyer, world) > lower
+    # A buyer who cannot pay the demand does not bid.
+    buyer.reputation = 70
+    buyer.wage_cap = buyer.wage_bill + 100000
     assert all(p.player_id != player.id for p in propose_transfers(world, Random(1)) if p.target_id == 1)
 
 
@@ -526,35 +554,6 @@ def test_squad_depth_grows_with_club_reputation(config):
     assert squad_depth(club, config) == rules.max_squad_depth
     club.reputation = (rules.min_depth_reputation + rules.max_depth_reputation) / 2
     assert squad_depth(club, config) == round((rules.min_squad_depth + rules.max_squad_depth) / 2)
-
-
-def test_rotation_player_needs_cover_before_sale_even_when_a_backup_bench_exists(config):
-    from core.ai.market import can_sell
-    from core.domain.players import Attributes
-    world = mini_world(config)
-    seller = world.clubs[2]
-    def weaken(player):
-        return replace(player, rating=50, attributes=Attributes(tuple(v - 20 for v in player.attributes.values)))
-    # Sixteen regulars, then a bench twenty points weaker: the useful squad (19 players
-    # at this reputation) is not covered beyond its sixteenth member.
-    regulars = {pid: world.players[pid] for pid in range(216, 220)}
-    for pid, regular in regulars.items(): world.players[pid] = weaken(regular)
-    for index, position in enumerate(["GB", "DL", "DC", "DR", "MC", "AILD"]):
-        extra = replace(weaken(world.players[200 + index]), id=860 + index, position=position)
-        world.players[extra.id] = extra
-        seller.player_ids.append(extra.id)
-    world.players[217] = regulars[217]
-    player = world.players[217]
-    squad = [world.players[pid] for pid in seller.player_ids]
-    replaced = [item for item in squad if item.id != player.id]
-    tolerance = player.rating * config.management.utility.backup_weight
-    # Under the graded weights this rotation player is nearly free to sell...
-    assert squad_quality(squad, seller, config) - squad_quality(replaced, seller, config) <= tolerance
-    # ...but a club that plays its rotation all season keeps him without cover.
-    assert not can_sell(player, seller, world)
-    # With regulars all the way down the useful squad, losing him costs a rotation slot only.
-    world.players.update(regulars)
-    assert can_sell(player, seller, world)
 
 
 @pytest.mark.parametrize("case,rating,morale,target_reputation,allowed", [
@@ -685,9 +684,9 @@ def test_star_far_above_a_small_club_is_sellable_but_only_at_his_price(config):
     quote = asking_price(star, seller, world)
     assert not seller_accepts(star, seller, quote - 1, world, Random(1))
     assert seller_accepts(star, seller, quote, world, Random(1))
-    # The same player at a club whose ambitions he does not exceed is still protected.
+    # The same player at a club whose ambitions he does not exceed is sold all the same, as the starter he is.
     seller.reputation = club_within_reach_of(star, config)
-    assert not can_sell(star, seller, world)
+    assert can_sell(star, seller, world)
 
 
 def test_outgrown_star_still_cannot_leave_below_squad_minimums(config):
@@ -717,7 +716,7 @@ def test_outgrown_star_still_cannot_leave_below_squad_minimums(config):
 
 
 def test_buyers_bid_for_a_star_stuck_at_a_small_club(config):
-    from core.ai.market import propose_transfers, needs_for
+    from core.ai.market import propose_transfers, needs_for, asking_price
     world = recruitment_world(config)
     buyer = world.clubs[1]
     priority = needs_for(buyer, [world.players[pid] for pid in buyer.player_ids], world.config)[0].position
@@ -725,9 +724,7 @@ def test_buyers_bid_for_a_star_stuck_at_a_small_club(config):
     world.clubs[2].reputation = 50
     bids = [p for p in propose_transfers(world, Random(1)) if p.player_id == star.id]
     assert bids and all(p.target_id == 1 for p in bids)
-    # A club that can hold him keeps its star: nobody may even bid.
-    world.clubs[2].reputation = club_within_reach_of(star, config)
-    assert not [p for p in propose_transfers(world, Random(1)) if p.player_id == star.id]
+    assert all(p.fee == asking_price(star, world.clubs[2], world) for p in bids)
 
 
 def restless_setup(config, rating=94, reputation=59, ego=0.0):
@@ -834,3 +831,63 @@ def test_renewal_forks_to_a_pending_proposal_for_the_human_club(config):
     # A pending proposal is not regenerated on the next weekly pass.
     again = renewal_events(world)
     assert not [e for e in again if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
+
+
+def sellable_world(config):
+    """A market where club 2 can let player 201 go (a like-for-like cover stays) and the human club 1 bids."""
+    world = recruitment_world(config)
+    seller, player = world.clubs[2], world.players[201]
+    cover = replace(player, id=800)
+    world.players[cover.id] = cover
+    seller.player_ids.append(cover.id)
+    world.controlled_club_id = 1
+    return world, player, seller
+
+
+def test_human_buyer_learns_the_asking_price_of_a_refused_offer(config):
+    from core.ai.market import asking_price, can_sell, seller_accepts
+    from core.world.market import settle_offers, quoted_minimum
+    world, player, seller = sellable_world(config)
+    assert can_sell(player, seller, world)
+    quote = asking_price(player, seller, world)
+    low = TransferOffer("low", world.date, player.id, seller.id, 1, player.contract, quote // 2, quote // 2, 1.0)
+    world.offers[low.key] = low
+    close_auction(world)
+    assert settle_offers(world, True) == {1: {player.id}}
+    news = world.news[-1]
+    assert (news.kind, news.club_id, news.player_id) == ("offer_rejected", 1, player.id)
+    minimum = int(news.text.rsplit("au moins ", 1)[1].removesuffix(" €"))
+    assert minimum == quoted_minimum(asking_price(player, seller, world))
+    assert seller_accepts(player, seller, minimum, world, Random(1))
+
+
+def test_human_buyer_is_told_when_the_player_refuses_or_prefers_a_rival(config):
+    from core.world.market import settle_offers
+    world, player, seller = sellable_world(config)
+    rival = extra_buyer(world, 3)
+    fee = 10 ** 9 // 2
+    for key, target, score in (("mine", 1, 1.0), ("rival", rival.id, 5.0)):
+        world.offers[key] = TransferOffer(key, world.date, player.id, seller.id, target, player.contract, fee, fee, score)
+    close_auction(world)
+    settle_offers(world, True)
+    assert player.club_id == rival.id
+    assert world.news[-1].kind == "offer_rejected" and f"a préféré l'offre de {rival.name}" in world.news[-1].text
+
+    world, player, seller = sellable_world(config)
+    seller.reputation, world.clubs[1].reputation = 91, 57
+    player.rating, player.morale = 74, 0.74
+    world.offers["mine"] = TransferOffer("mine", world.date, player.id, seller.id, 1, player.contract, fee, fee, 1.0)
+    close_auction(world)
+    assert settle_offers(world, True) == {1: {player.id}}
+    assert world.news[-1].kind == "offer_rejected" and "refuse de rejoindre" in world.news[-1].text
+
+
+def test_offers_still_open_when_the_window_closes_are_reported_as_expired(config):
+    from core.world.market import settle_offers
+    world, player, seller = sellable_world(config)
+    own = world.players[world.clubs[1].player_ids[0]]
+    world.offers["out"] = TransferOffer("out", world.date, player.id, seller.id, 1, player.contract, 1, 1, 1.0)
+    world.offers["in"] = TransferOffer("in", world.date, own.id, 1, seller.id, own.contract, 1, 1, 1.0, awaiting_review=True)
+    settle_offers(world, False)
+    assert not world.offers
+    assert [(entry.kind, entry.player_id) for entry in world.news] == [("offer_expired", own.id), ("offer_expired", player.id)]

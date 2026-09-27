@@ -119,6 +119,8 @@ class World:
     pending_match_day: Date | None = None
     submitted_lineups: dict[int, SubmittedLineup] = field(default_factory=dict)
     pending_renewals: dict[int, RenewalProposal] = field(default_factory=dict)
+    # Players whose club or who broke off talks with the human club, until the given day.
+    talks_closed: dict[int, Date] = field(default_factory=dict)
     news: list[JournalEntry] = field(default_factory=list)
     live_match: LiveMatchRecord | None = None
 

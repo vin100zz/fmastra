@@ -12,6 +12,7 @@ from core.engine.abilities import overall
 from core.math import interpolate
 from core.randomness import stream
 from core.world.finances import initial_finances
+from core.world.transfer_rules import greed_trait
 from .records import SourceClub, SourcePlayer
 from .selection import select_squad
 from .source_positions import parse_positions
@@ -76,6 +77,7 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
                   cfg.states.moral.initial, fragility, ego, None if free else row.club_id, contract,
                   source_current_ability=row.current_ability, source_potential_ability=row.potential_ability,
                   position_ratings=dict(row.position_ratings), aggression=aggression,
+                  greed=greed_trait(row.loyalty, cfg, seed, row.id),
                   international_caps=row.international_caps, international_goals=row.international_goals,
                   historical_caps=row.international_caps, historical_goals=row.international_goals)
 

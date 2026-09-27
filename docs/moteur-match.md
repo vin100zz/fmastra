@@ -214,12 +214,49 @@ Cartons : la faute est commise par un joueur de champ tiré selon son implicatio
 défensive multipliée par `agressivité ** poids_agressivite_tacle` (gardien exclu tant
 qu'il reste un joueur de champ) ; la probabilité de carton ne dépend que de la zone et
 des avertissements déjà reçus. Un tacleur adroit n'est donc pas plus sanctionné.
+Le fautif n'est pas le joueur nommé sur la perte de balle, tiré à part (ci-dessous).
 
-Notes : base et contributions d'événements dans `notes_joueurs`, puis bornes.
-Une expulsion est pénalisée une fois, distinctement des jaunes déjà reçus.
-Un joueur sous le minimum de minutes sans but, assist ou expulsion n'est pas
-noté ; son absence de note n'est pas un zéro. Ce barème initial doit être
-calibré avant d'utiliser les notes comme moteur important de progression/forme.
+## Notes des joueurs
+
+Les agrégats de zone décident si une action réussit ; la note décide seulement
+à qui elle est attribuée. Ces attributions utilisent un flux aléatoire dérivé
+de celui du match sans y puiser (`side_stream`) : changer le barème ne change
+ni un score, ni un tir, ni une minute.
+
+Le joueur crédité est tiré parmi ceux impliqués dans la zone, pondérés par
+exp(± `sensibilite_qualite` × composite de la phase) : les meilleurs sont plus
+souvent nommés sur une réussite, les plus faibles sur un échec. Le composite
+retient forme, moral et poste mais pas la fraîcheur : les zones font déjà perdre
+le ballon à une équipe fatiguée, et un remplaçant frais ne doit pas être gonflé.
+`refresh` précalcule ces profils avec les agrégats ; ils ne valent qu'après
+chaque changement sur le terrain, comme eux.
+
+- Progression : le porteur déjà nommé par le moteur reçoit `progression_par_zone`
+  de la zone atteinte. Selon sa technique face à sa passe (`part_dribbles`,
+  `sensibilite_dribble`), il élimine un défenseur, nommé en second sur
+  l'événement `progress` (`detail` = `dribble`), qui reçoit `defenseur_elimine`.
+- Perte de balle : un récupérateur et un perdant sont nommés sur `turnover`,
+  crédités de `recuperation_par_zone` et `perte_par_zone`, chacun dans son
+  propre repère : récupérer devant son but vaut plus, perdre devant le sien coûte plus.
+- Occasion en jeu : `passe_cle` au passeur ou centreur, `participation_occasion`
+  aux autres porteurs de l'action.
+- Tir : `tir_cadre_sans_but` ou `tir_non_cadre` au tireur. Une frappe non cadrée
+  est contrée selon `part_non_cadres_contres` : `off_target` nomme le défenseur
+  (`detail` = `blocked`), crédité de `contre`. Un but coûte `but_encaisse_gardien`
+  au gardien et `defenseur_battu` à un défenseur de champ.
+- Buts, passes décisives, arrêts et cartons gardent leur barème.
+- Résultat : `victoire` en plus ou en moins, au prorata des minutes. Sans but
+  encaissé, `sans_encaisser` au joueur d'au moins `minutes_sans_encaisser`
+  minutes, pondéré par l'implication défensive de son dernier poste dans sa
+  propre zone : pleinement au gardien, pas du tout à l'attaquant.
+- Chaque minute retire `attendu_par_minute` : un joueur qui apporte ce qu'on
+  attend de ses minutes reste à la base, et la moyenne ne dérive pas.
+
+Les crédits s'accumulent pendant le match ; la note en direct et la note finale
+sont la même fonction. Une expulsion est pénalisée une fois, distinctement des
+jaunes déjà reçus. Un joueur sous le minimum de minutes sans but, assist ou
+expulsion n'est pas noté ; son absence de note n'est pas un zéro. La note nourrit
+la forme : `stats_match` vérifie que chaque poste reste centré sur la base.
 
 ## Disponibilité et validation
 

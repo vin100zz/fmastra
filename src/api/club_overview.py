@@ -18,6 +18,9 @@ def outcome(club_id: int, match: Match) -> str:
 
 
 def calendar(world: World, club_id: int, played: list[Match], upcoming: list[Match]) -> dict:
+    """Current season only, like the calendar tab."""
+    played = [match for match in played if match.season == world.season]
+    upcoming = [match for match in upcoming if match.season == world.season]
     return {"last": [{**v.match_row(world, match), "outcome": outcome(club_id, match)} for match in reversed(played[-LAST_MATCHES:])],
             "next": [v.match_row(world, match) for match in upcoming[:NEXT_MATCHES]]}
 

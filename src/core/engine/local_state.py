@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from random import Random
 
 from core.config.model import Config
 from core.domain.matches import Lineup, LineupSlot, MatchEvent, PlayerMatchStats, TeamStats, PlayingTimePriority
@@ -25,6 +26,11 @@ class TeamState:
     dismissed: set[int] = field(default_factory=set)
     injured: set[int] = field(default_factory=set)
     zones: dict[str, list[list[float]]] = field(default_factory=dict)
+    # Per phase, each player on the pitch with his vertical and lateral involvement and exp(sensitivity x quality).
+    profiles: dict[str, list[tuple[LineupSlot, tuple[float, ...], tuple[float, ...], float]]] = field(default_factory=dict)
+    # The last position of every player who took the field, and what his actions added to his rating.
+    roles: dict[int, Position] = field(default_factory=dict)
+    credits: dict[int, float] = field(default_factory=dict)
     next_refresh: float = 0
     next_substitution: float = 0
     next_rotation: float = 0
@@ -45,6 +51,9 @@ class TeamState:
                    next_substitution=cfg.states.substitutions.first_evaluation_minute * 60,
                    starters={slot.player.id for slot in lineup.slots}, playing_time=dict(lineup.playing_time))
 
+    def credit(self, player_id: int, amount: float) -> None:
+        self.credits[player_id] = self.credits.get(player_id, 0.0) + amount
+
     def goalkeeper(self) -> LineupSlot:
         if not self.active:
             raise ValueError("No players left on the pitch")
@@ -58,6 +67,8 @@ class MatchLog:
     period: int = 1
     possession: int = 0
     shots: int = 0
+    # Who gets the credit for an action is drawn from this stream, never from the match's own: ratings leave play unchanged.
+    attribution: Random = field(default_factory=lambda: Random(0))
 
     def emit(self, kind: str, team: TeamState, player_id: int | None = None, secondary_id: int | None = None,
              zone: int | None = None, lane: int | None = None, shot_id: int | None = None,

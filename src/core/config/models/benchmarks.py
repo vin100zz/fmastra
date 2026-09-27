@@ -128,6 +128,8 @@ class BenchmarksConfigStatsMatch:
     reds_per_team: BenchmarksConfigStatsMatchRedsPerTeam = Field(alias="rouges_par_equipe")
     lane_shares: BenchmarksConfigStatsMatchLaneShares = Field(alias="repartition_couloirs")
     central_xg_above_wide: bool = Field(alias="xg_axe_superieur_aile")
+    min_position_rating: float = Field(default=6.4, alias="note_moyenne_poste_min")
+    max_position_rating: float = Field(default=6.6, alias="note_moyenne_poste_max")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

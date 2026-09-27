@@ -8,7 +8,7 @@ from core.domain.clubs import Competition
 from core.domain.world import World
 from core.domain.players import Player, ATTRIBUTE_NAMES
 from core.domain.matches import Match, MatchResult
-from core.ai.market import market_value
+from core.ai.market import market_value, asking_price, can_sell
 from core.world.calendar import standings
 from core.world.finances import financial_season
 from core.world.cups import ROUND_NAMES
@@ -58,8 +58,35 @@ def player_row(world: World, player: Player) -> dict:
             "average": round(player.rating_sum / player.rating_count, 2) if player.rating_count else None}
 
 
+def asking_quote(world: World, player: Player, settled: set[int]) -> dict:
+    """The lowest fee his club accepts, as shown and offered: rounded up to three significant digits.
+
+    None for a free agent, and for a player his club cannot let go (`transferable` false)."""
+    from core.world.market import quoted_minimum
+    seller = world.clubs.get(player.club_id) if player.club_id is not None else None
+    if seller is None: return {"asking_price": None, "transferable": True}
+    if player.id in settled or not can_sell(player, seller, world): return {"asking_price": None, "transferable": False}
+    return {"asking_price": quoted_minimum(asking_price(player, seller, world)), "transferable": True}
+
+
+def talks_view(world: World, player: Player) -> dict:
+    """Where the human club's talks for a player stand, and what stops a new offer."""
+    from core.world.talks import talks_for, opening_obstacle, available_budget
+    from core.domain.offers import FEE_TALKS, SIGNING
+    talks = talks_for(world, player.id)
+    rounds = world.config.management.market.negotiation_rounds
+    return {"etape": talks.stage if talks else None, "indemnite": talks.fee if talks else None,
+            "salaire": talks.contract.weekly_wage if talks and talks.stage == SIGNING else None,
+            "contre_offre": talks.counter if talks else None, "tours_restants": rounds - (talks.rounds if talks else 0),
+            "date_prevue": talks.due.iso() if talks and talks.due else None, "budget": available_budget(world, player),
+            "obstacle": opening_obstacle(world, player) if talks is None or talks.stage == FEE_TALKS else None}
+
+
 def player_detail(world: World, player: Player) -> dict:
+    from core.world.transfer_rules import recent_arrival_ids
     result = player_row(world, player)
+    result.update(asking_quote(world, player, recent_arrival_ids(world)))
+    result["greed"] = player.greed
     result.update({"born": player.born.iso(),
                    "national_team": player.national_team,
                    "national_team_id": next((team.id for team in world.international.nations.values() if team.code == player.national_team), None),

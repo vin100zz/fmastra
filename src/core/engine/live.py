@@ -7,6 +7,7 @@ from core.config.model import Config
 from core.domain.matches import Lineup, LineupSlot, LiveOrder, MatchEvent, MatchResult, PlayerMatchStats
 from core.domain.players import Position
 from core.math import clamp
+from core.randomness import side_stream
 from .analytical import lineup_strength
 from .fitness import consume, intensity
 from .local_state import TeamState, MatchLog
@@ -31,7 +32,7 @@ class LiveMatch:
         self.controllers = controllers
         for team, controller in zip(self.teams, controllers):
             team.automatic = controller.automatic
-        self.log = MatchLog()
+        self.log = MatchLog(attribution=side_stream(rng, "ratings"))
         self.status, self.outcome = "playing", "played"
         self.delivered = 0  # events already handed out by advance_segment
         self._result: MatchResult | None = None
@@ -217,7 +218,7 @@ class LiveMatch:
         side = rng.randrange(2)
         affected = teams[side]
         injury_zone, injury_lane = (outcome.zone, outcome.lane) if side == owner else mirror(outcome.zone, outcome.lane, cfg)
-        candidate = involved_player(affected, injury_zone, injury_lane, side == owner, cfg, rng)
+        candidate = involved_player(affected, injury_zone, injury_lane, side == owner, rng)
         injuries = cfg.states.injuries
         risk = injuries.possession_probability * (injuries.fitness_factor - affected.fitness[candidate.player.id]) * candidate.player.fragility * intensity(affected.block_height, cfg)
         if rng.random() < clamp(risk, 0, 1):

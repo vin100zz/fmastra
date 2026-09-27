@@ -15,6 +15,7 @@ from pathlib import Path
 from core.domain.world import World
 from core.world.demography import initialize_targets
 from core.world.reputation import initialize_reputation
+from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
 from infrastructure.config.loader import config_fingerprint, config_payload
 from infrastructure.importation.readers import ATTRIBUTE_COLUMNS, note
@@ -23,10 +24,29 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 17
+SCHEMA_VERSION = 19
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Transfer talks, asking prices by squad status and wage demands by move: an older save negotiates with these rules.
+    (19, ("ia_gestion", "mercato"), {
+         "coef_prix_hors_effectif": 0.45, "coef_prix_doublure": 0.75, "coef_prix_rotation": 1.0, "coef_prix_titulaire": 1.5,
+         "part_minutes_pilier": 0.75, "matchs_confiance_minutes": 10, "marge_potentiel_espoir": 10.0, "tours_negociation": 3,
+         "jours_rupture_negociation": 7, "delai_reponse_min_jours": 1, "delai_reponse_max_jours": 3}),
+    (19, ("ia_gestion", "contrats"), {
+         "prime_appat_gain": 0.15, "appat_gain_note_basse": 7.5, "appat_gain_note_reference": 11.5, "appat_gain_note_haute": 15.5,
+         "hausse_par_point_reputation": 0.01, "hausse_salaire_max": 0.30, "baisse_par_point_reputation": 0.01,
+         "baisse_salaire_max": 0.15}),
+    # Ratings credited action by action: an older save keeps its older scale for goals, saves and cards,
+    # and rates tackles, losses, key passes and results from its next match on.
+    (18, ("moteur_match", "notes_joueurs"), {
+         "sensibilite_qualite": 0.05, "progression_par_zone": [0.0, 0.01, 0.02, 0.04],
+         "recuperation_par_zone": [0.07, 0.04, 0.025, 0.015], "perte_par_zone": [-0.04, -0.03, -0.02, -0.01],
+         "part_dribbles": 0.3, "sensibilite_dribble": 0.08, "defenseur_elimine": -0.02, "passe_cle": 0.1,
+         "participation_occasion": 0.03, "tir_non_cadre": -0.03, "part_non_cadres_contres": 0.4, "contre": 0.05,
+         "defenseur_battu": -0.15, "victoire": 0.1, "sans_encaisser": 0.25, "minutes_sans_encaisser": 60,
+         "attendu_par_minute": 0.0055}),
+    (18, ("benchmarks", "stats_match"), {"note_moyenne_poste_min": 6.4, "note_moyenne_poste_max": 6.6}),
     # Mentality chosen during a live match: an older save is given the block height shifts of its first live match.
     (17, ("formations", "hauteur_bloc"), {"mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}),
     # Bounded rating gaps and score management: an older save plays its next matches without 30-0 mismatches.
@@ -139,6 +159,7 @@ class SaveStore:
             if not {"matches", "market", "states", "progression", "demography"}.issubset(world.rngs):
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
             validate_consistency(world.config)
+            if version < 19: _assign_greed(world, self.directory.parent / "data" / "players.csv")
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -186,6 +207,19 @@ def _extend_attribute_vectors(raw: bytes, source_path: Path) -> bytes:
                                                for offset in DELIVERY_OFFSETS[player["position"]]]
         player["attributes"]["values"].extend(extra)
     return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _assign_greed(world: World, source_path: Path) -> None:
+    """Schema 19 gave players an appetite for money: from the exact source CSV's loyalty, drawn otherwise."""
+    loyalties = {}
+    if source_path.is_file():
+        raw = source_path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() == world.source_hashes.get("players.csv"):
+            source = world.config.import_settings.source_format
+            reader = csv.DictReader(io.StringIO(raw.decode(source.encoding)), delimiter=source.delimiter)
+            loyalties = {int(row["UID"]): float(row["Loyality"]) for row in reader if row.get("Loyality")}
+    for player in world.players.values():
+        player.greed = greed_trait(loyalties.get(player.id), world.config, world.seed, player.id)
 
 
 def _config_matches(world: World, fingerprint: str, version: int) -> bool:

@@ -1,14 +1,16 @@
 import {monthlySalary} from './salaries.js';
 import {calendarBlock,financeBlock,lineupBlock} from './club-overview.js';
-import {api,escape as e,heading,card,pager,money,date,empty,playerLink,clubLink,standingsTable,roundTitle} from './ui.js';
+import {api,escape as e,heading,card,pager,money,price,date,empty,playerLink,clubLink,standingsTable,roundTitle} from './ui.js';
 
-const NEWS_LABELS={renewal_proposed:'Prolongation',renewal_signed:'Prolongation',renewal_refused:'Prolongation',offer_received:'Offre reçue',offer_accepted:'Transfert',offer_refused:'Transfert',
+const NEWS_LABELS={renewal_proposed:'Prolongation',renewal_signed:'Prolongation',renewal_refused:'Prolongation',offer_received:'Offre reçue',offer_accepted:'Transfert',offer_refused:'Transfert',offer_rejected:'Offre refusée',offer_expired:'Offre expirée',talks_open:'Négociation',
  transfer:'Transfert',release:'Fin de contrat',retirement:'Retraite',academy:'Formation',injury:'Blessure',injury_end:'Infirmerie',suspension:'Suspension',suspension_end:'Suspension',
  result:'Résultat',call_up:'Sélection',promotion:'Promotion',relegation:'Relégation',season:'Saison',cup_winner:'Trophée',europe_winner:'Trophée'};
 
 // The text of an entry with its player's name linked to his page and, for a result or an in-match injury, the match linked to its report.
+// Wages are written weekly in the stored text, as in the simulation; they read as a rounded monthly amount like everywhere else.
+// Fees are written in full euros; they read like other amounts, precise enough to act on an asking price.
 function newsText(item) {
- let text=e(item.text);
+ let text=e(item.text).replace(/(\d+) €(\/semaine)?/g,(_,amount,weekly)=>weekly?`${monthlySalary(Number(amount))}/mois`:price(Number(amount)));
  if(item.match_id!=null&&item.kind==='result')return `<a href="#/match/${item.match_id}">${text}</a>`;
  if(item.player_id!=null&&item.player){const name=e(item.player),at=text.indexOf(name);if(at>=0)text=`${text.slice(0,at)}<a href="#/player/${item.player_id}">${name}</a>${text.slice(at+name.length)}`;}
  if(item.match_id!=null)text=text.replace(/ en match\b/,` en <a href="#/match/${item.match_id}">match</a>`);
@@ -33,7 +35,9 @@ function standingsBlock(club,standings) {
 function marketBlock(club,transfers,contracts) {
  const offerButtons=offer=>`<button class="primary" data-command="reponse-offre" data-decision="accepter" data-offer="${e(offer.offre_id)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(offer.offre_id)}">Refuser</button>`;
  const incoming=transfers.entrantes.flatMap(group=>group.offres.map(offer=>`<li><span>${playerLink(group.joueur_id,group.joueur)}</span><small>${clubLink(offer.acheteur)} · ${monthlySalary(offer.salaire_propose)}</small><b>${money(offer.indemnite)}</b><span class="market-actions">${offerButtons(offer)}</span></li>`));
- const outgoing=transfers.sortantes.map(offer=>`<li><span>${playerLink(offer.joueur_id,offer.joueur)}</span><small>${clubLink(offer.vendeur)} · ${monthlySalary(offer.salaire_propose)}</small><b>${money(offer.indemnite)}</b></li>`);
+ // Talks show where they stand; an older offer still in its auction shows the wage it proposes.
+ const stage=offer=>({indemnite:'Contre-offre en cours',accord_club:`Réponse du joueur le ${date(offer.date_prevue)}`,salaire:'Contrat à négocier',signature:`Arrivée le ${date(offer.date_prevue)}`})[offer.etape]||monthlySalary(offer.salaire_propose);
+ const outgoing=transfers.sortantes.map(offer=>`<li><span>${playerLink(offer.joueur_id,offer.joueur)}</span><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}</small><b>${price(offer.indemnite)}</b>${offer.etape==='salaire'?`<a href="#/player/${offer.joueur_id}">Négocier →</a>`:''}</li>`);
  const renewals=contracts.items.map(row=>`<li><span>${playerLink(row.joueur_id,row.nom)}</span><small>Demande ${monthlySalary(row.salaire_propose)} · jusqu’au ${date(row.fin_contrat_proposee)}</small><a href="#/player/${row.joueur_id}">Répondre →</a></li>`);
  const section=(title,items,none)=>`<h3>${title} · ${items.length}</h3>${items.length?`<ul class="moves">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}`;
  const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.')+section('Vos offres',outgoing,'Aucune offre en cours.')+section('Prolongations',renewals,'Aucune prolongation en attente.');

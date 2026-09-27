@@ -74,6 +74,12 @@ du gardien. Un but compte dans les tirs et tirs cadrés. Le total des possession
 et leurs durées doivent être cohérents avec la durée effective du match.
 Mesurer aussi la dangerosité par attaque axiale ou latérale, séparément du volume.
 
+La note moyenne des titulaires de chaque poste du 4-3-3 symétrique (`rating_GB`,
+`rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`.
+La note nourrit la forme : un poste systématiquement mieux noté renforcerait ses
+joueurs match après match. Le levier est `attendu_par_minute` pour la moyenne
+générale, puis les tables par zone du barème pour l'écart entre postes.
+
 ## Suite formations
 
 Toutes les formations configurées contre toutes les autres, avec autant de

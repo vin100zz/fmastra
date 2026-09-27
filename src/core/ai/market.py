@@ -10,13 +10,14 @@ from core.config.model import Config
 from core.domain.clubs import Club
 from core.domain.date import Date
 from core.domain.players import Player, Position, Contract, ATTRIBUTE_INDEX
+from core.domain.offers import RESERVING_STAGES
 from core.domain.world import World
 from core.engine.abilities import overall
-from core.math import clamp
+from core.math import clamp, interpolate
 from core.world.estimates import estimate_potential
 from core.world.events import PlayerSigned
 from core.world.human import is_human_club
-from core.world.transfer_rules import recent_arrival_ids, accepts_move, outgrown_by
+from core.world.transfer_rules import recent_arrival_ids, accepts_move
 from core.world.importation.synthesis import intrinsic_value, expected_wage
 from .assignment import maximize_assignment
 
@@ -56,12 +57,12 @@ def squad_depth(club: Club, cfg: Config) -> int:
     return round(rules.min_squad_depth + share * (rules.max_squad_depth - rules.min_squad_depth))
 
 
-def squad_quality(players: list[Player], club: Club, cfg: Config, deep: bool = False) -> float:
-    """Weighted assignment score; `deep` weighs the whole useful squad heavily.
+def _assign(players: list[Player], club: Club, cfg: Config, deep: bool) -> tuple[float, tuple[int, ...]]:
+    """Weighted assignment of a squad to the club's places: its score and the player index of each place.
 
-    Recruitment keeps the graded starter/rotation/backup weights. Retention must not:
-    the club plays its rotation players all season, so every place among its
-    `squad_depth` best weighs at least `depth_sale_weight`, not the low rotation weight.
+    Recruitment keeps the graded starter/rotation/backup weights. `deep` does not: the
+    club plays its rotation players all season, so every place among its `squad_depth`
+    best weighs at least `depth_sale_weight`, not the low rotation weight.
     """
     roles, weights = squad_roles(club, cfg)
     if deep:
@@ -71,12 +72,22 @@ def squad_quality(players: list[Player], club: Club, cfg: Config, deep: bool = F
     unique_roles = tuple(dict.fromkeys(roles))
     profiles = tuple((role, tuple((ATTRIBUTE_INDEX[key], value) for key, value in cfg.attributes.overall[role].items())) for role in unique_roles)
     signatures = tuple((player.attributes.values, player.position, tuple(player.secondary_positions.items())) for player in players)
-    return _quality(signatures, tuple(roles), tuple(weights), profiles,
-                    cfg.attributes.out_of_position.base, cfg.attributes.out_of_position.factor)
+    return _assigned(signatures, tuple(roles), tuple(weights), profiles,
+                     cfg.attributes.out_of_position.base, cfg.attributes.out_of_position.factor)
+
+
+def squad_quality(players: list[Player], club: Club, cfg: Config) -> float:
+    return _assign(players, club, cfg, False)[0]
+
+
+def squad_places(players: list[Player], club: Club, cfg: Config) -> dict[int, int]:
+    """The place each player holds in his club's useful squad, by index of `squad_roles`; absent when he has none."""
+    assignment = _assign(players, club, cfg, True)[1]
+    return {players[index].id: place for place, index in enumerate(assignment) if index < len(players)}
 
 
 @lru_cache(maxsize=8192)
-def _quality(players: tuple, roles: tuple, weights: tuple, profiles: tuple, base: float, factor: float) -> float:
+def _assigned(players: tuple, roles: tuple, weights: tuple, profiles: tuple, base: float, factor: float) -> tuple[float, tuple[int, ...]]:
     """Memoize immutable ability snapshots, never mutable Player or World objects."""
     qualities = {}
     for role, coefficients in profiles:
@@ -86,7 +97,7 @@ def _quality(players: tuple, roles: tuple, weights: tuple, profiles: tuple, base
     scores = [[quality * weight for quality in qualities[role]] for role, weight in zip(roles, weights)]
     for row in scores: row.extend([0.0] * max(0, len(roles) - len(players)))
     assignment = maximize_assignment(scores)
-    return sum(row[index] for row, index in zip(scores, assignment))
+    return sum(row[index] for row, index in zip(scores, assignment)), tuple(assignment)
 
 
 def needs_for(club: Club, players: list[Player], cfg: Config) -> list[Need]:
@@ -133,8 +144,39 @@ def contract_for(player: Player, world: World, wage: int) -> Contract:
     return Contract(wage, end, world.date, synthetic=False)
 
 
+# Squad status of a player at his club: what each place of `squad_roles` is worth to it.
+BACKUP_STATUS, ROTATION_STATUS, STARTER_STATUS = 0.3, 0.6, 1.0
+
+
+def squad_status(player: Player, club: Club, world: World) -> float:
+    """How much a club relies on a player, from 0 (outside its useful squad) to 1 (a starter).
+
+    The highest of three readings: his place in the club's best assignment (starter,
+    rotation within `squad_depth`, backup up to the nominal size), his share of the
+    season's minutes against the club's busiest player once enough matches are played,
+    and, for a prospect, the margin of his potential over his level as the club sees it.
+    """
+    cfg = world.config
+    rules = cfg.management.market
+    squad = [world.players[pid] for pid in club.player_ids]
+    place = squad_places(squad, club, cfg).get(player.id)
+    role = (0.0 if place is None or place >= nominal_size(cfg) else STARTER_STATUS if place < cfg.world.match_rules.players_on_pitch
+            else ROTATION_STATUS if place < squad_depth(club, cfg) else BACKUP_STATUS)
+    busiest = max(item.season_minutes for item in squad)
+    match_minutes = cfg.engine.timing.match_seconds / 60
+    confidence = min(1.0, busiest / (rules.minutes_confidence_matches * match_minutes))
+    played = confidence * min(1.0, player.season_minutes / (rules.regular_minutes_share * busiest)) if busiest else 0.0
+    estimate = estimate_potential(player, world.date, world.seed, cfg, club.id, club.reputation)
+    prospect = ROTATION_STATUS * clamp((estimate.center - player.rating) / rules.prospect_margin, 0, 1)
+    return max(role, played, prospect)
+
+
 def asking_price(player: Player, seller: Club, world: World) -> int:
-    """One quoted price for buyers and sellers, including replacement cost."""
+    """One quoted price for buyers and sellers: the lowest fee the seller accepts.
+
+    A starter or a regular costs well above his value, a backup about his value, and a
+    player outside the useful squad with no prospect goes cheap (see `squad_status`).
+    """
     cfg = world.config
     if seller.competition_id is None:
         return round(market_value(player, world, seller) * cfg.management.market.dormant_clubs.asking_multiplier)
@@ -142,32 +184,19 @@ def asking_price(player: Player, seller: Club, world: World) -> int:
     rules = cfg.management.market
     threshold = market_value(player, world, seller) * (rules.seller_multiplier - rules.surplus_discount * surplus)
     threshold *= 1 + rules.patience_weight * seller.personality.negotiation_patience
-    squad = [world.players[pid] for pid in seller.player_ids]
-    quality = squad_quality(squad, seller, cfg)
-    departure_cost = quality - squad_quality([item for item in squad if item.id != player.id], seller, cfg)
-    return round(threshold * (1 + max(0, departure_cost) / max(1, quality)))
+    status = interpolate(((0.0, rules.surplus_price_factor), (BACKUP_STATUS, rules.backup_price_factor),
+                          (ROTATION_STATUS, rules.rotation_price_factor), (STARTER_STATUS, rules.starter_price_factor)),
+                         squad_status(player, seller, world))
+    return round(threshold * status)
 
 
 def can_sell(player: Player, seller: Club, world: World) -> bool:
+    """Only the hard minimums stop a sale; any other player has his price (see `asking_price`)."""
     if seller.competition_id is None: return True
-    cfg = world.config
-    guard = cfg.management.guardrails
+    guard = world.config.management.guardrails
     if len(seller.player_ids) <= guard.min_squad: return False
     if player.position == Position.GOALKEEPER and sum(
         world.players[pid].position == Position.GOALKEEPER for pid in seller.player_ids) <= guard.min_goalkeepers: return False
-    # A player far above what the club aims at cannot be kept as cover: he is an asset
-    # sold at his price, which funds a replacement. Without this, the better the player,
-    # the wider the gap to his replacement, and the best players of small clubs would
-    # be unsellable for good. The asking price still applies in `seller_accepts`.
-    if outgrown_by(player, seller, cfg) > 0: return True
-    squad = [world.players[pid] for pid in seller.player_ids]
-    loss = (squad_quality(squad, seller, cfg, deep=True)
-            - squad_quality([p for p in squad if p.id != player.id], seller, cfg, deep=True))
-    # A player of the useful squad (starters and rotation, see squad_depth) must be
-    # adequately covered before being sold, even in a squad above nominal size: a
-    # surplus of backups elsewhere must not let the best player at an uncovered
-    # position leave, nor a rotation player who plays all season.
-    if loss > player.rating * cfg.management.utility.backup_weight + 1e-9: return False
     return True
 
 
@@ -188,9 +217,23 @@ def player_offer_score(player: Player, target: Club, wage: int, world: World) ->
     return weights.wage_weight * salary + weights.playing_time_weight * minutes + weights.reputation_weight * reputation + weights.ambition_weight * ambition
 
 
-def recruitment_wage(player: Player, club: Club, world: World) -> int:
-    expected = expected_wage(market_value(player, world, club, False), world.config)
-    return max(expected, player.contract.weekly_wage if player.contract else 0)
+def wage_demand(player: Player, club: Club, world: World) -> int:
+    """The lowest weekly wage a player accepts to join a club.
+
+    From the higher of his wage and his market wage: a raise to join a more reputed club,
+    a limited cut for a less reputed one. The greedier he is, the bigger the raise and
+    the smaller the cut he concedes, and the higher the premium on top (see `greed_trait`).
+    """
+    cfg = world.config
+    rules = cfg.management.contracts
+    expected = expected_wage(market_value(player, world, club, False), cfg)
+    base = max(expected, player.contract.weekly_wage if player.contract else 0)
+    source = world.clubs.get(player.club_id) if player.club_id is not None else None
+    step = club.reputation - source.reputation if source is not None and source.id != club.id else 0.0
+    if step >= 0: move = min(rules.max_raise, rules.raise_per_point * step) * (0.5 + player.greed)
+    else: move = -min(rules.max_cut, rules.cut_per_point * -step) * (1.5 - player.greed)
+    wage = base * (1 + move) * (1 + rules.greed_premium * player.greed)
+    return max(cfg.management.budgets.wages.weekly_minimum, round(wage))
 
 
 def propose_transfers(world: World, rng: Random, emergency: bool = False,
@@ -199,7 +242,8 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
     from .controller import AIController
     cfg = world.config
     controller = AIController(cfg, rng)
-    settled = recent_arrival_ids(world)
+    # Recent arrivals stay put; players the human club has agreed a fee for are no longer on the market.
+    settled = recent_arrival_ids(world) | {offer.player_id for offer in world.offers.values() if offer.stage in RESERVING_STAGES}
     candidates = [player for player in world.players.values() if player.id not in settled]
     rejected = rejected or {}
     proposals = []
@@ -296,7 +340,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             considered = 0
             for player in pool:
                 if not available(player) or not accepts_move(player, club, world): continue
-                wage = recruitment_wage(player, club, world)
+                wage = wage_demand(player, club, world)
                 if wage > wages: continue
                 fee = price(player)
                 if fee > money: continue
@@ -327,7 +371,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             for player in choices:
                 if not available(player) or not accepts_move(player, club, world): continue
                 fee = price(player)
-                wage = recruitment_wage(player, club, world)
+                wage = wage_demand(player, club, world)
                 if fee <= club.transfer_budget and club.balance - fee >= cfg.management.guardrails.min_balance and club.wage_bill + wage <= club.wage_cap:
                     offer = PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee)
                     proposals.append(offer)

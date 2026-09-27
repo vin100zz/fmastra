@@ -30,6 +30,7 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
         return measurements
     home, away = synthetic_lineup(cfg, 1, delivery=AVERAGE_DELIVERY), synthetic_lineup(cfg, 2, delivery=AVERAGE_DELIVERY)
     totals = {key: 0.0 for key in ("possessions", "shots", "xg", "goals", "yellows", "reds", "set_goals", "home_advantage")}
+    ratings: dict[str, list[float]] = {}
     started = perf_counter()
     for index in range(iterations):
         result = engine.simulate(home, away, cfg, stream(seed, "symmetric", index))
@@ -39,6 +40,10 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
             totals["set_goals"] += stats.set_piece_goals
         totals["goals"] += result.home_goals + result.away_goals
         totals["home_advantage"] += result.home_goals - result.away_goals
+        if suite != "performance":
+            for pid, position in result.home_lineup + result.away_lineup:
+                if result.player_stats[pid].rating is not None:
+                    ratings.setdefault(position, []).append(result.player_stats[pid].rating)
     elapsed = perf_counter() - started
     if suite == "performance":
         return [Measurement("match_milliseconds", elapsed * 1000 / iterations, 0, cfg.benchmarks.performance.match_milliseconds, iterations)]
@@ -53,5 +58,9 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
                                         reference.target + reference.tolerance, iterations))
     bounds = target.set_piece_goal_share
     measurements.append(Measurement("set_piece_goal_share", totals["set_goals"] / max(1, totals["goals"]), bounds.min, bounds.max, iterations))
+    # Every starter's position of the symmetric 4-3-3: none may pull its players' form up or down.
+    for position, values in sorted(ratings.items()):
+        measurements.append(Measurement(f"rating_{position}", sum(values) / len(values), target.min_position_rating,
+                                        target.max_position_rating, len(values)))
     measurements.append(Measurement("match_milliseconds", elapsed * 1000 / iterations, 0, cfg.benchmarks.performance.match_milliseconds, iterations))
     return measurements

@@ -3,11 +3,12 @@ from dataclasses import dataclass
 from random import Random
 
 from core.config.model import Config
+from core.domain.players import Player
 from core.math import clamp, sigmoid, logit
 from .local_state import MatchLog, TeamState
 from .personnel import dismiss
 from .shots import resolve_shot
-from .zones import foul_committer, gap, involved_player, mirror, choose_lane
+from .zones import credited, foul_committer, gap, involved_player, mirror, choose_lane
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,7 +22,8 @@ class PossessionOutcome:
 def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: int, counter: bool,
                     home: bool, log: MatchLog, cfg: Config, rng: Random) -> PossessionOutcome:
     last_zone = len(cfg.involvement.zones) - 1
-    passer = None
+    ratings, credit_rng = cfg.engine.player_ratings, log.attribution
+    passer, carriers = None, []
     while True:
         creation = zone == last_zone
         rules = cfg.engine.transitions
@@ -35,18 +37,26 @@ def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: i
             break
         if creation:
             kind = "shot" if lane == len(cfg.involvement.lanes) // 2 else "cross"
-            goal = resolve_shot(attacker, defender, zone, lane, counter, kind, passer, log, cfg, rng)
+            goal = resolve_shot(attacker, defender, zone, lane, counter, kind, passer, log, cfg, rng, carriers)
             return PossessionOutcome(zone, lane, True, goal)
-        creator = involved_player(attacker, zone, lane, True, cfg, rng)
+        creator = involved_player(attacker, zone, lane, True, rng)
         passer = creator.player.id
+        carriers.append(passer)
+        duel_zone, duel_lane = mirror(zone, lane, cfg)
         zone += 1
         switch = cfg.engine.lanes.switch_probability * (1 + cfg.engine.lanes.switch_vision_weight
                                                         * creator.player.attributes.get("vision") / cfg.attributes.bounds.max)
         if rng.random() < clamp(switch, 0, 1):
             neighbors = [candidate for candidate in (lane - 1, lane + 1) if 0 <= candidate < len(cfg.involvement.lanes)]
             lane = choose_lane(attacker, defender, zone, cfg, rng, neighbors)
+        attacker.credit(passer, ratings.progression[zone])
+        # A carrier who prefers his feet to his passing takes his marker on rather than passing round him.
+        dribbled = None
+        if credit_rng.random() < dribble_probability(creator.player, cfg):
+            dribbled = credited(defender, "progression_defense", duel_zone, duel_lane, False, credit_rng)
+            defender.credit(dribbled, ratings.dribbled)
         # The ball carrier who took the side into the next zone, where the play now stands.
-        log.emit("progress", attacker, passer, zone=zone, lane=lane)
+        log.emit("progress", attacker, passer, dribbled, zone=zone, lane=lane, detail="dribble" if dribbled else "")
     defensive_zone, defensive_lane = mirror(zone, lane, cfg)
     tackler = foul_committer(defender, defensive_zone, defensive_lane, cfg, rng)
     cards = cfg.engine.cards
@@ -77,8 +87,20 @@ def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: i
             log.emit(kind, attacker, zone=zone, lane=lane)
             goal = resolve_shot(attacker, defender, last_zone, lane, False, kind, None, log, cfg, rng)
             return PossessionOutcome(zone, lane, True, goal)
-    log.emit("turnover", defender, tackler.player.id, zone=defensive_zone, lane=defensive_lane)
+    # The foul, if any, was the tackler's; the ball goes to the best placed, and is lost by the least able.
+    creation = zone == last_zone
+    winner = credited(defender, "creation_defense" if creation else "progression_defense", defensive_zone, defensive_lane, True, credit_rng)
+    loser = credited(attacker, "creation_attack" if creation else "progression_attack", zone, lane, False, credit_rng)
+    defender.credit(winner, ratings.recovery[defensive_zone])
+    attacker.credit(loser, ratings.loss[zone])
+    log.emit("turnover", defender, winner, loser, zone=defensive_zone, lane=defensive_lane)
     return PossessionOutcome(zone, lane, False, False)
+
+
+def dribble_probability(player: Player, cfg: Config) -> float:
+    rules = cfg.engine.player_ratings
+    attributes = player.attributes
+    return sigmoid(logit(rules.dribble_share) + rules.dribble_sensitivity * (attributes.get("technique") - attributes.get("passe")))
 
 
 def next_possession(outcome: PossessionOutcome, recovering: TeamState, losing: TeamState, cfg: Config,

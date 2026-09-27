@@ -128,7 +128,8 @@ spontanée de joueurs pour le remplir.
 La forme suit un retour à une cible issue de la dernière note, avec bruit et
 bornes configurés. Un joueur non noté ne reçoit pas une note artificielle de
 zéro ; conserver sa forme jusqu'à une prochaine performance notée ou son
-retour de blessure. Le calcul du barème est dans `moteur_match.notes_joueurs`.
+retour de blessure. Le calcul du barème est dans `moteur_match.notes_joueurs`
+(`docs/moteur-match.md`, « Notes des joueurs »).
 
 Moral : cible pondérée du temps de jeu, des résultats du club et de la
 satisfaction contractuelle, chaque composante normalisée à [0, 1], puis dérive

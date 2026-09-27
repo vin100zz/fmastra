@@ -105,7 +105,7 @@ def squad_strip(live: LiveMatch, side: int) -> list[dict]:
         return {"id": player.id, "name": player.name, "position": player.position.value, "starter": starter,
                 "state": "on" if player.id in playing else "bench" if player.id in waiting else "off",
                 "fitness": round(team.fitness.get(player.id, player.fitness), 3),
-                "rating": round(player_rating(team, player.id, live.log, live.cfg), 1) if played else None,
+                "rating": round(player_rating(team, live.teams[1 - side], player.id, live.cfg), 1) if played else None,
                 "goals": stats.goals if stats else 0, "yellows": stats.yellows if stats else 0,
                 "red": bool(stats and stats.red), "injured": player.id in team.injured}
     return [row(slot.player, True) for slot in initial.slots] + [row(player, False) for player in initial.bench]
@@ -125,8 +125,9 @@ def multiplex(world: World) -> dict:
              for other in others]
     table = None
     if competition.kind == "league":
-        before = [other for other in world.matches.values() if other.competition_id == competition.id
-                  and other.result is not None and other.date < match.date]
+        # The season's own fixtures: world.matches also keeps past seasons, with clubs since relegated.
+        before = [other for other in map(world.matches.__getitem__, competition.match_ids)
+                  if other.result is not None and other.date < match.date]
         table = [{"club": v.club_ref(world, row.club_id), "played": row.played, "won": row.won, "drawn": row.drawn,
                   "lost": row.lost, "goals_for": row.goals_for, "goals_against": row.goals_against, "points": row.points}
                  for row in standings(competition, before, cfg)]

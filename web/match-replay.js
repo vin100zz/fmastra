@@ -642,7 +642,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   for(const event of sequence.progress){
    const point=at(jitter(ZONE_U[event.zone],.04),jitter(LANE_V[event.lane],.07));
    const receiver=who(event.player_id);
-   note(event.player_id,`${title} · ${name(event)} fait avancer le jeu`);
+   note(event.player_id,`${title} · ${event.detail==='dribble'?`${name(event)} élimine ${e(event.secondary||'—')}`:`${name(event)} fait avancer le jeu`}`);
    const catchAt=lerpPoint(this.ballAt,point,.75);
    if(!(await this.pass(receiver,catchAt)))return false;
    if(!(await this.carry(point)))return false;
@@ -679,12 +679,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(!(await this.pass(shooter,lerpPoint(this.ballAt,shotFrom,.7))))return false;
    if(!(await this.carry(shotFrom,{duration:420})))return false;
   }
-  const outcome=sequence.outcome?.kind;
+  const outcome=sequence.outcome?.kind,blocked=outcome==='off_target'&&sequence.outcome.detail==='blocked';
   const xg=shot.xg!=null?` <small>xG ${shot.xg.toFixed(2).replace('.',',')}</small>`:'';
   const keeper=shot.secondary_id!=null&&this.dots[other].has(shot.secondary_id)?{side:other,id:shot.secondary_id}:this.keeperOf(other);
   if(keeper)involved.push(keeper.id);
+  if(blocked&&this.dots[other].has(sequence.outcome.secondary_id))involved.push(sequence.outcome.secondary_id);
   this.highlight(involved);
-  const target=outcome==='goal'?at(1.012,jitter(.5,.035)):outcome==='save'?at(.99,jitter(.5,.045)):at(1.035,random()<.5?.38:.62);
+  // A blocked strike stops a few strides out, on the defender who threw himself in front of it.
+  const target=outcome==='goal'?at(1.012,jitter(.5,.035)):outcome==='save'?at(.99,jitter(.5,.045))
+   :blocked?lerpPoint(shotFrom,at(1,.5),.3):at(1.035,random()<.5?.38:.62);
   const dive=keeper&&this.toPitch(other,.015,this.toLocal(other,target).v);
   const header=kind==='cross'||kind==='corner';
   if(!(await this.perform({kind:'shot',by:shooter,target,keeper,keeperPoint:outcome==='off_target'?null:dive,catch:outcome==='save',catchAt:target,
@@ -699,7 +702,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    this.tempo=1;
    return this.wait(1700);
   }
-  this.caption(`${title} · ${outcome==='save'?`Arrêt de ${e(shot.secondary||'—')}`:'Tir non cadré'}${xg}`);
+  this.caption(`${title} · ${outcome==='save'?`Arrêt de ${e(shot.secondary||'—')}`:blocked?`Tir contré par ${e(sequence.outcome.secondary||'—')}`:'Tir non cadré'}${xg}`);
   this.tempo=1;
   return this.wait(850);
  }

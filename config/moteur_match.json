@@ -92,6 +92,7 @@
     "bonus_domicile_buts": 0.30
   },
   "notes_joueurs": {
+    "_note": "Le moteur decide de la reussite d'une action avec les agregats de zone ; la note decide seulement a qui elle est attribuee, avec un flux aleatoire separe qui laisse les scores inchanges. Tables *_par_zone indexees dans le repere du joueur qui agit (DEFENSE a VERITE). Chaque minute jouee retire attendu_par_minute : la moyenne reste a la base.",
     "base": 6.5,
     "min": 1.0,
     "max": 10.0,
@@ -99,9 +100,26 @@
     "passe_decisive": 0.5,
     "tir_cadre_sans_but": 0.05,
     "arret": 0.10,
-    "but_encaisse_gardien": -0.20,
+    "but_encaisse_gardien": -0.15,
     "jaune": -0.20,
     "expulsion": -1.0,
-    "minutes_minimum_note": 15
+    "minutes_minimum_note": 15,
+    "sensibilite_qualite": 0.05,
+    "progression_par_zone": [0.0, 0.010, 0.020, 0.040],
+    "recuperation_par_zone": [0.070, 0.040, 0.025, 0.015],
+    "perte_par_zone": [-0.040, -0.030, -0.020, -0.010],
+    "part_dribbles": 0.30,
+    "sensibilite_dribble": 0.08,
+    "defenseur_elimine": -0.02,
+    "passe_cle": 0.10,
+    "participation_occasion": 0.03,
+    "tir_non_cadre": -0.03,
+    "part_non_cadres_contres": 0.40,
+    "contre": 0.05,
+    "defenseur_battu": -0.15,
+    "victoire": 0.10,
+    "sans_encaisser": 0.25,
+    "minutes_sans_encaisser": 60,
+    "attendu_par_minute": 0.0055
   }
 }
