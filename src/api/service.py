@@ -10,6 +10,8 @@ from typing import Iterator
 from uuid import uuid4
 
 from core.domain.world import World
+from core.engine.live import LiveMatch
+from core.world.live import build_live_match, finish_live_match, start_live_match
 from core.world.simulation import advance_day, target_date
 from core.world.validation import validate_world
 from infrastructure.config.loader import load_config
@@ -49,6 +51,14 @@ class GameService:
         # Seconds between two journées. Beyond pacing, the wait lets request threads take the world
         # lock, which is not fair: without it the loop could re-acquire it before any reader wakes.
         self.auto_delay = 0.8
+        # The human club's match being played, kept in memory; the world only records how to rebuild it.
+        self.live: LiveMatch | None = None
+
+    def live_match(self, world: World) -> LiveMatch:
+        """The match being played live, rebuilt from its record after a load or a restart. Call under the lock."""
+        if world.live_match is None: raise CommandError("Aucun match en cours.")
+        if self.live is None: self.live = build_live_match(world)
+        return self.live
 
     @contextmanager
     def reading(self) -> Iterator[World]:
@@ -77,6 +87,10 @@ class GameService:
             if self.active: raise CommandError("Une commande est déjà en cours.")
             if kind not in ("create", "load") and (self.world is None or self.recovery_required):
                 raise CommandError("Créez ou chargez une partie.")
+            if kind in ("advance", "auto", "live_start") and self.world.live_match is not None:
+                raise CommandError("Un match est en cours : terminez-le d'abord.")
+            if kind == "live_finish" and self.world.live_match is None:
+                raise CommandError("Aucun match en cours.")
             if "slot" in payload: self.store.path_for(payload["slot"])
             job = Job(uuid4().hex, kind)
             self.jobs[job.id] = job
@@ -111,9 +125,22 @@ class GameService:
                 self.store.save(world, "autosave")
                 with self.lock:
                     self.world = world
+                    self.live = None
                     self.recovery_required = False
             elif job.command == "save":
                 self.store.save(self.world, payload["slot"])
+            elif job.command in ("live_start", "live_finish"):
+                world = self.world
+                with self.lock:
+                    advancing = True
+                    if job.command == "live_start":
+                        self.live = start_live_match(world)
+                    else:
+                        finish_live_match(world, self.live_match(world))
+                        self.live = None
+                    advancing = False
+                validate_world(world)
+                self.store.save(world, "autosave")
             elif job.command == "auto":
                 world = self.world
                 moved, saved_on = False, None

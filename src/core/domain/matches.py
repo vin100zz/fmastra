@@ -39,6 +39,33 @@ class SubmittedLineup:
     bench: list[int]  # player_ids
 
 
+@dataclass(frozen=True, slots=True)
+class LiveOrder:
+    """A decision of the human club during its live match. It is replayed at the same point
+    (after `possession`, during the break when `halftime`) to rebuild the match exactly."""
+    possession: int
+    halftime: bool
+    kind: str  # "substitution" | "reposition" | "mentality" | "auto"
+    outgoing_id: int | None = None
+    incoming_id: int | None = None
+    position: str = ""
+    slots: tuple[tuple[int, str], ...] = ()
+    mentality: str = ""
+
+
+@dataclass(slots=True)
+class LiveMatchRecord:
+    """The human club's match being played live: its lineup and orders are enough to rebuild it.
+
+    `reached` counts the possessions already handed to the viewer, `floor` those of the segments
+    before the last one: a rewind for new orders never goes below `floor` nor beyond `reached`."""
+    match_id: int
+    lineup: SubmittedLineup
+    orders: list[LiveOrder] = field(default_factory=list)
+    reached: int = 0
+    floor: int = 0
+
+
 # The engine logs these for its own bookkeeping. TeamStats already counts corners and
 # free kicks, and no view lists them, so a stored result keeps every other kind.
 TRANSIENT_EVENT_KINDS = frozenset({"possession", "progress", "delivery", "turnover", "corner", "free_kick"})

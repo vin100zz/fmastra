@@ -27,7 +27,9 @@ Conserver un seul processus serveur : l'état est en mémoire.
 
 L'interface comprend le tableau de bord, les classements, calendriers,
 statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
-les comptes rendus et les compositions. L'utilisateur reste observateur.
+les comptes rendus et les compositions. L'utilisateur dirige un club, choisi à la
+création : compositions, matches en direct, contrats et transferts ; les autres
+clubs sont pilotés par l'IA.
 
 Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, et les compétitions du même pays de la première division à la coupe. Le passage d'un club à l'autre garde l'onglet ouvert.
 
@@ -69,6 +71,13 @@ pas après chaque journée : un plantage brutal peut donc perdre jusqu'à un moi
 La pause prend effet à la fin du jour en cours. Les lectures attendent la fin du jour
 simulé : sur un jour d'une centaine de matchs (quelques secondes), l'affichage d'un
 écran peut être retardé d'autant.
+
+Les matches du club dirigé se jouent **en direct** : « Jouer » depuis la composition
+joue les autres matches du jour, puis déroule le match dans le résumé 2D, avec
+« Tactique » pour interrompre et changer joueurs, postes et mentalité, et le
+multiplex des autres matches. « Simuler » saute le match. On peut sauvegarder,
+recharger ou redémarrer le serveur en plein match : il est reconstruit à l'identique.
+Voir `docs/ui.md` et `docs/architecture.md`.
 
 Les sauvegardes sont dans `saves/`. Le slot `autosave` est remplacé après chaque
 commande d'avance (et à l'arrêt du mode Auto) et chaque changement de mois. Utiliser un slot nommé dans

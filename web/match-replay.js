@@ -84,6 +84,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.dots={home:new Map(),away:new Map()};this.pressers={};
   this.build();
   this.reset(0);
+  if(this.live)this.startLive();
  }
  disconnectedCallback(){this.run++;this.settle(false);cancelAnimationFrame(this.frame);this.frame=null;}
 
@@ -91,7 +92,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   const {home,away}=this.teams;
   // The scoreboard in a corner of the pitch, as on television: full names, or three letters on a phone.
   const team=side=>`<span class="replay-team"><i style="background:${side.major}"></i><span class="long">${e(side.name)}</span><abbr title="${e(side.name)}">${e(side.name.normalize('NFD').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase())}</abbr></span>`;
-  this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${team(home)}<strong class="replay-score">0 – 0</strong>${team(away)}</div><div class="replay-progress" aria-hidden="true"><strong class="replay-progress-clock">0′</strong><span class="replay-progress-bar"><i></i></span><span class="replay-progress-label">Jeu en cours</span><ul class="replay-progress-notes"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
+  this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${team(home)}<strong class="replay-score">0 – 0</strong>${team(away)}</div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span>${this.live?'<button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps <span>→</span></button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer <span>→</span></button>':''}<ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
 <div class="replay-caption" aria-live="polite"></div>
 <div class="replay-timeline" role="group" aria-label="Occasions du match"><span class="replay-half"></span><span class="replay-cursor"></span></div>
 <div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><span class="replay-speed" role="group" aria-label="Vitesse">${[1,2,4].map(speed=>`<button type="button" data-speed="${speed}" aria-pressed="${speed===1}">${speed}×</button>`).join('')}</span><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
@@ -146,7 +147,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  }
 
  minute(second){return clockLabel(second,this.halfTime());}
- halfTime(){const end=this.events.find(event=>event.kind==='period_end'&&event.period===1);return end?end.second:2700;}
+ // Live, the first half lasts until its whistle is known: its added time reads 45+1′, not 46′.
+ halfTime(){const end=this.events.find(event=>event.kind==='period_end'&&event.period===1);return end?end.second:this.live?Infinity:2700;}
  side(teamId){return teamId===this.homeId?'home':'away';}
  opponent(side){return side==='home'?'away':'home';}
  // Home attacks to the right before the break and to the left after it.
@@ -312,8 +314,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  }
  highlight(ids){for(const side of ['home','away'])for(const [id,dot] of this.dots[side]){dot.node.classList.toggle('on',ids.includes(id));dot.node.classList.toggle('carrier',this.carrier?.side===side&&this.carrier.id===id);}}
 
- showClock(second){const label=this.minute(second);this.querySelector('.replay-clock').textContent=label;this.querySelector('.replay-progress-clock').textContent=label;this.querySelector('.replay-cursor').style.left=`${100*clamp(second/this.duration,0,1)}%`;}
- showScore(){this.querySelector('.replay-score').textContent=`${this.score[0]} – ${this.score[1]}`;}
+ showClock(second){this.displayed=second;this.clockText(this.minute(second));this.querySelector('.replay-cursor').style.left=`${100*clamp(second/this.duration,0,1)}%`;if(this.live)this.emit('replay-clock',{second});}
+ clockText(label){this.querySelector('.replay-clock').textContent=label;this.querySelector('.replay-progress-clock').textContent=label;}
+ emit(name,detail){this.dispatchEvent(new CustomEvent(name,{detail,bubbles:true}));}
+ showScore(){this.querySelector('.replay-score').textContent=`${this.score[0]} – ${this.score[1]}`;if(this.live)this.emit('replay-score',{score:[...this.score]});}
  caption(html,live=false){const node=this.querySelector('.replay-caption');node.innerHTML=html;node.classList.toggle('live',live);}
  showBanner(text,side){this.banner.textContent=text;this.banner.setAttribute('class',`replay-banner${text?' on':''}`);this.banner.style.fill=side?this.teams[side].major:'';}
 
@@ -365,7 +369,9 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.caption(second?'':'Coup d’envoi');
  }
 
- play(){if(this.current>=this.sequences.length)this.reset(0);this.paused=false;this.querySelector('.replay-start')?.remove();this.updatePlay();this.startLoop();if(!this.running)this.loop();}
+ play(){
+  if(this.live){if(this.hold)return;this.paused=false;this.updatePlay();this.startLoop();if(!this.running)this.liveLoop();return;}
+  if(this.current>=this.sequences.length)this.reset(0);this.paused=false;this.querySelector('.replay-start')?.remove();this.updatePlay();this.startLoop();if(!this.running)this.loop();}
  pause(){this.paused=true;this.updatePlay();}
  updatePlay(){const button=this.querySelector('[data-replay="play"]');button.textContent=this.paused?'▶':'❚❚';button.setAttribute('aria-label',this.paused?'Lecture':'Pause');button.title=button.getAttribute('aria-label');}
  shown(sequence){return sequence.goal||(this.filter!=='goals'&&(sequence.shot.xg??1)>=Number(this.filter));}
@@ -410,6 +416,115 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   }finally{if(run===this.run)this.running=false;}
  }
  markCurrent(index){this.querySelectorAll('.replay-marker').forEach(marker=>marker.classList.toggle('current',Number(marker.dataset.chance)===index));}
+
+ // ---- Live: the match is fed one segment at a time (up to the next chance, card, change or whistle). ----
+ // `this.live` holds the opening state (the match so far) and `next()`, which fetches the following segment.
+ // The next segment is asked for only once the previous one has played out: the server never runs ahead of the viewer.
+ startLive(){
+  this.classList.add('live');
+  this.querySelector('.replay-start')?.remove();
+  this.duration=Math.max(this.duration,5400);
+  this.resync(this.live.state);
+  if(this.status==='playing'){this.hold=false;this.play();}
+ }
+ refreshSequences(){this.sequences=chanceSequences(this.events);this.others=this.events.filter(event=>event.kind in NOTABLE&&event.period!==3);}
+ // Puts the pitch where the server says the match stands: on opening, and after new orders replaced what came next.
+ resync(state){
+  this.run++;this.settle(false);this.running=false;this.hold=true;
+  this.events=state.result.events;this.refreshSequences();
+  this.status=state.status;
+  this.reset(state.second,this.sequences.length);
+  this.score=[...state.score];this.showScore();
+  this.clock=state.second;this.segmentShown=true;
+  if(state.status==='halftime')this.showHalfTime();
+  else if(state.status==='finished')this.finishLive(false);
+ }
+ append(data){
+  const known=new Set(this.events.map(event=>event.sequence));
+  const fresh=data.result.events.filter(event=>!known.has(event.sequence));
+  this.events=[...this.events,...fresh];
+  this.refreshSequences();
+  this.status=data.status;
+  return fresh;
+ }
+ async liveLoop(){
+  const run=this.run;
+  this.running=true;
+  try{
+   while(run===this.run&&!this.hold){
+    if(this.stopRequested){this.stopAt(null);return;}
+    this.fetching=true;this.segmentShown=false;
+    let data;
+    try{data=await this.live.next();}
+    catch(error){if(run===this.run){this.hold=true;this.segmentShown=true;this.emit('live-error',{error});}return;}
+    finally{this.fetching=false;}
+    if(run!==this.run)return;
+    const fresh=this.append(data);
+    this.emit('live-segment',data);
+    for(let index=this.nextIndex(this.current);index<this.sequences.length;index=this.nextIndex(index+1)){
+     const sequence=this.sequences[index];
+     this.current=index;
+     if(!(await this.interlude(this.clock,sequence.second)))return;
+     this.markCurrent(index);
+     this.inChance=true;
+     const played=await this.chance(sequence);
+     this.inChance=false;
+     if(!played)return;
+     this.clock=sequence.end;
+    }
+    this.current=this.sequences.length;
+    if(!(await this.interlude(this.clock,Math.max(this.clock,...fresh.map(event=>event.second)))))return;
+    this.segmentShown=true;
+    if(data.status==='finished'){this.finishLive();return;}
+    if(data.status==='halftime'){this.showHalfTime();this.hold=true;this.emit('live-halftime',data);if(this.stopRequested)this.stopAt(null);return;}
+    if(data.decision){this.hold=true;this.emit('live-decision',data);if(this.stopRequested)this.stopAt(null);return;}
+   }
+  }finally{if(run===this.run)this.running=false;}
+ }
+ // « Tactique » : resolves with the clock to rewind the server to, or null to stop where the server already is.
+ // A chance being played finishes first (it closes its segment); between two chances the clock stops at once, and
+ // what the server computed beyond it, unseen, is played again with the new orders.
+ interrupt(){
+  if(this.hold)return Promise.resolve(null);
+  return new Promise(resolve=>{
+   if(this.inChance){this.stopRequested=resolve;return;}
+   const second=Math.max(0,Math.floor(this.displayed??this.clock)-1);
+   this.run++;this.settle(false);this.running=false;this.hold=true;
+   resolve(this.segmentShown&&!this.fetching?null:second);
+  });
+ }
+ stopAt(second){const resolve=this.stopRequested;this.stopRequested=null;this.hold=true;this.running=false;resolve?.(second);}
+ // After the Tactique panel or at the start of the second half.
+ resume(){
+  if(!this.live||!this.hold||this.status==='finished')return;
+  this.hold=false;
+  if(this.status==='halftime'){
+   this.status='playing';this.period=2;
+   this.updateRosters(this.clock);this.kickOff(this.kickOffSide(2));
+   this.progress('Jeu en cours');this.caption('');
+   this.querySelector('.replay-second-half').hidden=true;
+  }
+  this.play();
+ }
+ // The clock stays on 45′ until the viewer kicks the second half off.
+ showHalfTime(){
+  this.status='halftime';
+  this.stage.classList.add('fast');
+  this.progress('Mi-temps',true);
+  this.caption(`<strong>Mi-temps</strong> · ${e(this.teams.home.name)} ${this.score[0]} – ${this.score[1]} ${e(this.teams.away.name)}`);
+  this.clockText('45′');
+  this.querySelector('.replay-second-half').hidden=false;
+ }
+ finishLive(notify=true){
+  this.status='finished';this.hold=true;
+  this.stage.classList.add('fast');
+  this.progress('Coup de sifflet final',true);
+  this.caption(`<strong>Coup de sifflet final</strong> · ${e(this.teams.home.name)} ${this.score[0]} – ${this.score[1]} ${e(this.teams.away.name)}`);
+  this.querySelector('.replay-second-half').hidden=true;this.querySelector('.replay-continue').hidden=false;
+  this.pause();
+  if(notify)this.emit('live-finished');
+  if(this.stopRequested)this.stopAt(null);
+ }
 
  // ---- Building blocks of a move, all derived from where the players are now. ----
  passTime(from,to){return clamp(220+distance(from,to)*26,380,1300);}
@@ -598,12 +713,22 @@ if(globalThis.customElements&&!customElements.get('match-replay'))customElements
 const pending=new Map();
 let keys=0;
 // `teams` holds {name, major, minor, keeper} for each side; the element starts itself once inserted.
-export function replayCard(match,teams){
- const result=match.result,key=String(++keys);
+function rosterNames(result){
  const names=new Map();
  for(const player of [...result.home_lineup,...result.home_bench,...result.away_lineup,...result.away_bench])names.set(player.id,surname(player.name));
  for(const event of result.events){if(event.player&&!names.has(event.player_id))names.set(event.player_id,surname(event.player));if(event.secondary&&!names.has(event.secondary_id))names.set(event.secondary_id,surname(event.secondary));}
- pending.set(key,{events:result.events,duration:result.duration,homeId:match.home.id,awayId:match.away.id,teams,names,
+ return names;
+}
+// The live match: `state` is the match so far (as GET /direct returns it), `next()` fetches the following segment.
+export function liveReplay(state,teams,next){
+ const result=state.result,key=String(++keys);
+ pending.set(key,{events:[],duration:0,homeId:state.home.id,awayId:state.away.id,teams,names:rosterNames(result),
+                  lineups:{home:result.home_lineup,away:result.away_lineup},live:{state,next}});
+ return `<match-replay data-key="${key}"></match-replay>`;
+}
+export function replayCard(match,teams){
+ const result=match.result,key=String(++keys);
+ pending.set(key,{events:result.events,duration:result.duration,homeId:match.home.id,awayId:match.away.id,teams,names:rosterNames(result),
                   lineups:{home:result.home_lineup,away:result.away_lineup}});
  // Folded by default: the toggle sits in the match banner, the panel below it stays empty until first opened.
  const toggle=`<button type="button" class="replay-toggle" data-replay-toggle="${key}" aria-controls="replay-${key}" aria-expanded="false">`

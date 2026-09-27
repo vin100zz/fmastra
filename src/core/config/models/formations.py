@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from core.config.types import FrozenMap, MODEL_CONFIG
+from core.config.types import FrozenDict, FrozenMap, MODEL_CONFIG
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class FormationsConfigBlockHeight:
@@ -18,6 +18,7 @@ class FormationsConfigBlockHeight:
     late_trailing_adjustment: float = Field(alias="ajustement_menes_fin_match")
     late_match_minutes: int = Field(alias="minutes_fin_match")
     red_card_adjustment: float = Field(alias="malus_inferiorite_numerique")
+    mentalities: FrozenMap[float] = Field(default_factory=lambda: FrozenDict({"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}), alias="mentalites")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

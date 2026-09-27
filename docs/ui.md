@@ -215,9 +215,37 @@ de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
   du bandeau du score l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
 
-En v1 le match détaillé est simulé avant consultation. Les événements horodatés
-permettent une animation différée. Un futur match interactif demandera aussi
-des points de pause et des commandes influençant la suite du moteur.
+### Match en direct
+
+« Jouer » depuis la composition joue les autres matches du jour puis ouvre
+`#/direct`, modal jusqu'au coup de sifflet final : l'écran prend toute la
+fenêtre, sans menu ni bandeau. À gauche, le résumé 2D alimenté
+segment par segment : seules les occasions sont animées, le compteur défile entre
+elles. Sous le terrain, une vignette par joueur de l'équipe (titulaires puis
+remplaçants) : note, buts, cartons, blessure et fatigue. À droite, les temps forts
+(le widget du compte rendu, sans liens, un but n'y paraît qu'une fois marqué à
+l'écran), les statistiques, le multiplex de la compétition et le classement tel
+qu'il serait si les matches s'arrêtaient à la minute affichée.
+
+- « Tactique » termine l'occasion en cours, ou arrête le compteur tout de suite
+  entre deux occasions, puis ouvre une fenêtre dans le style de la composition :
+  le terrain à gauche, les joueurs (sur le terrain, remplaçants, sortis) à droite.
+  Glisser un remplaçant sur le terrain le fait entrer, glisser deux joueurs du
+  terrain l'un sur l'autre échange leurs postes, renvoyer un entrant vers la liste
+  annule son entrée ; tactiques et mentalité en haut. « Reprendre » applique les
+  ordres et relance le match, « Annuler » (ou Échap) le relance sans rien changer.
+- Une blessure ou un carton rouge dans l'équipe du joueur arrête le match et ouvre
+  la fenêtre Tactique.
+- À la mi-temps le compteur reste sur 45′ jusqu'à « 2e mi-temps », bouton affiché
+  sur le terrain sous « Mi-temps ».
+- « Fin du match » laisse l'IA finir le match sans l'afficher.
+- Au coup de sifflet final, « Continuer », sur le terrain, clôt la journée et
+  mène à Mon club. « 2e mi-temps » et « Continuer » reprennent le style du
+  bouton « Continuer » du bandeau (classe \`cta\`).
+
+« Simuler », dans la barre de la composition, joue le match sans le regarder et
+affiche le compte rendu. Le mode Auto ne joue jamais en direct.
+
 Pour un résultat analytique, signaler l'absence de détail et masquer les
 statistiques inconnues au lieu d'afficher des zéros. Garder les compositions
 initiales indépendantes des remplacements enregistrés ensuite.
@@ -267,6 +295,13 @@ GET  /api/joueurs/{id}/historique
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
 GET  /api/matches/{id}                    compte rendu complet
+
+POST /api/direct/demarrer                 {commande_id} -> travail_id ; joue les autres matches du jour, ouvre le direct
+GET  /api/direct                          le match jusqu'ici : score, seconde, statut, événements montrés, stats, effectif du joueur
+POST /api/direct/avancer                  {commande_id, jusqu_a: "evenement" | "fin"} -> segment suivant (ou la fin, jouée par l'IA)
+POST /api/direct/ordres                   {commande_id, seconde: float|null, ordres: [...]} ; seconde = compteur arrêté entre deux occasions
+GET  /api/direct/multiplex                autres matches du jour (buts horodatés) et classement avant la journée
+POST /api/direct/terminer                 {commande_id} -> travail_id ; applique le résultat et clôt la journée
 
 POST /api/partie/sauvegarder              {slot: str}
 POST /api/partie/charger                  {slot: str}

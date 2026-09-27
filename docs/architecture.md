@@ -41,10 +41,28 @@ relecture, pas une limite imposant un découpage artificiel. Noms Python anglais
 - Interfaces d'import et de persistance côté cœur, adaptateurs dans
   `infrastructure`. Aucun chargement dans le moteur de match.
 
-Le contrôle humain demandera aussi des commandes, écrans et points d'attente.
-Rejouer un résultat calculé est distinct d'un match interactif où une décision
-change la suite. Prévoir des étapes de match reprenables ; le journal seul ne
-suffira pas à ce futur mode. Aucune règle ne teste « club de l'utilisateur ».
+Le contrôle humain passe par des commandes, des écrans et des points d'attente.
+Les seuls tests « club de l'utilisateur » sont regroupés dans `core/world/human.py`.
+
+### Match en direct
+
+`LiveMatch` (`core/engine/live.py`) joue un match une possession à la fois ;
+`PossessionEngine.simulate` le déroule jusqu'au bout, une seule implémentation
+pour l'IA, les benchmarks et le direct (un test d'empreintes, `test_engine_golden`,
+fige les résultats). `advance_segment` avance jusqu'au prochain événement à montrer :
+occasion, but, carton, blessure, changement, coup de sifflet.
+
+Chaque côté a son contrôleur : `AIController` décide les changements et la montée
+du bloc en fin de match ; `HumanController` ne décide rien, il applique les ordres
+(`LiveOrder` : remplacement, placement, mentalité) validés par `LiveMatch.apply_orders`
+avec les règles de remplacement. Les changements de la mi-temps n'utilisent pas de fenêtre.
+
+La journée du match se joue en trois temps (`core/world/live.py`) : les autres matches
+d'abord, puis le match en direct, enfin `close_day`. Le monde n'enregistre que
+`LiveMatchRecord` (composition, ordres, possessions montrées) ; comme chaque match
+tire dans son propre flux, rejouer les ordres depuis le coup d'envoi reconstruit
+exactement le match, après un chargement comme pour revenir au moment où le
+spectateur a interrompu le match entre deux occasions.
 
 Activer un club dormant demande de valider son effectif, initialiser contrôleur,
 calendrier, finances et statistiques, puis changer son statut. Un service
@@ -76,6 +94,9 @@ Les effets de persistance sont séparés.
   jamais de `hash()` Python ni de l'ordre des lignes CSV.
 - Trier les entités et offres par clé stable avant les tirages sensibles à
   l'ordre. Définir explicitement le départage des offres simultanées.
+- Chaque match de club tire dans son flux (`stream(seed, "match", saison, id)`),
+  ses conséquences aussi (`"match-states"`) : un résultat ne dépend pas de l'ordre
+  dans lequel les matches du jour sont joués.
 - Les consultations API ne modifient ni le monde ni les RNG de simulation.
 - En benchmark parallèle, dériver la graine de l'ID de scénario et de l'indice
   de répétition. Le nombre de processus ne change pas les résultats.

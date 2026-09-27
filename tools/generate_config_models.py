@@ -124,6 +124,7 @@ malus_vulnerabilite_contre=counter_vulnerability
 ajustement_menes_fin_match=late_trailing_adjustment
 minutes_fin_match=late_match_minutes
 malus_inferiorite_numerique=red_card_adjustment
+mentalites=mentalities
 chronologie=timing
 duree_match_secondes=match_seconds
 duree_possession_moyenne=possession_mean
@@ -491,6 +492,7 @@ MAPS = {
     "implications.vertical_defense": "FrozenMap[tuple[float, ...]]",
     "implications.lateral": "FrozenMap[tuple[float, ...]]",
     "formations.formations": "FrozenMap[tuple[str, ...]]",
+    "formations.hauteur_bloc.mentalites": "FrozenMap[float]",
     "ia_gestion.valorisation.rarete_poste": "FrozenMap[float]",
     "ia_gestion.budgets.revenus.multiplicateur_pays": "FrozenMap[float]",
     "demographie.progression.poids_declin_par_attribut": "FrozenMap[float]",
@@ -562,7 +564,8 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "demographie.cohorte.intensite_tri_centres": 10.0, "demographie.cohorte.poids_reputation_tri": 0.0,
             "demographie.generation.poids_age": (0.45, 0.35, 0.15, 0.05), "demographie.generation.seuil_potentiel_elite": 85.0,
             "demographie.generation.exposant_nations_elite": 0.5, "demographie.generation.part_plancher_nation": 0.0002,
-            "demographie.generation.noms_minimum_par_nation": 20}
+            "demographie.generation.noms_minimum_par_nation": 20,
+            "formations.hauteur_bloc.mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}
 
 
 def clean(value: object) -> object:
@@ -608,7 +611,11 @@ def generate(domain: str, name: str) -> str:
             for key, item in sorted(value.items(), key=lambda pair: path + "." + pair[0] in DEFAULTS):
                 field = WORDS.get(key, key)
                 annotation = infer(item, path + "." + key, class_name + camel(field))
-                default = f"default={DEFAULTS[path + '.' + key]!r}, " if path + "." + key in DEFAULTS else ""
+                default = DEFAULTS.get(path + "." + key)
+                if isinstance(default, dict):  # Mutable: each instance receives its own frozen copy.
+                    default = f"default_factory=lambda: FrozenDict({json.dumps(default)}), "
+                else:
+                    default = "" if default is None else f"default={default!r}, "
                 fields.append(f'    {field}: {annotation} = Field({default}alias="{key}")')
             declarations.append("@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)\n"
                                 + f"class {class_name}:\n" + "\n".join(fields) + "\n")
@@ -621,7 +628,10 @@ def generate(domain: str, name: str) -> str:
               'from __future__ import annotations\n\nfrom pydantic import Field\n'
               'from pydantic.dataclasses import dataclass\n'
               'from core.config.types import FrozenMap, MODEL_CONFIG\n\n')
-    return header + "\n\n".join(declarations)
+    body = "\n\n".join(declarations)
+    if "FrozenDict(" in body:
+        header = header.replace("import FrozenMap,", "import FrozenDict, FrozenMap,")
+    return header + body
 
 
 def main() -> None:

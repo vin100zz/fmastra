@@ -62,8 +62,8 @@ a:hover{color:var(--strong)}
 .eyebrow{color:var(--muted);letter-spacing:.12em}
 .date-block strong{font-size:20px!important;font-weight:600;margin-top:1px!important;color:var(--strong)}
 .time-controls select{height:40px}
-#advance{height:44px;padding:0 16px 0 20px;font-family:var(--display);font-stretch:semi-condensed;font-size:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-#advance span{margin-left:14px}
+#advance,.cta{height:44px;padding:0 16px 0 20px;font-family:var(--display);font-stretch:semi-condensed;font-size:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+#advance span,.cta span{margin-left:14px}
 #autoplay[aria-pressed="true"]{background:var(--accent);border-color:var(--accent-text);color:var(--accent-ink)}
 .pill{background:transparent;border:1px solid var(--good-line);color:var(--good);border-radius:13px;padding:5px 10px;font-size:12px;font-weight:600}
 #market-badge:not(:empty):before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}
@@ -255,7 +255,7 @@ dialog::backdrop{background:var(--backdrop)}
 .date-block strong{font-size:18px!important}
 .time-controls{gap:8px}
 .time-controls select{height:36px;padding:0 8px}
-#advance{height:36px;font-size:16px;padding:0 12px 0 16px}
+#advance,.cta{height:36px;font-size:16px;padding:0 12px 0 16px}
 .nav-label{margin:12px 20px 3px!important}
 .sidebar nav a,.sidebar-bottom>a{min-height:34px}
 .sidebar-bottom{padding-top:6px}

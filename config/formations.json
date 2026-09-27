@@ -17,6 +17,7 @@
     "malus_vulnerabilite_contre": 0.35,
     "ajustement_menes_fin_match": 0.5,
     "minutes_fin_match": 20,
-    "malus_inferiorite_numerique": -0.5
+    "malus_inferiorite_numerique": -0.5,
+    "mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}
   }
 }

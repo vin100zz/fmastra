@@ -72,7 +72,7 @@ def dismiss(team: TeamState, player_id: int, log: MatchLog, cfg: Config, direct:
     team.block_height = team.initial_block
     log.emit("red", team, player_id, detail="direct" if direct else "second_yellow")
     reserve_keepers = [player for player in team.bench if player.position == Position.GOALKEEPER]
-    if keeper_sent_off and reserve_keepers and team.active and team.substituted < cfg.world.match_rules.max_substitutions and team.windows < cfg.world.match_rules.substitution_windows:
+    if team.automatic and keeper_sent_off and reserve_keepers and team.active and team.substituted < cfg.world.match_rules.max_substitutions and team.windows < cfg.world.match_rules.substitution_windows:
         incoming = max(reserve_keepers, key=lambda player: (player.rating, -player.id))
         outgoing = min(team.active, key=lambda slot: (slot.player.rating, slot.player.id))
         team.active[team.active.index(outgoing)] = LineupSlot(incoming, Position.GOALKEEPER)

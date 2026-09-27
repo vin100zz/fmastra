@@ -30,6 +30,9 @@ class TeamState:
     next_rotation: float = 0
     starters: set[int] = field(default_factory=set)
     playing_time: dict[int, PlayingTimePriority] = field(default_factory=dict)
+    mentality: str = "equilibree"
+    # False when the side's manager takes the decisions himself, e.g. who goes in goal after a keeper is sent off.
+    automatic: bool = True
 
     @classmethod
     def from_lineup(cls, lineup: Lineup, cfg: Config) -> TeamState:

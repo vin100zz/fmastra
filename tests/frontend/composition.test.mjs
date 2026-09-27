@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {pitchLayout,place,remove,nextFree,changeFormation,lineupProblems,compositionContent} from '../../web/composition.js';
+import {pitchLayout,place,remove,dropOnSquad,nextFree,changeFormation,lineupProblems,compositionContent} from '../../web/composition.js';
 
 const F433=['GB','DL','DC','DC','DR','MDC','MC','MC','AILG','BU','AILD'];
 const F442=['GB','DL','DC','DC','DR','AILG','MC','MC','AILD','BU','BU'];
@@ -21,6 +21,16 @@ test('dropping swaps places; from the squad list the former holder leaves the li
  assert.deepEqual(place(lineup,9,{kind:'slot',index:1}),{slots:[1,9,3],bench:[4,null]});
  assert.deepEqual(place(lineup,9,{kind:'bench',index:1}),{slots:[1,2,3],bench:[4,9]});
  assert.deepEqual(remove(lineup,2),{slots:[1,null,3],bench:[4,null]});
+});
+
+test('dropping on a squad row swaps a selected player with an unselected one',()=>{
+ const lineup={slots:[1,2,3],bench:[4,null]};
+ assert.deepEqual(dropOnSquad(lineup,2,9),{slots:[1,9,3],bench:[4,null]});
+ assert.deepEqual(dropOnSquad(lineup,9,2),{slots:[1,9,3],bench:[4,null]});
+ assert.deepEqual(dropOnSquad(lineup,9,4),{slots:[1,2,3],bench:[9,null]});
+ assert.deepEqual(dropOnSquad(lineup,2,3),{slots:[1,null,3],bench:[4,null]});
+ assert.deepEqual(dropOnSquad(lineup,2,null),{slots:[1,null,3],bench:[4,null]});
+ assert.deepEqual(dropOnSquad(lineup,9,8),lineup);
 });
 
 test('changing tactics keeps each starter on his position, then on his line',()=>{

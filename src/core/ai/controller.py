@@ -7,6 +7,7 @@ from core.domain.players import Player
 from core.domain.world import World
 from core.domain.matches import Lineup
 from core.engine.local_state import TeamState
+from core.math import clamp
 from .selection import LineupContext, select_lineup
 from .substitutions import Substitution, choose_substitution
 
@@ -15,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class AIController:
+    automatic = True
+
     def __init__(self, cfg: Config, rng: Random) -> None:
         self.cfg, self.rng = cfg, rng
 
@@ -26,6 +29,14 @@ class AIController:
                             allow_rotation: bool = True) -> Substitution | None:
         return choose_substitution(state, self.cfg, forced_id, minute=minute,
                                    goal_difference=goal_difference, allow_rotation=allow_rotation)
+
+    def late_block(self, state: TeamState, opponent_goals: int, second: float) -> float:
+        """A side behind pushes its block up over the last minutes of the match."""
+        timing, heights = self.cfg.engine.timing, self.cfg.formations.block_height
+        trailing = max(0, opponent_goals - state.goals)
+        fraction = clamp((second - (timing.match_seconds - heights.late_match_minutes * 60)) /
+                         (heights.late_match_minutes * 60), 0, 1)
+        return clamp(state.initial_block + trailing * fraction * heights.late_trailing_adjustment, heights.min, heights.max)
 
     def evaluate_needs(self, club: Club, players: list[Player]) -> list["Need"]:
         from .market import needs_for

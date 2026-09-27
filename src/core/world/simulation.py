@@ -1,13 +1,15 @@
 """Advance coherent game days, applying each phase before dependent decisions."""
 from __future__ import annotations
 
-from core.ai.controller import AIController
-from core.ai.selection import LineupContext, to_lineup
+from random import Random
+
+from core.ai.selection import LineupContext, select_lineup, to_lineup
 from core.ai.market import propose_transfers
-from core.config.model import Config
 from core.domain.date import Date
+from core.domain.matches import Lineup, Match, MatchResult
 from core.domain.world import World
 from core.engine.match import PossessionEngine
+from core.randomness import stream
 from .application import apply
 from .calendar import standings
 from .contracts import expiry_events, renewal_events
@@ -98,33 +100,48 @@ def annual_review(world: World) -> None:
 def advance_day(world: World, auto: bool = False) -> bool:
     """No I/O, no clock reads; callers persist after this coherent boundary.
 
-    Returns False if the day stopped before finishing, awaiting the human club's lineup
-    (never happens when `auto` is set: Auto mode falls back to an automatic lineup instead)."""
-    cfg = world.config
-    review = cfg.world.key_dates.population_review
-    from .international import prepare_international_day, play_international_day
+    Returns False if the day stopped before finishing: awaiting the human club's lineup (never
+    when `auto` is set: Auto mode falls back to an automatic lineup), or its match being played live."""
+    if world.live_match is not None:
+        return False
     if world.pending_match_day is None:
-        apply(world, DateAdvanced(world.date.add_days(1)))
-        for event in expiry_events(world): apply(world, event)
-        for event in daily_player_events(world): apply(world, event)
-        prepare_international_day(world)
-        if world.date.day == 1:
-            for event in monthly_player_events(world): apply(world, event)
-        if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
-            annual_review(world)
-        if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
-            for event in renewal_events(world): apply(world, event)
-        open_market = market_window(world) is not None
-        for _ in range(cfg.world.market.rounds_per_day):
-            rejected = settle_offers(world, open_market)
-            open_offers(world, open_market, rejected)
-        match_id = pending_lineup_match(world)
-        if match_id is not None and not auto:
+        open_day(world)
+        if pending_lineup_match(world) is not None and not auto:
             world.pending_match_day = world.date
             return False
     elif pending_lineup_match(world) is not None and not auto:
         return False  # resumed without a lineup submitted meanwhile: keep waiting instead of auto-picking one
-    _simulate_matches(world, cfg)
+    simulate_matches(world)
+    close_day(world)
+    return True
+
+
+def open_day(world: World) -> None:
+    """Everything a day does before its matches."""
+    cfg = world.config
+    review = cfg.world.key_dates.population_review
+    from .international import prepare_international_day
+    apply(world, DateAdvanced(world.date.add_days(1)))
+    for event in expiry_events(world): apply(world, event)
+    for event in daily_player_events(world): apply(world, event)
+    prepare_international_day(world)
+    if world.date.day == 1:
+        for event in monthly_player_events(world): apply(world, event)
+    if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
+        annual_review(world)
+    if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
+        for event in renewal_events(world): apply(world, event)
+    open_market = market_window(world) is not None
+    for _ in range(cfg.world.market.rounds_per_day):
+        rejected = settle_offers(world, open_market)
+        open_offers(world, open_market, rejected)
+
+
+def close_day(world: World) -> None:
+    """Everything a day does once all its club matches have a result."""
+    cfg = world.config
+    review = cfg.world.key_dates.population_review
+    from .international import play_international_day
     progress_cups(world)
     progress_europe(world)
     play_international_day(world)
@@ -137,35 +154,50 @@ def advance_day(world: World, auto: bool = False) -> bool:
         apply(world, FinancePosted(club.id, payment, remainder))
     world.pending_match_day = None
     world.submitted_lineups.clear()
-    return True
 
 
-def _simulate_matches(world: World, cfg: Config) -> None:
-    """A human club's match uses its submitted lineup when there is one; otherwise (Auto mode,
-    or a competition without a pause point) it falls back to the same path as an AI club."""
-    controller = AIController(cfg, world.rngs["matches"])
+def match_stream(world: World, match: Match) -> Random:
+    """Each match draws from its own stream: its result does not depend on the order matches are played in."""
+    return stream(world.seed, "match", match.season, match.id)
+
+
+def match_lineups(world: World, match: Match) -> tuple[list[Lineup], dict[int, str]]:
+    """Home then away lineups, with the names of any temporary reinforcement of a cup match.
+
+    A human club's match uses its submitted lineup when there is one; otherwise (Auto mode) it
+    falls back to the same path as an AI club."""
+    lineups, temporary = [], {}
+    is_cup = world.competitions[match.competition_id].kind in ("cup", "europe")
+    for club_id in (match.home_id, match.away_id):
+        if is_human_club(world, club_id) and match.id in world.submitted_lineups:
+            lineups.append(to_lineup(world, world.submitted_lineups[match.id], match.competition_id, world.config))
+        elif is_cup:
+            lineup, names = cup_lineup(world, match, club_id)
+            lineups.append(lineup)
+            temporary.update(names)
+        else:
+            lineups.append(select_lineup(LineupContext.from_world(world, club_id, match.competition_id, world.date), world.config))
+    return lineups, temporary
+
+
+def settle_match(world: World, match: Match, result: MatchResult, lineups: list[Lineup], temporary: dict[int, str]) -> None:
+    """Decides a drawn knockout tie, then applies the match and its consequences to the world."""
+    kind = world.competitions[match.competition_id].kind
+    if kind in ("cup", "europe"):
+        result.temporary_players = temporary
+        if kind == "europe":
+            decide_european_winner(world, match, result, lineups)
+        else:
+            decide_winner(world, match, result, lineups)
+    apply(world, match_event(world, match, result))
+
+
+def simulate_matches(world: World, exclude: int | None = None) -> None:
+    """Plays every club match of the day still without a result, except `exclude`."""
     engine = PossessionEngine()
     for match in sorted((match for match in world.matches.values() if match.date == world.date and match.result is None), key=lambda item: item.id):
-        lineups = []
-        temporary = {}
-        kind = world.competitions[match.competition_id].kind
-        is_cup = kind in ("cup", "europe")
-        for club_id in (match.home_id, match.away_id):
-            if is_human_club(world, club_id) and match.id in world.submitted_lineups:
-                lineups.append(to_lineup(world, world.submitted_lineups[match.id], match.competition_id, cfg))
-                continue
-            if is_cup:
-                lineup, names = cup_lineup(world, match, club_id)
-                lineups.append(lineup)
-                temporary.update(names)
-                continue
-            context = LineupContext.from_world(world, club_id, match.competition_id, world.date)
-            lineups.append(controller.select_lineup(context))
-        result = engine.simulate(*lineups, cfg, world.rngs["matches"], neutral=match.neutral)
-        if is_cup:
-            result.temporary_players = temporary
-            if kind == "europe":
-                decide_european_winner(world, match, result, lineups)
-            else:
-                decide_winner(world, match, result, lineups)
-        apply(world, match_event(world, match, result))
+        if match.id == exclude:
+            continue
+        lineups, temporary = match_lineups(world, match)
+        result = engine.simulate(*lineups, world.config, match_stream(world, match), neutral=match.neutral)
+        settle_match(world, match, result, lineups, temporary)

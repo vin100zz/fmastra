@@ -141,7 +141,9 @@ def headline(text: str) -> str:
 def router(service: GameService) -> APIRouter:
     api = APIRouter(prefix="/api")
     from .international import international_router
+    from .live import live_router
     api.include_router(international_router(service))
+    api.include_router(live_router(service))
 
     @api.get("/monde/etat")
     def state() -> dict:
@@ -157,6 +159,7 @@ def router(service: GameService) -> APIRouter:
                              "fixtures": sum(match.season == world.season for match in world.matches.values()),
                              "controlled_club_id": world.controlled_club_id,
                              "awaiting_lineup": pending_lineup_match(world),
+                             "live_match_id": world.live_match.match_id if world.live_match else None,
                              "club_next_matches": club_next_matches(world)})
             return data
 

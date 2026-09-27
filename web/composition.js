@@ -50,6 +50,13 @@ export function remove(lineup,id){
  const clear=list=>list.map(item=>item===id?null:item);
  return {slots:clear(lineup.slots),bench:clear(lineup.bench)};
 }
+// Drops a player on a row of the squad list: a selected and an unselected player trade places; otherwise the dropped player leaves the lineup.
+export function dropOnSquad(lineup,id,onto){
+ const from=where(lineup,id),to=onto==null?null:where(lineup,onto);
+ if(from&&onto!=null&&!to)return place(lineup,onto,from);
+ if(!from&&to)return place(lineup,id,to);
+ return remove(lineup,id);
+}
 // The first empty place in the order of positions (GB, DL, DC, DR…), substitutes last; null when the lineup is full.
 export function nextFree(lineup,roles){
  const slot=lineup.slots.map((id,index)=>({id,index})).filter(item=>item.id==null)
@@ -141,8 +148,7 @@ function editorHtml(){
  const tactics=Object.keys(editor.data.formations).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
  // The first problem is spelled out in the toolbar, the others counted; all of them in the tooltip.
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
- const fixture=`<span class="lineup-fixture">vs <b>${e(editor.data.opponent?.name||'?')}</b> · ${editor.data.home?'domicile':'extérieur'}</span>`;
- return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${fixture}${status}<button type="button" data-lineup-suggest>Meilleure composition</button></div>
+ return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<button type="button" data-lineup-suggest>Meilleure composition</button><button type="button" data-lineup-simulate title="Jouer le match sans le regarder">Simuler</button></div>
 <div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${editor.slots.map((id,index)=>slotHtml(id,current[index],layout[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>`;
@@ -215,8 +221,8 @@ function install(){
   const target=dropTarget(event.target);if(!target)return;
   event.preventDefault();
   const id=dragged;dragged=null;
-  // Dropping back on the squad list takes the player out of the lineup.
-  if('squadDrop' in target.dataset)update(remove(editor,id));
+  // Dropping back on the squad list takes the player out of the lineup, or swaps him with the unselected player of that row (and conversely).
+  if('squadDrop' in target.dataset){const row=event.target.closest('tr[data-player]');update(dropOnSquad(editor,id,row?Number(row.dataset.player):null));}
   else update(place(editor,id,'slot' in target.dataset?{kind:'slot',index:Number(target.dataset.slot)}:{kind:'bench',index:Number(target.dataset.bench)}));
  });
  document.addEventListener('contextmenu',event=>{

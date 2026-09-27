@@ -9,6 +9,7 @@ from core.domain.matches import Match, MatchResult
 from core.engine.abilities import overall, recenter
 from core.engine.fitness import recovered_fitness
 from core.math import clamp, weighted_choice
+from core.randomness import stream
 from .events import PlayerChanged, MatchPlayed
 
 
@@ -71,7 +72,8 @@ def monthly_player_events(world: World) -> list[PlayerChanged]:
 
 
 def match_event(world: World, match: Match, result: MatchResult) -> MatchPlayed:
-    cfg, rng = world.config, world.rngs["states"]
+    # Its own stream: the consequences of a match do not depend on which matches were applied before it.
+    cfg, rng = world.config, stream(world.seed, "match-states", match.season, match.id)
     injuries, suspensions, forms = {}, {}, {}
     for event in result.events:
         if event.kind == "injury" and event.player_id not in result.temporary_players:

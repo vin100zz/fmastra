@@ -10,7 +10,8 @@ from core.config.model import Config
 from core.domain.date import Date
 from core.domain.players import Attributes, Contract, Discipline, Injury, Player, Position
 from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition
-from core.domain.matches import Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats, SubmittedLineup
+from core.domain.matches import (Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats, SubmittedLineup,
+                                 LiveOrder, LiveMatchRecord)
 from core.domain.world import World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot
 from core.domain.offers import RenewalProposal, TransferOffer
 from core.domain.finance import FinanceSeason, MonthlyFinance
@@ -20,7 +21,7 @@ from infrastructure.config.loader import config_payload, decode_config
 ENTITIES = {cls.__name__: cls for cls in (Date, Attributes, Contract, Discipline, Injury, Player,
             Club, ClubPersonality, Competition, Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats,
             World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot, TransferOffer, FinanceSeason, MonthlyFinance,
-            SubmittedLineup, RenewalProposal)}
+            SubmittedLineup, RenewalProposal, LiveOrder, LiveMatchRecord)}
 ENUMS = {cls.__name__: cls for cls in (Position, ClubStatus)}
 ENTITIES.update({cls.__name__: cls for cls in (NationalTeam, InternationalEdition, NationalCamp, InternationalRecord, InternationalState, InternationalCareer)})
 

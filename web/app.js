@@ -10,6 +10,7 @@ import {internationalScreen} from './international.js';
 import {clubSelectScreen} from './club-select.js';
 import {myClubScreen} from './my-club.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
+import {liveScreen,liveStatus} from './live.js';
 import {awayIcon} from './club-overview.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
@@ -22,6 +23,16 @@ const compositionHash=()=>`#/club/${state.controlled_club_id}/composition`;
 function onCompositionScreen(){const {parts}=routeParts();return parts[0]==='club'&&Number(parts[1])===state.controlled_club_id&&parts[2]==='composition';}
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),mode=document.querySelector('#advance-mode');
+ // During the live match the day waits: Continuer only closes it once the final whistle has gone.
+ if(state.live_match_id){
+  button.innerHTML='Continuer <span>→</span>';
+  button.disabled||=liveStatus()!=='finished';
+  // The header is hidden during the live match: its own Continuer mirrors this one.
+  document.querySelectorAll('[data-live="continuer"]').forEach(copy=>copy.disabled=button.disabled);
+  button.classList.remove('blocked');button.removeAttribute('aria-disabled');button.removeAttribute('title');
+  mode.hidden=true;
+  return;
+ }
  const jouer=state.awaiting_lineup&&onCompositionScreen();
  button.innerHTML=jouer?'Jouer <span>→</span>':state.awaiting_lineup?'Match <span>→</span>':'Continuer <span>→</span>';
  // An unplayable lineup greys Jouer out; it stays hoverable (aria-disabled, not disabled) so its tooltip tells what to fix.
@@ -59,7 +70,7 @@ function nextMatchesHtml(){
   return `<a class="next-match" href="#/match/${match.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span><span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span></a>`;
  }).join('');
 }
-async function refreshState(){state=await api('/monde/etat');document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'VOTRE UNIVERS FOOTBALL';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'Bienvenue sur le banc de touche';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=[...new Set(leagues.filter(league=>league.kind!=='europe').map(league=>league.nation))].sort((a,b)=>LEAGUE_ORDER.indexOf(a)-LEAGUE_ORDER.indexOf(b));document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span class="league-code">${e(nation.slice(0,2))}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'VOTRE UNIVERS FOOTBALL';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'Bienvenue sur le banc de touche';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=[...new Set(leagues.filter(league=>league.kind!=='europe').map(league=>league.nation))].sort((a,b)=>LEAGUE_ORDER.indexOf(a)-LEAGUE_ORDER.indexOf(b));document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span class="league-code">${e(nation.slice(0,2))}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 function slotsHtml(slots){return slots.length?slots.map(slot=>`<div class="slot-row"><div><strong>${e(slot.slot==='autosave'?'Sauvegarde automatique':slot.slot)}</strong><small>${new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(slot.modified*1000))} · ${n(slot.bytes/1024/1024)} Mo</small></div><div class="slot-actions"><button data-command="load" data-slot="${e(slot.slot)}">Reprendre →</button><button class="danger" data-command="delete" data-slot="${e(slot.slot)}" aria-label="Supprimer ${e(slot.slot==='autosave'?'la sauvegarde automatique':slot.slot)}">Supprimer</button></div></div>`).join(''):empty('Vos sauvegardes apparaîtront ici.','Aucune partie enregistrée');}
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
@@ -100,6 +111,8 @@ async function render(){const version=++renderVersion;const {parts,params}=route
  const selection=focusName&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
  try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section,extra]=parts;
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
+  // The live match is modal: whatever the address, it stays on screen until the day is closed.
+  else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
  if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],folds=path===renderedPath?[...main.querySelectorAll('details.filters')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
@@ -121,16 +134,22 @@ async function command(path,payload){
  }
  finally{submitting=false;busyButtons();}
 }
-// Submits the composition being edited, then plays the day out; pollJob redirects to the match report on success.
-async function playMatch(){
+// Submits the composition being edited. Jouer then plays the day's other matches and opens the live match;
+// Simuler plays the day out at once and shows the match report (pollJob redirects on success).
+async function submitLineup(){
  const lineup=lineupSubmission();
- if(!lineup){const issues=compositionIssues();if(issues.length)toast(`Composition à corriger : ${issues.join(' · ')}`,true);return;}
- const matchId=lineup.match_id;
- if(polling||submitting)return;
+ if(!lineup){const issues=compositionIssues();if(issues.length)toast(`Composition à corriger : ${issues.join(' · ')}`,true);return null;}
+ if(polling||submitting)return null;
  submitting=true;busyButtons();
  try{await api('/partie/composition',{...lineup,commande_id:crypto.randomUUID()});}
- catch(error){submitting=false;busyButtons();toast(error.message,true);return;}
- submitting=false;
+ catch(error){toast(error.message,true);return null;}
+ finally{submitting=false;busyButtons();}
+ return lineup.match_id;
+}
+async function playMatch(){if(await submitLineup()!=null)await command('/direct/demarrer',{});}
+async function simulateMatch(){
+ const matchId=await submitLineup();
+ if(matchId==null)return;
  pendingMatchRedirect=matchId;
  await command('/monde/avancer',{jusqu_a:'jour'});
 }
@@ -148,7 +167,7 @@ async function pollJob(id){
    const open=job.command==='auto';
    // An auto job has no end to measure against: show an indeterminate bar instead of a percentage.
    if(open)progress.removeAttribute('value');else progress.value=job.progress;
-   document.querySelector('#job-label').textContent=`${({create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation',auto:'Simulation automatique'})[job.command]}… ${job.date?date(job.date):''} ${open?'':Math.round(job.progress*100)+'%'}`;
+   document.querySelector('#job-label').textContent=`${({create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation',auto:'Simulation automatique',live_start:'Les autres matches du jour',live_finish:'Fin de la journée'})[job.command]}… ${job.date?date(job.date):''} ${open?'':Math.round(job.progress*100)+'%'}`;
    if(['done','failed','awaiting_lineup'].includes(job.status)){
     state.job=null;
     polling=null;
@@ -156,8 +175,12 @@ async function pollJob(id){
     document.querySelector('#job-bar').hidden=true;
     if(job.status==='failed'){pendingMatchRedirect=null;toast(job.error,true);}
     else if(job.status==='awaiting_lineup'){pendingMatchRedirect=null;toast('Un match de votre club est programmé aujourd’hui : composez votre équipe pour poursuivre.');}
-    else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
+    else if(job.command==='live_start')toast('Coup d’envoi !');
+    else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='live_finish'?'Journée terminée. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
     if(job.status==='done'&&pendingMatchRedirect){const matchId=pendingMatchRedirect;pendingMatchRedirect=null;justPlayedMatchId=matchId;location.hash=`#/match/${matchId}`;return;}
+    if(job.status==='done'&&job.command==='live_start'&&location.hash!=='#/direct'){location.hash='#/direct';return;}
+    // A normal advance and the end of a live match both land on Mon club.
+    if(job.status==='done'&&job.command==='live_finish'){location.hash='#/mon-club';return;}
     // A normal advance always lands on Mon club, so the user sees anything needing attention; a paused match keeps its own flow above.
     if(job.status==='done'&&job.command==='advance'){
      if(location.hash==='#/mon-club')await render();else location.hash='#/mon-club';
@@ -185,6 +208,7 @@ document.querySelector('#autoplay').addEventListener('click',async()=>{
 });
 
 document.querySelector('#advance').addEventListener('click',()=>{
+ if(state.live_match_id){if(liveStatus()==='finished')command('/direct/terminer',{});return;}
  if(state.awaiting_lineup&&!onCompositionScreen()){location.hash=compositionHash();return;}
  if(state.awaiting_lineup)return playMatch();
  // Closes the match screenflow (Composition → Jouer → Résultat) on its own report page: one more click, straight to Mon club.
@@ -203,6 +227,7 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
  if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
+ if('lineupSimulate' in button.dataset)await simulateMatch();
  if(button.id==='retry')render();});
 // A card head with a single link ("Voir →") follows it wherever it is clicked.
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
@@ -227,5 +252,6 @@ window.addEventListener('hashchange',()=>{
  render();window.scrollTo({top:0});
 });
 document.addEventListener('lineup-change',updateAdvanceButton);
+document.addEventListener('live-status',busyButtons);
 window.addEventListener('unhandledrejection',event=>toast(event.reason?.message||'Une erreur inattendue est survenue.',true));
 render();

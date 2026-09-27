@@ -23,10 +23,12 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Mentality chosen during a live match: an older save is given the block height shifts of its first live match.
+    (17, ("formations", "hauteur_bloc"), {"mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}),
     # Bounded rating gaps and score management: an older save plays its next matches without 30-0 mismatches.
     (16, ("moteur_match", "transitions"), {"ecart_note_max": 20.0, "avance_confortable": 2, "relachement_par_but": 0.4}),
     # Regens placed by academy and country: an older save is given the rules its next cohort is drawn with.

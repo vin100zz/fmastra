@@ -7,7 +7,7 @@ from random import Random
 from core.config.model import Config
 from .clubs import Club, Competition
 from .date import Date
-from .matches import Match, SubmittedLineup
+from .matches import LiveMatchRecord, Match, SubmittedLineup
 from .players import Player, Position
 from .offers import RenewalProposal, TransferOffer
 from .finance import FinanceSeason
@@ -120,6 +120,7 @@ class World:
     submitted_lineups: dict[int, SubmittedLineup] = field(default_factory=dict)
     pending_renewals: dict[int, RenewalProposal] = field(default_factory=dict)
     news: list[JournalEntry] = field(default_factory=list)
+    live_match: LiveMatchRecord | None = None
 
     def active_clubs(self) -> list[Club]:
         return [club for club in self.clubs.values() if club.competition_id is not None]

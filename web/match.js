@@ -48,7 +48,7 @@ function lineupCard(match,side,marks){
 }
 
 // Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.
-function replayTeams(match){
+export function replayTeams(match){
  const home=kitOf(match.home,'home'),away=kitOf(match.away,'away'),[homeMajor,awayMajor]=barColors(home,away);
  const keeper=['#f2c94c','#40c4ff','#c77dff'].find(color=>contrastRatio(color,homeMajor)>=1.6&&contrastRatio(color,awayMajor)>=1.6)||'#f2c94c';
  const minor=(major,kit)=>major===kit.major?kit.minor:contrastText(major);
@@ -57,7 +57,7 @@ function replayTeams(match){
 
 const sidesHead=match=>`<div class="match-sides"><span>${kitDot(match.home)}${e(match.home.name)}</span><span>${kitDot(match.away)}${e(match.away.name)}</span></div>`;
 
-function statsCard(match){
+export function statsCard(match){
  const result=match.result,home=result.home_stats,away=result.away_stats,totalPoss=home.possession_seconds+away.possession_seconds;
  const [homeColor,awayColor]=barColors(kitOf(match.home,'home'),kitOf(match.away,'away'));
  const stats=[['Buts attendus (xG)',home.xg,away.xg],['Tirs',home.shots,away.shots],['Tirs cadrés',home.on_target,away.on_target],['Possession',100*home.possession_seconds/Math.max(1,totalPoss),100*away.possession_seconds/Math.max(1,totalPoss)],['Corners',home.corners,away.corners],['Coups francs',home.free_kicks,away.free_kicks],['Cartons jaunes',home.yellows,away.yellows],['Cartons rouges',home.reds,away.reds]];
@@ -66,13 +66,14 @@ function statsCard(match){
 }
 
 // Goals, injuries and red cards in the order they came, the home side's on the left and the away side's on the right.
-function highlightsCard(match){
+// `link` names a player: a link to his page, or plain text where leaving the screen is not allowed (the live match).
+export function highlightsCard(match,link=playerLink){
  const events=match.result.events.filter(event=>['goal','injury','red'].includes(event.kind)&&event.period!==3);
  const content=event=>{
   const label=event.kind==='goal'?'But':event.kind==='injury'?'Blessure':event.detail==='second_yellow'?'Deuxième carton jaune':'Carton rouge';
   const mark=event.kind==='goal'?icon('goal','⚽',label):event.kind==='injury'?icon('injury','',label):icon('booking red','',label);
-  const detail=event.kind==='goal'&&event.secondary?`Passe de ${playerLink(event.secondary_id,event.secondary)}`:label;
-  return `${mark}<div><strong>${event.player?playerLink(event.player_id,event.player):'—'}</strong><small>${detail}</small></div>`;
+  const detail=event.kind==='goal'&&event.secondary?`Passe de ${link(event.secondary_id,event.secondary)}`:label;
+  return `${mark}<div><strong>${event.player?link(event.player_id,event.player):'—'}</strong><small>${detail}</small></div>`;
  };
  const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
  return card('Les temps forts',`<div class="card-body">${sidesHead(match)}${rows||empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
