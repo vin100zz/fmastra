@@ -53,6 +53,7 @@ def test_national_api_and_player_history(imported, tmp_path):
         france = next(n for n in data['nations'] if n['name'] == 'France')
         nation = client.get(f"/api/international/nations/{france['id']}").json()
         assert len(nation['squad']) == 23 and nation['camp']
+        assert {'age', 'potential', 'club', 'value', 'wage', 'contract_end'} <= set(nation['squad'][0])
         match = client.get(f"/api/matches/{edition['matches'][0]['id']}").json()
         assert match['international'] and match['home']['national']
         pid = next(p['id'] for p in nation['squad'] if p['id'] >= 0)

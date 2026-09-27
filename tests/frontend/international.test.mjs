@@ -36,6 +36,7 @@ test('nation page shows a big flag, prev/next navigation, camp status and drops 
   assert.match(html,/Rassemblement/);
   assert.match(html,/temporary-player/);
   assert.match(html,/data-value="60"/);
+  assert.match(html,/POSTE.*JOUEUR.*ÂGE.*NIV\..*POT\..*CLUB.*VALEUR.*SALAIRE \/ MOIS.*CONTRAT.*ÉTAT.*SÉL\..*BUTS/s);
   assert.doesNotMatch(html,/Joueurs éligibles/);
   assert.match(html,/>Effectif<\/a>/);
   assert.match(html,/>Calendrier<\/a>/);

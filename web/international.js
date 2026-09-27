@@ -1,5 +1,6 @@
-import {api,escape as e,number as n,date,card,heading,table,sortableTable,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag} from './ui.js';
+import {api,escape as e,number as n,date,card,heading,table,sortableTable,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag,money,duration} from './ui.js';
 import {nationNavigation} from './navigation.js';
+import {monthlySalary} from './salaries.js';
 import {bracket} from './bracket.js';
 
 export function internationalStandings(rows,places=0){
@@ -37,8 +38,12 @@ const editionRun=run=>run?(run.winner?`✦ ${e(run.label)}`:e(run.label)):'—';
 function squadCard(data){
  if(!data.camp)return card('Sélection',empty('La prochaine liste de 23 sera annoncée au début du rassemblement.','Aucun rassemblement en cours'));
  const title=`${data.camp.upcoming?'Rassemblement':'Dernier rassemblement'} du ${date(data.camp.start)} au ${date(data.camp.end)}`;
- return card(title,sortableTable(['JOUEUR','POSTE','NIVEAU','CONDITION','SÉL.','BUTS'],data.squad.map(p=>[
-  playerLink(p.id,p.name),position(p.position),levelBadge(p.rating),p.injured_until?`Blessé jusqu’au ${date(p.injured_until)}`:p.suspended?`${p.suspended} match${p.suspended>1?'s':''} de suspension`:`${Math.round(p.fitness*100)} %`,p.caps,p.goals]),data.squad.map(p=>[p.name,p.position,p.rating,p.fitness,p.caps,p.goals])));
+ // The same columns, in the same order, as the club and player lists.
+ const fitness=p=>p.injured_until?`<span class="status danger" title="Retour le ${e(date(p.injured_until))}">✚ ${duration(p.injured_until)}</span>`:p.suspension?`<span class="status danger">▰ ${p.suspension} match${p.suspension>1?'s':''}</span>`:`<span class="status">${Math.round(p.fitness*100)}%</span>`;
+ return card(title,sortableTable(['POSTE','JOUEUR','ÂGE','NIV.','POT.','CLUB','VALEUR','SALAIRE / MOIS','CONTRAT','ÉTAT','SÉL.','BUTS'],data.squad.map(p=>[
+  position(p.position),`<span class="strong">${playerLink(p.id,p.name)}</span>`,p.age??'—',levelBadge(p.rating,'Niveau actuel sur 200'),levelBadge(p.potential,'Potentiel sur 200'),p.id<0?'—':clubLink(p.club),
+  p.value==null?'—':money(p.value),p.wage==null?'—':monthlySalary(p.wage),`<span class="${p.expiring?'danger':''}">${date(p.contract_end)}</span>`,fitness(p),p.caps,p.goals]),
+  data.squad.map(p=>[p.position,p.name,p.age??'',p.rating,p.potential??'',p.club?.name??'',p.value??'',p.wage??'',p.contract_end??'',p.injured_until||p.suspension?-1:p.fitness,p.caps,p.goals])));
 }
 function historyContent(data){
  const editions=card('Bilan par compétition',data.editions.length?table(['ÉDITION','QUALIFICATIONS','PHASE FINALE'],data.editions.map(row=>[e(row.name),editionRun(row.qualification),editionRun(row.finals)])):empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));

@@ -138,12 +138,14 @@ def international_router(service):
                     player = get_player_or_none(world, pid)
                     if player is None:
                         continue
-                    players.append({"id": pid, "name": player.name, "position": player.position,
-                                    "rating": round(player.rating, 1), "fitness": player.fitness,
-                                    "injured_until": player.injury.end.iso() if player.injury else None,
-                                    "caps": player.international_caps, "goals": player.international_goals,
-                                    "suspended": player.international_discipline.get(world.international.editions[camp.edition].competition_id, None).suspended_matches
-                                        if world.international.editions[camp.edition].competition_id in player.international_discipline else 0})
+                    competition_id = world.international.editions[camp.edition].competition_id
+                    discipline = player.international_discipline.get(competition_id)
+                    row = v.player_row(world, player)
+                    if pid < 0:
+                        # A campaign-only reinforcement has neither a club nor a contract.
+                        row.update({"value": None, "wage": None, "contract_end": None, "expiring": False})
+                    players.append({**row, "id": pid, "caps": player.international_caps, "goals": player.international_goals,
+                                    "suspension": discipline.suspended_matches if discipline else 0})
             return {**nation_ref(world, nation_id), "reference_strength": team.reference_strength,
                     "camp": {"start": camp.start.iso(), "end": camp.end.iso(), "finals": camp.finals, "upcoming": upcoming} if camp else None,
                     "squad": players,
