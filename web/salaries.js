@@ -19,11 +19,15 @@ export function salarySearchParams(params){
   const value=result.get(name);
   if(value!==null&&value!=='')result.set(name,String(round(Number(value)*12/weeksPerYear)));
  }
- // Niveau is shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
- const niveau=result.get('niveau_min');
- if(niveau!==null&&niveau!=='')result.set('niveau_min',String(Number(niveau)/2));
- // Max value is typed in millions of euros; the API filters on full euros.
- const valeur=result.get('valeur_max');
- if(valeur!==null&&valeur!=='')result.set('valeur_max',String(Math.round(Number(valeur)*1e6)));
+ // Niveau and potentiel are shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
+ for(const name of ['niveau_min','potentiel_min']){
+  const level=result.get(name);
+  if(level!==null&&level!=='')result.set(name,String(Number(level)/2));
+ }
+ // Max value and max asking price are typed in millions of euros; the API filters on full euros.
+ for(const name of ['valeur_max','prix_max']){
+  const amount=result.get(name);
+  if(amount!==null&&amount!=='')result.set(name,String(Math.round(Number(amount)*1e6)));
+ }
  return result;
 }

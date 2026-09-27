@@ -35,4 +35,11 @@ test('max value is typed in millions of euros',()=>{
   assert.equal(salarySearchParams(new URLSearchParams(`valeur_max=${input}`)).get('valeur_max'),expected);
  }
  assert.equal(salarySearchParams(new URLSearchParams()).has('valeur_max'),false);
+ assert.equal(salarySearchParams(new URLSearchParams('prix_max=12.5')).get('prix_max'),'12500000');
+ assert.equal(salarySearchParams(new URLSearchParams()).has('prix_max'),false);
+});
+
+test('minimum levels are typed on the 1–200 scale',()=>{
+ const result=salarySearchParams(new URLSearchParams('niveau_min=140&potentiel_min=161'));
+ assert.equal(result.get('niveau_min'),'70');assert.equal(result.get('potentiel_min'),'80.5');
 });

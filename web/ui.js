@@ -107,7 +107,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
   };
   return columns.map(([key])=>cells[key]);
  });
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false||key==='asking_price'?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows)}</div>`+pager(data);
+ return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows)}</div>`+pager(data);
 }
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}

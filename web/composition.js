@@ -148,7 +148,7 @@ function editorHtml(){
  const tactics=Object.keys(editor.data.formations).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
  // The first problem is spelled out in the toolbar, the others counted; all of them in the tooltip.
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
- return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<button type="button" data-lineup-suggest>Meilleure composition</button><button type="button" data-lineup-simulate title="Jouer le match sans le regarder">Simuler</button></div>
+ return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<button type="button" data-lineup-suggest>Meilleure composition</button></div>
 <div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${editor.slots.map((id,index)=>slotHtml(id,current[index],layout[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>`;

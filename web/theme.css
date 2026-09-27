@@ -244,6 +244,7 @@ dialog::backdrop{background:var(--backdrop)}
  .sidebar-bottom{border-top:0;padding-top:0;top:4px!important}
  .time-controls{grid-template-columns:1fr 1fr}
  .time-controls #advance{grid-column:1/-1}
+ .time-controls #simulate:not([hidden])+#advance{grid-column:auto}
 }
 
 /* Density: as much as possible visible without scrolling. 48 px bar, 8-12 px gaps, 26 px table rows, one-line page headers. */
@@ -256,6 +257,7 @@ dialog::backdrop{background:var(--backdrop)}
 .time-controls{gap:8px}
 .time-controls select{height:36px;padding:0 8px}
 #advance,.cta{height:36px;font-size:16px;padding:0 12px 0 16px}
+#simulate{height:36px;padding:0 14px;font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .nav-label{margin:12px 20px 3px!important}
 .sidebar nav a,.sidebar-bottom>a{min-height:34px}
 .sidebar-bottom{padding-top:6px}

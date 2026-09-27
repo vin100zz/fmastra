@@ -539,37 +539,50 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/joueurs")
     def players(recherche: str = "", poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
-                niveau_min: float = Query(1, ge=1, le=100), nation: str | None = None, club: int | None = None,
+                niveau_min: float = Query(1, ge=1, le=100), potentiel_min: float = Query(1, ge=1, le=100),
+                nation: str | None = None, club: int | None = None,
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
-                valeur_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value"] = "value",
+                valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
+                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price"] = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
             search = v.normalized(recherche)
+            # Asking prices weigh each player's place in his squad: computed only when a filter or the sort needs them.
+            settled, quotes = recent_arrival_ids(world), {}
+            def quote(player) -> dict:
+                if player.id not in quotes: quotes[player.id] = v.asking_quote(world, player, settled)
+                return quotes[player.id]
+            def fee(player) -> int | None:
+                """What his club asks, 0 for a free agent, None for a player his club will not sell."""
+                row = quote(player)
+                return None if not row["transferable"] else row["asking_price"] or 0
             for player in world.players.values():
                 wage = player.contract.weekly_wage if player.contract else 0
                 owner = world.clubs.get(player.club_id)
                 if (search not in v.normalized(player.name) or (poste and player.position != poste)
-                    or not age_min <= player.born.age_on(world.date) <= age_max or player.rating < niveau_min
+                    or not age_min <= player.born.age_on(world.date) <= age_max or player.rating < niveau_min or player.potential < potentiel_min
                     or (nation and nation not in player.nationalities) or (club is not None and player.club_id != club)
                     or (statut_club and (owner is None or (owner.competition_id is not None) != (statut_club == "actif")))
                     or (contrat and (player.contract is None) != (contrat == "libre"))
                     or wage < salaire_min or (salaire_max is not None and wage > salaire_max)
-                    or (valeur_max is not None and v.market_value(player, world) > valeur_max)): continue
+                    or (valeur_max is not None and v.market_value(player, world) > valeur_max)
+                    or (prix_max is not None and (fee(player) is None or fee(player) > prix_max))): continue
                 selected.append(player)
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
+                if tri == 'asking_price': return fee(player) or 0, player.id
                 value = {"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
                          "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,
                          "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else ""}[tri]
                 return value, player.id
             selected.sort(key=sort_key, reverse=ordre == "desc")
+            # Players their clubs will not sell have no price: they come last whichever the order.
+            if tri == 'asking_price': selected.sort(key=lambda player: fee(player) is None)
             data = v.paginate(selected, page)
-            # Asking prices weigh each player's place in his squad: only the page shown pays for them.
-            settled = recent_arrival_ids(world)
-            data["items"] = [{**v.player_row(world, player), **v.asking_quote(world, player, settled)} for player in data["items"]]
+            data["items"] = [{**v.player_row(world, player), **quote(player)} for player in data["items"]]
             return data
 
     @api.get("/joueurs/{player_id}")

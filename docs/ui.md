@@ -230,6 +230,10 @@ de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
   mêmes positions ; le choix est retenu, sans WebGL le bouton disparaît.
+  Le stade a des tribunes pleines (supporters aux couleurs des deux clubs, les
+  visiteurs dans un coin), des loges, des panneaux LED et des filets. Les joueurs
+  sont articulés : ils courent, frappent, reprennent de la tête les centres, le
+  gardien plonge et l'équipe qui marque célèbre avec ses supporters.
 
 ### Match en direct
 
@@ -259,8 +263,8 @@ qu'il serait si les matches s'arrêtaient à la minute affichée.
   mène à Mon club. « 2e mi-temps » et « Continuer » reprennent le style du
   bouton « Continuer » du bandeau (classe \`cta\`).
 
-« Simuler », dans la barre de la composition, joue le match sans le regarder et
-affiche le compte rendu. Le mode Auto ne joue jamais en direct.
+« Simuler », à côté de « Jouer » dans le bandeau de la composition, joue le match
+sans le regarder et affiche le compte rendu. Le mode Auto ne joue jamais en direct.
 
 Pour un résultat analytique, signaler l'absence de détail et masquer les
 statistiques inconnues au lieu d'afficher des zéros. Garder les compositions

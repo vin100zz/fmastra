@@ -72,6 +72,19 @@ def test_views_pagination_and_no_rng_leak(client):
     cap = values[len(values) // 2]
     capped = client.get(f'/api/joueurs?valeur_max={cap}').json()
     assert capped['items'] and all(row['value'] <= cap for row in capped['items']) and capped['total'] < first['total']
+    promising = client.get('/api/joueurs?potentiel_min=75').json()
+    assert promising['items'] and all(row['potential'] >= 75 for row in promising['items']) and promising['total'] < first['total']
+    # The asking price sorts and filters like the value; players their clubs will not sell come last, and never under a cap.
+    priced = client.get('/api/joueurs?tri=asking_price&page=1').json()['items']
+    prices = [row['asking_price'] or 0 for row in priced if row['transferable']]
+    assert prices == sorted(prices, reverse=True) and prices[0] > 0
+    cheapest = client.get('/api/joueurs?tri=asking_price&ordre=asc').json()['items']
+    assert [row['asking_price'] or 0 for row in cheapest] == sorted(row['asking_price'] or 0 for row in cheapest)
+    last = client.get(f"/api/joueurs?tri=asking_price&page={(first['total'] + 29) // 30}").json()['items']
+    assert not last[-1]['transferable']
+    fee_cap = prices[len(prices) // 2]
+    affordable = client.get(f'/api/joueurs?prix_max={fee_cap}&tri=asking_price').json()
+    assert affordable['items'] and all(row['transferable'] and (row['asking_price'] or 0) <= fee_cap for row in affordable['items'])
     club_rows = client.get('/api/clubs').json()['items']
     assert all({'training_facilities', 'youth_recruitment'} <= row.keys() for row in club_rows)
     psg = client.get('/api/clubs/868').json()

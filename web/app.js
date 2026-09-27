@@ -19,27 +19,33 @@ const sortScope=table=>`${location.hash.split('?')[0]}|${[...main.querySelectorA
 let renderedPath=null,state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,justPlayedMatchId=null,lastFinishedJobId=null;
 const main=document.querySelector('#main');
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the report).
+// Simuler, beside Jouer on the composition screen, skips the live match and goes straight to the report.
 const compositionHash=()=>`#/club/${state.controlled_club_id}/composition`;
 function onCompositionScreen(){const {parts}=routeParts();return parts[0]==='club'&&Number(parts[1])===state.controlled_club_id&&parts[2]==='composition';}
+// An unplayable lineup greys Jouer and Simuler out; they stay hoverable (aria-disabled, not disabled) so their tooltip tells what to fix.
+function blockOn(button,issues,title=null){
+ button.classList.toggle('blocked',issues.length>0);
+ if(issues.length){button.setAttribute('aria-disabled','true');button.title=`Composition à corriger :\n• ${issues.join('\n• ')}`;}
+ else{button.removeAttribute('aria-disabled');if(title)button.title=title;else button.removeAttribute('title');}
+}
 function updateAdvanceButton(){
- const button=document.querySelector('#advance'),mode=document.querySelector('#advance-mode');
+ const button=document.querySelector('#advance'),mode=document.querySelector('#advance-mode'),simulate=document.querySelector('#simulate');
  // During the live match the day waits: Continuer only closes it once the final whistle has gone.
  if(state.live_match_id){
   button.innerHTML='Continuer <span>→</span>';
   button.disabled||=liveStatus()!=='finished';
   // The header is hidden during the live match: its own Continuer mirrors this one.
   document.querySelectorAll('[data-live="continuer"]').forEach(copy=>copy.disabled=button.disabled);
-  button.classList.remove('blocked');button.removeAttribute('aria-disabled');button.removeAttribute('title');
-  mode.hidden=true;
+  blockOn(button,[]);
+  mode.hidden=true;simulate.hidden=true;
   return;
  }
  const jouer=state.awaiting_lineup&&onCompositionScreen();
  button.innerHTML=jouer?'Jouer <span>→</span>':state.awaiting_lineup?'Match <span>→</span>':'Continuer <span>→</span>';
- // An unplayable lineup greys Jouer out; it stays hoverable (aria-disabled, not disabled) so its tooltip tells what to fix.
  const issues=jouer?compositionIssues():[];
- button.classList.toggle('blocked',issues.length>0);
- if(issues.length){button.setAttribute('aria-disabled','true');button.title=`Composition à corriger :\n• ${issues.join('\n• ')}`;}
- else{button.removeAttribute('aria-disabled');button.removeAttribute('title');}
+ blockOn(button,issues);
+ blockOn(simulate,issues,'Passer directement au résultat du match');
+ simulate.hidden=!jouer;
  mode.hidden=Boolean(state.awaiting_lineup);
 }
 // The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
@@ -48,7 +54,7 @@ const busyButtons=()=>{
  // (its autosave runs after the status turns "done"), which must not leave the buttons stuck disabled.
  const busy=Boolean(polling)||submitting;
  const auto=Boolean(state.auto?.running),stopping=Boolean(state.auto?.stopping);
- document.querySelectorAll('[data-command],#advance,#advance-mode').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
+ document.querySelectorAll('[data-command],#advance,#advance-mode,#simulate').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
  updateAdvanceButton();
  const button=document.querySelector('#autoplay');
  button.disabled=stopping||(!auto&&(busy||!state.exists||Boolean(state.recovery_required)));
@@ -230,6 +236,7 @@ document.querySelector('#advance').addEventListener('click',()=>{
  if(justPlayedMatchId!=null&&parts[0]==='match'&&Number(parts[1])===justPlayedMatchId){justPlayedMatchId=null;location.hash='#/mon-club';return;}
  return command('/monde/avancer',{jusqu_a:document.querySelector('#advance-mode').value});
 });
+document.querySelector('#simulate').addEventListener('click',()=>{if(state.awaiting_lineup&&onCompositionScreen())simulateMatch();});
 function applyFilter(form){const values=Object.fromEntries(new FormData(form));Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
 main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element);if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
  else if(element.id==='talks-form'){
@@ -246,7 +253,6 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
  if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
- if('lineupSimulate' in button.dataset)await simulateMatch();
  if(button.id==='retry')render();});
 // A card head with a single link ("Voir →") follows it wherever it is clicked.
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});

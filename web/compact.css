@@ -81,7 +81,7 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 .competition-badge{flex:none;padding:1px 5px;border-radius:4px;background:#e9effa;color:#4f6d9e;font-size:9px;font-weight:650;white-space:nowrap}
 
 /* Lineup editor: tactics above, the pitch and bench on the left, the whole squad on the right; players move by drag and drop. */
-#advance.blocked{opacity:.45;cursor:not-allowed}
+#advance.blocked,#simulate.blocked{opacity:.45;cursor:not-allowed}
 .lineup-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 0}
 .tactics{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:7px;overflow:hidden}.tactics button{border:0;border-radius:0;border-right:1px solid var(--line);padding:7px 13px;font-variant-numeric:tabular-nums}.tactics button:last-child{border-right:0}.tactics button.active{background:var(--green);color:#fff}
 .lineup-problems{margin:10px 14px 0;padding:8px 12px 8px 30px;background:#fbeceb;border:1px solid #f0cfcc;border-radius:7px;color:var(--red);font-size:12px;line-height:1.6}

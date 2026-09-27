@@ -21,8 +21,9 @@ const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substi
 const FOLLOW_MS=420,TOP_SPEED=.018,TURN_MS=140;
 // Scripted runs (a receiver meeting a pass, a scorer attacking a cross) may go a little faster than the block.
 const RUN_SPEED=.026;
-// Between chances the clock runs at this many ms of replay per match minute; chances play this much faster than life-like.
-const MS_PER_MINUTE=90,CHANCE_TEMPO=2.4;
+// Between chances the clock runs at this many ms of replay per match minute; chances play at this pace, 1 being life-like
+// (a pass, a shot or a run takes about the time it would on the pitch).
+const MS_PER_MINUTE=90,CHANCE_TEMPO=1;
 // Pass-like flights decelerate; a shot even more; a lofted delivery hangs; a carry starts and stops gently.
 const EASE={pass:k=>1-(1-k)**2.2,cross:k=>1-(1-k)**1.7,shot:k=>1-(1-k)**3,place:k=>k*k*(3-2*k)};
 const clamp=(value,low,high)=>Math.min(high,Math.max(low,value));
