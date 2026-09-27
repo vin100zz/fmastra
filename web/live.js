@@ -38,7 +38,7 @@ function othersHtml(second=0){
  const games=scoresAt(second);
  const rows=games.filter(game=>!game.own).map(game=>`<div class="live-game"><span>${kitDot(game.home)}${e(game.home.name)}</span><b>${game.goals[0]} – ${game.goals[1]}</b><span>${kitDot(game.away)}${e(game.away.name)}</span></div>`).join('');
  const own=view.state.side==='home'?view.state.home.id:view.state.away.id;
- const table=view.others.table?`<div class="table-scroll"><table class="live-table"><thead><tr><th>#</th><th>CLUB</th><th>J</th><th>DIFF.</th><th>PTS</th></tr></thead><tbody>${liveTable(view.others.table,games,view.others.points).map((row,index)=>`<tr class="${row.club.id===own?'own':''}"><td>${index+1}</td><td>${kitDot(row.club)}${e(row.club.name)}</td><td>${row.played}</td><td>${row.goals_for-row.goals_against}</td><td><b>${row.points}</b></td></tr>`).join('')}</tbody></table></div>`:'';
+ const table=view.others.table?`<div class="table-scroll"><table class="live-table"><thead><tr><th>#</th><th>CLUB</th><th>PTS</th><th>J</th><th>DIFF.</th></tr></thead><tbody>${liveTable(view.others.table,games,view.others.points).map((row,index)=>`<tr class="${row.club.id===own?'own':''}"><td>${index+1}</td><td>${kitDot(row.club)}${e(row.club.name)}</td><td><b>${row.points}</b></td><td>${row.played}</td><td>${row.goals_for-row.goals_against}</td></tr>`).join('')}</tbody></table></div>`:'';
  return card(view.others.competition,`<div class="card-body">${rows}</div>${table}`,'','live-others');
 }
 
