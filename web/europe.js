@@ -1,6 +1,19 @@
 import {api,escape as e,season,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
+import {bracket} from './bracket.js';
 
 const SECTIONS=[['table','Classement'],['calendar','Phase de ligue'],['knockout','Phase finale'],['stats','Statistiques'],['history','Palmarès']];
+
+// Each two-legged round after the league phase becomes one stage (the final is a single match); the play-offs lead into one side of each round-of-16 tie.
+function knockoutStages(data){
+ const rounds=data.rounds.filter(round=>round.number>data.league_rounds),stages=[];
+ for(let index=0;index<rounds.length;index++){
+  const [first,second]=[rounds[index],rounds[index+1]];
+  const final=index===rounds.length-1;
+  stages.push({label:first.label.split(' · ')[0],date:first.date,matches:final?first.items:[...first.items,...second.items],single:index===0});
+  if(!final)index++;
+ }
+ return stages;
+}
 
 export async function europeScreen(code,section,params,competitions){
  const cups=competitions.filter(item=>item.kind==='europe').sort((a,b)=>a.code.localeCompare(b.code));
@@ -15,8 +28,10 @@ export async function europeScreen(code,section,params,competitions){
  let content='';
  if(section==='table'){
   content=card('Phase de ligue · 36 clubs',`<div class="card-body europe-legend"><span class="qualification-direct">1–8 : huitièmes directs</span><span class="qualification-playoff">9–24 : barrages</span><span>25–36 : élimination</span></div>`+standingsTable({items:data.standings}));
- }else if(section==='calendar'||section==='knockout'){
-  const rounds=data.rounds.filter(round=>section==='calendar'?round.number<=data.league_rounds:round.number>data.league_rounds);
+ }else if(section==='knockout'){
+  content=bracket(knockoutStages(data));
+ }else if(section==='calendar'){
+  const rounds=data.rounds.filter(round=>round.number<=data.league_rounds);
   const focus=rounds.some(round=>round.number===data.next_round)?data.next_round:
    rounds.some(round=>round.number===data.latest_round)?data.latest_round:rounds.find(round=>!round.complete)?.number||rounds.at(-1).number;
   content=rounds.map(round=>`<details class="card cup-round" ${round.number===focus?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures(round):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');

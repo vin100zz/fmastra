@@ -31,14 +31,21 @@ test('Europe navigation and full 36-club table with qualifying zones',async()=>{
  }finally{globalThis.fetch=previous;}
 });
 
-test('knockout screen separates aggregate and penalty scores; return links to first leg',async()=>{
+test('knockout screen draws the bracket with both legs, aggregate and shoot-out; return links to first leg',async()=>{
  const previous=globalThis.fetch;
- globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/matches/')?{...match,result:{status:'played'}}:data});
+ const first={...match,id:41,round:9,round_label:'Barrages · aller',home:match.away,away:match.home,score:[2,1],aggregate:null,penalties:null,winner_id:null,first_leg_id:null};
+ const knockout={...data,rounds:data.rounds.map(round=>round.number===9?{...round,label:'Barrages · aller',items:[first]}:round)};
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/matches/')?{...match,result:{status:'played'}}:knockout});
  try{
   const html=await europeScreen('C1','knockout',new URLSearchParams(),cups);
-  assert.match(html,/Barrages · retour/);
-  assert.match(html,/Cumul 2 – 2/);
-  assert.match(html,/4 – 5 t.a.b./);
+  assert.match(html,/class="bracket"/);
+  assert.match(html,/<strong>Barrages<\/strong>/);
+  assert.match(html,/<strong>Finale<\/strong>/);
+  // play-offs and round of 16 have eight boxes each, then four, two and one
+  assert.equal((html.match(/class="bracket-tie/g)||[]).length,8+8+4+2+1);
+  // the winner's row: 2 away in the first leg, 0 away in the return, no aggregate, 5 in the shoot-out; the box opens the return leg
+  assert.match(html,/bracket-team winner"><span class="bracket-club"><a href="#\/club\/2"[^]*?>2<\/a><a class="bracket-score" href="#\/match\/42">0<\/a><span class="bracket-pens" title="Tirs au but">\(5\)<\/span><\/div>/);
+  assert.match(html,/<a class="bracket-match" href="#\/match\/42"/);
   assert.doesNotMatch(html,/Phase de ligue · Journée/);
   const detail=await matchScreen(42);
   assert.match(detail,/#\/match\/41/);

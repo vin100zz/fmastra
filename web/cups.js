@@ -1,4 +1,5 @@
 import {api,escape as e,date,season,clubLink,playerLink,number as n,fixtures,empty,card,heading,tabs,table,pager,leadersCards} from './ui.js';
+import {bracket} from './bracket.js';
 
 export function cupSummaryCard(cup,data){
  const round=data.rounds.find(item=>item.number===(data.latest_round||1));
@@ -9,9 +10,10 @@ export function cupSummaryCard(cup,data){
 }
 
 export async function cupScreen(cup,section,params,lead=''){
- section=section||'calendar';
+ const menu=[['bracket','Tableau'],['stats','Statistiques'],['history','Palmarès']];
+ // A section a league has and a cup has not (arriving from a league's Calendrier) opens the bracket.
+ section=menu.some(([key])=>key===section)?section:'bracket';
  const data=await api(`/competitions/${cup.id}/coupe?${params}`);
- const menu=[['calendar','Les tours'],['stats','Statistiques'],['history','Palmarès']];
  let content;
  if(section==='history'){
   const history=await api(`/competitions/${cup.id}/historique?${params}`);
@@ -22,7 +24,7 @@ export async function cupScreen(cup,section,params,lead=''){
  }else{
   content=`<form class="filters" data-filter><select name="saison" aria-label="Saison">${data.seasons.map(year=>`<option value="${year}" ${year===data.season?'selected':''}>${season(year)}</option>`).join('')}</select><button>Afficher</button></form>`;
   if(data.winner)content+=`<div class="notice cup-winner">🏆 Vainqueur : ${clubLink(data.winner)}</div>`;
-  content+=data.rounds.map(round=>`<details class="card cup-round" ${round.number===(data.latest_round||1)?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures(round):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
+  content+=bracket(data.rounds.map(round=>({label:round.label,date:round.date,matches:round.items})));
  }
  return heading(cup.name,'',lead)+tabs(`#/league/${cup.id}`,menu,section)+content;
 }

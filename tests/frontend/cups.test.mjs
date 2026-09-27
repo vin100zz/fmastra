@@ -6,8 +6,8 @@ import {fixtures,playerLink} from '../../web/ui.js';
 import {matchScreen} from '../../web/match.js';
 
 const cup={id:-3,name:'Coupe de France',kind:'cup',nation:'FRA',clubs:64,level:0};
-const match={id:1,home:{id:1,name:'Home'},away:{id:2,name:'Away'},date:'2025-12-10',round:1,round_label:'32es de finale',score:[1,1],penalties:[4,5]};
-const data={season:2025,seasons:[2025],latest_round:1,winner:null,rounds:[{number:1,label:'32es de finale',date:'2025-12-10',items:Array.from({length:32},(_,i)=>({...match,id:i+1}))},{number:2,label:'16es de finale',date:'2026-01-07',items:[]}]};
+const match={id:1,home:{id:1,name:'Home'},away:{id:2,name:'Away'},date:'2025-12-10',round:1,round_label:'32es de finale',score:[1,1],penalties:[4,5],winner_id:2};
+const data={season:2025,seasons:[2025],latest_round:1,winner:null,rounds:[{number:1,label:'32es de finale',date:'2025-12-10',items:Array.from({length:32},(_,i)=>({...match,id:i+1}))},...['16es de finale','8es de finale','Quarts de finale','Demi-finales','Finale'].map((label,i)=>({number:i+2,label,date:'2026-01-07',items:[]}))]};
 
 test('cup summary preserves all 32 results and distinguishes penalty scores',()=>{
  const html=cupSummaryCard(cup,data);
@@ -28,11 +28,18 @@ test('country places the cup between the first and second divisions',async()=>{
   assert.ok(html.indexOf('Coupe de France')<html.indexOf('FRA · Ligue 2'));
   // the title is the left-menu entry alone, with no line above or below it
   assert.match(html,/^<div class="page-heading"><div><h1>FRA<\/h1><\/div><\/div>/);
+  // the bracket is the cup's only view of its rounds, and a league's Calendrier section lands on it
   const screen=await cupScreen(cup,'calendar',new URLSearchParams());
-  assert.match(screen,/Tirage à venir/);
-  assert.equal((screen.match(/class="fixture"/g)||[]).length,32);
+  assert.doesNotMatch(screen,/Les tours/);
+  assert.match(screen,/class="active" href="#\/league\/-3\/bracket">Tableau/);
+  assert.equal((screen.match(/class="bracket-tie"/g)||[]).length,32);
+  assert.equal((screen.match(/bracket-tie empty/g)||[]).length,16+8+4+2+1);
+  // the box opens the match, the name opens the club, the shoot-out sits in brackets
+  assert.match(screen,/<a class="bracket-match" href="#\/match\/1"/);
+  assert.match(screen,/bracket-team winner"><span class="bracket-club"><a href="#\/club\/2"/);
+  assert.match(screen,/<span class="bracket-pens" title="Tirs au but">\(5\)<\/span>/);
   // the block stepping between competitions sits in the header, left of the cup's name
-  const led=await cupScreen(cup,'calendar',new URLSearchParams(),'<div class="entity-nav"></div>');
+  const led=await cupScreen(cup,'bracket',new URLSearchParams(),'<div class="entity-nav"></div>');
   assert.match(led,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"><\/div><div><h1>Coupe de France<\/h1>/);
   assert.doesNotMatch(screen,/heading-with-lead/);
  }finally{globalThis.fetch=previous;}

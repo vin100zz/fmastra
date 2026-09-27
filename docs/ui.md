@@ -162,6 +162,19 @@ financier, saisons du club et classements archivés) se trient aussi.
 | Statistiques | meilleurs buteurs, passeurs, meilleures notes moyennes, clean sheets, cartons |
 | Historique | champions par saison, meilleur buteur par saison, puis les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat, puis les classements archivés |
 
+L'onglet Tableau d'une coupe nationale (sa seule vue des tours, ouverte par défaut), la Phase
+finale d'une coupe d'Europe et la phase finale d'une édition internationale dessinent l'arbre à
+élimination directe : une colonne par tour, du premier à la finale, chaque confrontation centrée
+à droite des deux dont elle réunit les vainqueurs. Une confrontation donne, par équipe, le score
+de chaque match (aller puis retour, sans cumul) et, s'il y en a eu, les tirs au but entre
+parenthèses. L'équipe qualifiée est surlignée. Un clic sur le bloc ouvre le match (le retour
+une fois joué), un clic sur le nom d'une équipe ouvre sa fiche, et en aller-retour chaque score
+ouvre son propre match. Les tirages étant ouverts en coupe nationale et en coupe d'Europe,
+l'ordre des cases est reconstruit après coup à partir des vainqueurs, et un tour pas encore
+tiré reste en cases vides non reliées ; le tableau des sélections, fixé d'avance, relie aussi
+les tours à venir. En coupe d'Europe, les barrages occupent autant de cases que les huitièmes :
+chacun est aligné sur le huitième où son vainqueur retrouve un club classé de 1 à 8.
+
 L'onglet Palmarès d'une coupe nationale ou d'une coupe d'Europe (vainqueurs par saison) se termine par
 les mêmes deux classements de 15 joueurs. Ils additionnent toutes les saisons, la saison en cours
 comprise, et tous les clubs qu'un joueur a servis dans cette seule compétition (les matches et

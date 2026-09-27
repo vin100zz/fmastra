@@ -66,3 +66,16 @@ test('legacy saves explain how to activate national competitions',async()=>{
  globalThis.fetch=async()=>({ok:true,json:async()=>({enabled:false})});
  try{assert.match(await internationalScreen(),/Nouvelle partie nécessaire/);}finally{globalThis.fetch=previous;}
 });
+
+test('finals end with a fixed bracket joined through the rounds still to be played',()=>{
+ const team=id=>({...nation,id,name:`Nation ${id}`});
+ const quarter=(id,home,away,winner)=>({id,round:14,round_label:'Quarts de finale',date:'2028-06-30',home:team(home),away:team(away),score:[1,0],penalties:null,winner_id:winner,first_leg_id:null});
+ const finals={...edition,final_groups:[{name:'A',rows:[row]}],matches:[quarter(1,-1,-2,-1),quarter(2,-3,-4,-3),quarter(3,-5,-6,-5),quarter(4,-7,-8,-7)],
+  knockout_rounds:[{number:14,label:'Quarts de finale'},{number:15,label:'Demi-finales'},{number:16,label:'Finale'}]};
+ const html=editionContent(finals,'finals');
+ assert.match(html,/class="bracket"/);
+ assert.equal((html.match(/bracket-tie empty/g)||[]).length,3);
+ assert.equal((html.match(/bracket-round linked/g)||[]).length,2);
+ // the knockout matches are in the bracket only, not repeated as round cards
+ assert.doesNotMatch(html,/<h2>Quarts de finale<\/h2>/);
+});

@@ -99,7 +99,7 @@ ni joueurs sous contrat ni statistiques de carrière. La participation européen
 n’active pas le championnat d’un club étranger. Aucune prime financière n’est ajoutée.
 
 L’interface conserve les 36 lignes du classement sur la même page, distingue
-les zones de qualification, sépare phase de ligue et phase finale et donne accès
+les zones de qualification, sépare phase de ligue et phase finale (dessinée en arbre, voir `ui.md`) et donne accès
 aux éditions précédentes, buteurs et vainqueurs. Les calendriers de tous les
 clubs, y compris étrangers, affichent les rencontres européennes.
 

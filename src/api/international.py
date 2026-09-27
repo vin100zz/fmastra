@@ -49,6 +49,7 @@ def edition_view(world, year):
     return {"year": edition.year, "name": edition.name, "kind": edition.kind,
             "qualification_groups": groups_view(edition.qualification_groups, False),
             "final_groups": groups_view(edition.final_groups, True),
+            "knockout_rounds": [{"number": number, "label": label} for number, label in FINALS_LABELS[edition.kind].items()],
             "best_seconds": [row_view(row) for row in best_seconds(world, edition)],
             "second_places": 6 if edition.kind == "euro" else 4,
             "qualifiers": [nation_ref(world, nid) for nid in edition.qualifiers],
