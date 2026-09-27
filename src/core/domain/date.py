@@ -76,6 +76,17 @@ class Date:
         return (later.year - self.year) * 12 + later.month - self.month + (later.day - self.day) / month_days(self.year, self.month)
 
 
+def readable_duration(days: int) -> str:
+    """Rounded to the most readable unit, like the web `duration`: "3 jours", "2 semaines", "1 mois"."""
+    days = max(1, days)
+    if days < 7:
+        return f"{days} jour{'s' if days > 1 else ''}"
+    if days < 30:
+        weeks = int(days / 7 + 0.5)
+        return f"{weeks} semaine{'s' if weeks > 1 else ''}"
+    return f"{max(1, int(days / 30 + 0.5))} mois"
+
+
 def next_annual_date(current: Date, month: int, day: int) -> Date:
     candidate = Date(current.year, month, min(day, month_days(current.year, month)))
     return candidate if candidate > current else candidate.add_years(1)

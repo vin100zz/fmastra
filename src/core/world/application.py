@@ -1,4 +1,5 @@
 """The only entry point for applying decisions to an existing world."""
+from core.domain.date import readable_duration
 from core.domain.players import Discipline
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
@@ -218,8 +219,6 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
             discipline = world.players[pid].discipline.get(match.competition_id)
             if discipline and discipline.suspended_matches > 0:
                 discipline.suspended_matches -= 1
-                if discipline.suspended_matches == 0:
-                    add_news(world, "suspension_end", f"{world.players[pid].name} n'est plus suspendu", club_id, pid)
     starters = {pid for pid, _ in event.result.home_lineup + event.result.away_lineup}
     for pid, stats in event.result.player_stats.items():
         if pid in event.result.temporary_players:
@@ -246,7 +245,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
                 discipline.served_thresholds.append(threshold.yellows)
         if pid in event.injuries:
             player.injury = event.injuries[pid]
-            text = f"{player.name} se blesse en match"
+            text = f"{player.name} se blesse en match ({readable_duration(player.injury.end.ordinal() - world.date.ordinal())})"
             world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, pid, match.id))
             add_news(world, "injury", text, player.club_id, pid, match.id)
         key = f"{match.season}:{pid}:{player.club_id}:{match.competition_id}"

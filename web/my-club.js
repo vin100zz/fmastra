@@ -26,8 +26,9 @@ function inbox(news) {
 function standingsBlock(club,standings) {
  if(!club.competition_id)return card('Classement',empty('Votre club ne dispute pas de championnat simulé.','Pas de classement'));
  // The user's own club stands out in the table (see .standings-card .own).
- const table=standingsTable(standings,true).replace(`href="#/club/${club.id}" class="club-link"`,`href="#/club/${club.id}" class="club-link own"`);
- return card('Classement',`<div class="standings-scroll">${table}</div>`,`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
+ const table=standingsTable(standings,'record').replace(`href="#/club/${club.id}" class="club-link"`,`href="#/club/${club.id}" class="club-link own"`);
+ const round=Math.max(0,...standings.items.map(row=>row.played));
+ return card(round?`Classement · ${round}${round===1?'re':'e'} journée`:'Classement',`<div class="standings-scroll">${table}</div>`,`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
 }
 
 function marketBlock(club,transfers,contracts) {
