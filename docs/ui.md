@@ -214,6 +214,9 @@ de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D » à droite
   du bandeau du score l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
+  Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
+  Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
+  mêmes positions ; le choix est retenu, sans WebGL le bouton disparaît.
 
 ### Match en direct
 

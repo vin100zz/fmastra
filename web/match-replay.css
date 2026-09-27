@@ -10,6 +10,11 @@ match-replay{display:block;padding:12px 16px 14px;--pitch-a:#1f5236;--pitch-b:#2
 .replay-stage{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--pitch-a)}
 .replay-pitch{display:block;width:100%;height:auto;max-height:62vh}
 .replay-stripe{fill:var(--pitch-b)}
+/* The television view (replay-3d.js) draws under the top-down pitch, of which only the banner stays. */
+.replay-3d{position:absolute;inset:0;display:block;width:100%;height:100%}
+.replay-stage.three .replay-pitch{position:relative}
+.replay-stage.three .replay-pitch>:not(.replay-banner){visibility:hidden}
+.replay-controls button[hidden]{display:none}
 .replay-lines{fill:none;stroke:var(--pitch-line);stroke-width:.3}
 .replay-lines .goal{fill:#ffffff26}
 .replay-player circle{stroke-width:.45;transition:r .25s}
@@ -67,7 +72,7 @@ match-replay{display:block;padding:12px 16px 14px;--pitch-a:#1f5236;--pitch-b:#2
 .replay-controls button{min-width:34px;height:30px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font:inherit;cursor:pointer}
 .replay-controls button:hover{border-color:var(--accent)}
 .replay-speed{display:inline-flex;gap:2px;margin-left:6px}
-.replay-speed button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.replay-speed button[aria-pressed="true"],.replay-controls [data-replay="view"][aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .replay-controls select{margin-left:auto;height:30px;padding:0 8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font:inherit;font-size:13px}
 @media(max-width:650px){
  match-replay{padding:10px}

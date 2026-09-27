@@ -14,7 +14,7 @@ const SEQUENCE_KINDS=new Set(['possession','progress','corner','free_kick','deli
 // Which chances the summary plays, by the engine's xG (0.05 for a corner or free kick, up to about 0.25 for a
 // clean shot); goals are always shown. Remembered for the viewer between matches.
 const FILTERS=[['0','Toutes les occasions'],['0.1','Occasions nettes (xG ≥ 0,10)'],['0.2','Grosses occasions (xG ≥ 0,20)'],['goals','Buts seulement']];
-const FILTER_KEY='touchline-replay-filter';
+const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view';
 const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substitution:'Changement'};
 // Players reach their moving targets like a critically damped spring: about the lag of a real block, never
 // faster than a sprint (in pitch metres per ms of replay), so a target that jumps does not make them teleport.
@@ -84,9 +84,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.dots={home:new Map(),away:new Map()};this.pressers={};
   this.build();
   this.reset(0);
+  try{if(localStorage.getItem(VIEW_KEY)==='3d')this.setView(true);}catch{}
   if(this.live)this.startLive();
  }
- disconnectedCallback(){this.run++;this.settle(false);cancelAnimationFrame(this.frame);this.frame=null;}
+ disconnectedCallback(){this.run++;this.settle(false);cancelAnimationFrame(this.frame);this.frame=null;this.pitch3d?.dispose();this.pitch3d=null;}
 
  build(){
   const {home,away}=this.teams;
@@ -95,7 +96,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${team(home)}<strong class="replay-score">0 – 0</strong>${team(away)}</div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span>${this.live?'<button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps <span>→</span></button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer <span>→</span></button>':''}<ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
 <div class="replay-caption" aria-live="polite"></div>
 <div class="replay-timeline" role="group" aria-label="Occasions du match"><span class="replay-half"></span><span class="replay-cursor"></span></div>
-<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><span class="replay-speed" role="group" aria-label="Vitesse">${[1,2,4].map(speed=>`<button type="button" data-speed="${speed}" aria-pressed="${speed===1}">${speed}×</button>`).join('')}</span><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
+<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><span class="replay-speed" role="group" aria-label="Vitesse">${[1,2,4].map(speed=>`<button type="button" data-speed="${speed}" aria-pressed="${speed===1}">${speed}×</button>`).join('')}</span><button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
   const stage=this.stage=this.querySelector('.replay-stage');
   this.svg=svg('svg',{viewBox:`-3 -3 ${W+6} ${H+6}`,class:'replay-pitch',role:'img','aria-label':`Terrain vu de dessus : ${home.name} contre ${away.name}`});
   const lines=svg('g',{class:'replay-lines'});
@@ -134,6 +135,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    else if(button.dataset.chance)this.jump(Number(button.dataset.chance));
    else if(button.dataset.speed){this.speed=Number(button.dataset.speed);this.querySelectorAll('[data-speed]').forEach(item=>item.setAttribute('aria-pressed',item===button));}
    else if(button.dataset.replay==='play')this.paused?this.play():this.pause();
+   else if(button.dataset.replay==='view')this.setView(!this.view3d,true);
    else if(button.dataset.replay==='previous')this.jump(this.previousIndex());
    else if(button.dataset.replay==='next')this.jump(this.nextIndex(this.current+1));
   });
@@ -144,6 +146,20 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    this.applyFilter();
   });
   this.applyFilter();
+ }
+
+ // The television view (replay-3d.js) is loaded on first use and reads this element's state at each frame;
+ // without WebGL its button goes away and the pitch stays top-down.
+ setView(on,remember=false){
+  const button=this.querySelector('[data-replay="view"]');
+  this.view3d=on;
+  if(remember)try{localStorage.setItem(VIEW_KEY,on?'3d':'2d');}catch{}
+  button.setAttribute('aria-pressed',String(on));
+  this.stage.classList.toggle('three',on);
+  if(!on){this.pitch3d?.dispose();this.pitch3d=null;return;}
+  if(this.pitch3d)return;
+  import('./replay-3d.js').then(({Pitch3D})=>{if(this.view3d&&!this.pitch3d&&this.isConnected)this.pitch3d=new Pitch3D(this);})
+   .catch(()=>{button.hidden=true;this.setView(false);});
  }
 
  minute(second){return clockLabel(second,this.halfTime());}
@@ -308,6 +324,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  }
  drawBall(height){
   const {x,y}=this.ballAt;
+  this.ballHeight=height;
   this.ball.setAttribute('cx',x.toFixed(2));this.ball.setAttribute('cy',(y-height*1.4).toFixed(2));this.ball.setAttribute('r',(.95+height*.4).toFixed(2));
   this.shadow.setAttribute('cx',x.toFixed(2));this.shadow.setAttribute('cy',(y+.5).toFixed(2));
   this.ball.classList.toggle('faded',!!this.faded);
