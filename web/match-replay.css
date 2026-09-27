@@ -99,7 +99,7 @@ match-replay.live .replay-timeline,match-replay.live [data-replay="previous"],ma
 .live-player{flex:1 1 0;min-width:34px;max-width:66px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border-radius:var(--radius);background:var(--panel-2);border:1px solid var(--line);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .live-player.bench{opacity:.6}
 .live-player.off{opacity:.4}
-.live-player-shirt{width:28px;height:28px;border-radius:5px 5px 9px 9px;display:grid;place-items:center;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums}
+.live-player-shirt{width:28px;height:28px;border-radius:5px 5px 9px 9px;display:grid;place-items:center;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;box-shadow:0 0 0 1px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.15)}
 .live-player-name{max-width:100%;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
 .live-player-marks{display:flex;gap:2px;align-items:center;min-height:14px}
 .live-player-marks .match-mark.injury{width:11px;height:11px}
