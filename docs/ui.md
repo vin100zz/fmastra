@@ -159,8 +159,23 @@ financier, saisons du club et classements archivés) se trient aussi.
 |---|---|
 | Classement | position, J, V, N, D, BP, BC, différence, points, forme |
 | Calendrier | matches par journée, avec résultats |
+| Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement |
+| Prochains matches | la prochaine journée ou le prochain tour, à côté du classement |
 | Statistiques | meilleurs buteurs, passeurs, meilleures notes moyennes, clean sheets, cartons |
 | Historique | champions par saison, meilleur buteur par saison, puis les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat, puis les classements archivés |
+
+Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro et de
+la Coupe du monde) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
+Le dernier tour est celui du résultat le plus récent, le prochain celui du plus proche match à jouer ;
+un tour pas encore tiré garde son nom et sa date, sans matches. Les matches sont à gauche et le classement
+qu'ils concernent à droite : le championnat, ou le classement de la phase de ligue d'une coupe d'Europe.
+Une compétition à groupes (qualifications et phase de groupes des sélections) montre chaque groupe avec
+ses matches et son classement réduit (#, points, J, différence), deux groupes par ligne (un seul sous
+1330 px), les places qualificatives surlignées. Un tour à élimination directe, sans classement, étale
+ses matches sur deux colonnes. Sous chaque match joué, les buteurs de chaque équipe sont alignés sous
+elle, par nom de famille (lien vers la fiche), dans l'ordre de leur premier but, avec les minutes de
+leurs buts regroupées : « Maupay (14, 75), Welbeck (56) ». Les minutes suivent la feuille de match
+(1 à 45, puis 45+1…, 46 à 90, puis 90+1…) ; la séance de tirs au but n'y figure pas.
 
 L'onglet Tableau d'une coupe nationale (sa seule vue des tours, ouverte par défaut), la Phase
 finale d'une coupe d'Europe et la phase finale d'une édition internationale dessinent l'arbre à
@@ -305,6 +320,8 @@ GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, r�
 GET  /api/competitions
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=
+GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null}]}
+GET  /api/international/editions/{année}/journee/derniere|prochaine   idem, un groupe par groupe de qualification ou de phase finale
 GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
 GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste

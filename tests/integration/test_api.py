@@ -288,6 +288,52 @@ def test_club_overview_before_any_match_has_no_lineup(client):
     assert overview["lineup"] is None
 
 
+def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(played):
+    world = played.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    get = lambda path: played.get("/api" + path).json()
+
+    def check_scorers(rows):
+        for row in rows:
+            result = world.matches.get(row["id"]) or world.international.matches[row["id"]]
+            if result.result is None:
+                assert row["scorers"] is None and row["score"] is None
+            elif result.result.status == "played":
+                assert [sum(len(scorer["minutes"]) for scorer in side) for side in row["scorers"]] == row["score"]
+    for league in (item for item in world.competitions.values() if item.kind == "league"):
+        latest, coming = get(f"/competitions/{league.id}/journee/derniere"), get(f"/competitions/{league.id}/journee/prochaine")
+        assert coming["round"]["number"] == latest["round"]["number"] + 1 and coming["round"]["label"] == f"Journée {coming['round']['number']}"
+        for data, played_out in ((latest, True), (coming, False)):
+            [block] = data["groups"]
+            assert len(block["matches"]) == len(league.club_ids) // 2
+            assert all(row["round"] == data["round"]["number"] and (row["score"] is not None) == played_out for row in block["matches"])
+            assert [row["club_id"] for row in block["standings"]] == [row["club_id"] for row in v.table(world, league.id)]
+            check_scorers(block["matches"])
+    for cup in (item for item in world.competitions.values() if item.kind == "cup"):
+        assert get(f"/competitions/{cup.id}/journee/derniere") == {"round": None, "groups": []}
+        coming = get(f"/competitions/{cup.id}/journee/prochaine")
+        assert coming["round"]["label"] == "32es de finale" and [len(block["matches"]) for block in coming["groups"]] == [32]
+        assert coming["groups"][0]["standings"] is None
+    for europe in (item for item in world.competitions.values() if item.kind == "europe"):
+        for which in ("derniere", "prochaine"):
+            data = get(f"/competitions/{europe.id}/journee/{which}?saison={world.season}")
+            if data["round"] and data["round"]["number"] <= world.config.world.europe.league_rounds:
+                assert data["round"]["label"].startswith("Phase de ligue") and len(data["groups"][0]["standings"]) == 36
+                check_scorers(data["groups"][0]["matches"])
+    [edition] = world.international.editions.values()
+    latest = get(f"/international/editions/{edition.year}/journee/derniere")
+    assert latest["round"]["label"].startswith("Qualifications · J") and len(latest["groups"]) == len(edition.qualification_groups) == 10
+    for group, block in zip(edition.qualification_groups, latest["groups"]):
+        assert {row["club"]["id"] for row in block["standings"]} == set(group) and all(row["club"]["national"] for row in block["standings"])
+        assert [row["movement"] for row in block["standings"]] == ["qualified"] + [None] * (len(group) - 1)
+        assert all({row["home"]["id"], row["away"]["id"]} <= set(group) and row["score"] for row in block["matches"])
+        check_scorers(block["matches"])
+    assert sum(len(block["matches"]) for block in latest["groups"]) == sum(len(group) // 2 for group in edition.qualification_groups)
+    assert played.get("/api/competitions/999999/journee/derniere").status_code == 404
+    assert played.get(f"/api/competitions/{league.id}/journee/hier").status_code == 422
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
 def test_squad_sorts_by_what_each_column_shows(played):
     world = played.app.state.game.world
     club = world.clubs[next(iter(world.active_clubs())).id]

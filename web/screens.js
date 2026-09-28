@@ -5,6 +5,7 @@ import {financialHistory,movementsHistory,seasonsHistory} from './club-history.j
 import {clubOverview} from './club-overview.js';
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
+import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
 
 export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
@@ -80,9 +81,10 @@ async function leagueContent(league,section,params,lead){
  let content='';
  if(section==='table'){const data=await api(`/competitions/${id}/classement?${params}`);content=card('Classement général',standingsTable(data),'<span class="muted">3 points pour une victoire</span>');}
  else if(section==='calendar'){const data=await api(`/competitions/${id}/calendrier?${params}`);content=card('Les rencontres',fixtures(data)+pager(data),`<form data-filter class="round-select"><select name="journee" aria-label="Journée">${data.rounds.map(round=>`<option value="${round}" ${data.round===round?'selected':''}>Journée ${round}</option>`).join('')}</select><button>Afficher</button></form>`);}
+ else if(isRoundTab(section))content=roundContent(await api(`/competitions/${id}/${roundPath(section)}`),section);
  else if(section==='stats'){const category=params.get('type')||'buteurs';const data=await api(`/competitions/${id}/statistiques?${query({...Object.fromEntries(params),type:category})}`);content=`<form class="filters" data-filter><select name="type" aria-label="Statistique">${[['buteurs','Meilleurs buteurs'],['passeurs','Meilleurs passeurs'],['notes','Meilleures notes'],['cartons','Cartons jaunes'],['clean_sheets','Clean sheets par club']].map(([key,label])=>`<option value="${key}" ${category===key?'selected':''}>${label}</option>`).join('')}</select><button>Afficher</button></form>`+card('Les leaders',table(['#',category==='clean_sheets'?'CLUB':'JOUEUR','CLUB','TOTAL'],data.items.map((row,index)=>[(data.page-1)*data.page_size+index+1,row.id?playerLink(row.id,row.name):clubLink(row.club),clubLink(row.club),`<b>${n(row.value)}</b>`]))+pager(data));}
  else{const data=await api(`/competitions/${id}/historique?${params}`);content=card('Le palmarès',table(['SAISON','CHAMPION','MEILLEUR BUTEUR','BUTS'],data.items.map(row=>[season(row.season),clubLink(row.champion),row.scorer?playerLink(row.scorer.id,row.scorer.name):'—',row.scorer?.value??'—']))+pager(data))+leadersCards(data.leaders)+seasonArchives(data);}
- return heading(league.name,'',lead)+tabs(`#/league/${id}`,[['table','Classement'],['calendar','Calendrier'],['stats','Statistiques'],['history','Historique']],section)+content;
+ return heading(league.name,'',lead)+tabs(`#/league/${id}`,[['table','Classement'],['calendar','Calendrier'],...ROUND_TABS,['stats','Statistiques'],['history','Historique']],section)+content;
 }
 
 export async function playersScreen(params){

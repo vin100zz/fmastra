@@ -2,6 +2,7 @@ import {api,escape as e,number as n,date,card,heading,table,sortableTable,empty,
 import {nationNavigation} from './navigation.js';
 import {monthlySalary} from './salaries.js';
 import {bracket} from './bracket.js';
+import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
 export function internationalStandings(rows,places=0){
  const rowClasses=rows.map((row,i)=>i<places?'promoted':'');
@@ -12,8 +13,10 @@ function scorers(records){
  return records.length?sortableTable(['JOUEUR','NATION','MATCHS','BUTS','PASSES'],records.map(row=>[
   playerLink(row.player_id,row.name),clubLink(row.nation),row.matches,row.goals,row.assists]),records.map(row=>[row.name,row.nation.name,row.matches,row.goals,row.assists])):empty('Les statistiques apparaîtront après les premiers matchs.');
 }
-export function editionContent(data,section='qualifications'){
- const navigation=tabs(`#/international/${data.year}`,[['finals','Phase finale'],['qualifications','Qualifications'],['statistics','Statistiques']],section);
+// `round` is the latest or next round of the edition, for the tabs that show it.
+export function editionContent(data,section='qualifications',round=null){
+ const navigation=tabs(`#/international/${data.year}`,[['finals','Phase finale'],['qualifications','Qualifications'],...ROUND_TABS,['statistics','Statistiques']],section);
+ if(round)return navigation+roundContent(round,section);
  if(section==='statistics')return navigation+card('Statistiques de l’édition',scorers(data.records));
  const finals=section==='finals';
  const groups=finals?data.final_groups:data.qualification_groups;
@@ -62,8 +65,8 @@ export async function internationalScreen(id,section,tab){
  if(!data.enabled)return heading('Sélections nationales')+card('Nouvelle partie nécessaire',empty('Cette sauvegarde conserve son calendrier de clubs. Créez une nouvelle partie pour activer les sélections nationales.'));
  const editionLinks=`<div class="tabs">${data.editions.map(item=>`<a href="#/international/${item.year}" class="${String(item.year)===id?'active':''}">${e(item.name)}</a>`).join('')}</div>`;
  if(id){
-  const edition=await api(`/international/editions/${id}`);
-  return heading(edition.name,`<a href="#/international">Toutes les nations</a>`)+editionLinks+(edition.winner?card('Vainqueur',`<div class="card-body">${clubLink(edition.winner)}</div>`):'')+editionContent(edition,section);
+  const [edition,round]=await Promise.all([api(`/international/editions/${id}`),isRoundTab(section)?api(`/international/editions/${id}/${roundPath(section)}`):null]);
+  return heading(edition.name,`<a href="#/international">Toutes les nations</a>`)+editionLinks+(edition.winner?card('Vainqueur',`<div class="card-body">${clubLink(edition.winner)}</div>`):'')+editionContent(edition,section,round);
  }
  return heading('Sélections nationales')+editionLinks+card('Palmarès',data.editions.some(item=>item.winner)?table(['ÉDITION','VAINQUEUR'],data.editions.filter(item=>item.winner).map(item=>[`<a href="#/international/${item.year}/finals">${e(item.name)}</a>`,clubLink(item.winner)])):empty('Les vainqueurs apparaîtront après les premières finales.'))+card('Nations actives',sortableTable(['NATION','FÉDÉRATION','FORCE / 100'],data.nations.map(team=>[clubLink(team),e(team.federation),n(team.strength)]),data.nations.map(team=>[team.name,team.federation,team.strength])));
 }

@@ -1,5 +1,6 @@
 """Read-only international screens, with no dependency on club seasons."""
 from dataclasses import asdict
+from typing import Literal
 from fastapi import APIRouter
 from core.world.international import group_table, best_seconds, edition_matches
 from . import navigation as nav
@@ -21,11 +22,15 @@ def get_player_or_none(world, pid):
     return world.players.get(pid) if pid >= 0 else world.international.temporary.get(pid)
 
 
+def round_label(edition, number):
+    return (f"Qualifications · J{number}" if number <= 10 else f"Groupes · J{number - 10}" if number <= 13
+            else FINALS_LABELS[edition.kind][number])
+
+
 def international_match_row(world, match):
     edition = world.international.editions[match.season]
     number = match.round_number
-    label = (f"Qualifications · J{number}" if number <= 10 else f"Groupes · J{number - 10}" if number <= 13
-             else FINALS_LABELS[edition.kind][number])
+    label = round_label(edition, number)
     return {"id": match.id, "date": match.date.iso(), "round": number, "season": edition.year,
             "competition_id": edition.competition_id, "competition": edition.name, "international": True,
             "aggregate": None, "first_leg_id": None, "home": nation_ref(world, match.home_id),
@@ -124,6 +129,12 @@ def international_router(service):
     def edition(year: int):
         with service.reading() as world:
             return edition_view(world, year)
+
+    @api.get("/editions/{year}/journee/{quand}")
+    def edition_round(year: int, quand: Literal["derniere", "prochaine"]):
+        from .rounds import edition_round as round_view
+        with service.reading() as world:
+            return round_view(world, year, quand)
 
     @api.get("/nations/{nation_id}")
     def nation(nation_id: int):

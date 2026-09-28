@@ -480,3 +480,27 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .bracket-round.legs .winner .bracket-score{color:var(--strong)}
 a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 .bracket-pens{flex-basis:26px;font-size:10px;color:var(--muted);font-weight:400}
+
+/* A competition's latest or next round: the matches with the table they count for on their right, groups two a row;
+   a cup round, with no table, lays its ties out over two columns. */
+.round-block{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start}
+.round-matches{min-width:0}
+.round-table{border-left:1px solid var(--line)}
+.round-table th{padding:0 5px!important}.round-table td{padding:3px 5px!important}
+.round-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.round-group{min-width:0;border-top:1px solid var(--line)}
+.round-group:nth-child(-n+2){border-top:0}
+.round-group:nth-child(odd){border-right:1px solid var(--line)}
+/* The same width for every group table, so that they line up from one group to the next. */
+.round-group .round-block{grid-template-columns:minmax(0,1fr) minmax(250px,max-content)}
+.round-group .round-table table{width:100%}
+.round-group h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.round-knockout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.round-knockout .fixture:nth-child(odd){border-right:1px solid var(--row-line)}
+.round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:0}
+.fixture.with-scorers{row-gap:2px}
+.fixture-scorers{min-width:0;font-size:11px;line-height:15px;color:var(--muted)}
+.fixture-scorers a{color:inherit}
+.fixture-scorers a:hover{color:var(--strong);text-decoration:underline}
+@media(max-width:1329px){.round-groups{grid-template-columns:1fr}.round-group:nth-child(2){border-top:1px solid var(--line)}.round-group:nth-child(odd){border-right:0}}
+@media(max-width:950px){.round-block,.round-group .round-block,.round-knockout{grid-template-columns:1fr}.round-table{border-left:0;border-top:1px solid var(--line)}.round-knockout .fixture:nth-child(odd){border-right:0}.round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--row-line)}}

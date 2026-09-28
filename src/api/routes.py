@@ -522,6 +522,11 @@ def router(service: GameService) -> APIRouter:
             data = v.paginate([v.match_row(world, match) for match in matches if match.round_number == selected], page)
             return {**data, "round": selected, "rounds": rounds}
 
+    @api.get("/competitions/{competition_id}/journee/{quand}")
+    def round_matches(competition_id: int, quand: Literal["derniere", "prochaine"], saison: int | None = None) -> dict:
+        from .rounds import competition_round
+        with service.reading() as world: return competition_round(world, competition_id, quand, saison)
+
     @api.get("/competitions/{competition_id}/statistiques")
     def statistics(competition_id: int, type: Literal["buteurs", "passeurs", "notes", "cartons", "clean_sheets"] = "buteurs", page: int = Query(1, ge=1), saison: int | None = None) -> dict:
         from .statistics import leaders

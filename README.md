@@ -31,6 +31,12 @@ les comptes rendus et les compositions. L'utilisateur dirige un club, choisi à 
 création : compositions, matches en direct, contrats et transferts ; les autres
 clubs sont pilotés par l'IA.
 
+Chaque compétition (championnat, coupe nationale, coupe d'Europe, Euro, Coupe du monde) a deux
+onglets, **Derniers matches** et **Prochains matches** : la dernière ou la prochaine journée (ou le
+tour de coupe), à gauche, avec les buteurs et les minutes de leurs buts sous chaque match joué
+(« Maupay (14, 75) »), et le classement à droite ; groupe par groupe, deux par ligne, quand la
+compétition a des groupes.
+
 Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, et les compétitions du même pays de la première division à la coupe. Le passage d'un club à l'autre garde l'onglet ouvert.
 
 La liste des joueurs affiche toutes leurs nationalités, leur valeur et leur potentiel exact à côté du niveau actuel, tous deux sous forme de badges sur 200 dont la couleur suit une même échelle (rouge jusqu'à 70, jaune à 110, vert à partir de 150),

@@ -1,7 +1,8 @@
 import {api,escape as e,season,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
+import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
-const SECTIONS=[['table','Classement'],['calendar','Phase de ligue'],['knockout','Phase finale'],['stats','Statistiques'],['history','Palmarès']];
+const SECTIONS=[['table','Classement'],['calendar','Phase de ligue'],['knockout','Phase finale'],...ROUND_TABS,['stats','Statistiques'],['history','Palmarès']];
 
 // Each two-legged round after the league phase becomes one stage (the final is a single match); the play-offs lead into one side of each round-of-16 tie.
 function knockoutStages(data){
@@ -35,6 +36,8 @@ export async function europeScreen(code,section,params,competitions){
   const focus=rounds.some(round=>round.number===data.next_round)?data.next_round:
    rounds.some(round=>round.number===data.latest_round)?data.latest_round:rounds.find(round=>!round.complete)?.number||rounds.at(-1).number;
   content=rounds.map(round=>`<details class="card cup-round" ${round.number===focus?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures(round):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
+ }else if(isRoundTab(section)){
+  content=roundContent(await api(`/competitions/${cup.id}/${roundPath(section)}?${year}`),section);
  }else if(section==='stats'){
   const stats=await api(`/competitions/${cup.id}/statistiques?type=buteurs&${year}&page=${params.get('page')||1}`);
   content=card(`Meilleurs buteurs · ${season(data.season)}`,table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]))+pager(stats));
