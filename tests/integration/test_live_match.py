@@ -100,6 +100,7 @@ def test_the_live_api_from_kick_off_to_the_end_of_the_day(config, tmp_path):
             while (job := client.get(f"/api/travaux/{job['id']}").json())["status"] not in ("done", "failed"):
                 time.sleep(0.1)
             assert job["status"] == "done", job
+            return job
         assert client.get("/api/direct").status_code == 409
         wait(client.post("/api/direct/demarrer", json={}).json())
         assert client.get("/api/monde/etat").json()["live_match_id"] == match.id
@@ -127,6 +128,9 @@ def test_the_live_api_from_kick_off_to_the_end_of_the_day(config, tmp_path):
         assert final["status"] == "finished"
         assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
-        wait(client.post("/api/direct/terminer", json={}).json())
+        closed = wait(client.post("/api/direct/terminer", json={}).json())
+        # The screen flow then shows the round the match counted for.
+        competition = world.competitions[match.competition_id]
+        assert closed["competition"] == {"kind": competition.kind, "id": competition.id, "code": competition.code}
         assert client.get("/api/monde/etat").json()["live_match_id"] is None
         assert world.matches[match.id].result is not None and world.pending_match_day is None

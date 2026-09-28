@@ -1,14 +1,17 @@
-import {escape as e,date,card,empty,fixtures,standingsTable} from './ui.js';
+import {escape as e,date,card,empty,fixtures,standingsTable,table,playerLink,clubLink} from './ui.js';
 
 // The two tabs every competition has, just before its statistics; `path` is their endpoint below the competition or the edition.
 export const ROUND_TABS=[['latest','Derniers matches'],['next','Prochains matches']];
 export const isRoundTab=section=>ROUND_TABS.some(([key])=>key===section);
 export const roundPath=section=>`journee/${section==='latest'?'derniere':'prochaine'}`;
 
-// Matches on the left, the table they count for on the right; a cup round, with no table, lays its ties out over two columns.
+// Matches on the left, the table they count for on the right, then the competition's leading scorers when it has any;
+// a cup round, with no table, lays its ties out over two columns.
 function block(group,compact){
  const matches=fixtures({items:group.matches});
- return group.standings?`<div class="round-block"><div class="round-matches">${matches}</div><div class="round-table">${standingsTable({items:group.standings},compact)}</div></div>`:`<div class="round-knockout">${matches}</div>`;
+ if(!group.standings)return `<div class="round-knockout">${matches}</div>`;
+ const scorers=group.top_scorers?.length?`<div class="round-top-scorers">${table(['#','JOUEUR','CLUB','BUTS'],group.top_scorers.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club),`<b>${row.goals}</b>`]))}</div>`:'';
+ return `<div class="round-block${scorers?' with-top-scorers':''}"><div class="round-matches">${matches}</div><div class="round-table">${standingsTable({items:group.standings},compact)}</div>${scorers}</div>`;
 }
 
 export function roundContent(data,section){

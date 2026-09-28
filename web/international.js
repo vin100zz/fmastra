@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,date,card,heading,table,sortableTable,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag,money,duration} from './ui.js';
+import {api,escape as e,number as n,date,card,heading,table,sortableTable,standings,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag,money,duration} from './ui.js';
 import {nationNavigation} from './navigation.js';
 import {monthlySalary} from './salaries.js';
 import {bracket} from './bracket.js';
@@ -6,8 +6,8 @@ import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
 export function internationalStandings(rows,places=0){
  const rowClasses=rows.map((row,i)=>i<places?'promoted':'');
- return table(['#','NATION','PTS','J','V','N','D','BP','BC','DIFF.'],rows.map((row,i)=>[
-  i+1,clubLink(row.nation),`<strong>${row.points}</strong>`,row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,row.difference]),undefined,rowClasses);
+ return standings(['#','NATION','PTS','J','V','N','D','BP','BC','DIFF.'],rows.map((row,i)=>[
+  i+1,clubLink(row.nation),`<strong>${row.points}</strong>`,row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,row.difference]),rowClasses);
 }
 function scorers(records){
  return records.length?sortableTable(['JOUEUR','NATION','MATCHS','BUTS','PASSES'],records.map(row=>[

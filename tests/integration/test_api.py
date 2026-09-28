@@ -300,6 +300,10 @@ def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(pl
                 assert row["scorers"] is None and row["score"] is None
             elif result.result.status == "played":
                 assert [sum(len(scorer["minutes"]) for scorer in side) for side in row["scorers"]] == row["score"]
+
+    def top_scorers(competition_id, query=""):
+        leaders = get(f"/competitions/{competition_id}/statistiques?type=buteurs{query}")["items"]
+        return [{key: row[key] for key in ("id", "name", "club", "goals")} for row in leaders[:10]]
     for league in (item for item in world.competitions.values() if item.kind == "league"):
         latest, coming = get(f"/competitions/{league.id}/journee/derniere"), get(f"/competitions/{league.id}/journee/prochaine")
         assert coming["round"]["number"] == latest["round"]["number"] + 1 and coming["round"]["label"] == f"Journée {coming['round']['number']}"
@@ -308,17 +312,19 @@ def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(pl
             assert len(block["matches"]) == len(league.club_ids) // 2
             assert all(row["round"] == data["round"]["number"] and (row["score"] is not None) == played_out for row in block["matches"])
             assert [row["club_id"] for row in block["standings"]] == [row["club_id"] for row in v.table(world, league.id)]
+            assert block["top_scorers"] == top_scorers(league.id) and 0 < len(block["top_scorers"]) <= 10
             check_scorers(block["matches"])
     for cup in (item for item in world.competitions.values() if item.kind == "cup"):
         assert get(f"/competitions/{cup.id}/journee/derniere") == {"round": None, "groups": []}
         coming = get(f"/competitions/{cup.id}/journee/prochaine")
         assert coming["round"]["label"] == "32es de finale" and [len(block["matches"]) for block in coming["groups"]] == [32]
-        assert coming["groups"][0]["standings"] is None
+        assert coming["groups"][0]["standings"] is None and coming["groups"][0]["top_scorers"] is None
     for europe in (item for item in world.competitions.values() if item.kind == "europe"):
         for which in ("derniere", "prochaine"):
             data = get(f"/competitions/{europe.id}/journee/{which}?saison={world.season}")
             if data["round"] and data["round"]["number"] <= world.config.world.europe.league_rounds:
                 assert data["round"]["label"].startswith("Phase de ligue") and len(data["groups"][0]["standings"]) == 36
+                assert data["groups"][0]["top_scorers"] == top_scorers(europe.id, f"&saison={world.season}")
                 check_scorers(data["groups"][0]["matches"])
     [edition] = world.international.editions.values()
     latest = get(f"/international/editions/{edition.year}/journee/derniere")

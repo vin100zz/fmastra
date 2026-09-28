@@ -67,6 +67,11 @@ départs transférés, fins de contrat, retraites et jeunes promus. Les arrivée
 Pour une ancienne sauvegarde, les comptes détaillés commencent à la mise à jour ;
 les données historiques manquantes sont signalées. Les dates de naissance des retraités peuvent être récupérées dans le CSV uniquement si son empreinte correspond exactement à celle de l'import initial.
 
+**Continuer** avance jusqu'au prochain jour que suit votre club (sa division, la coupe
+de son pays, les coupes d'Europe, les sélections), montre les prochains matches s'il
+joue, sinon les derniers résultats, puis Mon club. Une offre à traiter l'arrête plus
+tôt, et il ne dépasse jamais une semaine.
+
 Le bouton **▶ Auto** enchaîne les prochaines dates de matchs, championnat et coupe.
 Le mode tourne sur le serveur, pas dans la page : on peut naviguer entre les écrans,
 recharger ou fermer l'onglet sans l'interrompre, et l'écran affiché suit les nouvelles

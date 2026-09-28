@@ -12,7 +12,9 @@ from uuid import uuid4
 from core.domain.world import World
 from core.engine.live import LiveMatch
 from core.world.live import build_live_match, finish_live_match, start_live_match
+from core.world.human import pending_lineup_match
 from core.world.simulation import advance_day, target_date
+from core.world.steps import day_results, step_over, step_target
 from core.world.validation import validate_world
 from infrastructure.config.loader import load_config
 from infrastructure.importation.loader import import_world
@@ -31,6 +33,20 @@ class Job:
     progress: float = 0
     date: str | None = None
     error: str | None = None
+    # The competition whose round the screen flow shows once the job ends: its next round when
+    # the human club's match awaits a lineup, otherwise the round just played.
+    competition: dict | None = None
+
+
+def round_competition(world: World, results: tuple[str, int] | None) -> dict | None:
+    """A competition as the pages showing its rounds address it."""
+    if results is None:
+        return None
+    kind, key = results
+    if kind == "international":
+        return {"kind": "international", "year": key}
+    competition = world.competitions[key]
+    return {"kind": competition.kind, "id": competition.id, "code": competition.code}
 
 
 class GameService:
@@ -116,6 +132,7 @@ class GameService:
     def _run(self, job: Job, payload: dict) -> None:
         advancing = False
         awaiting_lineup = False
+        competition = None
         pending_save: Future | None = None
         try:
             with self.lock: job.status = "running"
@@ -138,6 +155,7 @@ class GameService:
                     else:
                         finish_live_match(world, self.live_match(world))
                         self.live = None
+                        competition = round_competition(world, day_results(world))
                     advancing = False
                 validate_world(world)
                 self.store.save(world, "autosave")
@@ -166,20 +184,29 @@ class GameService:
                     if saved_on != world.date.ordinal(): self.store.save(world, "autosave")
             else:
                 world = self.world
-                destination = target_date(world, payload["until"])
-                days = destination.ordinal() - world.date.ordinal()
-                for index in range(days):
+                # "etape" ends on a day the human club follows (see core.world.steps); the other targets
+                # run a fixed number of days, a paused match day counting as one when it is resumed.
+                step = payload["until"] == "etape"
+                start, news_from = world.date, len(world.news)
+                destination = step_target(world) if step else target_date(world, payload["until"])
+                days = destination.ordinal() - start.ordinal()
+                index = 0
+                while True:
                     with self.lock:
                         advancing = True
                         finished = advance_day(world)
                         advancing = False
+                        index += 1
                         job.date = world.date.iso()
-                        job.progress = (index + 1) / days * .95
+                        job.progress = min(index / days, 1) * .95
                     if not finished:
                         awaiting_lineup = True
                         break
                     if world.date.day == 1: self.store.save(world, "autosave")
+                    if step_over(world, start, news_from) if step else index >= days: break
                 validate_world(world)
+                competition = round_competition(world, ("club", world.matches[pending_lineup_match(world)].competition_id)
+                                                if awaiting_lineup else day_results(world))
                 if awaiting_lineup:
                     # Terminal pause, not a failure: save synchronously so it survives a restart.
                     self.store.save(world, "autosave")
@@ -190,6 +217,7 @@ class GameService:
             with self.lock:
                 job.status, job.progress = ("awaiting_lineup", job.progress) if awaiting_lineup else ("done", 1)
                 job.date = self.world.date.iso()
+                job.competition = competition
         except Exception as exc:
             with self.lock:
                 self.recovery_required |= advancing

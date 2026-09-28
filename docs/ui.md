@@ -65,10 +65,37 @@ Barre persistante en tête d'application :
 - Bouton « Continuer »
 - Journal des événements du jour : résultats, transferts, blessures
 
-Le mode Auto (enchaîner les journées), le choix de l'avance (prochaine journée,
-demain, fin du mercato) et le choix du thème clair ou sombre sont en bas du menu
-de gauche, sous « Ma partie » ; sur téléphone, en haut à droite à côté de l'icône
-de « Ma partie ».
+Le mode Auto (enchaîner les journées) et le choix du thème clair ou sombre sont
+en bas du menu de gauche, sous « Ma partie » ; sur téléphone, en haut à droite à
+côté de l'icône de « Ma partie ».
+
+### Enchaînement de « Continuer »
+
+« Continuer » avance jusqu'au prochain jour que suit le club dirigé
+(`core/world/steps.py`) :
+
+- une journée de sa division (pas celles des autres divisions du pays) ;
+- un tour de la coupe de son pays, même éliminé ;
+- une soirée européenne, même sans y participer : C1, C3 et C4 jouent le même soir ;
+- une date de match des sélections (qualifications et phase finale) ;
+- le 1er juillet (nouvelle saison) et la veille de la fermeture de chaque mercato.
+
+L'avance s'arrête plus tôt sur une nouvelle actualité qui demande une décision
+(offre reçue, négociation de contrat ouverte, demande de prolongation), et ne
+dépasse jamais 7 jours.
+
+- Le club joue ce jour-là : « Prochains matches » de sa compétition, le bouton
+  devient « Match », puis la composition et le match, puis « Derniers matches ».
+- Sinon, « Derniers matches » de ce qui s'est joué : la coupe d'Europe du club,
+  la C1 s'il n'en joue aucune.
+- Rien de suivi n'a été joué (semaine creuse, date clé, décision à prendre) :
+  directement Mon club.
+
+Après les résultats, « Continuer » mène à Mon club si une actualité est arrivée
+depuis sa dernière visite, sinon avance directement. Ces étapes restent dues si
+l'on consulte d'autres pages entre-temps (état gardé dans l'onglet du navigateur,
+`web/flow.js`). Le mode Auto garde son propre rythme : il enchaîne toutes les
+dates de matchs du monde et ne s'arrête jamais.
 
 Une avance longue renvoie un identifiant de travail et une progression.
 Elle s'affiche dans la barre du haut, sans décaler la page : le libellé au
@@ -159,16 +186,19 @@ financier, saisons du club et classements archivés) se trient aussi.
 |---|---|
 | Classement | position, J, V, N, D, BP, BC, différence, points, forme |
 | Calendrier | matches par journée, avec résultats |
-| Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement |
-| Prochains matches | la prochaine journée ou le prochain tour, à côté du classement |
+| Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement et des 10 meilleurs buteurs |
+| Prochains matches | la prochaine journée ou le prochain tour, à côté du classement et des 10 meilleurs buteurs |
 | Statistiques | meilleurs buteurs, passeurs, meilleures notes moyennes, clean sheets, cartons |
 | Historique | champions par saison, meilleur buteur par saison, puis les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat, puis les classements archivés |
 
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro et de
 la Coupe du monde) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
 Le dernier tour est celui du résultat le plus récent, le prochain celui du plus proche match à jouer ;
-un tour pas encore tiré garde son nom et sa date, sans matches. Les matches sont à gauche et le classement
-qu'ils concernent à droite : le championnat, ou le classement de la phase de ligue d'une coupe d'Europe.
+un tour pas encore tiré garde son nom et sa date, sans matches. Les matches sont à gauche, sur 460 px au
+plus, et le classement qu'ils concernent prend le reste de la largeur : le championnat, ou le classement
+de la phase de ligue d'une coupe d'Europe. Ce classement est suivi des 10 meilleurs buteurs de la
+compétition sur la saison (#, joueur, club, buts), à sa droite à partir de 1450 px, dessous en deçà ;
+ils n'apparaissent qu'une fois un but marqué.
 Une compétition à groupes (qualifications et phase de groupes des sélections) montre chaque groupe avec
 ses matches et son classement réduit (#, points, J, différence), deux groupes par ligne (un seul sous
 1330 px), les places qualificatives surlignées. Un tour à élimination directe, sans classement, étale
@@ -275,11 +305,11 @@ qu'il serait si les matches s'arrêtaient à la minute affichée.
   sur le terrain sous « Mi-temps ».
 - « Fin du match » laisse l'IA finir le match sans l'afficher.
 - Au coup de sifflet final, « Continuer », sur le terrain, clôt la journée et
-  mène à Mon club. « 2e mi-temps » et « Continuer » reprennent le style du
+  mène aux « Derniers matches » de la compétition, puis à Mon club. « 2e mi-temps » et « Continuer » reprennent le style du
   bouton « Continuer » du bandeau (classe \`cta\`).
 
 « Simuler », à côté de « Jouer » dans le bandeau de la composition, joue le match
-sans le regarder et affiche le compte rendu. Le mode Auto ne joue jamais en direct.
+sans le regarder et affiche le compte rendu, puis « Derniers matches » et Mon club. Le mode Auto ne joue jamais en direct.
 
 Pour un résultat analytique, signaler l'absence de détail et masquer les
 statistiques inconnues au lieu d'afficher des zéros. Garder les compositions
@@ -300,10 +330,10 @@ signaler explicitement plutôt que d'afficher des sections vides.
 
 ```
 GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping)
-POST /api/monde/avancer                  {commande_id: str, jusqu_a: "jour" | "journee" | "fin_mercato"} -> travail_id
+POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
-GET  /api/travaux/{id}                  statut, progression, erreur éventuelle
+GET  /api/travaux/{id}                  statut, progression, erreur éventuelle, compétition dont le tour suit (competition)
 GET  /api/monde/journal?date=             événements du jour
 GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {europe, countries}
 
@@ -320,8 +350,8 @@ GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, r�
 GET  /api/competitions
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=
-GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null}]}
-GET  /api/international/editions/{année}/journee/derniere|prochaine   idem, un groupe par groupe de qualification ou de phase finale
+GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison, avec le classement) | null}]}
+GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification ou de phase finale
 GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
 GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste

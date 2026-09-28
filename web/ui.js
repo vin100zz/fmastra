@@ -63,11 +63,12 @@ export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</
 // A page title on its own: the name of the left-menu entry it belongs to, with neither line above nor below.
 export const heading = (title,extra='',lead='') => {const text=`<div><h1>${escape(title)}</h1></div>`;return `<div class="page-heading">${lead?`<div class="heading-with-lead">${lead}${text}</div>`:text}${extra}</div>`;};
 export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
-export function table(headers, rows, footer, rowClasses, sort) {
+// `headClasses` gives each column's header a class ('' for none).
+export function table(headers, rows, footer, rowClasses, sort, headClasses) {
  const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
  const cell=(cell,index,column)=>sort?`<td data-value="${escape(sort.values[index][column]??'')}">${cell}</td>`:`<td>${cell}</td>`;
  const first=index=>sort?.ascending?.includes(index)?' data-first="asc"':'';
- return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}><thead><tr>${headers.map((item,index)=>`<th${first(index)}>${head(item)}</th>`).join('')}</tr></thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
+ return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}><thead><tr>${headers.map((item,index)=>`<th${headClasses?.[index]?` class="${headClasses[index]}"`:''}${first(index)}>${head(item)}</th>`).join('')}</tr></thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
 }
 // A short list shown whole, sorted in the browser: `values` holds the raw value behind each cell ('' when unknown);
 // `ascending` lists the columns whose first click runs from smallest to largest (ranks), the others start from the largest.
@@ -109,6 +110,9 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  });
  return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows)}</div>`+pager(data);
 }
+// Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
+const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};
+export const standings = (headers, rows, rowClasses, sort) => `<div class="standings">${table(headers,rows,undefined,rowClasses,sort,headers.map(header=>STANDINGS_COLUMNS[header]||''))}</div>`;
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round.
@@ -121,7 +125,7 @@ export function standingsTable(data, compact=false, sortable=false) {
  // Form sorts by the points of the last five matches.
  const points=row=>[...row.form].reduce((sum,letter)=>sum+(letter==='V'?3:letter==='N'?1:0),0);
  const values=()=>data.items.map(row=>[row.rank,row.club?.name,row.points,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference,...(compact?[]:[points(row)])]);
- return table(headers,cells,undefined,rowClasses,sortable?{values:values(),ascending:[0]}:undefined);
+ return standings(headers,cells,rowClasses,sortable?{values:values(),ascending:[0]}:undefined);
 }
 // Under each side of a played match, its scorers by surname, each with the minutes of their goals: "Maupay (14, 75), Gouiri (26)".
 const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(surname(scorer.name))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(surname(scorer.name))}</a>`} (${scorer.minutes.join(', ')})`).join(', ');

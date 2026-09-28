@@ -11,9 +11,11 @@ from core.world.europe import round_label as europe_label
 from core.world.international import edition_matches, group_table
 from . import views as v
 from .international import FINALS_LABELS, international_match_row, nation_ref, round_label as international_label
+from .statistics import leaders
 
 Which = Literal["derniere", "prochaine"]
 HALF_SECONDS = 2700
+TOP_SCORERS = 10
 GROUP_ROUNDS, FINAL_GROUP_ROUNDS = 10, 13
 
 
@@ -79,7 +81,10 @@ def competition_round(world: World, competition_id: int, which: Which, season: i
     table = (v.table(world, competition.id, None if year == world.season else year) if competition.kind == "league" else
              v.table(world, competition.id, year) if competition.kind == "europe" and number <= league_rounds else None)
     rows = [{**v.match_row(world, match), "scorers": scorers(world, match)} for match in fixtures]
-    return view(number, label, day.iso() if day else None, [{"name": None, "matches": rows, "standings": table}] if rows else [])
+    # The competition's leading scorers of the season go with its table (a knockout round, spread over two columns, has no room for them).
+    top = None if table is None else [{key: row[key] for key in ("id", "name", "club", "goals")}
+                                      for row in leaders(world, competition.id, "buteurs", year)[:TOP_SCORERS]]
+    return view(number, label, day.iso() if day else None, [{"name": None, "matches": rows, "standings": table, "top_scorers": top}] if rows else [])
 
 
 def nation_standings(world: World, edition, group: list[int], finals: bool) -> list[dict]:

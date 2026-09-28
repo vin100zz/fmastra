@@ -27,7 +27,8 @@ class Command(BaseModel):
 
 
 class Advance(Command):
-    jusqu_a: Literal["jour", "journee", "fin_mercato"]
+    # "etape" is the screen flow's Continuer (see core.world.steps); the others remain for tools and tests.
+    jusqu_a: Literal["etape", "jour", "journee", "fin_mercato"]
 
 
 class Slot(Command):
@@ -163,6 +164,8 @@ def router(service: GameService) -> APIRouter:
                              "fixtures": sum(match.season == world.season for match in world.matches.values()),
                              "controlled_club_id": world.controlled_club_id,
                              "awaiting_lineup": pending_lineup_match(world),
+                             # The feed only grows: the page compares it with its last visit to Mon club.
+                             "news_count": len(world.news),
                              "live_match_id": world.live_match.match_id if world.live_match else None,
                              "club_next_matches": club_next_matches(world)})
             return data

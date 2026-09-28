@@ -12,14 +12,15 @@ import {myClubScreen} from './my-club.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
 import {awayIcon} from './club-overview.js';
+import {landing,setSteps,resetFlow,markNewsSeen,nextStep} from './flow.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
 const sortScope=table=>`${location.hash.split('?')[0]}|${[...main.querySelectorAll('table[data-sortable]')].indexOf(table)}`;
-let renderedPath=null,state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,justPlayedMatchId=null,lastFinishedJobId=null;
+let renderedPath=null,state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,lastFinishedJobId=null;
 const main=document.querySelector('#main');
-// Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the report).
-// Simuler, beside Jouer on the composition screen, skips the live match and goes straight to the report.
+// Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the round's results).
+// Simuler, beside Jouer on the composition screen, skips the live match and shows its report first (see flow.js).
 const compositionHash=()=>`#/club/${state.controlled_club_id}/composition`;
 function onCompositionScreen(){const {parts}=routeParts();return parts[0]==='club'&&Number(parts[1])===state.controlled_club_id&&parts[2]==='composition';}
 // An unplayable lineup greys Jouer and Simuler out; they stay hoverable (aria-disabled, not disabled) so their tooltip tells what to fix.
@@ -29,7 +30,7 @@ function blockOn(button,issues,title=null){
  else{button.removeAttribute('aria-disabled');if(title)button.title=title;else button.removeAttribute('title');}
 }
 function updateAdvanceButton(){
- const button=document.querySelector('#advance'),mode=document.querySelector('#advance-mode'),simulate=document.querySelector('#simulate');
+ const button=document.querySelector('#advance'),simulate=document.querySelector('#simulate');
  // During the live match the day waits: Continuer only closes it once the final whistle has gone.
  if(state.live_match_id){
   button.innerHTML='Continuer <span>→</span>';
@@ -37,7 +38,7 @@ function updateAdvanceButton(){
   // The header is hidden during the live match: its own Continuer mirrors this one.
   document.querySelectorAll('[data-live="continuer"]').forEach(copy=>copy.disabled=button.disabled);
   blockOn(button,[]);
-  mode.hidden=true;simulate.hidden=true;
+  simulate.hidden=true;
   return;
  }
  const jouer=state.awaiting_lineup&&onCompositionScreen();
@@ -46,7 +47,6 @@ function updateAdvanceButton(){
  blockOn(button,issues);
  blockOn(simulate,issues,'Passer directement au résultat du match');
  simulate.hidden=!jouer;
- mode.hidden=Boolean(state.awaiting_lineup);
 }
 // The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
 const busyButtons=()=>{
@@ -54,7 +54,7 @@ const busyButtons=()=>{
  // (its autosave runs after the status turns "done"), which must not leave the buttons stuck disabled.
  const busy=Boolean(polling)||submitting;
  const auto=Boolean(state.auto?.running),stopping=Boolean(state.auto?.stopping);
- document.querySelectorAll('[data-command],#advance,#advance-mode,#simulate').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
+ document.querySelectorAll('[data-command],#advance,#simulate').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
  updateAdvanceButton();
  const button=document.querySelector('#autoplay');
  button.disabled=stopping||(!auto&&(busy||!state.exists||Boolean(state.recovery_required)));
@@ -134,7 +134,10 @@ async function render(){const version=++renderVersion;const {parts,params}=route
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],folds=path===renderedPath?[...main.querySelectorAll('details.filters')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
+ if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],folds=path===renderedPath?[...main.querySelectorAll('details.filters')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+ // Mon club on screen: the news it shows no longer call for a visit in the flow of Continuer.
+ if(parts[0]==='mon-club'&&state.controlled_club_id!=null&&!state.live_match_id)markNewsSeen(state.news_count);
+ document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
  }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
 
@@ -194,17 +197,17 @@ async function pollJob(id){
     lastFinishedJobId=id;
     document.querySelector('#job-bar').hidden=true;
     if(job.status==='failed'){pendingMatchRedirect=null;toast(job.error,true);}
-    else if(job.status==='awaiting_lineup'){pendingMatchRedirect=null;toast('Un match de votre club est programmé aujourd’hui : composez votre équipe pour poursuivre.');}
+    else if(job.status==='awaiting_lineup'){toast('Un match de votre club est programmé aujourd’hui : composez votre équipe pour poursuivre.');}
     else if(job.command==='live_start')toast('Coup d’envoi !');
     else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='live_finish'?'Journée terminée. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
-    if(job.status==='done'&&pendingMatchRedirect){const matchId=pendingMatchRedirect;pendingMatchRedirect=null;justPlayedMatchId=matchId;location.hash=`#/match/${matchId}`;return;}
     if(job.status==='done'&&job.command==='live_start'&&location.hash!=='#/direct'){location.hash='#/direct';return;}
-    // A normal advance and the end of a live match both land on Mon club.
-    if(job.status==='done'&&job.command==='live_finish'){location.hash='#/mon-club';return;}
-    // A normal advance always lands on Mon club, so the user sees anything needing attention; a paused match keeps its own flow above.
-    if(job.status==='done'&&job.command==='advance'){
-     if(location.hash==='#/mon-club')await render();else location.hash='#/mon-club';
-     return;
+    if(job.status!=='failed'&&['create','load'].includes(job.command))resetFlow();
+    if(job.status==='done'&&job.command==='auto')setSteps([]);
+    // An advance and the end of a live match land on the round the club follows (or Mon club), then queue what Continuer shows next.
+    if(job.status!=='failed'&&['advance','live_finish'].includes(job.command)){
+     const {hash,steps}=landing(job,pendingMatchRedirect);
+     pendingMatchRedirect=null;setSteps(steps);
+     if(hash&&location.hash!==hash){location.hash=hash;return;}
     }
     await render();
     return;
@@ -231,10 +234,10 @@ document.querySelector('#advance').addEventListener('click',()=>{
  if(state.live_match_id){if(liveStatus()==='finished')command('/direct/terminer',{});return;}
  if(state.awaiting_lineup&&!onCompositionScreen()){location.hash=compositionHash();return;}
  if(state.awaiting_lineup)return playMatch();
- // Closes the match screenflow (Composition → Jouer → Résultat) on its own report page: one more click, straight to Mon club.
- const {parts}=routeParts();
- if(justPlayedMatchId!=null&&parts[0]==='match'&&Number(parts[1])===justPlayedMatchId){justPlayedMatchId=null;location.hash='#/mon-club';return;}
- return command('/monde/avancer',{jusqu_a:document.querySelector('#advance-mode').value});
+ // The results and Mon club still due from the last step come before the next one.
+ const next=nextStep(state.news_count,location.hash.split('?')[0]);
+ if(next){location.hash=next;return;}
+ return command('/monde/avancer',{jusqu_a:'etape'});
 });
 document.querySelector('#simulate').addEventListener('click',()=>{if(state.awaiting_lineup&&onCompositionScreen())simulateMatch();});
 function applyFilter(form){const values=Object.fromEntries(new FormData(form));Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
@@ -271,11 +274,7 @@ main.addEventListener('click',async event=>{
 document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a'))menu.removeAttribute('open');}));
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.entity-menu-panel'),current=panel.querySelector('[aria-current]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
-window.addEventListener('hashchange',()=>{
- const {parts}=routeParts();
- if(justPlayedMatchId!=null&&!(parts[0]==='match'&&Number(parts[1])===justPlayedMatchId))justPlayedMatchId=null;
- render();window.scrollTo({top:0});
-});
+window.addEventListener('hashchange',()=>{render();window.scrollTo({top:0});});
 document.addEventListener('lineup-change',updateAdvanceButton);
 document.addEventListener('live-status',busyButtons);
 window.addEventListener('unhandledrejection',event=>toast(event.reason?.message||'Une erreur inattendue est survenue.',true));

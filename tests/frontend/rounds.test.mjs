@@ -29,7 +29,16 @@ test('a round lists its matches on the left, with each side’s scorers and thei
  assert.match(html,/class="fixture with-scorers"/);
  // the whole table beside a single block, form included
  assert.match(html,/FORME/);
- assert.equal(count(html,/class="rank/g),2);
+ assert.equal(count(html,/class="rank[ "]/g),2);
+});
+
+test('the leading scorers of the competition follow its table, ranked, and only once someone has scored',()=>{
+ const top_scorers=[{id:101,name:'Neal Maupay',club:club(1,'Brighton'),goals:7},{id:-5,name:'Renfort',club:club(2,'Nice'),goals:4}];
+ const html=roundContent({...league,groups:[{...league.groups[0],top_scorers}]},'latest');
+ assert.match(html,/<div class="round-block with-top-scorers">/);
+ assert.ok(html.indexOf('round-table')<html.indexOf('round-top-scorers'));
+ assert.match(html,/<div class="round-top-scorers">.*<th>JOUEUR<\/th><th>CLUB<\/th><th>BUTS<\/th>.*<td>1<\/td><td><a href="#\/player\/101">Neal Maupay<\/a><\/td>.*<b>7<\/b>.*<td>2<\/td><td><span class="temporary-player"/);
+ for(const none of [[],null,undefined])assert.doesNotMatch(roundContent({...league,groups:[{...league.groups[0],top_scorers:none}]},'latest'),/top-scorers/);
 });
 
 test('several scorers of one side follow each other; a goalless match or one to come has no scorers line',()=>{

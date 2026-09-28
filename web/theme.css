@@ -317,8 +317,16 @@ h1{font-size:26px;margin:0}
 /* Tables: 26 px rows, 26 px headers, 18 px chips. */
 th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
 td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
-.standings-card th,.league-summary-grid .standings-scroll th,.live-table th{padding:0 5px!important}.standings-card td,.league-summary-grid .standings-scroll td,.live-table td{padding:3px 5px!important}
-/* The table takes just the width its columns need; the last round's results get the rest. */
+/* Standings: every column but the club's has a set width (padding on top), the club's takes the rest, so that the tables of a screen line up column for column. */
+.standings th{padding:0 5px!important;box-sizing:content-box}.standings td{padding:3px 5px!important}
+.standings .rank-column{width:14px}.standings .count-column{width:13px}.standings .total-column{width:21px}.standings .difference-column{width:28px}.standings .form-column{width:97px}
+/* Where tables sit side by side or one above the other, only the club's column gives way when space runs short: a name too long for it ends in an ellipsis. */
+@media(min-width:951px){
+ .grid.equal .standings table,.round-group .standings table{table-layout:fixed}
+ .grid.equal .standings td:nth-child(2),.round-group .standings td:nth-child(2){overflow:hidden;text-overflow:ellipsis}
+ .grid.equal .standings .nation,.round-group .standings .nation{display:inline}.grid.equal .standings .flag,.round-group .standings .flag{margin-right:6px;vertical-align:-1px}
+}
+/* The table takes just the width its columns need, flush right, so that its figures line up with the next league's; the last round's results get the rest. */
 @media(min-width:951px){.league-summary-grid{grid-template-columns:minmax(0,1fr) max-content}}
 .rating,.player-table .rating,.grid.thirds .attribute .rating{padding:1px 6px!important;line-height:16px;font-size:11px;min-width:30px;display:inline-block;text-align:center}
 .position,.player-table .position{padding:2px 5px!important;line-height:14px}
@@ -408,11 +416,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .card-head:has(>a[href]){cursor:pointer}
 .card-head:has(>a[href]):hover>a{color:var(--strong)}
 
-/* Advance mode, small, beside Auto at the bottom of the sidebar. */
-#autoplay{flex:none;min-width:64px;padding:0 8px;font-size:12px}
-#advance-mode{flex:1;min-width:0;height:34px;padding:0 4px;font-size:11px}
-@media(max-width:650px){#advance-mode{height:32px;max-width:96px}}
-
 /* The controlled club's next three matches, left of Continuer. */
 .next-matches{display:flex;min-width:0;border:1px solid var(--line);border-radius:3px;background:var(--panel);overflow:hidden}
 .next-matches:empty{display:none}
@@ -481,18 +484,24 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 .bracket-pens{flex-basis:26px;font-size:10px;color:var(--muted);font-weight:400}
 
-/* A competition's latest or next round: the matches with the table they count for on their right, groups two a row;
+/* A competition's latest or next round: the matches, no wider than they need, then the table they count for, which takes
+   the rest of the width (and the leading scorers, beside it where there is room, else below it); groups two a row;
    a cup round, with no table, lays its ties out over two columns. */
-.round-block{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start}
-.round-matches{min-width:0}
-.round-table{border-left:1px solid var(--line)}
-.round-table th{padding:0 5px!important}.round-table td{padding:3px 5px!important}
+.round-block{display:grid;grid-template-columns:minmax(0,460px) minmax(max-content,1fr);grid-template-areas:"matches table";align-items:start}
+.round-block.with-top-scorers{grid-template-areas:"matches table" "matches top-scorers"}
+.round-matches{min-width:0;grid-area:matches}
+.round-table{grid-area:table;border-left:1px solid var(--line)}
+.round-top-scorers{grid-area:top-scorers;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+@media(min-width:1450px){
+ .round-block.with-top-scorers{grid-template-columns:minmax(0,460px) minmax(max-content,1fr) minmax(max-content,1fr);grid-template-areas:"matches table top-scorers"}
+ .round-top-scorers{border-top:0}
+}
 .round-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .round-group{min-width:0;border-top:1px solid var(--line)}
 .round-group:nth-child(-n+2){border-top:0}
 .round-group:nth-child(odd){border-right:1px solid var(--line)}
 /* The same width for every group table, so that they line up from one group to the next. */
-.round-group .round-block{grid-template-columns:minmax(0,1fr) minmax(250px,max-content)}
+.round-group .round-block{grid-template-columns:minmax(0,460px) minmax(270px,1fr)}
 .round-group .round-table table{width:100%}
 .round-group h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .round-knockout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -503,4 +512,4 @@ a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 .fixture-scorers a{color:inherit}
 .fixture-scorers a:hover{color:var(--strong);text-decoration:underline}
 @media(max-width:1329px){.round-groups{grid-template-columns:1fr}.round-group:nth-child(2){border-top:1px solid var(--line)}.round-group:nth-child(odd){border-right:0}}
-@media(max-width:950px){.round-block,.round-group .round-block,.round-knockout{grid-template-columns:1fr}.round-table{border-left:0;border-top:1px solid var(--line)}.round-knockout .fixture:nth-child(odd){border-right:0}.round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--row-line)}}
+@media(max-width:950px){.round-block,.round-group .round-block,.round-block.with-top-scorers,.round-knockout{grid-template-columns:1fr}.round-block,.round-block.with-top-scorers{grid-template-areas:"matches" "table" "top-scorers"}.round-table,.round-top-scorers{border-left:0;border-top:1px solid var(--line)}.round-knockout .fixture:nth-child(odd){border-right:0}.round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--row-line)}}
