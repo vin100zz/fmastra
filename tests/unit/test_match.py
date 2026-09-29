@@ -39,6 +39,15 @@ def test_empty_zone_and_coordinate_involution(config):
             assert mirror(*mirror(zone, lane, config), config) == (zone, lane)
 
 
+def test_an_exhausted_eleven_keeps_its_credit(config):
+    team = TeamState.from_lineup(synthetic_lineup(config, 1), config)
+    refresh(team, config)
+    fresh = {phase: [credit for *_, credit in profiles] for phase, profiles in team.profiles.items()}
+    team.fitness.update((slot.player.id, 0.0) for slot in team.active)
+    refresh(team, config)
+    assert {phase: [credit for *_, credit in profiles] for phase, profiles in team.profiles.items()} == fresh
+
+
 def test_neutral_ground_removes_both_home_bonuses(config):
     home, away = synthetic_lineup(config, 1), synthetic_lineup(config, 2)
     no_bonus = replace(config,

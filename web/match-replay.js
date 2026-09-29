@@ -9,7 +9,7 @@ import {escape as e,surname} from './ui.js';
 const W=105,H=68;
 // The engine's grid in a side's own frame: u from its goal (0) to the opponent's (1), v from its left to its right.
 const ZONE_U=[.14,.37,.62,.84],LANE_V=[.17,.5,.83];
-const DEPTH={GB:.02,DC:.17,DL:.2,DR:.2,MDC:.33,MC:.46,MOC:.58,AILG:.68,AILD:.68,BU:.74};
+const DEPTH={GB:.02,DC:.17,DG:.2,DD:.2,MDC:.33,MC:.46,MOC:.58,AILG:.68,AILD:.68,BU:.74};
 const SEQUENCE_KINDS=new Set(['possession','progress','corner','free_kick','delivery','shot','goal','save','off_target']);
 // Which chances the summary plays, by the engine's xG (0.05 for a corner or free kick, up to about 0.25 for a
 // clean shot); goals are always shown. Remembered for the viewer between matches.
@@ -57,13 +57,13 @@ export function chanceSequences(events){
 // Where each starter stands in his side's frame, spread along his line like the lineup pitch.
 function baseShape(roster){
  const rows=new Map();
- for(const player of roster){if(player.position==='AILG'||player.position==='AILD')continue;const line=['DL','DC','DR'].includes(player.position)?'D':player.position;if(!rows.has(line))rows.set(line,[]);rows.get(line).push(player);}
- const order={DL:0,DC:1,DR:2};
+ for(const player of roster){if(player.position==='AILG'||player.position==='AILD')continue;const line=['DG','DC','DD'].includes(player.position)?'D':player.position;if(!rows.has(line))rows.set(line,[]);rows.get(line).push(player);}
+ const order={DG:0,DC:1,DD:2};
  for(const row of rows.values())row.sort((a,b)=>(order[a.position]??1)-(order[b.position]??1));
  return roster.map(player=>{
   if(player.position==='AILG')return {...player,u:DEPTH.AILG,v:.12};
   if(player.position==='AILD')return {...player,u:DEPTH.AILD,v:.88};
-  const row=rows.get(['DL','DC','DR'].includes(player.position)?'D':player.position),index=row.indexOf(player);
+  const row=rows.get(['DG','DC','DD'].includes(player.position)?'D':player.position),index=row.indexOf(player);
   return {...player,u:DEPTH[player.position]??.45,v:player.position==='GB'?.5:.5+(index-(row.length-1)/2)*Math.min(.3,.78/Math.max(1,row.length-1))};
  });
 }

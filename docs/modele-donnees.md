@@ -86,7 +86,7 @@ y compris pour le poste principal. Le poste ayant la meilleure aptitude devient
 principal ; le libellé Position départage les égalités de façon stable.
 Les notes sont visibles sur la fiche joueur.
 DefenderCentral et Sweeper sont regroupés en DC ; DefenderLeft/Right et
-WingbackLeft/Right en DL/DR ; MidfielderLeft/Right et AttackingMidfielderLeft/Right
+WingbackLeft/Right en DG/DD ; MidfielderLeft/Right et AttackingMidfielderLeft/Right
 en AILG/AILD. Chaque regroupement prend la meilleure note. Les autres rôles ont
 une correspondance directe. FreeRole n'est pas un poste du moteur.
 

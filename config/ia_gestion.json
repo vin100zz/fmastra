@@ -30,7 +30,7 @@
       {"mois_max": 12, "facteur": 0.45},
       {"mois_max": 18, "facteur": 0.75}
     ],
-    "rarete_poste": {"GB": 1.00, "DC": 1.00, "DL": 1.05, "DR": 1.05, "MDC": 1.00,
+    "rarete_poste": {"GB": 1.00, "DC": 1.00, "DG": 1.05, "DD": 1.05, "MDC": 1.00,
                      "MC": 1.00, "MOC": 1.10, "AILG": 1.10, "AILD": 1.10, "BU": 1.20}
   },
   "utilite": {

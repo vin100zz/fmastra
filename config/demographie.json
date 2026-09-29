@@ -65,14 +65,14 @@
     "poids_reputation_tri": 0.0
   },
   "cible_postes": {
-    "GB": 0.10, "DC": 0.18, "DL": 0.07, "DR": 0.07,
+    "GB": 0.10, "DC": 0.18, "DG": 0.07, "DD": 0.07,
     "MDC": 0.12, "MC": 0.12, "MOC": 0.11, "AILG": 0.06, "AILD": 0.06, "BU": 0.11
   },
   "generation": {
     "_note": "Age tire selon poids_age (un poids par age de age_min a age_max). potentiel_min, potentiel_amplitude et beta_* ne servent plus (le potentiel vient de la classe tiree) ; conserves pour les anciennes sauvegardes. Un potentiel >= seuil_potentiel_elite tire sa nation dans un melange aplati (part ** exposant_nations_elite) ; part_plancher_nation donne une chance minimale a toute nation dotee de noms ; une nation de moins de noms_minimum_par_nation identites emprunte le reste de ses noms a l'ensemble du monde.",
     "affinite_secondaire": 0.6,
     "postes_secondaires_possibles": {
-      "GB": [], "DC": ["MDC"], "DL": ["AILG"], "DR": ["AILD"],
+      "GB": [], "DC": ["MDC"], "DG": ["AILG"], "DD": ["AILD"],
       "MDC": ["DC", "MC"], "MC": ["MDC", "MOC"],
       "MOC": ["MC", "AILG", "AILD"], "AILG": ["MOC"],
       "AILD": ["MOC"], "BU": ["MOC"]

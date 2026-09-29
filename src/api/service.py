@@ -5,7 +5,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from threading import Event, RLock
+from threading import Condition, Event, RLock
 from typing import Iterator
 from uuid import uuid4
 
@@ -60,6 +60,10 @@ class GameService:
         self.jobs: dict[str, Job] = {}
         self.commands: dict[str, tuple[str, dict, str]] = {}
         self.active: str | None = None
+        # The autosave an advance leaves writing once reported done: it reads the world, so whatever
+        # writes to the world next waits on `saved` instead of being refused.
+        self.pending_save: Future | None = None
+        self.saved = Condition(self.lock)
         self.recovery_required = False
         # Auto mode is one long job on the simulation thread; `auto_stop` is the only way to end it.
         self.auto_job: str | None = None
@@ -86,8 +90,9 @@ class GameService:
     @contextmanager
     def mutating(self) -> Iterator[World]:
         """A synchronous world write outside the job queue: fast, no simulation RNG consumed,
-        still lock-guarded and refused while a day-advance job is running."""
+        still lock-guarded, refused while a day-advance job is running and held until its autosave is written."""
         with self.lock:
+            while self.pending_save is not None: self.saved.wait()
             if self.world is None: raise CommandError("Créez ou chargez une partie.")
             if self.recovery_required: raise CommandError("Simulation interrompue : rechargez la dernière sauvegarde.")
             if self.active: raise CommandError("Une commande est déjà en cours.")
@@ -135,7 +140,12 @@ class GameService:
         competition = None
         pending_save: Future | None = None
         try:
-            with self.lock: job.status = "running"
+            with self.lock:
+                # Queued behind the previous advance's autosave: it must be written before this job touches the world.
+                while self.pending_save is not None: self.saved.wait()
+                if self.recovery_required and job.command not in ("create", "load"):
+                    raise CommandError("Simulation interrompue : rechargez la dernière sauvegarde.")
+                job.status = "running"
             if job.command in ("create", "load"):
                 world = (import_world(self.root / "data", load_config(self.root / "config"), payload["seed"])
                          if job.command == "create" else self.store.load(payload["slot"]))
@@ -212,29 +222,34 @@ class GameService:
                     self.store.save(world, "autosave")
                 else:
                     # Nothing else mutates `world` in this job; the write can safely continue after we
-                    # report success, as long as `active` stays held so no other job starts touching it.
+                    # report success, as long as `pending_save` holds back whatever touches it next.
                     pending_save = self.save_executor.submit(self.store.save, world, "autosave")
             with self.lock:
                 job.status, job.progress = ("awaiting_lineup", job.progress) if awaiting_lineup else ("done", 1)
                 job.date = self.world.date.iso()
                 job.competition = competition
+                self._release(job, pending_save)
         except Exception as exc:
             with self.lock:
                 self.recovery_required |= advancing
                 job.status, job.error = "failed", f"{type(exc).__name__} : {exc}"
-        finally:
-            if pending_save is None:
-                with self.lock:
-                    self.active = None
-                    if self.auto_job == job.id: self.auto_job = None
-            else:
-                pending_save.add_done_callback(self._finish_save)
+                self._release(job, pending_save)
+
+    def _release(self, job: Job, pending_save: Future | None) -> None:
+        """Frees the queue in the same lock section that publishes the job's outcome: a page told the job
+        is over can submit the next command at once. Call under the lock."""
+        self.active = None
+        if self.auto_job == job.id: self.auto_job = None
+        if pending_save is not None:
+            self.pending_save = pending_save
+            pending_save.add_done_callback(self._finish_save)
 
     def _finish_save(self, future: Future) -> None:
         with self.lock:
             if future.exception() is not None:
                 self.recovery_required = True
-            self.active = None
+            if self.pending_save is future: self.pending_save = None
+            self.saved.notify_all()
 
     def close(self) -> None:
         self.auto_stop.set()  # an unbounded auto job would otherwise block the shutdown forever

@@ -10,6 +10,7 @@ import os
 import platform
 import re
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 
 from core.domain.world import World
@@ -17,14 +18,14 @@ from core.world.demography import initialize_targets
 from core.world.reputation import initialize_reputation
 from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
-from infrastructure.config.loader import config_fingerprint, config_payload
+from infrastructure.config.loader import config_fingerprint, config_payload, decode_config
 from infrastructure.importation.readers import ATTRIBUTE_COLUMNS, note
 from .codec import encode, decode
 from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 20
+SCHEMA_VERSION = 22
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -98,10 +99,18 @@ MIGRATION_DEFAULTS = (
     (7, ("ia_gestion", "mercato"), {"gain_qualite_min_recrutement": 3.0}),
     (6, ("ia_gestion", "mercato"), {"stabilite_apres_arrivee_jours": 180}),
 )
+# Schema 21 renamed the 4-4-2 and put two variants beside it: an older save's clubs and lineups follow the new name.
+RENAMED_FORMATIONS = {"4-4-2": "4-4-2 plat"}
+ADDED_FORMATIONS = {"4-4-2 diamant": ("GB", "DL", "DC", "DC", "DR", "MDC", "MC", "MC", "MOC", "BU", "BU"),
+                    "4-4-2 offensif": ("GB", "DL", "DC", "DC", "DR", "MDC", "MDC", "MOC", "MOC", "BU", "BU")}
+# Schema 22 named the full-backs like the wingers, left and right (DL/DR became DG/DD), and put two wingers
+# in place of the attacking 4-4-2's two attacking midfielders.
+RENAMED_POSITIONS = {"DL": "DG", "DR": "DD"}
+ATTACKING_442 = ("GB", "DG", "DC", "DC", "DD", "MDC", "MDC", "AILG", "AILD", "BU", "BU")
 # Attributes `centre` and `cpa` were appended at schema 12. Players whose source row is unavailable receive the level
 # generation gives their position: rating plus these offsets, as in `profils_generation` of that version.
 LEGACY_ATTRIBUTE_COUNT = 13
-DELIVERY_OFFSETS = {"GB": (-25, -25), "DC": (-27, -37), "DL": (1, -17), "DR": (-2, -24), "MDC": (-19, -20),
+DELIVERY_OFFSETS = {"GB": (-25, -25), "DC": (-27, -37), "DG": (1, -17), "DD": (-2, -24), "MDC": (-19, -20),
                     "MC": (-14, -16), "MOC": (-10, -11), "AILG": (-6, -15), "AILD": (-4, -15), "BU": (-20, -25)}
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
@@ -147,12 +156,12 @@ class SaveStore:
             # Version 1 used tagged entities; it remains readable during migration.
             if b'"schema_version":1,' in raw[:100] or b'"schema_version": 1,' in raw[:100]:
                 payload = json.loads(raw)
-                world, fingerprint = decode(payload["world"]), payload["config_hash"]
+                world, fingerprint = decode(_rename_positions(payload["world"], skip="config")), payload["config_hash"]
                 version = 1
             else:
                 found = re.search(rb'"schema_version":\s*(\d+)', raw[:100])
                 if found and int(found.group(1)) < SCHEMA_VERSION:
-                    raw = _extend_attribute_vectors(raw, self.directory.parent / "data" / "players.csv")
+                    raw = _upgrade_document(raw, int(found.group(1)), self.directory.parent / "data" / "players.csv")
                 payload = ADAPTER.validate_json(raw)
                 if not 2 <= payload.schema_version <= SCHEMA_VERSION:
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
@@ -160,6 +169,8 @@ class SaveStore:
                 version = payload.schema_version
             if not isinstance(world, World) or not _config_matches(world, fingerprint, version):
                 raise SaveError("Sauvegarde incohérente : configuration ou racine invalide.")
+            if version < 21: _upgrade_formations(world)
+            if version < 22: _upgrade_configured_positions(world)
             if not {"matches", "market", "states", "progression", "demography"}.issubset(world.rngs):
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
             validate_consistency(world.config)
@@ -198,19 +209,32 @@ def _source_delivery(world: dict, source_path: Path, wanted: set[int]) -> dict[i
             for row in reader if int(row["UID"]) in wanted}
 
 
-def _extend_attribute_vectors(raw: bytes, source_path: Path) -> bytes:
-    """Schema 12 appended `centre` and `cpa` to every attribute vector; vectors already extended are left alone."""
+def _upgrade_document(raw: bytes, version: int, source_path: Path) -> bytes:
+    """What an older save's JSON must receive before it is typed; its configuration is upgraded once verified."""
     document = json.loads(raw)
-    world = document["world"]
+    if version < 22: document["world"] = _rename_positions(document["world"], skip="config")
+    _extend_attribute_vectors(document["world"], source_path)
+    return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _rename_positions(node, skip: str | None = None):
+    """Schema 22: every position code of a JSON document, value or key; the subtree under a `skip` key is left as it is."""
+    if isinstance(node, dict):
+        return {RENAMED_POSITIONS.get(key, key): value if key == skip else _rename_positions(value, skip) for key, value in node.items()}
+    if isinstance(node, list): return [_rename_positions(item, skip) for item in node]
+    return RENAMED_POSITIONS.get(node, node) if isinstance(node, str) else node
+
+
+def _extend_attribute_vectors(world: dict, source_path: Path) -> None:
+    """Schema 12 appended `centre` and `cpa` to every attribute vector; vectors already extended are left alone."""
     stale = [player for player in world["players"].values() if len(player["attributes"]["values"]) == LEGACY_ATTRIBUTE_COUNT]
-    if not stale: return raw
+    if not stale: return
     imported = _source_delivery(world, source_path, {player["id"] for player in stale})
     bounds = world["config"]["attributs"]["bornes"]
     for player in stale:
         extra = imported.get(player["id"]) or [min(bounds["max"], max(bounds["min"], player["rating"] + offset))
                                                for offset in DELIVERY_OFFSETS[player["position"]]]
         player["attributes"]["values"].extend(extra)
-    return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 def _assign_greed(world: World, source_path: Path) -> None:
@@ -224,6 +248,35 @@ def _assign_greed(world: World, source_path: Path) -> None:
             loyalties = {int(row["UID"]): float(row["Loyality"]) for row in reader if row.get("Loyality")}
     for player in world.players.values():
         player.greed = greed_trait(loyalties.get(player.id), world.config, world.seed, player.id)
+
+
+def _upgrade_formations(world: World) -> None:
+    """Schema 21: the embedded 4-4-2 becomes the flat one, the diamond and the box follow it; names already taken are kept."""
+    formations = world.config.formations.formations
+    renamed = {old: new for old, new in RENAMED_FORMATIONS.items() if old in formations and new not in formations}
+    added = {name: roles for name, roles in ADDED_FORMATIONS.items() if name not in formations}
+    if not renamed and not added: return
+    upgraded = {}
+    for name, roles in formations.items():
+        upgraded[renamed.get(name, name)] = roles
+        if name in renamed: upgraded.update(added)
+    upgraded.update(added)
+    world.config = replace(world.config, formations=replace(world.config.formations, formations=upgraded))
+    for club in world.clubs.values(): club.formation = renamed.get(club.formation, club.formation)
+    world.submitted_lineups = {mid: replace(lineup, formation=renamed.get(lineup.formation, lineup.formation))
+                               for mid, lineup in world.submitted_lineups.items()}
+    if world.live_match is not None:
+        lineup = world.live_match.lineup
+        world.live_match.lineup = replace(lineup, formation=renamed.get(lineup.formation, lineup.formation))
+
+
+def _upgrade_configured_positions(world: World) -> None:
+    """Schema 22 in the embedded configuration; an attacking 4-4-2 other than the one schema 21 added is kept."""
+    payload = _rename_positions(config_payload(world.config))
+    formations = payload["formations"]["formations"]
+    if formations.get("4-4-2 offensif") == _rename_positions(list(ADDED_FORMATIONS["4-4-2 offensif"])):
+        formations["4-4-2 offensif"] = list(ATTACKING_442)
+    world.config = decode_config(payload)
 
 
 def _config_matches(world: World, fingerprint: str, version: int) -> bool:

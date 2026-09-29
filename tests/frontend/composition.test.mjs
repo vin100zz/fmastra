@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {pitchLayout,place,remove,dropOnSquad,nextFree,changeFormation,lineupProblems,compositionContent} from '../../web/composition.js';
 
-const F433=['GB','DL','DC','DC','DR','MDC','MC','MC','AILG','BU','AILD'];
-const F442=['GB','DL','DC','DC','DR','AILG','MC','MC','AILD','BU','BU'];
+const F433=['GB','DG','DC','DC','DD','MDC','MC','MC','AILG','BU','AILD'];
+const F442=['GB','DG','DC','DC','DD','AILG','MC','MC','AILD','BU','BU'];
 
 test('the pitch puts the keeper at the bottom, forwards at the top and full-backs on the wings',()=>{
  const places=pitchLayout(F433);
@@ -12,6 +12,16 @@ test('the pitch puts the keeper at the bottom, forwards at the top and full-back
  // 4-3-3 wingers line up with the striker; 4-4-2 wingers with the midfield.
  assert.equal(places[8].y,places[9].y);
  const flat=pitchLayout(F442);assert.equal(flat[5].y,flat[6].y);
+});
+
+test('the diamond stacks its midfield on three lines; the attacking 4-4-2 puts its wingers ahead of two holding midfielders',()=>{
+ const diamond=pitchLayout(['GB','DG','DC','DC','DD','MDC','MC','MC','MOC','BU','BU']);
+ assert.ok(diamond[5].y>diamond[6].y&&diamond[6].y===diamond[7].y&&diamond[7].y>diamond[8].y&&diamond[8].y>diamond[9].y);
+ assert.equal(diamond[5].x,50);assert.equal(diamond[8].x,50);assert.ok(diamond[6].x<50&&diamond[7].x>50);
+ const attacking=pitchLayout(['GB','DG','DC','DC','DD','MDC','MDC','AILG','AILD','BU','BU']),flat=pitchLayout(F442);
+ assert.equal(attacking[5].y,attacking[6].y);assert.equal(attacking[7].y,attacking[8].y);
+ assert.ok(attacking[6].y>attacking[7].y&&attacking[7].y>attacking[9].y&&attacking[7].y<flat[5].y);
+ assert.ok(attacking[7].x<attacking[5].x&&attacking[8].x>attacking[6].x);
 });
 
 test('dropping swaps places; from the squad list the former holder leaves the lineup',()=>{
@@ -52,19 +62,35 @@ test('empty positions and unavailable players make the lineup unplayable',()=>{
 
 test('the editor starts from the previous lineup and flags unavailable players',async()=>{
  const player=(id,position,extra={})=>({id,name:`Joueur ${id}`,position,rating:100,potential:120,fitness:.9,appearances:3,goals:1,assists:0,average:6.5,unavailable:null,...extra});
- const data={match_id:5,home:true,opponent:{id:9,name:'Nice'},bench_size:2,formations:{'4-3-3':F433,'4-4-2':F442},
+ const data={match_id:5,home:true,opponent:{id:9,name:'Nice'},bench_size:2,formations:{'4-3-3':F433,'4-4-2 plat':F442},
   players:[player(1,'GB'),player(2,'DC',{unavailable:'injured'}),player(3,'BU',{unavailable:'suspended',match_suspension:2})],
-  default:{formation:'4-4-2',titulaires:[[1,'GB'],[2,'DL']],banc:[3]},suggestions:{}};
+  default:{formation:'4-4-2 plat',titulaires:[[1,'GB'],[2,'DG']],banc:[3]},suggestions:{}};
  const previous=globalThis.fetch;
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:5});
   assert.doesNotMatch(html,/composition légale/);
-  assert.match(html,/data-tactic="4-4-2" aria-pressed="true"/);
+  assert.match(html,/data-tactic="4-4-2 plat" aria-pressed="true"/);
   assert.match(html,/class="pitch-player lineup-slot def invalid" data-slot="1" data-player="2"/);
   assert.match(html,/lineup-icon injury/);assert.match(html,/lineup-icon suspension" title="Suspendu \(2 matchs\)"/);
   assert.match(html,/Joueur 2 est blessé/);
   for(const label of ['COMPO','POSTE','JOUEUR','NIV.','POT.','FATIGUE','MJ','BUTS','PD','NOTE'])assert.ok(html.includes(`>${label}`),label);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('without a match to play today, the editor prepares the next one, or none between seasons',async()=>{
+ const data=(match_id)=>({match_id,home:true,opponent:null,bench_size:1,formations:{'4-3-3':F433},
+  players:[{id:1,name:'Joueur 1',position:'GB',rating:100,potential:120,fitness:1,appearances:0,goals:0,assists:0,average:null,unavailable:null}],
+  default:{formation:'4-3-3',titulaires:[[1,'GB']],banc:[]},suggestions:{}});
+ const previous=globalThis.fetch,urls=[];
+ try{
+  for(const id of [8,null]){
+   globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>data(id)};};
+   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
+   assert.match(html,new RegExp(`id="lineup-form" data-match="${id??0}"`));
+   assert.match(html,/data-slot="0" data-player="1"/);
+  }
+  assert.ok(urls.every(url=>!url.includes('match_id')),urls.join());
  }finally{globalThis.fetch=previous;}
 });
 

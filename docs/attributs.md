@@ -192,7 +192,7 @@ Zones : 1 défense, 2 milieu bas, 3 milieu haut, 4 zone de vérité.
 |---|---|---|---|---|
 | GB | 0.10 | 0.05 | 0.00 | 0.00 |
 | DC | 0.30 | 0.25 | 0.05 | 0.05 |
-| DL / DR | 0.25 | 0.40 | 0.30 | 0.10 |
+| DG / DD | 0.25 | 0.40 | 0.30 | 0.10 |
 | MDC | 0.20 | 0.55 | 0.30 | 0.05 |
 | MC | 0.10 | 0.45 | 0.50 | 0.15 |
 | MOC | 0.05 | 0.25 | 0.60 | 0.40 |
@@ -205,7 +205,7 @@ Zones : 1 défense, 2 milieu bas, 3 milieu haut, 4 zone de vérité.
 |---|---|---|---|---|
 | GB | 0.90 | 0.05 | 0.00 | 0.00 |
 | DC | 0.85 | 0.35 | 0.05 | 0.00 |
-| DL / DR | 0.70 | 0.45 | 0.15 | 0.00 |
+| DG / DD | 0.70 | 0.45 | 0.15 | 0.00 |
 | MDC | 0.45 | 0.70 | 0.25 | 0.00 |
 | MC | 0.25 | 0.60 | 0.35 | 0.05 |
 | MOC | 0.10 | 0.30 | 0.35 | 0.10 |
@@ -224,8 +224,8 @@ Couloirs : gauche, axe, droite.
 |---|---|---|---|
 | GB | 0.20 | 0.60 | 0.20 |
 | DC | 0.25 | 0.50 | 0.25 |
-| DL | 0.75 | 0.25 | 0.00 |
-| DR | 0.00 | 0.25 | 0.75 |
+| DG | 0.75 | 0.25 | 0.00 |
+| DD | 0.00 | 0.25 | 0.75 |
 | MDC / MC | 0.20 | 0.60 | 0.20 |
 | MOC | 0.20 | 0.60 | 0.20 |
 | AIL G | 0.70 | 0.30 | 0.00 |
@@ -257,7 +257,7 @@ Décalages par rapport au niveau cible, en points :
 |---|---|---|
 | GB | reflexes +15, sorties +12, relance +8 | tous les autres −25 |
 | DC | tacle +12, placement +10, jeu_tete +10 | finition −18, vision −8 |
-| DL/DR | vitesse +10, endurance +8, passe +5 | finition −15, jeu_tete −8 |
+| DG/DD | vitesse +10, endurance +8, passe +5 | finition −15, jeu_tete −8 |
 | MDC | tacle +10, placement +10, passe +8 | finition −12 |
 | MC | passe +12, vision +8, endurance +8 | jeu_tete −6 |
 | MOC | vision +14, technique +12, passe +8 | tacle −15 |
@@ -270,8 +270,8 @@ Les décalages `centre` et `cpa` sont relevés sur les joueurs des clubs actifs
 | Poste | centre | cpa | Poste | centre | cpa |
 |---|---:|---:|---|---:|---:|
 | DC | −27 | −37 | MOC | −10 | −11 |
-| DL | +1 | −17 | AILG | −6 | −15 |
-| DR | −2 | −24 | AILD | −4 | −15 |
+| DG | +1 | −17 | AILG | −6 | −15 |
+| DD | −2 | −24 | AILD | −4 | −15 |
 | MDC | −19 | −20 | BU | −20 | −25 |
 | MC | −14 | −16 | GB | −25 | −25 (`_autres`) |
 

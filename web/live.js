@@ -5,7 +5,7 @@ import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,highlightsCard} from './match.js';
 import {pitchLayout,changeFormation} from './composition.js';
 
-const POSITIONS=['GB','DL','DC','DR','MDC','MC','AILG','AILD','MOC','BU'];
+const POSITIONS=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 const MENTALITIES={defensive:'Défensive',equilibree:'Équilibrée',offensive:'Offensive'};
 let view=null;
 

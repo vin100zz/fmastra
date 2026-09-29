@@ -208,15 +208,37 @@ def test_lineup_form_offers_every_tactic_and_starts_from_the_previous_eleven(cli
     assert {player["id"] for player in data["players"]} <= set(world.clubs[club_id].player_ids)
     assert all(player["unavailable"] in (None, "injured", "suspended") for player in data["players"])
 
-    chosen = data["suggestions"]["4-4-2"]
+    chosen = data["suggestions"]["4-4-2 plat"]
     assert client.post("/api/partie/composition", json={"match_id": match.id, "formation": "inconnue",
                                                         "titulaires": chosen["titulaires"], "banc": chosen["banc"]}).status_code == 400
-    assert client.post("/api/partie/composition", json={"match_id": match.id, "formation": "4-4-2",
+    assert client.post("/api/partie/composition", json={"match_id": match.id, "formation": "4-4-2 plat",
                                                         "titulaires": chosen["titulaires"], "banc": chosen["banc"]}).status_code == 200
     advance_day(world)
     following = _play_until_pending(world)
 
     default = client.get(f"/api/ma-partie/composition?match_id={following.id}").json()["default"]
-    assert default["formation"] == "4-4-2"
+    assert default["formation"] == "4-4-2 plat"
     squad = set(world.clubs[club_id].player_ids)
     assert [pid for pid, _ in default["titulaires"]] == [pid if pid in squad else None for pid, _ in chosen["titulaires"]]
+
+
+def test_lineup_form_is_open_any_day_for_the_next_match_or_the_league(client):
+    world = client.app.state.game.world
+    world.controlled_club_id = club_id = next(iter(world.active_clubs())).id
+    club = world.clubs[club_id]
+    upcoming = sorted((match for match in world.matches.values() if match.result is None and club_id in (match.home_id, match.away_id)),
+                      key=lambda match: (match.date, match.id))
+    assert upcoming[0].date > world.date  # a fresh game starts before the season's first round
+
+    data = client.get("/api/ma-partie/composition").json()
+    assert data["match_id"] == upcoming[0].id and {player["id"] for player in data["players"]} == set(club.player_ids)
+    assert data["default"]["titulaires"] and set(data["suggestions"]) == set(data["formations"])
+    # Only a lineup for today's match can be submitted.
+    chosen = data["suggestions"]["4-4-2 plat"]
+    assert client.post("/api/partie/composition", json={"match_id": upcoming[0].id, "formation": "4-4-2 plat",
+                                                        "titulaires": chosen["titulaires"], "banc": chosen["banc"]}).status_code == 400
+
+    # Between seasons, with no fixture left, the lineup is tried out for the club's league.
+    for match in upcoming: del world.matches[match.id]
+    empty = client.get("/api/ma-partie/composition").json()
+    assert empty["match_id"] is None and empty["opponent"] is None and len(empty["players"]) == len(club.player_ids)

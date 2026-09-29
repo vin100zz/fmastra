@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import {scoreHue,scoreBadge,setNations} from '../../web/ui.js';
 import {playerScreen,levelChart,positionPitch,attributeGroups} from '../../web/player.js';
 
-const detail={id:1,name:'Test Joueur',position:'DR',secondary_positions:['MC'],age:19,nationalities:['FRA'],nationality_names:['France'],club:{id:1,name:'Club'},
+const detail={id:1,name:'Test Joueur',position:'DD',secondary_positions:['MC'],age:19,nationalities:['FRA'],nationality_names:['France'],club:{id:1,name:'Club'},
  born:'2005-01-01',wage:12000,contract_end:'2028-06-30',value:1314589,rating:70,potential:91.5,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],
- attributes:{passe:80,technique:30},position_ratings:{GB:1,DR:20,MC:12}};
+ attributes:{passe:80,technique:30},position_ratings:{GB:1,DD:20,MC:12}};
 const history={career:{items:[{season:2025,club:{id:1,name:'Club'},fee:null,competition:'Serie A · C1',matches:4,goals:1,assists:0,average:6.5}],totals:{fee:0,matches:4,goals:1,assists:0,average:6.5}},
  trajectory:{items:[{season:2026,rating:60},{season:2025,rating:55}]}};
 
-const squad={scope:{kind:'club',id:1,name:'Club'},index:1,total:3,items:[{id:5,name:'Gardien Test',position:'GB'},{id:1,name:'Test Joueur',position:'DR'},{id:6,name:'Buteur Test',position:'BU'}],
+const squad={scope:{kind:'club',id:1,name:'Club'},index:1,total:3,items:[{id:5,name:'Gardien Test',position:'GB'},{id:1,name:'Test Joueur',position:'DD'},{id:6,name:'Buteur Test',position:'BU'}],
  previous:{id:5,name:'Gardien Test',position:'GB'},next:{id:6,name:'Buteur Test',position:'BU'}};
 
 async function render(player=detail,navigation=squad){
@@ -51,9 +51,9 @@ test('level chart points take the colours of the club played for, and stay neutr
 });
 
 test('position pitch places ratings of 10 or more on the field and outlines the main position',()=>{
- const html=positionPitch({GB:1,DR:20,MC:12,MDC:10,DC:9,BU:null},'DR');
+ const html=positionPitch({GB:1,DD:20,MC:12,MDC:10,DC:9,BU:null},'DD');
  assert.equal((html.match(/class="shirt graded"/g)||[]).length,3);
- assert.match(html,/pitch-player main" style="left:85%;top:70%"><span class="shirt graded" style="--hue:120" title="DR : 20 \/ 20">20</);
+ assert.match(html,/pitch-player main" style="left:85%;top:70%"><span class="shirt graded" style="--hue:120" title="DD : 20 \/ 20">20</);
  assert.equal((html.match(/pitch-player main/g)||[]).length,1);
  assert.match(html,/<small>MC<\/small>/);assert.match(html,/title="MDC : 10 \/ 20">10</);
  assert.doesNotMatch(html,/<small>(GB|DC|BU)</);
@@ -92,7 +92,7 @@ test('player page steps through the squad above the header, and shows nothing wi
  const at=html.indexOf('class="entity-nav"');
  assert.ok(html.indexOf('class="page-heading player-heading"')<html.indexOf('<div class="identity"><div class="entity-nav"')&&at<html.indexOf('class="avatar"'));
  assert.match(html,/href="#\/player\/5" rel="prev"/);assert.match(html,/href="#\/player\/6" rel="next"/);
- assert.match(html,/<a href="#\/player\/1" aria-current="true"><span class="position def">DR<\/span><span>Test Joueur<\/span><\/a>/);
+ assert.match(html,/<a href="#\/player\/1" aria-current="true"><span class="position def">DD<\/span><span>Test Joueur<\/span><\/a>/);
  assert.equal(html.match(/<h1>(.*?)<\/h1>/)[1],'Test Joueur');
  for(const navigation of [null,{...squad,total:1,items:[squad.items[1]],previous:null,next:null}]){
   const alone=(await render(detail,navigation)).html;

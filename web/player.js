@@ -44,7 +44,7 @@ function attributesBody(player) {
 
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
 // The central column is spaced by at least 15% so that shirts and labels of a 360px pitch do not overlap.
-const PITCH={GB:[50,92],DC:[50,77],DL:[15,70],DR:[85,70],MDC:[50,62],MC:[50,47],MOC:[50,32],AILG:[15,22],AILD:[85,22],BU:[50,9]};
+const PITCH={GB:[50,92],DC:[50,77],DG:[15,70],DD:[85,70],MDC:[50,62],MC:[50,47],MOC:[50,32],AILG:[15,22],AILD:[85,22],BU:[50,9]};
 
 // Only the roles the player can actually fill are drawn; without any, there is no pitch at all.
 const MIN_RATING=10;

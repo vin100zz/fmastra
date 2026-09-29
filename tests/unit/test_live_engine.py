@@ -11,7 +11,7 @@ from test_engine_golden import roughened
 
 
 def lineups(config):
-    return synthetic_lineup(config, 1, "4-4-2", 72), synthetic_lineup(config, 2, "4-3-3", 68)
+    return synthetic_lineup(config, 1, "4-4-2 plat", 72), synthetic_lineup(config, 2, "4-3-3", 68)
 
 
 def test_segments_replay_the_whole_match_and_stop_on_what_is_worth_showing(config):

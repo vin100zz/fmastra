@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 20` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 22` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -91,6 +91,18 @@ et `World.offered_until`, vides à la lecture d'une sauvegarde antérieure, et q
 `ia_gestion.mercato` (`tolerance_baisse_joueur_a_vendre` 15, `multiplicateur_prix_max_acheteur` 1,35,
 `jours_relance_proposition` 14, `offres_max_proposition` 5), reçus par la configuration embarquée après
 vérification de l'empreinte d'origine.
+
+La v21 renomme la formation `4-4-2` en `4-4-2 plat` et ajoute `4-4-2 diamant` (4-1-2-1-2) et `4-4-2 offensif`
+(4-2-2-2) juste après elle. À la lecture d'une sauvegarde antérieure, l'empreinte de la configuration d'origine
+est vérifiée, puis la configuration embarquée est renommée et complétée ; la formation des clubs et des
+compositions en attente ou en direct suit le nouveau nom. Un nom déjà présent dans une configuration
+personnalisée n'est ni écrasé ni renommé.
+
+La v22 code les latéraux comme les ailiers : `DL` devient `DG` et `DR` devient `DD`. À la lecture d'une sauvegarde
+antérieure, avant tout typage, chaque code `DL`/`DR` du monde (valeur ou clé : poste et notes par poste des joueurs,
+compositions, événements de match, instantanés des transferts…) est renommé ; la configuration embarquée l'est après
+vérification de son empreinte d'origine. Le `4-4-2 offensif` ajouté par la v21 (deux MOC) reçoit ses deux ailiers
+(MDC, MDC, AILG, AILD) ; une autre définition de ce nom est conservée. Les codes de la source (`players.csv`) ne changent pas.
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de

@@ -22,12 +22,14 @@ def refresh(team: TeamState, cfg: Config) -> None:
     density_reference, exponent = cfg.engine.density.reference, cfg.engine.density.exponent
     sensitivity = cfg.engine.player_ratings.quality_sensitivity
     multipliers = [state_multiplier(slot.player, slot.position, cfg, team.fitness[slot.player.id]) for slot in team.active]
+    # The same state without fitness, not divided by it: an exhausted player's fitness reaches zero.
+    rested = [state_multiplier(slot.player, slot.position, cfg, 1.0) for slot in team.active]
     team.roles.update((slot.player.id, slot.position) for slot in team.active)
     for phase in PHASES:
         attack = phase.endswith("attack")
         weights = getattr(cfg.attributes.composites, phase)
-        qualities = [weighted_rating(slot.player.attributes, weights) * multiplier
-                     for slot, multiplier in zip(team.active, multipliers)]
+        ratings = [weighted_rating(slot.player.attributes, weights) for slot in team.active]
+        qualities = [rating * multiplier for rating, multiplier in zip(ratings, multipliers)]
         vertical = cfg.involvement.attack if attack else cfg.involvement.defense
         profiles = [(slot, vertical[slot.position], cfg.involvement.lateral[slot.position], quality)
                     for slot, quality in zip(team.active, qualities)]
@@ -45,8 +47,8 @@ def refresh(team: TeamState, cfg: Config) -> None:
             table.append(row)
         team.zones[phase] = table
         # Credit follows the player's own level, not his freshness: the zones already make a tired side lose the ball.
-        team.profiles[phase] = [(slot, heights, sides, exp(sensitivity * quality / team.fitness[slot.player.id]))
-                                for slot, heights, sides, quality in profiles]
+        team.profiles[phase] = [(slot, heights, sides, exp(sensitivity * rating * level))
+                                for (slot, heights, sides, _), rating, level in zip(profiles, ratings, rested)]
 
 
 def gap(attacker: TeamState, defender: TeamState, zone: int, lane: int, creation: bool, cfg: Config, counter: bool = False) -> float:

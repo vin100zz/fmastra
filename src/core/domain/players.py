@@ -10,8 +10,8 @@ from .date import Date
 class Position(StrEnum):
     GOALKEEPER = "GB"
     CENTER_BACK = "DC"
-    LEFT_BACK = "DL"
-    RIGHT_BACK = "DR"
+    LEFT_BACK = "DG"
+    RIGHT_BACK = "DD"
     DEFENSIVE_MIDFIELDER = "MDC"
     CENTRAL_MIDFIELDER = "MC"
     ATTACKING_MIDFIELDER = "MOC"

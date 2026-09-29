@@ -26,8 +26,12 @@ def shortened(lineup, size: int):
     return replace(lineup, slots=lineup.slots[:size])
 
 
+# The formations the reference was frozen with: a formation added to the configuration does not reshuffle the cases.
+FORMATIONS = ("4-4-2 plat", "4-3-3", "4-2-3-1", "3-5-2", "5-3-2", "5-4-1")
+
+
 def cases(config):
-    formations = list(config.formations.formations)
+    formations = FORMATIONS
     result = {}
     for index in range(12):
         home_formation, away_formation = formations[index % len(formations)], formations[(index * 5 + 1) % len(formations)]

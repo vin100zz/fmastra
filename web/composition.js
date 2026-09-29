@@ -1,22 +1,23 @@
-import {api,escape as e,card,empty,position,group,levelBadge,number,surname,appearances} from './ui.js';
+import {api,escape as e,position,group,levelBadge,number,surname,appearances} from './ui.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
 
-const POSITION_ORDER=['GB','DL','DC','DR','MDC','MC','AILG','AILD','MOC','BU'];
+const POSITION_ORDER=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 const LINE_Y={gk:90,def:73,dm:60,cm:47,am:33,att:15};
-const LATERAL={DL:0,AILG:0,DR:2,AILD:2};
+const LATERAL={DG:0,AILG:0,DD:2,AILD:2};
 // Each position sits on a line of the pitch; wingers join the forwards, the attacking midfielder or the midfield,
-// depending on what the rest of the formation leaves in front of them.
+// depending on what the rest of the formation leaves in front of them. Without a central midfield to join, they stand
+// in front of the holding midfielders.
 function line(role,roles){
  if(role==='GB')return 'gk';
- if(['DL','DC','DR'].includes(role))return 'def';
+ if(['DG','DC','DD'].includes(role))return 'def';
  if(role==='MDC')return 'dm';
  if(role==='MC')return 'cm';
  if(role==='MOC')return 'am';
  if(role==='BU')return 'att';
  const count=value=>roles.filter(item=>item===value).length;
- if(roles.includes('MOC'))return 'am';
+ if(roles.includes('MOC')||!roles.includes('MC'))return 'am';
  return count('BU')<2&&count('MC')+count('MDC')>=3?'att':'cm';
 }
 // Pitch coordinates (percentages) of each slot of a formation, attack at the top.
@@ -57,7 +58,7 @@ export function dropOnSquad(lineup,id,onto){
  if(!from&&to)return place(lineup,id,to);
  return remove(lineup,id);
 }
-// The first empty place in the order of positions (GB, DL, DC, DR…), substitutes last; null when the lineup is full.
+// The first empty place in the order of positions (GB, DG, DC, DD…), substitutes last; null when the lineup is full.
 export function nextFree(lineup,roles){
  const slot=lineup.slots.map((id,index)=>({id,index})).filter(item=>item.id==null)
   .sort((a,b)=>POSITION_ORDER.indexOf(roles[a.index])-POSITION_ORDER.indexOf(roles[b.index])||a.index-b.index)[0];
@@ -170,11 +171,12 @@ function load(formation,titulaires,banc){
  editor.slots=slots;editor.bench=benchOf(banc,editor.data.bench_size);
 }
 
-// The lineup editor of the controlled club, shown in its club page's Composition tab.
+// The lineup editor of the controlled club, shown in its club page's Composition tab. Without a match to play today,
+// it prepares the next one (or none, between seasons): the choices are kept for its day, when they can be played.
 export async function compositionContent(params, state) {
- const matchId=Number(params.get('match')||state.awaiting_lineup);
- if(!matchId) return card('Aucune composition à faire',empty('Revenez ici lorsqu’un match de votre club est programmé aujourd’hui.','Rien à composer pour l’instant'));
- const data=await api(`/ma-partie/composition?match_id=${matchId}`);
+ const requested=params.get('match')||state.awaiting_lineup;
+ const data=await api(`/ma-partie/composition${requested?`?match_id=${requested}`:''}`);
+ const matchId=data.match_id??0;
  if(editor?.matchId!==matchId){
   editor={matchId,data,sort:{key:'selected',direction:'asc'}};
   load(data.default.formation,data.default.titulaires,data.default.banc);

@@ -18,7 +18,7 @@ def normalized(value: str) -> str:
     return "".join(character for character in unicodedata.normalize("NFKD", value.casefold()) if not unicodedata.combining(character))
 
 
-POSITION_ORDER = ["GB", "DL", "DR", "DC", "MDC", "MC", "MOC", "AILG", "AILD", "BU"]
+POSITION_ORDER = ["GB", "DG", "DD", "DC", "MDC", "MC", "MOC", "AILG", "AILD", "BU"]
 
 
 def position_rank(position: str) -> int:

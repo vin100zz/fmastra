@@ -23,7 +23,7 @@ test('equal points are split by goal difference, then by goals scored',()=>{
 
 const manager=()=>({mentality:'equilibree',substitutions_left:3,windows_left:1,
  active:[{id:1,position:'GB'},{id:2,position:'DC'},{id:3,position:'MC'},{id:4,position:'BU'}],
- vacancies:[{id:9,position:'DL'}],bench:[{id:20,position:'DL'},{id:21,position:'GB'},{id:22,position:'BU'}]});
+ vacancies:[{id:9,position:'DG'}],bench:[{id:20,position:'DG'},{id:21,position:'GB'},{id:22,position:'BU'}]});
 
 test('an untouched draft gives no order',()=>{
  const data=manager();
@@ -66,8 +66,8 @@ test('the draft checks the rules: changes left, windows, a single keeper',()=>{
 
 test('another formation keeps the players and changes their places',()=>{
  const data=manager();
- const draft=formationInDraft(tacticsDraft(data),['GB','DL','DC','MC','MC']);
- assert.deepEqual(draft.slots.map(slot=>[slot.id,slot.role]),[[1,'GB'],[9,'DL'],[2,'DC'],[3,'MC'],[4,'MC']]);
+ const draft=formationInDraft(tacticsDraft(data),['GB','DG','DC','MC','MC']);
+ assert.deepEqual(draft.slots.map(slot=>[slot.id,slot.role]),[[1,'GB'],[9,'DG'],[2,'DC'],[3,'MC'],[4,'MC']]);
 });
 
 test('the highlights show a goal once the score counts it, other events once the clock has passed them',()=>{

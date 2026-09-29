@@ -48,7 +48,7 @@ export const nationFlag = code => nations[code]?.flag ? `<span class="nation" ti
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 export const clubLink = club => club ? `<a href="#/${club.national?'international/nation':'club'}/${club.id}" class="club-link">${club.national?`<span class="nation">${nationFlag(club.nation)}${escape(club.name)}</span>`:`${kitDot(club)}${escape(club.name)}`}</a>` : '<span class="muted">Libre</span>';
 export const playerLink = (id, name) => id<0?`<span class="temporary-player" title="Joueur temporaire hors du marché des transferts">${escape(name || 'Joueur temporaire')} <small>(temp.)</small></span>`:`<a href="#/player/${id}">${escape(name || 'Joueur archivé')}</a>`;
-export const group = role => role === 'GB' ? 'gk' : ['DC','DL','DR'].includes(role) ? 'def' : ['BU','AILG','AILD'].includes(role) ? 'att' : 'mid';
+export const group = role => role === 'GB' ? 'gk' : ['DC','DG','DD'].includes(role) ? 'def' : ['BU','AILG','AILD'].includes(role) ? 'att' : 'mid';
 export const position = value => `<span class="position ${group(value)}">${escape(value)}</span>`;
 // The family name for tight spaces: the last word with the particles before it ("de Lange", "Van der Sar"), never the first word.
 const PARTICLES=new Set(['da','das','de','del','della','den','der','des','di','do','dos','du','el','la','le','lo','ten','ter','van','von']);
@@ -136,10 +136,10 @@ export function fixtures(data, showDates=false) {if(!data.items.length)return em
 // instead of one colour per position (match-only players keep their grey shirt); `marks(player)` adds icons beside a shirt.
 export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null}={}){
  const colors=safeColor(kit?.major)?{major:kit.major,minor:safeColor(kit.minor)||kit.major}:null;
- const bands={GB:90,DC:75,DL:69,DR:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
+ const bands={GB:90,DC:75,DG:69,DD:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
  // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
- const line=player=>['DL','DC','DR'].includes(player.position)?'defence':bands[player.position]??45;
- const lateral={DL:0,DC:1,DR:2};
+ const line=player=>['DG','DC','DD'].includes(player.position)?'defence':bands[player.position]??45;
+ const lateral={DG:0,DC:1,DD:2};
  const rows={};lineup.forEach(player=>(rows[line(player)]??=[]).push(player));
  Object.values(rows).forEach(row=>row.sort((a,b)=>(lateral[a.position]??1)-(lateral[b.position]??1)));
  return `<div class="pitch" aria-label="${escape(label)}">${lineup.map(player=>{const row=rows[line(player)];const y=bands[player.position]??45;let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;return `<${player.temporary?'span':'a'} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player ${group(player.position)} ${player.temporary?'temporary-player':''}" style="left:${x}%;top:${y}%"><span class="shirt"${colors&&!player.temporary?` style="${kitShirtStyle(colors.major,colors.minor)}"`:''}>${player.stats?.rating?number(player.stats.rating):player.position}</span>${marks?marks(player):''}<small>${escape(compact?surname(player.name):player.name)}${player.temporary?' (temp.)':''}</small></${player.temporary?'span':'a'}>`;}).join('')}</div>`;

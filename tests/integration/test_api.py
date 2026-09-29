@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, Semaphore, Thread, current_thread
 
 import pytest
 from fastapi.testclient import TestClient
@@ -232,6 +232,50 @@ def test_closing_the_service_ends_a_running_auto_job(config, tmp_path, monkeypat
         service.auto_stop.set()  # a regression must fail this test, not leave the simulation thread running
         closer.join(30)
     assert service.jobs[job_id].status == "done"
+
+
+def test_what_follows_an_advance_waits_for_its_autosave_instead_of_being_refused(config, tmp_path, monkeypatch):
+    """An advance reports done before its autosave is written, and the page offers Continuer again at once."""
+    app = create_app(ROOT, tmp_path)
+    service = app.state.game
+    service.world = import_world(ROOT / "data", config, 780)
+    started, permits = Semaphore(0), Semaphore(0)
+    def save(world, slot):
+        if current_thread().name.startswith("autosave"):  # the write an advance leaves running
+            started.release()
+            assert permits.acquire(timeout=10)
+    monkeypatch.setattr(service.store, "save", save)
+    client = TestClient(app)
+    def advance():
+        response = client.post("/api/monde/avancer", json={"jusqu_a": "jour"})
+        assert response.status_code == 202, response.text
+        return response.json()["id"]
+    try:
+        first = advance()
+        assert started.acquire(timeout=30) and wait_until(lambda: service.jobs[first].status == "done")
+        assert client.get("/api/monde/etat").json()["job"] is None
+        # A synchronous write waits for the autosave to be written...
+        entered = Event()
+        def write():
+            with service.mutating(): entered.set()
+        writer = Thread(target=write)
+        writer.start()
+        assert not entered.wait(0.3)
+        permits.release()
+        assert entered.wait(10)
+        writer.join(10)
+        # ...and the next advance is queued behind it: the world does not move while it is being written.
+        second = advance()
+        assert started.acquire(timeout=30) and wait_until(lambda: service.jobs[second].status == "done")
+        third = advance()
+        time.sleep(0.3)
+        assert service.jobs[third].status == "queued" and service.world.date.iso() == service.jobs[second].date
+        permits.release(2)
+        assert wait_until(lambda: service.jobs[third].status == "done" and service.pending_save is None)
+        assert not service.recovery_required
+    finally:
+        permits.release(10)  # a regression must fail this test, not leave the autosave thread waiting
+        service.close()
 
 
 @pytest.fixture(scope="module")

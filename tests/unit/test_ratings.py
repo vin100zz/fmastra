@@ -22,7 +22,7 @@ def with_ratings(config, **changes):
 
 
 def play(config, seed):
-    return PossessionEngine().simulate(synthetic_lineup(config, 1, "4-4-2"), synthetic_lineup(config, 2, "4-2-3-1"), config, stream(seed))
+    return PossessionEngine().simulate(synthetic_lineup(config, 1, "4-4-2 plat"), synthetic_lineup(config, 2, "4-2-3-1"), config, stream(seed))
 
 
 def test_the_side_stream_leaves_the_match_stream_untouched(config):

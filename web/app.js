@@ -51,8 +51,8 @@ function updateAdvanceButton(){
 }
 // The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
 const busyButtons=()=>{
- // `polling`, not `state.job`: the server can still report a just-finished job as active for a moment
- // (its autosave runs after the status turns "done"), which must not leave the buttons stuck disabled.
+ // `polling`, not `state.job`: the buttons follow the job the page is watching. Once its status turns "done" the next
+ // command is accepted at once, even while the autosave is still written: the server queues it behind that write.
  const busy=Boolean(polling)||submitting;
  const auto=Boolean(state.auto?.running),stopping=Boolean(state.auto?.stopping);
  document.querySelectorAll('[data-command],#advance,#simulate').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
@@ -191,8 +191,7 @@ async function simulateMatch(){
  await command('/monde/avancer',{jusqu_a:'jour'});
 }
 async function pollJob(id){
- // The server can report the job as still active for a moment after status is "done" (async autosave):
- // refreshState() then tries to poll it again — ignore that, this job's outcome was already handled.
+ // A job whose outcome was already handled is never followed again, whatever a late /monde/etat still reports.
  if(polling===id||id===lastFinishedJobId)return;
  polling=id;
  document.querySelector('#job-bar').hidden=false;

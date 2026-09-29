@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import Literal
 from uuid import uuid4
 
@@ -114,7 +114,7 @@ def previous_lineup(world, match, context, formations: dict) -> dict | None:
 
     Its formation is the one holding the same positions; otherwise the club's, each player on a slot of his position."""
     club_id = context.club.id
-    played = sorted((other for other in world.matches.values() if other.result is not None and other.id != match.id
+    played = sorted((other for other in world.matches.values() if other.result is not None and other is not match
                      and club_id in (other.home_id, other.away_id)), key=lambda other: (other.date, other.id))
     squad = {player.id for player in context.players}
     for other in reversed(played):
@@ -251,15 +251,24 @@ def router(service: GameService) -> APIRouter:
         return {"match_id": command.match_id}
 
     @api.get("/ma-partie/composition")
-    def lineup_form(match_id: int) -> dict:
+    def lineup_form(match_id: int | None = None) -> dict:
         from core.ai.selection import LineupContext, select_lineup
         with service.reading() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
             club_id = world.controlled_club_id
-            match = world.matches.get(match_id)
-            if match is None or club_id not in (match.home_id, match.away_id):
-                raise HTTPException(404, "Match introuvable pour ce club.")
-            context = LineupContext.from_world(world, club_id, match.competition_id, world.date)
+            if match_id is None:
+                # A lineup can be tried any day: for the club's next match, or for its league while no fixture is scheduled.
+                upcoming = [match for match in world.matches.values() if match.result is None and club_id in (match.home_id, match.away_id)]
+                match = min(upcoming, key=lambda match: (match.date, match.id), default=None)
+            else:
+                match = world.matches.get(match_id)
+                if match is None or club_id not in (match.home_id, match.away_id):
+                    raise HTTPException(404, "Match introuvable pour ce club.")
+            competition_id = match.competition_id if match else world.clubs[club_id].competition_id
+            context = LineupContext.from_world(world, club_id, competition_id, world.date)
+            if match is None or match.date != world.date:
+                # Players away with their national team may be back by a later match.
+                context = replace(context, players=[world.players[pid] for pid in context.club.player_ids])
             formations = world.config.formations.formations
             suggestions = {}
             for name in formations:
@@ -271,8 +280,10 @@ def router(service: GameService) -> APIRouter:
             if default is None:
                 formation = context.club.formation if context.club.formation in formations else next(iter(formations))
                 default = {"formation": formation, **suggestions[formation]}
-            return {"match_id": match_id, "opponent": v.club_ref(world, match.away_id if match.home_id == club_id else match.home_id),
-                    "home": match.home_id == club_id, "players": [lineup_player(world, player, match.competition_id, stats[player.id]) for player in context.players],
+            opponent = None if match is None else match.away_id if match.home_id == club_id else match.home_id
+            return {"match_id": match.id if match else None, "opponent": v.club_ref(world, opponent) if match else None,
+                    "home": match is not None and match.home_id == club_id,
+                    "players": [lineup_player(world, player, competition_id, stats[player.id]) for player in context.players],
                     "formations": {name: list(roles) for name, roles in formations.items()},
                     "bench_size": world.config.world.match_rules.bench_size,
                     "default": default, "suggestions": suggestions}

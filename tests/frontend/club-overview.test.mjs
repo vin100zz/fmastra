@@ -78,7 +78,7 @@ test('transfers list three arrivals and departures, count what is not shown and 
 
 test('the last eleven reuses the match pitch, and its absence is explained',()=>{
  assert.match(clubOverview(club,data()),/Aucun match joué/);
- const positions=['GB','DL','DC','DC','DR','MC','MC','MC','AILG','BU','AILD'];
+ const positions=['GB','DG','DC','DC','DD','MC','MC','MC','AILG','BU','AILD'];
  const players=positions.map((position,index)=>({id:100+index,name:`Prénom Nom<${index}>`,position,temporary:false,stats:{rating:6.5}}));
  const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players};
  const html=clubOverview(club,data({lineup}));
@@ -92,9 +92,9 @@ test('the last eleven reuses the match pitch, and its absence is explained',()=>
 });
 
 test('the pitch spreads full-backs and centre-backs on one line, from left to right',()=>{
- const back=['DR','DC','DL','DC','DC'].map((position,index)=>({id:index,name:`P${index}`,position}));
+ const back=['DD','DC','DG','DC','DC'].map((position,index)=>({id:index,name:`P${index}`,position}));
  const placed=[...pitch(back).matchAll(/left:([\d.]+)%;top:(\d+)%"><span class="shirt">(\w+)/g)].map(([, left,, position])=>[position,Number(left)]).sort((a,b)=>a[1]-b[1]);
- assert.deepEqual(placed.map(([position])=>position),['DL','DC','DC','DC','DR']);
+ assert.deepEqual(placed.map(([position])=>position),['DG','DC','DC','DC','DD']);
  assert.deepEqual(placed.map(([,left])=>left),[11,30.5,50,69.5,89]);
  const pair=[...pitch(['BU','BU'].map((position,index)=>({id:index,name:'B',position}))).matchAll(/left:([\d.]+)%/g)].map(match=>Number(match[1]));
  assert.deepEqual(pair,[35,65]);
