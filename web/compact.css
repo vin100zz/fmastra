@@ -70,7 +70,7 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 .my-club-widgets{grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
 .my-club-widgets .lineup-card{grid-row:span 2}.my-club-widgets .standings-card .standings-scroll{max-height:300px}.my-club-widgets .standings-card table{font-size:11px}.my-club-widgets .standings-card th,.my-club-widgets .standings-card td{padding:5px 8px}
 .standings-card tr:has(.own){background:#fff6d6}.standings-card .own{font-weight:800}
-.market-card .moves{max-height:190px;overflow-y:auto}.market-card .moves li{flex-wrap:wrap}.market-card .moves li>a{font-size:10px;color:var(--green);white-space:nowrap}.market-actions{display:flex;gap:4px;width:100%;justify-content:flex-end}.market-actions button{padding:3px 8px;font-size:10px}
+.market-card .moves{max-height:190px;overflow-y:auto}.market-card .moves li,.action-dialog .moves li{flex-wrap:wrap}.market-card .moves li>a{font-size:10px;color:var(--green);white-space:nowrap}.market-actions{display:flex;gap:4px;width:100%;justify-content:flex-end}.market-actions button{padding:3px 8px;font-size:10px}
 @media(max-width:1329px){.my-club-widgets{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:950px){.my-club{grid-template-columns:1fr}.my-club>.inbox{position:static;max-height:420px}}
 @media(max-width:650px){.my-club-widgets{grid-template-columns:1fr}.my-club-widgets .lineup-card{grid-row:auto}}

@@ -121,6 +121,10 @@ class World:
     pending_renewals: dict[int, RenewalProposal] = field(default_factory=dict)
     # Players whose club or who broke off talks with the human club, until the given day.
     talks_closed: dict[int, Date] = field(default_factory=dict)
+    # The human club's players it wants to sell (see core.world.sales): the fee asked for each listed player,
+    # and for each player offered to every club, the day he may be offered again.
+    transfer_list: dict[int, int] = field(default_factory=dict)
+    offered_until: dict[int, Date] = field(default_factory=dict)
     news: list[JournalEntry] = field(default_factory=list)
     live_match: LiveMatchRecord | None = None
 

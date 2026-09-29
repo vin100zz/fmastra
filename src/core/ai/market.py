@@ -16,7 +16,7 @@ from core.engine.abilities import overall
 from core.math import clamp, interpolate
 from core.world.estimates import estimate_potential
 from core.world.events import PlayerSigned
-from core.world.human import is_human_club
+from core.world.human import is_human_club, listed_price
 from core.world.transfer_rules import recent_arrival_ids, accepts_move
 from core.world.importation.synthesis import intrinsic_value, expected_wage
 from .assignment import maximize_assignment
@@ -236,20 +236,20 @@ def wage_demand(player: Player, club: Club, world: World) -> int:
     return max(cfg.management.budgets.wages.weekly_minimum, round(wage))
 
 
-def propose_transfers(world: World, rng: Random, emergency: bool = False,
-                      rejected: dict[int, set[int]] | None = None) -> list[PlayerSigned]:
-    """Snapshot all proposals before applying any; competing offers share a round."""
-    from .controller import AIController
+def overpriced(player: Player, buyer: Club, fee: int, world: World) -> bool:
+    """Whether a fee the human club set itself (transfer list, offer to clubs) is more than a buyer pays.
+
+    A buyer pays the player's usual asking price, as any buyer does in the course of the
+    market, or up to `buyer_price_multiplier` times the value it sees in him if that is higher.
+    """
+    if fee <= round(market_value(player, world, buyer) * world.config.management.market.buyer_price_multiplier): return False
+    return fee > asking_price(player, world.clubs[player.club_id], world)
+
+
+def reinforced_positions(world: World) -> dict[int, set[Position]]:
+    """Positions each club reinforced by a transfer in the window open today."""
     cfg = world.config
-    controller = AIController(cfg, rng)
-    # Recent arrivals stay put; players the human club has agreed a fee for are no longer on the market.
-    settled = recent_arrival_ids(world) | {offer.player_id for offer in world.offers.values() if offer.stage in RESERVING_STAGES}
-    candidates = [player for player in world.players.values() if player.id not in settled]
-    rejected = rejected or {}
-    proposals = []
-    opening_day = any((world.date.month, world.date.day) == (window.start_month, window.start_day)
-                      for window in (cfg.world.market.summer, cfg.world.market.winter))
-    completed_positions: dict[int, set[Position]] = defaultdict(set)
+    completed: dict[int, set[Position]] = defaultdict(set)
     for window in (cfg.world.market.summer, cfg.world.market.winter):
         start = Date(world.date.year, window.start_month, window.start_day)
         end = Date(world.date.year, window.end_month, window.end_day)
@@ -259,8 +259,122 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             player = world.players.get(move.player_id)
             if (move.date <= world.date and move.kind == "transfer" and move.target_id is not None
                     and player is not None and player.club_id == move.target_id):
-                completed_positions[move.target_id].add(player.position)
+                completed[move.target_id].add(player.position)
         break
+    return completed
+
+
+def short_of_players(squad: list[Player], cfg: Config) -> bool:
+    """Below the hard squad or goalkeeper minimum: the club must recruit."""
+    guard = cfg.management.guardrails
+    return len(squad) < guard.min_squad or sum(player.position == Position.GOALKEEPER for player in squad) < guard.min_goalkeepers
+
+
+def open_slots(club: Club, pending: list, cfg: Config) -> int:
+    """New offers a club may still open beside its pending ones."""
+    return min(cfg.management.market.max_negotiations - len(pending), cfg.management.guardrails.max_squad - len(club.player_ids) - len(pending))
+
+
+@dataclass(slots=True)
+class Plan:
+    """A club's recruitment round: the squad it projects with its pending offers, and what it can still commit."""
+    club: Club
+    projected: list[Player]
+    quality: float
+    money: int
+    wages: int
+    slots: int
+    covered: set[Position]
+    urgent: bool
+    missing_keeper: bool
+
+    def improved_quality(self, player: Player, cfg: Config) -> float | None:
+        """The projected squad quality with the player, if he raises it by the minimum gain or fills a hard minimum."""
+        quality = squad_quality([*self.projected, player], self.club, cfg)
+        required = (len(self.projected) < cfg.management.guardrails.min_squad
+                    or self.missing_keeper and player.position == Position.GOALKEEPER)
+        if (quality <= self.quality or quality - self.quality < cfg.management.market.minimum_quality_gain) and not required: return None
+        return quality
+
+    def take(self, player: Player, fee: int, wage: int, quality: float) -> None:
+        self.projected.append(player)
+        self.quality = quality
+        self.money -= fee
+        self.wages -= wage
+        self.slots -= 1
+        self.covered.add(player.position)
+
+
+def recruitment_plan(world: World, club: Club, pending: list, slots: int, reinforced: set[Position]) -> Plan:
+    cfg = world.config
+    squad = [world.players[pid] for pid in club.player_ids]
+    reserved_money = sum(offer.ceiling for offer in pending)
+    money = min(club.transfer_budget, club.balance - cfg.management.guardrails.min_balance) - reserved_money
+    wages = club.wage_cap - club.wage_bill - sum(offer.contract.weekly_wage for offer in pending)
+    projected = squad + [world.players[offer.player_id] for offer in pending if offer.player_id in world.players]
+    covered = {player.position for player in projected[len(squad):]}
+    # Keep the window's plan after signatures; don't buy successive small
+    # upgrades at an already reinforced position. Actual shortages reopen it.
+    counts = Counter(player.position for player in projected)
+    required_counts = Counter(Position(role) for role in cfg.formations.formations[club.formation])
+    required_counts[Position.GOALKEEPER] = cfg.management.guardrails.min_goalkeepers
+    if len(projected) >= cfg.management.guardrails.min_squad:
+        covered.update(position for position in reinforced if counts[position] >= max(1, required_counts[position]))
+    missing_keeper = sum(player.position == Position.GOALKEEPER for player in projected) < cfg.management.guardrails.min_goalkeepers
+    return Plan(club, projected, squad_quality(projected, club, cfg), money, wages, slots, covered,
+                short_of_players(squad, cfg), missing_keeper)
+
+
+def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> list[PlayerSigned]:
+    """The clubs that bid, at this fee, for a player the human club offers to every club today.
+
+    An active club decides as in its daily review, without waiting for it: a need at his
+    position not already covered, room for a new offer, the means, and at least the
+    minimum quality gain. A dormant club with room takes its chance with its
+    approach probability. Neither pays more than `overpriced` allows.
+    """
+    cfg = world.config
+    guard = cfg.management.guardrails
+    reinforced = reinforced_positions(world)
+    bids = []
+    for club in sorted(world.clubs.values(), key=lambda item: item.id):
+        if club.id == player.club_id or is_human_club(world, club.id): continue
+        if club.competition_id is None:
+            if len(club.player_ids) >= guard.max_squad or rng.random() >= cfg.management.market.dormant_clubs.approach_probability: continue
+            if not accepts_move(player, club, world): continue
+            wage = wage_demand(player, club, world)
+            if (fee > club.transfer_budget or club.balance - fee < guard.min_balance or club.wage_bill + wage > club.wage_cap
+                    or overpriced(player, club, fee, world)): continue
+            bids.append(PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee))
+            continue
+        pending = [offer for offer in world.offers.values() if offer.target_id == club.id]
+        slots = open_slots(club, pending, cfg)
+        if slots <= 0 or any(offer.player_id == player.id for offer in pending) or not accepts_move(player, club, world): continue
+        plan = recruitment_plan(world, club, pending, slots, reinforced[club.id])
+        wage = wage_demand(player, club, world)
+        if player.position in plan.covered or wage > plan.wages or fee > plan.money or overpriced(player, club, fee, world): continue
+        if not any(need.position == player.position and (need.gap > 0 or plan.urgent) for need in needs_for(club, plan.projected, cfg)): continue
+        if plan.improved_quality(player, cfg) is None: continue
+        bids.append(PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee))
+    return bids
+
+
+def propose_transfers(world: World, rng: Random, emergency: bool = False,
+                      rejected: dict[int, set[int]] | None = None) -> list[PlayerSigned]:
+    """Snapshot all proposals before applying any; competing offers share a round."""
+    from .controller import AIController
+    cfg = world.config
+    controller = AIController(cfg, rng)
+    # Recent arrivals stay put; players the human club has agreed a fee for are no longer on the market.
+    settled = recent_arrival_ids(world) | {offer.player_id for offer in world.offers.values() if offer.stage in RESERVING_STAGES}
+    candidates = [player for player in world.players.values() if player.id not in settled]
+    # The human club's transfer list, at the fee it asks: every club with the need sees it first.
+    listed = {player.id: fee for player in candidates if (fee := listed_price(world, player.id)) is not None}
+    rejected = rejected or {}
+    proposals = []
+    opening_day = any((world.date.month, world.date.day) == (window.start_month, window.start_day)
+                      for window in (cfg.world.market.summer, cfg.world.market.winter))
+    completed_positions = reinforced_positions(world)
     # Quotes are valid for this snapshot; settlement checks the seller again.
     quotes: dict[int, int] = {}
     sale_permissions: dict[int, bool] = {}
@@ -289,44 +403,28 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
     def price(player: Player) -> int:
         if player.id not in quotes:
             seller = world.clubs.get(player.club_id)
-            quotes[player.id] = asking_price(player, seller, world) if seller else 0
+            quotes[player.id] = listed[player.id] if player.id in listed else asking_price(player, seller, world) if seller else 0
         return quotes[player.id]
 
     for club in world.active_clubs():
         if is_human_club(world, club.id): continue  # the human club's outgoing offers come from its own command, not this scan
         pending = [offer for offer in world.offers.values() if offer.target_id == club.id]
-        squad = [world.players[pid] for pid in club.player_ids]
-        urgent = len(squad) < cfg.management.guardrails.min_squad or sum(player.position == Position.GOALKEEPER for player in squad) < cfg.management.guardrails.min_goalkeepers
+        urgent = short_of_players([world.players[pid] for pid in club.player_ids], cfg)
         if emergency and not urgent: continue
-        slots = min(cfg.management.market.max_negotiations - len(pending),
-                    cfg.management.guardrails.max_squad - len(squad) - len(pending))
+        slots = open_slots(club, pending, cfg)
         if club.id in rejected: slots = min(slots, len(rejected[club.id]))
         if slots <= 0: continue
         # Opening-day planning covers several positions. Later batch reviews
         # preserve the configured rate of opportunities instead of tripling it.
         review_probability = cfg.management.market.daily_proposal_probability / max(1, slots)
         if not urgent and not opening_day and club.id not in rejected and rng.random() >= review_probability: continue
-        reserved_money = sum(offer.ceiling for offer in pending)
-        money = min(club.transfer_budget, club.balance - cfg.management.guardrails.min_balance) - reserved_money
-        wages = club.wage_cap - club.wage_bill - sum(offer.contract.weekly_wage for offer in pending)
-        projected = squad + [world.players[offer.player_id] for offer in pending if offer.player_id in world.players]
-        covered = {player.position for player in projected[len(squad):]}
-        # Keep the window's plan after signatures; don't buy successive small
-        # upgrades at an already reinforced position. Actual shortages reopen it.
-        counts = Counter(player.position for player in projected)
-        required_counts = Counter(Position(role) for role in cfg.formations.formations[club.formation])
-        required_counts[Position.GOALKEEPER] = cfg.management.guardrails.min_goalkeepers
-        if len(projected) >= cfg.management.guardrails.min_squad:
-            covered.update(position for position in completed_positions[club.id]
-                           if counts[position] >= max(1, required_counts[position]))
-        needs = controller.evaluate_needs(club, projected)
-        missing_keeper = sum(player.position == Position.GOALKEEPER for player in projected) < cfg.management.guardrails.min_goalkeepers
-        if missing_keeper:
+        plan = recruitment_plan(world, club, pending, slots, completed_positions[club.id])
+        needs = controller.evaluate_needs(club, plan.projected)
+        if plan.missing_keeper:
             needs.sort(key=lambda need: need.position != Position.GOALKEEPER)
-        quality = squad_quality(projected, club, cfg)
         for need in needs:
-            if slots <= 0: break
-            if need.position in covered: continue
+            if plan.slots <= 0: break
+            if need.position in plan.covered: continue
             if need.gap <= 0 and not urgent: continue
             pool = [player for player in candidates if player.position == need.position and player.club_id != club.id
                     and (not emergency or player.club_id is None)
@@ -336,35 +434,35 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
                 scanned = {player.id for player in pool}
                 pool += [player for player in known_talents(need.position)
                          if player.id not in scanned and player.club_id != club.id and player.id not in rejected.get(club.id, ())]
-            pool.sort(key=lambda player: (-player.rating, player.id))
+                scanned.update(player.id for player in pool)
+                pool += [world.players[pid] for pid in listed if world.players[pid].position == need.position
+                         and pid not in scanned and pid not in rejected.get(club.id, ())]
+            pool.sort(key=lambda player: (player.id not in listed, -player.rating, player.id))
             considered = 0
             for player in pool:
                 if not available(player) or not accepts_move(player, club, world): continue
                 wage = wage_demand(player, club, world)
-                if wage > wages: continue
+                if wage > plan.wages: continue
                 fee = price(player)
-                if fee > money: continue
+                if fee > plan.money or player.id in listed and overpriced(player, club, fee, world): continue
                 # Shortlist only affordable, sellable players, not the richest stars.
                 if considered >= cfg.management.market.shortlist_size: break
                 considered += 1
-                new_quality = squad_quality([*projected, player], club, cfg)
-                required = (len(projected) < cfg.management.guardrails.min_squad
-                            or missing_keeper and need.position == Position.GOALKEEPER)
-                if (new_quality <= quality or new_quality - quality < cfg.management.market.minimum_quality_gain) and not required: continue
+                quality = plan.improved_quality(player, cfg)
+                if quality is None: continue
                 proposals.append(PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee))
-                projected.append(player)
-                quality = new_quality
-                money -= fee
-                wages -= wage
-                slots -= 1
-                covered.add(need.position)
+                plan.take(player, fee, wage, quality)
                 break
     # Each external club has one scheduled opportunity per transfer window.
     if not emergency:
         from .external_market import approaching_clubs
         surplus = [world.players[pid] for club in world.active_clubs() for pid in sorted(club.player_ids,
                    key=lambda pid: (world.players[pid].rating, pid))[:max(0, len(club.player_ids) - nominal_size(cfg))]]
-        external_pool = [player for player in surplus if player.id not in settled] + [player for player in candidates if player.club_id is None]
+        external_pool = [player for player in surplus if player.id not in settled]
+        # A listed player is part of the surplus whatever the size of the human club's squad.
+        pooled = {player.id for player in external_pool}
+        external_pool += [world.players[pid] for pid in listed if pid not in pooled]
+        external_pool += [player for player in candidates if player.club_id is None]
         for club in approaching_clubs(world):
             choices = rng.sample(external_pool, min(len(external_pool), cfg.management.market.shortlist_size))
             choices.sort(key=lambda player: (-player.rating, player.id))
@@ -372,6 +470,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
                 if not available(player) or not accepts_move(player, club, world): continue
                 fee = price(player)
                 wage = wage_demand(player, club, world)
+                if player.id in listed and overpriced(player, club, fee, world): continue
                 if fee <= club.transfer_budget and club.balance - fee >= cfg.management.guardrails.min_balance and club.wage_bill + wage <= club.wage_cap:
                     offer = PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee)
                     proposals.append(offer)

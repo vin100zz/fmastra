@@ -65,6 +65,10 @@ def validate_consistency(cfg: Config) -> None:
     require(market.negotiation_rounds >= 1 and market.negotiation_cooldown_days >= 0,
             "Talks need at least one round and a nonnegative cooldown")
     require(1 <= market.min_reply_days <= market.max_reply_days, "Reply delays must be at least one day and ordered")
+    require(market.sale_drop_tolerance >= market.reputation_drop_tolerance,
+            "A player put up for sale cannot be stricter about a smaller club than any other player")
+    require(market.buyer_price_multiplier > 0 and market.offer_cooldown_days >= 1 and market.max_offers_per_proposal >= 1,
+            "Offering a player needs a positive price multiplier, a cooldown of a day or more and at least one offer")
     wages = cfg.management.contracts
     require(wages.greed_source_low < wages.greed_source_reference < wages.greed_source_high,
             "Appetite for money source notes must be increasing")

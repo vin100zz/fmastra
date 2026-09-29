@@ -132,6 +132,31 @@ def test_outgoing_offer_and_incoming_offer_response(client):
     assert all(row["club_id"] == club_id for row in news["items"])
 
 
+def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
+    world = client.app.state.game.world
+    club = world.active_clubs()[0]
+    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    own_player = min((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)
+    other_player = world.active_clubs()[1].player_ids[0]
+    assert client.get(f"/api/ma-partie/vente/{own_player}").json() == {"prix_liste": None, "obstacle_proposition": None, "offres": []}
+
+    listed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": 2_000_000})
+    assert listed.status_code == 200 and listed.json()["prix_liste"] == 2_000_000
+    assert client.get("/api/ma-partie/transferts").json()["liste"] == [{"joueur_id": own_player, "joueur": world.players[own_player].name, "indemnite": 2_000_000}]
+    refused = client.post("/api/partie/liste-transferts", json={"joueur_id": other_player, "indemnite": 1})
+    assert refused.status_code == 400 and refused.json()["detail"] == "Ce joueur n'est pas dans votre effectif."
+
+    offered = client.post("/api/partie/proposer-aux-clubs", json={"joueur_id": own_player, "indemnite": 2_000_000}).json()
+    assert offered["proposees"] == len(offered["offres"]) <= world.config.management.market.max_offers_per_proposal
+    assert offered["obstacle_proposition"].startswith("Déjà proposé")
+    assert client.post("/api/partie/proposer-aux-clubs", json={"joueur_id": own_player, "indemnite": 2_000_000}).status_code == 400
+    incoming = {row["joueur_id"]: row["offres"] for row in client.get("/api/ma-partie/transferts").json()["entrantes"]}
+    assert incoming.get(own_player, []) == offered["offres"]
+
+    removed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": None}).json()
+    assert removed["prix_liste"] is None and client.get("/api/ma-partie/transferts").json()["liste"] == []
+
+
 def test_news_requires_a_selected_club(client):
     assert client.get("/api/ma-partie/actualites").status_code == 400
 

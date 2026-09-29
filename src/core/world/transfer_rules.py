@@ -6,6 +6,7 @@ from core.domain.players import Player
 from core.domain.world import World
 from core.math import clamp, interpolate
 from core.randomness import stream
+from .human import on_sale
 
 
 def greed_trait(loyalty: float | None, cfg: Config, seed: int, player_id: int) -> float:
@@ -95,12 +96,16 @@ def accepts_move(player: Player, target: Club, world: World) -> bool:
     on both counts: he is not looking for a lateral move, so only a club whose
     reputation is higher by more than the same tolerance band is an escape, and no
     morale makes him accept a smaller one.
+
+    A player the human club put up for sale (see `on_sale`) knows he is no longer
+    wanted: he accepts a drop in reputation up to `sale_drop_tolerance` instead.
     """
     source = world.clubs.get(player.club_id) if player.club_id is not None else None
     if source is None or source.id == target.id: return True
     rules = world.config.management.market
     if wants_to_leave(player, world):
         return target.reputation - source.reputation > rules.reputation_drop_tolerance
-    if source.reputation - target.reputation <= rules.reputation_drop_tolerance: return True
+    tolerance = rules.sale_drop_tolerance if on_sale(world, player.id) else rules.reputation_drop_tolerance
+    if source.reputation - target.reputation <= tolerance: return True
     if player.rating <= target_level(target, world.config) + rules.player_level_margin: return True
     return player.morale <= rules.forced_exit_morale

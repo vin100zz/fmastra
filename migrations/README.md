@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 14` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 20` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -83,6 +83,14 @@ les joueurs à défaut), pas sur les regens déjà générés : la queue de pote
 cibles. Les joueurs existants ne sont pas modifiés ; seuls les regens du prochain 1er juillet suivent les nouvelles
 règles. Les paramètres `potentiel_min`, `potentiel_amplitude`, `beta_*` et `candidats_max_par_classe` n'ont plus
 d'effet mais restent dans la configuration : supprimer une clé demanderait une migration dédiée.
+
+Les v15 à v19 ajoutent des paramètres de config (`MIGRATION_DEFAULTS` dans `store.py` en fait foi).
+
+La v20 ajoute les ventes du club de l'utilisateur (`docs/ia-gestion.md`, « Mercato ») : `World.transfer_list`
+et `World.offered_until`, vides à la lecture d'une sauvegarde antérieure, et quatre paramètres de
+`ia_gestion.mercato` (`tolerance_baisse_joueur_a_vendre` 15, `multiplicateur_prix_max_acheteur` 1,35,
+`jours_relance_proposition` 14, `offres_max_proposition` 5), reçus par la configuration embarquée après
+vérification de l'empreinte d'origine.
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de

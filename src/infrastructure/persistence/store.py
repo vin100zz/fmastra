@@ -24,10 +24,14 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 19
+SCHEMA_VERSION = 20
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # The human club's transfer list and players offered to clubs: an older save sells with these rules.
+    (20, ("ia_gestion", "mercato"), {
+         "tolerance_baisse_joueur_a_vendre": 15.0, "multiplicateur_prix_max_acheteur": 1.35, "jours_relance_proposition": 14,
+         "offres_max_proposition": 5}),
     # Transfer talks, asking prices by squad status and wage demands by move: an older save negotiates with these rules.
     (19, ("ia_gestion", "mercato"), {
          "coef_prix_hors_effectif": 0.45, "coef_prix_doublure": 0.75, "coef_prix_rotation": 1.0, "coef_prix_titulaire": 1.5,

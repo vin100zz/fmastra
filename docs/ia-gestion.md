@@ -242,6 +242,39 @@ partie existante, est expliquée dans les actualités quand elle échoue (refus 
 vendeur ou du joueur, offre rivale, clôture). Les offres reçues encore en attente à
 la clôture sont signalées comme expirées.
 
+Pour vendre, l'utilisateur place un de ses joueurs sur sa **liste des transferts**, ou
+le **propose aux clubs** (`core/world/sales.py`). Dans les deux cas il fixe le prix
+demandé, et les offres suivent le circuit des offres reçues : en attente de sa réponse,
+avec une actualité.
+
+- **Liste des transferts.** Le joueur y reste, à son prix, jusqu'à sa vente, son départ
+  ou son retrait ; la liste reste ouverte hors mercato et sert à l'ouverture suivante.
+  Chaque club qui recherche à son poste le voit, quel que soit son tirage de
+  candidats, et l'examine avant les autres. Les clubs dormants le comptent dans le
+  surplus qu'ils démarchent, quelle que soit la taille de l'effectif. L'acheteur
+  offre directement le prix demandé, sans le ratio de contre-offre. Un joueur listé ne
+  demande pas de prolongation.
+- **Proposer aux clubs.** Pendant le mercato, tous les clubs examinent le joueur le
+  jour même, à ce prix. Un club actif décide comme dans sa revue quotidienne, sans
+  attendre son tirage : un besoin à ce poste non encore couvert, une place de
+  négociation, les moyens et le gain de qualité minimal. Un club dormant qui a de la
+  place tente sa chance avec `probabilite_demarchage_par_fenetre`. Les
+  `offres_max_proposition` (5) offres que le joueur préfère (score du joueur, avec son
+  bruit, tiré d'un flux propre au joueur et au jour) sont en attente de réponse
+  aussitôt, sans période d'enchères. Le même joueur ne peut être reproposé qu'après
+  `jours_relance_proposition` (14) jours. Refusé à un joueur arrivé récemment, ou
+  dont le départ passerait sous l'effectif ou les gardiens minimaux.
+
+Un prix fixé par l'utilisateur n'est payé que s'il ne dépasse pas le plus haut de deux
+montants : le prix demandé habituel du joueur, que tout acheteur paie dans le cours
+normal du marché, et la valeur de marché que l'acheteur lui voit, multipliée par
+`multiplicateur_prix_max_acheteur` (1,35). Un joueur listé, ou proposé depuis moins de
+`jours_relance_proposition` jours, sait qu'il n'entre plus dans les plans de son club :
+il accepte un club moins réputé jusqu'à `tolerance_baisse_joueur_a_vendre` (15 points)
+au lieu de `tolerance_baisse_reputation`. Un joueur qui veut partir garde sa propre
+règle. Les offres d'un joueur proposé qu'il n'accepterait plus à la fin de ce délai
+sont retirées au règlement suivant, comme tout refus du joueur.
+
 Hors urgence d'effectif, le gain de qualité doit être positif et atteindre
 `gain_qualite_min_recrutement` (3 points pondérés par défaut). Un club déjà au
 niveau cible ne recrute pas uniquement parce qu'il est riche.

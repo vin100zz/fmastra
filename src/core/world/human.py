@@ -9,6 +9,19 @@ def is_human_club(world: World, club_id: int | None) -> bool:
     return club_id is not None and club_id == world.controlled_club_id
 
 
+def listed_price(world: World, player_id: int) -> int | None:
+    """The fee the human club asks for a player on its transfer list, or None."""
+    player = world.players.get(player_id)
+    return world.transfer_list.get(player_id) if player is not None and is_human_club(world, player.club_id) else None
+
+
+def on_sale(world: World, player_id: int) -> bool:
+    """Whether the human club let a player know it would sell him: on its transfer list, or offered to clubs lately."""
+    if listed_price(world, player_id) is not None: return True
+    until, player = world.offered_until.get(player_id), world.players.get(player_id)
+    return until is not None and until > world.date and player is not None and is_human_club(world, player.club_id)
+
+
 def pending_lineup_match(world: World) -> int | None:
     """The human club's match today with no lineup submitted yet, or None."""
     club_id = world.controlled_club_id

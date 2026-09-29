@@ -158,6 +158,10 @@ class ManagementConfigMarket:
     negotiation_cooldown_days: int = Field(default=7, alias="jours_rupture_negociation")
     min_reply_days: int = Field(default=1, alias="delai_reponse_min_jours")
     max_reply_days: int = Field(default=3, alias="delai_reponse_max_jours")
+    sale_drop_tolerance: float = Field(default=15.0, alias="tolerance_baisse_joueur_a_vendre")
+    buyer_price_multiplier: float = Field(default=1.35, alias="multiplicateur_prix_max_acheteur")
+    offer_cooldown_days: int = Field(default=14, alias="jours_relance_proposition")
+    max_offers_per_proposal: int = Field(default=5, alias="offres_max_proposition")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

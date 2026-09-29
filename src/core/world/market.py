@@ -9,7 +9,7 @@ from core.domain.offers import TransferOffer, RESERVING_STAGES
 from core.ai.market import propose_transfers, player_offer_score, seller_accepts, can_sell, asking_price
 from .events import OffersUpdated, PlayerSigned
 from .application import apply
-from .human import is_human_club, record
+from .human import is_human_club, listed_price, record
 from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on
 
 
@@ -158,7 +158,8 @@ def open_offers(world: World, open_market: bool, rejected: dict[int, set[int]] |
         if not can_open_offer(world, club, event.contract, event.fee, reserved): continue
         player = world.players[event.player_id]
         score = player_offer_score(player, club, event.contract.weekly_wage, world) + rng.gauss(0, cfg.management.market.player_score.noise)
-        fee = round(event.fee * cfg.management.market.counteroffer_ratio)
+        # The human club named the fee of a listed player: buyers offer it outright.
+        fee = event.fee if listed_price(world, player.id) is not None else round(event.fee * cfg.management.market.counteroffer_ratio)
         offers.append(TransferOffer(f"{world.date.iso()}:{club.id}:{player.id}", world.date, player.id,
                                     event.source_id, club.id, event.contract, fee, event.fee, score))
     apply(world, OffersUpdated(offers))

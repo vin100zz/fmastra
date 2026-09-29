@@ -5,7 +5,7 @@ from core.math import clamp
 from collections import Counter
 from core.ai.market import market_value, expected_wage, contract_for, nominal_size, squad_quality
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
-from .human import is_human_club
+from .human import is_human_club, listed_price
 from .transfer_rules import frustration, wants_to_leave
 
 
@@ -66,7 +66,8 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
             proposed = player.contract.weekly_wage
         if proposed < expected and satisfaction < rules.satisfaction_threshold: continue
         if is_human_club(world, club.id):
-            if player.id not in world.pending_renewals:
+            # A player on the transfer list does not ask for an extension.
+            if player.id not in world.pending_renewals and listed_price(world, player.id) is None:
                 events.append(RenewalProposed(RenewalProposal(player.id, club.id, contract_for(player, world, proposed), world.date)))
             continue
         events.append(PlayerSigned(player.id, club.id, club.id, contract_for(player, world, proposed), 0, True))

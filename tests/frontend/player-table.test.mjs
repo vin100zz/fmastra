@@ -80,9 +80,10 @@ test('squad table includes season statistics but no minutes column, and minutes 
 
 test('every squad column is a sort button, and the active one carries its direction',()=>{
  const html=playerTable({items:[player],total:1,page_size:30},false,'position','asc');
- const headers=[...html.matchAll(/<th><button[^>]*data-sort="(\w+)"/g)].map(match=>match[1]);
+ // Each header also names its column, which sets its width whatever the order of the rows.
+ const headers=[...html.matchAll(/<th class="(\w+)-column"><button[^>]*data-sort="(\w+)"/g)].map(match=>{assert.equal(match[1],match[2]);return match[2];});
  assert.deepEqual(headers,['position','name','nation','age','rating','potential','value','wage','contract_end','fitness','appearances','goals','assists','yellows','reds','average']);
- assert.equal((html.match(/<th>(?!<button)/g)||[]).length,0);
+ assert.equal((html.match(/<th(?: [^>]*)?>(?!<button)/g)||[]).length,0);
  assert.match(html,/<button data-first="asc" data-order="asc" data-sort="position">POSTE ↑/);
  assert.match(html,/<button data-first="desc" data-sort="rating">NIV\. </);
  assert.doesNotMatch(html.replace(/data-order="asc" data-sort="position"/,''),/data-order/);

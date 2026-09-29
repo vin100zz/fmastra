@@ -8,7 +8,8 @@ const club={id:7,name:'Lens',competition_id:3,competition:'Ligue 1',major_color:
 const overview={calendar:{last:[],next:[]},finances:{transfer_budget:5e6,reserved_transfer_budget:0,wage_bill:100,wage_cap:200},lineup:null};
 const news={items:[{id:1,date:'2029-08-02',kind:'offer_received',text:'Nice propose 3 M€ pour Vendu.',player_id:11,player:'Vendu',match_id:null,read:false},{id:2,date:'2029-08-01',kind:'offer_rejected',text:'Nice refuse votre offre de 3000000 € pour Cible : le club en attend au moins 4850000 €',player_id:20,player:'Cible',match_id:null,read:true},{id:0,date:'2029-08-01',kind:'season',text:'Ouverture.',player_id:null,match_id:null,read:true}],total:3,page:1,page_size:30,unread:1};
 const transfers={sortantes:[{offre_id:'out',joueur_id:20,joueur:'Cible',vendeur:ref(9,'Nice'),indemnite:1e6,salaire_propose:1000}],
- entrantes:[{joueur_id:11,joueur:'Vendu',offres:[{offre_id:'in-1',acheteur:ref(9,'Nice'),indemnite:3e6,salaire_propose:2000}]}]};
+ entrantes:[{joueur_id:11,joueur:'Vendu',offres:[{offre_id:'in-1',acheteur:ref(9,'Nice'),indemnite:3e6,salaire_propose:2000}]}],
+ liste:[{joueur_id:13,joueur:'Partant',indemnite:4500000}]};
 const contracts={items:[{joueur_id:12,nom:'Fidèle',salaire_actuel:1000,salaire_propose:1500,fin_contrat_proposee:'2032-06-30',fin_contrat_actuelle:'2030-06-30'}],total:1};
 const standings={items:[{rank:1,club:ref(7,'Lens'),played:1,difference:2,points:3,form:'V',movement:null}]};
 
@@ -30,13 +31,15 @@ test('the dashboard shows an inbox with unread entries and the club widgets, wit
  for(const link of ['#/club/7/calendar','#/league/3','#/club/7/composition','#/club/7/finances','#/club/7/transfers'])assert.ok(html.includes(`href="${link}"`),link);
  assert.match(html,/data-command="reponse-offre" data-decision="accepter" data-offer="in-1"/);
  assert.match(html,/href="#\/player\/12">Répondre →/);
+ assert.match(html,/<h3>Liste des transferts · 1<\/h3><ul class="moves"><li><span><a href="#\/player\/13">Partant<\/a><\/span><b>4,5\sM\s?€<\/b><\/li>/);
 });
 
 const player={id:20,name:'Cible',position:'BU',secondary_positions:[],age:24,nationalities:['FRA'],club:ref(9,'Nice'),born:'2005-01-01',wage:1000,contract_end:'2030-06-30',value:2e6,asking_price:3450000,transferable:true,greed:.5,
  rating:70,potential:80,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],attributes:{},position_ratings:{}};
 const history={career:{items:[],totals:{fee:0,matches:0,goals:0,assists:0,average:null}},trajectory:{items:[]}};
 const idle={etape:null,indemnite:null,salaire:null,contre_offre:null,tours_restants:3,date_prevue:null,obstacle:null};
-const playerRoutes=(detail,state,talks=idle)=>({[`/joueurs/${detail.id}`]:detail,[`/ma-partie/negociation/${detail.id}`]:talks,[`/joueurs/${detail.id}/historique`]:history,[`/joueurs/${detail.id}/navigation`]:null,'/monde/etat':state,'/ma-partie/transferts':transfers,'/ma-partie/contrats':contracts});
+const unlisted={prix_liste:null,obstacle_proposition:null,offres:[]};
+const playerRoutes=(detail,state,talks=idle,sale=unlisted)=>({[`/joueurs/${detail.id}`]:detail,[`/ma-partie/negociation/${detail.id}`]:talks,[`/ma-partie/vente/${detail.id}`]:sale,[`/joueurs/${detail.id}/historique`]:history,[`/joueurs/${detail.id}/navigation`]:null,'/monde/etat':state,'/ma-partie/transferts':transfers,'/ma-partie/contrats':contracts});
 
 test('an inbox entry links its player and its match, never the whole entry but for a result',async()=>{
  const items=[{id:2,date:'2029-08-03',kind:'injury',text:'Ada Un se blesse en match',player_id:5,player:'Ada Un',match_id:40,read:false},
@@ -79,4 +82,22 @@ test('an own player gets a contract proposal instead, enabled when he awaits a r
  assert.match(html,/data-command="renouvellement" data-decision="accepter" data-player="12"/);
  const settled=await withApi(playerRoutes({...own,id:13},{controlled_club_id:7}),()=>playerScreen(13));
  assert.match(settled,/data-open-dialog="contract-dialog" disabled/);
+});
+
+test('an own player goes on the transfer list or is offered to the clubs, and his offers open in a dialog',async()=>{
+ const own={...player,id:12,name:'Fidèle',club:ref(7,'Lens'),value:2e6};
+ const unsold=await withApi(playerRoutes(own,{controlled_club_id:7,market:true}),()=>playerScreen(12));
+ assert.match(unsold,/data-open-dialog="listing-dialog">Mettre sur la liste<\/button>/);
+ assert.match(unsold,/<form data-sale="liste">[^]*name="montant" type="number" min="0" step="0.01" value="2"/);
+ assert.match(unsold,/data-open-dialog="proposal-dialog">Proposer aux clubs<\/button>/);assert.match(unsold,/<form data-sale="proposition">/);
+ assert.doesNotMatch(unsold,/Offres reçues|Sur la liste/);
+ const sale={prix_liste:4500000,obstacle_proposition:'Déjà proposé : nouvelle proposition le 12 août.',
+  offres:[{offre_id:'proposition:1',acheteur:ref(9,'Nice'),indemnite:4500000,salaire_propose:2000}]};
+ const listed=await withApi(playerRoutes(own,{controlled_club_id:7,market:true},idle,sale),()=>playerScreen(12));
+ assert.match(listed,/<span class="pill">Sur la liste · 4,5\sM\s?€<\/span>/);
+ assert.match(listed,/data-command="liste-transferts" data-player="12">Retirer de la liste<\/button>/);assert.doesNotMatch(listed,/listing-dialog/);
+ assert.match(listed,/<button type="button" disabled title="Déjà proposé : nouvelle proposition le 12 août.">Proposer aux clubs<\/button>/);
+ assert.doesNotMatch(listed,/proposal-dialog/);
+ assert.match(listed,/data-open-dialog="offers-dialog">Offres reçues · 1<\/button>/);
+ assert.match(listed,/<dialog id="offers-dialog"[^]*href="#\/club\/9"[^]*data-command="reponse-offre" data-decision="accepter" data-offer="proposition:1"/);
 });

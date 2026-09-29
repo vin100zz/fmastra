@@ -110,16 +110,37 @@ function talksAction(player, state, talks) {
 // Contracts are extended on the player's terms: his pending demand is accepted or turned down.
 function contractAction(player, renewal) {
  const button=`<button class="primary" type="button" data-open-dialog="contract-dialog" ${renewal?'':'disabled title="Le joueur n’attend pas de prolongation pour l’instant."'}>Proposer un contrat</button>`;
- if(!renewal)return `<div class="player-actions">${button}</div>`;
+ if(!renewal)return {pills:'',buttons:button,dialogs:''};
  const terms=`<div class="card-body">${fact('Salaire actuel',`${monthlySalary(renewal.salaire_actuel)} / mois`)}${fact('Salaire demandé',`${monthlySalary(renewal.salaire_propose)} / mois`)}${fact('Fin de contrat actuelle',date(renewal.fin_contrat_actuelle))}${fact('Fin de contrat proposée',date(renewal.fin_contrat_proposee))}</div>`;
  const dialog=`<dialog id="contract-dialog" class="action-dialog"><div><span class="eyebrow">PROLONGATION</span><h2>Nouveau contrat pour ${e(player.name)}</h2><p>Le joueur est prêt à prolonger aux conditions suivantes.</p>${terms}${dialogButtons(`<button data-command="renouvellement" data-decision="refuser" data-player="${player.id}">Refuser</button><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${player.id}">Signer</button>`)}</div></dialog>`;
- return `<div class="player-actions"><span class="pill">Prolongation en attente</span>${button}</div>${dialog}`;
+ return {pills:'<span class="pill">Prolongation en attente</span>',buttons:button,dialogs:dialog};
+}
+
+// An own player up for sale: on the transfer list at the fee asked, or offered to every club at once. Both dialogs take
+// the fee; the offers awaiting an answer, whichever way they came, open in a dialog of their own.
+function saleAction(player, sale) {
+ const listed=sale.prix_liste!=null;
+ const fee=(id,kind,title,confirm)=>`<dialog id="${id}" class="action-dialog"><form data-sale="${kind}"><span class="eyebrow">VENTE</span><h2>${title}</h2><p>Valeur ${price(player.value)}</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Prix demandé (M€) <input name="montant" type="number" min="0" step="0.01" value="${Math.round((listed?sale.prix_liste:player.value||0)/1e4)/100}" required></label>${dialogButtons(`<button class="primary" type="submit">${confirm}</button>`)}</form></dialog>`;
+ const list=listed?`<button type="button" data-command="liste-transferts" data-player="${player.id}">Retirer de la liste</button>`
+  :`<button type="button" data-open-dialog="listing-dialog">Mettre sur la liste</button>`;
+ const offer=sale.obstacle_proposition?`<button type="button" disabled title="${e(sale.obstacle_proposition)}">Proposer aux clubs</button>`
+  :`<button type="button" data-open-dialog="proposal-dialog">Proposer aux clubs</button>`;
+ const received=sale.offres.length?`<button type="button" data-open-dialog="offers-dialog">Offres reçues · ${sale.offres.length}</button>`:'';
+ const rows=sale.offres.map(item=>`<li><span>${clubLink(item.acheteur)}</span><small>${monthlySalary(item.salaire_propose)} / mois</small><b>${price(item.indemnite)}</b><span class="market-actions"><button class="primary" data-command="reponse-offre" data-decision="accepter" data-offer="${e(item.offre_id)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(item.offre_id)}">Refuser</button></span></li>`).join('');
+ const offers=sale.offres.length?`<dialog id="offers-dialog" class="action-dialog"><div><span class="eyebrow">OFFRES REÇUES</span><h2>Offres pour ${e(player.name)}</h2><ul class="moves">${rows}</ul><div class="actions"><button type="button" data-close-dialog>Fermer</button></div></div></dialog>`:'';
+ return {pills:listed?`<span class="pill">Sur la liste · ${price(sale.prix_liste)}</span>`:'',buttons:received+list+offer,
+  dialogs:(listed?'':fee('listing-dialog','liste',`Mettre ${e(player.name)} sur la liste`,'Mettre sur la liste'))
+   +(sale.obstacle_proposition?'':fee('proposal-dialog','proposition',`Proposer ${e(player.name)} aux clubs`,'Proposer'))+offers};
 }
 
 async function playerActions(player, state) {
  const clubId=state.controlled_club_id;
  if(clubId==null||player.retired)return '';
- if(player.club?.id===clubId){const contracts=await api('/ma-partie/contrats');return contractAction(player,contracts.items.find(row=>row.joueur_id===player.id));}
+ if(player.club?.id===clubId){
+  const [contracts,sale]=await Promise.all([api('/ma-partie/contrats'),api(`/ma-partie/vente/${player.id}`)]);
+  const parts=[saleAction(player,sale),contractAction(player,contracts.items.find(row=>row.joueur_id===player.id))];
+  return `<div class="player-actions sale-actions">${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}</div>${parts.map(part=>part.dialogs).join('')}`;
+ }
  return talksAction(player,state,await api(`/ma-partie/negociation/${player.id}`));
 }
 

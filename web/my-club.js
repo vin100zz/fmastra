@@ -39,8 +39,10 @@ function marketBlock(club,transfers,contracts) {
  const stage=offer=>({indemnite:'Contre-offre en cours',accord_club:`Réponse du joueur le ${date(offer.date_prevue)}`,salaire:'Contrat à négocier',signature:`Arrivée le ${date(offer.date_prevue)}`})[offer.etape]||monthlySalary(offer.salaire_propose);
  const outgoing=transfers.sortantes.map(offer=>`<li><span>${playerLink(offer.joueur_id,offer.joueur)}</span><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}</small><b>${price(offer.indemnite)}</b>${offer.etape==='salaire'?`<a href="#/player/${offer.joueur_id}">Négocier →</a>`:''}</li>`);
  const renewals=contracts.items.map(row=>`<li><span>${playerLink(row.joueur_id,row.nom)}</span><small>Demande ${monthlySalary(row.salaire_propose)} · jusqu’au ${date(row.fin_contrat_proposee)}</small><a href="#/player/${row.joueur_id}">Répondre →</a></li>`);
+ const listed=transfers.liste.map(row=>`<li><span>${playerLink(row.joueur_id,row.joueur)}</span><b>${price(row.indemnite)}</b></li>`);
  const section=(title,items,none)=>`<h3>${title} · ${items.length}</h3>${items.length?`<ul class="moves">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}`;
- const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.')+section('Vos offres',outgoing,'Aucune offre en cours.')+section('Prolongations',renewals,'Aucune prolongation en attente.');
+ const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.')+section('Vos offres',outgoing,'Aucune offre en cours.')
+  +section('Liste des transferts',listed,'Aucun joueur sur la liste.')+section('Prolongations',renewals,'Aucune prolongation en attente.');
  return card('Transferts et contrats',`<div class="card-body">${body}</div><p class="card-note">Faites une offre ou proposez un contrat depuis la fiche d’un joueur.</p>`,`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir →</a>`,'market-card');
 }
 

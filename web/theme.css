@@ -284,7 +284,10 @@ h1{font-size:26px;margin:0}
 .player-facts>div{white-space:nowrap}
 .player-actions{flex-wrap:nowrap}
 .player-actions button{white-space:nowrap;padding:6px 12px}
-@media(max-width:1300px){.player-heading{flex-wrap:wrap}.player-facts{flex-wrap:wrap;margin-left:0}}
+/* An own player's sale and contract actions may not fit beside the facts: they then take a line of their own, on the right. */
+.player-heading:has(.sale-actions){flex-wrap:wrap}
+.sale-actions{margin-left:auto}
+@media(max-width:1300px){.player-heading{flex-wrap:wrap}.player-facts{flex-wrap:wrap;margin-left:0}.player-actions{flex-wrap:wrap}.sale-actions{margin-left:0}}
 .player-facts dt{font-size:10px}
 .player-facts dd{margin:1px 0 0;font-size:13px}
 .entity-nav{gap:1px}
@@ -320,6 +323,13 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 /* Standings: every column but the club's has a set width (padding on top), the club's takes the rest, so that the tables of a screen line up column for column. */
 .standings th{padding:0 5px!important;box-sizing:content-box}.standings td{padding:3px 5px!important}
 .standings .rank-column{width:14px}.standings .count-column{width:13px}.standings .total-column{width:21px}.standings .difference-column{width:28px}.standings .form-column{width:97px}
+/* Player tables: every column has a set width (padding on top), wide enough for the longest value it shows, so that a sort or a new page never moves them; the spare width is shared out among them. */
+.player-table table{table-layout:fixed}.player-table th{box-sizing:content-box}.player-table td{overflow:hidden;text-overflow:ellipsis}
+.player-table .position-column{width:40px}.player-table .name-column{width:172px}.player-table .nation-column{width:152px}.player-table .age-column{width:30px}
+.player-table .rating-column,.player-table .potential-column{width:34px}.player-table .club-column,.player-table .academy_club-column{width:152px}
+.player-table .value-column{width:56px}.player-table .asking_price-column{width:68px}.player-table .wage-column{width:86px}.player-table .contract_end-column{width:66px}.player-table .fitness-column{width:54px}
+.player-table .appearances-column{width:36px}.player-table .goals-column{width:38px}.player-table .assists-column,.player-table .yellows-column,.player-table .reds-column{width:26px}.player-table .average-column{width:40px}
+.player-table .promotion_date-column{width:72px}.player-table .data_at-column{width:72px}
 /* Where tables sit side by side or one above the other, only the club's column gives way when space runs short: a name too long for it ends in an ellipsis. */
 @media(min-width:951px){
  .grid.equal .standings table,.round-group .standings table{table-layout:fixed}

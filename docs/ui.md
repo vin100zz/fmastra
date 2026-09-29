@@ -178,7 +178,9 @@ Toutes les colonnes de la liste se trient, sur ce qu'elles affichent : le nom sa
 tenir compte des accents ou des majuscules, les nationalités par leur code affiché,
 l'état du plus indisponible (blessé, puis suspendu) au plus frais. Il n'y a pas de
 colonne de minutes jouées. Les tableaux des autres onglets (transferts, journal
-financier, saisons du club et classements archivés) se trient aussi.
+financier, saisons du club et classements archivés) se trient aussi. Dans les listes
+de joueurs, chaque colonne a une largeur fixe : un tri ou une autre page ne les
+déplace pas, et la page garde sa position de défilement.
 
 ### Compétition
 
@@ -260,6 +262,16 @@ Les textes du graphe ont la même taille que le reste de l'interface. Les niveau
 potentiels, attributs et aptitudes par poste sont des badges dont la couleur va du
 rouge au jaune puis au vert : sur 200, rouge jusqu'à 70, jaune à 110, vert à partir
 de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
+
+Sur la fiche d'un joueur de son club, l'en-tête porte les actions de vente à côté de
+« Proposer un contrat » : « Mettre sur la liste », qui ouvre une boîte de dialogue au prix
+demandé (valeur de marché par défaut) et devient « Retirer de la liste » avec une pastille
+« Sur la liste · prix », et « Proposer aux clubs », même boîte de dialogue, grisé avec la
+raison en infobulle pendant le délai de relance, hors mercato ou pour un joueur intransférable.
+Dès qu'une offre attend une réponse, « Offres reçues · n » ouvre la liste des offres
+pour ce joueur, à accepter ou refuser ; elle s'ouvre seule après une proposition qui en
+a obtenu. Dans Mon club, la carte Transferts et contrats liste aussi les joueurs sur la
+liste des transferts, avec leur prix.
 
 ### Match
 

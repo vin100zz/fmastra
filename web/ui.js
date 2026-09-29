@@ -108,7 +108,8 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
   };
   return columns.map(([key])=>cells[key]);
  });
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows)}</div>`+pager(data);
+ // Each header carries its column's key, which sets its width (see .player-table in theme.css).
+ return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,undefined,undefined,columns.map(([key])=>`${key}-column`))}</div>`+pager(data);
 }
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};

@@ -82,6 +82,22 @@ def talks_view(world: World, player: Player) -> dict:
             "obstacle": opening_obstacle(world, player) if talks is None or talks.stage == FEE_TALKS else None}
 
 
+def incoming_offers(world: World, player_id: int) -> list[dict]:
+    """The offers for a player of the human club that await its answer."""
+    return [{"offre_id": offer.key, "acheteur": club_ref(world, offer.target_id), "indemnite": offer.fee,
+             "salaire_propose": offer.contract.weekly_wage}
+            for offer in world.offers.values() if offer.player_id == player_id and offer.source_id == world.controlled_club_id
+            and offer.awaiting_review]
+
+
+def sale_view(world: World, player: Player) -> dict:
+    """A player of the human club: the fee asked if he is on its transfer list, what stops offering him to the clubs, and the offers awaiting an answer."""
+    from core.world.human import listed_price
+    from core.world.sales import offer_obstacle
+    return {"prix_liste": listed_price(world, player.id), "obstacle_proposition": offer_obstacle(world, player),
+            "offres": incoming_offers(world, player.id)}
+
+
 def player_detail(world: World, player: Player) -> dict:
     from core.world.transfer_rules import recent_arrival_ids
     result = player_row(world, player)

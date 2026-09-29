@@ -123,6 +123,19 @@ async function negotiate(kind,payload){
  finally{submitting=false;await render();}
  if(reply?.resultat==='contre_offre')main.querySelector('#talks-dialog')?.showModal();
 }
+// An own player goes on the transfer list, or is offered to every club: their offers come back at once in a dialog.
+async function sell(kind,payload){
+ if(polling||submitting)return;
+ submitting=true;busyButtons();
+ let reply=null;
+ try{
+  reply=await api(kind==='liste'?'/partie/liste-transferts':'/partie/proposer-aux-clubs',{...payload,commande_id:crypto.randomUUID()});
+  toast(kind==='liste'?'Joueur placé sur la liste des transferts.':reply.proposees?`${reply.proposees} club${reply.proposees>1?'s':''} intéressé${reply.proposees>1?'s':''}.`:'Aucun club intéressé.');
+ }
+ catch(error){toast(error.message,true);}
+ finally{submitting=false;await render();}
+ if(reply?.proposees)main.querySelector('#offers-dialog')?.showModal();
+}
 async function savesScreen(welcome=false){const slots=await api('/partie/slots');const intro=welcome?`<section class="hero"><div><span class="eyebrow">BIENVENUE SUR LE BANC DE TOUCHE</span><h1>Tout un monde de football.<br>À votre rythme.</h1><p>96 clubs, cinq championnats et des milliers de destins. Créez votre univers et suivez son histoire, saison après saison.</p></div><div class="hero-graphic" aria-hidden="true"></div></section>`:heading('Ma partie');let report='';if(state.exists&&!state.recovery_required){const data=await api('/partie/rapport-import');report=card('Rapport de création',`<div class="card-body"><div class="stat-grid">${stat('Joueurs retenus',n(data.counts.players))}${stat('Joueurs écartés',n(data.counts.excluded))}${stat('Joueurs actifs',n(data.counts.active_players))}${stat('Agents libres',n(data.counts.free_agents))}</div><p class="note">Au maximum ${data.max_squad} joueurs par club, dont deux places réservées aux meilleurs gardiens disponibles. Les CSV originaux restent inchangés. ${data.counts.attributes_from_source?'Les attributs et aptitudes proviennent du CSV. Les finances restent estimées.':'Cette ancienne partie utilise des attributs estimés.'}</p><details><summary>Détail des corrections à l’import</summary><pre>${e(JSON.stringify(data.counts,null,2))}</pre></details></div>`);}
 return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':''}<div class="grid equal">${card('Nouvelle partie',`<div class="card-body"><span class="eyebrow">SAISON INITIALE · 2025 / 2026</span><p>Chaque graine crée une simulation reproductible. Tous les clubs sont pilotés par l’IA.</p><form id="new-game"><label for="seed">Graine de la simulation</label><input id="seed" name="seed" type="number" min="0" max="9007199254740991" value="2025" required><div class="actions"><button class="primary" data-command="create">Créer mon univers →</button></div></form></div>`)}${card(welcome?'Reprendre une partie':'Mes sauvegardes',`<div class="card-body">${state.exists&&!state.recovery_required?`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="ma-partie"><button data-command="save">Enregistrer</button></form>`:''}${slotsHtml(slots)}</div>`)}</div>${report}</div>`;}
 
@@ -250,6 +263,7 @@ main.addEventListener('submit',async event=>{event.preventDefault();const elemen
   const amount=accepted?Number(event.submitter.value):kind==='salaire'?weeklyFromMonthly(typed):Math.round(typed*1e6);
   await negotiate(kind,{joueur_id:Number(data.get('joueur_id')),[kind==='salaire'?'salaire_hebdo':'indemnite']:amount});
  }
+ else if(element.dataset.sale)await sell(element.dataset.sale,{joueur_id:Number(data.get('joueur_id')),indemnite:Math.round(Number(data.get('montant'))*1e6)});
 });
 let filterTimer;
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});
@@ -257,6 +271,7 @@ main.addEventListener('change',event=>{const field=event.target;const form=field
 main.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if('tableSort' in button.dataset){const table=button.closest('table'),column=button.closest('th').cellIndex,direction=nextDirection(table,column);sortTable(table,column,direction);tableSorts.set(sortScope(table),{column,direction});return;}const {params}=routeParts();if('resetFilters' in button.dataset){clearTimeout(filterTimer);changeParams(sortParams(params));return;}if(button.dataset.season){params.set('saison',button.dataset.season);params.delete('page');changeParams(params);}if(button.dataset.page){params.set('page',button.dataset.page);changeParams(params);}if(button.dataset.sort){params.set('ordre',button.dataset.order?(button.dataset.order==='desc'?'asc':'desc'):button.dataset.first);params.set('tri',button.dataset.sort);params.delete('page');changeParams(params);}if(button.dataset.command==='load')command('/partie/charger',{slot:button.dataset.slot});if(button.dataset.command==='delete')await deleteSlot(button.dataset.slot);
  if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
+ if(button.dataset.command==='liste-transferts')await action('/partie/liste-transferts',{joueur_id:Number(button.dataset.player),indemnite:null},'Joueur retiré de la liste des transferts.');
  if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
  if(button.id==='retry')render();});
 // A card head with a single link ("Voir →") follows it wherever it is clicked.
@@ -276,7 +291,8 @@ main.addEventListener('click',async event=>{
 document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a'))menu.removeAttribute('open');}));
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.entity-menu-panel'),current=panel.querySelector('[aria-current]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
-window.addEventListener('hashchange',()=>{render();window.scrollTo({top:0});});
+// A new page opens at the top; a new sort, filter or page of the same list keeps the scroll where it was.
+window.addEventListener('hashchange',event=>{const path=url=>new URL(url).hash.split('?')[0];render();if(path(event.oldURL)!==path(event.newURL))window.scrollTo({top:0});});
 document.addEventListener('lineup-change',updateAdvanceButton);
 document.addEventListener('live-status',busyButtons);
 window.addEventListener('unhandledrejection',event=>toast(event.reason?.message||'Une erreur inattendue est survenue.',true));

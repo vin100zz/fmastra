@@ -63,6 +63,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         world.journal.append(JournalEntry(world.date, kind, text, source, player.id))
         add_news(world, kind, text, source, player.id)
         world.pending_renewals.pop(event.player_id, None)
+        _off_sale(world, player.id)
     elif isinstance(event, PlayerGenerated):
         player = event.player
         if player.id in world.players or player.id in world.retired: raise ValueError("Reused player ID")
@@ -199,7 +200,14 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     if event.source_id is not None:
         add_news(world, "transfer", text, event.source_id, player.id)
     world.pending_renewals.pop(player.id, None)
+    _off_sale(world, player.id)
     return True
+
+
+def _off_sale(world: World, player_id: int) -> None:
+    """A player who left his club is no longer on its transfer list nor waiting to be offered again."""
+    world.transfer_list.pop(player_id, None)
+    world.offered_until.pop(player_id, None)
 
 
 def _archived(result: MatchResult) -> MatchResult:

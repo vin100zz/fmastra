@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from core.domain.date import Date
 from core.domain.matches import SubmittedLineup
-from core.world.human import pending_lineup_match
+from core.world.human import listed_price, pending_lineup_match
 from core.world.transfer_rules import recent_arrival_ids
 from core.world.simulation import target_date, market_window
 from .service import GameService
@@ -63,6 +63,16 @@ class FeeOffer(Command):
 class WageOffer(Command):
     joueur_id: int
     salaire_hebdo: int = Field(gt=0)
+
+
+class Listing(Command):
+    joueur_id: int
+    indemnite: int | None = Field(default=None, ge=0)  # None takes the player off the list
+
+
+class OfferToClubs(Command):
+    joueur_id: int
+    indemnite: int = Field(ge=0)
 
 
 class OfferDecision(Command):
@@ -337,6 +347,35 @@ def router(service: GameService) -> APIRouter:
             apply(world, OffersUpdated(remaining))
         return {"offre_id": command.offre_id, "decision": command.decision}
 
+    # The human club's own players up for sale: its transfer list, and players offered to every club at once.
+    def sell(command: Listing | OfferToClubs, act) -> dict:
+        from core.world.sales import SaleRefused
+        with service.mutating() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(command.joueur_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            try: result = act(world, player)
+            except SaleRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
+            return {**result, **v.sale_view(world, player)}
+
+    @api.post("/partie/liste-transferts")
+    def list_player(command: Listing) -> dict:
+        from core.world.sales import set_listing
+        return sell(command, lambda world, player: set_listing(world, player, command.indemnite) or {})
+
+    @api.post("/partie/proposer-aux-clubs")
+    def offer_to_clubs(command: OfferToClubs) -> dict:
+        from core.world.sales import offer_to_clubs
+        return sell(command, lambda world, player: {"proposees": len(offer_to_clubs(world, player, command.indemnite))})
+
+    @api.get("/ma-partie/vente/{player_id}")
+    def sale(player_id: int) -> dict:
+        with service.reading() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(player_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            return v.sale_view(world, player)
+
     @api.get("/ma-partie/transferts")
     def my_transfers() -> dict:
         with service.reading() as world:
@@ -346,14 +385,12 @@ def router(service: GameService) -> APIRouter:
                         "vendeur": v.club_ref(world, offer.source_id), "indemnite": offer.fee, "salaire_propose": offer.contract.weekly_wage,
                         "etape": offer.stage, "date_prevue": offer.due.iso() if offer.due else None}
                        for offer in world.offers.values() if offer.target_id == club_id]
-            incoming: dict[int, list[dict]] = {}
-            for offer in world.offers.values():
-                if offer.source_id == club_id and offer.awaiting_review:
-                    incoming.setdefault(offer.player_id, []).append({"offre_id": offer.key, "acheteur": v.club_ref(world, offer.target_id),
-                                                                     "indemnite": offer.fee, "salaire_propose": offer.contract.weekly_wage})
-            entrantes = [{"joueur_id": player_id, "joueur": v.player_name(world, player_id), "offres": offers}
-                        for player_id, offers in incoming.items()]
-            return {"sortantes": outgoing, "entrantes": entrantes}
+            incoming = dict.fromkeys(offer.player_id for offer in world.offers.values() if offer.source_id == club_id and offer.awaiting_review)
+            entrantes = [{"joueur_id": player_id, "joueur": v.player_name(world, player_id), "offres": v.incoming_offers(world, player_id)}
+                        for player_id in incoming]
+            listed = [{"joueur_id": player_id, "joueur": world.players[player_id].name, "indemnite": fee}
+                      for player_id in world.transfer_list if (fee := listed_price(world, player_id)) is not None]
+            return {"sortantes": outgoing, "entrantes": entrantes, "liste": listed}
 
     @api.get("/ma-partie/contrats")
     def pending_renewals() -> dict:
