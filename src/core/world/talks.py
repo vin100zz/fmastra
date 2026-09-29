@@ -30,7 +30,7 @@ class TalksRefused(ValueError):
     """An offer the human club cannot make, with the reason shown to the user."""
 
 
-LIMITS = {"negotiations": "Vous menez déjà le nombre maximal de négociations.", "squad": "Votre effectif est complet.",
+LIMITS = {"squad": "Votre effectif est complet.",
           "budget": "Votre budget transferts ne suffit pas.", "balance": "Votre trésorerie ne suffit pas.",
           "wages": "Votre masse salariale ne permet pas ce salaire."}
 

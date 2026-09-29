@@ -116,6 +116,17 @@ def test_the_answer_comes_by_the_last_day_of_the_window(config):
     assert talks_for(world, player.id).stage == WAGE_TALKS
 
 
+def test_the_human_club_is_not_capped_in_simultaneous_talks(config):
+    from core.world.market import offer_limit
+    from test_market import extra_buyer
+    world, player, seller = sellable_world(config)
+    contract = replace(player.contract, weekly_wage=0)
+    reserved = [TransferOffer(f"talks:{n}", world.date, 900 + n, seller.id, 1, contract, 0, 0, 0.0)
+                for n in range(config.management.market.max_negotiations)]
+    assert offer_limit(world, world.clubs[1], contract, 0, reserved) is None
+    assert offer_limit(world, extra_buyer(world, 3), contract, 0, reserved) == "negotiations"
+
+
 def test_a_free_agent_negotiates_his_wage_straight_away(config):
     from core.world.talks import offer_fee, offer_wage, TalksRefused
     world, player, seller = sellable_world(config)

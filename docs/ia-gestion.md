@@ -236,7 +236,8 @@ pendant `jours_rupture_negociation` (7) jours.
 
 L'indemnité et le salaire demandé sont réservés comme pour toute offre ; une offre
 qui dépasse le budget, la trésorerie, la masse salariale ou l'effectif est refusée
-avec la limite en cause. Une offre de l'ancienne forme, encore aux enchères dans une
+avec la limite en cause. Le nombre de négociations simultanées n'est pas limité,
+contrairement aux clubs IA. Une offre de l'ancienne forme, encore aux enchères dans une
 partie existante, est expliquée dans les actualités quand elle échoue (refus du
 vendeur ou du joueur, offre rivale, clôture). Les offres reçues encore en attente à
 la clôture sont signalées comme expirées.

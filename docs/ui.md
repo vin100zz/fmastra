@@ -318,9 +318,14 @@ initiales indépendantes des remplacements enregistrés ensuite.
 ### Recherche de joueurs
 
 Vue transversale sur les joueurs importés (25 911 avec les CSV présents).
-Filtres serveur : poste, âge, niveau,
-nationalité, club, statut du club (actif ou dormant), fourchette de salaire,
-statut contractuel. Tri sur toute colonne, pagination obligatoire.
+Filtres serveur : poste, statut du club (actif ou dormant), statut contractuel,
+puis en filtres avancés âge, niveau et potentiel minimum, salaire, valeur et prix
+maximum. Tri sur toute colonne, pagination obligatoire.
+
+Les écrans Clubs et Joueurs retiennent leurs filtres et leur tri (pas la page) dans
+le navigateur : y revenir par le menu, ou après un rechargement, les rouvre tels
+qu'on les a laissés. Changer un filtre garde le tri et revient à la première page. « Réinitialiser », au bout de la ligne de filtres, les vide
+et garde le tri ; il est grisé quand aucun filtre n'est actif.
 
 Un club dormant est consultable — nom, effectif, fiches joueurs — mais n'a ni
 classement, ni calendrier, ni statistiques de saison. L'interface doit le
