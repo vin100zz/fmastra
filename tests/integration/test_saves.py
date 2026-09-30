@@ -151,6 +151,28 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
 
 
 
+def test_save_from_before_the_monthly_level_history_keeps_its_season_points_and_adds_the_current_month(config, tmp_path):
+    import gzip
+    import json
+    from core.domain.world import history_level, history_month
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 22
+    first, second = list(world.players.values())[:2]
+    # One point a season, taken when it opened: the import season, then each July.
+    legacy["world"]["trajectories"][str(first.id)] = [[2024, 50.2], [2025, 55.0]]
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    now = history_month(world.date.year, world.date.month)
+    assert migrated.trajectories[first.id] == [(history_month(2024, 7), [100]), (history_month(2025, 7), [110]), (now, [history_level(first.rating)])]
+    # Runs already monthly are kept; a second point in the same month replaces the first.
+    assert migrated.trajectories[second.id] == world.trajectories[second.id] == [(now, [history_level(second.rating)])]
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").trajectories == migrated.trajectories
+
+
 @pytest.mark.slow
 def test_save_from_before_the_regen_targets_measures_them_on_the_players_the_source_supplied(config, tmp_path):
     import gzip

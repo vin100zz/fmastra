@@ -330,6 +330,11 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .player-table .value-column{width:56px}.player-table .asking_price-column{width:68px}.player-table .wage-column{width:86px}.player-table .contract_end-column{width:66px}.player-table .fitness-column{width:54px}
 .player-table .appearances-column{width:36px}.player-table .goals-column{width:38px}.player-table .assists-column,.player-table .yellows-column,.player-table .reds-column{width:26px}.player-table .average-column{width:40px}
 .player-table .promotion_date-column{width:72px}.player-table .data_at-column{width:72px}
+/* Club list and world movements, sorted on the server too: a sort brings other rows, so each column has a set width (padding on top), wide enough for the longest value it shows or its heading and arrow. */
+.clubs-table table,.movements-table table{table-layout:fixed}.clubs-table th,.movements-table th{box-sizing:content-box}.clubs-table td,.movements-table td{overflow:hidden;text-overflow:ellipsis}
+.clubs-table .nom-column{width:178px}.clubs-table .pays-column{width:54px}.clubs-table .championnat-column{width:94px}.clubs-table .reputation-column{width:72px}.clubs-table .entrainement-column{width:86px}
+.clubs-table .recrutement-column{width:120px}.clubs-table .effectif-column{width:52px}.clubs-table .niveau-column{width:84px}.clubs-table .potentiel-column{width:98px}.clubs-table .formation-column{width:70px}
+.movements-table .date-column{width:76px}.movements-table .name-column{width:170px}.movements-table .source-column,.movements-table .target-column{width:168px}.movements-table .fee-column{width:102px}
 /* Attribute view: each section's heading over its columns, a line opening each section. An attribute column is as wide as the level's, set on its <col> (padding included). */
 .player-table col.grouped{width:50px}.player-table col.group-start{border-left:1px solid var(--line)}.player-table th.column-group{text-align:center;text-transform:uppercase}
 .off-role .rating{opacity:.4}

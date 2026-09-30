@@ -178,9 +178,11 @@ Toutes les colonnes de la liste se trient, sur ce qu'elles affichent : le nom sa
 tenir compte des accents ou des majuscules, les nationalités par leur code affiché,
 l'état du plus indisponible (blessé, puis suspendu) au plus frais. Il n'y a pas de
 colonne de minutes jouées. Les tableaux des autres onglets (transferts, journal
-financier, saisons du club et classements archivés) se trient aussi. Dans les listes
-de joueurs, chaque colonne a une largeur fixe : un tri ou une autre page ne les
-déplace pas, et la page garde sa position de défilement.
+financier, saisons du club et classements archivés) se trient aussi. Un tri ne change
+la largeur d'aucune colonne, dans aucun tableau : chaque en-tête triable garde la place
+de sa flèche, et les listes triées par le serveur (joueurs, clubs, mercato mondial) ont
+des colonnes de largeur fixe, si bien qu'un tri ou une autre page ne les déplace pas ;
+la page garde sa position de défilement.
 
 Deux boutons en tête de la liste des joueurs d'un club et de l'écran Joueurs, « Infos » et
 « Attributs », changent ses colonnes. La vue Attributs garde poste, nom, âge, niveau et potentiel
@@ -266,7 +268,7 @@ dans la ligne du haut et la carrière reste seule dessous.
 | En-tête | nom, nationalités, poste et postes secondaires, âge, club ; date de naissance, salaire mensuel, fin de contrat, valeur de marché estimée |
 | Attributs | les 15 attributs en badges de 1 à 20, avec le niveau (Niv.) et le potentiel exact (Pot.), sur 200, dans l'en-tête du bloc. Quatre sections : Gardien (Réflexes, Sorties, Relance), Défense (Tacle, Placement), Attaque (Finition, Sang-froid, Technique, Vision, Jeu de tête, Centres, Coups arrêtés) et Général (Passe, Vitesse, Endurance). Un joueur de champ ne voit pas Gardien ; un gardien ne voit que Gardien (Placement s'y ajoute) et Général, ses autres attributs sont dans un repli « Autres attributs », fermé par défaut. Les sections et les attributs de chacune gardent toujours le même ordre, quel que soit le poste (Défense, Attaque, Général ; pour un gardien, Placement s'insère après Sorties). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
 | État | blessure en cours et durée, fatigue, suspension, forme, moral |
-| Évolution du niveau | courbe annuelle du niveau, sur 200, avec axe gradué ; chaque point reprend les couleurs du club de la saison (dernier club de la saison en cas de transfert) et son infobulle donne saison, club et niveau |
+| Évolution du niveau | courbe mensuelle du niveau, sur 200, avec axes gradués ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club de la saison (dernier club de la saison en cas de transfert) et son infobulle donne mois, club et niveau |
 | Aptitudes par poste | carte de terrain, à la même taille que celle du dernier onze aligné d'un club (maillots et libellés compris) : niveau de 10 à 20 aux seuls postes où il atteint 10, poste principal entouré |
 | Carrière | une ligne par saison et club : transfert, division du championnat, précédée du drapeau de son pays, et code de la coupe d'Europe (pas de coupe nationale), matches, buts, passes, note |
 
@@ -366,7 +368,7 @@ GET  /api/travaux/{id}                  statut, progression, erreur éventuelle,
 GET  /api/monde/journal?date=             événements du jour
 GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {europe, countries}
 
-GET  /api/clubs?competition=&statut=actif|dormant&recherche=&page=&tri=
+GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&tri=&ordre=   tri : toute colonne (niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
 GET  /api/clubs/{id}                      en-tête + résumé
 GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
@@ -387,7 +389,7 @@ GET  /api/competitions/{id}/navigation    compétitions du même pays : précéd
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=   tri : idem, attributs compris
 GET  /api/joueurs/{id}
-GET  /api/joueurs/{id}/historique
+GET  /api/joueurs/{id}/historique         carrière + trajectory : niveau sur 200 mois par mois {year, month, season, level}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
 GET  /api/matches/{id}                    compte rendu complet

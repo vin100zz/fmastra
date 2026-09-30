@@ -43,6 +43,68 @@ def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
+def test_club_list_averages_its_sixteen_best_players_and_sorts_on_it(client):
+    world = client.app.state.game.world
+    def best(club_id: int, key: str) -> float:
+        values = sorted((getattr(world.players[pid], key) for pid in world.clubs[club_id].player_ids), reverse=True)[:16]
+        return round(sum(values) / len(values), 1)
+    for tri, field, key in (("niveau", "top_rating", "rating"), ("potentiel", "top_potential", "potential")):
+        rows = client.get(f'/api/clubs?statut=actif&tri={tri}').json()['items']
+        assert all(row[field] == best(row['id'], key) for row in rows)
+        assert [row[field] for row in rows] == sorted((row[field] for row in rows), reverse=True)
+        weakest = client.get(f'/api/clubs?statut=actif&tri={tri}&ordre=asc').json()['items']
+        assert [row[field] for row in weakest] == sorted(row[field] for row in weakest) and weakest[0][field] < rows[0][field]
+    names = [v.normalized(row['name']) for row in client.get('/api/clubs?tri=nom').json()['items']]
+    assert names == sorted(names)
+    empty = next((club for club in world.clubs.values() if not club.player_ids), None)
+    if empty:
+        assert client.get(f'/api/clubs/{empty.id}').json()['top_rating'] is None
+        rows = client.get(f'/api/clubs?tri=niveau&ordre=asc&page={(len(world.clubs) + 29) // 30}').json()['items']
+        assert rows[-1]['top_rating'] is None
+
+
+def test_club_list_sorts_on_every_column_and_filters_by_country(client):
+    world = client.app.state.game.world
+    codes = build_nation_table(world.nation_names)
+    shown = {"nom": lambda row: v.normalized(row['name']), "pays": lambda row: codes[row['nation_code']]['display_code'],
+             "championnat": lambda row: row['competition'] and v.normalized(row['competition']), "reputation": lambda row: row['reputation'],
+             "entrainement": lambda row: row['training_facilities'], "recrutement": lambda row: row['youth_recruitment'],
+             "effectif": lambda row: row['squad_size'], "niveau": lambda row: row['top_rating'],
+             "potentiel": lambda row: row['top_potential'], "formation": lambda row: v.normalized(row['formation'])}
+    for tri, value in shown.items():
+        for ordre in ("asc", "desc"):
+            data = client.get(f'/api/clubs?pays=ITA&tri={tri}&ordre={ordre}').json()
+            assert data['total'] == sum(club.nation == 'ITA' for club in world.clubs.values())
+            assert all(row['nation_code'] == 'ITA' for row in data['items'])
+            values = [value(row) for row in data['items']]
+            present = [item for item in values if item is not None]
+            # Clubs with nothing to show there come last whichever the order.
+            assert values == present + [None] * (len(values) - len(present)), tri
+            assert present == sorted(present, reverse=ordre == "desc"), (tri, ordre)
+    ties = client.get('/api/clubs?pays=ITA&statut=actif&tri=championnat&ordre=desc').json()['items']
+    league = [row['reputation'] for row in ties if row['competition'] == ties[0]['competition']]
+    assert league == sorted(league, reverse=True)
+    data = client.get('/api/clubs').json()
+    assert data['nations'] == sorted({club.nation for club in world.clubs.values()})
+    assert client.get('/api/clubs?pays=ITA').json()['nations'] == data['nations']
+    assert client.get('/api/clubs?tri=invalid').status_code == 422
+
+
+def test_player_history_gives_the_level_month_by_month_after_the_season_points_of_older_saves(client):
+    from core.domain.world import history_month
+    world = client.app.state.game.world
+    player = next(iter(world.players.values()))
+    kept = world.trajectories[player.id]
+    world.trajectories[player.id] = [(history_month(2024, 7), [100]), (history_month(2025, 6), [104, 106])]
+    try:
+        trajectory = client.get(f"/api/joueurs/{player.id}/historique").json()["trajectory"]
+    finally:
+        world.trajectories[player.id] = kept
+    assert trajectory == [{"year": 2024, "month": 7, "season": 2024, "level": 100},
+                          {"year": 2025, "month": 6, "season": 2024, "level": 104},
+                          {"year": 2025, "month": 7, "season": 2025, "level": 106}]
+
+
 def test_player_lists_carry_the_attributes_and_sort_on_each(client):
     world = client.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}

@@ -5,6 +5,7 @@ from dataclasses import asdict, replace
 import unicodedata
 
 from core.domain.clubs import Competition
+from core.domain.date import Date
 from core.domain.world import World
 from core.domain.players import Player, ATTRIBUTE_NAMES
 from core.domain.matches import Match, MatchResult
@@ -171,6 +172,21 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
             for index, row in enumerate(standings(competition, matches, world.config))]
 
 
+TOP_SQUAD = 16
+
+
+def top_average(values) -> float | None:
+    """Mean of the TOP_SQUAD best values; a smaller squad averages all it has."""
+    best = sorted(values, reverse=True)[:TOP_SQUAD]
+    return round(sum(best) / len(best), 1) if best else None
+
+
+def squad_strength(world: World, club_id: int) -> dict:
+    players = [world.players[pid] for pid in world.clubs[club_id].player_ids]
+    return {"top_rating": top_average(player.rating for player in players),
+            "top_potential": top_average(player.potential for player in players)}
+
+
 def club_detail(world: World, club_id: int) -> dict:
     club = world.clubs[club_id]
     standing = next((row for row in table(world, club.competition_id) if row["club_id"] == club.id), None) if club.competition_id else None
@@ -179,7 +195,7 @@ def club_detail(world: World, club_id: int) -> dict:
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
             "academy": round(club.academy, 1), "training_facilities": club.training_facilities,
             "youth_recruitment": club.youth_recruitment,
-            "formation": club.formation, "squad_size": len(club.player_ids), "standing": standing,
+            "formation": club.formation, "squad_size": len(club.player_ids), **squad_strength(world, club_id), "standing": standing,
             "major_color": club.home_kit_major_color, "minor_color": club.home_kit_minor_color,
             "third_color": club.home_kit_third_color}
 
@@ -255,8 +271,19 @@ def club_league(world: World, club_id: int | None) -> Competition | None:
     return world.competitions[club.competition_id] if club and club.competition_id else None
 
 
+def level_history(world: World, player_id: int) -> list[dict]:
+    """The player's level out of 200 month by month, oldest first; seasons played before the history became monthly have a
+    single point, at their opening."""
+    points = []
+    for start, levels in world.trajectories.get(player_id, []):
+        for index, level in enumerate(levels, start):
+            year, month = divmod(index, 12)
+            points.append({"year": year, "month": month + 1, "season": financial_season(world, Date(year, month + 1, 1)), "level": level})
+    return points
+
+
 def career(world: World, player_id: int) -> dict:
-    player_records = [row for row in world.records.values() if row.player_id == player_id]
+    player_records =[row for row in world.records.values() if row.player_id == player_id]
     rows = {}
     for record in player_records:
         key = (record.season, record.club_id)

@@ -7,7 +7,7 @@ const detail={id:1,name:'Test Joueur',position:'DD',secondary_positions:['MC'],a
  born:'2005-01-01',wage:12000,contract_end:'2028-06-30',value:1314589,rating:70,potential:91.5,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],
  attributes:{passe:80,technique:30},position_ratings:{GB:1,DD:20,MC:12}};
 const history={career:{items:[{season:2025,club:{id:1,name:'Club'},fee:null,competition:'Serie A · C1',matches:4,goals:1,assists:0,average:6.5}],totals:{fee:0,matches:4,goals:1,assists:0,average:6.5}},
- trajectory:{items:[{season:2026,rating:60},{season:2025,rating:55}]}};
+ trajectory:[{year:2025,month:7,season:2025,level:110},{year:2026,month:7,season:2026,level:120}]};
 
 const squad={scope:{kind:'club',id:1,name:'Club'},index:1,total:3,items:[{id:5,name:'Gardien Test',position:'GB'},{id:1,name:'Test Joueur',position:'DD'},{id:6,name:'Buteur Test',position:'BU'}],
  previous:{id:5,name:'Gardien Test',position:'GB'},next:{id:6,name:'Buteur Test',position:'BU'}};
@@ -24,8 +24,14 @@ test('attribute and position scores share one red-yellow-green scale out of 20',
  assert.equal(scoreBadge(null),'—');
 });
 
+// One point a season, at its opening, as saves from before the monthly history kept it.
+const seasons=list=>list.map(([season,level,club])=>({year:season,month:7,season,level,club}));
+// Consecutive months from July of `season`, the season changing every July.
+const monthly=(season,levels)=>levels.map((level,index)=>{const month=6+index,year=season+Math.floor(month/12);
+ return {year,month:month%12+1,season:month%12<6?year-1:year,level};});
+
 test('level chart labels the ordinate out of 200 with a gridline per tick, in HTML text',()=>{
- const html=levelChart([{season:2025,rating:55},{season:2026,rating:60},{season:2027,rating:72.5}]);
+ const html=levelChart(seasons([[2025,110],[2026,120],[2027,145]]));
  const ticks=[...html.matchAll(/class="y-tick" style="top:[\d.]+%">(\d+)</g)].map(match=>Number(match[1]));
  assert.deepEqual(ticks,[110,120,130,140,150]);
  assert.equal((html.match(/class="grid-line"/g)||[]).length,5);
@@ -33,20 +39,42 @@ test('level chart labels the ordinate out of 200 with a gridline per tick, in HT
  assert.match(html,/class="point-value first" style="left:0.00%;top:[\d.]+%">110</);
  assert.match(html,/class="point-value last" style="left:100.00%;top:[\d.]+%">145</);
  assert.equal((html.match(/class="point-value/g)||[]).length,2);
- for(const year of [2025,2026,2027])assert.match(html,new RegExp(`class="x-tick" style="left:[\\d.]+%">${year}<`));
- const flat=levelChart([{season:2025,rating:60},{season:2026,rating:60}]);
+ // Januaries on the abscissa, named by their year
+ assert.deepEqual([...html.matchAll(/class="x-tick" style="left:([\d.]+)%">(\d+)</g)].map(match=>[match[1],match[2]]),[['25.00','2026'],['75.00','2027']]);
+ const flat=levelChart(seasons([[2025,120],[2026,120]]));
  assert.equal((flat.match(/class="grid-line"/g)||[]).length,2);assert.doesNotMatch(flat,/NaN|Infinity/);
- const long=levelChart(Array.from({length:20},(_,index)=>({season:2000+index,rating:40+index})));
- assert.doesNotMatch(long,/NaN|Infinity/);assert.equal((long.match(/class="x-tick"/g)||[]).length,5);
+ const long=levelChart(seasons(Array.from({length:20},(_,index)=>[2000+index,80+2*index])));
+ assert.doesNotMatch(long,/NaN|Infinity/);assert.deepEqual([...long.matchAll(/class="x-tick"[^>]*>(\d+)</g)].map(match=>match[1]),['2005','2010','2015']);
+});
+
+test('level chart draws every month but marks only the opening of each season and the latest month',()=>{
+ const html=levelChart(monthly(2025,[110,111,111,112,113,113,114,115,115,116,117,118,118,119]));
+ assert.equal(html.match(/points="([^"]*)"/)[1].split(' ').length,14);
+ assert.deepEqual([...html.matchAll(/class="chart-point" style="left:([\d.]+)%[^"]*" title="([^"]*)"/g)].map(match=>[match[1],match[2]]),
+  [['0.00','juillet 2025 · niveau 110'],['92.31','juillet 2026 · niveau 118'],['100.00','août 2026 · niveau 119']]);
+ assert.match(html,/class="point-value last"[^>]*>119</);
+ // Every half year on the abscissa for a year and a month: July by its name, January by its year
+ assert.deepEqual([...html.matchAll(/class="x-tick"[^>]*>([^<]+)</g)].map(match=>match[1]),['juil.','2026','juil.']);
+ const short=levelChart(monthly(2025,[110,111,112,113]));
+ assert.deepEqual([...short.matchAll(/class="x-tick"[^>]*>([^<]+)</g)].map(match=>match[1]),['juil.','août','sept.','oct.']);
+ const years=levelChart(monthly(2025,Array.from({length:31},(_,index)=>100+index)));
+ assert.deepEqual([...years.matchAll(/class="x-tick"[^>]*>([^<]+)</g)].map(match=>match[1]),['2026','2027','2028']);
+ assert.match(html,/aria-label="Évolution mensuelle du niveau, sur 200"/);
+});
+
+test('level chart keeps time proportional across the seasons recorded before the monthly history',()=>{
+ const html=levelChart([...seasons([[2024,100]]),...monthly(2025,[110,111,112,113])]);
+ assert.deepEqual([...html.matchAll(/class="chart-point" style="left:([\d.]+)%/g)].map(match=>match[1]),['0.00','80.00','100.00']);
+ assert.equal(html.match(/points="([^"]*)"/)[1].split(' ')[1].split(',')[0],'80.00');
 });
 
 test('level chart points take the colours of the club played for, and stay neutral without one',()=>{
- const html=levelChart([{season:2025,rating:55,club:{id:9,name:'Olympique de Marseille',major_color:'#ffffff',minor_color:'#2faee0'}},{season:2026,rating:60}]);
+ const html=levelChart(seasons([[2025,110,{id:9,name:'Olympique de Marseille',major_color:'#ffffff',minor_color:'#2faee0'}],[2026,120]]));
  const [first,second]=html.split('class="chart-point"').slice(1);
- assert.match(first,/title="2025 \/ 2026 · Olympique de Marseille · niveau 110"/);
+ assert.match(first,/title="juillet 2025 · Olympique de Marseille · niveau 110"/);
  assert.match(first,/class="kit-dot" style="background:linear-gradient\(135deg,#ffffff 50%,#2faee0 50%\)"/);
- assert.match(second,/title="2026 \/ 2027 · niveau 120"/);assert.match(second,/class="kit-dot neutral"/);
- const unsafe=levelChart([{season:2025,rating:55,club:{name:'X',major_color:'red;background:url(x)',minor_color:'#000000'}},{season:2026,rating:60}]);
+ assert.match(second,/title="juillet 2026 · niveau 120"/);assert.match(second,/class="kit-dot neutral"/);
+ const unsafe=levelChart(seasons([[2025,110,{name:'X',major_color:'red;background:url(x)',minor_color:'#000000'}],[2026,120]]));
  assert.doesNotMatch(unsafe,/url\(x\)/);assert.match(unsafe,/kit-dot neutral/);
 });
 
@@ -108,7 +136,7 @@ test('level chart points use the latest club of each season from the career',asy
  history.career.items=[{...previous[0],season:2026,club:marseille},{...previous[0],season:2025,club:marseille},{...previous[0],season:2025,club:lyon}];
  try{
   const {html}=await render();
-  assert.match(html,/title="2025 \/ 2026 · Marseille · niveau 110"/);assert.match(html,/title="2026 \/ 2027 · Marseille · niveau 120"/);
+  assert.match(html,/title="juillet 2025 · Marseille · niveau 110"/);assert.match(html,/title="juillet 2026 · Marseille · niveau 120"/);
   assert.doesNotMatch(html,/Lyon · niveau/);
  }finally{history.career.items=previous;}
 });

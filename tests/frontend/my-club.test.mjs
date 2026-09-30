@@ -36,7 +36,7 @@ test('the dashboard shows an inbox with unread entries and the club widgets, wit
 
 const player={id:20,name:'Cible',position:'BU',secondary_positions:[],age:24,nationalities:['FRA'],club:ref(9,'Nice'),born:'2005-01-01',wage:1000,contract_end:'2030-06-30',value:2e6,asking_price:3450000,transferable:true,greed:.5,
  rating:70,potential:80,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],attributes:{},position_ratings:{}};
-const history={career:{items:[],totals:{fee:0,matches:0,goals:0,assists:0,average:null}},trajectory:{items:[]}};
+const history={career:{items:[],totals:{fee:0,matches:0,goals:0,assists:0,average:null}},trajectory:[]};
 const idle={etape:null,indemnite:null,salaire:null,contre_offre:null,tours_restants:3,date_prevue:null,obstacle:null};
 const unlisted={prix_liste:null,obstacle_proposition:null,offres:[]};
 const playerRoutes=(detail,state,talks=idle,sale=unlisted)=>({[`/joueurs/${detail.id}`]:detail,[`/ma-partie/negociation/${detail.id}`]:talks,[`/ma-partie/vente/${detail.id}`]:sale,[`/joueurs/${detail.id}/historique`]:history,[`/joueurs/${detail.id}/navigation`]:null,'/monde/etat':state,'/ma-partie/transferts':transfers,'/ma-partie/contrats':contracts});

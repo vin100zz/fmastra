@@ -7,9 +7,11 @@ import {resetButton} from './filters.js';
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton} from './ui.js';
+import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton,levelBadge} from './ui.js';
 
 export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
+// The countries whose leagues are simulated, in the sidebar's order.
+export const playableNations=leagues=>[...new Set(leagues.filter(league=>league.kind!=='europe').map(league=>league.nation))].sort((a,b)=>LEAGUE_ORDER.indexOf(a)-LEAGUE_ORDER.indexOf(b));
 
 async function leagueSummary(id){
  const [standings,upcoming,scorers]=await Promise.all([api(`/competitions/${id}/classement`),api(`/competitions/${id}/calendrier`),api(`/competitions/${id}/statistiques?type=buteurs`)]);
@@ -42,12 +44,17 @@ export async function countryScreen(nation,leagues){
  return heading(nationName(nation))+`<div class="league-summaries">${cards.join('')}</div>`;
 }
 
-export async function clubsScreen(params){
+export async function clubsScreen(params,leagues=[]){
  const values=Object.fromEntries(params);
  const data=await api(`/clubs?${query(values)}`);
- const sorted=values.tri||'reputation',order=values.ordre||'desc';
- const sortHeader=(key,label)=>sortButton(key,label,sorted,order,key==='nom'?'asc':'desc');
- return heading('Clubs')+`<form class="filters" data-filter><input type="search" name="recherche" value="${e(values.recherche)}" placeholder="Rechercher un club…" aria-label="Rechercher un club"><select name="statut" aria-label="Statut"><option value="">Tous les clubs</option><option value="actif" ${values.statut==='actif'?'selected':''}>Clubs actifs</option><option value="dormant" ${values.statut==='dormant'?'selected':''}>Clubs dormants</option></select>${resetButton(params)}</form>`+card(`${n(data.total)} clubs`,table([sortHeader('nom','CLUB'),'PAYS','CHAMPIONNAT',sortHeader('reputation','RÉPUTATION'),'ENTRAÎNEMENT','RECRUTEMENT JEUNES',sortHeader('effectif','EFFECTIF'),'FORMATION'],data.items.map(club=>[`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),e(club.competition||'Marché extérieur'),`<span class="rating">${n(club.reputation)}</span>`,club.training_facilities==null?'—':n(club.training_facilities),club.youth_recruitment==null?'—':n(club.youth_recruitment),club.squad_size,e(club.formation)]))+pager(data));
+ const textColumns=['nom','pays','championnat','formation'],sorted=values.tri||'reputation',order=values.ordre||(textColumns.includes(sorted)?'asc':'desc');
+ const sortHeader=(key,label)=>sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc');
+ const columns=[['nom','CLUB'],['pays','PAYS'],['championnat','CHAMPIONNAT'],['reputation','RÉPUTATION'],['entrainement','ENTRAÎNEMENT'],['recrutement','RECRUTEMENT JEUNES'],['effectif','EFFECTIF'],['niveau','NIVEAU TOP 16'],['potentiel','POTENTIEL TOP 16'],['formation','FORMATION']];
+ // Playable countries first, then the others by name.
+ const playable=playableNations(leagues).filter(code=>data.nations.includes(code)),others=data.nations.filter(code=>!playable.includes(code)).sort((a,b)=>nationName(a).localeCompare(nationName(b),'fr'));
+ const nationOption=code=>`<option value="${e(code)}" ${values.pays===code?'selected':''}>${e(nationName(code))}</option>`;
+ const nationSelect=`<select name="pays" aria-label="Pays"><option value="">Tous les pays</option>${playable.map(nationOption).join('')}${playable.length&&others.length?'<hr>':''}${others.map(nationOption).join('')}</select>`;
+ return heading('Clubs')+`<form class="filters" data-filter><input type="search" name="recherche" value="${e(values.recherche)}" placeholder="Rechercher un club…" aria-label="Rechercher un club">${nationSelect}<select name="statut" aria-label="Statut"><option value="">Tous les clubs</option><option value="actif" ${values.statut==='actif'?'selected':''}>Clubs actifs</option><option value="dormant" ${values.statut==='dormant'?'selected':''}>Clubs dormants</option></select>${resetButton(params)}</form>`+card(`${n(data.total)} clubs`,`<div class="clubs-table">${table(columns.map(([key,label])=>sortHeader(key,label)),data.items.map(club=>[`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),e(club.competition||'Marché extérieur'),`<span class="rating">${n(club.reputation)}</span>`,club.training_facilities==null?'—':n(club.training_facilities),club.youth_recruitment==null?'—':n(club.youth_recruitment),club.squad_size,levelBadge(club.top_rating,'Moyenne des 16 meilleurs niveaux sur 200'),levelBadge(club.top_potential,'Moyenne des 16 meilleurs potentiels sur 200'),e(club.formation)]),undefined,undefined,undefined,columns.map(([key])=>`${key}-column`))}</div>`+pager(data));
 }
 
 export async function clubScreen(id,section,params){

@@ -194,7 +194,7 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                             "missing_capacities": sum(row.capacity <= 0 for row in source_clubs),
                             "missing_youth_recruitment": sum(row.youth_recruitment is None for row in source_clubs),
                             "attributes_from_source": len(source_players) - len(excluded), **corrections}
-    for player in players.values(): world.trajectories[player.id] = [(season, player.rating)]
+    for player in players.values(): world.record_level(player)
     world.finance_history_since = world.movement_history_since = world.date
     from core.world.reputation import initialize_reputation
     initialize_reputation(world)

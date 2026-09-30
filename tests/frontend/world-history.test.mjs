@@ -14,7 +14,8 @@ test('all movement tabs expose sortable columns and the selected direction',asyn
    globalThis.fetch=async url=>{requested=url;return {ok:true,json:async()=>({season:2027,previous_season:2026,next_season:null,history_since:'2025-07-01',sort,order:'asc',page:1,page_size:50,total:1,items:[{date:'2027-07-01',player_id:1,player:'Joueur',kind:type,fee:30000,details:{id:1,name:'Joueur',nationalities:[],data_at:'unknown'}}]})};};
    const html=await worldHistoryScreen(type,new URLSearchParams({tri:sort,ordre:'asc',saison:'2027'}));
    for(const key of keys)assert.ok(html.includes(`data-sort="${key}"`),`${type}: ${key}`);
-   assert.match(html,/↑/);assert.ok(requested.includes(`tri=${sort}`));assert.ok(requested.includes('ordre=asc'));
+   if(type!=='academy')for(const key of keys)assert.ok(html.includes(`<th class="${key}-column">`),`${type}: ${key} width`);
+   assert.ok(html.includes(`data-order="asc" data-sort="${sort}"`));assert.ok(requested.includes(`tri=${sort}`));assert.ok(requested.includes('ordre=asc'));
   }
  }finally{globalThis.fetch=original;}
 });

@@ -88,7 +88,9 @@ class World:
     transfers: list[TransferRecord] = field(default_factory=list)
     records: dict[str, SeasonRecord] = field(default_factory=dict)
     champions: dict[int, list[tuple[int, int]]] = field(default_factory=dict)
-    trajectories: dict[int, list[tuple[int, float]]] = field(default_factory=dict)
+    # Level history, see `record_level`: player -> runs of consecutive months as (first month, levels), oldest first. A month
+    # counts `year * 12 + month - 1`; a save from before schema 23 kept one level a season, each a run of its own.
+    trajectories: dict[int, list[tuple[int, list[int]]]] = field(default_factory=dict)
     retired: dict[int, str] = field(default_factory=dict)
     nation_targets: dict[str, float] = field(default_factory=dict)
     level_targets: tuple[float, ...] = ()  # Initial-level shares of the active players at import; only a reference since regens follow potential_targets.
@@ -130,3 +132,22 @@ class World:
 
     def active_clubs(self) -> list[Club]:
         return [club for club in self.clubs.values() if club.competition_id is not None]
+
+    def record_level(self, player: Player) -> None:
+        """This month's point of the player's level history: it extends his latest run of months, or opens another after a
+        gap; a second point in the same month replaces the first."""
+        month, level = history_month(self.date.year, self.date.month), history_level(player.rating)
+        runs = self.trajectories.setdefault(player.id, [])
+        end = runs[-1][0] + len(runs[-1][1]) if runs else None
+        if end == month + 1: runs[-1][1][-1] = level
+        elif end == month: runs[-1][1].append(level)
+        else: runs.append((month, [level]))
+
+
+def history_month(year: int, month: int) -> int:
+    return year * 12 + month - 1
+
+
+def history_level(rating: float) -> int:
+    """A rating as the level history keeps it: to the half point, i.e. the whole level out of 200 the interface shows."""
+    return int(rating * 2 + .5)

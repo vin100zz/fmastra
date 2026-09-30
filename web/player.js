@@ -1,6 +1,6 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,price,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances,ATTRIBUTES,ATTRIBUTE_SECTIONS} from './ui.js';
+import {api,escape as e,number as n,money,price,attributeScore,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances,ATTRIBUTES,ATTRIBUTE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -48,26 +48,37 @@ export function positionPitch(ratings, main) {
  return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${roles.map(([role,[x,y]])=>`<span class="pitch-player ${role===main?'main':''}" style="left:${x}%;top:${y}%"><span class="shirt graded" style="--hue:${scoreHue(ratings[role])}" title="${role} : ${ratings[role]} / 20">${ratings[role]}</span><small>${role}</small></span>`).join('')}</div><p class="pitch-legend">Le contour indique le poste principal.</p>`;
 }
 
-// `points` run from the oldest season to the latest, each with the club played for (if known); ratings are stored out of 100 and shown out of 200.
+const MONTH=new Intl.DateTimeFormat('fr-FR',{month:'short'}),MONTH_YEAR=new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'});
+const calendar=({year,month})=>new Date(year,month-1,15);
+
+// `points` run month by month from the oldest to the latest, each with its level out of 200, its season and the club played for
+// (if known); seasons recorded before the monthly history have one point, at their opening. The abscissa is time, so such gaps
+// keep their length. A dot marks the first point of each season and the latest one.
 // Text and dots are HTML so they keep the size of the rest of the interface; only the gridlines and the curve are stretched SVG.
 export function levelChart(points) {
- const values=points.map(point=>level(point.rating));
+ const values=points.map(point=>point.level),months=points.map(point=>point.year*12+point.month-1);
  const low=Math.min(...values),high=Math.max(...values);
  const step=[5,10,20,25,50].find(size=>(high-low)/size<=5)??50;
  const min=Math.floor(low/step)*step;
  let max=Math.ceil(high/step)*step;if(max===min)max+=step;
- const across=index=>(index*100/(points.length-1)).toFixed(2);
+ const first=months[0],span=Math.max(1,months.at(-1)-first);
+ const across=month=>((month-first)*100/span).toFixed(2);
  const down=value=>((max-value)*100/(max-min)).toFixed(2);
  const ticks=[];for(let value=min;value<=max;value+=step)ticks.push(value);
- const every=Math.ceil(points.length/6);
- const lines=`<svg class="plot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${ticks.map(value=>`<line class="grid-line" x1="0" x2="100" y1="${down(value)}" y2="${down(value)}" vector-effect="non-scaling-stroke"/>`).join('')}<polyline class="curve" points="${values.map((value,index)=>`${across(index)},${down(value)}`).join(' ')}" vector-effect="non-scaling-stroke"/></svg>`;
- const axis=ticks.map(value=>`<span class="y-tick" style="top:${down(value)}%">${value}</span>`).join('');
+ // At most five dates on the abscissa: months over two years at most, then Januaries named by their year.
+ const every=[1,2,3,6,12,24,36,60,120].find(size=>span/size<=4)??120;
+ const dates=[];for(let month=Math.ceil(first/every)*every;month<=months.at(-1);month+=every)dates.push(month);
+ const lines=`<svg class="plot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${ticks.map(value=>`<line class="grid-line" x1="0" x2="100" y1="${down(value)}" y2="${down(value)}" vector-effect="non-scaling-stroke"/>`).join('')}<polyline class="curve" points="${values.map((value,index)=>`${across(months[index])},${down(value)}`).join(' ')}" vector-effect="non-scaling-stroke"/></svg>`;
+ const axis=ticks.map(value=>`<span class="y-tick" style="top:${down(value)}%">${value}</span>`).join('')
+  +dates.map(month=>`<span class="x-tick" style="left:${across(month)}%">${month%12?MONTH.format(calendar({year:Math.floor(month/12),month:month%12+1})):month/12}</span>`).join('');
  const marks=points.map((point,index)=>{
-  const at=`left:${across(index)}%;top:${down(values[index])}%`,edge=index===0?'first':index===points.length-1?'last':'';
-  const label=`${season(point.season)}${point.club?` · ${point.club.name}`:''} · niveau ${values[index]}`;
-  return `<span class="chart-point" style="${at}" title="${e(label)}">${kitDot(point.club)||'<i class="kit-dot neutral" aria-hidden="true"></i>'}</span>${edge?`<span class="point-value ${edge}" style="${at}">${values[index]}</span>`:''}${index%every===0?`<span class="x-tick" style="left:${across(index)}%">${point.season}</span>`:''}`;
+  const last=index===points.length-1;
+  if(index&&!last&&point.season===points[index-1].season)return '';
+  const at=`left:${across(months[index])}%;top:${down(values[index])}%`,edge=index===0?'first':last?'last':'';
+  const label=`${MONTH_YEAR.format(calendar(point))}${point.club?` · ${point.club.name}`:''} · niveau ${values[index]}`;
+  return `<span class="chart-point" style="${at}" title="${e(label)}">${kitDot(point.club)||'<i class="kit-dot neutral" aria-hidden="true"></i>'}</span>${edge?`<span class="point-value ${edge}" style="${at}">${values[index]}</span>`:''}`;
  }).join('');
- return `<div class="level-chart" role="img" aria-label="Évolution annuelle du niveau, sur 200"><div class="plot">${lines}${axis}${marks}</div></div>`;
+ return `<div class="level-chart" role="img" aria-label="Évolution mensuelle du niveau, sur 200"><div class="plot">${lines}${axis}${marks}</div></div>`;
 }
 
 function header(player, lead='', actions='') {
@@ -152,8 +163,8 @@ export async function playerScreen(id) {
  const actions=await playerActions(player,state);
  // The latest club of each season: career rows are listed newest first.
  const clubs=new Map();for(const row of history.career.items)if(!clubs.has(row.season))clubs.set(row.season,row.club);
- const points=[...history.trajectory.items].reverse().map(point=>({...point,club:clubs.get(point.season)}));
- const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au bilan de chaque saison.'),'<span class="muted">Niveau sur 200</span>');
+ const points=history.trajectory.map(point=>({...point,club:clubs.get(point.season)}));
+ const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au début de chaque mois.'),'<span class="muted">Niveau sur 200</span>');
  const totals=history.career.totals;
  const footer=['Total','',totals.fee?money(totals.fee):'—','',`${n(totals.matches)}`,`${n(totals.goals)}`,`${n(totals.assists)}`,totals.average?n(totals.average):'—'];
  const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']),footer));

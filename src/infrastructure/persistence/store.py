@@ -13,7 +13,7 @@ import tempfile
 from dataclasses import replace
 from pathlib import Path
 
-from core.domain.world import World
+from core.domain.world import World, history_level, history_month
 from core.world.demography import initialize_targets
 from core.world.reputation import initialize_reputation
 from core.world.transfer_rules import greed_trait
@@ -25,7 +25,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 22
+SCHEMA_VERSION = 23
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -157,6 +157,7 @@ class SaveStore:
             if b'"schema_version":1,' in raw[:100] or b'"schema_version": 1,' in raw[:100]:
                 payload = json.loads(raw)
                 world, fingerprint = decode(_rename_positions(payload["world"], skip="config")), payload["config_hash"]
+                world.trajectories = _monthly_trajectories(world.trajectories, world.config.world.key_dates.population_review.month)
                 version = 1
             else:
                 found = re.search(rb'"schema_version":\s*(\d+)', raw[:100])
@@ -171,6 +172,8 @@ class SaveStore:
                 raise SaveError("Sauvegarde incohérente : configuration ou racine invalide.")
             if version < 21: _upgrade_formations(world)
             if version < 22: _upgrade_configured_positions(world)
+            if version < 23:
+                for player in world.players.values(): world.record_level(player)
             if not {"matches", "market", "states", "progression", "demography"}.issubset(world.rngs):
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
             validate_consistency(world.config)
@@ -213,8 +216,18 @@ def _upgrade_document(raw: bytes, version: int, source_path: Path) -> bytes:
     """What an older save's JSON must receive before it is typed; its configuration is upgraded once verified."""
     document = json.loads(raw)
     if version < 22: document["world"] = _rename_positions(document["world"], skip="config")
+    if version < 23:
+        world = document["world"]
+        world["trajectories"] = _monthly_trajectories(world["trajectories"], world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
     _extend_attribute_vectors(document["world"], source_path)
     return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _monthly_trajectories(trajectories: dict, opening_month: int) -> dict:
+    """Schema 23: the level history became monthly. Each season point of an older save, taken when the season opened, is
+    a run of its own at that month; runs already monthly are left as they are."""
+    return {player: [point if isinstance(point[1], list) else (history_month(point[0], opening_month), [history_level(point[1])])
+                     for point in points] for player, points in trajectories.items()}
 
 
 def _rename_positions(node, skip: str | None = None):

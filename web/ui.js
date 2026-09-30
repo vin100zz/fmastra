@@ -109,7 +109,8 @@ export function sortTable(table, column, direction) {
  [...table.tHead.rows[0].cells].forEach((head,index)=>index===column?head.setAttribute('aria-sort',direction==='asc'?'ascending':'descending'):head.removeAttribute('aria-sort'));
 }
 // The active column carries its direction, so a click never has to guess it from the URL; text columns start A→Z.
-export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label} ${key===sorted?(order==='desc'?'↓':'↑'):''}</button>`;
+// The arrow comes from the style sheet, like on the tables sorted in the browser.
+export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label}</button>`;
 export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
 const textColumns=['position','name','nation','club','academy_club'];
 const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA'};

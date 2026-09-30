@@ -37,7 +37,9 @@ def apply(world: World, event: WorldEvent) -> bool:
             add_news(world, "injury", text, player.club_id, player.id)
         if event.healed:
             add_news(world, "injury_end", f"{player.name} est de nouveau disponible", player.club_id, player.id)
-        if event.reset_month: player.monthly_minutes = 0
+        if event.reset_month:  # The monthly progression.
+            player.monthly_minutes = 0
+            world.record_level(player)
     elif isinstance(event, MatchPlayed):
         _apply_match(world, event)
     elif isinstance(event, PlayerSigned):
@@ -75,7 +77,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             club.wage_bill += player.contract.weekly_wage
         world.players[player.id] = player
         world.next_id = max(world.next_id, player.id + 1)
-        world.trajectories[player.id] = [(world.season, player.rating)]
+        world.record_level(player)
         if player.club_id is not None:
             from .estimates import estimate_potential
             from core.ai.market import market_value
@@ -140,7 +142,6 @@ def apply(world: World, event: WorldEvent) -> bool:
         for club in world.clubs.values():
             world.reputation_history.setdefault(club.id, []).append((event.year, club.reputation))
         for player in world.players.values():
-            world.trajectories.setdefault(player.id, []).append((event.year, player.rating))
             player.season_minutes = player.season_goals = player.season_assists = player.appearances = player.substitutes = 0
             player.rating_sum = player.rating_count = 0
             for discipline in player.discipline.values():

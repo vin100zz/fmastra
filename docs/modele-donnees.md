@@ -219,8 +219,8 @@ club et compétition** : un transfert en cours de saison produit plusieurs ligne
 Conserver minutes, buts, passes, cartons, somme des notes et nombre de notes
 pour calculer les moyennes sans moyenne de moyennes.
 
-Conserver les transferts, palmarès, retraites et une trajectoire annuelle des
-attributs. Archiver les retraités sous forme compacte ; ils ne restent pas dans
+Conserver les transferts, palmarès, retraites et l'historique mensuel du niveau
+(entier sur 200, par suites de mois consécutifs ; un point par saison avant la v23). Archiver les retraités sous forme compacte ; ils ne restent pas dans
 les boucles de progression ou de recherche des joueurs disponibles.
 
 JSON gzippé avec `schema_version`, sérialisation explicite, migrations testées,

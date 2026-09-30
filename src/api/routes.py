@@ -105,6 +105,27 @@ def squad_sort_key(world, column: str):
     return lambda row: row[column]
 
 
+ClubSort = Literal["nom", "pays", "championnat", "reputation", "entrainement", "recrutement", "effectif", "niveau", "potentiel", "formation"]
+CLUB_TEXT_SORTS = ("nom", "pays", "championnat", "formation")
+
+
+def club_sort_key(world, column: str):
+    """Orders the club list by what a column shows; None when the club has nothing to show there."""
+    if column == "nom": return lambda club: v.normalized(club.name)
+    if column == "pays":
+        codes = build_nation_table(world.nation_names)
+        return lambda club: codes.get(club.nation, {}).get("display_code", club.nation)
+    if column == "championnat":
+        return lambda club: v.normalized(world.competitions[club.competition_id].name) if club.competition_id is not None else None
+    if column == "reputation": return lambda club: club.reputation
+    if column == "entrainement": return lambda club: club.training_facilities
+    if column == "recrutement": return lambda club: club.youth_recruitment
+    if column == "effectif": return lambda club: len(club.player_ids)
+    if column == "formation": return lambda club: v.normalized(club.formation)
+    field = "top_rating" if column == "niveau" else "top_potential"
+    return lambda club: v.squad_strength(world, club.id)[field]
+
+
 def lineup_player(world, player, competition_id: int, stats: dict) -> dict:
     """A squad row of the lineup screen, with why the player cannot take part in this match."""
     row = {**v.player_row(world, player), **stats}
@@ -503,15 +524,24 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return build_nation_table(world.nation_names)
 
     @api.get("/clubs")
-    def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = None,
-              recherche: str = "", page: int = Query(1, ge=1), tri: Literal["nom", "reputation", "effectif"] = "reputation") -> dict:
+    def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = None, pays: str = "",
+              recherche: str = "", page: int = Query(1, ge=1), tri: ClubSort = "reputation",
+              ordre: Literal["asc", "desc"] | None = None) -> dict:
         with service.reading() as world:
             rows = [club for club in world.clubs.values() if (competition is None or club.competition_id == competition)
                     and (statut is None or (club.competition_id is not None) == (statut == "actif"))
-                    and v.normalized(recherche) in v.normalized(club.name)]
-            rows.sort(key=lambda club: ((v.normalized(club.name) if tri == "nom" else -club.reputation if tri == "reputation" else -len(club.player_ids)), club.id))
+                    and (not pays or club.nation == pays) and v.normalized(recherche) in v.normalized(club.name)]
+            # Both sorts are stable: ties keep the reputation order whichever the direction.
+            rows.sort(key=lambda club: (-club.reputation, club.id))
+            key = club_sort_key(world, tri)
+            values = {club.id: key(club) for club in rows}
+            descending = (ordre or ("asc" if tri in CLUB_TEXT_SORTS else "desc")) == "desc"
+            # A club without the value (a dash, or no league) comes last whichever the order.
+            rows = (sorted((club for club in rows if values[club.id] is not None), key=lambda club: values[club.id], reverse=descending)
+                    + [club for club in rows if values[club.id] is None])
             result = v.paginate(rows, page)
             result["items"] = [v.club_detail(world, item.id) for item in result["items"]]
+            result["nations"] = sorted({club.nation for club in world.clubs.values()})
             return result
 
     @api.get("/clubs/{club_id}")
@@ -666,11 +696,10 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return nav.player_navigation(world, player_id)
 
     @api.get("/joueurs/{player_id}/historique")
-    def player_history(player_id: int, page: int = Query(1, ge=1)) -> dict:
+    def player_history(player_id: int) -> dict:
         with service.reading() as world:
             if player_id not in world.players and player_id not in world.retired: raise KeyError(player_id)
-            return {"career": v.career(world, player_id),
-                    "trajectory": v.paginate([{"season": year, "rating": rating} for year, rating in reversed(world.trajectories.get(player_id, []))], page)}
+            return {"career": v.career(world, player_id), "trajectory": v.level_history(world, player_id)}
 
     @api.get("/matches/{match_id}")
     def match(match_id: int) -> dict:

@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 22` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 23` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -103,6 +103,13 @@ antérieure, avant tout typage, chaque code `DL`/`DR` du monde (valeur ou clé :
 compositions, événements de match, instantanés des transferts…) est renommé ; la configuration embarquée l'est après
 vérification de son empreinte d'origine. Le `4-4-2 offensif` ajouté par la v21 (deux MOC) reçoit ses deux ailiers
 (MDC, MDC, AILG, AILD) ; une autre définition de ce nom est conservée. Les codes de la source (`players.csv`) ne changent pas.
+
+La v23 rend l'historique du niveau mensuel : `World.trajectories` associe à chaque joueur des suites de mois consécutifs
+`(premier mois, niveaux)`, le mois valant `année * 12 + mois - 1` et le niveau étant l'entier sur 200 affiché (note arrondie
+au demi-point). Un niveau s'ajoute à chaque progression mensuelle, à l'import et à la génération d'un joueur. À la lecture
+d'une sauvegarde antérieure, avant tout typage, chaque point annuel `(saison, note)`, pris à l'ouverture de la saison,
+devient une suite d'un seul mois au mois du bilan démographique ; les suites déjà mensuelles sont conservées. Le niveau
+courant de chaque joueur est ensuite ajouté au mois de la reprise. Aucun mois antérieur n'est inventé.
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de

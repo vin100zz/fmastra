@@ -25,7 +25,7 @@ test('player list shows multiple nationalities and value with selected sorting',
  const html=playerTable({items:[player],total:1,page_size:30},true,'value');
  assert.match(html,/title="France"/);assert.match(html,/title="Espagne"/);
  assert.match(html,/flags\/fr.svg/);assert.match(html,/flags\/es.svg/);
- assert.match(html,/VALEUR ↓/);assert.match(html,/1,3/);
+ assert.match(html,/data-order="desc" data-sort="value">VALEUR</);assert.match(html,/1,3/);
  const imported=playerTable({items:[{...player,nationalities:['POR','XOP'],nationality_names:['Portugal','Angola']}],total:1,page_size:30},true);
  assert.match(imported,/POR/);assert.match(imported,/Angola/);assert.doesNotMatch(imported,/XOP/);
 });
@@ -47,10 +47,10 @@ test('archived academy rows without a stored potential do not break the table',(
 
 test('exact potential is shown out of 200 and sortable in player and squad lists',()=>{
  const players=playerTable({items:[{...player,potential:91.5,club:{id:1,name:'Club'}}],total:1,page_size:30},true,'potential','desc');
- assert.match(players,/data-sort="potential">POT\. ↓/);assert.match(players,/title="Potentiel sur 200">183</);
+ assert.match(players,/data-order="desc" data-sort="potential">POT\.</);assert.match(players,/title="Potentiel sur 200">183</);
  const squad=playerTable({items:[{...player,potential:91.5}],total:1,page_size:30},false,'potential','asc');
  assert.ok(squad.indexOf('NIV.')<squad.indexOf('POT.')&&squad.indexOf('POT.')<squad.indexOf('VALEUR'));
- assert.match(squad,/data-sort="potential">POT\. ↑/);assert.match(squad,/title="Potentiel sur 200">183</);
+ assert.match(squad,/data-order="asc" data-sort="potential">POT\.</);assert.match(squad,/title="Potentiel sur 200">183</);
  assert.doesNotMatch(squad,/data-sort="club"/);
 });
 
@@ -84,8 +84,8 @@ test('every squad column is a sort button, and the active one carries its direct
  const headers=[...html.matchAll(/<th class="(\w+)-column"><button[^>]*data-sort="(\w+)"/g)].map(match=>{assert.equal(match[1],match[2]);return match[2];});
  assert.deepEqual(headers,['position','name','nation','age','rating','potential','value','wage','contract_end','fitness','appearances','goals','assists','yellows','reds','average']);
  assert.equal((html.match(/<th(?: [^>]*)?>(?!<button)/g)||[]).length,0);
- assert.match(html,/<button data-first="asc" data-order="asc" data-sort="position">POSTE ↑/);
- assert.match(html,/<button data-first="desc" data-sort="rating">NIV\. </);
+ assert.match(html,/<button data-first="asc" data-order="asc" data-sort="position">POSTE</);
+ assert.match(html,/<button data-first="desc" data-sort="rating">NIV\.<\/button>/);
  assert.doesNotMatch(html.replace(/data-order="asc" data-sort="position"/,''),/data-order/);
  for(const key of ['name','nation'])assert.match(html,new RegExp(`data-first="asc"[^>]*data-sort="${key}"`));
 });
@@ -126,7 +126,7 @@ test('appearances show the substitute entries in brackets after the starts',()=>
 
 test('the player list shows the lowest fee a club accepts, sortable, or that it will not sell',()=>{
  const html=playerTable({items:[{...player,asking_price:25100000,transferable:true},{...player,id:2,asking_price:null,transferable:false}],total:2,page_size:30},true,'asking_price','desc',{asking:true});
- assert.match(html,/data-sort="asking_price"/);assert.match(html,/PRIX MIN\. ↓/);
+ assert.match(html,/data-sort="asking_price"/);assert.match(html,/data-order="desc" data-sort="asking_price">PRIX MIN\.</);
  assert.match(html,/25,1\sM\s?€/);
  assert.match(html,/<span class="muted">Intransférable<\/span>/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
@@ -147,7 +147,7 @@ test('the attribute view lists the attributes out of 20 by section, Général, D
  // Same badges as the player page: 1 to 20 on the red-yellow-green scale, the full name in the header's tooltip.
  assert.match(html,/<span class="rating graded" style="--hue:120" title="Finition sur 20">16</);
  assert.match(html,/<span class="rating graded" style="--hue:0" title="Tacle sur 20">4</);
- assert.match(html,/<span title="Finition">FIN<\/span> ↓/);
+ assert.match(html,/data-order="desc" data-sort="finition"><span title="Finition">FIN<\/span></);
  assert.equal(playerTable({items:[{...player,attributes}],total:1,page_size:30},true,'rating','desc',{view:'attributs'}).match(/data-sort="(\w+)"/g)[5],'data-sort="club"');
 });
 

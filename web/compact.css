@@ -29,7 +29,10 @@ th,td{padding:7px 9px;font-size:12px}th{font-size:9px}th button{padding:0;font-s
 @media(max-width:1329px){.club-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.club-overview{grid-template-columns:1fr}}
 
 /* Client-sorted tables: the header button shows its direction through aria-sort. */
-th button.sort-toggle{font-weight:inherit;text-transform:inherit}th button.sort-toggle:hover{color:var(--green);background:none}th[aria-sort=ascending] button:after{content:" ↑"}th[aria-sort=descending] button:after{content:" ↓"}
+th button.sort-toggle{font-weight:inherit;text-transform:inherit}th button.sort-toggle:hover{color:var(--green);background:none}
+/* Every sortable heading keeps room for its arrow, shown on the sorted column only, so that a sort never widens a column. */
+th button.sort-toggle:after,th button[data-sort]:after{content:" ↓";visibility:hidden}
+th[aria-sort=ascending] button:after,th button[data-order=asc]:after{content:" ↑";visibility:visible}th[aria-sort=descending] button:after,th button[data-order=desc]:after{content:" ↓";visibility:visible}
 
 /* Stepping between peers, at the left of a page header: triangle up (previous), menu (every member), triangle down (next). */
 .heading-with-lead{display:flex;align-items:center;gap:12px;min-width:0}
