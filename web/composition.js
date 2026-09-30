@@ -1,7 +1,9 @@
-import {api,escape as e,position,group,levelBadge,number,surname,appearances} from './ui.js';
+import {api,escape as e,position,group,levelBadge,number,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,COMPOSITE_SECTIONS} from './ui.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
+// The columns of the squad list, 'infos' or 'jeu' (the composites): kept from one match to the next.
+let squadView='infos';
 
 const POSITION_ORDER=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 const LINE_Y={gk:90,def:73,dm:60,cm:47,am:33,att:15};
@@ -108,19 +110,31 @@ export function lineupSubmission(){
 const unavailableIcon=player=>player.unavailable==='injured'?'<span class="lineup-icon injury" title="Blessé" aria-label="Blessé">✚</span>'
  :player.unavailable==='suspended'?`<span class="lineup-icon suspension" title="Suspendu${player.match_suspension?` (${player.match_suspension} match${player.match_suspension>1?'s':''})`:''}" aria-label="Suspendu"></span>`:'';
 const fatigue=player=>Math.round((1-player.fitness)*100);
+// The position of the pitch picked to compare the squad on it, or null.
+const pickedRole=()=>editor.picked==null?null:roles()[editor.picked]??null;
+const wantedAt=role=>editor.data.composites_by_position?.[role]||[];
+// A player's note at a position with his affinity to it, as the pitch shows them: on the pitch and in the list for the picked position.
+const fitAt=(player,role)=>`<span class="fit-cell">${positionNote(player,role,wantedAt(role))}${affinityTag(player.position_affinities?.[role],role)}</span>`;
 
 function slotHtml(id,role,place,index,byId){
  const player=byId.get(id);
- const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}`;
+ const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}${index===editor.picked?' picked':''}`;
  const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
- return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}" draggable="true"`:''} style="left:${place.x}%;top:${place.y}%" title="${e(title)}"><span class="shirt">${e(role)}</span><small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
+ const note=player?positionNote(player,role,wantedAt(role)):'';
+ return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}" draggable="true"`:''} style="left:${place.x}%;top:${place.y}%" title="${e(title)}"><span class="shirt">${e(role)}${player?affinityTag(player.position_affinities?.[role],role):''}</span>${note?`<span class="position-note">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
 }
 function benchHtml(id,index,byId){
  const player=byId.get(id);
  return `<div class="bench-slot${player?'':' empty'}${player?.unavailable?' invalid':''}" data-bench="${index}"${player?` data-player="${player.id}" draggable="true" title="${e(player.name)}"`:''}>${player?`${position(player.position)}<span>${unavailableIcon(player)}${e(surname(player.name))}</span>`:'<span class="muted">Remplaçant</span>'}</div>`;
 }
 
-const COLUMNS=[['selected','COMPO'],['position','POSTE'],['name','JOUEUR'],['rating','NIV.'],['potential','POT.'],['fatigue','FATIGUE'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
+const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
+// The composites by section, a line opening each section.
+const GAME_COLUMNS=COMPOSITE_SECTIONS.flatMap(section=>section.composites.map((key,index)=>[key,compositeHeader(key),index===0]));
+// The squad list's columns, [key, header, opens a section]: with a position picked on the pitch (`role`), everyone's note there
+// comes right after COMPO.
+export const lineupColumns=(view,role)=>[['selected','COMPO'],...(role?[['fit',`EN ${e(role)}`]]:[]),['position','POSTE'],['name','JOUEUR'],['rating','NIV.'],...(view==='jeu'?GAME_COLUMNS:INFO_COLUMNS)];
+const columns=()=>lineupColumns(squadView,pickedRole());
 // Starters come first in their pitch order, then substitutes, then the rest of the squad by position.
 function sortValue(player,key){
  const spot=where(editor,player.id);
@@ -128,17 +142,30 @@ function sortValue(player,key){
  if(key==='position')return POSITION_ORDER.indexOf(player.position);
  if(key==='fatigue')return fatigue(player);
  if(key==='name')return player.name;
+ if(key==='fit')return player.position_notes?.[pickedRole()]??-1;
+ if(key in (player.composites||{}))return player.composites[key];
  return player[key]??-1;
 }
 function squadHtml(byId){
  const {key,direction}=editor.sort,sign=direction==='asc'?1:-1;
+ const role=pickedRole(),wanted=role?wantedAt(role):null,shown=columns();
  const rows=[...byId.values()].sort((a,b)=>{const x=sortValue(a,key),y=sortValue(b,key);return sign*(typeof x==='string'?x.localeCompare(y,'fr'):x-y)||a.id-b.id;});
- const head=COLUMNS.map(([column,label])=>`<th${column===key?` aria-sort="${direction==='asc'?'ascending':'descending'}"`:''}><button type="button" data-lineup-sort="${column}">${label}</button></th>`).join('');
+ // In the game view, the composites the picked position asks for stand out in the header; the others are grey in every row.
+ const headClass=([column,,opens])=>[opens?'group-start':'',wanted?.includes(column)?'wanted':''].filter(Boolean).join(' ');
+ const head=shown.map(item=>{const [column,label]=item,classes=headClass(item);return `<th${classes?` class="${classes}"`:''}${column===key?` aria-sort="${direction==='asc'?'ascending':'descending'}"`:''}><button type="button" data-lineup-sort="${column}">${label}</button></th>`;}).join('');
  const body=rows.map(player=>{
   const spot=where(editor,player.id);
-  const selected=spot?spot.kind==='slot'?position(roles()[spot.index]):'<span class="position bench">REMP</span>':'';
   const tired=fatigue(player);
-  return `<tr data-player="${player.id}" draggable="true" class="${spot?'chosen':''}${player.unavailable?' invalid':''}"><td>${selected}</td><td>${position(player.position)}</td><td class="strong"><span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span></td><td>${levelBadge(player.rating,'Niveau actuel sur 200')}</td><td>${levelBadge(player.potential,'Potentiel sur 200')}</td><td><span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span></td><td>${appearances(player.appearances,player.substitutes)}</td><td>${player.goals}</td><td>${player.assists}</td><td>${player.average?number(player.average):'—'}</td></tr>`;
+  const cells={
+   selected:spot?spot.kind==='slot'?position(roles()[spot.index]):'<span class="position bench">REMP</span>':'',
+   fit:role?fitAt(player,role):'',position:position(player.position),
+   name:`<span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span>`,
+   rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),
+   fatigue:`<span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span>`,
+   appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?number(player.average):'—'};
+  const cell=([column,,opens])=>{const classes=[column==='name'?'strong':'',opens?'group-start':''].filter(Boolean).join(' ');
+   return `<td${classes?` class="${classes}"`:''}>${column in cells?cells[column]:compositeCell(player,column,wanted||player.key_composites)}</td>`;};
+  return `<tr data-player="${player.id}" draggable="true" class="${spot?'chosen':''}${player.unavailable?' invalid':''}${spot?.kind==='slot'&&spot.index===editor.picked?' picked':''}">${shown.map(cell).join('')}</tr>`;
  }).join('');
  return `<div class="table-scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
@@ -149,7 +176,8 @@ function editorHtml(){
  const tactics=Object.keys(editor.data.formations).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
  // The first problem is spelled out in the toolbar, the others counted; all of them in the tooltip.
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
- return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<button type="button" data-lineup-suggest>Meilleure composition</button></div>
+ const views=[['infos','Infos'],['jeu','Jeu']].map(([key,label])=>`<button type="button" data-lineup-view="${key}" aria-pressed="${key===squadView}" class="${key===squadView?'active':''}">${label}</button>`).join('');
+ return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<div class="segmented" role="group" aria-label="Colonnes">${views}</div><button type="button" data-lineup-suggest>Meilleure composition</button></div>
 <div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${editor.slots.map((id,index)=>slotHtml(id,current[index],layout[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>`;
@@ -163,6 +191,13 @@ function refresh(){
  document.dispatchEvent(new CustomEvent('lineup-change'));
 }
 function update(lineup){editor.slots=lineup.slots;editor.bench=lineup.bench;refresh();}
+// Picking a position sorts the squad by its note there; letting it go returns to the lineup's order.
+function pick(index){
+ editor.picked=index;
+ if(index!=null)editor.sort={key:'fit',direction:'desc'};
+ else if(editor.sort.key==='fit')editor.sort={key:'selected',direction:'asc'};
+ refresh();
+}
 const benchOf=(ids,size)=>Array.from({length:size},(_,index)=>ids[index]??null);
 function load(formation,titulaires,banc){
  editor.formation=formation;
@@ -178,7 +213,7 @@ export async function compositionContent(params, state) {
  const data=await api(`/ma-partie/composition${requested?`?match_id=${requested}`:''}`);
  const matchId=data.match_id??0;
  if(editor?.matchId!==matchId){
-  editor={matchId,data,sort:{key:'selected',direction:'asc'}};
+  editor={matchId,data,sort:{key:'selected',direction:'asc'},picked:null};
   load(data.default.formation,data.default.titulaires,data.default.banc);
  }else{
   // Fresh squad data (fitness, injuries) under the choices already made; players who left drop out.
@@ -237,12 +272,20 @@ function install(){
   else{const target=nextFree(editor,roles());if(target)update(place(editor,id,target));}
  });
  document.addEventListener('click',event=>{
+  // A click on a position of the pitch compares the squad on it; a second click, or another tactic, lets it go.
+  const slot=event.target.closest?.('.lineup-pitch [data-slot]');
+  if(slot&&inside(slot)&&mounted()){pick(editor.picked===Number(slot.dataset.slot)?null:Number(slot.dataset.slot));return;}
   const button=event.target.closest?.('button');
   if(!button||!inside(button)||!mounted())return;
   if(button.dataset.tactic&&button.dataset.tactic!==editor.formation){
    const next=button.dataset.tactic;
    editor.slots=changeFormation(editor.slots,roles(),editor.data.formations[next]);
-   editor.formation=next;refresh();
+   editor.formation=next;pick(null);
+  }
+  if(button.dataset.lineupView&&button.dataset.lineupView!==squadView){
+   squadView=button.dataset.lineupView;
+   if(!columns().some(([column])=>column===editor.sort.key))editor.sort={key:'selected',direction:'asc'};
+   refresh();
   }
   if('lineupSuggest' in button.dataset){const best=editor.data.suggestions[editor.formation];load(editor.formation,best.titulaires,best.banc);refresh();}
   if(button.dataset.lineupSort){

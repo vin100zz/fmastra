@@ -86,14 +86,16 @@ class NewsRead(Command):
     ids: list[int] | None = None
 
 
-# The attribute view of the player lists sorts on each attribute.
+# The attribute view of the player lists sorts on each attribute, their game view on each composite.
 AttributeSort = Literal[ATTRIBUTE_NAMES]
+CompositeSort = Literal[tuple(v.COMPOSITES)]
 
 
 def squad_sort_key(world, column: str):
     """Orders the squad table by what a column shows, not by the raw value behind it."""
     if column == "position": return lambda row: position_rank(row["position"])
     if column in ATTRIBUTE_INDEX: return lambda row: row["attributes"][column]
+    if column in v.COMPOSITES: return lambda row: row["composites"][column]
     if column == "name": return lambda row: v.normalized(row["name"])
     if column == "contract_end": return lambda row: row["contract_end"] or ""
     if column == "fitness":
@@ -128,7 +130,8 @@ def club_sort_key(world, column: str):
 
 def lineup_player(world, player, competition_id: int, stats: dict) -> dict:
     """A squad row of the lineup screen, with why the player cannot take part in this match."""
-    row = {**v.player_row(world, player), **stats}
+    row = {**v.player_row(world, player), **stats, "position_notes": v.position_notes(player, world.config),
+           "position_affinities": v.position_affinities(player)}
     injured = player.injury is not None and player.injury.end > world.date
     discipline = player.discipline.get(competition_id)
     row["unavailable"] = "injured" if injured else "suspended" if discipline and discipline.suspended_matches else None
@@ -312,6 +315,7 @@ def router(service: GameService) -> APIRouter:
                     "home": match is not None and match.home_id == club_id,
                     "players": [lineup_player(world, player, competition_id, stats[player.id]) for player in context.players],
                     "formations": {name: list(roles) for name, roles in formations.items()},
+                    "composites_by_position": {position: list(keys) for position, keys in v.COMPOSITES_BY_POSITION.items()},
                     "bench_size": world.config.world.match_rules.bench_size,
                     "default": default, "suggestions": suggestions}
 
@@ -553,7 +557,7 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return nav.club_navigation(world, club_id)
 
     @api.get("/clubs/{club_id}/effectif")
-    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] | AttributeSort = "position",
+    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] | AttributeSort | CompositeSort = "position",
               ordre: Literal["asc", "desc"] = "asc") -> dict:
         with service.reading() as world:
             rows = v.squad_rows(world, club_id)
@@ -636,7 +640,7 @@ def router(service: GameService) -> APIRouter:
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
                 valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
-                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price"] | AttributeSort = "value",
+                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price"] | AttributeSort | CompositeSort = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
@@ -666,6 +670,7 @@ def router(service: GameService) -> APIRouter:
                 if tri == 'value': return v.market_value(player, world), player.id
                 if tri == 'asking_price': return fee(player) or 0, player.id
                 if tri in ATTRIBUTE_INDEX: return player.attributes.get(tri), player.id
+                if tri in v.COMPOSITES: return v.composite(player, tri, world.config), player.id
                 value ={"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
                          "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,

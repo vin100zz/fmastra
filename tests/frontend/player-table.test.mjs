@@ -167,3 +167,24 @@ test('the view switch marks the open view and carries the sort over only when th
  assert.match(squad,/data-view="attributs" aria-pressed="true" class="active"/);
  assert.doesNotMatch(playerViewSwitch('attributs','passe','desc'),/data-view="infos"[^>]*data-view-sort/);
 });
+
+const composites={progression_attaque:55,occasion_attaque:45.5,tir:78,tete:64.5,progression_defense:41,occasion_defense:32,arret:23.5,sortie:22};
+test('the game view lists the composites out of 200 by section, Attaque, Défense then Gardien, under their headings',()=>{
+ const html=playerTable({items:[{...player,composites,key_composites:['tir','occasion_attaque','tete']}],total:1,page_size:30},false,'tir','desc',{view:'jeu'});
+ assert.deepEqual([...html.matchAll(/data-sort="(\w+)"/g)].map(match=>match[1]),
+  ['position','name','age','rating','potential','progression_attaque','occasion_attaque','tir','tete','progression_defense','occasion_defense','arret','sortie']);
+ assert.deepEqual([...html.matchAll(/<th colspan="(\d+)" class="column-group">([^<]+)</g)].map(match=>`${match[2]}:${match[1]}`),['Attaque:4','Défense:2','Gardien:2']);
+ assert.equal((html.match(/<col class="grouped group-start">/g)||[]).length,3);
+ assert.match(html,/data-order="desc" data-sort="tir"><span title="Frappe">FRA<\/span></);
+ // Those the player's position asks for in colour, the others grey.
+ assert.match(html,/<td><span class="rating graded" style="--hue:120" title="Frappe sur 200">156</);
+ assert.deepEqual([...html.matchAll(/<span class="off-role"><span[^>]*title="([^"]+) sur 200"/g)].map(match=>match[1]),
+  ['Progression','Défense au milieu','Défense de surface','Arrêts','Sorties aériennes']);
+ assert.doesNotMatch(playerTable({items:[{...player,composites:undefined}],total:1,page_size:30},false,'position','asc',{view:'jeu'}),/NaN|undefined/);
+});
+
+test('the view switch offers the game view beside the infos and the attributes',()=>{
+ assert.match(playerViewSwitch('jeu','tir','desc'),/data-view="attributs" aria-pressed="false" class="">Attributs<\/button><button type="button" data-view="jeu" aria-pressed="true" class="active"/);
+ assert.match(playerViewSwitch('attributs','rating','desc'),/data-view="jeu" aria-pressed="false" class="" data-view-sort="rating" data-view-order="desc">Jeu</);
+ assert.doesNotMatch(playerViewSwitch('attributs','passe','desc'),/data-view="jeu"[^>]*data-view-sort/);
+});

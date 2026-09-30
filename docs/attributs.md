@@ -130,6 +130,21 @@ comp_tir = 0.60*finition + 0.25*sang_froid + 0.15*technique
 comp_arret = 0.70*reflexes + 0.30*placement
 ```
 
+### Affichage et note au poste
+
+Les écrans montrent les huit composites sur 200, comme le niveau (fiche joueur, vue Jeu des listes
+et de la composition). Pour chaque poste, l'API retient ceux qu'il demande surtout, d'après
+l'implication du poste dans chaque phase (`implications.json`) et le choix du tireur
+(`COMPOSITES_BY_POSITION` dans `src/api/views.py`, liste d'affichage qu'aucun match ne lit). La note
+au poste en est la moyenne, multipliée par le facteur hors poste du moteur :
+
+```python
+note_poste = moyenne(composites_du_poste) * (malus_hors_poste.base + malus_hors_poste.facteur * affinite)
+```
+
+Elle ne tient compte ni de la forme, ni du moral, ni de la fraîcheur, et donne le même poids à chaque
+composite du poste.
+
 ### Livraison : centre et coups de pied arrêtés (individuel)
 
 `centre` et `cpa` ne forment pas un composite : ils décrivent la qualité du geste,

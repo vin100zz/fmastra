@@ -18,6 +18,12 @@ export const scoreHue = score => gradeHue(score,4,10,16);
 const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</span>`;
 export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
 export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
+// A player's note at a position, out of 200 like the level: the mean of the composites `keys` that position asks for, times the
+// engine's factor for his affinity there (see /api). The pitches of the lineup and of the player page show it beside the shirt.
+export const positionNote = (player, role, keys=[]) => player?.position_notes?.[role]==null ? ''
+ : levelBadge(player.position_notes[role],`Note au poste ${role} : ${keys.map(key=>COMPOSITES[key]).join(', ')}, affinité au poste comprise`);
+// The affinity to a position out of 20, only below 20: a tag on the corner of the shirt.
+export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;
 export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
 // What an attribute is for decides its section; the attributes of a section always come in the same order.
 export const ATTRIBUTE_SECTIONS=[
@@ -25,7 +31,13 @@ export const ATTRIBUTE_SECTIONS=[
  {key:'defense',title:'Défense',attributes:['tacle','placement']},
  {key:'attack',title:'Attaque',attributes:['finition','sang_froid','technique','vision','jeu_tete','centre','cpa']},
  {key:'general',title:'Général',attributes:['passe','vitesse','endurance']}];
-export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
+// The composites the match engine plays with (`attributs.composites`), out of 200 like the level, by the phase they decide.
+export const COMPOSITES={progression_attaque:'Progression',occasion_attaque:'Création',tir:'Frappe',tete:'Jeu aérien',progression_defense:'Défense au milieu',occasion_defense:'Défense de surface',arret:'Arrêts',sortie:'Sorties aériennes'};
+export const COMPOSITE_SECTIONS=[
+ {key:'attack',title:'Attaque',composites:['progression_attaque','occasion_attaque','tir','tete']},
+ {key:'defense',title:'Défense',composites:['progression_defense','occasion_defense']},
+ {key:'goalkeeper',title:'Gardien',composites:['arret','sortie']}];
+export const date =(value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
@@ -123,10 +135,20 @@ const attributeCell=(player,key)=>{
  const badge=scoreBadge(attributeScore(value),`${ATTRIBUTES[key]} sur 20`);
  return offRole(player,key)?`<span class="off-role">${badge}</span>`:badge;
 };
-// A player list's columns, [key, header, heading over it]: contract, state and season by default, the attributes by section in the 'attributs' view.
+export const COMPOSITE_SHORT={progression_attaque:'PRO',occasion_attaque:'CRÉ',tir:'FRA',tete:'AÉR',progression_defense:'DMI',occasion_defense:'DSU',arret:'ARR',sortie:'SAÉ'};
+export const compositeHeader = key => `<span title="${COMPOSITES[key]}">${COMPOSITE_SHORT[key]}</span>`;
+// A composite out of 200, grey when the position does not ask for it (`wanted`: the composites of that position).
+export const compositeCell = (player, key, wanted=player.key_composites) => {
+ const value=player.composites?.[key];if(value==null)return '—';
+ const badge=levelBadge(value,`${COMPOSITES[key]} sur 200`);
+ return wanted&&!wanted.includes(key)?`<span class="off-role">${badge}</span>`:badge;
+};
+// A player list's columns, [key, header, heading over it]: contract, state and season by default, the attributes by section in the
+// 'attributs' view, the composites by section in the 'jeu' view.
 function playerColumns(view, withClub, options) {
- if(view==='attributs')return [['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),
-  ...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
+ const identity=[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
+ if(view==='attributs')return [...identity,...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
+ if(view==='jeu')return [...identity,...COMPOSITE_SECTIONS.flatMap(section=>section.composites.map(key=>[key,compositeHeader(key),section.title]))];
  return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
 }
 // Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
@@ -136,7 +158,7 @@ export function playerViewSwitch(view, sorted, order, withClub=false, options={}
   const active=key===(view||'infos'),kept=playerColumns(key,withClub,options).some(([column])=>column===sorted);
   return `<button type="button" data-view="${key}" aria-pressed="${active}" class="${active?'active':''}"${kept?` data-view-sort="${sorted}" data-view-order="${order}"`:''}>${label}</button>`;
  };
- return `<div class="segmented" role="group" aria-label="Colonnes">${[['infos','Infos'],['attributs','Attributs']].map(button).join('')}</div>`;
+ return `<div class="segmented" role="group" aria-label="Colonnes">${[['infos','Infos'],['attributs','Attributs'],['jeu','Jeu']].map(button).join('')}</div>`;
 }
 export function playerTable(data, withClub=false, sorted='rating', order='desc', options={}) {
  const columns=playerColumns(options.view,withClub,options);
@@ -150,7 +172,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
    appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
   };
-  return columns.map(([key])=>key in ATTRIBUTES?attributeCell(player,key):cells[key]);
+  return columns.map(([key])=>key in ATTRIBUTES?attributeCell(player,key):key in COMPOSITES?compositeCell(player,key):cells[key]);
  });
  // Each header carries its column's key, which sets its width (see .player-table in theme.css).
  return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,undefined,undefined,columns.map(([key])=>`${key}-column`),columns.map(([,,heading])=>heading||null))}</div>`+pager(data);

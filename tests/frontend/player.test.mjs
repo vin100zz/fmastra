@@ -81,11 +81,48 @@ test('level chart points take the colours of the club played for, and stay neutr
 test('position pitch places ratings of 10 or more on the field and outlines the main position',()=>{
  const html=positionPitch({GB:1,DD:20,MC:12,MDC:10,DC:9,BU:null},'DD');
  assert.equal((html.match(/class="shirt graded"/g)||[]).length,3);
- assert.match(html,/pitch-player main" style="left:85%;top:70%"><span class="shirt graded" style="--hue:120" title="DD : 20 \/ 20">20</);
+ assert.match(html,/<button type="button" class="pitch-player main picked" data-composite-role="DD" aria-pressed="true" style="left:85%;top:70%"><span class="shirt graded" style="--hue:120" title="DD : 20 \/ 20">20</);
  assert.equal((html.match(/pitch-player main/g)||[]).length,1);
  assert.match(html,/<small>MC<\/small>/);assert.match(html,/title="MDC : 10 \/ 20">10</);
  assert.doesNotMatch(html,/<small>(GB|DC|BU)</);
  assert.equal(positionPitch({GB:1,DC:9},'DC'),'');
+});
+
+const COMPOSITE_VALUES={progression_attaque:55,occasion_attaque:45.5,tir:78,tete:64.5,progression_defense:41,occasion_defense:32,arret:23.5,sortie:22};
+const BY_POSITION={GB:['arret','sortie'],DD:['progression_defense','progression_attaque','occasion_defense'],MC:['progression_attaque','progression_defense'],BU:['tir','occasion_attaque','tete']};
+const playing={...detail,composites:COMPOSITE_VALUES,composites_by_position:BY_POSITION,position_notes:{DD:48.5,MC:43.1,BU:62.7},
+ composite_weights:{occasion_attaque:{vision:.5,technique:.3,passe:.2}}};
+
+test('each position of the pitch of aptitudes carries its note out of 200 beside the shirt, and the main one starts picked',()=>{
+ const html=positionPitch({DD:20,MC:12,GB:1},'DD',playing);
+ assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="shirt graded"[^>]*>20<\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note au poste DD : Défense au milieu, Progression, Défense de surface, affinité au poste comprise">97</);
+ assert.match(html,/data-composite-role="MC" aria-pressed="false"[^>]*>.*?<span class="position-note"><span[^>]*>86</);
+ assert.equal(positionPitch({DD:20},'DD',playing,'MC').match(/aria-pressed="true"/g),null);
+ // Without notes (an older server), the shirts stand alone.
+ assert.doesNotMatch(positionPitch({DD:20},'DD'),/position-note/);
+});
+
+test('the Jeu section leads the attributes: an outfield player\'s six composites, those of the position marked, the others grey',async()=>{
+ const {compositesGroup,compositeItems}=await import('../../web/player.js');
+ assert.deepEqual(compositeItems(playing).map(item=>[item.key,item.wanted]),
+  [['progression_attaque',true],['occasion_attaque',false],['tir',false],['tete',false],['progression_defense',true],['occasion_defense',true]]);
+ const html=compositesGroup(playing);
+ assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
+ assert.match(html,/<div class="attribute key" title="Progression"><span>Progression<\/span><span class="rating graded" style="--hue:\d+">110</);
+ assert.match(html,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Création<\/span><span class="off-role"><span class="rating graded"[^>]*>91</);
+ // Another position picked on the pitch reads the section for it.
+ assert.deepEqual(compositeItems(playing,'BU').filter(item=>item.wanted).map(item=>item.key),['occasion_attaque','tir','tete']);
+ assert.match(compositesGroup(playing,'BU'),/<h3>Jeu <span class="position att">BU<\/span>/);
+ // A goalkeeper only has his two; without composites there is no section.
+ assert.deepEqual(compositeItems({...playing,position:'GB'},'GB').map(item=>item.key),['arret','sortie']);
+ assert.equal(compositesGroup(detail),'');
+});
+
+test('the Jeu section sits in the attributes card, ahead of the attributes',async()=>{
+ const {html}=await render(playing);
+ const attributes=html.slice(html.indexOf('>Attributs<'),html.indexOf('Aptitudes par poste'));
+ assert.ok(attributes.indexOf('data-composites')>=0&&attributes.indexOf('data-composites')<attributes.indexOf('<h3>Attaque</h3>'));
+ assert.match(html,/class="position-note"/);
 });
 
 test('player page merges profile and career without tabs, stat cards or identity block',async()=>{

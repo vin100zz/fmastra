@@ -141,7 +141,7 @@ entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la co
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 |
+| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200 |
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
@@ -184,17 +184,22 @@ de sa flèche, et les listes triées par le serveur (joueurs, clubs, mercato mon
 des colonnes de largeur fixe, si bien qu'un tri ou une autre page ne les déplace pas ;
 la page garde sa position de défilement.
 
-Deux boutons en tête de la liste des joueurs d'un club et de l'écran Joueurs, « Infos » et
-« Attributs », changent ses colonnes. La vue Attributs garde poste, nom, âge, niveau et potentiel
+Trois boutons en tête de la liste des joueurs d'un club et de l'écran Joueurs, « Infos »,
+« Attributs » et « Jeu », changent ses colonnes. La vue Attributs garde poste, nom, âge, niveau et potentiel
 (et le club sur l'écran Joueurs), puis donne les 15 attributs en badges de 1 à 20, aux couleurs du
 bloc Attributs de la fiche joueur, sous quatre intertitres qui couvrent leurs colonnes : Général
 (Passe, Vitesse, Endurance), Défense (Tacle, Placement), Attaque (Finition, Sang-froid, Technique,
 Vision, Jeu de tête, Centres, Coups arrêtés) et Gardien (Réflexes, Sorties, Relance). Chaque colonne
 porte une abréviation de trois lettres, le nom complet en infobulle, et se trie côté serveur. Ce que
-la fiche joueur masque ou replie est estompé : le bloc Gardien d'un joueur de champ, Défense (sauf
-Placement) et Attaque d'un gardien. Changer de vue garde le tri quand l'autre vue a sa colonne ;
-sinon elle s'ouvre sur son tri par défaut (le poste pour un effectif ; sur l'écran Joueurs, la
-valeur, ou le niveau en vue Attributs). La vue suit le passage d'un club à l'autre.
+la fiche joueur masque ou replie est en gris : le bloc Gardien d'un joueur de champ, Défense (sauf
+Placement) et Attaque d'un gardien. La vue Jeu garde les mêmes premières colonnes, puis donne les
+huit composites du moteur de match en badges sur 200, comme le niveau, sous trois intertitres :
+Attaque (Progression, Création, Frappe, Jeu aérien : PRO, CRÉ, FRA, AÉR), Défense (Défense au milieu,
+Défense de surface : DMI, DSU) et Gardien (Arrêts, Sorties aériennes : ARR, SAÉ). Les composites que
+le poste du joueur ne demande pas sont en gris (`key_composites` de la liste, voir la fiche joueur).
+Changer de vue garde le tri quand l'autre vue a sa colonne ; sinon elle s'ouvre sur son tri par
+défaut (le poste pour un effectif ; sur l'écran Joueurs, la valeur, ou le niveau en vues Attributs
+et Jeu). La vue suit le passage d'un club à l'autre.
 
 ### Compétition
 
@@ -266,10 +271,10 @@ dans la ligne du haut et la carrière reste seule dessous.
 | Bloc | Contenu |
 |---|---|
 | En-tête | nom, nationalités, poste et postes secondaires, âge, club ; date de naissance, salaire mensuel, fin de contrat, valeur de marché estimée |
-| Attributs | les 15 attributs en badges de 1 à 20, avec le niveau (Niv.) et le potentiel exact (Pot.), sur 200, dans l'en-tête du bloc. Quatre sections : Gardien (Réflexes, Sorties, Relance), Défense (Tacle, Placement), Attaque (Finition, Sang-froid, Technique, Vision, Jeu de tête, Centres, Coups arrêtés) et Général (Passe, Vitesse, Endurance). Un joueur de champ ne voit pas Gardien ; un gardien ne voit que Gardien (Placement s'y ajoute) et Général, ses autres attributs sont dans un repli « Autres attributs », fermé par défaut. Les sections et les attributs de chacune gardent toujours le même ordre, quel que soit le poste (Défense, Attaque, Général ; pour un gardien, Placement s'insère après Sorties). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
+| Attributs | en tête, la section Jeu : les composites du moteur de match en badges sur 200, les six d'un joueur de champ (Progression, Création, Frappe, Jeu aérien, Défense au milieu, Défense de surface) ou les deux d'un gardien (Arrêts, Sorties aériennes), avec leurs poids en infobulle. Ceux que le poste demande sont marqués d'un point, les autres en gris ; le poste lu est celui choisi sur la carte des aptitudes, le poste principal par défaut, et son intertitre le nomme. Puis les 15 attributs en badges de 1 à 20, avec le niveau (Niv.) et le potentiel exact (Pot.), sur 200, dans l'en-tête du bloc. Quatre sections : Gardien (Réflexes, Sorties, Relance), Défense (Tacle, Placement), Attaque (Finition, Sang-froid, Technique, Vision, Jeu de tête, Centres, Coups arrêtés) et Général (Passe, Vitesse, Endurance). Un joueur de champ ne voit pas Gardien ; un gardien ne voit que Gardien (Placement s'y ajoute) et Général, ses autres attributs sont dans un repli « Autres attributs », fermé par défaut. Les sections et les attributs de chacune gardent toujours le même ordre, quel que soit le poste (Défense, Attaque, Général ; pour un gardien, Placement s'insère après Sorties). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
 | État | blessure en cours et durée, fatigue, suspension, forme, moral |
 | Évolution du niveau | courbe mensuelle du niveau, sur 200, avec axes gradués ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club de la saison (dernier club de la saison en cas de transfert) et son infobulle donne mois, club et niveau |
-| Aptitudes par poste | carte de terrain, à la même taille que celle du dernier onze aligné d'un club (maillots et libellés compris) : niveau de 10 à 20 aux seuls postes où il atteint 10, poste principal entouré |
+| Aptitudes par poste | carte de terrain, à la même taille que celle du dernier onze aligné d'un club (maillots et libellés compris) : niveau de 10 à 20 aux seuls postes où il atteint 10, poste principal entouré ; à droite de chaque maillot, la note au poste sur 200 (voir Composition). Cliquer un poste fait lire la section Jeu des attributs pour lui, son libellé passe en jaune |
 | Carrière | une ligne par saison et club : transfert, division du championnat, précédée du drapeau de son pays, et code de la coupe d'Europe (pas de coupe nationale), matches, buts, passes, note |
 
 Les textes du graphe ont la même taille que le reste de l'interface. Les niveaux,
@@ -305,6 +310,25 @@ liste des transferts, avec leur prix.
   visiteurs dans un coin), des loges, des panneaux LED et des filets. Les joueurs
   sont articulés : ils courent, frappent, reprennent de la tête les centres, le
   gardien plonge et l'équipe qui marque célèbre avec ses supporters.
+
+### Composition
+
+L'onglet Composition du club dirigé : tactiques en haut, le terrain et les remplaçants à gauche,
+la liste de l'effectif à droite, triable. On glisse un joueur sur un poste ou sur le banc ; un clic
+droit sort un joueur de la composition ou met un joueur sur la prochaine place libre ;
+« Meilleure composition » reprend la suggestion de l'IA pour la tactique affichée.
+
+Sur le terrain, chaque titulaire porte sa note au poste, sur 200 à droite du maillot, et, sous
+20/20 seulement, son affinité au poste sur le coin du maillot. La note au poste est la moyenne des
+composites que ce poste demande, multipliée par le facteur hors poste du moteur (`malus_hors_poste`).
+Les composites demandés par poste sont une liste d'affichage de l'API (`COMPOSITES_BY_POSITION`,
+tirée de `implications.json`, la clé en premier) : aucun match ne la lit.
+
+« Infos » et « Jeu », à côté de « Meilleure composition », changent les colonnes de la liste :
+potentiel, fatigue et saison, ou les huit composites. Cliquer un poste du terrain le choisit : la
+liste ajoute après COMPO la colonne « EN » suivie du poste, avec la note et l'affinité de chacun à
+ce poste, et se trie dessus ; en vue Jeu, les composites de ce poste passent en jaune dans l'en-tête,
+les autres en gris. Un second clic, ou une autre tactique, le libère.
 
 ### Match en direct
 
@@ -372,7 +396,7 @@ GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&tri=&or
 GET  /api/clubs/{id}                      en-tête + résumé
 GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
-GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, ou un attribut (passe, reflexes…)
+GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, un attribut (passe, reflexes…) ou un composite (tir, occasion_attaque…)
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances
 GET  /api/clubs/{id}/transferts?saison=
@@ -387,7 +411,7 @@ GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
 GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
-GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=   tri : idem, attributs compris
+GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=   tri : idem, attributs et composites compris
 GET  /api/joueurs/{id}
 GET  /api/joueurs/{id}/historique         carrière + trajectory : niveau sur 200 mois par mois {year, month, season, level}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)

@@ -107,3 +107,27 @@ test('the pitch names a player by surname, particles included',async()=>{
  assert.equal(surname('Jeffrey de Lange'),'de Lange');assert.equal(surname('Thomás De Martis'),'De Martis');
  assert.equal(surname('Edwin van der Sar'),'van der Sar');assert.equal(surname('Mason Greenwood'),'Greenwood');assert.equal(surname('Pedri'),'Pedri');
 });
+
+test('the pitch shows each starter\'s note at his position beside the shirt, and his affinity on it below 20/20',async()=>{
+ const player=(id,position,extra={})=>({id,name:`Joueur ${id}`,position,rating:65,potential:80,fitness:1,appearances:0,goals:0,assists:0,average:null,unavailable:null,...extra});
+ const data={match_id:12,home:true,opponent:null,bench_size:1,formations:{'4-3-3':F433},composites_by_position:{GB:['arret','sortie'],MDC:['progression_defense','progression_attaque']},
+  players:[player(1,'GB',{position_notes:{GB:70.5},position_affinities:{GB:20}}),player(2,'MOC',{position_notes:{MDC:36.6},position_affinities:{MDC:1}})],
+  default:{formation:'4-3-3',titulaires:[[1,'GB'],[null,'DG'],[null,'DC'],[null,'DC'],[null,'DD'],[2,'MDC']],banc:[]},suggestions:{}};
+ const previous=globalThis.fetch;
+ globalThis.fetch=async()=>({ok:true,json:async()=>data});
+ try{
+  const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="shirt">GB<\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141</);
+  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="shirt">MDC<i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><span class="position-note"><span[^>]*>73</);
+  // The list switches between its infos and the composites, beside the suggestion.
+  assert.match(html,/<button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><button type="button" data-lineup-suggest>/);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('a position picked on the pitch puts everyone\'s note there right after COMPO; the game view lists the composites',async()=>{
+ const {lineupColumns}=await import('../../web/composition.js');
+ assert.deepEqual(lineupColumns('infos',null).map(([key])=>key),['selected','position','name','rating','potential','fatigue','appearances','goals','assists','average']);
+ assert.deepEqual(lineupColumns('jeu','MDC').map(([key,label])=>key==='fit'?label:key),
+  ['selected','EN MDC','position','name','rating','progression_attaque','occasion_attaque','tir','tete','progression_defense','occasion_defense','arret','sortie']);
+ assert.deepEqual(lineupColumns('jeu',null).filter(([,,opens])=>opens).map(([key])=>key),['progression_attaque','progression_defense','arret']);
+});

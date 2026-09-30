@@ -121,6 +121,49 @@ def test_player_lists_carry_the_attributes_and_sort_on_each(client):
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
+def test_players_carry_the_engine_composites_their_notes_by_position_and_sort_on_each(client):
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club_id = next(iter(world.active_clubs())).id
+    composites = world.config.attributes.composites
+    squad = client.get(f'/api/clubs/{club_id}/effectif?tri=occasion_attaque&ordre=desc').json()['items']
+    assert [row['composites']['occasion_attaque'] for row in squad] == sorted((row['composites']['occasion_attaque'] for row in squad), reverse=True)
+    row = squad[0]
+    player = world.players[row['id']]
+    assert list(row['composites']) == list(v.COMPOSITES)
+    assert row['composites']['tir'] == round(sum(player.attributes.get(name) * weight for name, weight in composites.shooting.items()), 1)
+    assert row['key_composites'] == list(v.COMPOSITES_BY_POSITION[row['position']])
+    for key in v.COMPOSITES:
+        rows = client.get(f'/api/joueurs?tri={key}&ordre=asc').json()['items']
+        assert [item['composites'][key] for item in rows] == sorted(item['composites'][key] for item in rows)
+
+    # At his own position a player has no affinity to lose: his note is the mean of the composites it asks for.
+    detail = client.get(f"/api/joueurs/{row['id']}").json()
+    keys = v.COMPOSITES_BY_POSITION[detail['position']]
+    exact = {key: v.composite(player, key, world.config) for key in keys}
+    assert detail['position_notes'][detail['position']] == round(sum(exact.values()) / len(keys), 1)
+    assert set(detail['position_notes']) == set(v.COMPOSITES_BY_POSITION) and detail['composites_by_position']['BU'] == ['tir', 'occasion_attaque', 'tete']
+    assert detail['composite_weights']['tir'] == dict(composites.shooting)
+    # Elsewhere the engine's out-of-position factor weighs on it.
+    penalty = world.config.attributes.out_of_position
+    stranger = next(position for position in v.COMPOSITES_BY_POSITION if player.affinity(position) < 1)
+    base = sum(v.composite(player, key, world.config) for key in v.COMPOSITES_BY_POSITION[stranger]) / len(v.COMPOSITES_BY_POSITION[stranger])
+    assert detail['position_notes'][stranger] == round(base * (penalty.base + penalty.factor * player.affinity(stranger)), 1)
+
+    # The lineup screen gives each player his note and affinity at every position.
+    kept, world.controlled_club_id = world.controlled_club_id, club_id
+    try:
+        lineup = client.get('/api/ma-partie/composition').json()
+    finally:
+        world.controlled_club_id = kept
+    assert lineup['composites_by_position'] == {position: list(keys) for position, keys in v.COMPOSITES_BY_POSITION.items()}
+    first = lineup['players'][0]
+    assert set(first['position_notes']) == set(first['position_affinities']) == set(v.COMPOSITES_BY_POSITION)
+    assert all(0 <= value <= 20 for value in first['position_affinities'].values())
+    assert client.get(f'/api/clubs/{club_id}/effectif?tri=composite').status_code == 422
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
 def test_views_pagination_and_no_rng_leak(client):
     world = client.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}

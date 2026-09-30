@@ -7,9 +7,10 @@ import unicodedata
 from core.domain.clubs import Competition
 from core.domain.date import Date
 from core.domain.world import World
-from core.domain.players import Player, ATTRIBUTE_NAMES
+from core.domain.players import Player, Position, ATTRIBUTE_NAMES
 from core.domain.matches import Match, MatchResult
 from core.ai.market import market_value, asking_price, can_sell
+from core.engine.abilities import weighted_rating
 from core.world.calendar import standings
 from core.world.finances import financial_season
 from core.world.cups import ROUND_NAMES
@@ -24,6 +25,45 @@ POSITION_ORDER = ["GB", "DG", "DD", "DC", "MDC", "MC", "MOC", "AILG", "AILD", "B
 
 def position_rank(position: str) -> int:
     return POSITION_ORDER.index(position) if position in POSITION_ORDER else len(POSITION_ORDER)
+
+
+# The composites the match engine plays with (`attributs.composites`), by their configuration name, in the order the
+# screens show them: attack, defence, then goalkeeping.
+COMPOSITES = {"progression_attaque": "progression_attack", "occasion_attaque": "creation_attack", "tir": "shooting",
+              "tete": "heading", "progression_defense": "progression_defense", "occasion_defense": "creation_defense",
+              "arret": "saving", "sortie": "claiming"}
+# What each position mostly asks of a player, after its involvement in each phase of play (implications.json) and whom
+# the engine names on a shot: the composites the screens single out, the key one first. A display choice: no match reads it.
+COMPOSITES_BY_POSITION = {
+    "GB": ("arret", "sortie"),
+    "DC": ("occasion_defense", "progression_defense", "tete"),
+    "DG": ("progression_defense", "progression_attaque", "occasion_defense"),
+    "DD": ("progression_defense", "progression_attaque", "occasion_defense"),
+    "MDC": ("progression_defense", "progression_attaque"),
+    "MC": ("progression_attaque", "progression_defense"),
+    "MOC": ("occasion_attaque", "progression_attaque", "tir"),
+    "AILG": ("progression_attaque", "occasion_attaque", "tir"),
+    "AILD": ("progression_attaque", "occasion_attaque", "tir"),
+    "BU": ("tir", "occasion_attaque", "tete")}
+
+
+def composite(player: Player, key: str, cfg) -> float:
+    return weighted_rating(player.attributes, getattr(cfg.attributes.composites, COMPOSITES[key]))
+
+
+def position_notes(player: Player, cfg) -> dict[str, float]:
+    """The player's note at each position, on the level's scale: the mean of the composites that position singles out,
+    times the engine's out-of-position factor for his affinity there."""
+    values = {key: composite(player, key, cfg) for key in COMPOSITES}
+    penalty = cfg.attributes.out_of_position
+    return {position: round(sum(values[key] for key in keys) / len(keys)
+                            * (penalty.base + penalty.factor * player.affinity(Position(position))), 1)
+            for position, keys in COMPOSITES_BY_POSITION.items()}
+
+
+def position_affinities(player: Player) -> dict[str, int]:
+    """His affinity to each position out of 20, as the engine reads it: a regen without ratings by position has his own and his secondary ones."""
+    return {position.value: round(player.affinity(position) * 20) for position in Position}
 
 
 def paginate(items: list, page: int, size: int = 30) -> dict:
@@ -47,6 +87,8 @@ def player_row(world: World, player: Player) -> dict:
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
             "potential": round(player.potential, 1),
             "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
+            "composites": {key: round(composite(player, key, world.config), 1) for key in COMPOSITES},
+            "key_composites": list(COMPOSITES_BY_POSITION[player.position]),
             "nationalities": list(player.nationalities),
             "nationality_names": [world.nation_names.get(code, code) for code in player.nationalities],
             "value": market_value(player, world),
@@ -116,6 +158,10 @@ def player_detail(world: World, player: Player) -> dict:
                    "attribute_weights": dict(world.config.attributes.overall[player.position]),
                    "attributes_imported": player.source_current_ability is not None,
                    "position_ratings": player.position_ratings,
+                   "position_notes": position_notes(player, world.config),
+                   # The page names what each composite weighs and, for the position picked on its pitch, which ones count there.
+                   "composite_weights": {key: dict(getattr(world.config.attributes.composites, name)) for key, name in COMPOSITES.items()},
+                   "composites_by_position": {position: list(keys) for position, keys in COMPOSITES_BY_POSITION.items()},
                    "form": player.form, "morale": player.morale, "value": market_value(player, world),
                    "discipline": [{"competition": world.competitions[cid].name, **asdict(item)} for cid, item in player.discipline.items()]
                        + [{"competition": edition.name, **asdict(item)} for edition in world.international.editions.values()

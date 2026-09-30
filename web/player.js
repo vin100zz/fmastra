@@ -1,10 +1,13 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,price,attributeScore,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances,ATTRIBUTES,ATTRIBUTE_SECTIONS} from './ui.js';
+import {api,escape as e,number as n,money,price,attributeScore,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances,positionNote,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
 const KEY_WEIGHT=.14;
+
+// The player on screen, whose Jeu section follows the position picked on his pitch of aptitudes.
+let shown=null;
 
 // Sections and attributes keep the order of ATTRIBUTE_SECTIONS, whatever the position. Goalkeeper attributes mean nothing
 // for an outfield player and the reverse: the irrelevant section is hidden, and for a goalkeeper its attributes stay
@@ -28,11 +31,30 @@ function attributeItem({key,value,weight}) {
  return `<div class="attribute${important?' key':''}"${important?` title="Compte pour ${Math.round(weight*100)} % de la note du poste"`:''}><span>${ATTRIBUTES[key]}</span>${scoreBadge(attributeScore(value))}</div>`;
 }
 
+// The composites the engine plays with, out of 200 like the level: a goalkeeper's two, or the six of an outfield player. Those
+// the position `role` asks for are marked like key attributes, the others grey.
+export function compositeItems(player, role=player.position) {
+ const keys=player.position==='GB'?['arret','sortie']:COMPOSITE_SECTIONS.filter(section=>section.key!=='goalkeeper').flatMap(section=>section.composites);
+ const wanted=player.composites_by_position?.[role]||[];
+ return keys.filter(key=>player.composites?.[key]!=null).map(key=>({key,value:player.composites[key],wanted:wanted.includes(key)}));
+}
+
+const weighting=weights=>Object.entries(weights||{}).map(([key,weight])=>`${ATTRIBUTES[key]} ${Math.round(weight*100)} %`).join(' · ');
+
+// Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for.
+export function compositesGroup(player, role=player.position) {
+ const items=compositeItems(player,role);
+ if(!items.length)return '';
+ const item=({key,value,wanted})=>{const badge=levelBadge(value),weights=weighting(player.composite_weights?.[key]);
+  return `<div class="attribute${wanted?' key':''}" title="${e(weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key])}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
+ return `<div class="attribute-group composites-group" data-composites><h3>Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
+}
+
 function attributesBody(player) {
  const {sections,others}=attributeGroups(player);
  const grid=list=>`<div class="attributes-grid">${list.map(attributeItem).join('')}</div>`;
  const fold=others.length?`<details class="attribute-others"><summary>Autres attributs (${others.length})</summary>${grid(others)}</details>`:'';
- return `<div class="card-body">${sections.map(section=>`<div class="attribute-group"><h3>${section.title}</h3>${grid(section.items)}</div>`).join('')}${fold}</div>`;
+ return `<div class="card-body">${compositesGroup(player)}${sections.map(section=>`<div class="attribute-group"><h3>${section.title}</h3>${grid(section.items)}</div>`).join('')}${fold}</div>`;
 }
 
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
@@ -42,10 +64,13 @@ const PITCH={GB:[50,92],DC:[50,77],DG:[15,70],DD:[85,70],MDC:[50,62],MC:[50,47],
 // Only the roles the player can actually fill are drawn; without any, there is no pitch at all.
 const MIN_RATING=10;
 
-export function positionPitch(ratings, main) {
+// Beside each shirt, the player's note at that position (`player`, from /api/joueurs); a click on a position reads the Jeu
+// section of the attributes for it (`picked`).
+export function positionPitch(ratings, main, player=null, picked=main) {
  const roles=Object.entries(PITCH).filter(([role])=>ratings[role]>=MIN_RATING);
  if(!roles.length)return '';
- return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${roles.map(([role,[x,y]])=>`<span class="pitch-player ${role===main?'main':''}" style="left:${x}%;top:${y}%"><span class="shirt graded" style="--hue:${scoreHue(ratings[role])}" title="${role} : ${ratings[role]} / 20">${ratings[role]}</span><small>${role}</small></span>`).join('')}</div><p class="pitch-legend">Le contour indique le poste principal.</p>`;
+ const note=role=>{const badge=positionNote(player,role,player?.composites_by_position?.[role]);return badge?`<span class="position-note">${badge}</span>`:'';};
+ return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%"><span class="shirt graded" style="--hue:${scoreHue(ratings[role])}" title="${role} : ${ratings[role]} / 20">${ratings[role]}</span>${note(role)}<small>${role}</small></button>`).join('')}</div><p class="pitch-legend">Le contour indique le poste principal.</p>`;
 }
 
 const MONTH=new Intl.DateTimeFormat('fr-FR',{month:'short'}),MONTH_YEAR=new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'});
@@ -150,8 +175,9 @@ async function playerActions(player, state) {
 
 function profile(player, chart, career) {
  const levels=`<div class="level-summary"><span>Niv. ${levelBadge(player.rating,'Niveau actuel sur 200')}</span><span>Pot. ${levelBadge(player.potential,'Potentiel sur 200')}</span></div>`;
+ shown=player;
  const attributes=card('Attributs',attributesBody(player),levels);
- const pitch=positionPitch(player.position_ratings||{},player.position);
+ const pitch=positionPitch(player.position_ratings||{},player.position,player);
  const positions=pitch?card('Aptitudes par poste',pitch):'';
  const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Appât du gain',`${Math.round(1+player.greed*19)} / 20`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match${item.suspended_matches>1?'s':''} de suspension`)).join('')}</div>`);
  // Without any pitch to show, the state takes its place in the top row and the career stands alone below.
@@ -170,6 +196,17 @@ export async function playerScreen(id) {
  const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']),footer));
  return header(player,playerNavigation(neighbours),actions)+(player.retired?chart+career:profile(player,chart,career));
 }
+
+// A position picked on the pitch of aptitudes: the Jeu section marks what that position asks for.
+function install(){
+ document.addEventListener('click',event=>{
+  const button=event.target.closest?.('[data-composite-role]');
+  if(!button||!shown)return;
+  document.querySelector('[data-composites]')?.replaceWith(Object.assign(document.createElement('template'),{innerHTML:compositesGroup(shown,button.dataset.compositeRole)}).content);
+  document.querySelectorAll('[data-composite-role]').forEach(item=>{item.classList.toggle('picked',item===button);item.setAttribute('aria-pressed',String(item===button));});
+ });
+}
+if(typeof document!=='undefined')install();
 
 function internationalCareer(player){
  if(player.international_caps==null)return '';
