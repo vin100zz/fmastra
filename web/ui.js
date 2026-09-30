@@ -18,6 +18,13 @@ export const scoreHue = score => gradeHue(score,4,10,16);
 const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</span>`;
 export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
 export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
+export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
+// What an attribute is for decides its section; the attributes of a section always come in the same order.
+export const ATTRIBUTE_SECTIONS=[
+ {key:'goalkeeper',title:'Gardien',attributes:['reflexes','sorties','relance']},
+ {key:'defense',title:'Défense',attributes:['tacle','placement']},
+ {key:'attack',title:'Attaque',attributes:['finition','sang_froid','technique','vision','jeu_tete','centre','cpa']},
+ {key:'general',title:'Général',attributes:['passe','vitesse','endurance']}];
 export const date = (value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
@@ -63,12 +70,23 @@ export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</
 // A page title on its own: the name of the left-menu entry it belongs to, with neither line above nor below.
 export const heading = (title,extra='',lead='') => {const text=`<div><h1>${escape(title)}</h1></div>`;return `<div class="page-heading">${lead?`<div class="heading-with-lead">${lead}${text}</div>`:text}${extra}</div>`;};
 export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
-// `headClasses` gives each column's header a class ('' for none).
-export function table(headers, rows, footer, rowClasses, sort, headClasses) {
+// `headClasses` gives each column's header a class ('' for none). `groups` names the heading over each column (null for none): the columns
+// under one heading share it on a first header row and have their own headers on a second one, the others span both rows.
+export function table(headers, rows, footer, rowClasses, sort, headClasses, groups) {
  const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
  const cell=(cell,index,column)=>sort?`<td data-value="${escape(sort.values[index][column]??'')}">${cell}</td>`:`<td>${cell}</td>`;
  const first=index=>sort?.ascending?.includes(index)?' data-first="asc"':'';
- return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}><thead><tr>${headers.map((item,index)=>`<th${headClasses?.[index]?` class="${headClasses[index]}"`:''}${first(index)}>${head(item)}</th>`).join('')}</tr></thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
+ const th=(index,span='')=>`<th${span}${headClasses?.[index]?` class="${headClasses[index]}"`:''}${first(index)}>${head(headers[index])}</th>`;
+ const columns=headers.map((item,index)=>index);
+ let thead=`<tr>${columns.map(index=>th(index)).join('')}</tr>`,colgroup='';
+ if(groups?.some(Boolean)){
+  const starts=index=>groups[index]&&groups[index]!==groups[index-1];
+  const span=index=>{let end=index;while(groups[end+1]===groups[index])end++;return end-index+1;};
+  thead=`<tr>${columns.map(index=>!groups[index]?th(index,' rowspan="2"'):starts(index)?`<th colspan="${span(index)}" class="column-group">${escape(groups[index])}</th>`:'').join('')}</tr><tr>${columns.filter(index=>groups[index]).map(index=>th(index)).join('')}</tr>`;
+  // A fixed layout takes its widths from the first row, where the headings span their columns: those columns get theirs from a <col>.
+  colgroup=`<colgroup>${columns.map(index=>`<col${groups[index]?` class="grouped${starts(index)?' group-start':''}"`:''}>`).join('')}</colgroup>`;
+ }
+ return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}>${colgroup}<thead>${thead}</thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
 }
 // A short list shown whole, sorted in the browser: `values` holds the raw value behind each cell ('' when unknown);
 // `ascending` lists the columns whose first click runs from smallest to largest (ranks), the others start from the largest.
@@ -94,8 +112,33 @@ export function sortTable(table, column, direction) {
 export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label} ${key===sorted?(order==='desc'?'↓':'↑'):''}</button>`;
 export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
 const textColumns=['position','name','nation','club','academy_club'];
+const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA'};
+const LIST_SECTIONS=['general','defense','attack','goalkeeper'].map(key=>ATTRIBUTE_SECTIONS.find(section=>section.key===key));
+const SECTION_OF=Object.fromEntries(ATTRIBUTE_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,section.key])));
+// What the player page hides or folds away fades: goalkeeping for an outfield player, Défense (Placement aside) and Attaque for a goalkeeper.
+const offRole=(player,key)=>player.position==='GB'?['defense','attack'].includes(SECTION_OF[key])&&key!=='placement':SECTION_OF[key]==='goalkeeper';
+const attributeCell=(player,key)=>{
+ const value=player.attributes?.[key];if(value==null)return '—';
+ const badge=scoreBadge(attributeScore(value),`${ATTRIBUTES[key]} sur 20`);
+ return offRole(player,key)?`<span class="off-role">${badge}</span>`:badge;
+};
+// A player list's columns, [key, header, heading over it]: contract, state and season by default, the attributes by section in the 'attributs' view.
+function playerColumns(view, withClub, options) {
+ if(view==='attributs')return [['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),
+  ...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
+ return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+}
+// Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
+// view opens on its own default sort.
+export function playerViewSwitch(view, sorted, order, withClub=false, options={}) {
+ const button=([key,label])=>{
+  const active=key===(view||'infos'),kept=playerColumns(key,withClub,options).some(([column])=>column===sorted);
+  return `<button type="button" data-view="${key}" aria-pressed="${active}" class="${active?'active':''}"${kept?` data-view-sort="${sorted}" data-view-order="${order}"`:''}>${label}</button>`;
+ };
+ return `<div class="segmented" role="group" aria-label="Colonnes">${[['infos','Infos'],['attributs','Attributs']].map(button).join('')}</div>`;
+}
 export function playerTable(data, withClub=false, sorted='rating', order='desc', options={}) {
- const columns=[['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ const columns=playerColumns(options.view,withClub,options);
  const rows=data.items.map(player=>{
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
@@ -106,10 +149,10 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
    appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
   };
-  return columns.map(([key])=>cells[key]);
+  return columns.map(([key])=>key in ATTRIBUTES?attributeCell(player,key):cells[key]);
  });
  // Each header carries its column's key, which sets its width (see .player-table in theme.css).
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,undefined,undefined,columns.map(([key])=>`${key}-column`))}</div>`+pager(data);
+ return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,undefined,undefined,columns.map(([key])=>`${key}-column`),columns.map(([,,heading])=>heading||null))}</div>`+pager(data);
 }
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};

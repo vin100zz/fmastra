@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from api import views as v
 from api.app import create_app
 from api.nations import build_nation_table
-from core.domain.players import Discipline, Injury
+from core.domain.players import ATTRIBUTE_NAMES, Discipline, Injury
 from core.world.simulation import advance_day, target_date
 from infrastructure.importation.loader import import_world
 
@@ -40,6 +40,22 @@ def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
     assert detail['potential'] == round(player.potential, 1) and detail['rating'] <= detail['potential']
     assert 'potential_estimate' not in detail and 'source_potential_ability' not in detail
     assert client.get('/api/joueurs?tri=invalid').status_code == 422
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_player_lists_carry_the_attributes_and_sort_on_each(client):
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club_id = next(iter(world.active_clubs())).id
+    squad = client.get(f'/api/clubs/{club_id}/effectif?tri=reflexes&ordre=desc').json()['items']
+    assert squad and all(row['attributes'] == dict(zip(ATTRIBUTE_NAMES, world.players[row['id']].attributes.values)) for row in squad)
+    assert [row['attributes']['reflexes'] for row in squad] == sorted((row['attributes']['reflexes'] for row in squad), reverse=True)
+    for name in ATTRIBUTE_NAMES:
+        rows = client.get(f'/api/joueurs?tri={name}&ordre=asc').json()['items']
+        assert [row['attributes'][name] for row in rows] == sorted(row['attributes'][name] for row in rows)
+    best = client.get('/api/joueurs?tri=finition&ordre=desc').json()['items'][0]
+    assert best['attributes']['finition'] == max(player.attributes.get('finition') for player in world.players.values())
+    assert client.get(f'/api/clubs/{club_id}/effectif?tri=invalid').status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 

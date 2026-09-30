@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {rememberFilters,hasFilters,sortParams} from '../../web/filters.js';
+import {rememberFilters,hasFilters,viewParams} from '../../web/filters.js';
 
 test('a plain address to Clubs or Joueurs reopens the filters and sort last used, without the page',()=>{
  assert.equal(rememberFilters('#/players?poste=BU&tri=age&ordre=asc&page=3'),'#/players?poste=BU&tri=age&ordre=asc&page=3');
@@ -24,9 +24,9 @@ test('other screens are left as they are',()=>{
  assert.equal(rememberFilters(''),'');
 });
 
-test('a new filter and a reset keep the sort, not the filters nor the page',()=>{
- const params=new URLSearchParams('recherche=mbappe&poste=BU&tri=value&ordre=asc&page=2');
- assert.equal(sortParams(params).toString(),'tri=value&ordre=asc');
+test('a new filter and a reset keep the sort and the columns, not the filters nor the page',()=>{
+ const params=new URLSearchParams('recherche=mbappe&poste=BU&tri=value&vue=attributs&ordre=asc&page=2');
+ assert.equal(viewParams(params).toString(),'tri=value&vue=attributs&ordre=asc');
  assert.equal(hasFilters(params),true);
- assert.equal(hasFilters(new URLSearchParams('tri=value&ordre=asc&page=2')),false);
+ assert.equal(hasFilters(new URLSearchParams('tri=value&ordre=asc&vue=attributs&page=2')),false);
 });

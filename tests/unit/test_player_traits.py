@@ -41,7 +41,7 @@ def team_with(config, changes_by_index=None):
 
 def test_every_engine_attribute_has_a_source_column_and_a_web_label():
     assert set(ATTRIBUTE_COLUMNS) == set(ATTRIBUTE_NAMES)
-    labels = re.search(r"const ATTRIBUTES=\{(.*?)\};", (ROOT / "web" / "player.js").read_text("utf-8")).group(1)
+    labels = re.search(r"export const ATTRIBUTES=\{(.*?)\};", (ROOT / "web" / "ui.js").read_text("utf-8")).group(1)
     assert set(re.findall(r"(\w+):'", labels)) == set(ATTRIBUTE_NAMES)
 
 
@@ -152,8 +152,8 @@ def test_a_lone_goalkeeper_can_still_be_the_fouler(config):
 
 
 def test_player_page_sections_partition_the_attributes():
-    source = (ROOT / "web" / "player.js").read_text("utf-8")
-    block = re.search(r"const ATTRIBUTE_SECTIONS=\[(.*?)\];", source, re.S).group(1)
+    source = (ROOT / "web" / "ui.js").read_text("utf-8")
+    block = re.search(r"export const ATTRIBUTE_SECTIONS=\[(.*?)\];", source, re.S).group(1)
     listed = [name for group in re.findall(r"attributes:\[([^\]]*)\]", block) for name in re.findall(r"'(\w+)'", group)]
     assert sorted(listed) == sorted(ATTRIBUTE_NAMES)  # each attribute in exactly one section
 

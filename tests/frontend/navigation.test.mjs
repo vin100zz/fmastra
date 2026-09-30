@@ -24,6 +24,8 @@ test('a club steps to its neighbours with two triangles and lists its division i
 test('moving to another club keeps the open tab',()=>{
  const html=clubNavigation(division(1),'finances');
  assert.equal(count(html,/href="#\/club\/\d+\/finances"/g),5);  // two triangles and the three entries of the menu
+ // and the columns of the squad list
+ assert.equal(count(clubNavigation(division(1),'squad','vue=attributs'),/href="#\/club\/\d+\/squad\?vue=attributs"/g),5);
 });
 
 test('the ends of the group have a greyed triangle instead of a link, so the block keeps its shape',()=>{

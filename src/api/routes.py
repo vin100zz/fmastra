@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from core.domain.date import Date
 from core.domain.matches import SubmittedLineup
+from core.domain.players import ATTRIBUTE_INDEX, ATTRIBUTE_NAMES
 from core.world.human import listed_price, pending_lineup_match
 from core.world.transfer_rules import recent_arrival_ids
 from core.world.simulation import target_date, market_window
@@ -85,9 +86,14 @@ class NewsRead(Command):
     ids: list[int] | None = None
 
 
+# The attribute view of the player lists sorts on each attribute.
+AttributeSort = Literal[ATTRIBUTE_NAMES]
+
+
 def squad_sort_key(world, column: str):
     """Orders the squad table by what a column shows, not by the raw value behind it."""
     if column == "position": return lambda row: position_rank(row["position"])
+    if column in ATTRIBUTE_INDEX: return lambda row: row["attributes"][column]
     if column == "name": return lambda row: v.normalized(row["name"])
     if column == "contract_end": return lambda row: row["contract_end"] or ""
     if column == "fitness":
@@ -517,7 +523,7 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return nav.club_navigation(world, club_id)
 
     @api.get("/clubs/{club_id}/effectif")
-    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] = "position",
+    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] | AttributeSort = "position",
               ordre: Literal["asc", "desc"] = "asc") -> dict:
         with service.reading() as world:
             rows = v.squad_rows(world, club_id)
@@ -600,7 +606,7 @@ def router(service: GameService) -> APIRouter:
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
                 valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
-                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price"] = "value",
+                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price"] | AttributeSort = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
@@ -629,7 +635,8 @@ def router(service: GameService) -> APIRouter:
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
                 if tri == 'asking_price': return fee(player) or 0, player.id
-                value = {"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
+                if tri in ATTRIBUTE_INDEX: return player.attributes.get(tri), player.id
+                value ={"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
                          "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,
                          "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else ""}[tri]

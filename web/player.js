@@ -1,22 +1,15 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,price,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances} from './ui.js';
+import {api,escape as e,number as n,money,price,attributeScore,level,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances,ATTRIBUTES,ATTRIBUTE_SECTIONS} from './ui.js';
 
-const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
-// What an attribute is for decides its section; sections and attributes always come in the same order, whatever the
-// position. The main position only marks the attributes weighing most in its rating (`attribute_weights`, from the game
-// rules). Placement is part of a goalkeeper's craft
-// (30% of a save, 40% of a claim), so it moves from Défense to Gardien for him.
-const ATTRIBUTE_SECTIONS=[
- {key:'goalkeeper',title:'Gardien',attributes:['reflexes','sorties','relance']},
- {key:'defense',title:'Défense',attributes:['tacle','placement']},
- {key:'attack',title:'Attaque',attributes:['finition','sang_froid','technique','vision','jeu_tete','centre','cpa']},
- {key:'general',title:'Général',attributes:['passe','vitesse','endurance']}];
-// An attribute weighing at least this share of the main position's rating is a key one for that position.
+// An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
+// key one for that position; the position marks them and changes nothing else.
 const KEY_WEIGHT=.14;
 
-// Goalkeeper attributes mean nothing for an outfield player and the reverse: the irrelevant section is hidden, and for a
-// goalkeeper its attributes stay reachable in a fold.
+// Sections and attributes keep the order of ATTRIBUTE_SECTIONS, whatever the position. Goalkeeper attributes mean nothing
+// for an outfield player and the reverse: the irrelevant section is hidden, and for a goalkeeper its attributes stay
+// reachable in a fold. Placement is part of a goalkeeper's craft (30% of a save, 40% of a claim), so it moves from Défense
+// to Gardien for him.
 export function attributeGroups(player) {
  const keeper=player.position==='GB',weights=player.attribute_weights||{};
  const listed=name=>{

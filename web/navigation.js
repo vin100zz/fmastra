@@ -16,13 +16,14 @@ function neighbours(nav,{href,scope,listLabel,label=item=>item.name,row=item=>e(
  return `<div class="entity-nav" role="group" aria-label="${e(listLabel)}">${step(nav.previous,'prev','Précédent')}<details class="entity-menu"><summary aria-label="${e(listLabel)}" title="${e(caption)}">${burger}</summary><div class="entity-menu-panel"><p class="entity-menu-scope">${e(caption)}</p><ul>${rows}</ul></div></details>${step(nav.next,'next','Suivant')}</div>`;
 }
 
-// Clubs of a division, alphabetically; a club outside any division steps through the clubs of its country. Moving keeps the open tab.
-// Homonymous clubs (the source lists a club and its empty duplicate) carry their squad size, so that a step never looks like a no-op.
-export function clubNavigation(nav,section){
+// Clubs of a division, alphabetically; a club outside any division steps through the clubs of its country. Moving keeps the open tab
+// and `query` (the columns of the squad list). Homonymous clubs (the source lists a club and its empty duplicate) carry their squad size,
+// so that a step never looks like a no-op.
+export function clubNavigation(nav,section,query=''){
  if(!nav)return '';
  const division=nav.scope.kind==='division';
  const seen=new Set(),twins=new Set();for(const club of nav.items)(seen.has(club.name)?twins:seen).add(club.name);
- return neighbours(nav,{href:club=>`#/club/${club.id}${section?`/${section}`:''}`,scope:division?nav.scope.name:`Tous les clubs · ${nav.scope.name}`,
+ return neighbours(nav,{href:club=>`#/club/${club.id}${section?`/${section}`:''}${query?`?${query}`:''}`,scope:division?nav.scope.name:`Tous les clubs · ${nav.scope.name}`,
   listLabel:`Choisir un club${division?` de ${nav.scope.name}`:` · ${nav.scope.name}`}`,
   label:club=>twins.has(club.name)?`${club.name} (${club.squad} joueur${club.squad>1?'s':''})`:club.name});
 }

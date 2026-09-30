@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances} from '../../web/ui.js';
+import {playerTable,playerViewSwitch,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -130,4 +130,40 @@ test('the player list shows the lowest fee a club accepts, sortable, or that it 
  assert.match(html,/25,1\sM\s?€/);
  assert.match(html,/<span class="muted">Intransférable<\/span>/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
+});
+
+const attributes={passe:70,technique:60,finition:81,tacle:20,jeu_tete:55,vision:62,placement:30,sang_froid:66,vitesse:74,endurance:50,reflexes:10,sorties:8,relance:12,centre:40,cpa:35};
+test('the attribute view lists the attributes out of 20 by section, Général, Défense, Attaque then Gardien, under their headings',()=>{
+ const html=playerTable({items:[{...player,attributes}],total:1,page_size:30},false,'finition','desc',{view:'attributs'});
+ const keys=[...html.matchAll(/data-sort="(\w+)"/g)].map(match=>match[1]);
+ assert.deepEqual(keys,['position','name','age','rating','potential','passe','vitesse','endurance','tacle','placement','finition','sang_froid','technique','vision','jeu_tete','centre','cpa','reflexes','sorties','relance']);
+ assert.doesNotMatch(html,/VALEUR|SALAIRE|CONTRAT|data-sort="goals"/);
+ // Each heading spans its section on a first header row; the other headers span both rows.
+ assert.deepEqual([...html.matchAll(/<th colspan="(\d+)" class="column-group">([^<]+)</g)].map(match=>`${match[2]}:${match[1]}`),['Général:3','Défense:2','Attaque:7','Gardien:3']);
+ assert.equal((html.match(/<th rowspan="2"/g)||[]).length,5);
+ assert.match(html,/<th rowspan="2" class="name-column">/);
+ // The columns under a heading take their width from a <col>, a line opening each section.
+ assert.equal((html.match(/<col class="grouped/g)||[]).length,15);assert.equal((html.match(/<col class="grouped group-start">/g)||[]).length,4);
+ // Same badges as the player page: 1 to 20 on the red-yellow-green scale, the full name in the header's tooltip.
+ assert.match(html,/<span class="rating graded" style="--hue:120" title="Finition sur 20">16</);
+ assert.match(html,/<span class="rating graded" style="--hue:0" title="Tacle sur 20">4</);
+ assert.match(html,/<span title="Finition">FIN<\/span> ↓/);
+ assert.equal(playerTable({items:[{...player,attributes}],total:1,page_size:30},true,'rating','desc',{view:'attributs'}).match(/data-sort="(\w+)"/g)[5],'data-sort="club"');
+});
+
+test('in the attribute view, what the player page hides or folds away fades',()=>{
+ const faded=position=>[...playerTable({items:[{...player,position,attributes}],total:1,page_size:30},false,'position','asc',{view:'attributs'}).matchAll(/<span class="off-role"><span[^>]*title="([^"]+) sur 20"/g)].map(match=>match[1]);
+ assert.deepEqual(faded('BU'),['Réflexes','Sorties','Relance']);
+ assert.deepEqual(faded('GB'),['Tacle','Finition','Sang-froid','Technique','Vision','Jeu de tête','Centres','Coups arrêtés']);
+ assert.doesNotMatch(playerTable({items:[{...player,attributes:undefined}],total:1,page_size:30},false,'position','asc',{view:'attributs'}),/NaN|undefined/);
+});
+
+test('the view switch marks the open view and carries the sort over only when the other view has its column',()=>{
+ const players=playerViewSwitch(null,'value','desc',true,{asking:true});
+ assert.match(players,/<button type="button" data-view="infos" aria-pressed="true" class="active" data-view-sort="value" data-view-order="desc">Infos<\/button>/);
+ assert.match(players,/<button type="button" data-view="attributs" aria-pressed="false" class="">Attributs<\/button>/);
+ const squad=playerViewSwitch('attributs','age','asc');
+ assert.match(squad,/data-view="infos" aria-pressed="false" class="" data-view-sort="age" data-view-order="asc">/);
+ assert.match(squad,/data-view="attributs" aria-pressed="true" class="active"/);
+ assert.doesNotMatch(playerViewSwitch('attributs','passe','desc'),/data-view="infos"[^>]*data-view-sort/);
 });

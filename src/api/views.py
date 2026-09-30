@@ -45,6 +45,7 @@ def player_row(world: World, player: Player) -> dict:
     return {"id": player.id, "name": player.name, "position": player.position.value,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
             "potential": round(player.potential, 1),
+            "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
             "nationalities": list(player.nationalities),
             "nationality_names": [world.nation_names.get(code, code) for code in player.nationalities],
             "value": market_value(player, world),
@@ -109,7 +110,7 @@ def player_detail(world: World, player: Player) -> dict:
                    "international_caps": player.international_caps, "international_goals": player.international_goals,
                    "historical_caps": player.historical_caps, "historical_goals": player.historical_goals,
                    "international_records": [asdict(row) for row in world.international.records.values() if row.player_id == player.id],
-                   "secondary_positions": list(player.secondary_positions), "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
+                   "secondary_positions": list(player.secondary_positions),
                    # Weight of each attribute in the rating of his main position: the page orders and marks attributes with it.
                    "attribute_weights": dict(world.config.attributes.overall[player.position]),
                    "attributes_imported": player.source_current_ability is not None,

@@ -141,7 +141,7 @@ entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la co
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), matches, buts, passes, cartons, note moyenne |
+| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 |
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
@@ -181,6 +181,18 @@ colonne de minutes jouées. Les tableaux des autres onglets (transferts, journal
 financier, saisons du club et classements archivés) se trient aussi. Dans les listes
 de joueurs, chaque colonne a une largeur fixe : un tri ou une autre page ne les
 déplace pas, et la page garde sa position de défilement.
+
+Deux boutons en tête de la liste des joueurs d'un club et de l'écran Joueurs, « Infos » et
+« Attributs », changent ses colonnes. La vue Attributs garde poste, nom, âge, niveau et potentiel
+(et le club sur l'écran Joueurs), puis donne les 15 attributs en badges de 1 à 20, aux couleurs du
+bloc Attributs de la fiche joueur, sous quatre intertitres qui couvrent leurs colonnes : Général
+(Passe, Vitesse, Endurance), Défense (Tacle, Placement), Attaque (Finition, Sang-froid, Technique,
+Vision, Jeu de tête, Centres, Coups arrêtés) et Gardien (Réflexes, Sorties, Relance). Chaque colonne
+porte une abréviation de trois lettres, le nom complet en infobulle, et se trie côté serveur. Ce que
+la fiche joueur masque ou replie est estompé : le bloc Gardien d'un joueur de champ, Défense (sauf
+Placement) et Attaque d'un gardien. Changer de vue garde le tri quand l'autre vue a sa colonne ;
+sinon elle s'ouvre sur son tri par défaut (le poste pour un effectif ; sur l'écran Joueurs, la
+valeur, ou le niveau en vue Attributs). La vue suit le passage d'un club à l'autre.
 
 ### Compétition
 
@@ -334,10 +346,10 @@ Filtres serveur : poste, statut du club (actif ou dormant), statut contractuel,
 puis en filtres avancés âge, niveau et potentiel minimum, salaire, valeur et prix
 maximum. Tri sur toute colonne, pagination obligatoire.
 
-Les écrans Clubs et Joueurs retiennent leurs filtres et leur tri (pas la page) dans
+Les écrans Clubs et Joueurs retiennent leurs filtres et leur tri, et Joueurs sa vue (pas la page), dans
 le navigateur : y revenir par le menu, ou après un rechargement, les rouvre tels
-qu'on les a laissés. Changer un filtre garde le tri et revient à la première page. « Réinitialiser », au bout de la ligne de filtres, les vide
-et garde le tri ; il est grisé quand aucun filtre n'est actif.
+qu'on les a laissés. Changer un filtre garde le tri et la vue, et revient à la première page. « Réinitialiser », au bout de la ligne de filtres, les vide
+et garde le tri et la vue ; il est grisé quand aucun filtre n'est actif.
 
 Un club dormant est consultable — nom, effectif, fiches joueurs — mais n'a ni
 classement, ni calendrier, ni statistiques de saison. L'interface doit le
@@ -358,7 +370,7 @@ GET  /api/clubs?competition=&statut=actif|dormant&recherche=&page=&tri=
 GET  /api/clubs/{id}                      en-tête + résumé
 GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
-GET  /api/clubs/{id}/effectif
+GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, ou un attribut (passe, reflexes…)
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances
 GET  /api/clubs/{id}/transferts?saison=
@@ -373,7 +385,7 @@ GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
 GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
-GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=
+GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=   tri : idem, attributs compris
 GET  /api/joueurs/{id}
 GET  /api/joueurs/{id}/historique
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
