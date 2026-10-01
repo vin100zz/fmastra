@@ -6,6 +6,7 @@ import {weeklyFromMonthly} from './salaries.js';
 import {matchScreen} from './match.js';
 import {europeScreen} from './europe.js';
 import {honoursScreen} from './honours.js';
+import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
 import {clubSelectScreen} from './club-select.js';
 import {myClubScreen} from './my-club.js';
@@ -143,12 +144,17 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  const active=document.activeElement;
  const focusName=active&&main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active.name:null;
  const selection=focusName&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
- try{await refreshState();let html;if(!state.exists||state.recovery_required)html=await savesScreen(true);else{const [screen,id,section,extra]=parts;
+ try{await refreshState();let html;const [screen,id,section,extra]=parts;
+  // The manual needs no game: it opens from the welcome screen too, though never over a live match.
+  if(screen==='aide'&&!state.live_match_id)html=await manualScreen(id);
+  else if(!state.exists||state.recovery_required)html=await savesScreen(true);else{
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],folds=path===renderedPath?[...main.querySelectorAll('details.filters')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+ if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+ // A chapter of the manual opened on one of its sections; a redraw of the same address leaves the scroll where it is.
+ if(moved&&parts[0]==='aide'&&parts[2])document.getElementById(`manual-${parts[2]}`)?.scrollIntoView();
  // Mon club on screen: the news it shows no longer call for a visit in the flow of Continuer.
  if(parts[0]==='mon-club'&&state.controlled_club_id!=null&&!state.live_match_id)markNewsSeen(state.news_count);
  document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;

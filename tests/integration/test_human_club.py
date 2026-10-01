@@ -77,6 +77,52 @@ def test_advance_day_pauses_for_the_human_clubs_match_and_resumes_after_a_lineup
     assert played_ids == {pid for pid, _ in submitted.slots}
 
 
+def test_the_players_list_tells_the_human_club_who_would_join_it_and_at_what_wage(client):
+    from core.world.talks import asked_wage
+    from core.world.transfer_rules import accepts_move
+    world = client.app.state.game.world
+    # Without a club nobody is a recruit: no figure, and the two filters are left aside.
+    assert all(row["interested"] is None and row["wage_demand"] is None for row in client.get("/api/joueurs").json()["items"])
+    assert client.get("/api/joueurs?interesse=oui&pretentions_max=0").json()["total"] == len(world.players)
+
+    max_squad = world.config.management.guardrails.max_squad
+    clubs = sorted((club for club in world.active_clubs() if len(club.player_ids) < max_squad), key=lambda club: club.reputation)
+    club = clubs[len(clubs) // 2]  # a middling club with room in its squad: the best players refuse it
+    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    rows = client.get("/api/joueurs").json()["items"]
+    for row in rows:
+        player = world.players[row["id"]]
+        assert row["interested"] is accepts_move(player, club, world) and row["wage_demand"] == asked_wage(world, player) > 0
+    assert not all(row["interested"] for row in rows)
+
+    keen, reluctant = (client.get(f"/api/joueurs?interesse={choice}").json() for choice in ("oui", "non"))
+    assert keen["items"] and all(row["interested"] is True for row in keen["items"])
+    assert reluctant["items"] and all(row["interested"] is False for row in reluctant["items"])
+    assert keen["total"] + reluctant["total"] == len(world.players) - len(club.player_ids)
+
+    cap = sorted(row["wage_demand"] for row in rows)[len(rows) // 2]
+    modest = client.get(f"/api/joueurs?pretentions_max={cap}&tri=wage_demand").json()
+    demands = [row["wage_demand"] for row in modest["items"]]
+    assert demands == sorted(demands, reverse=True) and demands[0] == cap and modest["total"] < len(world.players) - len(club.player_ids)
+
+    # Its own players have nothing to ask or to accept, and come last in either sort.
+    own = client.get("/api/joueurs", params={"club": club.id}).json()["items"]
+    assert own and all(row["interested"] is None and row["wage_demand"] is None for row in own)
+    for sort in ("wage_demand", "interested"):
+        for order in ("asc", "desc"):
+            last = client.get(f"/api/joueurs?tri={sort}&ordre={order}&page={(len(world.players) + 29) // 30}").json()["items"]
+            assert last[-1]["club"]["id"] == club.id, (sort, order)
+    first = client.get("/api/joueurs?tri=interested").json()["items"]
+    assert all(row["interested"] is True for row in first)
+
+    # A bid stops on the wage he would ask when it does not fit under the cap, and says both figures.
+    target = next(world.players[row["id"]] for row in keen["items"] if row["club"] and opening_obstacle(world, world.players[row["id"]]) is None)
+    club.wage_cap = club.wage_bill
+    refused = client.post("/api/partie/negociation/indemnite", json={"joueur_id": target.id, "indemnite": 1})
+    assert refused.status_code == 400
+    assert refused.json()["detail"].startswith(f"{target.name} demanderait ") and "il vous reste 0 € / mois sous le plafond salarial" in refused.json()["detail"]
+
+
 def test_outgoing_offer_and_incoming_offer_response(client):
     world = client.app.state.game.world
     assert market_window(world) is not None  # a fresh game starts inside the summer window

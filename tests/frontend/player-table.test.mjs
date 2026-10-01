@@ -132,6 +132,20 @@ test('the player list shows the lowest fee a club accepts, sortable, or that it 
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
 });
 
+test('with a club of his own the user reads what a player asks to join it and whether he accepts to',()=>{
+ const items=[{...player,wage_demand:71539,interested:true},{...player,id:2,wage_demand:21462,interested:false},{...player,id:3,wage_demand:null,interested:null}];
+ const html=playerTable({items,total:3,page_size:30},true,'wage_demand','desc',{asking:true,recruiting:true});
+ assert.match(html,/<th class="wage_demand-column"><button data-first="desc" data-order="desc" data-sort="wage_demand">PRÉTENTIONS</);
+ assert.match(html,/<th class="interested-column"><button data-first="desc" data-sort="interested">INTÉRESSÉ</);
+ assert.ok(html.indexOf('SALAIRE / MOIS')<html.indexOf('PRÉTENTIONS')&&html.indexOf('PRÉTENTIONS')<html.indexOf('INTÉRESSÉ')&&html.indexOf('INTÉRESSÉ')<html.indexOf('CONTRAT'));
+ // The demand reads as a monthly wage; a player of the user's own club has neither.
+ const cells=[...html.matchAll(/<tr class="">(.*?)<\/tr>/g)].map(row=>[...row[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]).slice(10,12));
+ assert.deepEqual(cells.map(([demand,interest])=>[demand.replace(/\D/g,''),interest]),[['310000','Oui'],['93000','<span class="muted">Non</span>'],['','—']]);
+ // The switch keeps the sort where the columns are; other lists have neither column.
+ assert.match(playerViewSwitch(null,'wage_demand','desc',true,{asking:true,recruiting:true}),/data-view="infos"[^>]*data-view-sort="wage_demand"/);
+ assert.doesNotMatch(playerTable({items,total:3,page_size:30},true,'value','desc',{asking:true}),/PRÉTENTIONS|INTÉRESSÉ/);
+});
+
 const attributes={passe:70,technique:60,finition:81,tacle:20,jeu_tete:55,vision:62,placement:30,sang_froid:66,vitesse:74,endurance:50,reflexes:10,sorties:8,relance:12,centre:40,cpa:35};
 test('the attribute view lists the attributes out of 20 by section, Général, Défense, Attaque then Gardien, under their headings',()=>{
  const html=playerTable({items:[{...player,attributes}],total:1,page_size:30},false,'finition','desc',{view:'attributs'});

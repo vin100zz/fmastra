@@ -39,6 +39,13 @@ test('max value is typed in millions of euros',()=>{
  assert.equal(salarySearchParams(new URLSearchParams()).has('prix_max'),false);
 });
 
+test('a bound on wage demands keeps the players asking exactly that monthly amount',()=>{
+ // A demand of 93 000 €/month is quoted 21 462 €/week, the next weekly euro above it.
+ assert.equal(salarySearchParams(new URLSearchParams('pretentions_max=93000')).get('pretentions_max'),'21462');
+ assert.equal(salarySearchParams(new URLSearchParams('pretentions_max=260000')).get('pretentions_max'),'60000');
+ assert.equal(salarySearchParams(new URLSearchParams()).has('pretentions_max'),false);
+});
+
 test('minimum levels are typed on the 1–200 scale',()=>{
  const result=salarySearchParams(new URLSearchParams('niveau_min=140&potentiel_min=161'));
  assert.equal(result.get('niveau_min'),'70');assert.equal(result.get('potentiel_min'),'80.5');

@@ -19,6 +19,9 @@ export function salarySearchParams(params){
   const value=result.get(name);
   if(value!==null&&value!=='')result.set(name,String(round(Number(value)*12/weeksPerYear)));
  }
+ // A wage demand is a round monthly amount, raised to the next weekly euro: so is its bound, to keep the players asking just that.
+ const demand=result.get('pretentions_max');
+ if(demand!==null&&demand!=='')result.set('pretentions_max',String(Math.ceil(Number(demand)*12/weeksPerYear)));
  // Niveau and potentiel are shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
  for(const name of ['niveau_min','potentiel_min']){
   const level=result.get(name);

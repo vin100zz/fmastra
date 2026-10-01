@@ -501,6 +501,16 @@ def router(service: GameService) -> APIRouter:
             for item in targets: item.read = True
             return {"unread": sum(not item.read for item in world.news)}
 
+    @api.get("/manuel")
+    @api.get("/manuel/{chapitre}")
+    def manual(chapitre: str | None = None) -> dict:
+        from infrastructure.config.loader import config_payload, load_config
+        from .manual import manual_view
+        # Outside the lock: a configuration never changes, and the manual also opens before any game exists.
+        world = service.world
+        cfg = world.config if world is not None else load_config(service.root / "config")
+        return manual_view(service.root / "docs" / "manuel", config_payload(cfg), chapitre)
+
     @api.get("/monde/transferts")
     def global_transfers(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer", page: int = Query(1, ge=1),
                          tri: str | None = None, ordre: Literal['asc', 'desc'] = 'desc') -> dict:
@@ -666,8 +676,10 @@ def router(service: GameService) -> APIRouter:
                 nation: str | None = None, club: int | None = None,
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
-                valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
-                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price"] | AttributeSort | CompositeSort = "value",
+                valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0),
+                interesse: Literal["oui", "non"] | None = None, pretentions_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
+                tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price",
+                             "wage_demand", "interested"] | AttributeSort | CompositeSort = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
@@ -681,6 +693,12 @@ def router(service: GameService) -> APIRouter:
                 """What his club asks, 0 for a free agent, None for a player his club will not sell."""
                 row = quote(player)
                 return None if not row["transferable"] else row["asking_price"] or 0
+            # What a player asks to join the human club weighs his value as that club sees it: computed only when needed too.
+            # Without a human club nobody is a recruit: its two filters are left aside.
+            recruiting, demands = world.controlled_club_id is not None, {}
+            def demand(player) -> int | None:
+                if player.id not in demands: demands[player.id] = v.asked_wage(world, player)
+                return demands[player.id]
             for player in world.players.values():
                 wage = player.contract.weekly_wage if player.contract else 0
                 owner = world.clubs.get(player.club_id)
@@ -691,11 +709,15 @@ def router(service: GameService) -> APIRouter:
                     or (contrat and (player.contract is None) != (contrat == "libre"))
                     or wage < salaire_min or (salaire_max is not None and wage > salaire_max)
                     or (valeur_max is not None and v.market_value(player, world) > valeur_max)
-                    or (prix_max is not None and (fee(player) is None or fee(player) > prix_max))): continue
+                    or (prix_max is not None and (fee(player) is None or fee(player) > prix_max))
+                    or (recruiting and interesse and v.interested(world, player) is not (interesse == "oui"))
+                    or (recruiting and pretentions_max is not None and (demand(player) is None or demand(player) > pretentions_max))): continue
                 selected.append(player)
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
                 if tri == 'asking_price': return fee(player) or 0, player.id
+                if tri == 'wage_demand': return demand(player) or 0, player.id
+                if tri == 'interested': return bool(v.interested(world, player)), player.id
                 if tri in ATTRIBUTE_INDEX: return player.attributes.get(tri), player.id
                 if tri in v.COMPOSITES: return v.composite(player, tri, world.config), player.id
                 value ={"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
@@ -706,8 +728,12 @@ def router(service: GameService) -> APIRouter:
             selected.sort(key=sort_key, reverse=ordre == "desc")
             # Players their clubs will not sell have no price: they come last whichever the order.
             if tri == 'asking_price': selected.sort(key=lambda player: fee(player) is None)
+            # So do the human club's own players, who have nothing to ask or to accept.
+            if tri == 'wage_demand': selected.sort(key=lambda player: demand(player) is None)
+            if tri == 'interested': selected.sort(key=lambda player: v.interested(world, player) is None)
             data = v.paginate(selected, page)
-            data["items"] = [{**v.player_row(world, player), **quote(player)} for player in data["items"]]
+            data["items"] = [{**v.player_row(world, player), **quote(player), "interested": v.interested(world, player), "wage_demand": demand(player)}
+                             for player in data["items"]]
             return data
 
     @api.get("/joueurs/{player_id}")

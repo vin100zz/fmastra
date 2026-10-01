@@ -11,7 +11,7 @@ work as for any offer; the AI auction in `market.settle_offers` leaves them alon
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from math import ceil
+from math import ceil, floor
 
 from core.ai.market import asking_price, can_sell, contract_for, wage_demand
 from core.domain.date import Date
@@ -31,13 +31,32 @@ class TalksRefused(ValueError):
 
 
 LIMITS = {"squad": "Votre effectif est complet.",
-          "budget": "Votre budget transferts ne suffit pas.", "balance": "Votre trésorerie ne suffit pas.",
-          "wages": "Votre masse salariale ne permet pas ce salaire."}
+          "budget": "Votre budget transferts ne suffit pas.", "balance": "Votre trésorerie ne suffit pas."}
 
 
-def check_limits(world: World, player: Player, contract: Contract, fee: int) -> None:
+def check_limits(world: World, player: Player, contract: Contract, fee: int, demanded: bool = False) -> None:
+    """Refuses an offer the human club's means do not cover; `demanded` when the wage is the player's demand, not one the club offered."""
     club = world.clubs[world.controlled_club_id]
-    if (limit := offer_limit(world, club, contract, fee, others(world, player))) is not None: raise TalksRefused(LIMITS[limit])
+    limit = offer_limit(world, club, contract, fee, others(world, player))
+    if limit == "wages": raise TalksRefused(wage_refusal(world, player, contract.weekly_wage if demanded else None))
+    if limit is not None: raise TalksRefused(LIMITS[limit])
+
+
+def wage_room(world: World, player: Player) -> int:
+    """What the human club can still pay a week under its wage cap, beside its other offers and talks."""
+    club = world.clubs[world.controlled_club_id]
+    return club.wage_cap - club.wage_bill - sum(offer.contract.weekly_wage for offer in others(world, player))
+
+
+def wage_refusal(world: World, player: Player, demand: int | None = None) -> str:
+    """Why a wage does not fit under the human club's cap: the room left, rounded down, after the player's demand
+    when the club has not offered a wage of its own yet, and with what its other offers and talks reserve."""
+    def amount(weekly: int, rounding=round) -> str:
+        return f"{monthly_amount(weekly, world, rounding):,}\u00a0€ / mois".replace(",", "\u202f")
+    reserved = sum(offer.contract.weekly_wage for offer in others(world, player))
+    cause = f"{player.name} demanderait {amount(demand)}" if demand is not None else "Ce salaire dépasse votre marge"
+    text = f"{cause} : il vous reste {amount(max(0, wage_room(world, player)), floor)} sous le plafond salarial"
+    return f"{text}, vos autres offres en cours réservant {amount(reserved)}." if reserved else f"{text}."
 
 
 def available_budget(world: World, player: Player) -> int:
@@ -84,12 +103,21 @@ def opening_obstacle(world: World, player: Player) -> str | None:
     return None
 
 
+def monthly_amount(weekly: int, world: World, rounding=round) -> int:
+    """A weekly wage as the monthly amount the pages show, with two significant digits."""
+    monthly = weekly * world.config.management.budgets.weeks_per_year / 12
+    step = 10 ** max(0, len(str(int(monthly))) - 2)
+    return rounding(monthly / step) * step
+
+
 def quoted_wage(weekly: int, world: World) -> int:
     """A weekly wage raised so that its monthly amount has two significant digits, as the pages show it."""
-    weeks = world.config.management.budgets.weeks_per_year
-    monthly = weekly * weeks / 12
-    step = 10 ** max(0, len(str(int(monthly))) - 2)
-    return ceil(ceil(monthly / step) * step * 12 / weeks)
+    return ceil(monthly_amount(weekly, world, ceil) * 12 / world.config.management.budgets.weeks_per_year)
+
+
+def asked_wage(world: World, player: Player) -> int:
+    """The weekly wage a player asks to join the human club, as his counter-offer quotes it."""
+    return quoted_wage(wage_demand(player, world.clubs[world.controlled_club_id], world), world)
 
 
 def offer_fee(world: World, player: Player, fee: int) -> Reply:
@@ -100,8 +128,8 @@ def offer_fee(world: World, player: Player, fee: int) -> Reply:
     if seller is None: raise TalksRefused("Joueur libre : négociez directement son contrat.")
     current = talks_for(world, player.id)
     # Until his own terms are agreed, the wage he would ask is what the club reserves.
-    contract = contract_for(player, world, wage_demand(player, club, world))
-    check_limits(world, player, contract, fee)
+    contract = contract_for(player, world, asked_wage(world, player))
+    check_limits(world, player, contract, fee, demanded=True)
     talks = TransferOffer(f"talks:{club.id}:{player.id}", world.date, player.id, seller.id, club.id, contract, fee, fee, 0.0,
                           stage=FEE_TALKS, rounds=current.rounds if current is not None else 0)
     minimum = asking_price(player, seller, world)
@@ -125,8 +153,7 @@ def offer_wage(world: World, player: Player, weekly: int) -> Reply:
         check_limits(world, player, contract, 0)
         talks = TransferOffer(f"talks:{club.id}:{player.id}", world.date, player.id, None, club.id, contract, 0, 0, 0.0, stage=WAGE_TALKS)
     if talks is None or talks.stage != WAGE_TALKS: raise TalksRefused("Le joueur n'attend pas d'offre de contrat.")
-    reserved = others(world, player)
-    if club.wage_bill + weekly + sum(offer.contract.weekly_wage for offer in reserved) > club.wage_cap: raise TalksRefused(LIMITS["wages"])
+    if weekly > wage_room(world, player): raise TalksRefused(wage_refusal(world, player))
     talks = replace(talks, contract=contract_for(player, world, weekly))
     demand = wage_demand(player, club, world)
     if weekly >= demand:

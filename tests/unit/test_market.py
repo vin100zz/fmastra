@@ -833,6 +833,39 @@ def test_renewal_forks_to_a_pending_proposal_for_the_human_club(config):
     assert not [e for e in again if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
 
 
+def test_a_newcomer_settles_before_asking_for_a_renewal(config):
+    from core.world.contracts import renewal_events
+    from core.world.events import RenewalProposed
+    world, player = renewal_setup(config, reputation=100)
+    world.controlled_club_id = player.club_id
+    player.contract.end = world.date.add_days(300)
+    proposed = lambda: any(isinstance(e, RenewalProposed) and e.proposal.player_id == player.id for e in renewal_events(world))
+    assert proposed()
+    world.transfers.append(TransferRecord(world.date, player.id, 1, player.club_id, 0, "transfer", world.season))
+    assert not proposed()
+    world.date = world.date.add_days(config.management.market.arrival_stability_days)
+    assert proposed()
+
+
+def test_an_unhappy_player_on_a_long_contract_asks_for_a_raise_or_nothing(config, monkeypatch):
+    from collections import Counter
+    from core.world import contracts
+    from core.world.events import RenewalProposed
+    world, player = renewal_setup(config, reputation=100)
+    club = world.clubs[player.club_id]
+    world.controlled_club_id = club.id
+    # Fairly paid but never fielded: unhappy, with years left on his contract.
+    club.competition_id = -16
+    monkeypatch.setattr(contracts, "games_by_club", lambda world: Counter({club.id: 10}))
+    player.greed, player.contract.end = 0.0, Date(world.date.year + 6, 6, 30)
+    proposals = lambda: [e.proposal for e in contracts.renewal_events(world) if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
+    assert not proposals()
+    # Underpaid, he asks for a raise, on a contract that does not end sooner.
+    player.contract.weekly_wage //= 2
+    proposal, = proposals()
+    assert proposal.contract.weekly_wage > player.contract.weekly_wage and proposal.contract.end == player.contract.end
+
+
 def sellable_world(config):
     """A market where club 2 can let player 201 go (a like-for-like cover stays) and the human club 1 bids."""
     world = recruitment_world(config)

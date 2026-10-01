@@ -227,6 +227,13 @@ au but, sans règle des buts à l’extérieur.
 saisons : une rangée pour les trois coupes d’Europe, puis une rangée par pays avec ses
 divisions et sa coupe nationale.
 
+**Manuel du jeu**, le bouton au livre ouvert en bas du menu de gauche, à côté du mode Auto
+et du thème, explique les mécanismes internes : moteur de match, forme, moral, fatigue,
+progression, regens, contrats, mercato, finances, réputation, sélections. Ses chapitres
+sont les fichiers de `docs/manuel/` ; leurs chiffres sont lus dans la configuration de la
+partie en cours, et tout changement de règle met à jour le chapitre concerné (voir
+`docs/ui.md`, « Manuel du jeu »).
+
 Les quotas viennent de `data/qualifs_europe.csv`, en plages `min-max` par pays
 tirées au sort chaque saison à total constant (36 places par coupe). La première saison utilise un
 tirage pondéré par réputation ; ensuite les pays simulés qualifient leurs clubs
@@ -439,6 +446,7 @@ API ne consomment jamais les RNG de simulation. Voir `docs/architecture.md`.
 | `docs/ia-gestion.md` | Valorisation, besoins, mercato, contrats |
 | `docs/progression-demographie.md` | Progression, déclin, regens, marché extérieur |
 | `docs/ui.md` | Écrans et endpoints |
+| `docs/manuel/` | Manuel du jeu affiché dans l'application : les mécanismes internes, pour le joueur |
 
 ## Ordre de construction
 

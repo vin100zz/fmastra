@@ -73,6 +73,45 @@ def test_the_player_answers_days_later_then_signs_at_his_demand(config):
     assert world.news[-1].kind == "transfer"
 
 
+def plain(text):
+    """A refusal without the no-break spaces of its amounts."""
+    return text.replace(" ", "").replace(" ", " ")
+
+
+def test_a_wage_over_the_cap_is_refused_with_the_demand_and_the_room_left(config):
+    from core.world.talks import asked_wage, monthly_amount, offer_fee, offer_wage, progress_talks, talks_for, TalksRefused
+    world, player, seller = sellable_world(config)
+    club = world.clubs[1]
+    demand = asked_wage(world, player)
+    # One weekly euro short of what he would ask: the offer stops there, whatever the fee.
+    club.wage_cap = club.wage_bill + demand - 1
+    with pytest.raises(TalksRefused) as refusal: offer_fee(world, player, 10 ** 9)
+    asked = monthly_amount(demand, world)
+    start = f"{player.name} demanderait {asked} € / mois : il vous reste "
+    assert plain(str(refusal.value)).startswith(start) and plain(str(refusal.value)).endswith(" € / mois sous le plafond salarial.")
+    assert int(plain(str(refusal.value)).removeprefix(start).split(" €")[0]) < asked
+    assert talks_for(world, player.id) is None
+
+    # The wages other talks reserve are named: they are why the room is smaller than the cap leaves.
+    other = world.players[800]
+    world.offers["talks:1:800"] = TransferOffer("talks:1:800", world.date, other.id, seller.id, 1, replace(other.contract, weekly_wage=demand), 0, 0, 0.0, stage=AGREED_FEE)
+    club.wage_cap += demand
+    with pytest.raises(TalksRefused) as refusal: offer_fee(world, player, 10 ** 9)
+    assert plain(str(refusal.value)).endswith(f"sous le plafond salarial, vos autres offres en cours réservant {asked} € / mois.")
+    del world.offers["talks:1:800"]
+
+    # With the room for it, the fee is agreed and his demand reserved: his counter-offer will fit.
+    club.wage_cap = club.wage_bill + demand
+    reply = offer_fee(world, player, 10 ** 9)
+    assert reply.outcome == "accepte" and reply.talks.contract.weekly_wage == demand
+    world.date = reply.talks.due
+    progress_talks(world)
+    assert offer_wage(world, player, 1).talks.counter == demand
+    with pytest.raises(TalksRefused) as refusal: offer_wage(world, player, demand + 1)
+    assert plain(str(refusal.value)).startswith("Ce salaire dépasse votre marge : il vous reste ")
+    assert offer_wage(world, player, demand).outcome == "accepte"
+
+
 def test_a_player_with_an_agreed_fee_is_off_the_ai_market(config):
     from core.ai.market import asking_price, propose_transfers
     from core.world.market import settle_offers

@@ -65,9 +65,9 @@ Barre persistante en tête d'application :
 - Bouton « Continuer »
 - Journal des événements du jour : résultats, transferts, blessures
 
-Le mode Auto (enchaîner les journées) et le choix du thème clair ou sombre sont
-en bas du menu de gauche, sous « Ma partie » ; sur téléphone, en haut à droite à
-côté de l'icône de « Ma partie ».
+Le mode Auto (enchaîner les journées), le choix du thème clair ou sombre et le
+manuel du jeu sont en bas du menu de gauche, sous « Ma partie » ; sur téléphone,
+en haut à droite à côté de l'icône de « Ma partie ».
 
 ### Enchaînement de « Continuer »
 
@@ -262,6 +262,48 @@ compétition sans vainqueur (début de partie, ou coupe en cours) garde son bloc
 un message. Le champion d'un championnat n'est connu qu'à la clôture de la saison ;
 celui d'une coupe, à la fin de sa finale.
 
+### Manuel du jeu
+
+Le bouton au livre ouvert, à droite du thème (`#/aide`), ouvre le manuel des mécanismes
+internes : ce que le jeu calcule sans le montrer (moteur de match, forme, moral, fatigue,
+progression, regens, contrats, mercato, finances, réputation, sélections). Il ne décrit
+pas les écrans. Les chapitres sont à gauche, avec les sections du chapitre ouvert ; le
+chapitre est à droite. `#/aide/<chapitre>/<section>` ouvre un chapitre sur une section.
+Le manuel s'ouvre aussi sans partie, depuis l'écran d'accueil.
+
+Les chapitres sont les fichiers Markdown de `docs/manuel/` (`NN-adresse.md`, la première
+ligne `# Titre`), dans l'ordre de leurs noms. **Aucun chiffre de règle n'y est tapé** :
+un chapitre écrit `{{expression}}`, calculée par le serveur sur la configuration de la
+partie en cours (celle de la sauvegarde, ou celle du dépôt sans partie).
+
+- Une expression adresse la configuration par les clés de `config/*.json`
+  (`etats.forme.min`, `demographie.progression.courbe_age[0].facteur` ; `importation`
+  pour `import.json`) et accepte `+ - * / **`.
+- Fonctions : `n(x, décimales)`, `pct(x, décimales)`, `eur(x)`, `date(jour, mois)`,
+  `annee(x)`, `poids(table)` (poids d'attributs en clair), `liste(x)`, `attribut(nom)`,
+  `min`, `max`, `abs`, `len`, `sum`, `exp`, `log`, `tanh`, `sigmoide`, `logit`.
+- Une ligne qui commence par `{{#chaque expression}}` est écrite une fois par élément
+  d'une liste (ses clés deviennent des noms, avec `element` et `i`) ou d'une table
+  (`cle`, `valeur`) : c'est ainsi que s'écrivent les lignes d'un tableau.
+- Les écrans affichent le niveau sur 200 et les attributs sur 20 : un seuil interne se
+  convertit dans l'expression (`* 2`, `/ 5`).
+- Les liens entre chapitres s'écrivent `[texte](#/aide/chapitre/section)`, la section
+  étant le titre `##` en minuscules, sans accents, mots séparés par des tirets.
+- Markdown reconnu : titres `##` et `###`, paragraphes, listes `-` et `1.`, tableaux
+  (colonne de chiffres : `---:`), notes `>`, blocs ``` pour les formules, `code`,
+  gras, italique, liens internes.
+
+**Tenir le manuel à jour fait partie de tout changement de règle.** Un mécanisme ajouté,
+modifié ou retiré met à jour son chapitre dans le même changement ; un nouveau domaine
+reçoit son chapitre. Recalibrer une valeur ne demande rien : le manuel la relit. Les
+nombres écrits dans le code plutôt que dans la configuration (tirs au but, listes des
+sélections) sont les seuls tapés dans un chapitre, et sont à reprendre à la main.
+`tests/unit/test_manual.py` échoue si un chapitre lit une clé de configuration qui
+n'existe plus ou pointe vers un chapitre ou une section disparus.
+
+Avec la configuration d'une ancienne sauvegarde, une valeur absente s'affiche « — »
+plutôt que de faire échouer la page.
+
 ### Joueur
 
 Une seule page, sans onglets (un joueur retraité n'affiche que son historique).
@@ -387,6 +429,20 @@ Filtres serveur : poste, statut du club (actif ou dormant), statut contractuel,
 puis en filtres avancés âge, niveau et potentiel minimum, salaire, valeur et prix
 maximum. Tri sur toute colonne, pagination obligatoire.
 
+Quand l'utilisateur dirige un club, la vue Infos a deux colonnes de plus, après le
+salaire : PRÉTENTIONS, le salaire mensuel que le joueur demande pour le rejoindre (sa
+contre-offre, celle que le club réserve sur sa masse salariale dès l'offre
+d'indemnité), et INTÉRESSÉ, Oui ou Non selon qu'il accepte ou non de le rejoindre
+(`wage_demand` et `interested` de la liste). Ses propres joueurs y ont un tiret et
+viennent en dernier quand on trie dessus. Deux filtres les accompagnent : « Joueurs
+intéressés » ou « Joueurs non intéressés » sur la ligne de filtres, et « Prétentions
+max. » en €/mois dans les filtres avancés. Sans club, ni colonnes ni filtres.
+
+Une offre que la masse salariale ne permet pas est refusée avec les deux montants :
+« Ibrahim Mbaye demanderait 310 000 € / mois : il vous reste 260 000 € / mois sous le
+plafond salarial », suivi de ce que les autres offres en cours réservent quand il y en
+a. La marge est arrondie en dessous, à deux chiffres significatifs comme les salaires.
+
 Les écrans Clubs et Joueurs retiennent leurs filtres et leur tri, et Joueurs sa vue (pas la page), dans
 le navigateur : y revenir par le menu, ou après un rechargement, les rouvre tels
 qu'on les a laissés. Changer un filtre garde le tri et la vue, et revient à la première page. « Réinitialiser », au bout de la ligne de filtres, les vide
@@ -406,6 +462,7 @@ POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running,
 GET  /api/travaux/{id}                  statut, progression, erreur éventuelle, compétition dont le tour suit (competition)
 GET  /api/monde/journal?date=             événements du jour
 GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {europe, countries}
+GET  /api/manuel[/{chapitre}]             manuel : {pages: [{slug, title}], page: {slug, title, sections: [{id, title}], markdown}} ; sans partie, configuration du dépôt
 
 GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&tri=&ordre=   tri : toute colonne (niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
 GET  /api/clubs/{id}                      en-tête + résumé
@@ -427,6 +484,7 @@ GET  /api/competitions/{id}/historique    champions par saison paginés (avec cl
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=   tri : idem, attributs et composites compris
+                  &interesse=oui|non&pretentions_max=   pour le club de l'utilisateur (ignorés sans club) ; tri : wage_demand, interested
 GET  /api/joueurs/{id}
 GET  /api/joueurs/{id}/historique         carrière + trajectory : niveau sur 200 mois par mois {year, month, season, level}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)

@@ -1,5 +1,5 @@
 """Weekly renewal decisions and daily contractual expiry."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from core.domain.clubs import Club
 from core.domain.offers import RenewalProposal
@@ -10,7 +10,7 @@ from collections import Counter
 from core.ai.market import market_value, expected_wage, contract_for, nominal_size, squad_quality
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
 from .human import is_human_club, listed_price
-from .transfer_rules import frustration, wants_to_leave
+from .transfer_rules import frustration, recent_arrival_ids, wants_to_leave
 
 
 def expiry_events(world: World) -> list[PlayerReleased]:
@@ -72,6 +72,7 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
     rules = cfg.management.contracts
     events = []
     games = games_by_club(world)
+    settling = recent_arrival_ids(world)
     ranks, useful_ids = {}, set()
     for club in world.clubs.values():
         useful_ids.update(sorted(club.player_ids, key=lambda pid: (-world.players[pid].rating, pid))[:nominal_size(cfg)])
@@ -87,6 +88,8 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
         if remaining >= rules.renewal_months and satisfaction >= rules.satisfaction_threshold: continue
         # A player who wants a bigger club does not extend; he plays out his contract or is sold.
         if wants_to_leave(player, world): continue
+        # A player who has just arrived does not reopen the contract he signed.
+        if player.id in settling: continue
         # Keep useful squad members, including backups; surplus expiry creates a market.
         indispensable_keeper = player.position == "GB" and rank < cfg.management.guardrails.min_goalkeepers
         useful = player.id in useful_ids or indispensable_keeper or len(club.player_ids) <= cfg.management.guardrails.min_squad
@@ -101,10 +104,16 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
             # A financially constrained club can still offer the existing wage.
             proposed = player.contract.weekly_wage
         if proposed < expected and satisfaction < rules.satisfaction_threshold: continue
+        contract = contract_for(player, world, proposed)
+        # A new contract never ends before the current one, and has to bring him something: a raise, or more years
+        # once the end is in sight.
+        if contract.end < player.contract.end: contract = replace(contract, end=player.contract.end)
+        longer = remaining < rules.renewal_months and contract.end > player.contract.end
+        if proposed <= player.contract.weekly_wage and not longer: continue
         if is_human_club(world, club.id):
             # A player on the transfer list does not ask for an extension.
             if player.id not in world.pending_renewals and listed_price(world, player.id) is None:
-                events.append(RenewalProposed(RenewalProposal(player.id, club.id, contract_for(player, world, proposed), world.date)))
+                events.append(RenewalProposed(RenewalProposal(player.id, club.id, contract, world.date)))
             continue
-        events.append(PlayerSigned(player.id, club.id, club.id, contract_for(player, world, proposed), 0, True))
+        events.append(PlayerSigned(player.id, club.id, club.id, contract, 0, True))
     return events

@@ -114,6 +114,20 @@ def asking_quote(world: World, player: Player, settled: set[int]) -> dict:
     return {"asking_price": quoted_minimum(asking_price(player, seller, world)), "transferable": True}
 
 
+def interested(world: World, player: Player) -> bool | None:
+    """Whether a player accepts to join the human club; None for its own players and without a human club."""
+    from core.world.transfer_rules import accepts_move
+    club = world.clubs.get(world.controlled_club_id)
+    return None if club is None or player.club_id == club.id else accepts_move(player, club, world)
+
+
+def asked_wage(world: World, player: Player) -> int | None:
+    """The weekly wage he asks to join the human club, as his counter-offer quotes it; None for its own players and without a human club."""
+    from core.world import talks
+    club = world.clubs.get(world.controlled_club_id)
+    return None if club is None or player.club_id == club.id else talks.asked_wage(world, player)
+
+
 def talks_view(world: World, player: Player) -> dict:
     """Where the human club's talks for a player stand, and what stops a new offer."""
     from core.world.talks import talks_for, opening_obstacle, available_budget

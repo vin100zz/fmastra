@@ -236,7 +236,10 @@ pendant `jours_rupture_negociation` (7) jours.
 
 L'indemnité et le salaire demandé sont réservés comme pour toute offre ; une offre
 qui dépasse le budget, la trésorerie, la masse salariale ou l'effectif est refusée
-avec la limite en cause. Le nombre de négociations simultanées n'est pas limité,
+avec la limite en cause. Le salaire réservé est la contre-offre que fera le joueur,
+`wage_demand` arrondi au-dessus à deux chiffres significatifs par mois (`asked_wage`) :
+c'est aussi la colonne PRÉTENTIONS de l'écran Joueurs, et le refus pour masse salariale
+la cite avec la marge restante sous le plafond, autres offres déduites. Le nombre de négociations simultanées n'est pas limité,
 contrairement aux clubs IA. Une offre de l'ancienne forme, encore aux enchères dans une
 partie existante, est expliquée dans les actualités quand elle échoue (refus du
 vendeur ou du joueur, offre rivale, clôture). Les offres reçues encore en attente à
@@ -325,7 +328,11 @@ donne 0. Il est tiré autour de 0,5 pour un regen ou sans note. Le salaire deman
 une prolongation vaut le salaire de marché augmenté de `prime_appat_gain` fois
 l'appât du gain (`facteur_ego` n'est plus lu).
 
-Ouvrir une négociation en cas d'insatisfaction ou d'échéance proche. Valoriser
+Ouvrir une négociation en cas d'insatisfaction ou d'échéance proche. Un joueur
+arrivé depuis moins de `mercato.stabilite_apres_arrivee_jours` jours ne renégocie
+pas. Un renouvellement doit apporter une hausse de salaire, ou une fin plus
+tardive si l'échéance est à moins de `mois_avant_fin_declenchant` mois ; sa fin
+n'est jamais antérieure à celle du contrat en cours. Valoriser
 la conservation du joueur avec le score de départ, pas avec un ajout en double.
 Le plafond salarial s'applique aussi aux renouvellements. À échéance inclusive,
 le joueur est libéré le lendemain si aucun nouveau contrat n'est signé.
