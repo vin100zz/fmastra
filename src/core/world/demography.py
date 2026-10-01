@@ -135,28 +135,66 @@ def draw_identity(world: World, nation: str, rng: Random) -> tuple[str, str]:
     return given, surname
 
 
+def draw_position_ratings(position: Position, cfg: Config, seed: int, player_id: int) -> dict[Position, int]:
+    """Aptitude out of 20 at every position for a player the source did not rate.
+
+    20 at his own position; elsewhere around the typical rating his position gives the other one, and 1 where it
+    gives none (a centre-back never leads the attack). Two draws tell one player from another: his versatility,
+    which moves all his ratings together, and his sides. He has one side, that of his position or either one if
+    he plays in the axis; unless he plays on both, the positions of the other side cost him `far_side_penalty`.
+    A rating under `min_rating` is no aptitude at all.
+
+    Its own stream, like greed: a player rated when an older save is loaded is given what his generation would have.
+    """
+    rules = cfg.demography.generation.position_ratings
+    rng = stream(seed, "position-ratings", player_id)
+    versatility = rng.gauss(0, rules.versatility_noise)
+    sided = position in rules.left_positions + rules.right_positions
+    left = position in rules.left_positions if sided else rng.random() < 0.5
+    far = () if rng.random() < rules.both_sides_probability else rules.right_positions if left else rules.left_positions
+    # Positions are read in their own order: the draws do not depend on how the configuration lists them.
+    ratings = {}
+    for other in Position:
+        typical = rules.typical[position].get(other)
+        if other == position:
+            ratings[other] = 20
+        elif typical is None:
+            ratings[other] = 1
+        else:
+            value = round(typical + versatility + rng.gauss(0, rules.position_noise) - (rules.far_side_penalty if other in far else 0))
+            # Never the equal of his own position.
+            ratings[other] = min(value, 19) if value >= rules.min_rating else 1
+    return ratings
+
+
+def secondary_affinities(ratings: dict[Position, int], position: Position) -> dict[Position, float]:
+    """The positions a rated player fills beside his own, as affinities: what an imported player carries too."""
+    return {other: rating / 20 for other, rating in ratings.items() if other != position and rating > 1}
+
+
 def generate_player(world: World, player_id: int, club: Club | None, position: Position,
                     nation: str, rng: Random, prospect: Prospect | None = None) -> Player:
     """A regen for `club`; without a prospect the club's academy draws his age, potential and level."""
     cfg = world.config
-    rules, academy = cfg.demography.generation, cfg.demography.academies
+    academy = cfg.demography.academies
     age, potential, level = draw_level(world, club, rng) if prospect is None else (prospect.age, prospect.potential, prospect.level)
     attributes = generate_attributes(level, position, cfg, rng)
     given, surname = draw_identity(world, nation, rng)
     birthday = world.date.add_years(-age)
     born = birthday.add_days(-rng.randrange(birthday.ordinal() - birthday.add_years(-1).ordinal()))
-    secondary = {Position(source): rules.secondary_affinity for source in rules.secondary_positions[position]
-                 if rng.random() < rules.secondary_probability}
+    ratings = draw_position_ratings(position, cfg, world.seed, player_id)
     contract = None
     if club:
         release = cfg.world.key_dates.contract_release
         end = Date(world.date.year + academy.contract_years, release.month, release.day).add_days(-1)
         contract = Contract(academy.base_weekly_wage, end, world.date, "backup", True)
     injury, agreements, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
-    return Player(player_id, f"{given} {surname}".strip(), surname, given, (nation,), born, position, secondary,
+    return Player(player_id, f"{given} {surname}".strip(), surname, given, (nation,), born, position,
+                  secondary_affinities(ratings, position),
                   attributes, overall(attributes, position, cfg), potential, cfg.states.fitness.initial,
                   cfg.states.form.initial, cfg.states.moral.initial, rng.uniform(injury.fragility_min, injury.fragility_max),
                   rng.uniform(agreements.ego_min, agreements.ego_max), club.id if club else None, contract,
+                  position_ratings=ratings,
                   # Peaked at the neutral factor, like the imported population.
                   aggression=rng.triangular(cards.aggression_min, cards.aggression_max, 1.0),
                   # Its own stream: the cohort's other draws stay as they were.

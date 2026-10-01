@@ -1,7 +1,7 @@
 """Lineup and bench decisions with unique player assignments."""
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from core.config.model import Config
@@ -31,14 +31,18 @@ class LineupContext:
     date: Date
     seed: int = 0
     games_played: int = 0
+    # Players who joined during the season, see `season_arrivals`.
+    arrivals: dict[int, tuple[int, float]] = field(default_factory=dict)
 
     @classmethod
     def from_world(cls, world: "World", club_id: int, competition_id: int, date: Date) -> "LineupContext":
+        from core.world.transfer_rules import season_arrivals
         club = world.clubs[club_id]
         games = sum(match.result is not None and match.season == world.season
                     and club_id in (match.home_id, match.away_id) for match in world.matches.values())
         called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
-        return cls(club, [world.players[pid] for pid in club.player_ids if pid not in called_up], competition_id, date, world.seed, games)
+        return cls(club, [world.players[pid] for pid in club.player_ids if pid not in called_up], competition_id, date, world.seed, games,
+                   season_arrivals(world, club_id))
 
 
 def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None,
@@ -91,7 +95,7 @@ def select_lineup(context: LineupContext, cfg: Config, formation: str | None = N
             chosen.add(replacement.id)
             slots[index] = LineupSlot(replacement, slot.position)
     priorities = playing_time_priorities(context.players, context.club, context.date,
-                                        context.seed, context.games_played, cfg)
+                                        context.seed, context.games_played, cfg, context.arrivals)
     remaining = sorted((player for player in players if player.id not in chosen), key=lambda player: (-player.rating * player.fitness, player.id))
     keepers = [player for player in remaining if player.position == Position.GOALKEEPER][:1]
     bench = keepers[:cfg.world.match_rules.bench_size]
@@ -165,5 +169,5 @@ def to_lineup(world: "World", submitted: SubmittedLineup, competition_id: int, c
     context = LineupContext.from_world(world, submitted.club_id, competition_id, world.date)
     slots = [LineupSlot(world.players[player_id], Position(position)) for player_id, position in submitted.slots]
     bench = [world.players[player_id] for player_id in submitted.bench]
-    priorities = playing_time_priorities(context.players, context.club, context.date, context.seed, context.games_played, cfg)
+    priorities = playing_time_priorities(context.players, context.club, context.date, context.seed, context.games_played, cfg, context.arrivals)
     return Lineup(submitted.club_id, submitted.formation, slots, bench, playing_time=priorities)

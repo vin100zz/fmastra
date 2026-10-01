@@ -25,6 +25,8 @@ def saved_world(config, tmp_path):
     world = mini_world(config)
     world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
     for club in world.clubs.values(): club.competition_id = -16
+    # Rated at every position, as they play: the save carries ratings under its position codes, and none is left to draw.
+    for player in world.players.values(): player.position_ratings = {position: 20 for position in Position}
     world.rngs = {key: Random(1) for key in ("market", "matches", "states", "progression", "demography")}
     world.clubs[1].formation = "4-4-2 plat"
     world.submitted_lineups[7] = SubmittedLineup(1, "4-4-2 plat", [(200, "GB"), (201, "DG"), (204, "DD")], [])

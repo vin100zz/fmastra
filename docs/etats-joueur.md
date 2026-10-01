@@ -134,7 +134,9 @@ retour de blessure. Le calcul du barème est dans `moteur_match.notes_joueurs`
 Moral : cible pondérée du temps de jeu, des résultats du club et de la
 satisfaction contractuelle, chaque composante normalisée à [0, 1], puis dérive
 vers cette cible. Les attentes de minutes sont proratisées aux matches déjà
-joués ; sans attente, employer une valeur neutre. L'effet en match vaut
+joués ; pour un joueur arrivé en cours de saison, aux matches du club depuis
+son arrivée, face aux minutes qu'il y a jouées (`season_arrivals`). Sans
+attente, employer une valeur neutre. L'effet en match vaut
 1 + amplitude × (2 × moral - 1), borné par construction à l'amplitude configurée.
 Le moral alimente aussi les demandes de contrat et de départ. La cible du moral
 retranche en outre la frustration d'ambition du joueur dont le club est en dessous

@@ -10,18 +10,19 @@ from core.math import clamp
 from core.world.estimates import estimate_potential
 
 
-def playing_time_priorities(players: list[Player], club: Club, date: Date,
-                            seed: int, games_played: int, cfg: Config) -> dict[int, PlayingTimePriority]:
+def playing_time_priorities(players: list[Player], club: Club, date: Date, seed: int, games_played: int, cfg: Config,
+                            arrivals: dict[int, tuple[int, float]] | None = None) -> dict[int, PlayingTimePriority]:
     rules, growth = cfg.states.substitutions, cfg.demography.progression
     ranks = Counter()
     priorities = {}
     for player in sorted(players, key=lambda item: (-item.rating, item.id)):
         rank = ranks[player.position]
         ranks[player.position] += 1
-        # Same positional expectations as the morale calculation. No invented
-        # playing-time debt before a club has played its first match.
-        expected = games_played * cfg.engine.timing.match_seconds / 60 / (rank + 1)
-        deficit = clamp(1 - player.season_minutes / expected, 0, 1) if expected else 0
+        # Same positional expectations as the morale calculation, counted since he came for a player who joined during
+        # the season. No invented playing-time debt before a club has played its first match.
+        games, minutes = (arrivals or {}).get(player.id, (games_played, player.season_minutes))
+        expected = games * cfg.engine.timing.match_seconds / 60 / (rank + 1)
+        deficit = clamp(1 - minutes / expected, 0, 1) if expected else 0
         age = player.born.age_on(date)
         age_factor = next((row.factor for row in growth.age_curve if age <= row.max_age), 0)
         development = 0.0

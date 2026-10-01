@@ -39,7 +39,11 @@ def test_save_restore_rng_and_config(config, tmp_path):
     assert migrated.finance_history == {} and migrated.custom_formation == ()
     assert migrated.clubs[868].youth_recruitment is None
     assert migrated.players[85139014].source_current_ability is None
-    assert not migrated.players[85139014].position_ratings
+    # Without the ratings of the source, every player is rated as a generated one is, around the positions he had.
+    rated = migrated.players[85139014]
+    assert rated.position_ratings[rated.position] == 20
+    assert all(rated.position_ratings[position] >= round(affinity * 20)
+               for position, affinity in world.players[85139014].secondary_positions.items())
     assert migrated.finance_history_since == world.date
     assert migrated.rngs["matches"].getstate() == world.rngs["matches"].getstate()
     engine = AnalyticalEngine()
@@ -173,6 +177,42 @@ def test_save_from_before_the_monthly_level_history_keeps_its_season_points_and_
     assert migrated.trajectories[second.id] == world.trajectories[second.id] == [(now, [history_level(second.rating)])]
     store.save(migrated, "upgraded")
     assert store.load("upgraded").trajectories == migrated.trajectories
+
+
+def test_save_from_before_the_generated_ratings_rates_its_regens_and_keeps_their_secondary_positions(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from core.domain.players import Position
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    world = import_world(ROOT / "data", config, 14)
+    generated = [player for player in world.players.values() if player.source_current_ability is None]
+    outfield = next(player for player in generated if player.position != Position.GOALKEEPER)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 23
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 23:
+            for key in defaults: del rules[path[0]][path[1]][key]
+    legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    # A regen of that time had no rating by position, and at most secondary positions at one fixed affinity.
+    for player in generated:
+        legacy["world"]["players"][str(player.id)].update(position_ratings={}, secondary_positions={})
+    legacy["world"]["players"][str(outfield.id)]["secondary_positions"] = {"GB": 0.6}
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    assert migrated.config == world.config
+    # Each one is rated as his generation rates him today, and still plays where he did.
+    kept = migrated.players[outfield.id]
+    assert kept.position_ratings == {**outfield.position_ratings, Position.GOALKEEPER: 12}
+    assert kept.secondary_positions == {**outfield.secondary_positions, Position.GOALKEEPER: 0.6}
+    # The players the source rated are left as they were.
+    kept.position_ratings, kept.secondary_positions = outfield.position_ratings, outfield.secondary_positions
+    assert migrated.players == world.players
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").players == migrated.players
 
 
 @pytest.mark.slow

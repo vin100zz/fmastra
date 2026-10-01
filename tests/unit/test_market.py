@@ -866,6 +866,39 @@ def test_an_unhappy_player_on_a_long_contract_asks_for_a_raise_or_nothing(config
     assert proposal.contract.weekly_wage > player.contract.weekly_wage and proposal.contract.end == player.contract.end
 
 
+def test_a_player_who_joined_during_the_season_answers_only_for_the_matches_since(config):
+    from core.domain.matches import Match, MatchResult, PlayerMatchStats
+    from core.world.contracts import contentment, renewal_events
+    from core.world.events import PlayerChanged
+    from core.world.transfer_rules import season_arrivals
+    world, player = renewal_setup(config, reputation=100)
+    club = world.clubs[player.club_id]
+    club.competition_id = 16
+    other = next(cid for cid in world.clubs if cid != club.id)
+    start, full = world.date, config.engine.timing.match_seconds / 60
+    arrival = start.add_days(30)
+    # Three matches before he came and two since, both played in full; his season minutes include those of his former club.
+    for index, day in enumerate((7, 14, 21, 37, 44)):
+        stats = {player.id: PlayerMatchStats(minutes=full)} if day > 30 else {}
+        world.matches[index] = Match(index, 16, world.season, index, start.add_days(day), club.id, other, MatchResult(1, 0, "possession", player_stats=stats))
+    player.season_minutes = 3 * full
+    world.date = start.add_days(50)
+    target = lambda: next(e.morale for e in renewal_events(world) if isinstance(e, PlayerChanged) and e.player_id == player.id)
+    assert season_arrivals(world) == {}
+    assert contentment(world, player, club, 0, 5, player.season_minutes).playing_time == pytest.approx(0.6)
+    there_all_season = target()
+    world.transfers.append(TransferRecord(arrival, player.id, other, club.id, 0, "transfer", world.season))
+    assert season_arrivals(world) == season_arrivals(world, club.id) == {player.id: (2, 2 * full)}
+    assert season_arrivals(world, other) == {}
+    assert contentment(world, player, club, 0, *season_arrivals(world)[player.id]).playing_time == 1
+    assert target() > there_all_season
+    # Neither a move of an earlier season nor one he has since left the club of is an arrival.
+    world.transfers[-1] = replace(world.transfers[-1], season=world.season - 1)
+    assert season_arrivals(world) == {}
+    world.transfers[-1] = replace(world.transfers[-1], season=world.season, target_id=other)
+    assert season_arrivals(world) == {}
+
+
 def sellable_world(config):
     """A market where club 2 can let player 201 go (a like-for-like cover stays) and the human club 1 bids."""
     world = recruitment_world(config)

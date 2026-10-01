@@ -108,6 +108,9 @@ def test_priority_tracks_minutes_age_and_estimated_not_true_potential(config, mo
     assert before.satisfaction == 1 and before.development > 0
     assert priority(replace(young, potential=70)) == before
     assert priority(young, 0).satisfaction == 0
+    # A player who joined during the season owes nothing for the matches played before he came.
+    arrived = playing_time_priorities([young], club, world.date, world.seed, 10, config, {young.id: (2, 180.0)})[young.id]
+    assert arrived.satisfaction == 0 and arrived.development == before.development
     played = priority(replace(young, season_minutes=900, monthly_minutes=400))
     assert played.satisfaction == played.development == 0
     assert priority(replace(young, born=Date(1990, 1, 1))).development == 0

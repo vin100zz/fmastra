@@ -234,3 +234,38 @@ def test_incoherent_regen_rules_are_rejected(config, section, key, value):
     raw["demographie"][section][key] = value
     with pytest.raises(ConfigError):
         decode_config(raw)
+
+
+def test_position_rating_rules_default_for_configurations_made_before_them(config):
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 24]
+    assert [(path, list(defaults)) for path, defaults in added] == [(("demographie", "generation"), ["aptitudes_postes"])]
+    raw = config_payload(config)
+    for (domain, section), defaults in added:
+        for key in defaults: del raw[domain][section][key]
+    older = decode_config(raw)
+    # The model defaults, the save migration and the shipped configuration describe the same rules.
+    assert older == config
+    restored = config_payload(older)
+    for (domain, section), defaults in added:
+        assert {key: restored[domain][section][key] for key in defaults} == defaults
+
+
+@pytest.mark.parametrize("key,value", [
+    ("notes_types", {"DC": {"MDC": 9.0}}), ("postes_gauche", ["DG", "DD"]), ("postes_droite", ["AD"]),
+    ("ecart_type_polyvalence", -1.0), ("ecart_type_poste", -1.0), ("probabilite_deux_cotes", 1.5),
+    ("malus_cote_oppose", -1.0), ("note_min", 1), ("note_min", 20),
+])
+def test_incoherent_position_rating_rules_are_rejected(config, key, value):
+    raw = config_payload(config)
+    raw["demographie"]["generation"]["aptitudes_postes"][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)
+
+
+@pytest.mark.parametrize("position,other,value", [("DC", "DC", 12.0), ("DC", "LIB", 12.0), ("DC", "MDC", 21.0)])
+def test_a_typical_rating_is_out_of_twenty_at_another_known_position(config, position, other, value):
+    raw = config_payload(config)
+    raw["demographie"]["generation"]["aptitudes_postes"]["notes_types"][position][other] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)

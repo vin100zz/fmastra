@@ -48,8 +48,9 @@ un jeune. Ces motifs peuvent déclencher un changement avant les seuils de
 fatigue. Le gardien ne fait pas l'objet d'une rotation ordinaire.
 
 Avant le match, le déficit de temps de jeu compare les minutes de la saison aux
-attentes liées au rang du joueur à son poste, comme pour le moral. Sans match
-déjà disputé, aucun déficit n'est inventé. La priorité de développement dépend
+attentes liées au rang du joueur à son poste, comme pour le moral (depuis son
+arrivée pour un joueur venu en cours de saison). Sans match déjà disputé, aucun
+déficit n'est inventé. La priorité de développement dépend
 de l'âge, de la marge au potentiel **estimé par le club**, des minutes du mois
 et de la préférence du club pour les jeunes. Ces priorités servent aussi à
 choisir le banc parmi des joueurs de niveau comparable, avec un gardien de

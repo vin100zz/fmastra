@@ -296,6 +296,7 @@ utilisés par le moteur sont importés directement, sans estimation depuis la va
 La marge de progression vaut `(PotentialAbility - CurrentAbility) / 2` sur
 l'échelle interne de 100, ajoutée au niveau pondéré et plafonnée à 100.
 Les aptitudes `Position_*` déterminent le poste principal et l'aisance à chaque poste.
+Un joueur généré reçoit des aptitudes de même forme, tirées autour de son poste.
 
 Les notes `TrainingFacilities` et `YouthRecruitment` sont affichées sur 20 dans
 la liste et la fiche des clubs. YouthRecruitment attire les meilleurs regens de l'année

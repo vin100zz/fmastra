@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from core.config.types import FrozenMap, MODEL_CONFIG
+from core.config.types import FrozenDict, FrozenMap, MODEL_CONFIG
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class DemographyConfigProgressionAgeCurveItem:
@@ -80,8 +80,37 @@ class DemographyConfigGenerationLevelRatiosItem:
     ratio: float = Field(alias="ratio")
 
 
+def _typical_ratings() -> FrozenDict:
+    rows = {"GB": {},
+            "DC": {"DG": 10.0, "DD": 10.0, "MDC": 9.0, "MC": 6.0},
+            "DG": {"DD": 14.0, "AILG": 12.0, "DC": 9.0, "AILD": 9.0, "MDC": 6.0, "MC": 6.0},
+            "DD": {"DG": 14.0, "AILD": 12.0, "DC": 9.0, "AILG": 9.0, "MDC": 6.0, "MC": 6.0},
+            "MDC": {"MC": 16.0, "DC": 9.0, "MOC": 8.0, "DG": 6.0, "DD": 6.0},
+            "MC": {"MDC": 13.0, "MOC": 12.0, "AILG": 10.0, "AILD": 10.0, "DG": 6.0, "DD": 6.0, "DC": 5.0, "BU": 5.0},
+            "MOC": {"MC": 14.0, "AILG": 13.0, "AILD": 13.0, "BU": 10.0, "MDC": 8.0},
+            "AILG": {"AILD": 17.0, "MOC": 11.0, "BU": 11.0, "MC": 8.0, "DG": 8.0, "DD": 8.0},
+            "AILD": {"AILG": 17.0, "MOC": 11.0, "BU": 11.0, "MC": 8.0, "DD": 8.0, "DG": 8.0},
+            "BU": {"AILG": 11.0, "AILD": 11.0, "MOC": 9.0}}
+    return FrozenDict({position: FrozenDict(row) for position, row in rows.items()})
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class DemographyConfigGenerationPositionRatings:
+    """Aptitude of a generated player at each position; the defaults are what a save made before it was introduced receives."""
+    # By main position, the rating out of 20 its typical player has at each other one; a position left out is never played.
+    typical: FrozenMap[FrozenMap[float]] = Field(default_factory=_typical_ratings, alias="notes_types")
+    left_positions: tuple[str, ...] = Field(default=("DG", "AILG"), alias="postes_gauche")
+    right_positions: tuple[str, ...] = Field(default=("DD", "AILD"), alias="postes_droite")
+    versatility_noise: float = Field(default=2.0, alias="ecart_type_polyvalence")
+    position_noise: float = Field(default=2.5, alias="ecart_type_poste")
+    both_sides_probability: float = Field(default=0.5, alias="probabilite_deux_cotes")
+    far_side_penalty: float = Field(default=7.0, alias="malus_cote_oppose")
+    min_rating: int = Field(default=8, alias="note_min")
+
+
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class DemographyConfigGeneration:
+    # The three secondary_* rules gave way to `position_ratings`; they stay for configurations saved with them.
     secondary_affinity: float = Field(alias="affinite_secondaire")
     secondary_positions: FrozenMap[tuple[str, ...]] = Field(alias="postes_secondaires_possibles")
     secondary_probability: float = Field(alias="probabilite_poste_secondaire")
@@ -99,6 +128,8 @@ class DemographyConfigGeneration:
     elite_nation_exponent: float = Field(default=0.5, alias="exposant_nations_elite")
     nation_floor: float = Field(default=0.0002, alias="part_plancher_nation")
     min_identities: int = Field(default=20, alias="noms_minimum_par_nation")
+    position_ratings: DemographyConfigGenerationPositionRatings = Field(
+        default_factory=DemographyConfigGenerationPositionRatings, alias="aptitudes_postes")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

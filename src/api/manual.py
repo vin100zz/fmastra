@@ -71,6 +71,12 @@ def weights(values: Mapping[str, float]) -> str:
     return ", ".join(f"{ATTRIBUTE_LABELS.get(name, name)} {percentage(weight)}" for name, weight in ranked)
 
 
+def ratings(values: Mapping[str, float]) -> str:
+    """The ratings a position gives the others, highest first: "MC 16, DC 9"; `MISSING` when it gives none."""
+    ranked = sorted(values.items(), key=lambda item: -item[1])
+    return ", ".join(f"{name} {number(value)}" for name, value in ranked) or MISSING
+
+
 def day(number: int, month: int) -> str:
     return f"{'1er' if number == 1 else number} {MONTHS[month - 1]}"
 
@@ -88,7 +94,7 @@ def text(value: Any) -> str:
 
 FUNCTIONS = {"min": min, "max": max, "abs": abs, "len": len, "sum": sum, "exp": math.exp, "log": math.log, "tanh": math.tanh,
              "sigmoide": sigmoid, "logit": lambda value: math.log(value / (1 - value)),
-             "n": number, "pct": percentage, "eur": euros, "poids": weights, "liste": text, "date": day, "annee": lambda value: str(int(value)),
+             "n": number, "pct": percentage, "eur": euros, "poids": weights, "notes": ratings, "liste": text, "date": day, "annee": lambda value: str(int(value)),
              "attribut": lambda name: ATTRIBUTE_LABELS[name]}
 OPERATORS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv, ast.Pow: operator.pow}
 

@@ -43,7 +43,18 @@ La part de chaque classe est celle mesurée sur les joueurs du fichier de dépar
 |---|---:|
 {{#chaque demographie.cible_postes}}| {{cle}} | {{pct(valeur, 0)}} |
 
-Chaque poste secondaire possible est acquis une fois sur {{n(1 / demographie.generation.probabilite_poste_secondaire, 0)}}, avec une affinité de {{demographie.generation.affinite_secondaire * 20}} sur 20.
+**Les aptitudes par poste.** Un regen vaut 20 à son poste. Ailleurs, son aptitude part d'une note type qui traduit la parenté entre les deux postes ; un poste absent de sa ligne lui reste fermé (1 sur 20) :
+
+| Poste du regen | Notes types aux autres postes |
+|---|---|
+{{#chaque demographie.generation.aptitudes_postes.notes_types}}| {{cle}} | {{notes(valeur)}} |
+
+Deux tirages distinguent ensuite un joueur d'un autre :
+
+- **la polyvalence** : un écart propre au joueur (écart-type de {{demographie.generation.aptitudes_postes.ecart_type_polyvalence}} points) s'ajoute à toutes ses notes à la fois, puis un aléa à chacune (écart-type de {{demographie.generation.aptitudes_postes.ecart_type_poste}} points). Certains regens dépannent partout autour de leur poste, d'autres nulle part ;
+- **le côté** : un joueur de couloir a le côté de son poste, un joueur axial un côté tiré au hasard. {{pct(demographie.generation.aptitudes_postes.probabilite_deux_cotes, 0)}} des regens jouent des deux côtés ; pour les autres, les postes du côté opposé ({{liste(demographie.generation.aptitudes_postes.postes_gauche)}} à gauche, {{liste(demographie.generation.aptitudes_postes.postes_droite)}} à droite) perdent {{demographie.generation.aptitudes_postes.malus_cote_oppose}} points.
+
+Une note inférieure à {{demographie.generation.aptitudes_postes.note_min}} ne compte pas : l'aptitude reste à 1. Aucune n'atteint 20, réservé au poste principal. Ces aptitudes sont fixées à la naissance et ne changent plus.
 
 **Les attributs.** Ils sont répartis autour du niveau de départ selon le profil du poste (un avant-centre reçoit plus de finition que de tacle), avec un aléa par attribut, puis ajustés pour que le niveau au poste tombe juste.
 

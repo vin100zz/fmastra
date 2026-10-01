@@ -49,7 +49,7 @@ Le moteur de match regroupe les attributs en huit composites, un par type d'acti
 
 ## Postes et affinité
 
-Chaque joueur a une affinité de 0 à 20 avec chacun des dix postes. Son poste principal est celui où elle est la plus haute. Pour un joueur du fichier de départ, ce sont les aptitudes par poste de sa fiche ; un regen vaut 20 à son poste, {{demographie.generation.affinite_secondaire * 20}} à ses éventuels postes secondaires et 0 ailleurs.
+Chaque joueur a une affinité de 1 à 20 avec chacun des dix postes : ce sont les aptitudes par poste de sa fiche. Son poste principal est celui où elle est la plus haute. Celles d'un joueur du fichier de départ viennent de ce fichier ; celles d'un regen sont tirées à sa naissance, autour de son poste (voir [Regens](#/aide/regens/a-quoi-ressemble-un-regen)).
 
 Jouer à un poste multiplie tout ce que fait le joueur par :
 
@@ -57,7 +57,7 @@ Jouer à un poste multiplie tout ce que fait le joueur par :
 {{attributs.malus_hors_poste.base}} + {{attributs.malus_hors_poste.facteur}} × (affinité ÷ 20)
 ```
 
-Un joueur totalement étranger à un poste y garde donc {{pct(attributs.malus_hors_poste.base)}} de ses moyens ; à 10 sur 20, {{pct(attributs.malus_hors_poste.base + attributs.malus_hors_poste.facteur * 0.5)}}.
+Un joueur totalement étranger à un poste (1 sur 20) y garde donc {{pct(attributs.malus_hors_poste.base + attributs.malus_hors_poste.facteur / 20)}} de ses moyens ; à 10 sur 20, {{pct(attributs.malus_hors_poste.base + attributs.malus_hors_poste.facteur * 0.5)}}.
 
 L'affinité n'est pas le seul effet du poste. Le poste décide aussi **où** le joueur intervient sur le terrain et dans quelles phases (voir [Le moteur de match](#/aide/match/la-force-d-une-equipe-dans-une-zone)) : un excellent finisseur placé arrière central ne se retrouve presque jamais en position de frapper.
 

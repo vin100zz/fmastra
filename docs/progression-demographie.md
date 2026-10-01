@@ -141,9 +141,21 @@ Les regens de l'année sont d'abord tirés **sans club**, puis placés (section 
    entre à 40 % de son potentiel, à 19 ans à 56 %. Les gardiens ne sont pas évalués sur
    les mêmes poids que les joueurs de champ.
 4. Poste tiré dans la cible corrigée, sauf si le club est sous son minimum de gardiens.
-   Pour chaque poste secondaire autorisé dans la table configurée, tirage
-   indépendant à la probabilité configurée, puis affinité secondaire configurée.
-   Aucune affinité totale gardien/champ.
+   Aptitudes par poste (`aptitudes_postes`, sur 20 comme celles de la source) : 20 au
+   poste tiré ; ailleurs `notes_types[poste][autre]` + polyvalence du joueur (normale,
+   la même à tous ses postes) + aléa du poste, arrondi, toujours sous 20. Un poste absent
+   de la ligne vaut 1 : un DC n'est jamais BU, aucune aptitude gardien/champ. Le joueur
+   a un côté (celui de son poste, tiré au hasard s'il est axial) ; sauf
+   `probabilite_deux_cotes`, les postes du côté opposé perdent `malus_cote_oppose`. Sous
+   `note_min`, l'aptitude vaut 1. Les notes types sont calées sur les parts de joueurs
+   importés notés 10 ou plus à chaque autre poste (MDC en MC 99 %, MOC en MC 87 %, DC en
+   MDC 39 %…), sauf les côtés : les latéraux importés changent peu de flanc (22 à 58 %)
+   et les ailiers presque tous (89 %), les regens environ une fois sur deux et trois fois
+   sur quatre. Le tirage a son propre flux (`position-ratings`, graine et identifiant du
+   joueur) : il ne consomme pas celui de la cohorte et se rejoue à l'identique au
+   chargement d'une ancienne sauvegarde. `secondary_positions` reprend, comme à l'import,
+   les postes notés au-dessus de 1. `affinite_secondaire`, `postes_secondaires_possibles`
+   et `probabilite_poste_secondaire` n'ont plus d'effet.
 5. Répartir les attributs selon le profil de poste ; recentrer pour que la note
    globale corresponde au niveau cible. Le plafonnement peut réduire l'écart
    effectif ; vérifier après génération niveau <= potentiel.

@@ -69,7 +69,29 @@
     "MDC": 0.12, "MC": 0.12, "MOC": 0.11, "AILG": 0.06, "AILD": 0.06, "BU": 0.11
   },
   "generation": {
-    "_note": "Age tire selon poids_age (un poids par age de age_min a age_max). potentiel_min, potentiel_amplitude et beta_* ne servent plus (le potentiel vient de la classe tiree) ; conserves pour les anciennes sauvegardes. Un potentiel >= seuil_potentiel_elite tire sa nation dans un melange aplati (part ** exposant_nations_elite) ; part_plancher_nation donne une chance minimale a toute nation dotee de noms ; une nation de moins de noms_minimum_par_nation identites emprunte le reste de ses noms a l'ensemble du monde.",
+    "_note": "Age tire selon poids_age (un poids par age de age_min a age_max). potentiel_min, potentiel_amplitude et beta_* ne servent plus (le potentiel vient de la classe tiree) ; conserves pour les anciennes sauvegardes, comme affinite_secondaire, postes_secondaires_possibles et probabilite_poste_secondaire, remplaces par aptitudes_postes. Un potentiel >= seuil_potentiel_elite tire sa nation dans un melange aplati (part ** exposant_nations_elite) ; part_plancher_nation donne une chance minimale a toute nation dotee de noms ; une nation de moins de noms_minimum_par_nation identites emprunte le reste de ses noms a l'ensemble du monde.",
+    "aptitudes_postes": {
+      "_note": "Aptitude sur 20 d'un joueur genere a chaque poste : 20 au sien ; ailleurs notes_types[son poste][poste] + polyvalence du joueur (normale d'ecart-type ecart_type_polyvalence, la meme a tous ses postes) + alea du poste (ecart_type_poste), arrondie et toujours sous 20. Un poste absent de la ligne n'est jamais joue (1). Chaque joueur a un cote : celui de son poste (postes_gauche, postes_droite) ou, s'il est axial, tire au hasard ; sauf probabilite_deux_cotes, les postes du cote oppose perdent malus_cote_oppose. Sous note_min l'aptitude est nulle (1). Les notes types sont calees sur les aptitudes des joueurs importes.",
+      "notes_types": {
+        "GB": {},
+        "DC": {"DG": 10, "DD": 10, "MDC": 9, "MC": 6},
+        "DG": {"DD": 14, "AILG": 12, "DC": 9, "AILD": 9, "MDC": 6, "MC": 6},
+        "DD": {"DG": 14, "AILD": 12, "DC": 9, "AILG": 9, "MDC": 6, "MC": 6},
+        "MDC": {"MC": 16, "DC": 9, "MOC": 8, "DG": 6, "DD": 6},
+        "MC": {"MDC": 13, "MOC": 12, "AILG": 10, "AILD": 10, "DG": 6, "DD": 6, "DC": 5, "BU": 5},
+        "MOC": {"MC": 14, "AILG": 13, "AILD": 13, "BU": 10, "MDC": 8},
+        "AILG": {"AILD": 17, "MOC": 11, "BU": 11, "MC": 8, "DG": 8, "DD": 8},
+        "AILD": {"AILG": 17, "MOC": 11, "BU": 11, "MC": 8, "DD": 8, "DG": 8},
+        "BU": {"AILG": 11, "AILD": 11, "MOC": 9}
+      },
+      "postes_gauche": ["DG", "AILG"],
+      "postes_droite": ["DD", "AILD"],
+      "ecart_type_polyvalence": 2.0,
+      "ecart_type_poste": 2.5,
+      "probabilite_deux_cotes": 0.5,
+      "malus_cote_oppose": 7.0,
+      "note_min": 8
+    },
     "affinite_secondaire": 0.6,
     "postes_secondaires_possibles": {
       "GB": [], "DC": ["MDC"], "DG": ["AILG"], "DD": ["AILD"],

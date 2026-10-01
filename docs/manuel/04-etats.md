@@ -59,7 +59,7 @@ moral visé = {{pct(etats.moral.poids_temps_de_jeu + etats.moral.poids_resultats
 
 Chacun des quatre termes va de 0 à 1.
 
-- **Temps de jeu** : ses minutes de la saison rapportées à celles qu'il attend. Il attend d'autant plus qu'il est bien classé à son poste dans l'effectif : le meilleur à son poste attend tous les matches du club, le deuxième la moitié, le troisième le tiers. Avant le premier match de la saison, tout le monde est satisfait.
+- **Temps de jeu** : ses minutes de la saison rapportées à celles qu'il attend. Il attend d'autant plus qu'il est bien classé à son poste dans l'effectif : le meilleur à son poste attend tous les matches du club, le deuxième la moitié, le troisième le tiers. Un joueur arrivé en cours de saison n'attend rien des matches joués avant sa venue : seuls comptent ceux du club depuis son arrivée, et les minutes qu'il y a jouées. Avant le premier match de la saison, tout le monde est satisfait.
 - **Salaire** : son salaire rapporté à celui que sa valeur lui fait attendre (voir [Valeur, salaires et contrats](#/aide/contrats/le-salaire-attendu)). Un joueur payé au-dessus n'est pas plus content qu'un joueur payé juste.
 - **Standing du club** : la réputation du club rapportée à la moitié du niveau du joueur. Un joueur de niveau 150 est pleinement satisfait à partir d'une réputation de 75.
 - **Frustration** : celle d'un joueur devenu trop fort pour son club.

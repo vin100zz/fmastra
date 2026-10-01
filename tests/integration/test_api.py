@@ -177,7 +177,7 @@ def test_squad_shows_form_and_morale_with_where_it_drifts_and_why(client):
     moral = world.config.states.moral
     for row in rows:
         player = world.players[row['id']]
-        mood = contentment(world, player, club, ranks[player.id], games)
+        mood = contentment(world, player, club, ranks[player.id], games, player.season_minutes)
         assert row['form'] == round(player.form, 3) and row['morale'] == round(player.morale, 3)
         # The target the weekly review moves his morale towards, within the bounds morale keeps.
         assert row['morale_target'] == round(min(moral.max, max(moral.min, mood.morale_target)), 3)

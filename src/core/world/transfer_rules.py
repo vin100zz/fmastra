@@ -48,6 +48,34 @@ def recent_arrival_ids(world: World) -> set[int]:
     return recent
 
 
+def season_arrivals(world: World, club_id: int | None = None) -> dict[int, tuple[int, float]]:
+    """Players who joined their club during the season: the matches it has played since, and their minutes in them.
+
+    The matches a club played before a player came were never his to play, and the minutes of a season follow him from
+    club to club: neither says how much he plays where he is now. `club_id` keeps one club's players only.
+    """
+    arrived, seen = {}, set()
+    # Movements are appended chronologically: those of this season are the tail.
+    for move in reversed(world.transfers):
+        if move.season != world.season: break
+        if move.player_id in seen: continue
+        seen.add(move.player_id)
+        player = world.players.get(move.player_id)
+        if player is None or move.target_id is None or player.club_id != move.target_id: continue
+        if club_id is None or move.target_id == club_id: arrived[player.id] = move.date
+    if not arrived: return {}
+    played = {world.players[pid].club_id: [] for pid in arrived}
+    for match in world.matches.values():
+        if match.result is None or match.season != world.season: continue
+        for side in (match.home_id, match.away_id):
+            if side in played: played[side].append(match)
+    arrivals = {}
+    for pid, date in arrived.items():
+        since = [match.result for match in played[world.players[pid].club_id] if match.date > date]
+        arrivals[pid] = (len(since), sum(result.player_stats[pid].minutes for result in since if pid in result.player_stats))
+    return arrivals
+
+
 def target_level(club: Club, cfg: Config) -> float:
     """The level a club aims at, the same profile clubs use to size their ambitions."""
     profile = cfg.management.target_profile

@@ -32,7 +32,7 @@ Le banc compte {{monde.regles_match.taille_banc}} joueurs : un gardien, puis des
 
 Avant chaque match, chaque joueur reçoit deux priorités, qui pèsent sur le choix du banc et sur les remplacements :
 
-- **La dette de temps de jeu** : la part des minutes attendues qu'il n'a pas jouées cette saison (le même calcul que pour le [moral](#/aide/etats/le-moral)).
+- **La dette de temps de jeu** : la part des minutes attendues qu'il n'a pas jouées cette saison, ou depuis son arrivée s'il est venu en cours de saison (le même calcul que pour le [moral](#/aide/etats/le-moral)).
 - **Le développement**, pour les joueurs encore en âge de progresser : d'autant plus fort que le joueur est jeune, loin de son potentiel estimé, peu utilisé ce mois-ci, et que le club aime faire jouer ses jeunes. Cette préférence pour les jeunes est un trait du club, tiré à la création de la partie entre {{ia_gestion.personnalite_club.preference_jeunes.min}} et {{ia_gestion.personnalite_club.preference_jeunes.max}}.
 
 Elles donnent un bonus pouvant atteindre {{etats.remplacements.poids_deficit_temps_jeu * 2}} points pour la dette et {{etats.remplacements.poids_developpement_jeunes * 2}} points pour le développement.

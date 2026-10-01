@@ -14,7 +14,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from core.domain.world import World, history_level, history_month
-from core.world.demography import initialize_targets
+from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
 from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
@@ -25,10 +25,25 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 23
+SCHEMA_VERSION = 24
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Generated players rated at every position: an older save rates its regens, past and to come, with these rules.
+    (24, ("demographie", "generation"), {"aptitudes_postes": {
+         "notes_types": {
+             "GB": {},
+             "DC": {"DG": 10.0, "DD": 10.0, "MDC": 9.0, "MC": 6.0},
+             "DG": {"DD": 14.0, "AILG": 12.0, "DC": 9.0, "AILD": 9.0, "MDC": 6.0, "MC": 6.0},
+             "DD": {"DG": 14.0, "AILD": 12.0, "DC": 9.0, "AILG": 9.0, "MDC": 6.0, "MC": 6.0},
+             "MDC": {"MC": 16.0, "DC": 9.0, "MOC": 8.0, "DG": 6.0, "DD": 6.0},
+             "MC": {"MDC": 13.0, "MOC": 12.0, "AILG": 10.0, "AILD": 10.0, "DG": 6.0, "DD": 6.0, "DC": 5.0, "BU": 5.0},
+             "MOC": {"MC": 14.0, "AILG": 13.0, "AILD": 13.0, "BU": 10.0, "MDC": 8.0},
+             "AILG": {"AILD": 17.0, "MOC": 11.0, "BU": 11.0, "MC": 8.0, "DG": 8.0, "DD": 8.0},
+             "AILD": {"AILG": 17.0, "MOC": 11.0, "BU": 11.0, "MC": 8.0, "DD": 8.0, "DG": 8.0},
+             "BU": {"AILG": 11.0, "AILD": 11.0, "MOC": 9.0}},
+         "postes_gauche": ["DG", "AILG"], "postes_droite": ["DD", "AILD"], "ecart_type_polyvalence": 2.0,
+         "ecart_type_poste": 2.5, "probabilite_deux_cotes": 0.5, "malus_cote_oppose": 7.0, "note_min": 8}}),
     # The human club's transfer list and players offered to clubs: an older save sells with these rules.
     (20, ("ia_gestion", "mercato"), {
          "tolerance_baisse_joueur_a_vendre": 15.0, "multiplicateur_prix_max_acheteur": 1.35, "jours_relance_proposition": 14,
@@ -178,6 +193,7 @@ class SaveStore:
                 raise SaveError("Sauvegarde incomplète : flux aléatoires manquants.")
             validate_consistency(world.config)
             if version < 19: _assign_greed(world, self.directory.parent / "data" / "players.csv")
+            if version < 24: _rate_positions(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -261,6 +277,18 @@ def _assign_greed(world: World, source_path: Path) -> None:
             loyalties = {int(row["UID"]): float(row["Loyality"]) for row in reader if row.get("Loyality")}
     for player in world.players.values():
         player.greed = greed_trait(loyalties.get(player.id), world.config, world.seed, player.id)
+
+
+def _rate_positions(world: World) -> None:
+    """Schema 24 rates generated players at every position: a player without ratings receives those his generation
+    would draw today, and keeps at least the affinity he had at his secondary positions."""
+    for player in world.players.values():
+        if player.position_ratings: continue
+        ratings = draw_position_ratings(player.position, world.config, world.seed, player.id)
+        for position, affinity in player.secondary_positions.items():
+            ratings[position] = max(ratings[position], round(affinity * 20))
+        player.position_ratings = ratings
+        player.secondary_positions = secondary_affinities(ratings, player.position)
 
 
 def _upgrade_formations(world: World) -> None:

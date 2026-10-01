@@ -89,6 +89,8 @@ DefenderCentral et Sweeper sont regroupés en DC ; DefenderLeft/Right et
 WingbackLeft/Right en DG/DD ; MidfielderLeft/Right et AttackingMidfielderLeft/Right
 en AILG/AILD. Chaque regroupement prend la meilleure note. Les autres rôles ont
 une correspondance directe. FreeRole n'est pas un poste du moteur.
+Un joueur généré (regen, complément d'effectif) reçoit des notes de même forme, tirées
+autour de son poste (`docs/progression-demographie.md`, Génération).
 
 ## Installations et regens
 

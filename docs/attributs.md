@@ -253,11 +253,12 @@ Un joueur aligné à un poste qui n'est pas le sien subit un malus multiplicatif
 sur ses composites :
 
 ```python
-affinite = 1.0 if poste == joueur.poste else joueur.postes_secondaires.get(poste, 0.0)
+affinite = joueur.aptitudes_par_poste[poste] / 20
 malus = 0.70 + 0.30 * affinite
 ```
 
-Un joueur sans affinité conserve 70 % de son niveau. Il utilise la matrice
+Importées ou tirées à la génération, les aptitudes vont de 1 à 20 : un joueur étranger
+au poste (1) conserve 71,5 % de son niveau. Il utilise la matrice
 d'implication du poste **où il est aligné**, pas du sien.
 
 ## Profils d'attributs à la génération

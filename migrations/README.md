@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 23` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 24` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -110,6 +110,16 @@ au demi-point). Un niveau s'ajoute à chaque progression mensuelle, à l'import 
 d'une sauvegarde antérieure, avant tout typage, chaque point annuel `(saison, note)`, pris à l'ouverture de la saison,
 devient une suite d'un seul mois au mois du bilan démographique ; les suites déjà mensuelles sont conservées. Le niveau
 courant de chaque joueur est ensuite ajouté au mois de la reprise. Aucun mois antérieur n'est inventé.
+
+La v24 note les joueurs générés à chaque poste (`docs/progression-demographie.md`, Génération) : la section
+`demographie.generation.aptitudes_postes`, reçue par la configuration embarquée d'une sauvegarde antérieure après
+vérification de l'empreinte d'origine. Jusque-là un regen n'avait pas de `position_ratings`, seulement d'éventuels postes
+secondaires à 0,6. Au chargement, tout joueur sans notes reçoit celles que sa génération tirerait aujourd'hui (flux
+`position-ratings`, graine et identifiant du joueur) ; à ses postes secondaires il garde au moins l'affinité qu'il avait,
+et `secondary_positions` est recalculé depuis les notes. Les joueurs déjà notés (ceux de la source) ne sont pas touchés.
+Un regen passe ainsi d'une affinité nulle à 1 sur 20 aux postes qui lui restent fermés, comme les joueurs importés.
+`affinite_secondaire`, `postes_secondaires_possibles` et `probabilite_poste_secondaire` n'ont plus d'effet mais restent
+dans la configuration.
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de

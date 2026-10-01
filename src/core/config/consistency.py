@@ -201,6 +201,15 @@ def validate_consistency(cfg: Config) -> None:
     require(0 < generation.elite_nation_exponent <= 1 and generation.nation_floor >= 0 and generation.min_identities >= 1,
             "Invalid nation flattening, floor or name minimum")
     require(cfg.attributes.bounds.min <= generation.elite_potential <= cfg.attributes.bounds.max, "Elite potential must lie within the attribute scale")
+    aptitudes = generation.position_ratings
+    require(set(aptitudes.typical) == positions
+            and all(set(row) <= positions - {position} and all(1 <= value <= 20 for value in row.values())
+                    for position, row in aptitudes.typical.items()),
+            "Typical position ratings need a row per position, rating other positions out of 20")
+    sides = (set(aptitudes.left_positions), set(aptitudes.right_positions))
+    require(sides[0] | sides[1] <= positions and not sides[0] & sides[1], "Sided positions must be known and on one side only")
+    require(min(aptitudes.versatility_noise, aptitudes.position_noise, aptitudes.far_side_penalty) >= 0
+            and 1 < aptitudes.min_rating < 20, "Invalid position rating noise, far side penalty or minimum")
     require(cfg.world.season.tiebreakers == ("points", "difference_buts", "buts_pour", "confrontation_directe"), "Unsupported v1 tiebreaking order")
     require(cfg.import_settings.source_format.date_format in ("%d.%m.%Y", "%Y-%m-%d"), "Unsupported import date format")
     require(cfg.import_settings.squad_selection.criterion in ("note_globale_synthetisee", "note_globale_attributs"), "Unsupported squad selection")

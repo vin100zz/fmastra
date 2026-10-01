@@ -9,7 +9,7 @@ import pytest
 from core.domain.players import Position
 from core.world.application import apply
 from core.world.demography import (Prospect, Slot, bucket_index, cohort_events, draw_age, draw_identity,
-                                   draw_prospect, place, place_outside, regime_of)
+                                   draw_position_ratings, draw_prospect, place, place_outside, regime_of)
 from core.world.events import PlayerReleased
 from core.world.validation import validate_world
 from infrastructure.importation.loader import import_world
@@ -133,6 +133,46 @@ def test_dormant_prospects_fill_the_room_and_the_rest_stay_free(world, config):
     assert place_outside(prospects, [], {}, config, Random(1)) == [None] * 10
 
 
+def rated(config, position, count=2000):
+    return [draw_position_ratings(position, config, 5, player_id) for player_id in range(count)]
+
+
+def test_generated_ratings_follow_the_kinship_of_positions(config):
+    rules = config.demography.generation.position_ratings
+    for position in Position:
+        for ratings in rated(config, position, 300):
+            assert set(ratings) == set(Position) and ratings[position] == 20
+            others = {other: value for other, value in ratings.items() if other != position}
+            assert all(value == 1 or rules.min_rating <= value < 20 for value in others.values())
+            # No aptitude where his position gives none.
+            assert all(value == 1 for other, value in others.items() if other not in rules.typical[position])
+    # A centre-back never leads the attack, and nobody but a keeper keeps goal.
+    assert Position.STRIKER not in rules.typical[Position.CENTER_BACK] and not rules.typical[Position.GOALKEEPER]
+    assert all(Position.GOALKEEPER not in row for row in rules.typical.values())
+    share = lambda position, other: mean(ratings[other] >= 10 for ratings in rated(config, position))
+    # An attacking midfielder mostly fills in at centre midfield, a full-back often on the other flank.
+    assert share(Position.ATTACKING_MIDFIELDER, Position.CENTRAL_MIDFIELDER) > 0.8
+    assert 0.4 < share(Position.LEFT_BACK, Position.RIGHT_BACK) < 0.75
+    assert share(Position.CENTER_BACK, Position.CENTRAL_MIDFIELDER) < 0.25
+    # One player, one draw: an older save rates him as his generation did.
+    assert rated(config, Position.STRIKER, 50) == rated(config, Position.STRIKER, 50)
+
+
+def test_generated_players_differ_in_versatility_and_in_the_sides_they_play(config):
+    wingers = rated(config, Position.LEFT_WINGER)
+    filled = Counter(sum(value >= 10 for value in ratings.values()) - 1 for ratings in wingers)
+    # Some play nowhere else, others at four more positions.
+    assert filled[0] > 20 and sum(count for size, count in filled.items() if size >= 4) > 200
+    # A winger of one side only loses the other wing, or plays it clearly less well.
+    assert 0.1 < mean(ratings[Position.RIGHT_WINGER] < 10 for ratings in wingers) < 0.4
+    assert 0.25 < mean(ratings[Position.RIGHT_WINGER] >= 15 for ratings in wingers) < 0.6
+    # A player of the axis has a side too: he plays both wings, one, or none.
+    wings = Counter((ratings[Position.LEFT_WINGER] >= 10, ratings[Position.RIGHT_WINGER] >= 10)
+                    for ratings in rated(config, Position.ATTACKING_MIDFIELDER))
+    assert all(wings[case] > 100 for case in ((True, True), (True, False), (False, True), (False, False)))
+    assert abs(wings[(True, False)] - wings[(False, True)]) < 150
+
+
 def test_a_cohort_of_regens_is_placed_coherently(world, config):
     world.rngs["demography"] = Random(21)
     guard = config.management.guardrails
@@ -155,6 +195,10 @@ def test_a_cohort_of_regens_is_placed_coherently(world, config):
     assert all(player.rating <= player.potential <= 100 for player in players)
     assert all(16 <= player.born.age_on(world.date) <= 19 for player in players)
     assert all(player.contract is None for player in players if player.club_id is None)
+    # Rated at every position, his own first; the others he fills are his secondary positions.
+    assert all(player.position_ratings[player.position] == 20 and player.secondary_positions == {
+        position: rating / 20 for position, rating in player.position_ratings.items() if 1 < rating < 20} for player in players)
+    assert sum(bool(player.secondary_positions) for player in players) > 0.6 * len(players)
     assert thin and all(any(player.club_id == club.id and player.position == Position.GOALKEEPER for player in playing) for club in thin)
     # Dormant regens live mostly in their own country, and so do those of a nation with a club playing.
     dormant = [player for player in outside if player.club_id]
