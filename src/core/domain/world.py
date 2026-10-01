@@ -120,6 +120,9 @@ class World:
     controlled_club_id: int | None = None
     pending_match_day: Date | None = None
     submitted_lineups: dict[int, SubmittedLineup] = field(default_factory=dict)
+    # The human club's own tactic (see core.ai.selection.CUSTOM_FORMATION): each place as (position, line, column)
+    # of the Composition pitch's grid, from the goal forward.
+    custom_formation: tuple[tuple[str, str, int], ...] = ()
     pending_renewals: dict[int, RenewalProposal] = field(default_factory=dict)
     # Players whose club or who broke off talks with the human club, until the given day.
     talks_closed: dict[int, Date] = field(default_factory=dict)

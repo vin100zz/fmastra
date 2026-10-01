@@ -1,4 +1,6 @@
 """Lineup and bench decisions with unique player assignments."""
+from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -13,6 +15,12 @@ from .playing_time import playing_time_priorities, rotation_bonus
 
 if TYPE_CHECKING:
     from core.domain.world import World
+
+# The human club's own tactic, built on the Composition pitch: a lineup submitted under this name plays its positions.
+CUSTOM_FORMATION = "Perso"
+# The lines of that pitch from the goal forward, each five columns wide; a place of the tactic is a cell of this grid.
+CUSTOM_LINES = ("gk", "def", "dm", "cm", "am", "att")
+CUSTOM_COLUMNS = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,18 +41,21 @@ class LineupContext:
         return cls(club, [world.players[pid] for pid in club.player_ids if pid not in called_up], competition_id, date, world.seed, games)
 
 
-def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None) -> Lineup:
-    """Best eleven and bench; a given `formation` is kept as is, otherwise the club's may give way to a better-suited one."""
-    forced = formation is not None
+def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None,
+                  positions: Sequence[str] | None = None) -> Lineup:
+    """Best eleven and bench; a given `formation`, or the `positions` of the club's own tactic, is kept as is,
+    otherwise the club's formation may give way to a better-suited one."""
+    forced = formation is not None or positions is not None
     players = sorted((player for player in context.players if player.available(context.competition_id, context.date)),
                      key=lambda player: player.id)
     formations = cfg.formations.formations
-    formation = formation or context.club.formation
+    formation = formation or (CUSTOM_FORMATION if positions is not None else context.club.formation)
+    source = formations[formation] if positions is None else positions
     if len(players) < cfg.world.match_rules.players_on_pitch:
         # Preserve the keeper slot and strongest available outfield coverage.
-        roles = [Position(role) for role in formations[formation]][:len(players)]
+        roles = [Position(role) for role in source][:len(players)]
     else:
-        roles = [Position(role) for role in formations[formation]]
+        roles = [Position(role) for role in source]
     if not roles:
         return Lineup(context.club.id, formation, [], [])
     scores = [[overall(player.attributes, role, cfg) * state_multiplier(player, role, cfg)
@@ -112,9 +123,25 @@ def select_lineup(context: LineupContext, cfg: Config, formation: str | None = N
     return Lineup(context.club.id, formation, slots, bench, playing_time=priorities)
 
 
-def validate_lineup(context: LineupContext, lineup: SubmittedLineup, cfg: Config) -> None:
-    """Legality checks for a human-submitted lineup; raises ValueError on the first violation found."""
-    if lineup.formation not in cfg.formations.formations:
+def validate_custom_formation(places: Sequence[tuple[str, str, int]], cfg: Config) -> None:
+    """The club's own tactic, as (position, line, column) places: one for each player on the pitch, a single keeper,
+    and never two places on the same cell. Raises ValueError on the first violation found."""
+    if len(places) != cfg.world.match_rules.players_on_pitch:
+        raise ValueError("La tactique doit placer chaque joueur sur le terrain.")
+    if any(position not in {item.value for item in Position} for position, _, _ in places):
+        raise ValueError("Poste inconnu.")
+    if sum(position == Position.GOALKEEPER for position, _, _ in places) != 1:
+        raise ValueError("La tactique doit compter un gardien.")
+    cells = [(line, column) for _, line, column in places]
+    if any(line not in CUSTOM_LINES or not 0 <= column < CUSTOM_COLUMNS for line, column in cells) or len(set(cells)) != len(cells):
+        raise ValueError("Placement invalide sur le terrain.")
+
+
+def validate_lineup(context: LineupContext, lineup: SubmittedLineup, cfg: Config, custom: Sequence[str] = ()) -> None:
+    """Legality checks for a human-submitted lineup; raises ValueError on the first violation found.
+    `custom` lists the positions of the club's own tactic, played under CUSTOM_FORMATION."""
+    roles = custom if lineup.formation == CUSTOM_FORMATION and custom else cfg.formations.formations.get(lineup.formation)
+    if roles is None:
         raise ValueError("Tactique inconnue.")
     available = {player.id: player for player in context.players if player.available(context.competition_id, context.date)}
     slot_ids = [player_id for player_id, _ in lineup.slots]
@@ -124,9 +151,11 @@ def validate_lineup(context: LineupContext, lineup: SubmittedLineup, cfg: Config
     missing = [pid for pid in chosen if pid not in available]
     if missing:
         raise ValueError("Joueur indisponible ou hors effectif.")
-    expected = min(len(cfg.formations.formations[lineup.formation]), len(available))
+    expected = min(len(roles), len(available))
     if len(slot_ids) != expected:
         raise ValueError("Nombre de titulaires incompatible avec la formation et l'effectif disponible.")
+    if Counter(position for _, position in lineup.slots) - Counter(roles):
+        raise ValueError("Postes incompatibles avec la tactique.")
     if len(lineup.bench) > cfg.world.match_rules.bench_size:
         raise ValueError("Le banc dépasse la taille autorisée.")
 

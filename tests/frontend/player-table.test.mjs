@@ -82,7 +82,7 @@ test('every squad column is a sort button, and the active one carries its direct
  const html=playerTable({items:[player],total:1,page_size:30},false,'position','asc');
  // Each header also names its column, which sets its width whatever the order of the rows.
  const headers=[...html.matchAll(/<th class="(\w+)-column"><button[^>]*data-sort="(\w+)"/g)].map(match=>{assert.equal(match[1],match[2]);return match[2];});
- assert.deepEqual(headers,['position','name','nation','age','rating','potential','value','wage','contract_end','fitness','appearances','goals','assists','yellows','reds','average']);
+ assert.deepEqual(headers,['position','name','nation','age','rating','potential','value','wage','contract_end','fitness','form','morale','appearances','goals','assists','yellows','reds','average']);
  assert.equal((html.match(/<th(?: [^>]*)?>(?!<button)/g)||[]).length,0);
  assert.match(html,/<button data-first="asc" data-order="asc" data-sort="position">POSTE</);
  assert.match(html,/<button data-first="desc" data-sort="rating">NIV\.<\/button>/);
@@ -187,4 +187,23 @@ test('the view switch offers the game view beside the infos and the attributes',
  assert.match(playerViewSwitch('jeu','tir','desc'),/data-view="attributs" aria-pressed="false" class="">Attributs<\/button><button type="button" data-view="jeu" aria-pressed="true" class="active"/);
  assert.match(playerViewSwitch('attributs','rating','desc'),/data-view="jeu" aria-pressed="false" class="" data-view-sort="rating" data-view-order="desc">Jeu</);
  assert.doesNotMatch(playerViewSwitch('attributs','passe','desc'),/data-view="jeu"[^>]*data-view-sort/);
+});
+
+test('the squad shows form as its signed effect and morale with where it drifts and, when low, its cause',()=>{
+ const rows=[{...player,form:1.111,morale:.63,morale_target:.66,morale_cause:'salaire',wage_satisfaction:.1,playing_time_satisfaction:1},
+  {...player,id:2,form:.913,morale:.44,morale_target:.34,morale_cause:'temps_de_jeu',wage_satisfaction:.6,playing_time_satisfaction:.1},
+  {...player,id:3,form:1.018,morale:.99,morale_target:1,morale_cause:null,wage_satisfaction:1,playing_time_satisfaction:1}];
+ const html=playerTable({items:rows,total:3,page_size:30},false,'form','desc');
+ assert.match(html,/data-order="desc" data-sort="form">FORME</);assert.match(html,/data-sort="morale">MORAL</);
+ // +11 % in green, −9 % in red, grey within 2 %.
+ assert.match(html,/<span class="rating graded form-badge" style="--hue:120" title="Forme 1,11 : tout ce qu&#39;il fait en match compte 11 % de plus">\+11 %</);
+ assert.match(html,/style="--hue:0" title="Forme 0,91 : tout ce qu&#39;il fait en match compte 9 % de moins">−9 %</);
+ assert.match(html,/<span class="rating form-badge neutral" title="Forme 1,02 : il joue à son niveau">\+2 %</);
+ // Morale: an arrow towards its target, the cause below 70 %, the detail in the tooltip.
+ assert.match(html,/<span class="morale-cell" title="Moral 63 %, vers 66 % · pèse surtout : son salaire · salaire : 10 % de ce qu&#39;il attend · temps de jeu : 100 % de ce qu&#39;il attend"><span class="rating graded" style="--hue:\d+">63 %<\/span><span class="trend-slot"><span class="trend up">▲<\/span><\/span><span class="morale-cause">€<\/span>/);
+ assert.match(html,/>44 %<\/span><span class="trend-slot"><span class="trend down">▼<\/span><\/span><span class="morale-cause">◷</);
+ assert.match(html,/>99 %<\/span><span class="trend-slot"><\/span><\/span>/);
+ // Players lists of the whole world keep their columns.
+ assert.doesNotMatch(playerTable({items:rows,total:3,page_size:30},true),/data-sort="(form|morale)"/);
+ assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30}),/NaN|undefined/);
 });

@@ -182,6 +182,8 @@ th button.sort-toggle:hover{color:var(--strong)}
 .lineup-slot.empty small{color:#c9d1db}
 .lineup-slot.invalid .shirt{box-shadow:0 0 0 2px #0e1217,0 0 0 4px var(--bad)}
 .lineup-pitch .drop-hover{background:#ffffff26}
+.lineup-cell span{width:30px;height:30px;border-color:#ffffff40;color:#ffffff80}
+.lineup-cell.drop-hover span{border-color:var(--accent);color:var(--accent)}
 .temporary-player{color:var(--muted)}
 
 /* Match. */
@@ -552,3 +554,20 @@ a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 .lineup-squad th.group-start,.lineup-squad td.group-start{border-left:1px solid var(--line)}
 .lineup-squad tr.picked td{background:var(--own-row)}
 .fit-cell{display:inline-flex;align-items:center;gap:4px}.fit-cell .affinity-tag{position:static;box-shadow:none}
+
+/* Form and morale in the squad list: form as its signed effect, grey when it changes nothing; morale with an arrow
+   towards where it drifts and, when low, its main cause. */
+.player-table .form-column{width:46px}.player-table .morale-column{width:84px}
+.player-table .rating.form-badge,.rating.form-badge{min-width:42px}.rating.form-badge.neutral{color:var(--muted)}
+.morale-cell{display:inline-flex;align-items:center;gap:3px}
+.trend-slot{display:inline-block;width:10px;text-align:center;font-size:10px;line-height:1}
+.trend.up{color:var(--good)}.trend.down{color:var(--bad)}
+.morale-cause{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:2px;background:var(--panel-3);color:var(--ink-2);font-size:10px;font-weight:700}
+/* Form on the lineup: an arrow on the bottom-right corner of the shirt for a form worth at least ±5 %, and beside the
+   note in the list. A note stands on the side of its shirt the next column leaves free, or under the name. */
+.form-arrow{display:inline-grid;place-items:center;width:13px;height:13px;border-radius:50%;color:#fff;font-size:7.5px;font-style:normal;line-height:1}
+.form-arrow.up{background:#2f8f55}.form-arrow.down{background:#b0453c}
+.lineup-slot .form-arrow{position:absolute;right:-7px;bottom:-4px;box-shadow:0 0 0 1.5px #0e1217;z-index:1}
+.lineup-slot .position-note{top:7px}
+.lineup-slot .position-note.left{left:auto;right:calc(50% + 19px)}
+.lineup-slot .position-note.below{top:calc(100% + 1px);left:50%;transform:translateX(-50%)}

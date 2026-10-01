@@ -92,6 +92,10 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 .lineup-field>h3{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:10px 0 6px}
 .lineup-pitch{margin:0;min-height:0;aspect-ratio:68/88;user-select:none}
 .lineup-slot{width:84px;cursor:grab;border-radius:8px;padding:3px 0}.lineup-slot.empty{cursor:default}.lineup-slot .shirt{width:34px;height:34px;font-size:10px;font-weight:700;border-radius:6px 6px 10px 10px}.lineup-slot small{font-size:11px;display:inline-flex;align-items:center;gap:4px}
+#lineup-form .lineup-slot.empty{cursor:grab}
+.lineup-cell{position:absolute;transform:translate(-50%,-50%);width:60px;height:50px;display:none;justify-items:center;align-items:start;padding-top:3px}.lineup-pitch.placing .lineup-cell{display:grid}
+.lineup-cell span{width:34px;height:34px;display:grid;place-items:center;border:1.5px dashed #8fae83;border-radius:6px 6px 10px 10px;font-size:9px;font-weight:700;color:var(--muted)}
+#lineup-form .lineup-cell.drop-hover{outline:0;background:none}.lineup-cell.drop-hover span{border-style:solid;border-color:var(--green);color:var(--green)}
 .lineup-slot.empty .shirt{background:#ffffff99!important;color:var(--muted);border:1.5px dashed #8fae83;box-shadow:none}.lineup-slot.empty small{background:none;color:var(--muted)}
 .lineup-slot.invalid .shirt{background:var(--red)!important;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--red)}.lineup-slot.invalid small{color:var(--red);font-weight:700}
 .lineup-bench{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px}

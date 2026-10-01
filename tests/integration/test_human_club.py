@@ -242,3 +242,35 @@ def test_lineup_form_is_open_any_day_for_the_next_match_or_the_league(client):
     for match in upcoming: del world.matches[match.id]
     empty = client.get("/api/ma-partie/composition").json()
     assert empty["match_id"] is None and empty["opponent"] is None and len(empty["players"]) == len(club.player_ids)
+
+
+def test_the_club_plays_a_tactic_of_its_own_and_starts_from_it_next_time(client):
+    world = client.app.state.game.world
+    world.controlled_club_id = next(iter(world.active_clubs())).id
+    match = _play_until_pending(world)
+    assert client.get(f"/api/ma-partie/composition?match_id={match.id}").json()["custom"] is None
+
+    # A 4-3-3 whose striker drops behind the wingers, as the Composition pitch places it.
+    places = [["GB", "gk", 2], ["DG", "def", 0], ["DC", "def", 1], ["DC", "def", 3], ["DD", "def", 4], ["MDC", "dm", 2],
+              ["MC", "cm", 1], ["MC", "cm", 3], ["MOC", "am", 2], ["AILG", "att", 0], ["AILD", "att", 4]]
+    positions = [position for position, _, _ in places]
+    best = client.get(f"/api/ma-partie/composition/suggestion?match_id={match.id}&postes={','.join(positions)}").json()
+    assert [position for _, position in best["titulaires"]] == positions[:len(best["titulaires"])]
+    assert client.get("/api/ma-partie/composition/suggestion?postes=GB,BU").status_code == 400
+
+    lineup = {"match_id": match.id, "formation": "Perso", "titulaires": best["titulaires"], "banc": best["banc"]}
+    # Nothing is played under that name before the club has a tactic of its own, nor with a second keeper,
+    # nor on positions the tactic does not hold.
+    assert client.post("/api/partie/composition", json=lineup).status_code == 400
+    assert client.post("/api/partie/composition", json={**lineup, "perso": [*places[:-1], ["GB", "att", 4]]}).status_code == 400
+    strikers = [best["titulaires"][0], *[[pid, "BU"] for pid, _ in best["titulaires"][1:]]]
+    assert client.post("/api/partie/composition", json={**lineup, "titulaires": strikers, "perso": places}).status_code == 400
+    assert world.custom_formation == ()
+    assert client.post("/api/partie/composition", json={**lineup, "perso": places}).status_code == 200
+    assert world.custom_formation == tuple(tuple(place) for place in places)
+
+    advance_day(world)
+    following = _play_until_pending(world)
+    data = client.get(f"/api/ma-partie/composition?match_id={following.id}").json()
+    assert data["custom"] == places and "Perso" not in data["formations"]
+    assert data["default"]["formation"] == "Perso" and [position for _, position in data["default"]["titulaires"]] == positions

@@ -141,7 +141,7 @@ entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la co
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200 |
+| Effectif | blocs d'entrée puis liste triable : poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état (blessé, suspendu, fatigue), forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200 |
 | Calendrier | matches passés et à venir, résultat, adversaire, domicile/extérieur |
 | Budget | budget de transfert, masse salariale et plafond, solde, revenus |
 | Transferts | arrivées et départs de la saison, avec montants |
@@ -183,6 +183,8 @@ la largeur d'aucune colonne, dans aucun tableau : chaque en-tête triable garde 
 de sa flèche, et les listes triées par le serveur (joueurs, clubs, mercato mondial) ont
 des colonnes de largeur fixe, si bien qu'un tri ou une autre page ne les déplace pas ;
 la page garde sa position de défilement.
+
+Dans la vue Infos d'un effectif, FORME donne l'effet de la forme sur tout ce que fait le joueur en match, signé (1,11 se lit « +11 % »), en vert ou en rouge, en gris entre −2 % et +2 %. MORAL donne le moral sur 100, une flèche vers la cible qu'il rejoint peu à peu chaque semaine (à partir de 3 points d'écart) et, sous 70 %, ce qui le retient le plus : € pour le salaire, ◷ pour le temps de jeu, ★ pour un club en dessous de son niveau (`morale_target` et `morale_cause` de la liste, tirés du calcul hebdomadaire des contrats). L'infobulle donne la cible et la satisfaction du joueur pour son salaire et son temps de jeu. L'écran Joueurs n'a pas ces colonnes.
 
 Trois boutons en tête de la liste des joueurs d'un club et de l'écran Joueurs, « Infos »,
 « Attributs » et « Jeu », changent ses colonnes. La vue Attributs garde poste, nom, âge, niveau et potentiel
@@ -318,15 +320,28 @@ la liste de l'effectif à droite, triable. On glisse un joueur sur un poste ou s
 droit sort un joueur de la composition ou met un joueur sur la prochaine place libre ;
 « Meilleure composition » reprend la suggestion de l'IA pour la tactique affichée.
 
-Sur le terrain, chaque titulaire porte sa note au poste, sur 200 à droite du maillot, et, sous
-20/20 seulement, son affinité au poste sur le coin du maillot. La note au poste est la moyenne des
+Le terrain est une grille : cinq colonnes sur chaque ligne (défense, sentinelles, milieu, milieu
+offensif, attaque) et le gardien seul dans son but. Chaque tactique y pose ses postes. Glisser un
+poste du terrain, occupé ou vide, fait apparaître les cases libres, chacune avec le poste qu'elle
+donne : latéraux sur les ailes jusqu'aux sentinelles, ailiers au-delà ; au centre, DC, MDC, MC, MOC
+ou BU selon la ligne. Lâché sur une case, le poste s'y déplace avec son joueur et la tactique devient
+« Perso », la tactique du club, à côté des autres (une seule, remplacée au déplacement suivant fait
+depuis une autre tactique). Le moteur ne lit que les postes : deux ailiers en attaque ou au milieu
+jouent de la même façon, la grille ne fait que les montrer. La tactique « Perso » part avec la
+composition envoyée au match et reste dans la sauvegarde ; elle est aussi proposée dans la fenêtre
+Tactique du direct.
+
+Sur le terrain, chaque titulaire porte sa note au poste, sur 200 à droite du maillot ; quand la
+colonne voisine de la même ligne est occupée (ou au bord du terrain), elle passe à gauche, et sous le
+nom si les deux côtés sont pris. Sous 20/20 seulement, son affinité au poste est sur le coin haut
+gauche du maillot ; une forme d'au moins ±5 % met une flèche ▲ ou ▼ sur son coin bas droit. La note au poste est la moyenne des
 composites que ce poste demande, multipliée par le facteur hors poste du moteur (`malus_hors_poste`).
 Les composites demandés par poste sont une liste d'affichage de l'API (`COMPOSITES_BY_POSITION`,
 tirée de `implications.json`, la clé en premier) : aucun match ne la lit.
 
 « Infos » et « Jeu », à côté de « Meilleure composition », changent les colonnes de la liste :
-potentiel, fatigue et saison, ou les huit composites. Cliquer un poste du terrain le choisit : la
-liste ajoute après COMPO la colonne « EN » suivie du poste, avec la note et l'affinité de chacun à
+potentiel, fatigue, forme (son effet signé, comme dans l'effectif) et saison, ou les huit composites. Cliquer un poste du terrain le choisit : la
+liste ajoute après COMPO la colonne « EN » suivie du poste, avec la note, la flèche de forme et l'affinité de chacun à
 ce poste, et se trie dessus ; en vue Jeu, les composites de ce poste passent en jaune dans l'en-tête,
 les autres en gris. Un second clic, ou une autre tactique, le libère.
 
@@ -417,6 +432,10 @@ GET  /api/joueurs/{id}/historique         carrière + trajectory : niveau sur 20
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
 GET  /api/matches/{id}                    compte rendu complet
+
+GET  /api/ma-partie/composition?match_id=   effectif, tactiques, tactique du club (custom : [poste, ligne, colonne] | null), onze de départ, suggestions
+GET  /api/ma-partie/composition/suggestion?postes=&match_id=   meilleur onze et banc de l'IA sur les postes de la tactique du club
+POST /api/partie/composition              {commande_id, match_id, formation, titulaires, banc, perso} ; perso garde la tactique du club
 
 POST /api/direct/demarrer                 {commande_id} -> travail_id ; joue les autres matches du jour, ouvre le direct
 GET  /api/direct                          le match jusqu'ici : score, seconde, statut, événements montrés, stats, effectif du joueur

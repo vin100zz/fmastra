@@ -49,6 +49,8 @@ class LineupSubmission(Command):
     formation: str
     titulaires: list[tuple[int, str]]
     banc: list[int]
+    # The club's own tactic as the Composition pitch holds it, (position, line, column) of each place; kept for the next matches.
+    perso: list[tuple[str, str, int]] | None = None
 
 
 class RenewalDecision(Command):
@@ -142,7 +144,8 @@ def lineup_player(world, player, competition_id: int, stats: dict) -> dict:
 def previous_lineup(world, match, context, formations: dict) -> dict | None:
     """The club's last starting eleven and bench laid out on the formation they fit, players who left dropped.
 
-    Its formation is the one holding the same positions; otherwise the club's, each player on a slot of his position."""
+    Its formation is the first of `formations` holding the same positions (the club's own tactic leads them);
+    otherwise the club's, each player on a slot of his position."""
     club_id = context.club.id
     played = sorted((other for other in world.matches.values() if other.result is not None and other is not match
                      and club_id in (other.home_id, other.away_id)), key=lambda other: (other.date, other.id))
@@ -153,7 +156,7 @@ def previous_lineup(world, match, context, formations: dict) -> dict | None:
         if not eleven: continue
         positions = sorted(position for _, position in eleven)
         formation = next((name for name, roles in formations.items() if sorted(roles) == positions),
-                         context.club.formation if context.club.formation in formations else next(iter(formations)))
+                         context.club.formation if context.club.formation in formations else next(iter(world.config.formations.formations)))
         remaining = [(pid, position) for pid, position in eleven if pid in squad]
         slots = []
         for role in formations[formation]:
@@ -263,7 +266,7 @@ def router(service: GameService) -> APIRouter:
 
     @api.post("/partie/composition")
     def submit_lineup(command: LineupSubmission) -> dict:
-        from core.ai.selection import LineupContext, validate_lineup
+        from core.ai.selection import LineupContext, validate_custom_formation, validate_lineup
         with service.mutating() as world:
             if world.controlled_club_id is None:
                 raise HTTPException(400, "Aucun club sélectionné.")
@@ -273,39 +276,49 @@ def router(service: GameService) -> APIRouter:
                 raise HTTPException(400, "Ce match n'est pas à composer aujourd'hui.")
             submitted = SubmittedLineup(club_id, command.formation, [tuple(item) for item in command.titulaires], list(command.banc))
             context = LineupContext.from_world(world, club_id, match.competition_id, world.date)
+            custom = world.custom_formation if command.perso is None else tuple(tuple(place) for place in command.perso)
             try:
-                validate_lineup(context, submitted, world.config)
+                if command.perso is not None: validate_custom_formation(custom, world.config)
+                validate_lineup(context, submitted, world.config, [position for position, _, _ in custom])
             except ValueError as error:
                 raise HTTPException(400, str(error))
+            world.custom_formation = custom
             world.submitted_lineups[match.id] = submitted
         return {"match_id": command.match_id}
 
+    def lineup_context(world, match_id: int | None):
+        """The controlled club's match being prepared, its competition and its lineup context: `match_id`, or the club's next match."""
+        from core.ai.selection import LineupContext
+        if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+        club_id = world.controlled_club_id
+        if match_id is None:
+            # A lineup can be tried any day: for the club's next match, or for its league while no fixture is scheduled.
+            upcoming = [match for match in world.matches.values() if match.result is None and club_id in (match.home_id, match.away_id)]
+            match = min(upcoming, key=lambda match: (match.date, match.id), default=None)
+        else:
+            match = world.matches.get(match_id)
+            if match is None or club_id not in (match.home_id, match.away_id):
+                raise HTTPException(404, "Match introuvable pour ce club.")
+        competition_id = match.competition_id if match else world.clubs[club_id].competition_id
+        context = LineupContext.from_world(world, club_id, competition_id, world.date)
+        if match is None or match.date != world.date:
+            # Players away with their national team may be back by a later match.
+            context = replace(context, players=[world.players[pid] for pid in context.club.player_ids])
+        return match, competition_id, context
+
+    def lineup_suggestion(lineup) -> dict:
+        return {"titulaires": [(slot.player.id, slot.position) for slot in lineup.slots], "banc": [player.id for player in lineup.bench]}
+
     @api.get("/ma-partie/composition")
     def lineup_form(match_id: int | None = None) -> dict:
-        from core.ai.selection import LineupContext, select_lineup
+        from core.ai.selection import CUSTOM_FORMATION, select_lineup
         with service.reading() as world:
-            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
-            club_id = world.controlled_club_id
-            if match_id is None:
-                # A lineup can be tried any day: for the club's next match, or for its league while no fixture is scheduled.
-                upcoming = [match for match in world.matches.values() if match.result is None and club_id in (match.home_id, match.away_id)]
-                match = min(upcoming, key=lambda match: (match.date, match.id), default=None)
-            else:
-                match = world.matches.get(match_id)
-                if match is None or club_id not in (match.home_id, match.away_id):
-                    raise HTTPException(404, "Match introuvable pour ce club.")
-            competition_id = match.competition_id if match else world.clubs[club_id].competition_id
-            context = LineupContext.from_world(world, club_id, competition_id, world.date)
-            if match is None or match.date != world.date:
-                # Players away with their national team may be back by a later match.
-                context = replace(context, players=[world.players[pid] for pid in context.club.player_ids])
+            match, competition_id, context = lineup_context(world, match_id)
+            club_id = context.club.id
             formations = world.config.formations.formations
-            suggestions = {}
-            for name in formations:
-                lineup = select_lineup(context, world.config, name)
-                suggestions[name] = {"titulaires": [(slot.player.id, slot.position) for slot in lineup.slots],
-                                     "banc": [player.id for player in lineup.bench]}
-            default = previous_lineup(world, match, context, formations)
+            suggestions = {name: lineup_suggestion(select_lineup(context, world.config, name)) for name in formations}
+            custom = {CUSTOM_FORMATION: [position for position, _, _ in world.custom_formation]} if world.custom_formation else {}
+            default = previous_lineup(world, match, context, {**custom, **formations})
             stats = v.club_season_stats(world, club_id, [player.id for player in context.players])
             if default is None:
                 formation = context.club.formation if context.club.formation in formations else next(iter(formations))
@@ -315,9 +328,23 @@ def router(service: GameService) -> APIRouter:
                     "home": match is not None and match.home_id == club_id,
                     "players": [lineup_player(world, player, competition_id, stats[player.id]) for player in context.players],
                     "formations": {name: list(roles) for name, roles in formations.items()},
+                    "custom": [list(place) for place in world.custom_formation] or None,
                     "composites_by_position": {position: list(keys) for position, keys in v.COMPOSITES_BY_POSITION.items()},
                     "bench_size": world.config.world.match_rules.bench_size,
                     "default": default, "suggestions": suggestions}
+
+    @api.get("/ma-partie/composition/suggestion")
+    def custom_lineup_suggestion(postes: str, match_id: int | None = None) -> dict:
+        """The best eleven and bench on the club's own tactic being built, `postes` listing its positions place by place."""
+        from core.ai.selection import select_lineup
+        from core.domain.players import Position
+        positions = postes.split(",")
+        with service.reading() as world:
+            if (len(positions) != world.config.world.match_rules.players_on_pitch
+                    or any(position not in {item.value for item in Position} for position in positions)):
+                raise HTTPException(400, "Tactique invalide.")
+            _, _, context = lineup_context(world, match_id)
+            return lineup_suggestion(select_lineup(context, world.config, positions=positions))
 
     @api.post("/partie/renouvellement")
     def respond_renewal(command: RenewalDecision) -> dict:
@@ -557,7 +584,7 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return nav.club_navigation(world, club_id)
 
     @api.get("/clubs/{club_id}/effectif")
-    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] | AttributeSort | CompositeSort = "position",
+    def squad(club_id: int, page: int = Query(1, ge=1), tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "form", "morale", "nation", "value", "appearances", "minutes", "goals", "assists", "yellows", "reds", "average"] | AttributeSort | CompositeSort = "position",
               ordre: Literal["asc", "desc"] = "asc") -> dict:
         with service.reading() as world:
             rows = v.squad_rows(world, club_id)

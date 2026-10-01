@@ -164,6 +164,30 @@ def test_players_carry_the_engine_composites_their_notes_by_position_and_sort_on
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
+def test_squad_shows_form_and_morale_with_where_it_drifts_and_why(client):
+    from core.world.contracts import contentment, games_by_club, position_ranks
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club = next(iter(world.active_clubs()))
+    rows = client.get(f'/api/clubs/{club.id}/effectif?tri=morale&ordre=asc').json()['items']
+    assert [row['morale'] for row in rows] == sorted(row['morale'] for row in rows)
+    by_form = client.get(f'/api/clubs/{club.id}/effectif?tri=form&ordre=desc').json()['items']
+    assert [row['form'] for row in by_form] == sorted((row['form'] for row in by_form), reverse=True)
+    ranks, games = position_ranks(world, club), games_by_club(world)[club.id]
+    moral = world.config.states.moral
+    for row in rows:
+        player = world.players[row['id']]
+        mood = contentment(world, player, club, ranks[player.id], games)
+        assert row['form'] == round(player.form, 3) and row['morale'] == round(player.morale, 3)
+        # The target the weekly review moves his morale towards, within the bounds morale keeps.
+        assert row['morale_target'] == round(min(moral.max, max(moral.min, mood.morale_target)), 3)
+        assert (row['wage_satisfaction'], row['playing_time_satisfaction']) == (round(mood.wage, 3), round(mood.playing_time, 3))
+        assert row['morale_cause'] in (None, 'salaire', 'temps_de_jeu', 'ambition')
+        if row['morale_cause'] == 'salaire': assert row['wage_satisfaction'] < 1
+        if row['morale_cause'] == 'temps_de_jeu': assert row['playing_time_satisfaction'] < 1
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
 def test_views_pagination_and_no_rng_leak(client):
     world = client.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}

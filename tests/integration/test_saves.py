@@ -14,10 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_save_restore_rng_and_config(config, tmp_path):
     world = import_world(ROOT / "data", config, 14)
     world.rngs["matches"].random()
+    world.custom_formation = (("GB", "gk", 2), ("DC", "def", 2))
     store = SaveStore(tmp_path)
     store.save(world, "test")
     restored = store.load("test")
     assert restored.date == world.date
+    assert restored.custom_formation == world.custom_formation
     assert config_fingerprint(restored.config) == config_fingerprint(world.config)
     assert restored.players == world.players
     assert restored.rngs["matches"].getstate() == world.rngs["matches"].getstate()
@@ -26,7 +28,7 @@ def test_save_restore_rng_and_config(config, tmp_path):
     import json
     legacy = json.loads(gzip.decompress(store.path_for("test").read_bytes()))
     legacy["schema_version"] = 2
-    for name in ("finance_history", "finance_history_since", "movement_history_since"):
+    for name in ("finance_history", "finance_history_since", "movement_history_since", "custom_formation"):
         legacy["world"].pop(name)
     for player in legacy['world']['players'].values():
         for name in ('source_current_ability', 'source_potential_ability', 'position_ratings'): player.pop(name)
@@ -34,7 +36,7 @@ def test_save_restore_rng_and_config(config, tmp_path):
         for name in ('training_facilities', 'youth_recruitment'): club.pop(name)
     store.path_for("legacy").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("legacy")
-    assert migrated.finance_history == {}
+    assert migrated.finance_history == {} and migrated.custom_formation == ()
     assert migrated.clubs[868].youth_recruitment is None
     assert migrated.players[85139014].source_current_ability is None
     assert not migrated.players[85139014].position_ratings

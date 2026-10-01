@@ -1,5 +1,9 @@
 """Weekly renewal decisions and daily contractual expiry."""
+from dataclasses import dataclass
+
+from core.domain.clubs import Club
 from core.domain.offers import RenewalProposal
+from core.domain.players import Player
 from core.domain.world import World
 from core.math import clamp
 from collections import Counter
@@ -14,40 +18,72 @@ def expiry_events(world: World) -> list[PlayerReleased]:
             if player.contract is not None and player.contract.end < world.date]
 
 
+def games_by_club(world: World) -> Counter:
+    """The matches each club has played this season."""
+    games = Counter()
+    for match in world.matches.values():
+        if match.result is not None and match.season == world.season:
+            games.update((match.home_id, match.away_id))
+    return games
+
+
+def position_ranks(world: World, club: Club) -> dict[int, int]:
+    """Each player's rank by level among his club's players of his position, 0 for the best."""
+    ranks, counts = {}, Counter()
+    for pid in sorted(club.player_ids, key=lambda pid: (-world.players[pid].rating, pid)):
+        position = world.players[pid].position
+        ranks[pid] = counts[position]
+        counts[position] += 1
+    return ranks
+
+
+@dataclass(frozen=True, slots=True)
+class Contentment:
+    """What a player under contract makes of his situation: his wage against the one his value commands, his minutes
+    against those his rank at his position promises (each out of 1), what a renewal weighs, how restless a club beneath
+    him makes him, and the morale he drifts towards each week."""
+    expected_wage: float
+    wage: float
+    playing_time: float
+    satisfaction: float
+    frustration: float
+    morale_target: float
+
+
+def contentment(world: World, player: Player, club: Club, rank: int, games: int) -> Contentment:
+    cfg = world.config
+    rules = cfg.management.contracts
+    expected = expected_wage(market_value(player, world, club, False), cfg)
+    salary_satisfaction = min(1, player.contract.weekly_wage / expected)
+    expected_share = 1 / (rank + 1)
+    expected_minutes = (games if club.competition_id else 0) * cfg.engine.timing.match_seconds / 60 * expected_share
+    playing_satisfaction = min(1, player.season_minutes / expected_minutes) if expected_minutes else 1
+    satisfaction = rules.wage_weight * salary_satisfaction + rules.playing_time_weight * playing_satisfaction + rules.club_weight * min(1, club.reputation / max(1, player.rating))
+    moral = cfg.states.moral
+    target = moral.playing_time_weight * playing_satisfaction + moral.contract_weight * salary_satisfaction + moral.results_weight * satisfaction
+    # Playing every match and earning a fair wage does not settle a player whose club is beneath him.
+    restless = frustration(player, world)
+    target -= cfg.management.market.frustration_morale_weight * restless
+    return Contentment(expected, salary_satisfaction, playing_satisfaction, satisfaction, restless, target)
+
+
 def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalProposed]:
     cfg = world.config
     rules = cfg.management.contracts
     events = []
-    games_by_club = Counter()
-    for match in world.matches.values():
-        if match.result is not None and match.season == world.season:
-            games_by_club.update((match.home_id, match.away_id))
+    games = games_by_club(world)
     ranks, useful_ids = {}, set()
     for club in world.clubs.values():
-        ordered = sorted(club.player_ids, key=lambda pid: (-world.players[pid].rating, pid))
-        useful_ids.update(ordered[:nominal_size(cfg)])
-        counts = Counter()
-        for pid in ordered:
-            position = world.players[pid].position
-            ranks[pid] = counts[position]
-            counts[position] += 1
+        useful_ids.update(sorted(club.player_ids, key=lambda pid: (-world.players[pid].rating, pid))[:nominal_size(cfg)])
+        ranks.update(position_ranks(world, club))
     for player in world.players.values():
         if player.contract is None or player.club_id is None: continue
         club = world.clubs[player.club_id]
         remaining = world.date.months_until(player.contract.end)
-        expected = expected_wage(market_value(player, world, club, False), cfg)
-        salary_satisfaction = min(1, player.contract.weekly_wage / expected)
         rank = ranks[player.id]
-        expected_share = 1 / (rank + 1)
-        games = games_by_club[club.id] if club.competition_id else 0
-        expected_minutes = games * cfg.engine.timing.match_seconds / 60 * expected_share
-        playing_satisfaction = min(1, player.season_minutes / expected_minutes) if expected_minutes else 1
-        satisfaction = rules.wage_weight * salary_satisfaction + rules.playing_time_weight * playing_satisfaction + rules.club_weight * min(1, club.reputation / max(1, player.rating))
-        moral = cfg.states.moral
-        target = moral.playing_time_weight * playing_satisfaction + moral.contract_weight * salary_satisfaction + moral.results_weight * satisfaction
-        # Playing every match and earning a fair wage does not settle a player whose club is beneath him.
-        target -= cfg.management.market.frustration_morale_weight * frustration(player, world)
-        events.append(PlayerChanged(player.id, morale=clamp(player.morale + moral.drift_speed * (target - player.morale), moral.min, moral.max)))
+        mood = contentment(world, player, club, rank, games[club.id])
+        expected, satisfaction, moral = mood.expected_wage, mood.satisfaction, cfg.states.moral
+        events.append(PlayerChanged(player.id, morale=clamp(player.morale + moral.drift_speed * (mood.morale_target - player.morale), moral.min, moral.max)))
         if remaining >= rules.renewal_months and satisfaction >= rules.satisfaction_threshold: continue
         # A player who wants a bigger club does not extend; he plays out his contract or is sold.
         if wants_to_leave(player, world): continue

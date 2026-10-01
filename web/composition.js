@@ -1,4 +1,4 @@
-import {api,escape as e,position,group,levelBadge,number,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,COMPOSITE_SECTIONS} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS} from './ui.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
@@ -35,6 +35,44 @@ export function pitchLayout(roles){
   });
  });
  return places;
+}
+
+// The club's own tactic is built on a grid of the Composition pitch: five columns on each line from the goal forward.
+export const CUSTOM='Perso';
+const LINES=['gk','def','dm','cm','am','att'];
+const COLUMN_X=[14,32,50,68,86];
+const LINE_ROLES={def:['DG','DC','DD'],dm:['DG','MDC','DD'],cm:['AILG','MC','AILD'],am:['AILG','MOC','AILD'],att:['AILG','BU','AILD']};
+// The position a cell gives its place: the keeper alone in his goal; on the wings, the full-backs up to the holding
+// midfield, the wingers beyond.
+export const cellRole=(key,column)=>key==='gk'?'GB':LINE_ROLES[key][column===0?0:column===COLUMN_X.length-1?2:1];
+// A formation on the grid: each position on its line of `pitchLayout`, in the column nearest its place there.
+export function gridPlaces(roles){
+ const layout=pitchLayout(roles),lines={};
+ roles.forEach((role,index)=>(lines[line(role,roles)]??=[]).push(index));
+ const places=[];
+ Object.entries(lines).forEach(([key,indexes])=>{
+  indexes.sort((a,b)=>layout[a].x-layout[b].x);
+  let column=-1;
+  indexes.forEach((slot,rank)=>{
+   const nearest=Math.round((layout[slot].x-COLUMN_X[0])/(COLUMN_X[1]-COLUMN_X[0]));
+   column=Math.min(COLUMN_X.length-indexes.length+rank,Math.max(column+1,nearest));
+   places[slot]={role:roles[slot],line:key,column};
+  });
+ });
+ return places;
+}
+// A place moved onto a free cell takes the cell's position, its player with it. The places then follow the pitch from
+// the goal forward, left to right: `order` gives each one's former index.
+export function movePlace(places,index,key,column){
+ const moved=places.map((item,rank)=>rank===index?{role:cellRole(key,column),line:key,column}:item);
+ const order=moved.map((_,rank)=>rank).sort((a,b)=>LINES.indexOf(moved[a].line)-LINES.indexOf(moved[b].line)||moved[a].column-moved[b].column);
+ return {places:order.map(rank=>moved[rank]),order};
+}
+// Every tactic on the grid, the club's own last when it has one.
+function tacticsOf(data){
+ const tactics=Object.fromEntries(Object.entries(data.formations).map(([name,roles])=>[name,gridPlaces(roles)]));
+ if(data.custom)tactics[CUSTOM]=data.custom.map(([role,key,column])=>({role,line:key,column}));
+ return tactics;
 }
 
 const where=(lineup,id)=>{const slot=lineup.slots.indexOf(id);if(slot>=0)return {kind:'slot',index:slot};const bench=lineup.bench.indexOf(id);return bench>=0?{kind:'bench',index:bench}:null;};
@@ -96,7 +134,8 @@ export function lineupProblems(lineup,roles,players){
 }
 
 const mounted=()=>editor&&typeof document!=='undefined'&&document.querySelector(`#lineup-form[data-match="${editor.matchId}"]`)?editor:null;
-const roles=()=>editor.data.formations[editor.formation];
+const shape=()=>editor.tactics[editor.formation];
+const roles=()=>shape().map(item=>item.role);
 // Problems of the lineup shown on screen; an empty list when it can be played (or when no lineup is being edited).
 export function compositionIssues(){const current=mounted();return current?lineupProblems(current,roles(),current.data.players):[];}
 // The payload of /partie/composition, or null when the lineup on screen cannot be played.
@@ -104,7 +143,8 @@ export function lineupSubmission(){
  const current=mounted();
  if(!current||compositionIssues().length)return null;
  return {match_id:current.matchId,formation:current.formation,
-  titulaires:current.slots.map((id,index)=>[id,roles()[index]]).filter(([id])=>id!=null),banc:current.bench.filter(id=>id!=null)};
+  titulaires:current.slots.map((id,index)=>[id,roles()[index]]).filter(([id])=>id!=null),banc:current.bench.filter(id=>id!=null),
+  perso:current.tactics[CUSTOM]?.map(item=>[item.role,item.line,item.column])??null};
 }
 
 const unavailableIcon=player=>player.unavailable==='injured'?'<span class="lineup-icon injury" title="Blessé" aria-label="Blessé">✚</span>'
@@ -113,22 +153,35 @@ const fatigue=player=>Math.round((1-player.fitness)*100);
 // The position of the pitch picked to compare the squad on it, or null.
 const pickedRole=()=>editor.picked==null?null:roles()[editor.picked]??null;
 const wantedAt=role=>editor.data.composites_by_position?.[role]||[];
-// A player's note at a position with his affinity to it, as the pitch shows them: on the pitch and in the list for the picked position.
-const fitAt=(player,role)=>`<span class="fit-cell">${positionNote(player,role,wantedAt(role))}${affinityTag(player.position_affinities?.[role],role)}</span>`;
+// A player's note at a position with his form and his affinity to it, as the pitch shows them: on the pitch and in the
+// list for the picked position.
+const fitAt=(player,role)=>`<span class="fit-cell">${positionNote(player,role,wantedAt(role))}${formArrow(player.form)}${affinityTag(player.position_affinities?.[role],role)}</span>`;
+// Where a note stands beside its shirt: on the right, unless a place of the next column on the same line (or the pitch's
+// edge) takes the room; then on the left, or under the name when both sides are taken.
+export function noteSide(cells,cell){
+ const taken=column=>column<0||column>=COLUMN_X.length||cells.some(item=>item.line===cell.line&&item.column===column);
+ return !taken(cell.column+1)?'':!taken(cell.column-1)?'left':'below';
+}
 
-function slotHtml(id,role,place,index,byId){
+function slotHtml(id,role,cell,index,byId){
  const player=byId.get(id);
  const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}${index===editor.picked?' picked':''}`;
  const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
- const note=player?positionNote(player,role,wantedAt(role)):'';
- return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}" draggable="true"`:''} style="left:${place.x}%;top:${place.y}%" title="${e(title)}"><span class="shirt">${e(role)}${player?affinityTag(player.position_affinities?.[role],role):''}</span>${note?`<span class="position-note">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
+ const note=player?positionNote(player,role,wantedAt(role)):'',side=noteSide(shape(),cell);
+ return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}"><span class="shirt">${e(role)}${player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''}</span>${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
+}
+// The free cells of the grid, shown while a place of the pitch is dragged.
+function cellsHtml(){
+ const taken=new Set(shape().map(item=>`${item.line}:${item.column}`));
+ return LINES.slice(1).flatMap(key=>COLUMN_X.map((x,column)=>taken.has(`${key}:${column}`)?''
+  :`<div class="lineup-cell" data-cell="${key}:${column}" style="left:${x}%;top:${LINE_Y[key]}%"><span>${cellRole(key,column)}</span></div>`)).join('');
 }
 function benchHtml(id,index,byId){
  const player=byId.get(id);
  return `<div class="bench-slot${player?'':' empty'}${player?.unavailable?' invalid':''}" data-bench="${index}"${player?` data-player="${player.id}" draggable="true" title="${e(player.name)}"`:''}>${player?`${position(player.position)}<span>${unavailableIcon(player)}${e(surname(player.name))}</span>`:'<span class="muted">Remplaçant</span>'}</div>`;
 }
 
-const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
+const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['form','FORME'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
 // The composites by section, a line opening each section.
 const GAME_COLUMNS=COMPOSITE_SECTIONS.flatMap(section=>section.composites.map((key,index)=>[key,compositeHeader(key),index===0]));
 // The squad list's columns, [key, header, opens a section]: with a position picked on the pitch (`role`), everyone's note there
@@ -162,7 +215,7 @@ function squadHtml(byId){
    name:`<span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span>`,
    rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),
    fatigue:`<span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span>`,
-   appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?number(player.average):'—'};
+   form:formBadge(player.form),appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?number(player.average):'—'};
   const cell=([column,,opens])=>{const classes=[column==='name'?'strong':'',opens?'group-start':''].filter(Boolean).join(' ');
    return `<td${classes?` class="${classes}"`:''}>${column in cells?cells[column]:compositeCell(player,column,wanted||player.key_composites)}</td>`;};
   return `<tr data-player="${player.id}" draggable="true" class="${spot?'chosen':''}${player.unavailable?' invalid':''}${spot?.kind==='slot'&&spot.index===editor.picked?' picked':''}">${shown.map(cell).join('')}</tr>`;
@@ -172,13 +225,13 @@ function squadHtml(byId){
 
 function editorHtml(){
  const byId=new Map(editor.data.players.map(player=>[player.id,player]));
- const current=roles(),layout=pitchLayout(current),problems=lineupProblems(editor,current,editor.data.players);
- const tactics=Object.keys(editor.data.formations).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
+ const current=roles(),cells=shape(),problems=lineupProblems(editor,current,editor.data.players);
+ const tactics=Object.keys(editor.tactics).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
  // The first problem is spelled out in the toolbar, the others counted; all of them in the tooltip.
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
  const views=[['infos','Infos'],['jeu','Jeu']].map(([key,label])=>`<button type="button" data-lineup-view="${key}" aria-pressed="${key===squadView}" class="${key===squadView?'active':''}">${label}</button>`).join('');
  return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<div class="segmented" role="group" aria-label="Colonnes">${views}</div><button type="button" data-lineup-suggest>Meilleure composition</button></div>
-<div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${editor.slots.map((id,index)=>slotHtml(id,current[index],layout[index],index,byId)).join('')}</div>
+<div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>`;
 }
@@ -191,6 +244,14 @@ function refresh(){
  document.dispatchEvent(new CustomEvent('lineup-change'));
 }
 function update(lineup){editor.slots=lineup.slots;editor.bench=lineup.bench;refresh();}
+// A place moved onto a free cell makes the tactic on screen the club's own, in place of the one it had.
+function reshape(index,key,column){
+ const {places,order}=movePlace(shape(),index,key,column);
+ editor.tactics[CUSTOM]=places;editor.formation=CUSTOM;
+ editor.slots=order.map(rank=>editor.slots[rank]);
+ if(editor.picked!=null)editor.picked=order.indexOf(editor.picked);
+ refresh();
+}
 // Picking a position sorts the squad by its note there; letting it go returns to the lineup's order.
 function pick(index){
  editor.picked=index;
@@ -200,8 +261,8 @@ function pick(index){
 }
 const benchOf=(ids,size)=>Array.from({length:size},(_,index)=>ids[index]??null);
 function load(formation,titulaires,banc){
- editor.formation=formation;
- const slots=editor.data.formations[formation].map(()=>null);
+ editor.formation=formation in editor.tactics?formation:Object.keys(editor.tactics)[0];
+ const slots=shape().map(()=>null);
  titulaires.forEach(([id],index)=>{if(index<slots.length)slots[index]=id;});
  editor.slots=slots;editor.bench=benchOf(banc,editor.data.bench_size);
 }
@@ -213,7 +274,7 @@ export async function compositionContent(params, state) {
  const data=await api(`/ma-partie/composition${requested?`?match_id=${requested}`:''}`);
  const matchId=data.match_id??0;
  if(editor?.matchId!==matchId){
-  editor={matchId,data,sort:{key:'selected',direction:'asc'},picked:null};
+  editor={matchId,data,tactics:tacticsOf(data),sort:{key:'selected',direction:'asc'},picked:null};
   load(data.default.formation,data.default.titulaires,data.default.banc);
  }else{
   // Fresh squad data (fitness, injuries) under the choices already made; players who left drop out.
@@ -224,42 +285,65 @@ export async function compositionContent(params, state) {
  return `<section class="card composition-card"><div id="lineup-form" data-match="${matchId}">${editorHtml()}</div></section>`;
 }
 
+// The AI's choice on the club's own tactic is asked for the positions on screen; a tactic changed meanwhile keeps its lineup.
+async function suggestCustom(){
+ const current=editor,wanted=roles().join(',');
+ try{
+  const best=await api(`/ma-partie/composition/suggestion?${query({postes:wanted,match_id:current.data.match_id})}`);
+  if(editor!==current||editor.formation!==CUSTOM||roles().join(',')!==wanted)return;
+  load(CUSTOM,best.titulaires,best.banc);refresh();
+ }catch(error){toast(error.message,true);}
+}
+
 function install(){
+ // The player dragged, and the place of the pitch he is dragged from (a place may be dragged empty).
  let dragged=null;
  const inside=target=>target.closest?.('#lineup-form');
- const dropTarget=target=>target.closest('[data-slot],[data-bench],[data-squad-drop]');
+ const dropTarget=target=>target.closest('[data-slot],[data-cell],[data-bench],[data-squad-drop]');
+ // A place of the pitch lands on a free cell (the keeper's excepted) or on another place, whose player it takes
+ // when it comes empty; a player also lands on the bench and the squad list.
+ const accepts=target=>'cell' in target.dataset?dragged.slot!=null&&roles()[dragged.slot]!=='GB'
+  :'slot' in target.dataset?dragged.player!=null||'player' in target.dataset:dragged.player!=null;
  document.addEventListener('dragstart',event=>{
-  const source=event.target.closest?.('[data-player][draggable="true"]');
+  const source=event.target.closest?.('[draggable="true"]');
   if(!source||!inside(source)||!mounted())return;
-  dragged=Number(source.dataset.player);
+  const pitch=source.closest('.lineup-pitch');
+  dragged={player:source.dataset.player?Number(source.dataset.player):null,slot:pitch?Number(source.dataset.slot):null};
   event.dataTransfer.effectAllowed='move';
-  event.dataTransfer.setData('text/plain',String(dragged));
+  event.dataTransfer.setData('text/plain',String(dragged.player??''));
   // The ghost is a shirt like the pitch's, not a table row: the player's place in the lineup, or his own position.
-  const player=editor.data.players.find(item=>item.id===dragged),spot=where(editor,dragged);
-  const role=spot?.kind==='slot'?roles()[spot.index]:player.position;
+  const player=editor.data.players.find(item=>item.id===dragged.player),spot=player?where(editor,player.id):null;
+  const role=pitch?roles()[dragged.slot]:spot?.kind==='slot'?roles()[spot.index]:player.position;
   const token=document.createElement('div');
-  token.className=`pitch-player lineup-slot drag-token ${group(role)}${player.unavailable?' invalid':''}`;
-  token.innerHTML=`<span class="shirt">${e(role)}</span><small>${unavailableIcon(player)}${e(surname(player.name))}</small>`;
+  token.className=`pitch-player lineup-slot drag-token ${group(role)}${player?player.unavailable?' invalid':'':' empty'}`;
+  token.innerHTML=`<span class="shirt">${e(role)}</span><small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small>`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());
   source.classList.add('dragging');
+  if(pitch&&role!=='GB')pitch.classList.add('placing');
  });
- document.addEventListener('dragend',event=>{dragged=null;event.target.classList?.remove('dragging');document.querySelectorAll('#lineup-form .drop-hover').forEach(item=>item.classList.remove('drop-hover'));});
+ document.addEventListener('dragend',event=>{
+  dragged=null;event.target.classList?.remove('dragging');
+  document.querySelectorAll('#lineup-form .drop-hover').forEach(item=>item.classList.remove('drop-hover'));
+  document.querySelectorAll('#lineup-form .placing').forEach(item=>item.classList.remove('placing'));
+ });
  document.addEventListener('dragover',event=>{
   if(dragged==null||!inside(event.target))return;
-  const target=dropTarget(event.target);if(!target)return;
+  const target=dropTarget(event.target);if(!target||!accepts(target))return;
   event.preventDefault();event.dataTransfer.dropEffect='move';
   document.querySelectorAll('#lineup-form .drop-hover').forEach(item=>item!==target&&item.classList.remove('drop-hover'));
   target.classList.add('drop-hover');
  });
  document.addEventListener('drop',event=>{
   if(dragged==null||!inside(event.target)||!mounted())return;
-  const target=dropTarget(event.target);if(!target)return;
+  const target=dropTarget(event.target);if(!target||!accepts(target))return;
   event.preventDefault();
-  const id=dragged;dragged=null;
+  const {player:id,slot}=dragged;dragged=null;
+  if('cell' in target.dataset){const [key,column]=target.dataset.cell.split(':');reshape(slot,key,Number(column));}
   // Dropping back on the squad list takes the player out of the lineup, or swaps him with the unselected player of that row (and conversely).
-  if('squadDrop' in target.dataset){const row=event.target.closest('tr[data-player]');update(dropOnSquad(editor,id,row?Number(row.dataset.player):null));}
+  else if('squadDrop' in target.dataset){const row=event.target.closest('tr[data-player]');update(dropOnSquad(editor,id,row?Number(row.dataset.player):null));}
+  else if('slot' in target.dataset&&id==null)update(place(editor,Number(target.dataset.player),{kind:'slot',index:slot}));
   else update(place(editor,id,'slot' in target.dataset?{kind:'slot',index:Number(target.dataset.slot)}:{kind:'bench',index:Number(target.dataset.bench)}));
  });
  document.addEventListener('contextmenu',event=>{
@@ -279,7 +363,7 @@ function install(){
   if(!button||!inside(button)||!mounted())return;
   if(button.dataset.tactic&&button.dataset.tactic!==editor.formation){
    const next=button.dataset.tactic;
-   editor.slots=changeFormation(editor.slots,roles(),editor.data.formations[next]);
+   editor.slots=changeFormation(editor.slots,roles(),editor.tactics[next].map(item=>item.role));
    editor.formation=next;pick(null);
   }
   if(button.dataset.lineupView&&button.dataset.lineupView!==squadView){
@@ -287,7 +371,10 @@ function install(){
    if(!columns().some(([column])=>column===editor.sort.key))editor.sort={key:'selected',direction:'asc'};
    refresh();
   }
-  if('lineupSuggest' in button.dataset){const best=editor.data.suggestions[editor.formation];load(editor.formation,best.titulaires,best.banc);refresh();}
+  if('lineupSuggest' in button.dataset){
+   if(editor.formation===CUSTOM)suggestCustom();
+   else{const best=editor.data.suggestions[editor.formation];load(editor.formation,best.titulaires,best.banc);refresh();}
+  }
   if(button.dataset.lineupSort){
    const key=button.dataset.lineupSort,same=editor.sort.key===key;
    editor.sort={key,direction:same?(editor.sort.direction==='asc'?'desc':'asc'):['selected','position','name'].includes(key)?'asc':'desc'};

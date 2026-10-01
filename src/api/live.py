@@ -7,6 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
+from core.ai.selection import CUSTOM_FORMATION
 from core.domain.matches import LiveOrder, MatchEvent, stored_events
 from core.domain.world import World
 from core.engine.live import LiveMatch
@@ -90,7 +91,8 @@ def manager_view(world: World, live: LiveMatch, side: int) -> dict:
             "windows_left": rules.substitution_windows - team.windows,
             "squad": squad_strip(live, side),
             "mentality": team.mentality, "mentalities": list(cfg.formations.block_height.mentalities),
-            "formations": {name: list(roles) for name, roles in cfg.formations.formations.items()}}
+            "formations": {**{name: list(roles) for name, roles in cfg.formations.formations.items()},
+                           **({CUSTOM_FORMATION: [position for position, _, _ in world.custom_formation]} if world.custom_formation else {})}}
 
 
 def squad_strip(live: LiveMatch, side: int) -> list[dict]:

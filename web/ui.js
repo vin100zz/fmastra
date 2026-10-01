@@ -22,6 +22,32 @@ export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(sc
 // engine's factor for his affinity there (see /api). The pitches of the lineup and of the player page show it beside the shirt.
 export const positionNote = (player, role, keys=[]) => player?.position_notes?.[role]==null ? ''
  : levelBadge(player.position_notes[role],`Note au poste ${role} : ${keys.map(key=>COMPOSITES[key]).join(', ')}, affinité au poste comprise`);
+// Form as its effect on all a player does in a match: 1.11 reads "+11 %", in green; within ±2 % it is grey.
+export const formBadge = form => {
+ if(form==null)return '—';
+ const pct=Math.round((form-1)*100),neutral=Math.abs(pct)<=2,text=pct>0?`+${pct} %`:pct<0?`−${-pct} %`:'0 %';
+ const title=`Forme ${form.toFixed(2).replace('.',',')} : ${neutral?'il joue à son niveau':`tout ce qu'il fait en match compte ${Math.abs(pct)} % de ${pct>0?'plus':'moins'}`}`;
+ return neutral?`<span class="rating form-badge neutral" title="${escape(title)}">${text}</span>`:gradedBadge(text,pct>0?120:0,title).replace('class="rating graded"','class="rating graded form-badge"');
+};
+// An arrow for a form worth at least 5 % either way in a match: on the lineup's pitch, and beside the note at a position.
+export const formArrow = form => {
+ const pct=form==null?0:Math.round((form-1)*100);
+ return Math.abs(pct)<5?'':`<i class="form-arrow ${pct>0?'up':'down'}" title="Forme ${pct>0?'+':'−'}${Math.abs(pct)} %">${pct>0?'▲':'▼'}</i>`;
+};
+// Morale below this names what holds it down.
+const MORALE_LOW=.7;
+const MORALE_CAUSES={salaire:['€','son salaire'],temps_de_jeu:['◷','son temps de jeu'],ambition:['★','un club en dessous de son niveau']};
+// Morale out of 100, an arrow towards where it drifts week after week, and its main cause when low (squad rows of /api).
+export function moraleCell(player) {
+ if(player.morale==null)return '—';
+ const value=Math.round(player.morale*100),target=player.morale_target==null?null:Math.round(player.morale_target*100);
+ const trend=target==null||Math.abs(target-value)<3?'':target>value?'<span class="trend up">▲</span>':'<span class="trend down">▼</span>';
+ const cause=player.morale<MORALE_LOW?MORALE_CAUSES[player.morale_cause]:null;
+ const share=value=>`${Math.round(value*100)} % de ce qu'il attend`;
+ const title=[`Moral ${value} %${target!=null&&target!==value?`, vers ${target} %`:''}`,...(cause?[`pèse surtout : ${cause[1]}`]:[]),
+  ...(player.wage_satisfaction!=null?[`salaire : ${share(player.wage_satisfaction)}`,`temps de jeu : ${share(player.playing_time_satisfaction)}`]:[])].join(' · ');
+ return `<span class="morale-cell" title="${escape(title)}">${gradedBadge(`${value} %`,gradeHue(value,40,60,80))}<span class="trend-slot">${trend}</span>${cause?`<span class="morale-cause">${cause[0]}</span>`:''}</span>`;
+}
 // The affinity to a position out of 20, only below 20: a tag on the corner of the shirt.
 export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;
 export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
@@ -149,7 +175,7 @@ function playerColumns(view, withClub, options) {
  const identity=[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
  if(view==='attributs')return [...identity,...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
  if(view==='jeu')return [...identity,...COMPOSITE_SECTIONS.flatMap(section=>section.composites.map(key=>[key,compositeHeader(key),section.title]))];
- return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
 }
 // Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
 // view opens on its own default sort.
@@ -169,6 +195,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    age:player.age??'—',rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:player.value==null?'—':money(player.value),asking_price:player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price),wage:player.wage==null?'—':monthlySalary(player.wage),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
+   form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
    appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
   };
