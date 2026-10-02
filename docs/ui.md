@@ -23,7 +23,8 @@ requêtes pour reconstituer une page.
 
 **Filtrage, tri et pagination côté serveur.** Ne jamais renvoyer tous les joueurs
 au navigateur. Toute liste est paginée, y compris la recherche de joueurs qui
-porte sur l'ensemble des clubs, actifs et dormants. Seules les courtes listes
+porte sur l'ensemble des clubs, actifs et dormants ; les écrans de liste demandent
+la taille de page que la fenêtre peut montrer. Seules les courtes listes
 renvoyées en entier (les transferts ou le journal financier d'une saison, les
 classements archivés, les saisons d'un club sur la page affichée) se trient dans
 le navigateur ; le choix survit aux
@@ -428,21 +429,120 @@ Pour un résultat analytique, signaler l'absence de détail et masquer les
 statistiques inconnues au lieu d'afficher des zéros. Garder les compositions
 initiales indépendantes des remplacements enregistrés ensuite.
 
+### Listes : Joueurs, Clubs, Mercato mondial
+
+Les trois écrans de liste partagent la même mise en page (`web/listing.js`).
+
+- **Une ligne pour le titre et les filtres** (classe `toolbar`) : le titre, la recherche,
+  les filtres, puis « Réinitialiser » au bout. Elle passe sur deux lignes quand la fenêtre
+  ne suffit pas. Mercato mondial a deux lignes : le titre avec ses onglets et la saison,
+  puis les filtres.
+- **Des filtres qui se voient.** Un filtre posé prend le fond jaune d'une ligne
+  sélectionnée. Les postes et les pays jouables sont des pastilles, un choix entre deux ou
+  trois valeurs un sélecteur segmenté, un choix plus long une liste, et une fourchette
+  (âge, niveau, valeur, salaire…) un bouton qui ouvre ses champs Min. et Max. avec
+  quelques valeurs toutes prêtes ; posée, le bouton lit la fourchette (« Âge ≤ 23 ») et
+  une croix la retire. Un seul menu ouvert à la fois ; il se ferme sur un clic ailleurs,
+  sur un choix ou sur Échap, et reste ouvert pendant qu'on tape dans ses champs.
+  Pastilles et sélecteurs sont des liens : ils gardent les autres filtres, le tri et la
+  vue, et reviennent à la première page.
+- **Une liste à la hauteur de la fenêtre.** L'écran demande au serveur autant de lignes
+  que la fenêtre en montre (`taille`, de 10 à 100) : il part d'une estimation, mesure les
+  lignes une fois affiché, et se redessine une fois si le compte diffère. La liste occupe
+  toute la hauteur, même avec peu de résultats, et la page ne défile pas. Une nouvelle
+  taille de fenêtre refait le calcul.
+- **Les pages dans l'en-tête de la carte** : « 1–33 sur 13 013 » et deux boutons carrés,
+  à droite du titre de la carte ; rien quand tout tient sur une page.
+- **Les chiffres à droite** de leur colonne, sous un en-tête aligné de même ; une barre
+  fine accompagne ceux qui se comparent (réputation, masse salariale, indemnité, condition).
+- **La nationalité** tient en un drapeau et son code ; les autres sont comptées (« +1 »)
+  et nommées en infobulle. Cela vaut pour toutes les listes de joueurs.
+- **Un volet à droite à partir de 1880 px de large**, la largeur où la liste garde toutes
+  ses colonnes à côté de lui. Sur Joueurs et Clubs, c'est
+  l'aperçu de la ligne sélectionnée, la première par défaut : un clic sur une ligne le
+  met à jour sans redessiner la liste, les flèches haut et bas passent d'une ligne à
+  l'autre, Entrée ouvre la fiche. Sur Mercato mondial, c'est le résumé de la saison. Le
+  volet prend la hauteur de la liste et défile en lui-même. La ligne sélectionnée est
+  dans l'adresse (`sel`) ; elle n'est ni un filtre ni retenue d'une visite à l'autre.
+
 ### Recherche de joueurs
 
 Vue transversale sur les joueurs importés (25 911 avec les CSV présents).
-Filtres serveur : poste, statut du club (actif ou dormant), statut contractuel,
-puis en filtres avancés âge, niveau et potentiel minimum, salaire, valeur et prix
-maximum. Tri sur toute colonne, pagination obligatoire.
+Filtres serveur : les postes (plusieurs à la fois), puis des fourchettes d'âge, de
+niveau, de potentiel, de valeur, de prix minimum (un plafond) et de salaire, puis le
+statut contractuel et le statut du club (actif ou dormant). Tri sur toute colonne,
+pagination obligatoire.
+
+La vue Infos ajoute les chiffres de la saison aux colonnes d'un effectif : MJ, BUTS, PD
+et NOTE, triables comme les autres.
+
+L'aperçu d'un joueur reprend les mots de sa fiche : drapeau, nom et poste, club et
+sélections, les tuiles âge, niveau et potentiel, puis État (condition, forme, moral,
+et la blessure ou la suspension s'il y en a une), Contrat (avec ses prétentions et son
+intérêt quand l'utilisateur dirige un club), Postes (affinité et note, un clic lit la
+section Jeu pour ce poste), Jeu et Attributs. Au pied, « Ouvrir la fiche » et les
+actions de la fiche (« Faire une offre », « Proposer un contrat », mise en vente),
+avec leurs boîtes de dialogue.
 
 Quand l'utilisateur dirige un club, la vue Infos a deux colonnes de plus, après le
 salaire : PRÉTENTIONS, le salaire mensuel que le joueur demande pour le rejoindre (sa
 contre-offre, celle que le club réserve sur sa masse salariale dès l'offre
 d'indemnité), et INTÉRESSÉ, Oui ou Non selon qu'il accepte ou non de le rejoindre
 (`wage_demand` et `interested` de la liste). Ses propres joueurs y ont un tiret et
-viennent en dernier quand on trie dessus. Deux filtres les accompagnent : « Joueurs
-intéressés » ou « Joueurs non intéressés » sur la ligne de filtres, et « Prétentions
-max. » en €/mois dans les filtres avancés. Sans club, ni colonnes ni filtres.
+viennent en dernier quand on trie dessus. Deux filtres les accompagnent : la liste
+« Intérêt » (joueurs intéressés ou non) et la fourchette « Prétentions », un plafond
+en €/mois. Sans club, ni colonnes ni filtres.
+
+### Liste des clubs
+
+Filtres serveur : les cinq pays jouables en pastilles, tous les pays dans une liste
+(les jouables d'abord), le championnat, et le statut (tous, actifs, dormants).
+
+Une ligne par club : son rang dans la liste, le club, le pays, le championnat
+(« Marché extérieur » en gris hors des championnats simulés), son classement (★ pour un
+champion, ↑ et ↓ pour une place de promotion ou de relégation) et sa forme sur cinq
+matches, la réputation avec sa barre, l'entraînement et le recrutement des jeunes en
+badges sur 20, l'effectif et son âge moyen, le niveau et le potentiel moyens des
+16 meilleurs, la valeur de l'effectif, le budget de transferts disponible et la masse
+salariale mensuelle, avec une barre de la part du plafond utilisée, rouge à partir de
+95 %. Toutes les colonnes se trient ; les noms et le classement partent du plus petit.
+Un club sans classement vient en dernier quel que soit l'ordre. Les en-têtes abrégés
+(CLASS., ENTR., JEUNES, EFF., NIV. 16, POT. 16, MASSE SAL.) donnent leur nom en infobulle.
+
+L'aperçu d'un club : écusson et nom, pays, championnat et capacité, les tuiles
+réputation, classement et points, la tactique et les deux notes d'installations, ses
+cinq derniers matches et les trois prochains (comme le bloc Calendrier de sa fiche), ses
+finances (budget, solde, masse salariale et plafond, achats et ventes de la saison) et
+ses huit meilleurs joueurs. Au pied, un bouton par onglet de sa fiche.
+
+### Mercato mondial
+
+La ligne du titre porte les onglets Transferts, Retraites et Promotions des centres,
+chacun avec le nombre de mouvements de la saison, et à droite la saison avec ses deux
+flèches. Les filtres ne concernent que les transferts (les deux autres onglets n'ont
+que la recherche) : recherche d'un joueur ou d'un club, fenêtre (saison, été, hiver),
+type (tous, payants, libres), championnat de l'un des deux clubs, poste, âge au moment
+du transfert, montant minimum en M€, et « Mon club » quand l'utilisateur en dirige un.
+
+Un transfert donne la date, le poste, le joueur, sa nationalité, son âge au transfert,
+son niveau, le club de provenance, une flèche, le club de destination, le montant avec
+une barre rapportée au record de la saison (« Libre », « Fin de contrat » ou « Motif
+non archivé » sinon) et la valeur du joueur. Poste, niveau et valeur sont ceux du
+joueur aujourd'hui : un mouvement ne les archive pas, et un joueur retraité n'en a plus.
+
+Le résumé de la saison, à droite, ne suit pas les filtres :
+
+- quatre tuiles : nombre de transferts, volume des indemnités, médiane des transferts
+  payants, record (le joueur en infobulle) ;
+- l'activité par semaine : une barre par semaine, la fenêtre d'été puis celle d'hiver,
+  en nombre de transferts ou en volume d'indemnités (`mesure`). Seule la semaine la plus
+  chargée de chaque fenêtre porte son chiffre ; l'infobulle d'une barre donne les deux ;
+- les clubs qui ont payé ou reçu une indemnité : arrivées, départs, achats, ventes,
+  balance, les plus dépensiers d'abord ; la carte prend la hauteur restante et défile ;
+- les championnats, avec les mêmes colonnes ; un club compte pour le championnat où il
+  joue aujourd'hui, les autres clubs sont réunis sous « Marché extérieur », en dernier.
+
+Ces deux tableaux se trient dans le navigateur.
 
 Une offre que la masse salariale ne permet pas est refusée avec les deux montants :
 « Ibrahim Mbaye demanderait 310 000 € / mois : il vous reste 260 000 € / mois sous le
@@ -468,9 +568,14 @@ POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running,
 GET  /api/travaux/{id}                  statut, progression, erreur éventuelle, compétition dont le tour suit (competition)
 GET  /api/monde/journal?date=             événements du jour
 GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {europe, countries}
+GET  /api/monde/transferts?saison=&type=transfer|retirement|academy&page=&taille=&tri=&ordre=&recherche=   counts : mouvements de la saison par onglet
+                  &fenetre=ete|hiver&nature=payant|libre&competition=&poste=&age_min=&age_max=&montant_min=&club=   pour les transferts seulement
+                                          un transfert donne aussi position, nationalities, rating et value du joueur aujourd'hui (null une fois retraité)
+GET  /api/monde/transferts/resume?saison= {total, paid, volume, median, record, weeks: [{week, summer, count, volume}], clubs, leagues}
 GET  /api/manuel[/{chapitre}]             manuel : {pages: [{slug, title}], page: {slug, title, sections: [{id, title}], markdown}} ; sans partie, configuration du dépôt
 
-GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&tri=&ordre=   tri : toute colonne (niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
+GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&taille=&tri=&ordre=   tri : toute colonne (classement, forme, age, valeur, budget, masse_salariale ; niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
+                                          chaque club : standing, average_age, squad_value, available_budget, wage_bill et wage_cap (hebdomadaires)
 GET  /api/clubs/{id}                      en-tête + résumé
 GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
@@ -489,9 +594,10 @@ GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
 GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
-GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&nation=&club=&statut_club=&page=&tri=   tri : idem, attributs et composites compris
+GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&valeur_min=&valeur_max=&prix_max=&salaire_min=&salaire_max=
+                  &nation=&club=&statut_club=&contrat=&page=&taille=&tri=   poste : un ou plusieurs, séparés par des virgules ; tri : idem, attributs, composites et chiffres de la saison (appearances, goals, assists, average) compris
                   &interesse=oui|non&pretentions_max=   pour le club de l'utilisateur (ignorés sans club) ; tri : wage_demand, interested
-GET  /api/joueurs/{id}
+GET  /api/joueurs/{id}                    la fiche, avec interested et wage_demand comme dans la liste
 GET  /api/joueurs/{id}/historique         carrière + trajectory : niveau sur 200 mois par mois {year, month, season, level}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 

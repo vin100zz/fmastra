@@ -179,6 +179,8 @@ def player_detail(world: World, player: Player) -> dict:
     result.update(asking_quote(world, player, recent_arrival_ids(world)))
     result.update(player_morale(world, player))
     result["greed"] = player.greed
+    # What the lists of the world tell a recruiter, for the preview beside them.
+    result.update({"interested": interested(world, player), "wage_demand": asked_wage(world, player)})
     # The bounds form keeps, for the page to draw it between them.
     result["form_bounds"] = [world.config.states.form.min, world.config.states.form.max]
     result.update({"born": player.born.iso(),
@@ -267,15 +269,44 @@ def squad_strength(world: World, club_id: int) -> dict:
             "top_potential": top_average(player.potential for player in players)}
 
 
-def club_detail(world: World, club_id: int) -> dict:
+def league_standings(world: World, competition_id: int | None, cache: dict | None = None) -> dict[int, dict]:
+    """The standing of each club of a league, by club; `cache` keeps them for the other clubs of a list."""
+    if competition_id is None: return {}
+    if cache is None: cache = {}
+    if competition_id not in cache:
+        cache[competition_id] = {row["club_id"]: row for row in table(world, competition_id)}
+    return cache[competition_id]
+
+
+def reserved_budgets(world: World) -> dict[int, int]:
+    """What each club's pending offers hold back from its transfer budget."""
+    reserved: dict[int, int] = {}
+    for offer in world.offers.values():
+        reserved[offer.target_id] = reserved.get(offer.target_id, 0) + offer.ceiling
+    return reserved
+
+
+def squad_profile(world: World, club_id: int) -> dict:
+    """Mean age and summed market value of a squad; None and 0 without any player."""
+    players = [world.players[pid] for pid in world.clubs[club_id].player_ids]
+    return {"average_age": round(sum(player.born.age_on(world.date) for player in players) / len(players), 1) if players else None,
+            "squad_value": sum(market_value(player, world) for player in players)}
+
+
+def club_detail(world: World, club_id: int, standings: dict | None = None, reserved: dict[int, int] | None = None) -> dict:
     club = world.clubs[club_id]
-    standing = next((row for row in table(world, club.competition_id) if row["club_id"] == club.id), None) if club.competition_id else None
+    standing = league_standings(world, club.competition_id, standings).get(club.id)
+    if reserved is None: reserved = reserved_budgets(world)
     return {"id": club.id, "name": club.name, "nation_code": club.nation, "nation": world.nation_names.get(club.nation, club.nation),
             "competition_id": club.competition_id, "competition": world.competitions[club.competition_id].name if club.competition_id else None,
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
             "academy": round(club.academy, 1), "training_facilities": club.training_facilities,
             "youth_recruitment": club.youth_recruitment,
             "formation": club.formation, "squad_size": len(club.player_ids), **squad_strength(world, club_id), "standing": standing,
+            **squad_profile(world, club_id),
+            # The budget left for a bid, and the wages against their cap (weekly, like every wage of the API).
+            "available_budget": max(0, club.transfer_budget - reserved.get(club.id, 0)),
+            "wage_bill": club.wage_bill, "wage_cap": club.wage_cap,
             "major_color": club.home_kit_major_color, "minor_color": club.home_kit_minor_color,
             "third_color": club.home_kit_third_color}
 
@@ -300,9 +331,14 @@ def transfer_row(world: World, row) -> dict:
     born = row.born or (player.born if player else None)
     if born is None:
         born = next((item.born for item in world.transfers if item.player_id == row.player_id and item.born), None)
+    # Position, level and value are the player's today: a movement keeps none of them (None once he has retired).
     return {"date": row.date.iso(), "player_id": row.player_id, "player": player_name(world, row.player_id),
             "source": club_ref(world, row.source_id), "target": club_ref(world, row.target_id), "fee": row.fee, "kind": row.kind,
-            "age": born.age_on(row.date) if born else None}
+            "age": born.age_on(row.date) if born else None,
+            "position": player.position.value if player else None,
+            "nationalities": list(player.nationalities) if player else [],
+            "rating": round(player.rating, 1) if player else None,
+            "value": market_value(player, world) if player else None}
 
 
 def academy_player_row(world: World, row) -> dict:

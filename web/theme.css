@@ -696,3 +696,167 @@ a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 }
 @media(max-width:1050px){.player-page{grid-template-columns:1fr}}
 @media(max-width:800px){.player-row.profile{grid-template-columns:1fr}}
+
+/* List screens (Joueurs, Clubs, Mercato mondial): the title and the filters on one line, the list fitted to the window with
+   its pages in the card's head, and on a wide screen a panel beside it. */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:30px;margin:0 0 8px}
+.toolbar h1{margin:0 6px 0 0;line-height:30px}
+.toolbar input[type=search]{flex:0 1 180px;min-width:110px;height:30px;padding:0 8px}
+.toolbar select{height:30px;padding:0 4px 0 8px;font-size:12px;field-sizing:content}
+.toolbar [data-reset-filters]{height:30px;margin-left:auto;padding:0 12px}
+.toolbar .tabs{margin:0!important;border:0;overflow:visible}
+.toolbar .tabs a{padding:5px 12px!important}
+.tabs .count{margin-left:3px;font-weight:500;color:var(--muted)}
+.toolbar .season-navigation{margin:0 0 0 auto;gap:8px}
+.toolbar .season-navigation strong{font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:600;color:var(--strong);white-space:nowrap}
+.toolbar .season-navigation button{width:30px;height:30px;padding:0;font-size:16px;line-height:1}
+/* A filter that is set: its control takes the colour of a picked row. */
+.toolbar select.on,.filter-menu.on>summary,.chip.on{background:var(--own-row);border-color:var(--accent-text);color:var(--strong)}
+.chips{display:flex;gap:8px}
+.chips>span{display:flex;gap:2px}
+.chip{display:flex;align-items:center;justify-content:center;gap:6px;min-width:32px;height:30px;padding:0 6px;border:1px solid var(--line);border-radius:3px;background:var(--panel);color:var(--ink-2);font-size:10px;font-weight:700;white-space:nowrap}
+.chip:hover{background:var(--panel-3);color:var(--strong)}
+.chip.gk{color:var(--gold-bright)}.chip.def{color:var(--info)}.chip.mid{color:var(--mid-ink)}.chip.att{color:var(--att-ink)}
+.chip.on.gk{background:var(--gold-soft);border-color:var(--gold-bright);color:var(--gold-bright)}
+.chip.on.def{background:var(--info-soft);border-color:var(--info);color:var(--info)}
+.chip.on.mid{background:var(--good-soft);border-color:var(--mid-ink);color:var(--mid-ink)}
+.chip.on.att{background:var(--att-soft);border-color:var(--att-ink);color:var(--att-ink)}
+.chip.nation-chip,.chip.toggle{padding:0 10px;font-size:12px;font-weight:500}
+.chip.on.nation-chip,.chip.on.toggle{font-weight:600}
+.chip .nation{gap:0}
+.segmented a{display:flex;align-items:center;height:28px;padding:0 11px;border-right:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+.segmented a:last-of-type{border-right:0}
+.segmented a:hover{color:var(--strong)}
+.segmented a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 -2px 0 var(--accent)}
+.card-head .segmented a{height:22px}
+/* A range folded behind a button: its fields open under it; set, it reads the range and a cross takes it off. */
+.filter-menu{position:relative}
+.filter-menu>summary{display:flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 10px;border:1px solid var(--line);border-radius:3px;background:var(--panel);color:var(--ink-2);font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;list-style:none;user-select:none}
+.filter-menu>summary::-webkit-details-marker{display:none}
+.filter-menu>summary:hover,.filter-menu[open]>summary{background:var(--panel-3)}
+.filter-menu:not(.on)>summary:after{content:"";width:5px;height:5px;margin:-3px 2px 0 2px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg)}
+.filter-menu.on>summary{padding-right:4px;font-weight:600}
+.filter-menu.on>summary:hover{background:var(--own-row)}
+.filter-menu .clear{display:grid;place-items:center;width:20px;height:20px;border-radius:2px;color:var(--accent-text);font-size:15px;font-weight:400;line-height:1}
+.filter-menu .clear:hover{background:var(--accent-soft);color:var(--strong)}
+.filter-panel{position:absolute;top:34px;left:0;z-index:6;display:flex;flex-direction:column;gap:8px;width:232px;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--panel);box-shadow:0 12px 32px #0009}
+:root[data-theme="light"] .filter-panel{box-shadow:0 12px 32px #1a2d3a2e}
+.filter-fields{display:flex;gap:8px}
+.filter-fields label{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;font-size:11px;font-weight:600;color:var(--muted)}
+.filter-fields input{width:100%;height:28px;padding:0 8px}
+.presets{display:flex;gap:4px}
+.presets a{flex:1;display:grid;place-items:center;height:26px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--ink);font-size:12px;font-weight:600;white-space:nowrap}
+.presets a:hover{background:var(--panel-3)}
+.presets a.on{background:var(--own-row);border-color:var(--accent-text)}
+/* The list and its panel, from the width where the list keeps all its columns beside it (see wideScreen in listing.js): the
+   panel takes the list's height and scrolls within it. */
+.split{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:stretch}
+.split>.card{display:flex;flex-direction:column;min-width:0;margin:0}
+@media(min-width:1880px){
+ .split.with-side{grid-template-columns:minmax(0,1fr) 348px}
+ .split.with-side.market{grid-template-columns:minmax(0,1fr) 560px}
+}
+.side{position:relative;min-width:0}
+.side-inner{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.side-inner>.card,.side-inner>.stat-grid{flex:none;margin:0}
+@media(max-width:1879px){.side{display:none}}
+.head-pager{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;white-space:nowrap}
+.head-pager span{margin-right:4px}
+.head-pager button{display:grid;place-items:center;width:24px;height:24px;padding:0;font-size:15px;line-height:1}
+.head-pager button:disabled{cursor:default}
+.card-tools{flex-wrap:nowrap}
+tr[data-select]{cursor:pointer}
+tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth-child(2){background:var(--own-row)}
+/* Figures stand on the right of their column, under a heading set the same way; a thin bar may go with one. */
+.num{display:block;text-align:right}
+.player-table :is(.age-column,.value-column,.asking_price-column,.wage-column,.wage_demand-column,.fitness-column,.appearances-column,.goals-column,.assists-column,.yellows-column,.reds-column,.average-column),
+.clubs-table :is(.rang-column,.reputation-column,.effectif-column,.age-column,.valeur-column,.budget-column,.masse_salariale-column),
+.movements-table :is(.age-column,.fee-column,.value-column),.summary-table th:nth-child(n+2){text-align:right}
+.mini-bar{flex:none;display:block;width:32px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.mini-bar>i{display:block;height:100%;border-radius:2px;background:var(--info)}
+.mini-bar.full>i{background:var(--bad)}
+.status .mini-bar{width:22px}
+.status .mini-bar>i{background:var(--good)}
+.status{justify-content:flex-end;width:100%}
+.bar-figure{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.bar-figure b{min-width:34px;font-weight:600;text-align:right;color:var(--strong)}
+/* Widths: the nationality is one flag and its code, the condition has its bar. Beside a preview the list of the world's
+   players, with the season's figures, keeps to the width left: narrower names and clubs, less padding. */
+.player-table .nation-column{width:66px}.player-table .fitness-column{width:60px}
+.split .player-table th,.split .player-table td{padding-left:6px!important;padding-right:6px!important}
+.split .player-table .name-column{width:150px}.split .player-table .club-column,.split .player-table .academy_club-column{width:126px}
+.split .player-table .asking_price-column{width:72px}.split .player-table .wage-column{width:84px}.split .player-table .wage_demand-column{width:76px}
+.split .player-table .interested-column{width:58px}.split .player-table .contract_end-column{width:62px}
+.split .player-table .goals-column{width:32px}.split .player-table .assists-column{width:24px}.split .player-table .average-column{width:34px}
+.clubs-table .rang-column{width:22px}.clubs-table .nom-column{width:auto}.clubs-table .championnat-column{width:112px}.clubs-table .classement-column{width:46px}.clubs-table .forme-column{width:100px}
+.clubs-table .reputation-column{width:96px}.clubs-table .entrainement-column{width:40px}.clubs-table .recrutement-column{width:48px}.clubs-table .effectif-column{width:30px}.clubs-table .age-column{width:34px}
+.clubs-table .niveau-column,.clubs-table .potentiel-column{width:50px}.clubs-table .valeur-column{width:60px}.clubs-table .budget-column{width:64px}.clubs-table .masse_salariale-column{width:100px}
+.clubs-table .bar-figure .mini-bar{width:40px}
+.movements-table .date-column{width:76px}.movements-table .position-column{width:40px}.movements-table .name-column{width:auto}.movements-table .nation-column{width:66px}.movements-table .age-column{width:30px}
+.movements-table .rating-column{width:34px}.movements-table .source-column,.movements-table .target-column{width:160px}.movements-table .arrow-column{width:14px;padding:0!important}
+.movements-table .fee-column{width:132px}.movements-table .value-column{width:60px}.movements-table .bar-figure .mini-bar{width:56px}.movements-table .bar-figure b{min-width:58px}
+.move-arrow{display:block;margin:0 -8px;text-align:center;color:var(--muted)}
+/* Preview of the row picked in a list: the words of the player's or the club's page, in a narrow card. */
+.preview{display:flex;flex-direction:column;flex:1 0 auto!important;overflow:visible}
+.preview-head{display:flex;align-items:center;gap:10px;padding:10px 12px 0}
+.preview-head h2{flex:1;min-width:0;margin:0;font-size:22px;font-weight:700;line-height:1.15;overflow-wrap:anywhere;color:var(--strong)}
+.preview-head .flag{width:24px;height:18px}
+.preview-head .crest{width:34px;height:34px;font-size:13px}
+.preview-line{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 10px;padding:6px 12px 0;font-size:12px;font-weight:600;color:var(--strong)}
+.preview-line b{font-weight:600;white-space:nowrap}
+.preview-line .muted{font-weight:400}
+.preview .rail-tiles{padding:8px 12px}
+.preview .tile{padding:5px 6px}
+.preview .tile strong{font-size:24px}
+.preview h3{display:flex;align-items:center;gap:6px;height:24px;margin:0;padding:0 12px;background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.preview .fact{min-height:25px;margin:0 12px;padding:0;border-bottom:1px solid var(--row-line);font-size:12px}
+.preview .fact:last-child{border-bottom:1px solid var(--row-line)}
+.preview .fact strong{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--strong);white-space:nowrap}
+.preview .fact b{min-width:44px;font-weight:600;text-align:right}
+.preview .fact .danger{color:var(--bad)}
+.preview .gauge.full>i{background:var(--bad)}
+.preview .positions-list{display:flex;flex-direction:column;flex:none;margin:0;border:0}
+.preview .position-row{height:25px}
+.preview .position-row.head{height:22px;border-top:0}
+.preview .attributes-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;padding:0 12px 4px}
+.preview .attribute{height:25px;margin:0;padding:0;border-bottom:1px solid var(--row-line);white-space:nowrap}
+.preview .club-matches{padding:2px 12px}
+.preview-table table{table-layout:fixed}
+.preview-table th,.preview-table td{padding-left:5px!important;padding-right:5px!important;overflow:hidden;text-overflow:ellipsis}
+.preview-table th:first-child,.preview-table td:first-child{padding-left:12px!important}
+.preview-table th:last-child,.preview-table td:last-child{padding-right:12px!important}
+.preview-table th:nth-child(1){width:56px}.preview-table th:nth-child(3){width:34px}.preview-table th:nth-child(4),.preview-table th:nth-child(5){width:44px}.preview-table th:nth-child(6){width:72px}
+.preview-table th:nth-child(3),.preview-table th:last-child{text-align:right}
+.preview-actions{display:flex;flex-direction:column;gap:6px;margin-top:auto;padding:10px 12px;border-top:1px solid var(--line)}
+.preview-tabs{display:flex;gap:6px}
+.preview-tabs .button{flex:1}
+a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--ink);font-size:12px;font-weight:600;white-space:nowrap}
+a.button:hover{background:var(--panel-3);color:var(--strong)}
+/* Mercato mondial: the season in figures beside its transfers. The clubs take the height left and scroll within it. */
+.side-inner>.stat-grid{gap:8px}
+.side-inner .stat-card{padding:7px 12px 8px}
+.side-inner .stat-card strong{margin:2px 0 0;font-size:22px;white-space:nowrap}
+.summary-table .table-scroll{overflow:visible}
+.summary-table th,.summary-table td{padding-left:6px!important;padding-right:6px!important}
+.summary-table th:first-child,.summary-table td:first-child{padding-left:12px!important}
+.summary-table th:last-child,.summary-table td:last-child{padding-right:12px!important}
+.summary-table .bar-figure .mini-bar{width:44px}
+.summary-table .bar-figure b{min-width:54px}
+.side-inner>.clubs-summary{flex:1 1 0;min-height:140px;display:flex;flex-direction:column}
+.clubs-summary .summary-table{flex:1;min-height:0;overflow:hidden auto}
+.clubs-summary thead th{position:sticky;top:0;z-index:1}
+/* The weeks of the season as bars, the summer window then the winter one, over a few graded lines. */
+.activity{--plot:128px;position:relative;display:flex;gap:18px;padding:16px 12px 8px 44px}
+.activity-grid{position:absolute;left:44px;right:12px;top:16px;height:var(--plot)}
+.activity-grid span{position:absolute;left:0;right:0;height:1px;background:var(--row-line)}
+.activity-grid em{position:absolute;right:100%;top:-6px;margin-right:6px;font-size:10px;font-style:normal;line-height:12px;white-space:nowrap;color:var(--muted)}
+.activity-window{position:relative;flex:1 1 0;min-width:0}
+.activity-bars{display:flex}
+.week{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center}
+.week-plot{position:relative;width:100%;height:var(--plot);border-bottom:1px solid var(--line)}
+.week-plot i{position:absolute;left:50%;bottom:0;width:min(20px,70%);min-height:2px;border-radius:4px 4px 0 0;background:var(--info);transform:translateX(-50%)}
+.week:hover .week-plot i{background:var(--strong)}
+.week-plot b{position:absolute;left:50%;margin-bottom:2px;font-size:10px;font-weight:600;line-height:12px;white-space:nowrap;color:var(--strong);transform:translateX(-50%)}
+.week>span{height:16px;font-size:10px;line-height:16px;color:var(--muted)}
+.activity.dense .week>span{visibility:hidden}
+.activity-window>small{display:block;padding-top:2px;border-top:1px solid var(--line);font-size:10px;font-weight:600;letter-spacing:.06em;text-align:center;text-transform:uppercase;color:var(--muted)}

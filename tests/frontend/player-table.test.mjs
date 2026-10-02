@@ -20,14 +20,15 @@ test('standings give European qualification places a blue background, matching p
 });
 
 const player={id:1,name:'Test',position:'BU',age:20,nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};
-test('player list shows multiple nationalities and value with selected sorting',()=>{
+test('player list shows the main nationality, counts the others, and the value with selected sorting',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'},POR:{name:'Portugal',display_code:'POR',flag:'pt'},XOP:{name:'Angola',display_code:'Angola',flag:'ao'}});
  const html=playerTable({items:[player],total:1,page_size:30},true,'value');
- assert.match(html,/title="France"/);assert.match(html,/title="Espagne"/);
- assert.match(html,/flags\/fr.svg/);assert.match(html,/flags\/es.svg/);
+ // The main nationality with its flag; the others are counted and named in a tooltip.
+ assert.match(html,/title="France"/);assert.match(html,/<span class="muted" title="Espagne">\+1<\/span>/);
+ assert.match(html,/flags\/fr.svg/);assert.doesNotMatch(html,/flags\/es.svg/);
  assert.match(html,/data-order="desc" data-sort="value">VALEUR</);assert.match(html,/1,3/);
  const imported=playerTable({items:[{...player,nationalities:['POR','XOP'],nationality_names:['Portugal','Angola']}],total:1,page_size:30},true);
- assert.match(imported,/POR/);assert.match(imported,/Angola/);assert.doesNotMatch(imported,/XOP/);
+ assert.match(imported,/POR/);assert.match(imported,/title="Angola">\+1</);assert.doesNotMatch(imported,/XOP/);
 });
 
 test('potential follows current level and academy columns preserve unknown data',()=>{
@@ -115,6 +116,22 @@ test('sorting orders by raw values, keeps unknown ones last and ties in page ord
  sortTable(table,1,'asc');assert.deepEqual(table.ids(),['2','3','1','0']);
  assert.equal(table.head[2].getAttribute('aria-sort'),null);assert.equal(table.head[1].getAttribute('aria-sort'),'ascending');
  table.head[0].dataset.first='asc';assert.equal(nextDirection(table,0),'asc');
+});
+
+test('figures stand on the right of their column, and the condition has its bar',()=>{
+ const html=playerTable({items:[{...player,fitness:.77}],total:1,page_size:30});
+ assert.match(html,/<td><span class="num">20<\/span><\/td>/);
+ assert.match(html,/<span class="num">1,3\sM\s€<\/span>/);
+ assert.match(html,/<span class="status"><i class="mini-bar" aria-hidden="true"><i style="width:77%"><\/i><\/i>77%<\/span>/);
+});
+
+test('a list beside a preview marks the picked row and lets each row be picked; its pages can stand elsewhere',()=>{
+ const items=[player,{...player,id:2}];
+ const html=playerTable({items,total:90,page_size:30,page:1},true,'value','desc',{select:2,pager:false});
+ assert.match(html,/<tr class="" data-select="1">/);assert.match(html,/<tr class="selected" data-select="2">/);
+ assert.doesNotMatch(html,/class="pager"/);
+ const plain=playerTable({items,total:90,page_size:30,page:1},true);
+ assert.doesNotMatch(plain,/data-select|selected/);assert.match(plain,/class="pager"/);
 });
 
 test('appearances show the substitute entries in brackets after the starts',()=>{

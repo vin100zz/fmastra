@@ -120,7 +120,8 @@ export const heading = (title,extra='',lead='') => {const text=`<div><h1>${escap
 export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
 // `headClasses` gives each column's header a class ('' for none). `groups` names the heading over each column (null for none): the columns
 // under one heading share it on a first header row and have their own headers on a second one, the others span both rows.
-export function table(headers, rows, footer, rowClasses, sort, headClasses, groups) {
+// `rowAttributes` adds attributes to each body row ('' for none).
+export function table(headers, rows, footer, rowClasses, sort, headClasses, groups, rowAttributes) {
  const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
  const cell=(cell,index,column)=>sort?`<td data-value="${escape(sort.values[index][column]??'')}">${cell}</td>`:`<td>${cell}</td>`;
  const first=index=>sort?.ascending?.includes(index)?' data-first="asc"':'';
@@ -134,7 +135,7 @@ export function table(headers, rows, footer, rowClasses, sort, headClasses, grou
   // A fixed layout takes its widths from the first row, where the headings span their columns: those columns get theirs from a <col>.
   colgroup=`<colgroup>${columns.map(index=>`<col${groups[index]?` class="grouped${starts(index)?' group-start':''}"`:''}>`).join('')}</colgroup>`;
  }
- return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}>${colgroup}<thead>${thead}</thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
+ return rows.length ? `<div class="table-scroll"><table${sort?' data-sortable':''}>${colgroup}<thead>${thead}</thead><tbody>${rows.map((row,index)=>`<tr class="${rowClasses?.[index]||''}"${sort?` data-row="${index}"`:''}${rowAttributes?.[index]?` ${rowAttributes[index]}`:''}>${row.map((item,column)=>cell(item,index,column)).join('')}</tr>`).join('')}</tbody>${footer?`<tfoot><tr>${footer.map(cell=>`<td>${cell}</td>`).join('')}</tr></tfoot>`:''}</table></div>` : empty();
 }
 // A short list shown whole, sorted in the browser: `values` holds the raw value behind each cell ('' when unknown);
 // `ascending` lists the columns whose first click runs from smallest to largest (ranks), the others start from the largest.
@@ -160,6 +161,21 @@ export function sortTable(table, column, direction) {
 // The arrow comes from the style sheet, like on the tables sorted in the browser.
 export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label}</button>`;
 export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
+// The same pages from the head of a card: the range shown and two square steps; nothing for a list that fits on one page.
+export function headPager(data) {
+ if(data.total<=data.page_size)return '';
+ const first=(data.page-1)*data.page_size+1,last=Math.min(data.page*data.page_size,data.total);
+ return `<div class="head-pager"><span>${number(first)}–${number(last)} sur ${number(data.total)}</span><button type="button" data-page="${data.page-1}" aria-label="Page précédente" ${data.page<=1?'disabled':''}>‹</button><button type="button" data-page="${data.page+1}" aria-label="Page suivante" ${last>=data.total?'disabled':''}>›</button></div>`;
+}
+// A figure, set to the right of its column.
+export const figure = value => `<span class="num">${value}</span>`;
+// A thin bar beside a figure of a list: `share` of its width filled.
+export const miniBar = (share, modifier='') => `<i class="mini-bar${modifier?` ${modifier}`:''}" aria-hidden="true"><i style="width:${Math.round(Math.max(0,Math.min(1,share))*100)}%"></i></i>`;
+// The main nationality with its flag; the others are counted beside it and named in the count's tooltip.
+export const mainNation = codes => {
+ const [main,...others]=codes&&codes.length?codes:['—'];
+ return `${nationBadge(main)}${others.length?` <span class="muted" title="${escape(others.map(nationName).join(', '))}">+${others.length}</span>`:''}`;
+};
 const textColumns=['position','name','nation','club','academy_club'];
 const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA'};
 const LIST_SECTIONS=['general','defense','attack','goalkeeper'].map(key=>ATTRIBUTE_SECTIONS.find(section=>section.key===key));
@@ -181,12 +197,12 @@ export const compositeCell = (player, key, wanted=player.key_composites) => {
 };
 // A player list's columns, [key, header, heading over it]: contract, state and season by default, the attributes by section in the
 // 'attributs' view, the composites by section in the 'jeu' view. `recruiting` adds what the user's club needs to know before a bid:
-// the wage a player asks to join it, and whether he accepts to.
+// the wage a player asks to join it, and whether he accepts to. `season` adds the season's figures to a list of the whole world.
 function playerColumns(view, withClub, options) {
  const identity=[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
  if(view==='attributs')return [...identity,...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
  if(view==='jeu')return [...identity,...COMPOSITE_SECTIONS.flatMap(section=>section.composites.map(key=>[key,compositeHeader(key),section.title]))];
- return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.season?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
 }
 // Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
 // view opens on its own default sort.
@@ -202,19 +218,21 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  const rows=data.items.map(player=>{
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
-   nation:nationBadges(player.nationalities||[player.nation]),
-   age:player.age??'—',rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
-   value:player.value==null?'—':money(player.value),asking_price:player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price),wage:player.wage==null?'—':monthlySalary(player.wage),
-   wage_demand:player.wage_demand==null?'—':monthlySalary(player.wage_demand),interested:player.interested==null?'—':player.interested?'Oui':'<span class="muted">Non</span>',contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
-   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${Math.round(player.fitness*100)}%</span>`,
+   nation:mainNation(player.nationalities||[player.nation]),
+   age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
+   value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
+   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),interested:player.interested==null?'—':player.interested?'Oui':'<span class="muted">Non</span>',contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
+   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}%</span>`,
    form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
-   appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,yellows:player.yellows,reds:player.reds,average:player.average?number(player.average):'—',
+   appearances:figure(appearances(player.appearances,player.substitutes)),goals:figure(player.goals??'—'),assists:figure(player.assists??'—'),yellows:figure(player.yellows??'—'),reds:figure(player.reds??'—'),average:figure(player.average?number(player.average):'—'),
   };
   return columns.map(([key])=>key in ATTRIBUTES?attributeCell(player,key):key in COMPOSITES?compositeCell(player,key):cells[key]);
  });
+ // A list beside a preview lets the user pick a row (`select`: the id of the picked one, null for none yet).
+ const picking='select' in options;
  // Each header carries its column's key, which sets its width (see .player-table in theme.css).
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,undefined,undefined,columns.map(([key])=>`${key}-column`),columns.map(([,,heading])=>heading||null))}</div>`+pager(data);
+ return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,picking?data.items.map(player=>player.id===options.select?'selected':''):undefined,undefined,columns.map(([key])=>`${key}-column`),columns.map(([,,heading])=>heading||null),picking?data.items.map(player=>`data-select="${player.id}"`):undefined)}</div>`+(options.pager===false?'':pager(data));
 }
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};

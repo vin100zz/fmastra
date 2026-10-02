@@ -43,6 +43,69 @@ def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
+
+def test_lists_take_a_page_size_several_positions_and_both_bounds_of_a_range(client):
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    page = client.get('/api/joueurs?taille=12&poste=GB,BU&niveau_max=60&potentiel_max=80&tri=rating').json()
+    assert page['page_size'] == 12 and len(page['items']) == 12
+    assert {row['position'] for row in page['items']} <= {'GB', 'BU'}
+    assert all(row['rating'] <= 60 and row['potential'] <= 80 for row in page['items'])
+    assert page['total'] == sum(player.position in ('GB', 'BU') and player.rating <= 60 and player.potential <= 80 for player in world.players.values())
+    floor = sorted(v.market_value(player, world) for player in world.players.values())[len(world.players) // 2]
+    assert all(row['value'] >= floor for row in client.get(f'/api/joueurs?valeur_min={floor}&tri=value&ordre=asc').json()['items'])
+    for bad in (5, 500): assert client.get(f'/api/joueurs?taille={bad}').status_code == 422
+    # The season's figures sort the list of the world's players.
+    for tri in ('appearances', 'goals', 'assists', 'average'):
+        assert client.get(f'/api/joueurs?tri={tri}').status_code == 200
+    # A player's page also tells what the lists tell a recruiter: nothing without a human club.
+    detail = client.get(f"/api/joueurs/{page['items'][0]['id']}").json()
+    assert detail['interested'] is None and detail['wage_demand'] is None
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_club_list_tells_standing_squad_and_money_and_sorts_on_them(client):
+    world = client.app.state.game.world
+    rows = client.get('/api/clubs?statut=actif&taille=10&tri=valeur').json()
+    assert rows['page_size'] == 10 and len(rows['items']) == 10
+    values = [row['squad_value'] for row in rows['items']]
+    assert values == sorted(values, reverse=True)
+    for row in rows['items']:
+        club = world.clubs[row['id']]
+        players = [world.players[pid] for pid in club.player_ids]
+        assert row['squad_value'] == sum(v.market_value(player, world) for player in players)
+        assert row['average_age'] == round(sum(player.born.age_on(world.date) for player in players) / len(players), 1)
+        assert (row['wage_bill'], row['wage_cap']) == (club.wage_bill, club.wage_cap)
+        assert row['available_budget'] == max(0, club.transfer_budget - sum(offer.ceiling for offer in world.offers.values() if offer.target_id == club.id))
+        assert row['standing']['club_id'] == club.id
+    # A rank first runs from the top of each league; clubs outside the leagues, without any, come last whichever the order.
+    ranked = client.get('/api/clubs?tri=classement').json()['items']
+    assert [row['standing']['rank'] for row in ranked] == sorted(row['standing']['rank'] for row in ranked) and ranked[0]['standing']['rank'] == 1
+    for ordre in ('asc', 'desc'):
+        last = client.get(f'/api/clubs?tri=classement&ordre={ordre}&page={(len(world.clubs) + 29) // 30}').json()['items']
+        assert last and last[-1]['standing'] is None
+    for tri, field in (('age', 'average_age'), ('budget', 'available_budget'), ('masse_salariale', 'wage_bill')):
+        listed = [row[field] for row in client.get(f'/api/clubs?statut=actif&tri={tri}').json()['items']]
+        assert listed == sorted(listed, reverse=True)
+    assert client.get('/api/clubs?tri=forme').status_code == 200
+    assert client.get('/api/clubs?taille=5').status_code == 422
+
+
+def test_world_transfers_take_filters_and_come_with_a_summary_of_the_season(client):
+    world = client.app.state.game.world
+    data = client.get('/api/monde/transferts?fenetre=ete&nature=payant&competition=16&poste=BU,MC&age_min=18&age_max=30&montant_min=1&recherche=a&taille=20').json()
+    assert data['page_size'] == 20 and set(data['counts']) == {'transfer', 'retirement', 'academy'}
+    assert client.get('/api/monde/transferts').json()['page_size'] == 50
+    for bad in ('fenetre=printemps', 'nature=gratuit', 'taille=5', 'age_min=-1'):
+        assert client.get(f'/api/monde/transferts?{bad}').status_code == 422
+    for sort in ('position', 'nation', 'age', 'rating', 'value'):
+        assert client.get(f'/api/monde/transferts?tri={sort}').json()['sort'] == sort
+    summary = client.get('/api/monde/transferts/resume').json()
+    assert summary['season'] == world.season
+    assert {'total', 'paid', 'volume', 'median', 'record', 'weeks', 'clubs', 'leagues'} <= summary.keys()
+    assert client.get('/api/monde/transferts/resume?saison=1900').status_code == 422
+
+
 def test_club_list_averages_its_sixteen_best_players_and_sorts_on_it(client):
     world = client.app.state.game.world
     def best(club_id: int, key: str) -> float:

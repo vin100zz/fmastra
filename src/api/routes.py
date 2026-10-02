@@ -109,12 +109,32 @@ def squad_sort_key(world, column: str):
     return lambda row: row[column]
 
 
-ClubSort = Literal["nom", "pays", "championnat", "reputation", "entrainement", "recrutement", "effectif", "niveau", "potentiel", "formation"]
-CLUB_TEXT_SORTS = ("nom", "pays", "championnat", "formation")
+ClubSort = Literal["nom", "pays", "championnat", "classement", "forme", "reputation", "entrainement", "recrutement", "effectif", "age",
+                   "niveau", "potentiel", "valeur", "budget", "masse_salariale", "formation"]
+# Text columns, and the rank in a league, first run from the smallest.
+CLUB_ASCENDING_SORTS = ("nom", "pays", "championnat", "classement", "formation")
+FORM_POINTS = {"V": 3, "N": 1}
+
+
+def page_size(default: int = 30):
+    """The lists fitted to the window ask for the rows it can show."""
+    return Query(default, ge=10, le=100)
 
 
 def club_sort_key(world, column: str):
     """Orders the club list by what a column shows; None when the club has nothing to show there."""
+    if column in ("classement", "forme"):
+        standings: dict = {}
+        def standing(club):
+            return v.league_standings(world, club.competition_id, standings).get(club.id)
+        if column == "classement": return lambda club: row["rank"] if (row := standing(club)) else None
+        return lambda club: sum(FORM_POINTS.get(letter, 0) for letter in row["form"]) if (row := standing(club)) else None
+    if column == "age": return lambda club: v.squad_profile(world, club.id)["average_age"]
+    if column == "valeur": return lambda club: v.squad_profile(world, club.id)["squad_value"] if club.player_ids else None
+    if column == "budget":
+        reserved = v.reserved_budgets(world)
+        return lambda club: max(0, club.transfer_budget - reserved.get(club.id, 0))
+    if column == "masse_salariale": return lambda club: club.wage_bill
     if column == "nom": return lambda club: v.normalized(club.name)
     if column == "pays":
         codes = build_nation_table(world.nation_names)
@@ -513,9 +533,19 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/monde/transferts")
     def global_transfers(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer", page: int = Query(1, ge=1),
-                         tri: str | None = None, ordre: Literal['asc', 'desc'] = 'desc') -> dict:
-        from .club_history import world_movements
-        with service.reading() as world: return world_movements(world, saison, type, page, tri, ordre)
+                         taille: int = page_size(50), tri: str | None = None, ordre: Literal['asc', 'desc'] = 'desc',
+                         recherche: str = "", fenetre: Literal["ete", "hiver"] | None = None, nature: Literal["payant", "libre"] | None = None,
+                         competition: int | None = None, poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
+                         montant_min: int = Query(0, ge=0), club: int | None = None) -> dict:
+        from .club_history import MovementFilter, world_movements
+        chosen = MovementFilter(v.normalized(recherche), fenetre, nature, competition, frozenset(name for name in (poste or "").split(",") if name),
+                                age_min, age_max, montant_min, club)
+        with service.reading() as world: return world_movements(world, saison, type, page, tri, ordre, taille, chosen)
+
+    @api.get("/monde/transferts/resume")
+    def transfers_summary(saison: int | None = None) -> dict:
+        from .club_history import market_summary
+        with service.reading() as world: return market_summary(world, saison)
 
     @api.get("/monde/palmares")
     def honours() -> dict:
@@ -566,7 +596,7 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/clubs")
     def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = None, pays: str = "",
-              recherche: str = "", page: int = Query(1, ge=1), tri: ClubSort = "reputation",
+              recherche: str = "", page: int = Query(1, ge=1), taille: int = page_size(), tri: ClubSort = "reputation",
               ordre: Literal["asc", "desc"] | None = None) -> dict:
         with service.reading() as world:
             rows = [club for club in world.clubs.values() if (competition is None or club.competition_id == competition)
@@ -576,12 +606,13 @@ def router(service: GameService) -> APIRouter:
             rows.sort(key=lambda club: (-club.reputation, club.id))
             key = club_sort_key(world, tri)
             values = {club.id: key(club) for club in rows}
-            descending = (ordre or ("asc" if tri in CLUB_TEXT_SORTS else "desc")) == "desc"
+            descending = (ordre or ("asc" if tri in CLUB_ASCENDING_SORTS else "desc")) == "desc"
             # A club without the value (a dash, or no league) comes last whichever the order.
             rows = (sorted((club for club in rows if values[club.id] is not None), key=lambda club: values[club.id], reverse=descending)
                     + [club for club in rows if values[club.id] is None])
-            result = v.paginate(rows, page)
-            result["items"] = [v.club_detail(world, item.id) for item in result["items"]]
+            result = v.paginate(rows, page, taille)
+            standings, reserved = {}, v.reserved_budgets(world)
+            result["items"] = [v.club_detail(world, item.id, standings, reserved) for item in result["items"]]
             result["nations"] = sorted({club.nation for club in world.clubs.values()})
             return result
 
@@ -672,18 +703,22 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/joueurs")
     def players(recherche: str = "", poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
-                niveau_min: float = Query(1, ge=1, le=100), potentiel_min: float = Query(1, ge=1, le=100),
+                niveau_min: float = Query(1, ge=1, le=100), niveau_max: float = Query(100, ge=1, le=100),
+                potentiel_min: float = Query(1, ge=1, le=100), potentiel_max: float = Query(100, ge=1, le=100),
                 nation: str | None = None, club: int | None = None,
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
-                valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0),
+                valeur_min: int = Query(0, ge=0), valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0),
                 interesse: Literal["oui", "non"] | None = None, pretentions_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
+                taille: int = page_size(),
                 tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price",
-                             "wage_demand", "interested"] | AttributeSort | CompositeSort = "value",
+                             "wage_demand", "interested", "appearances", "goals", "assists", "average"] | AttributeSort | CompositeSort = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
             search = v.normalized(recherche)
+            # Several positions are listed with commas.
+            positions = {name for name in (poste or "").split(",") if name}
             # Asking prices weigh each player's place in his squad: computed only when a filter or the sort needs them.
             settled, quotes = recent_arrival_ids(world), {}
             def quote(player) -> dict:
@@ -702,12 +737,14 @@ def router(service: GameService) -> APIRouter:
             for player in world.players.values():
                 wage = player.contract.weekly_wage if player.contract else 0
                 owner = world.clubs.get(player.club_id)
-                if (search not in v.normalized(player.name) or (poste and player.position != poste)
-                    or not age_min <= player.born.age_on(world.date) <= age_max or player.rating < niveau_min or player.potential < potentiel_min
+                if (search not in v.normalized(player.name) or (positions and player.position not in positions)
+                    or not age_min <= player.born.age_on(world.date) <= age_max
+                    or not niveau_min <= player.rating <= niveau_max or not potentiel_min <= player.potential <= potentiel_max
                     or (nation and nation not in player.nationalities) or (club is not None and player.club_id != club)
                     or (statut_club and (owner is None or (owner.competition_id is not None) != (statut_club == "actif")))
                     or (contrat and (player.contract is None) != (contrat == "libre"))
                     or wage < salaire_min or (salaire_max is not None and wage > salaire_max)
+                    or (valeur_min and v.market_value(player, world) < valeur_min)
                     or (valeur_max is not None and v.market_value(player, world) > valeur_max)
                     or (prix_max is not None and (fee(player) is None or fee(player) > prix_max))
                     or (recruiting and interesse and v.interested(world, player) is not (interesse == "oui"))
@@ -723,7 +760,9 @@ def router(service: GameService) -> APIRouter:
                 value ={"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
                          "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,
-                         "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else ""}[tri]
+                         "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else "",
+                         "appearances": player.appearances, "goals": player.season_goals, "assists": player.season_assists,
+                         "average": player.rating_sum / player.rating_count if player.rating_count else 0}[tri]
                 return value, player.id
             selected.sort(key=sort_key, reverse=ordre == "desc")
             # Players their clubs will not sell have no price: they come last whichever the order.
@@ -731,7 +770,7 @@ def router(service: GameService) -> APIRouter:
             # So do the human club's own players, who have nothing to ask or to accept.
             if tri == 'wage_demand': selected.sort(key=lambda player: demand(player) is None)
             if tri == 'interested': selected.sort(key=lambda player: v.interested(world, player) is None)
-            data = v.paginate(selected, page)
+            data = v.paginate(selected, page, taille)
             data["items"] = [{**v.player_row(world, player), **quote(player), "interested": v.interested(world, player), "wage_demand": demand(player)}
                              for player in data["items"]]
             return data

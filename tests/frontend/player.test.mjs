@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {scoreHue,scoreBadge,setNations} from '../../web/ui.js';
-import {playerScreen,levelChart,positionPitch,positionList,attributeGroups} from '../../web/player.js';
+import {playerScreen,playerPreview,levelChart,positionPitch,positionList,attributeGroups} from '../../web/player.js';
 
 const detail={id:1,name:'Test Joueur',position:'DD',secondary_positions:['MC'],age:19,nationalities:['FRA'],nationality_names:['France'],club:{id:1,name:'Club'},
  born:'2005-01-01',wage:12000,contract_end:'2028-06-30',value:1314589,rating:70,potential:91.5,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],
@@ -397,3 +397,30 @@ test('a goalkeeper card folds the other attributes closed by default',async()=>{
  assert.match(card,/class="attribute key"[^>]*><span>Placement<\/span>/);
 });
 
+
+test('beside a list of players, the picked one is previewed in the words of his page, with its actions',async()=>{
+ const previous=globalThis.fetch,urls=[];
+ const picked={...detail,form:.91,form_bounds:[.7,1.3],morale:.72,morale_cause:'salaire',international_caps:18,international_goals:3,asking_price:592e6,transferable:true,wage_demand:21462,interested:false,expiring:false,
+  position_notes:{DD:70,MC:60},composites:{progression_attaque:60,occasion_attaque:50,tir:40,tete:45,progression_defense:70,occasion_defense:65},composites_by_position:{DD:['progression_defense','progression_attaque','occasion_defense']},attribute_weights:{passe:.3}};
+ const talks={etape:null,obstacle:null,contre_offre:null,tours_restants:3,budget:5e6};
+ globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>url.includes('/negociation/')?talks:picked};};
+ let html;
+ try{html=await playerPreview(1,{controlled_club_id:7,market:'summer'});}finally{globalThis.fetch=previous;}
+ assert.deepEqual(urls,['/api/joueurs/1','/api/ma-partie/negociation/1']);
+ assert.match(html,/^<div class="card preview"><div class="preview-head">.*<h2><a href="#\/player\/1">Test Joueur<\/a><\/h2><span class="position def">DD<\/span>/);
+ assert.match(html,/18 sél - 3 buts/);
+ // Condition, form and morale, then the contract with what he asks to join the user's club.
+ for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3>${title}</h3>`),title);
+ assert.match(html,/<span>Forme<\/span>.*−9 %/);assert.match(html,/<span>Prétentions<\/span><strong>93\s000\s€ \/ mois<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
+ assert.doesNotMatch(html,/Blessure|Cartons/);
+ // His positions, best note first, then what the engine reads of him and his attributes.
+ assert.match(html,/class="position-row picked" data-composite-role="DD"/);
+ assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
+ assert.match(html,/<div class="attribute key"[^>]*><span>Passe<\/span>/);
+ assert.match(html,/<a class="button" href="#\/player\/1">Ouvrir la fiche<\/a>.*Faire une offre/);
+ // An injury shows in its place; a retired player has no preview.
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/negociation/')?talks:{...picked,injured_until:'2030-06-01'}});
+ try{assert.match(await playerPreview(1,{controlled_club_id:null}),/<span>Blessure<\/span><strong><span class="danger">Retour le 1 juin 2030/);}finally{globalThis.fetch=previous;}
+ globalThis.fetch=async()=>({ok:true,json:async()=>({id:1,name:'Ancien',retired:true})});
+ try{assert.equal(await playerPreview(1,{}),'');}finally{globalThis.fetch=previous;}
+});

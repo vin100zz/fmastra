@@ -30,3 +30,10 @@ test('a new filter and a reset keep the sort and the columns, not the filters no
  assert.equal(hasFilters(params),true);
  assert.equal(hasFilters(new URLSearchParams('tri=value&ordre=asc&vue=attributs&page=2')),false);
 });
+
+test('the row picked for the preview is neither a filter nor remembered; the season and the chart’s measure stay through a reset',()=>{
+ assert.equal(rememberFilters('#/players?poste=GB&sel=42&page=2'),'#/players?poste=GB&sel=42&page=2');
+ assert.equal(rememberFilters('#/players'),'#/players?poste=GB');
+ assert.equal(hasFilters(new URLSearchParams('sel=42&saison=2028&mesure=volume')),false);
+ assert.equal(viewParams(new URLSearchParams('fenetre=hiver&saison=2028&mesure=volume&sel=42&page=3')).toString(),'saison=2028&mesure=volume');
+});

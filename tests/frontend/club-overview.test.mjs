@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubOverview} from '../../web/club-overview.js';
+import {clubOverview,clubPreview} from '../../web/club-overview.js';
 import {pitch,kitShirtStyle,contrastRatio} from '../../web/ui.js';
 
 const club={id:7,name:'Lens',competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
@@ -116,4 +116,25 @@ test('the mini pitch shirts players in the club kit and keeps the number readabl
  assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/background:linear-gradient\(135deg,#204080 78%,#204080 78%\);color:#204080;text-shadow:0 0 2px #ffffff/);
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'red;background:url(x)',minor:'#ffffff'}})),['','','']);
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:null,minor:null}})),['','','']);
+});
+
+test('beside the list of clubs, the picked one is previewed: standing, matches, money, best players and a way to each tab',async()=>{
+ const previous=globalThis.fetch,asked=[];
+ const picked={...club,nation_code:'FRA',capacity:38223,reputation:71.4,formation:'4-3-3',training_facilities:16,youth_recruitment:17,active:true,standing:{rank:3,points:61}};
+ const squad={items:Array.from({length:12},(_,index)=>({id:100+index,name:`Joueur ${index}`,position:'MC',age:20+index,rating:70-index,potential:80,value:1e6}))};
+ globalThis.fetch=async url=>{asked.push(url);return {ok:true,json:async()=>url.endsWith('/apercu')?data({finances:{transfer_budget:50e6,reserved_transfer_budget:12e6,wage_bill:480000,wage_cap:500000,balance:9e6,season_spent:3e6,season_sales:0}}):url.includes('/effectif')?squad:picked};};
+ let html;
+ try{html=await clubPreview(7);}finally{globalThis.fetch=previous;}
+ assert.deepEqual(asked,['/api/clubs/7','/api/clubs/7/apercu','/api/clubs/7/effectif?tri=rating&ordre=desc']);
+ assert.match(html,/<h2><a href="#\/club\/7">Lens<\/a><\/h2>/);
+ assert.match(html,/<span>Classement<\/span><strong>3e<\/strong>/);assert.match(html,/<span>Points<\/span><strong>61<\/strong>/);
+ // Its last results and next fixtures, as on its page.
+ assert.equal((html.match(/class="club-match"/g)||[]).length,4);
+ // Budget left for a bid; the wage bill by the month against its cap, red from 95 %.
+ assert.match(html,/Budget transferts<\/span><strong>38\sM\s€/);
+ assert.match(html,/<i class="gauge full" role="img" aria-label="96 % du plafond salarial utilisé"><i style="width:96%">/);
+ // The eight best players, best first.
+ assert.deepEqual([...html.matchAll(/#\/player\/(\d+)/g)].map(match=>Number(match[1])),[100,101,102,103,104,105,106,107]);
+ for(const tab of ['squad','calendar','finances','transfers'])assert.ok(html.includes(`<a class="button" href="#/club/7/${tab}">`));
+ assert.doesNotMatch(html,/NaN|undefined/);
 });

@@ -23,12 +23,12 @@ export function salarySearchParams(params){
  const demand=result.get('pretentions_max');
  if(demand!==null&&demand!=='')result.set('pretentions_max',String(Math.ceil(Number(demand)*12/weeksPerYear)));
  // Niveau and potentiel are shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
- for(const name of ['niveau_min','potentiel_min']){
+ for(const name of ['niveau_min','niveau_max','potentiel_min','potentiel_max']){
   const level=result.get(name);
   if(level!==null&&level!=='')result.set(name,String(Number(level)/2));
  }
- // Max value and max asking price are typed in millions of euros; the API filters on full euros.
- for(const name of ['valeur_max','prix_max']){
+ // Values and the max asking price are typed in millions of euros; the API filters on full euros.
+ for(const name of ['valeur_min','valeur_max','prix_max']){
   const amount=result.get(name);
   if(amount!==null&&amount!=='')result.set(name,String(Math.round(Number(amount)*1e6)));
  }

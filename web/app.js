@@ -1,7 +1,7 @@
 import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,kitDot,card,stat,heading,empty,toast,setNations,nationName,sortTable,nextDirection,setToday} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,playableNations} from './screens.js';
-import {playerScreen} from './player.js';
+import {playerScreen,playerPreview} from './player.js';
 import {weeklyFromMonthly} from './salaries.js';
 import {matchScreen} from './match.js';
 import {europeScreen} from './europe.js';
@@ -12,14 +12,17 @@ import {clubSelectScreen} from './club-select.js';
 import {myClubScreen} from './my-club.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
-import {awayIcon} from './club-overview.js';
+import {awayIcon,clubPreview} from './club-overview.js';
 import {landing,setSteps,resetFlow,markNewsSeen,nextStep} from './flow.js';
 import {rememberFilters,viewParams} from './filters.js';
+import {refit} from './listing.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
 const sortScope=table=>`${location.hash.split('?')[0]}|${[...main.querySelectorAll('table[data-sortable]')].indexOf(table)}`;
 let renderedPath=null,state={},leagues=[],nationsLoaded=false,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,lastFinishedJobId=null;
+// A list fitted to the window is drawn again once it has measured the rows that fit (`refitted`: that second pass is under way).
+let refitted=false,previewVersion=0;
 const main=document.querySelector('#main');
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the round's results).
 // Simuler, beside Jouer on the composition screen, skips the live match and shows its report first (see flow.js).
@@ -143,7 +146,7 @@ return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'
 async function render(){const version=++renderVersion;const hash=rememberFilters(location.hash);if(hash!==location.hash)history.replaceState(history.state,'',hash);const {parts,params}=routeParts();if(!main.innerHTML||main.querySelector('.loading'))main.innerHTML='<div class="loading">Chargement…</div>';
  const active=document.activeElement;
  const focusName=active&&main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active.name:null;
- const selection=focusName&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
+ const selection=focusName&&active.type!=='number'&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
  try{await refreshState();let html;const [screen,id,section,extra]=parts;
   // The manual needs no game: it opens from the welcome screen too, though never over a live match.
   if(screen==='aide'&&!state.live_match_id)html=await manualScreen(id);
@@ -151,14 +154,18 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
-  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
+ if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters,details.filter-menu').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
  // A chapter of the manual opened on one of its sections; a redraw of the same address leaves the scroll where it is.
  if(moved&&parts[0]==='aide'&&parts[2])document.getElementById(`manual-${parts[2]}`)?.scrollIntoView();
  // Mon club on screen: the news it shows no longer call for a visit in the flow of Continuer.
  if(parts[0]==='mon-club'&&state.controlled_club_id!=null&&!state.live_match_id)markNewsSeen(state.news_count);
  document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
+ // A list fitted to the window: when the rows that fit are not those it asked for, it is drawn once more with the right count.
+ const list=main.querySelector('[data-fit]');
+ if(list&&refit(list)&&!refitted){refitted=true;return render();}
+ refitted=false;
  }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
 
 async function command(path,payload){
@@ -293,8 +300,36 @@ main.addEventListener('click',async event=>{
  await render();
 });
 // The list of peers in a page header closes on a click elsewhere, on a choice and on Escape; opening it centres the current entry.
-document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a'))menu.removeAttribute('open');}));
-document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
+// So does the menu of a filter, which also closes when another one opens.
+document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open],.filter-menu[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a,.filter-menu a'))menu.removeAttribute('open');}));
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open],.filter-menu[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
+main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.filter-menu')||!menu.open)return;main.querySelectorAll('.filter-menu[open]').forEach(other=>{if(other!==menu)other.removeAttribute('open');});if(!menu.contains(document.activeElement))menu.querySelector('input')?.focus();},true);
+// A row picked in a list refreshes the preview beside it, without drawing the list again; the address keeps the row for the
+// next redraw. The arrows step through the rows, Enter opens the page of the picked one.
+async function pickRow(row){
+ const side=main.querySelector('[data-preview]');
+ if(!side||row.classList.contains('selected'))return;
+ row.parentElement.querySelectorAll('tr.selected').forEach(other=>other.classList.remove('selected'));
+ row.classList.add('selected');
+ const {params}=routeParts();params.set('sel',row.dataset.select);
+ history.replaceState(history.state,'',`${location.hash.split('?')[0]}?${params}`);
+ const pick=++previewVersion,version=renderVersion;
+ try{
+  const html=side.dataset.preview==='club'?await clubPreview(row.dataset.select):await playerPreview(row.dataset.select,state);
+  if(pick===previewVersion&&version===renderVersion&&side.isConnected)side.querySelector('.side-inner').innerHTML=html;
+ }catch(error){toast(error.message,true);}
+}
+main.addEventListener('click',event=>{const row=event.target.closest('tr[data-select]');if(row&&!event.target.closest('a,button'))pickRow(row);});
+document.addEventListener('keydown',event=>{
+ if(!['ArrowDown','ArrowUp','Enter'].includes(event.key)||event.target.closest?.('input,select,textarea,button,summary,dialog,a'))return;
+ const row=main.querySelector('tr.selected[data-select]');if(!row)return;
+ if(event.key==='Enter'){row.querySelector('.strong a')?.click();return;}
+ const next=event.key==='ArrowDown'?row.nextElementSibling:row.previousElementSibling;
+ if(next){event.preventDefault();next.scrollIntoView({block:'nearest'});pickRow(next);}
+});
+// A new window size changes the rows that fit and whether the side panel has room.
+let resizeTimer;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit]'))render();},250);});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.entity-menu-panel'),current=panel.querySelector('[aria-current]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
 // A new page opens at the top; a new sort, filter or page of the same list keeps the scroll where it was.
 window.addEventListener('hashchange',event=>{const path=url=>new URL(url).hash.split('?')[0];render();if(path(event.oldURL)!==path(event.newURL))window.scrollTo({top:0});});

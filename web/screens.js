@@ -1,13 +1,18 @@
-import {monthlySalary,salarySearchParams} from './salaries.js';
+import {monthlySalary,monthlyAmount,salarySearchParams} from './salaries.js';
 import {cupSummaryCard,cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {financialHistory,movementsHistory,seasonsHistory} from './club-history.js';
-import {clubOverview} from './club-overview.js';
+import {clubOverview,clubPreview} from './club-overview.js';
+import {playerPreview} from './player.js';
 import {resetButton} from './filters.js';
+import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,choiceLinks,rangeMenu,choiceSelect} from './listing.js';
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,escape as e,number as n,money,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton,levelBadge} from './ui.js';
+import {api,escape as e,number as n,money,headPager,figure,miniBar,scoreBadge,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton,levelBadge} from './ui.js';
+
+// What stands above the first row of a list screen: top bar, title line, card head and table header.
+const LIST_ABOVE=155;
 
 export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
 // The countries whose leagues are simulated, in the sidebar's order.
@@ -45,16 +50,32 @@ export async function countryScreen(nation,leagues){
 }
 
 export async function clubsScreen(params,leagues=[]){
- const values=Object.fromEntries(params);
- const data=await api(`/clubs?${query(values)}`);
- const textColumns=['nom','pays','championnat','formation'],sorted=values.tri||'reputation',order=values.ordre||(textColumns.includes(sorted)?'asc':'desc');
- const sortHeader=(key,label)=>sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc');
- const columns=[['nom','CLUB'],['pays','PAYS'],['championnat','CHAMPIONNAT'],['reputation','RÉPUTATION'],['entrainement','ENTRAÎNEMENT'],['recrutement','RECRUTEMENT JEUNES'],['effectif','EFFECTIF'],['niveau','NIVEAU TOP 16'],['potentiel','POTENTIEL TOP 16'],['formation','FORMATION']];
+ const values=Object.fromEntries(params),base='#/clubs',rows=fittedRows('clubs',LIST_ABOVE),wide=wideScreen();
+ delete values.sel;
+ const data=await api(`/clubs?${query({...values,taille:rows})}`);
+ // Names and ranks first run from the smallest.
+ const ascending=['nom','pays','championnat','classement'],sorted=values.tri||'reputation',order=values.ordre||(ascending.includes(sorted)?'asc':'desc');
+ const sortHeader=(key,label,title)=>sortButton(key,title?`<span title="${title}">${label}</span>`:label,sorted,order,ascending.includes(key)?'asc':'desc');
+ const columns=[['nom','CLUB'],['pays','PAYS'],['championnat','CHAMPIONNAT'],['classement','CLASS.','Classement en championnat'],['forme','FORME'],['reputation','RÉPUTATION'],['entrainement','ENTR.','Entraînement'],['recrutement','JEUNES','Recrutement des jeunes'],['effectif','EFF.','Effectif'],['age','ÂGE','Âge moyen'],['niveau','NIV. 16','Niveau moyen des 16 meilleurs'],['potentiel','POT. 16','Potentiel moyen des 16 meilleurs'],['valeur','VALEUR','Valeur de l’effectif'],['budget','BUDGET','Budget de transferts'],['masse_salariale','MASSE SAL.','Masse salariale par mois, et la part du plafond utilisée']];
  // Playable countries first, then the others by name.
  const playable=playableNations(leagues).filter(code=>data.nations.includes(code)),others=data.nations.filter(code=>!playable.includes(code)).sort((a,b)=>nationName(a).localeCompare(nationName(b),'fr'));
  const nationOption=code=>`<option value="${e(code)}" ${values.pays===code?'selected':''}>${e(nationName(code))}</option>`;
- const nationSelect=`<select name="pays" aria-label="Pays"><option value="">Tous les pays</option>${playable.map(nationOption).join('')}${playable.length&&others.length?'<hr>':''}${others.map(nationOption).join('')}</select>`;
- return heading('Clubs')+`<form class="filters" data-filter><input type="search" name="recherche" value="${e(values.recherche)}" placeholder="Rechercher un club…" aria-label="Rechercher un club">${nationSelect}<select name="statut" aria-label="Statut"><option value="">Tous les clubs</option><option value="actif" ${values.statut==='actif'?'selected':''}>Clubs actifs</option><option value="dormant" ${values.statut==='dormant'?'selected':''}>Clubs dormants</option></select>${resetButton(params)}</form>`+card(`${n(data.total)} clubs`,`<div class="clubs-table">${table(columns.map(([key,label])=>sortHeader(key,label)),data.items.map(club=>[`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),e(club.competition||'Marché extérieur'),`<span class="rating">${n(club.reputation)}</span>`,club.training_facilities==null?'—':n(club.training_facilities),club.youth_recruitment==null?'—':n(club.youth_recruitment),club.squad_size,levelBadge(club.top_rating,'Moyenne des 16 meilleurs niveaux sur 200'),levelBadge(club.top_potential,'Moyenne des 16 meilleurs potentiels sur 200'),e(club.formation)]),undefined,undefined,undefined,columns.map(([key])=>`${key}-column`))}</div>`+pager(data));
+ const nationSelect=`<select name="pays" aria-label="Pays"${values.pays?' class="on"':''}><option value="">Tous les pays</option>${playable.map(nationOption).join('')}${playable.length&&others.length?'<hr>':''}${others.map(nationOption).join('')}</select>`;
+ const divisions=leagues.filter(league=>league.kind==='league').sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation)||a.level-b.level).map(league=>[league.id,e(league.name)]);
+ const toolbar=`<form class="toolbar" data-filter><h1>Clubs</h1>${searchField(params,'Rechercher un club…')}${nationChips(base,params,playable,false)}${nationSelect}${choiceSelect(params,'competition','Championnat',divisions)}${choiceLinks(base,params,'statut',[['','Tous'],['actif','Actifs'],['dormant','Dormants']],'Statut')}${resetButton(params)}</form>`;
+ // On a wide screen a row is picked, the first one by default, and previewed beside the list.
+ const selected=wide&&data.items.length?(data.items.find(club=>String(club.id)===params.get('sel'))||data.items[0]).id:null;
+ const rank=row=>`<span class="strong">${row.rank}${row.rank===1?'er':'e'}</span>${row.movement==='champion'?' <span class="movement-icon promotion" title="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation">↓</span>':''}`;
+ // The monthly wage bill, with the share of its cap it takes: the bar turns red from 95 %.
+ const wages=club=>club.wage_cap?`<span class="bar-figure">${miniBar(club.wage_bill/club.wage_cap,club.wage_bill>=.95*club.wage_cap?'full':'')}<b>${money(monthlyAmount(club.wage_bill))}</b></span>`:figure('—');
+ const cells=(club,index)=>[figure((data.page-1)*data.page_size+index+1),`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),club.competition?e(club.competition):'<span class="muted">Marché extérieur</span>',
+  club.standing?rank(club.standing):'—',club.standing?form(club.standing.form):'—',`<span class="bar-figure">${miniBar(club.reputation/100)}<b>${n(club.reputation)}</b></span>`,
+  scoreBadge(club.training_facilities,'Entraînement sur 20'),scoreBadge(club.youth_recruitment,'Recrutement des jeunes sur 20'),figure(club.squad_size),figure(club.average_age==null?'—':n(club.average_age)),
+  levelBadge(club.top_rating,'Moyenne des 16 meilleurs niveaux sur 200'),levelBadge(club.top_potential,'Moyenne des 16 meilleurs potentiels sur 200'),
+  figure(club.squad_value?money(club.squad_value):'—'),figure(club.available_budget==null?'—':money(club.available_budget)),wages(club)];
+ const list=card(`${n(data.total)} clubs`,`<div class="clubs-table">${table(['#',...columns.map(([key,label,title])=>sortHeader(key,label,title))],data.items.map(cells),undefined,selected==null?undefined:data.items.map(club=>club.id===selected?'selected':''),undefined,['rang-column',...columns.map(([key])=>`${key}-column`)],undefined,selected==null?undefined:data.items.map(club=>`data-select="${club.id}"`))}</div>`,headPager(data));
+ const side=selected==null?'':sidePanel('club',await clubPreview(selected));
+ return toolbar+`<div class="split${side?' with-side':''}" data-fit="clubs" data-rows="${rows??''}">${list}${side}</div>`;
 }
 
 export async function clubScreen(id,section,params){
@@ -98,10 +119,28 @@ async function leagueContent(league,section,params,lead){
 export async function playersScreen(params){
  // The attributes and the composites have no value column to sort on: their views open on the level.
  const view=params.get('vue'),sorted=params.get('tri')||(view==='attributs'||view==='jeu'?'rating':'value'),order=params.get('ordre')||'desc';
- const [data,state]=await Promise.all([api(`/joueurs?${salarySearchParams({...Object.fromEntries(params),tri:sorted,ordre:order})}`),api('/monde/etat')]);const value=key=>e(params.get(key));
+ const base='#/players',rows=fittedRows('players',LIST_ABOVE),wide=wideScreen();
+ const request={...Object.fromEntries(params),tri:sorted,ordre:order,...(rows?{taille:rows}:{})};
+ delete request.sel;
+ const [data,state]=await Promise.all([api(`/joueurs?${salarySearchParams(request)}`),api('/monde/etat')]);
  // With a club of his own, the user also reads and filters what a player asks to join it and whether he accepts to.
- const recruiting=state.controlled_club_id!=null,options={asking:true,recruiting};
- const select=(key,label,items)=>`<select name="${key}" aria-label="${label}"><option value="">${label}</option>${items.map(([id,name])=>`<option value="${id}" ${params.get(key)===id?'selected':''}>${name}</option>`).join('')}</select>`;
- const filter=`<form data-filter><div class="filters"><input name="recherche" type="search" value="${value('recherche')}" placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur">${select('poste','Tous les postes',['GB','DC','DG','DD','MDC','MC','MOC','AILG','AILD','BU'].map(role=>[role,role]))}${select('statut_club','Tous les clubs',[['actif','Clubs actifs'],['dormant','Clubs dormants']])}${select('contrat','Tous les contrats',[['libre','Agents libres'],['sous_contrat','Sous contrat']])}${recruiting?select('interesse','Tous les joueurs',[['oui','Joueurs intéressés'],['non','Joueurs non intéressés']]):''}${resetButton(params)}</div><details class="filters" ${['age_min','age_max','niveau_min','potentiel_min','salaire_max','pretentions_max','valeur_max','prix_max'].some(key=>params.get(key))?'open':''}><summary>Filtres avancés</summary><div class="filters"><label>Âge minimum <input name="age_min" type="number" min="0" max="100" value="${value('age_min')}"></label><label>Âge maximum <input name="age_max" type="number" min="0" max="100" value="${value('age_max')}"></label><label>Niveau minimum <input name="niveau_min" type="number" min="1" max="200" value="${value('niveau_min')}"></label><label>Potentiel minimum <input name="potentiel_min" type="number" min="1" max="200" value="${value('potentiel_min')}"></label><label>Salaire max. (€/mois) <input name="salaire_max" type="number" min="0" value="${value('salaire_max')}"></label>${recruiting?`<label>Prétentions max. (€/mois) <input name="pretentions_max" type="number" min="0" value="${value('pretentions_max')}"></label>`:''}<label>Valeur max. (M€) <input name="valeur_max" type="number" min="0" step="any" value="${value('valeur_max')}"></label><label>Prix max. (M€) <input name="prix_max" type="number" min="0" step="any" value="${value('prix_max')}"></label></div></details></form>`;
- return heading('Joueurs')+filter+card(`${n(data.total)} joueurs`,playerTable(data,true,sorted,order,{...options,view}),playerViewSwitch(view,sorted,order,true,options));
+ const recruiting=state.controlled_club_id!=null,options={asking:true,recruiting,season:true};
+ const level=(label,key,steps)=>rangeMenu(base,params,label,[[`${key}_min`,'min','min="1" max="200"'],[`${key}_max`,'max','min="1" max="200"']],{presets:steps.map(step=>[`≥ ${step}`,{[`${key}_min`]:step}])});
+ const amount='min="0" step="any"';
+ const toolbar=`<form class="toolbar" data-filter><h1>Joueurs</h1>${searchField(params,'Rechercher un joueur…')}${positionChips(base,params)}`
+  +rangeMenu(base,params,'Âge',[['age_min','min','min="0" max="100"'],['age_max','max','min="0" max="100"']],{presets:[['≤ 21',{age_max:21}],['≤ 23',{age_max:23}],['24–28',{age_min:24,age_max:28}],['≥ 29',{age_min:29}]]})
+  +level('Niveau','niveau',[120,140,160])+level('Potentiel','potentiel',[160,170,180,190])
+  +rangeMenu(base,params,'Valeur',[['valeur_min','min',amount],['valeur_max','max',amount]],{unit:'M€',hint:'M€'})
+  +rangeMenu(base,params,'Prix min.',[['prix_max','max',amount]],{unit:'M€',hint:'M€'})
+  +rangeMenu(base,params,'Salaire',[['salaire_min','min','min="0"'],['salaire_max','max','min="0"']],{unit:'€',hint:'€/mois'})
+  +(recruiting?rangeMenu(base,params,'Prétentions',[['pretentions_max','max','min="0"']],{unit:'€',hint:'€/mois'}):'')
+  +choiceSelect(params,'contrat','Contrat',[['libre','Agents libres'],['sous_contrat','Sous contrat']])
+  +choiceSelect(params,'statut_club','Clubs',[['actif','Clubs actifs'],['dormant','Clubs dormants']])
+  +(recruiting?choiceSelect(params,'interesse','Intérêt',[['oui','Joueurs intéressés'],['non','Joueurs non intéressés']]):'')
+  +`${resetButton(params)}</form>`;
+ // On a wide screen a row is picked, the first one by default, and previewed beside the list.
+ const selected=wide&&data.items.length?(data.items.find(player=>String(player.id)===params.get('sel'))||data.items[0]).id:null;
+ const list=card(`${n(data.total)} joueurs`,playerTable(data,true,sorted,order,{...options,view,pager:false,...(selected==null?{}:{select:selected})}),`<div class="card-tools">${playerViewSwitch(view,sorted,order,true,options)}${headPager(data)}</div>`);
+ const side=selected==null?'':sidePanel('player',await playerPreview(selected,state));
+ return toolbar+`<div class="split${side?' with-side':''}" data-fit="players" data-rows="${rows??''}">${list}${side}</div>`;
 }

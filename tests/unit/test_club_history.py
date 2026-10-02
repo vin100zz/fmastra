@@ -2,6 +2,7 @@ from dataclasses import replace
 
 from api.club_history import finances, movements
 from core.domain.date import Date
+from core.domain.clubs import Competition
 from core.domain.world import JournalEntry, TransferRecord
 from core.world.application import apply
 from core.world.events import FinancePosted, PlayerSigned, PlayerReleased, PlayerGenerated, DateAdvanced
@@ -30,6 +31,102 @@ def test_world_movements_include_dormant_clubs_and_paginate_each_type(config):
     assert world_movements(world, S, 'retirement', 1)['total'] == 1
     academy = world_movements(world, S, 'academy', 1)
     assert academy['total'] == 1 and academy['items'][0]['target']['id'] == 2
+
+
+
+def season_moves(world):
+    """A paid summer transfer, a free winter one, a winter release, and a move of a player since retired."""
+    S = world.season
+    opening = world.config.world.key_dates.population_review
+    summer, winter = Date(S, opening.month, opening.day).add_days(10), Date(S, opening.month, opening.day).add_days(200)
+    world.retired[900] = "Ancien Joueur"
+    return [TransferRecord(summer, 201, 2, 1, 5_000_000, 'transfer', S), TransferRecord(winter, 202, 2, 1, 0, 'transfer', S),
+            TransferRecord(winter.add_days(3), 101, 1, None, 0, 'release', S),
+            TransferRecord(summer.add_days(1), 900, 1, 2, 250_000, 'transfer', S, born=Date(S - 34, 1, 1))]
+
+
+def test_world_transfers_narrow_by_window_nature_position_age_fee_club_and_search(config):
+    from api.club_history import MovementFilter, world_movements
+    from api.views import normalized
+    world = mini_world(config)
+    S = world.season
+    world.transfers = season_moves(world)
+    def players(**chosen):
+        return sorted(row['player_id'] for row in world_movements(world, S, 'transfer', 1, chosen=MovementFilter(**chosen))['items'])
+    assert players() == [101, 201, 202, 900]
+    assert players(window='ete') == [201, 900] and players(window='hiver') == [101, 202]
+    assert players(nature='payant') == [201, 900] and players(nature='libre') == [101, 202]
+    assert players(fee_min=1_000_000) == [201]
+    assert players(club_id=2) == [201, 202, 900] and players(club_id=1) == [101, 201, 202, 900]
+    assert players(competition_id=16) == [101, 201, 202, 900] and players(competition_id=99) == []
+    # The position is the one the player has today: a retired one has none left to match.
+    position = world.players[201].position
+    assert players(positions=frozenset({position})) == sorted(pid for pid in (101, 201, 202) if world.players[pid].position == position)
+    age = world.players[201].born.age_on(world.transfers[0].date)
+    assert 201 in players(age_min=age, age_max=age) and players(age_min=34, age_max=40) == [900]
+    assert players(search=normalized(world.players[202].name)) == [202]
+    assert players(search='club 2') == [201, 202, 900] and players(search='ancien') == [900]
+    # Retirements and promotions only take the search; every tab tells how many movements the season holds.
+    world.transfers.append(TransferRecord(world.date, 900, 2, None, 0, 'retirement', S))
+    retired = world_movements(world, S, 'retirement', 1, chosen=MovementFilter(window='ete', nature='payant', fee_min=10))
+    assert retired['total'] == 1 and retired['counts'] == {'transfer': 4, 'retirement': 1, 'academy': 0}
+    assert world_movements(world, S, 'retirement', 1, chosen=MovementFilter(search='inconnu'))['total'] == 0
+
+
+def test_world_transfers_tell_who_the_player_is_today_and_sort_on_it_with_a_page_size(config):
+    from api.club_history import world_movements
+    world = mini_world(config)
+    S = world.season
+    world.transfers = season_moves(world)
+    states = {name: rng.getstate() for name, rng in world.rngs.items()}
+    data = world_movements(world, S, 'transfer', 1, size=3)
+    assert (len(data['items']), data['page_size'], data['total']) == (3, 3, 4)
+    rows = {row['player_id']: row for page in (1, 2) for row in world_movements(world, S, 'transfer', page, size=3)['items']}
+    active, gone = rows[201], rows[900]
+    player = world.players[201]
+    assert (active['position'], active['rating'], active['nationalities']) == (player.position, round(player.rating, 1), list(player.nationalities))
+    assert active['value'] > 0
+    assert (gone['position'], gone['rating'], gone['value'], gone['nationalities'], gone['age']) == (None, None, None, [], 34)
+    for key in ('position', 'nation', 'rating', 'value'):
+        for order in ('asc', 'desc'):
+            listed = world_movements(world, S, 'transfer', 1, key, order)['items']
+            # A retired player has nothing to sort on: he comes last whichever the order.
+            assert len(listed) == 4 and listed[-1]['player_id'] == 900
+    ratings = [row['rating'] for row in world_movements(world, S, 'transfer', 1, 'rating', 'desc')['items'][:3]]
+    assert ratings == sorted(ratings, reverse=True)
+    ages = [row['age'] for row in world_movements(world, S, 'transfer', 1, 'age', 'asc')['items']]
+    assert ages == sorted(ages)
+    assert {name: rng.getstate() for name, rng in world.rngs.items()} == states
+
+
+def test_market_summary_totals_the_season_by_week_club_and_league(config):
+    from api.club_history import market_summary
+    world = mini_world(config)
+    S = world.season
+    world.transfers = season_moves(world)
+    world.transfers.append(TransferRecord(world.date, 102, 1, None, 0, 'retirement', S))
+    world.competitions[16] = Competition(16, 'Ligue 1', 'FRA', 1, [1, 2])
+    summary = market_summary(world, S)
+    assert (summary['total'], summary['paid'], summary['volume'], summary['median']) == (4, 2, 5_250_000, 5_000_000)
+    assert summary['record'] == {'fee': 5_000_000, 'player_id': 201, 'player': world.players[201].name}
+    weeks = summary['weeks']
+    assert sum(week['count'] for week in weeks) == 4 and sum(week['volume'] for week in weeks) == 5_250_000
+    assert [week['week'] for week in weeks] == sorted(week['week'] for week in weeks)
+    # Every week opens on a Monday, in its window.
+    assert all((Date.parse(week['week']).ordinal() - 1) % 7 == 0 for week in weeks)
+    assert weeks[0]['summer'] and not weeks[-1]['summer']
+    clubs = {entry['club']['id']: entry for entry in summary['clubs']}
+    assert {key: clubs[1][key] for key in ('arrivals', 'departures', 'spent', 'earned')} == {'arrivals': 2, 'departures': 2, 'spent': 5_000_000, 'earned': 250_000}
+    assert {key: clubs[2][key] for key in ('arrivals', 'departures', 'spent', 'earned')} == {'arrivals': 1, 'departures': 2, 'spent': 250_000, 'earned': 5_000_000}
+    assert [entry['club']['id'] for entry in summary['clubs']] == [1, 2]
+    # Both clubs play in the same league: it paid what it received.
+    assert [(entry['id'], entry['name'], entry['arrivals'], entry['departures'], entry['spent'], entry['earned']) for entry in summary['leagues']] == [(16, 'Ligue 1', 3, 4, 5_250_000, 5_250_000)]
+    # A club outside the simulated leagues counts for none of them, listed last.
+    world.clubs[2].competition_id = None
+    assert [(entry['id'], entry['name'], entry['spent']) for entry in market_summary(world, S)['leagues']] == [(16, 'Ligue 1', 5_000_000), (None, None, 250_000)]
+    world.transfers = []
+    empty = market_summary(world, S)
+    assert (empty['total'], empty['volume'], empty['median'], empty['record'], empty['weeks'], empty['clubs']) == (0, 0, 0, None, [], [])
 
 
 def test_academy_sort_uses_archived_values_before_pagination_and_keeps_unknown_last(config):

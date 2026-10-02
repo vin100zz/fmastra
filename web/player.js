@@ -277,6 +277,34 @@ function careerCard(player, career) {
  return card('Carrière',clubs||nation?`<div class="table-scroll"><table><thead>${head}</thead>${clubs}${gap}${nation}</table></div>`:empty(),'','career-card');
 }
 
+// Beside a list of players, the one picked in it: who he is, how he is, his contract and what he is worth on a pitch, in
+// the words of his page, whose actions stand at the foot. Nothing for a retired player.
+export async function playerPreview(id, state) {
+ const player=await api(`/joueurs/${id}`);
+ if(player.retired)return '';
+ shown=player;
+ const actions=await playerActions(player,state);
+ const tile=(label,value,hue)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}><span>${label}</span><strong>${value}</strong></div>`;
+ const grade=(label,value)=>value==null?tile(label,'—'):tile(label,level(value),levelHue(level(value)));
+ const flags=nationFlags(player);
+ const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${e(item.competition)} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
+ const shape=`<h3>État</h3>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
+ const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`],['Valeur de marché',money(player.value)],
+  ...(player.club?[['Prix minimum',player.transferable===false?'Intransférable':price(player.asking_price)]]:[]),
+  ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[]),
+  ...(player.interested!=null?[['Intéressé',player.interested?'Oui':'Non']]:[])];
+ const roles=positionList(player.position_ratings||{},player);
+ const {sections}=attributeGroups(player);
+ const attributes=sections.flatMap(section=>section.items).map(attributeItem).join('');
+ return `<div class="card preview"><div class="preview-head">${flags.main}<h2><a href="#/player/${player.id}">${e(player.name)}</a></h2>${position(player.position)}</div>`
+  +`<div class="preview-line">${clubLink(player.club)}${caps(player)}</div>`
+  +`<div class="rail-tiles">${tile('Âge',player.age)}${grade('Niveau',player.rating)}${grade('Potentiel',player.potential)}</div>`
+  +shape+`<h3>Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
+  +(roles?`<h3>Postes</h3>${roles}`:'')+compositesGroup(player)
+  +`<h3>Attributs</h3><div class="attributes-grid">${attributes}</div>`
+  +`<div class="preview-actions"><a class="button" href="#/player/${player.id}">Ouvrir la fiche</a>${actions}</div></div>`;
+}
+
 export async function playerScreen(id) {
  const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
  // The latest club of each season: career rows are listed newest first.

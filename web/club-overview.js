@@ -1,7 +1,7 @@
-import {escape as e,money,season,kitDot,clubLink,playerLink,card,empty,fact,pitch} from './ui.js';
-import {monthlySalary} from './salaries.js';
+import {api,escape as e,number as n,money,season,kitDot,clubLink,playerLink,card,empty,fact,pitch,table,figure,position,levelBadge,nationBadge,facilityRating,safeColor,contrastText,initials} from './ui.js';
+import {monthlySalary,monthlyAmount} from './salaries.js';
 
-const LISTED_MOVES=3;
+const LISTED_MOVES=3,BEST_PLAYERS=8;
 const shortDate=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
 const outcomeLabels={V:'Victoire',N:'Match nul',D:'Défaite'};
 
@@ -51,6 +51,30 @@ export function lineupBlock(club,lineup,link){
  const {match}=lineup,home=match.home.id===club.id,opponent=home?match.away:match.home;
  const result=`<a class="lineup-match" href="#/match/${match.id}"><span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span><span>${home?'contre':'à'} ${kitDot(opponent)}${e(opponent.name)}<small>${shortDate(match.date)} · ${e(match.competition)} · ${e(match.round_label)}</small></span></a>`;
  return card('Dernier onze aligné',result+pitch(lineup.players,`Onze aligné par ${club.name}`,{compact:true,kit:{major:club.major_color,minor:club.minor_color}}),link?action('Composition'):`<a href="#/match/${match.id}" aria-label="Voir le match">Voir →</a>`,'lineup-card');
+}
+
+// Beside the list of clubs, the one picked in it: its standing, its matches, its money and its best players, with a way
+// to each tab of its page at the foot.
+export async function clubPreview(id){
+ const [club,data,squad]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/apercu`),api(`/clubs/${id}/effectif?tri=rating&ordre=desc`)]);
+ const major=safeColor(club.major_color),minor=safeColor(club.minor_color)||major;
+ const crest=`<div class="crest"${major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:''}>${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div>`;
+ const tile=(label,value)=>`<div class="tile"><span>${label}</span><strong>${value}</strong></div>`;
+ const standing=club.standing;
+ const tiles=`<div class="rail-tiles">${tile('Réputation',n(club.reputation))}${standing?tile('Classement',`${standing.rank}${standing.rank===1?'er':'e'}`)+tile('Points',standing.points):''}</div>`;
+ const books=data.finances,used=Math.round(100*books.wage_bill/Math.max(1,books.wage_cap));
+ const finances=`<h3>Finances</h3>${fact('Budget transferts',money(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
+  +fact('Masse salariale / mois',`<i class="gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><i style="width:${Math.min(100,used)}%"></i></i><b>${money(monthlyAmount(books.wage_bill))} / ${money(monthlyAmount(books.wage_cap))}</b>`)
+  +fact('Achats de la saison',money(books.season_spent))+fact('Ventes de la saison',money(books.season_sales));
+ const best=squad.items.slice(0,BEST_PLAYERS);
+ const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential),figure(money(player.value))]))}</div>`:'';
+ const tab=(key,label)=>`<a class="button" href="#/club/${club.id}/${key}">${label}</a>`;
+ return `<div class="card preview"><div class="preview-head">${crest}<h2><a href="#/club/${club.id}">${e(club.name)}</a></h2></div>`
+  +`<div class="preview-line"><span>${nationBadge(club.nation_code,{full:true})}</span><span class="muted">${e(club.competition||'Marché extérieur')} · ${n(club.capacity)} places</span></div>`
+  +tiles+fact('Tactique',e(club.formation))+fact('Entraînement',facilityRating(club.training_facilities))+fact('Recrutement des jeunes',facilityRating(club.youth_recruitment))
+  +(club.active?`<h3>Matches</h3>${matchList([...[...data.calendar.last].reverse(),...data.calendar.next],club,'Aucun match programmé.')}`:'')
+  +finances+players
+  +`<div class="preview-actions"><div class="preview-tabs">${tab('squad','Effectif')}${tab('calendar','Calendrier')}${tab('finances','Finances')}${tab('transfers','Transferts')}</div></div></div>`;
 }
 
 export function clubOverview(club,data){
