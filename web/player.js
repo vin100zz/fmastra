@@ -240,7 +240,8 @@ function rail(player, lead, actions) {
  const identity=`<div class="rail-identity"><div class="rail-club">${clubLink(player.club)}${caps(player)}</div>${flags.others.length?fact(flags.others.length>1?'Autres nationalités':'Autre nationalité',`<span class="rail-nations">${flags.others.join('')}</span>`):''}</div>`;
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
  const state=`<section class="rail-section"><h2>État</h2>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}</section>`;
- const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)]];
+ const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
+  ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[])];
  const contract=`<section class="rail-section"><h2>Contrat</h2>${terms.map(([label,value])=>fact(label,value)).join('')}</section>`;
  return `<aside class="card player-rail"><div class="rail-head">${lead}${flags.main}<h1>${e(player.name)}</h1></div>${tiles}${identity}${state}${contract}${actions?`<div class="rail-actions">${actions}</div>`:''}</aside>`;
 }
