@@ -136,8 +136,7 @@ th button.sort-toggle:hover{color:var(--strong)}
 .position.bench{background:var(--panel-2);color:var(--muted)}
 .fitness,.meter{background:var(--line)}
 .fitness span,.meter span{background:var(--good)}
-.avatar,.crest{background:var(--panel-3);color:var(--ink)}
-.avatar{border:2px solid var(--accent)}
+.crest{background:var(--panel-3);color:var(--ink)}
 .fact{border-color:var(--row-line)}
 .fact span{color:var(--muted)}
 .attribute.key>span:first-child:after{background:var(--accent)}
@@ -268,10 +267,9 @@ main{padding:8px 16px 12px}
 h1{font-size:26px;margin:0}
 .page-heading{margin-bottom:8px;gap:12px;align-items:center;min-height:0}
 .page-heading p{margin:0}
-/* Club, player and nation headers on one line: small crest, name, then the facts separated by bars. */
+/* Club and nation headers on one line: small crest, name, then the facts separated by bars. */
 .identity{gap:10px;align-items:center}
 .crest{width:44px;height:44px;font-size:16px}
-.avatar{width:40px;height:40px;font-size:15px}
 .identity>div:last-child{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:2px}
 .identity>div:last-child>h1{order:-1;margin:0;font-size:26px}
 .identity .eyebrow{font-size:11px}
@@ -280,18 +278,6 @@ h1{font-size:26px;margin:0}
 .club-facilities{gap:0 12px}
 .page-heading>div:not(.identity):not(.heading-with-lead){display:flex;align-items:center;gap:10px}
 .page-heading .pill{padding:3px 10px}
-.player-heading{flex-wrap:nowrap}
-.player-heading .identity{min-width:0}
-.player-facts{display:flex;flex-wrap:nowrap;gap:4px 18px;margin-left:auto}
-.player-facts>div{white-space:nowrap}
-.player-actions{flex-wrap:nowrap}
-.player-actions button{white-space:nowrap;padding:6px 12px}
-/* An own player's sale and contract actions may not fit beside the facts: they then take a line of their own, on the right. */
-.player-heading:has(.sale-actions){flex-wrap:wrap}
-.sale-actions{margin-left:auto}
-@media(max-width:1300px){.player-heading{flex-wrap:wrap}.player-facts{flex-wrap:wrap;margin-left:0}.player-actions{flex-wrap:wrap}.sale-actions{margin-left:0}}
-.player-facts dt{font-size:10px}
-.player-facts dd{margin:1px 0 0;font-size:13px}
 .entity-nav{gap:1px}
 .entity-step,.entity-menu>summary{width:20px;height:15px}
 
@@ -302,7 +288,7 @@ h1{font-size:26px;margin:0}
 .card-head{min-height:32px;padding:0 12px!important}
 .card-head h2,.club-overview .card-head h2,.inbox .card-head h2{font-size:13px!important}
 .card-body{padding:10px 12px}
-.grid,.grid.equal,.grid.thirds,.club-overview,.my-club,.match-layout,.honours-blocks,.transfer-columns,.league-summaries{gap:10px}
+.grid,.grid.equal,.club-overview,.my-club,.match-layout,.honours-blocks,.transfer-columns,.league-summaries{gap:10px}
 .club-overview{margin-bottom:10px}
 .stat-grid{gap:10px;margin-bottom:10px}
 .stat-card{padding:10px 12px}
@@ -349,7 +335,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 }
 /* The table takes just the width its columns need, flush right, so that its figures line up with the next league's; the last round's results get the rest. */
 @media(min-width:951px){.league-summary-grid{grid-template-columns:minmax(0,1fr) max-content}}
-.rating,.player-table .rating,.grid.thirds .attribute .rating{padding:1px 6px!important;line-height:16px;font-size:11px;min-width:30px;display:inline-block;text-align:center}
+.rating,.player-table .rating{padding:1px 6px!important;line-height:16px;font-size:11px;min-width:30px;display:inline-block;text-align:center}
 .position,.player-table .position{padding:2px 5px!important;line-height:14px}
 .form i{width:17px;height:17px}
 .fixture{padding:5px 12px;gap:10px}
@@ -613,3 +599,100 @@ a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
  .manual-menu ul ul{display:none}
  .manual-menu a{padding:4px 10px;font-size:12px}
 }
+
+/* Player page: a rail saying who he is, how he is and what his contract holds, with what the user can do about it at its
+   foot; beside it his attributes and his positions, then his level over time and his career. */
+.player-page{display:grid;grid-template-columns:280px minmax(0,1fr);gap:10px}
+.player-rail{margin:0;display:flex;flex-direction:column;overflow:visible}
+.rail-head{display:flex;align-items:center;gap:10px;padding:12px 14px 0}
+.rail-head h1{min-width:0;font-size:23px;line-height:1.1;overflow-wrap:anywhere}
+/* The flag of his main nation, between the squad stepper and his name. */
+.rail-head>a,.rail-head>.nation{flex:none;display:flex}
+.rail-head .flag{width:24px;height:18px}
+.rail-tiles{display:flex;gap:6px;padding:12px 14px}
+.tile{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 6px 6px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);color:var(--muted)}
+.tile span{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.tile strong{font-family:var(--display);font-stretch:semi-condensed;font-size:30px;font-weight:700;line-height:1;color:var(--strong)}
+.tile.graded{background:hsl(var(--hue) 40% 16%);color:hsl(var(--hue) 75% 68%);border-color:hsl(var(--hue) 35% 26%)}
+.tile.graded strong{color:inherit}
+:root[data-theme="light"] .tile.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
+/* The club with his caps on its right (under it when both do not fit on a line), then his other nationalities on a line
+   of their own, flags alone. */
+.rail-identity{padding:4px 14px;border-top:1px solid var(--line)}
+.rail-club{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 10px;min-height:27px;padding:3px 0;font-weight:600;color:var(--strong)}
+.rail-club b{font-weight:600;white-space:nowrap}
+.rail-club+.fact{border-top:1px solid var(--row-line)}
+.rail-nations{display:flex;align-items:center;gap:6px}
+.rail-nations .flag{width:20px;height:15px}
+.rail-section{padding:10px 14px 6px;border-top:1px solid var(--line)}
+.rail-section h2{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.rail-section .fact,.rail-identity .fact{min-height:27px;padding:0;font-size:13px}
+.rail-section .fact strong,.rail-identity .fact strong{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--strong);white-space:nowrap}
+.rail-section .fact b{min-width:44px;font-weight:600;text-align:right}
+.rail-section .fact .danger{color:var(--bad)}
+.rail-section .fact .available{color:var(--good)}
+.rail-section .morale-cause{cursor:help}
+/* A thin bar beside a figure: filled from the left, or from its middle (marked by a tick) for a value that goes either way. */
+.gauge{position:relative;display:block;width:72px;height:4px;border-radius:2px;background:var(--line)}
+.gauge>i{display:block;height:100%;border-radius:2px;background:var(--good)}
+.gauge.graded>i{background:hsl(var(--hue) 65% 50%)}
+.gauge.signed>i{position:absolute;top:0}
+.gauge.signed>.down{background:var(--bad)}
+.gauge.signed:after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:10px;background:var(--muted)}
+.rail-actions{margin-top:auto;padding:12px 14px;border-top:1px solid var(--line)}
+.player-actions button{white-space:nowrap;padding:6px 12px}
+.player-actions .pill{text-align:center;border-radius:3px}
+.player-main{min-width:0;display:flex;flex-direction:column;gap:10px}
+.player-row{display:grid;gap:10px}
+.player-row>.card{margin:0;min-width:0;display:flex;flex-direction:column}
+.player-row>.card>.card-body.fill{flex:1}
+.player-row.profile{grid-template-columns:minmax(0,1fr) 300px}
+.player-row.history{flex:1;grid-template-columns:240px minmax(0,1fr)}
+/* Attributes: each section under a strip like a table's header, its attributes on three columns, fewer when a column
+   would be too narrow for the longest name and its badge. */
+.attributes-card>.card-body{padding:0}
+.attributes-card .attribute-group h3{display:flex;align-items:center;gap:6px;height:25px;margin:0;padding:0 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;color:var(--ink)}
+.attributes-card .attribute-group+.attribute-group h3{border-top:1px solid var(--line)}
+.attributes-card .attributes-grid{grid-template-columns:repeat(auto-fill,minmax(max(165px,calc((100% - 48px)/3)),1fr));gap:0 24px;padding:3px 12px 9px}
+.attributes-card .attribute{height:27px;margin:0;padding:0;border-bottom:1px solid var(--row-line);white-space:nowrap}
+.attributes-card .attribute-others{padding:8px 12px;border-top:1px solid var(--line)}
+.attributes-card .attribute-others .attributes-grid{padding:0;margin-top:8px}
+/* Along the right touchline a position's note stands left of its shirt, so that it stays on the pitch. */
+.pitch.ratings .position-note.left{left:auto;right:calc(50% + 19px)}
+/* Aptitudes: the pitch, and beside it on a wide screen the list of its positions (hidden until there is room for it). */
+.positions{flex:1;display:flex;min-height:0}
+.positions>.pitch{flex:1}
+.positions-list{display:none}
+.position-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;width:100%;height:32px;padding:0 12px;border:0;border-bottom:1px solid var(--row-line);border-radius:0;background:none;color:inherit;font-size:12px;font-weight:400;text-align:left}
+.position-row:hover{background:var(--panel-3)}
+.position-row.picked{background:var(--own-row)}
+.position-row.head,.position-row.head:hover{height:26px;background:var(--panel-2);border-top:1px solid var(--line);border-bottom-color:var(--line);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.06em}
+/* Career: one table for the clubs, then the national team under the nation's name, their four figures in the same columns.
+   Each part ends on its total, styled as a table's foot. Eight columns beside the chart: the cells keep little padding.
+   The card is no taller than its table, whatever the height of the chart beside it. */
+.career-card{align-self:start}
+.career-card th,.career-card td{padding-left:5px!important;padding-right:5px!important}
+.career-card th:first-child,.career-card td:first-child{padding-left:12px!important}
+.career-card tr.total td{background:var(--panel-2);font-weight:700;border-top:2px solid var(--line);border-bottom:0}
+.career-card tr.nation-head th{text-transform:uppercase}
+/* Between the clubs and the national team, a band of the page's ground: two blocks in one card. */
+.career-card .career-gap td{height:12px;padding:0!important;background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+@media(max-width:1400px){.player-row.history{grid-template-columns:1fr}}
+/* Wide screen: two columns of two cards instead of stretched ones. Attributes over the career, each no wider than it reads
+   well at; beside them the aptitudes, whose notes leave the pitch for a list of the positions, over the chart. */
+@media(min-width:1728px){
+ .player-main{display:grid;grid-template-columns:minmax(650px,1fr) minmax(520px,1fr);align-content:start}
+ .player-main>.player-row{display:contents}
+ .player-main .attributes-card{grid-area:1/1}
+ .player-main .positions-card{grid-area:1/2}
+ .player-main .career-card{grid-area:2/1}
+ .player-main .level-card{grid-area:2/2}
+ /* Without a pitch the chart comes up beside the attributes, and the career runs under both. */
+ .player-main>.player-row:not(.profile)+.history .level-card{grid-area:1/2}
+ .player-main>.player-row:not(.profile)+.history .career-card{grid-area:2/1/3/-1}
+ .positions>.pitch:not(:only-child){flex:0 1 340px;min-width:300px;margin-right:0}
+ .positions-list{display:flex;flex-direction:column;flex:1 0 210px;min-width:0;margin:8px 0 0 10px;border-left:1px solid var(--line)}
+ .positions:has(.positions-list) .position-note{display:none}
+}
+@media(max-width:1050px){.player-page{grid-template-columns:1fr}}
+@media(max-width:800px){.player-row.profile{grid-template-columns:1fr}}

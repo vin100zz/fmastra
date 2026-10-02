@@ -25,6 +25,9 @@ class InternationalRecord:
     goals: int = 0
     assists: int = 0
     minutes: float = 0
+    # The match ratings he was given in this edition, as a season record keeps them for a club.
+    rating_sum: float = 0
+    rating_count: int = 0
 
 
 @dataclass(slots=True)

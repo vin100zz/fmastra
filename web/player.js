@@ -1,6 +1,6 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,price,attributeScore,levelBadge,scoreBadge,scoreHue,date,season,clubLink,kitDot,nationFlag,position,initials,empty,card,fact,table,nationBadges,appearances,positionNote,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {api,escape as e,number as n,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,position,empty,card,fact,appearances,positionNote,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -31,6 +31,9 @@ function attributeItem({key,value,weight}) {
  return `<div class="attribute${important?' key':''}"${important?` title="Compte pour ${Math.round(weight*100)} % de la note du poste"`:''}><span>${ATTRIBUTES[key]}</span>${scoreBadge(attributeScore(value))}</div>`;
 }
 
+// Greed is a trait out of 20 like an attribute, but neither good nor bad in itself: it closes Général, in a plain badge.
+const greedItem=player=>player.greed==null?'':`<div class="attribute"><span>Appât du gain</span><span class="rating" title="Appât du gain sur 20">${Math.round(1+player.greed*19)}</span></div>`;
+
 // The composites the engine plays with, out of 200 like the level: a goalkeeper's two, or the six of an outfield player. Those
 // the position `role` asks for are marked like key attributes, the others grey.
 export function compositeItems(player, role=player.position) {
@@ -52,25 +55,37 @@ export function compositesGroup(player, role=player.position) {
 
 function attributesBody(player) {
  const {sections,others}=attributeGroups(player);
- const grid=list=>`<div class="attributes-grid">${list.map(attributeItem).join('')}</div>`;
+ const grid=(list,extra='')=>`<div class="attributes-grid">${list.map(attributeItem).join('')}${extra}</div>`;
  const fold=others.length?`<details class="attribute-others"><summary>Autres attributs (${others.length})</summary>${grid(others)}</details>`:'';
- return `<div class="card-body">${compositesGroup(player)}${sections.map(section=>`<div class="attribute-group"><h3>${section.title}</h3>${grid(section.items)}</div>`).join('')}${fold}</div>`;
+ return `<div class="card-body">${compositesGroup(player)}${sections.map(section=>`<div class="attribute-group"><h3>${section.title}</h3>${grid(section.items,section.key==='general'?greedItem(player):'')}</div>`).join('')}${fold}</div>`;
 }
 
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
-// The central column is spaced by at least 15% so that shirts and labels of a 360px pitch do not overlap.
-const PITCH={GB:[50,92],DC:[50,77],DG:[15,70],DD:[85,70],MDC:[50,62],MC:[50,47],MOC:[50,32],AILG:[15,22],AILD:[85,22],BU:[50,9]};
+// The lines of the central column stand at least 16% apart, and the wingers between the striker and the playmaker, so that a
+// shirt, the ring of the main position and its label never touch the next ones on a 360px pitch.
+const PITCH={GB:[50,92],DC:[50,76],DG:[15,70],DD:[85,70],MDC:[50,59],MC:[50,42],MOC:[50,25],AILG:[15,17],AILD:[85,17],BU:[50,8]};
 
 // Only the roles the player can actually fill are drawn; without any, there is no pitch at all.
 const MIN_RATING=10;
 
-// Beside each shirt, the player's note at that position (`player`, from /api/joueurs); a click on a position reads the Jeu
-// section of the attributes for it (`picked`).
+// Beside each shirt, the player's note at that position (`player`, from /api/joueurs): on its right, or on its left along the
+// right touchline so that it stays on the pitch. A click on a position reads the Jeu section of the attributes for it (`picked`).
 export function positionPitch(ratings, main, player=null, picked=main) {
  const roles=Object.entries(PITCH).filter(([role])=>ratings[role]>=MIN_RATING);
  if(!roles.length)return '';
- const note=role=>{const badge=positionNote(player,role,player?.composites_by_position?.[role]);return badge?`<span class="position-note">${badge}</span>`:'';};
- return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%"><span class="shirt graded" style="--hue:${scoreHue(ratings[role])}" title="${role} : ${ratings[role]} / 20">${ratings[role]}</span>${note(role)}<small>${role}</small></button>`).join('')}</div><p class="pitch-legend">Le contour indique le poste principal.</p>`;
+ const note=(role,x)=>{const badge=positionNote(player,role,player?.composites_by_position?.[role]);return badge?`<span class="position-note${x>70?' left':''}">${badge}</span>`:'';};
+ return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%"><span class="shirt graded" style="--hue:${scoreHue(ratings[role])}" title="${role} : ${ratings[role]} / 20">${ratings[role]}</span>${note(role,x)}<small>${role}</small></button>`).join('')}</div>`;
+}
+
+// The same positions as a list, best note first: position, affinity out of 20, note out of 200. A wide screen shows it beside
+// the pitch, whose shirts then stand without their notes; a row picks its position as a shirt does. Without notes (an older
+// server) there is no list.
+export function positionList(ratings, player, picked=player.position) {
+ const notes=player.position_notes||{};
+ const roles=Object.keys(PITCH).filter(role=>ratings[role]>=MIN_RATING&&notes[role]!=null).sort((a,b)=>notes[b]-notes[a]||ratings[b]-ratings[a]);
+ if(!roles.length)return '';
+ const row=role=>`<button type="button" class="position-row${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}"><span>${position(role)}</span><span>${scoreBadge(ratings[role],`Affinité ${role} sur 20`)}</span><span>${positionNote(player,role,player.composites_by_position?.[role])}</span></button>`;
+ return `<div class="positions-list"><div class="position-row head" aria-hidden="true"><span>POSTE</span><span>AFFINITÉ</span><span>NOTE</span></div>${roles.map(row).join('')}</div>`;
 }
 
 const MONTH=new Intl.DateTimeFormat('fr-FR',{month:'short'}),MONTH_YEAR=new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'});
@@ -104,14 +119,6 @@ export function levelChart(points) {
   return `<span class="chart-point" style="${at}" title="${e(label)}">${kitDot(point.club)||'<i class="kit-dot neutral" aria-hidden="true"></i>'}</span>${edge?`<span class="point-value ${edge}" style="${at}">${values[index]}</span>`:''}`;
  }).join('');
  return `<div class="level-chart" role="img" aria-label="Évolution mensuelle du niveau, sur 200"><div class="plot">${lines}${axis}${marks}</div></div>`;
-}
-
-function header(player, lead='', actions='') {
- const identity=`<div class="identity">${lead}<div class="avatar">${initials(player.name)}</div><div><span class="eyebrow">${player.retired?'CARRIÈRE ARCHIVÉE':nationBadges(player.nationalities,{full:true})}</span><h1>${e(player.name)}</h1><p>${player.retired?'Retraité':`${position(player.position)}<span class="secondary-positions" title="Postes secondaires">${player.secondary_positions.map(position).join('')}</span> ${player.age} ans · ${clubLink(player.club)}`}</p></div></div>`;
- if(player.retired)return `<div class="page-heading player-heading">${identity}</div>`;
- const facts=[['Né le',date(player.born)],['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)],
-  ...(player.club?[['Prix minimum',player.transferable===false?'Intransférable':price(player.asking_price)]]:[])];
- return `<div class="page-heading player-heading">${identity}<dl class="player-facts">${facts.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>${actions}</div>`;
 }
 
 const dialogButtons=confirm=>`<div class="actions"><button type="button" data-close-dialog>Annuler</button>${confirm}</div>`;
@@ -168,49 +175,129 @@ async function playerActions(player, state) {
  if(player.club?.id===clubId){
   const [contracts,sale]=await Promise.all([api('/ma-partie/contrats'),api(`/ma-partie/vente/${player.id}`)]);
   const parts=[saleAction(player,sale),contractAction(player,contracts.items.find(row=>row.joueur_id===player.id))];
-  return `<div class="player-actions sale-actions">${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}</div>${parts.map(part=>part.dialogs).join('')}`;
+  return `<div class="player-actions">${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}</div>${parts.map(part=>part.dialogs).join('')}`;
  }
  return talksAction(player,state,await api(`/ma-partie/negociation/${player.id}`));
 }
 
-function profile(player, chart, career) {
- const levels=`<div class="level-summary"><span>Niv. ${levelBadge(player.rating,'Niveau actuel sur 200')}</span><span>Pot. ${levelBadge(player.potential,'Potentiel sur 200')}</span></div>`;
+// A line of the rail whose tooltip says more than its value.
+const told=(label,value,title)=>`<div class="fact"${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
+// A thin bar beside a figure of the rail, filled from the left: green, or in the colour of the grade `hue`.
+const gauge=(share,hue)=>`<i class="gauge${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`} aria-hidden="true"><i style="width:${Math.round(Math.max(0,Math.min(1,share))*100)}%"></i></i>`;
+
+// Form is an effect either way, drawn from the middle of its bar between the bounds it keeps (`form_bounds`; an older server
+// gives none, and the figure stands alone). Within ±2 % it changes nothing: the bar stays empty.
+function formFact(player) {
+ if(player.form==null)return '';
+ const {pct,neutral,text,title}=formReading(player.form),[low,high]=player.form_bounds||[];
+ const reach=Math.max(1-low,high-1)*100;
+ const fill=neutral?'':`<i class="${pct>0?'up':'down'}" style="${pct>0?'left':'right'}:50%;width:${Math.min(50,Math.abs(pct)*50/reach).toFixed(1)}%"></i>`;
+ return told('Forme',`${reach>0?`<i class="gauge signed" aria-hidden="true">${fill}</i>`:''}<b>${text}</b>`,title);
+}
+
+// Morale with what weighs most on it ahead of its bar, whenever the server names a cause.
+function moraleFact(player) {
+ if(player.morale==null)return '';
+ const {value,cause,title,hue}=moraleReading(player,true);
+ const why=cause?`<span class="morale-cause" title="${e(`Pèse surtout : ${cause[1]}`)}">${cause[0]}</span>`:'';
+ return told('Moral',`${why}${gauge(player.morale,hue)}<b>${value} %</b>`,title);
+}
+
+// Yellow cards add up over his competitions, each named in the tooltip; a suspension names the competition it holds in.
+function disciplineFacts(player) {
+ const cards=player.discipline||[];
+ const bans=cards.filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${e(item.competition)} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`));
+ return told('Cartons',cards.reduce((sum,item)=>sum+item.yellows,0),cards.map(item=>`${item.competition} ${item.yellows}`).join(' · '))+bans.join('');
+}
+
+// His main nation — the one he plays for, else the first of his nationalities — flies beside his name; the others get a line
+// of their own under the club. Flags alone, named in their tooltip.
+function nationFlags(player) {
+ const [main,...others]=[...new Set([player.national_team,...(player.nationalities||[])].filter(Boolean))];
+ const flag=code=>nationFlag(code)||nationBadge(code);
+ const capped=main===player.national_team&&player.national_team_id!=null;
+ return {main:!main?'':capped?`<a href="#/international/nation/${player.national_team_id}">${flag(main)}</a>`:flag(main),others:others.map(flag)};
+}
+
+// "12 sél - 3 buts": the goals only once he has scored.
+const caps=player=>player.international_caps==null?'':`<b>${n(player.international_caps)} sél${player.international_goals?` - ${n(player.international_goals)} but${player.international_goals>1?'s':''}`:''}</b>`;
+
+// Beside the page: who he is, how he is and what his contract is, with what the user can do about it at the foot.
+// `lead` (the block stepping through the squad) sits at the left of the name.
+function rail(player, lead, actions) {
+ const tile=(label,value,title,hue)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
+ const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),title,levelHue(level(value)));
+ const tiles=`<div class="rail-tiles">${tile('Âge',player.age,`Né le ${date(player.born)}`)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}</div>`;
+ const flags=nationFlags(player);
+ const identity=`<div class="rail-identity"><div class="rail-club">${clubLink(player.club)}${caps(player)}</div>${flags.others.length?fact(flags.others.length>1?'Autres nationalités':'Autre nationalité',`<span class="rail-nations">${flags.others.join('')}</span>`):''}</div>`;
+ const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
+ const state=`<section class="rail-section"><h2>État</h2>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}</section>`;
+ const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)],
+  ...(player.club?[['Prix minimum',player.transferable===false?'Intransférable':price(player.asking_price)]]:[])];
+ const contract=`<section class="rail-section"><h2>Contrat</h2>${terms.map(([label,value])=>fact(label,value)).join('')}</section>`;
+ return `<aside class="card player-rail"><div class="rail-head">${lead}${flags.main}<h1>${e(player.name)}</h1></div>${tiles}${identity}${state}${contract}${actions?`<div class="rail-actions">${actions}</div>`:''}</aside>`;
+}
+
+// Attributes beside the aptitudes (the pitch and the list of its positions); without any position to show, the attributes
+// take the whole row.
+function profile(player) {
  shown=player;
- const attributes=card('Attributs',attributesBody(player),levels);
- const pitch=positionPitch(player.position_ratings||{},player.position,player);
- const positions=pitch?card('Aptitudes par poste',pitch):'';
- const state=card('État du joueur',`<div class="card-body">${fact('Condition',`${Math.round(player.fitness*100)}%`)}<div class="meter"><span style="width:${player.fitness*100}%"></span></div>${fact('Forme',n(player.form))}${fact('Moral',`${Math.round(player.morale*100)}%`)}${fact('Appât du gain',`${Math.round(1+player.greed*19)} / 20`)}${fact('Blessure',player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'Disponible')}${player.discipline.map(item=>fact(item.competition,`${item.yellows} CJ · ${item.suspended_matches} match${item.suspended_matches>1?'s':''} de suspension`)).join('')}</div>`);
- // Without any pitch to show, the state takes its place in the top row and the career stands alone below.
- return `<div class="grid thirds">${attributes}${positions||state}${chart}</div>${positions?`<div class="grid state-career">${state}${career}</div>`:career}`;
+ const ratings=player.position_ratings||{},pitch=positionPitch(ratings,player.position,player);
+ const positions=pitch?card('Aptitudes par poste',`<div class="positions">${pitch}${positionList(ratings,player)}</div>`,'','positions-card'):'';
+ return `<div class="player-row${pitch?' profile':''}">${card('Attributs',attributesBody(player),'','attributes-card')}${positions}</div>`;
+}
+
+// A row of the career table. The national team has no use for the four columns ahead of the figures: its first cell
+// spans them (`lead`), so that matches, goals, assists and rating stay in the columns they have for the clubs.
+const careerRow=(cells,{tag='td',lead=1,name=''}={})=>`<tr${name?` class="${name}"`:''}>${cells.map((cell,index)=>`<${tag}${lead>1&&!index?` colspan="${lead}"`:''}>${cell}</${tag}>`).join('')}</tr>`;
+
+// Under the clubs, the national team: an edition a row beneath the nation's name, newest first, then what he had played
+// before the game started (`historical_*`), and his totals. Nothing before a first cap.
+function internationalCareer(player) {
+ if(!player.international_caps)return '';
+ const records=[...(player.international_records||[])].sort((a,b)=>b.edition-a.edition),wide={lead:4};
+ const nation=player.national_team?nationBadges([player.national_team],{full:true}):'Sélection';
+ const rows=records.map(row=>careerRow([`<a href="#/international/${row.edition}">${row.edition}</a>`,n(row.matches),row.goals,row.assists,row.average?n(row.average):'—'],wide));
+ if(player.historical_caps||player.historical_goals)rows.push(careerRow(['Historique importé',n(player.historical_caps),n(player.historical_goals),'—','—'],wide));
+ const rated=records.reduce((sum,row)=>sum+(row.rating_count||0),0);
+ const total=['Total',n(player.international_caps),n(player.international_goals),n(records.reduce((sum,row)=>sum+row.assists,0)),rated?n(records.reduce((sum,row)=>sum+row.rating_sum,0)/rated):'—'];
+ const head=[player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nation}</a>`:nation,'MATCHS','BUTS','PASSES','NOTE'];
+ return `<tbody>${careerRow(head,{tag:'th',lead:4,name:'nation-head'})}</tbody><tbody>${rows.join('')}${careerRow(total,{lead:4,name:'total'})}</tbody>`;
+}
+
+// One card and one table for the whole career: a row per season and club, newest first, then the national team, a gap
+// setting the two apart.
+function careerCard(player, career) {
+ const totals=career.totals,nation=internationalCareer(player);
+ const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']));
+ const total=careerRow(['Total','',totals.fee?money(totals.fee):'—','',n(totals.matches),n(totals.goals),n(totals.assists),totals.average?n(totals.average):'—'],{name:'total'});
+ const clubs=rows.length?`<tbody>${rows.join('')}${total}</tbody>`:'';
+ const head=careerRow(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],{tag:'th'});
+ const gap=clubs&&nation?'<tbody class="career-gap" aria-hidden="true"><tr><td colspan="8"></td></tr></tbody>':'';
+ return card('Carrière',clubs||nation?`<div class="table-scroll"><table><thead>${head}</thead>${clubs}${gap}${nation}</table></div>`:empty(),'','career-card');
 }
 
 export async function playerScreen(id) {
  const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
- const actions=await playerActions(player,state);
  // The latest club of each season: career rows are listed newest first.
  const clubs=new Map();for(const row of history.career.items)if(!clubs.has(row.season))clubs.set(row.season,row.club);
  const points=history.trajectory.map(point=>({...point,club:clubs.get(point.season)}));
- const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au début de chaque mois.'),'<span class="muted">Niveau sur 200</span>');
- const totals=history.career.totals;
- const footer=['Total','',totals.fee?money(totals.fee):'—','',`${n(totals.matches)}`,`${n(totals.goals)}`,`${n(totals.assists)}`,totals.average?n(totals.average):'—'];
- const career=internationalCareer(player)+card('La carrière',table(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],history.career.items.map(row=>[season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']),footer));
- return header(player,playerNavigation(neighbours),actions)+(player.retired?chart+career:profile(player,chart,career));
+ const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au début de chaque mois.'),'','level-card');
+ const story=`<div class="player-row history">${chart}${careerCard(player,history.career)}</div>`;
+ // A retired player keeps his name and his history.
+ if(player.retired)return `<div class="page-heading"><div class="identity"><div><span class="eyebrow">CARRIÈRE ARCHIVÉE</span><h1>${e(player.name)}</h1><p>Retraité</p></div></div></div>${story}`;
+ const actions=await playerActions(player,state);
+ return `<div class="player-page">${rail(player,playerNavigation(neighbours),actions)}<div class="player-main">${profile(player)}${story}</div></div>`;
 }
 
-// A position picked on the pitch of aptitudes: the Jeu section marks what that position asks for.
+// A position picked on the pitch of aptitudes or in their list: the Jeu section marks what that position asks for, and both
+// the shirt and the row of the position show it picked.
 function install(){
  document.addEventListener('click',event=>{
-  const button=event.target.closest?.('[data-composite-role]');
-  if(!button||!shown)return;
-  document.querySelector('[data-composites]')?.replaceWith(Object.assign(document.createElement('template'),{innerHTML:compositesGroup(shown,button.dataset.compositeRole)}).content);
-  document.querySelectorAll('[data-composite-role]').forEach(item=>{item.classList.toggle('picked',item===button);item.setAttribute('aria-pressed',String(item===button));});
+  const role=event.target.closest?.('[data-composite-role]')?.dataset.compositeRole;
+  if(!role||!shown)return;
+  document.querySelector('[data-composites]')?.replaceWith(Object.assign(document.createElement('template'),{innerHTML:compositesGroup(shown,role)}).content);
+  document.querySelectorAll('[data-composite-role]').forEach(item=>{const picked=item.dataset.compositeRole===role;item.classList.toggle('picked',picked);item.setAttribute('aria-pressed',String(picked));});
  });
 }
 if(typeof document!=='undefined')install();
-
-function internationalCareer(player){
- if(player.international_caps==null)return '';
- const nation=player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nationBadges([player.national_team],{full:true})}</a>`:'Aucune sélection représentée';
- const records=player.international_records||[];
- return card('Sélection nationale',`<div class="card-body">${nation} · ${n(player.international_caps)} sélections · ${n(player.international_goals)} buts<p class="note">Historique importé : ${n(player.historical_caps)} sélections, ${n(player.historical_goals)} buts.</p></div>`+table(['ÉDITION','MATCHS','BUTS','PASSES'],records.map(row=>[`<a href="#/international/${row.edition}">${row.edition}</a>`,row.matches,row.goals,row.assists])));
-}

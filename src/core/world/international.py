@@ -238,6 +238,9 @@ def apply_international_result(world, edition, match, result, lineups):
         record.goals += stats.goals
         record.assists += stats.assists
         record.minutes += stats.minutes
+        if stats.rating is not None:
+            record.rating_sum += stats.rating
+            record.rating_count += 1
         discipline = player.international_discipline.setdefault(edition.competition_id, Discipline())
         discipline.yellows += stats.yellows
         durations = []

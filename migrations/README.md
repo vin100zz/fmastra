@@ -121,6 +121,10 @@ Un regen passe ainsi d'une affinité nulle à 1 sur 20 aux postes qui lui resten
 `affinite_secondaire`, `postes_secondaires_possibles` et `probabilite_poste_secondaire` n'ont plus d'effet mais restent
 dans la configuration.
 
+Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
+comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses
+éditions déjà jouées restent sans note, et aucune n'est inventée.
+
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de
 changer les modèles. Modifier les coefficients du dossier `config` n'altère pas

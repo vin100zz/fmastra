@@ -5,6 +5,7 @@ from random import Random
 
 import pytest
 
+from api.views import international_records
 from benchmarks.fixtures import synthetic_lineup
 from core.domain.date import Date
 from core.domain.world import World
@@ -159,11 +160,15 @@ def test_allegiance_is_fixed_only_on_appearance_and_club_stats_separate(world):
     world.date = match.date
     lineups = [camp_lineup(world, edition, nid) for nid in (match.home_id, match.away_id)]
     player = next(slot.player for lineup in lineups for slot in lineup.slots if slot.player.id >= 0)
-    result = MatchResult(1, 0, "test", player_stats={player.id: PlayerMatchStats(minutes=90, goals=1, final_fitness=.65)},
+    result = MatchResult(1, 0, "test", player_stats={player.id: PlayerMatchStats(minutes=90, goals=1, final_fitness=.65, rating=7.5)},
                          events=[MatchEvent(1200, 1, 1, "injury", team.id, player.id)])
     apply_international_result(world, edition, match, result, lineups)
     assert player.national_team == team.code
     assert player.international_caps == 1 and player.international_goals == 1
+    # His rating counts in the edition's record, not in his club season.
+    record = world.international.records[f"{edition.year}:{player.id}"]
+    assert (record.matches, record.goals, record.rating_sum, record.rating_count) == (1, 1, 7.5, 1)
+    assert international_records(world, player.id)[0]["average"] == 7.5 and player.rating_count == 0
     assert player.fitness == .65 and player.injury is not None
     assert player.monthly_minutes == 90
     assert player.season_minutes == player.appearances == player.season_goals == 0

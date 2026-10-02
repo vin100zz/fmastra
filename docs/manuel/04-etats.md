@@ -19,7 +19,7 @@ La condition est de loin le facteur le plus lourd, la forme vient ensuite, le mo
 
 ## La forme
 
-La forme dit si un joueur traverse une bonne ou une mauvaise période. Elle commence à {{etats.forme.initiale}}. Les listes l'affichent comme un pourcentage (+8 %), la fiche du joueur comme un multiplicateur (1,08).
+La forme dit si un joueur traverse une bonne ou une mauvaise période. Elle commence à {{etats.forme.initiale}}. Les listes et la fiche du joueur l'affichent comme un pourcentage (+8 % pour une forme de 1,08) ; sur la fiche, une barre le situe entre les deux extrêmes.
 
 **Ce qui la fait bouger.** Uniquement les matches où le joueur est noté, en club comme en sélection. Après chacun, la forme se rapproche d'une cible fixée par sa note :
 
@@ -80,7 +80,7 @@ ambition = {{ia_gestion.mercato.ambition_base}} + {{ia_gestion.mercato.ambition_
 - En match : de −{{pct(etats.moral.amplitude_effet_match, 0)}} à +{{pct(etats.moral.amplitude_effet_match, 0)}} sur tout ce qu'il fait.
 - Sur le marché : à {{pct(ia_gestion.mercato.moral_depart_force, 0)}} ou moins, un joueur accepte de rejoindre un club moins réputé que le sien, ce qu'il refuserait autrement.
 
-Dans l'effectif, la flèche à côté du moral indique vers où il dérive, et l'icône ce qui le tire le plus vers le bas : le salaire (€), le temps de jeu (◷) ou un club trop petit (★).
+Dans l'effectif, la flèche à côté du moral indique vers où il dérive, et l'icône ce qui le tire le plus vers le bas : le salaire (€), le temps de jeu (◷) ou un club trop petit (★). La fiche du joueur porte la même icône devant la barre de son moral.
 
 ## La condition physique
 

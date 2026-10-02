@@ -54,7 +54,7 @@ test('an inbox entry links its player and its match, never the whole entry but f
 
 test('another club’s player can receive an offer from his page, only while the market is open',async()=>{
  const open=await withApi(playerRoutes(player,{controlled_club_id:7,market:true}),()=>playerScreen(20));
- assert.match(open,/<dt>Prix minimum<\/dt><dd>3,45\sM\s?€<\/dd>/);
+ assert.match(open,/<span>Prix minimum<\/span><strong>3,45\sM\s?€<\/strong>/);
  assert.match(open,/<button class="primary" type="button" data-open-dialog="talks-dialog">Faire une offre<\/button>/);
  assert.match(open,/<form id="talks-form" data-kind="indemnite">/);assert.doesNotMatch(open,/name="accepter"/);
  const closed=await withApi(playerRoutes(player,{controlled_club_id:7,market:false},{...idle,obstacle:'Le mercato est fermé.'}),()=>playerScreen(20));

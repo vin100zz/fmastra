@@ -22,11 +22,15 @@ export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(sc
 // engine's factor for his affinity there (see /api). The pitches of the lineup and of the player page show it beside the shirt.
 export const positionNote = (player, role, keys=[]) => player?.position_notes?.[role]==null ? ''
  : levelBadge(player.position_notes[role],`Note au poste ${role} : ${keys.map(key=>COMPOSITES[key]).join(', ')}, affinité au poste comprise`);
-// Form as its effect on all a player does in a match: 1.11 reads "+11 %", in green; within ±2 % it is grey.
+// Form as its effect on all a player does in a match: 1.11 reads "+11 %"; within ±2 % it changes nothing (`neutral`).
+export const formReading = form => {
+ const pct=Math.round((form-1)*100),neutral=Math.abs(pct)<=2,text=pct>0?`+${pct} %`:pct<0?`−${-pct} %`:'0 %';
+ return {pct,neutral,text,title:`Forme ${form.toFixed(2).replace('.',',')} : ${neutral?'il joue à son niveau':`tout ce qu'il fait en match compte ${Math.abs(pct)} % de ${pct>0?'plus':'moins'}`}`};
+};
+// In green or red; grey when neutral.
 export const formBadge = form => {
  if(form==null)return '—';
- const pct=Math.round((form-1)*100),neutral=Math.abs(pct)<=2,text=pct>0?`+${pct} %`:pct<0?`−${-pct} %`:'0 %';
- const title=`Forme ${form.toFixed(2).replace('.',',')} : ${neutral?'il joue à son niveau':`tout ce qu'il fait en match compte ${Math.abs(pct)} % de ${pct>0?'plus':'moins'}`}`;
+ const {pct,neutral,text,title}=formReading(form);
  return neutral?`<span class="rating form-badge neutral" title="${escape(title)}">${text}</span>`:gradedBadge(text,pct>0?120:0,title).replace('class="rating graded"','class="rating graded form-badge"');
 };
 // An arrow for a form worth at least 5 % either way in a match: on the lineup's pitch, and beside the note at a position.
@@ -37,16 +41,22 @@ export const formArrow = form => {
 // Morale below this names what holds it down.
 const MORALE_LOW=.7;
 const MORALE_CAUSES={salaire:['€','son salaire'],temps_de_jeu:['◷','son temps de jeu'],ambition:['★','un club en dessous de son niveau']};
-// Morale out of 100, an arrow towards where it drifts week after week, and its main cause when low (squad rows of /api).
-export function moraleCell(player) {
- if(player.morale==null)return '—';
+// A morale read for display: out of 100 with its hue, where it drifts week after week, its main cause ([icon, words]; only when
+// low, unless `always`) and the sentence telling it all (squad rows and player page of /api).
+export function moraleReading(player, always=false) {
  const value=Math.round(player.morale*100),target=player.morale_target==null?null:Math.round(player.morale_target*100);
- const trend=target==null||Math.abs(target-value)<3?'':target>value?'<span class="trend up">▲</span>':'<span class="trend down">▼</span>';
- const cause=player.morale<MORALE_LOW?MORALE_CAUSES[player.morale_cause]:null;
+ const cause=(always||player.morale<MORALE_LOW)&&MORALE_CAUSES[player.morale_cause]||null;
  const share=value=>`${Math.round(value*100)} % de ce qu'il attend`;
  const title=[`Moral ${value} %${target!=null&&target!==value?`, vers ${target} %`:''}`,...(cause?[`pèse surtout : ${cause[1]}`]:[]),
   ...(player.wage_satisfaction!=null?[`salaire : ${share(player.wage_satisfaction)}`,`temps de jeu : ${share(player.playing_time_satisfaction)}`]:[])].join(' · ');
- return `<span class="morale-cell" title="${escape(title)}">${gradedBadge(`${value} %`,gradeHue(value,40,60,80))}<span class="trend-slot">${trend}</span>${cause?`<span class="morale-cause">${cause[0]}</span>`:''}</span>`;
+ return {value,target,cause,title,hue:gradeHue(value,40,60,80)};
+}
+// Morale out of 100, an arrow towards where it drifts, and its main cause when low.
+export function moraleCell(player) {
+ if(player.morale==null)return '—';
+ const {value,target,cause,title,hue}=moraleReading(player);
+ const trend=target==null||Math.abs(target-value)<3?'':target>value?'<span class="trend up">▲</span>':'<span class="trend down">▼</span>';
+ return `<span class="morale-cell" title="${escape(title)}">${gradedBadge(`${value} %`,hue)}<span class="trend-slot">${trend}</span>${cause?`<span class="morale-cause">${cause[0]}</span>`:''}</span>`;
 }
 // The affinity to a position out of 20, only below 20: a tag on the corner of the shirt.
 export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;

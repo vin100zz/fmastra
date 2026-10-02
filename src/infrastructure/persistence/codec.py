@@ -95,6 +95,9 @@ def decode(value: Any) -> Any:
                 value["fields"].setdefault(name, default)
         if cls is SeasonRecord:
             value["fields"].setdefault("substitutes", 0)
+        if cls is InternationalRecord:
+            for name in ("rating_sum", "rating_count"):
+                value["fields"].setdefault(name, 0)
         if cls is JournalEntry:
             value["fields"].setdefault("read", False)
         if cls is MovementSnapshot:

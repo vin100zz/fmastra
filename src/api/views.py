@@ -157,17 +157,36 @@ def sale_view(world: World, player: Player) -> dict:
             "offres": incoming_offers(world, player.id)}
 
 
+def international_records(world: World, player_id: int) -> list[dict]:
+    """A player's international editions, each with the average of the ratings he was given in it (None before any)."""
+    return [{**asdict(row), "average": round(row.rating_sum / row.rating_count, 2) if row.rating_count else None}
+            for row in world.international.records.values() if row.player_id == player_id]
+
+
+def player_morale(world: World, player: Player) -> dict:
+    """The morale outlook of one player, as the squad list gives it for each player of a club."""
+    from core.world.contracts import games_by_club, position_ranks
+    from core.world.transfer_rules import season_arrivals
+    club = world.clubs.get(player.club_id)
+    if club is None: return {"morale_target": None, "morale_cause": None, "wage_satisfaction": None, "playing_time_satisfaction": None}
+    played = season_arrivals(world, club.id).get(player.id, (games_by_club(world)[club.id], player.season_minutes))
+    return morale_outlook(world, player, club, position_ranks(world, club)[player.id], *played)
+
+
 def player_detail(world: World, player: Player) -> dict:
     from core.world.transfer_rules import recent_arrival_ids
     result = player_row(world, player)
     result.update(asking_quote(world, player, recent_arrival_ids(world)))
+    result.update(player_morale(world, player))
     result["greed"] = player.greed
+    # The bounds form keeps, for the page to draw it between them.
+    result["form_bounds"] = [world.config.states.form.min, world.config.states.form.max]
     result.update({"born": player.born.iso(),
                    "national_team": player.national_team,
                    "national_team_id": next((team.id for team in world.international.nations.values() if team.code == player.national_team), None),
                    "international_caps": player.international_caps, "international_goals": player.international_goals,
                    "historical_caps": player.historical_caps, "historical_goals": player.historical_goals,
-                   "international_records": [asdict(row) for row in world.international.records.values() if row.player_id == player.id],
+                   "international_records": international_records(world, player.id),
                    "secondary_positions": list(player.secondary_positions),
                    # Weight of each attribute in the rating of his main position: the page orders and marks attributes with it.
                    "attribute_weights": dict(world.config.attributes.overall[player.position]),
@@ -369,7 +388,26 @@ def level_history(world: World, player_id: int) -> list[dict]:
     return points
 
 
+def career_league(world: World, club_id: int | None, levels: dict) -> tuple[str | None, str | None]:
+    """What a club's league reads as in a career, with its nation: the name of a simulated league; outside them "D" and
+    the level of the club's division (`levels`, see `division_levels`). The source gives no level to the other divisions:
+    such a club plays one level under the deepest known one of its nation, hence in the top flight of a nation without
+    any simulated league."""
+    club = world.clubs.get(club_id)
+    if club is None: return None, None
+    league = club_league(world, club_id)
+    if league: return league.name, league.nation
+    if club.division_id in levels:
+        nation, level = levels[club.division_id]
+    else:
+        nation = club.cup_nation or club.nation
+        level = max((known for country, known in levels.values() if country == nation), default=0) + 1
+    return f"D{level}", nation
+
+
 def career(world: World, player_id: int) -> dict:
+    from core.world.reputation import division_levels
+    levels = division_levels(world.config)
     player_records =[row for row in world.records.values() if row.player_id == player_id]
     rows = {}
     for record in player_records:
@@ -387,9 +425,12 @@ def career(world: World, player_id: int) -> dict:
             row[field] += getattr(record, field)
     for (_, club_id), row in rows.items():
         labels = row.pop("competitions")
-        league = club_league(world, club_id)
-        row["competition"] = " · ".join(sorted(labels, key=labels.get)) or (league.name if league else None)
-        row["competition_nation"] = row.pop("nation", None) or (league.nation if league and not labels else None)
+        # The league comes first, the one he played in or else his club's (a club outside the simulated leagues, or a season
+        # of cup matches only), then the European cup.
+        league, nation = career_league(world, club_id, levels)
+        played = [label for label, european in labels.items() if not european] or ([league] if league else [])
+        row["competition"] = " · ".join([*played, *(label for label, european in labels.items() if european)]) or None
+        row["competition_nation"] = row.pop("nation", None) or nation
         count = row.pop("rating_count")
         total = row.pop("rating_sum")
         row["average"] = round(total / count, 2) if count else None
@@ -408,9 +449,9 @@ def career(world: World, player_id: int) -> dict:
     for key in order:
         if key in rows: continue
         season, club_id = key
-        league = club_league(world, club_id)
+        league, nation = career_league(world, club_id, levels)
         rows[key] = {"season": season, "club": club_ref(world, club_id),
-                     "competition": league.name if league else None, "competition_nation": league.nation if league else None,
+                     "competition": league, "competition_nation": nation,
                      "matches": 0, "substitutes": 0, "goals": 0, "assists": 0, "average": None}
     items = [{**rows[key], "fee": fees.get(key)} for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
     rating_count = sum(row.rating_count for row in player_records)

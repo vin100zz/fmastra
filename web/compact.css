@@ -1,7 +1,7 @@
 /* Dense default layout: preserve readable type while reducing empty space. */
 .europe-cups{flex-wrap:wrap}.europe-legend{display:flex;gap:18px;flex-wrap:wrap}.europe-direct{background:#edf6ef}.europe-playoff{background:#fff9e9}.qualification-direct{color:#28613c;font-weight:600}.qualification-playoff{color:#84601d;font-size:11px}.aggregate-score{display:block;font-size:10px;font-weight:400;white-space:nowrap}.big-score .aggregate-score{font-size:14px}
 body{font-size:13px}main{padding:20px 24px 28px;max-width:none}.topbar{height:72px;padding:12px 24px}.job-bar{top:72px}.date-block strong{font-size:15px;margin-top:4px}
-.page-heading{margin-bottom:14px;gap:12px;align-items:center}h1{font-size:25px;margin:4px 0 5px}h2{margin-bottom:12px}.identity{gap:12px}.crest{width:104px;height:104px;font-size:32px}.avatar{width:44px;height:48px;font-size:17px}
+.page-heading{margin-bottom:14px;gap:12px;align-items:center}h1{font-size:25px;margin:4px 0 5px}h2{margin-bottom:12px}.identity{gap:12px}.crest{width:104px;height:104px;font-size:32px}
 .card{margin-bottom:14px;border-radius:8px}.card-head{padding:12px 14px;gap:10px}.card-head h2{font-size:14px}.card-body{padding:14px}.grid,.grid.equal{gap:14px}.tabs{margin-bottom:14px;gap:20px}.tabs a{padding:9px 0}.season-navigation{margin:12px 0}
 button,input,select{padding:7px 10px;font-size:12px}.filters{gap:8px;margin-bottom:12px}.filters input,.filters select{padding:7px 9px}.filters label{font-size:11px}.notice{padding:10px 12px;margin-bottom:14px;font-size:11px}
 th,td{padding:7px 9px;font-size:12px}th{font-size:9px}th button{padding:0;font-size:9px}.pager{padding:9px 12px;font-size:11px}.pager button{padding:5px 8px}.player-table td{padding:6px;font-size:11px}.player-table th{padding:8px 6px}.player-table .rating,.player-table .position{padding:3px 5px}.player-table th.name-column,.player-table td:nth-child(2){position:sticky;left:0;background:white;z-index:1}.player-table .strong{white-space:nowrap}
@@ -25,7 +25,7 @@ th,td{padding:7px 9px;font-size:12px}th{font-size:9px}th button{padding:0;font-s
 .moves{list-style:none;margin:0;padding:0}.moves li{display:flex;align-items:baseline;gap:6px;padding:3px 0;border-bottom:1px solid #edf0eb;font-size:11px}.moves li:last-child{border-bottom:0}.moves li>span{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.moves li>span>a{font-weight:650}.moves li>small{flex:1 1 40px}.moves li>b{flex:none;margin-left:auto;font-weight:650;white-space:nowrap;font-size:10px}.moves li.more{color:var(--muted);font-size:10px}.card-note{margin:0;padding:7px 12px;border-top:1px solid var(--line);font-size:10px}
 .lineup-match{display:flex;align-items:center;gap:8px;padding:8px 12px 0;font-size:11px}.lineup-match>span:last-child{min-width:0;font-weight:650}
 /* The club's last line-up and a player's positions share one pitch size. */
-.lineup-card .pitch,.pitch.ratings{flex:1;min-height:360px;margin:8px 10px 10px}.club-overview .pitch-player,.pitch.ratings .pitch-player{width:76px}.club-overview .pitch-player .shirt,.pitch.ratings .pitch-player .shirt{width:34px;height:34px;font-size:14px;font-weight:700;border-radius:6px 6px 10px 10px;margin-bottom:1px}.club-overview .pitch-player .shirt{box-shadow:0 0 0 1px #0000003d,0 2px 4px #25452330}.club-overview .pitch-player small,.pitch.ratings .pitch-player small{font-size:12px;line-height:1.15;padding:1px 4px}.pitch-legend{margin:0 10px 10px}
+.lineup-card .pitch,.pitch.ratings{flex:1;min-height:360px;margin:8px 10px 10px}.club-overview .pitch-player,.pitch.ratings .pitch-player{width:76px}.club-overview .pitch-player .shirt,.pitch.ratings .pitch-player .shirt{width:34px;height:34px;font-size:14px;font-weight:700;border-radius:6px 6px 10px 10px;margin-bottom:1px}.club-overview .pitch-player .shirt{box-shadow:0 0 0 1px #0000003d,0 2px 4px #25452330}.club-overview .pitch-player small,.pitch.ratings .pitch-player small{font-size:12px;line-height:1.15;padding:1px 4px}
 @media(max-width:1329px){.club-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.club-overview{grid-template-columns:1fr}}
 
 /* Client-sorted tables: the header button shows its direction through aria-sort. */
@@ -53,12 +53,10 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 .honours-block .table-scroll{max-height:340px}.honours-block thead th{position:sticky;top:0}.honours-block .empty{padding:24px 14px}
 @media(max-width:1100px){.honours-blocks{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.honours-blocks{grid-template-columns:1fr}}
 
-/* Player attributes: one block per section; the main position's key attributes in bold with a dot; the rest folded away. */
-.attribute-group+.attribute-group,.attribute-others{margin-top:16px}
-.attribute-group h3{margin:0 0 4px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:650}
-.grid.thirds .attribute-group .attributes-grid,.attribute-others .attributes-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+/* Player attributes: one block per section (laid out in theme.css); the main position's key attributes in bold with a dot; the rest folded away. */
+.attribute-group h3{letter-spacing:1px;text-transform:uppercase}
 .attribute.key>span:first-child{font-weight:700}.attribute.key>span:first-child:after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--green);vertical-align:middle}
-.attribute-others summary{cursor:pointer;font-size:11px;color:var(--muted)}.attribute-others .attributes-grid{margin-top:8px}
+.attribute-others summary{cursor:pointer;font-size:11px;color:var(--muted)}
 
 /* Mon club: the inbox in a left column, the club's widgets on the rest of the screen. */
 .my-club{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:12px;align-items:start}
@@ -78,8 +76,8 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 @media(max-width:950px){.my-club{grid-template-columns:1fr}.my-club>.inbox{position:static;max-height:420px}}
 @media(max-width:650px){.my-club-widgets{grid-template-columns:1fr}.my-club-widgets .lineup-card{grid-row:auto}}
 
-/* Player page actions (offer, contract) and their dialogs. */
-.player-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* Player page actions (offer, contract), stacked at the foot of the rail, and their dialogs. */
+.player-actions{display:flex;flex-direction:column;gap:6px}
 .action-dialog{width:min(440px,calc(100vw - 32px))}.action-dialog label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);margin:12px 0}.action-dialog .card-body{padding:4px 0}
 .competition-badge{flex:none;padding:1px 5px;border-radius:4px;background:#e9effa;color:#4f6d9e;font-size:9px;font-weight:650;white-space:nowrap}
 

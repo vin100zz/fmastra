@@ -55,6 +55,7 @@ Le sélectionneur compose son équipe comme l'[entraîneur IA](#/aide/entraineur
 - **La fatigue et les blessures sont partagées** : un joueur rentre avec la condition que lui ont laissée ses matches, et une blessure en sélection le prive de son club.
 - **La forme évolue** aussi sur les notes obtenues en sélection, et ses minutes comptent pour sa [progression](#/aide/progression/la-progression) mensuelle.
 - **Les cartons et les suspensions sont séparés** : un carton en sélection ne compte pas en club, et inversement.
+- **Les statistiques sont séparées** elles aussi : matches, buts, passes et note moyenne de chaque édition se lisent dans la carrière de la fiche du joueur, sous ses clubs, sans entrer dans ses statistiques de saison.
 - **Une retraite** décidée pendant un tournoi attend la fin du rassemblement.
 
 ## Les renforts

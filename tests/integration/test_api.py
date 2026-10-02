@@ -185,6 +185,12 @@ def test_squad_shows_form_and_morale_with_where_it_drifts_and_why(client):
         assert row['morale_cause'] in (None, 'salaire', 'temps_de_jeu', 'ambition')
         if row['morale_cause'] == 'salaire': assert row['wage_satisfaction'] < 1
         if row['morale_cause'] == 'temps_de_jeu': assert row['playing_time_satisfaction'] < 1
+    # The player page reads the same outlook for one player, and the bounds his form keeps.
+    detail = client.get(f"/api/joueurs/{rows[0]['id']}").json()
+    assert all(detail[key] == rows[0][key] for key in ('morale_target', 'morale_cause', 'wage_satisfaction', 'playing_time_satisfaction'))
+    assert detail['form_bounds'] == [world.config.states.form.min, world.config.states.form.max]
+    free_agent = next(player for player in world.players.values() if player.club_id is None)
+    assert client.get(f"/api/joueurs/{free_agent.id}").json()['morale_cause'] is None
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 

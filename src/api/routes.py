@@ -745,7 +745,7 @@ def router(service: GameService) -> APIRouter:
                 if career:
                     result.update(asdict(career))
                     result["national_team_id"] = next((n.id for n in world.international.nations.values() if n.code == career.national_team), None)
-                    result["international_records"] = [asdict(row) for row in world.international.records.values() if row.player_id == player_id]
+                    result["international_records"] = v.international_records(world, player_id)
                 return result
             return v.player_detail(world, world.players[player_id])
 

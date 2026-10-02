@@ -12,7 +12,7 @@ from benchmarks.fixtures import synthetic_lineup
 from core.domain.clubs import Competition
 from core.domain.date import Date
 from core.domain.matches import MatchResult, MatchEvent
-from core.domain.world import SeasonRecord
+from core.domain.world import SeasonRecord, TransferRecord
 from core.engine.match import PossessionEngine
 from core.randomness import stream
 from core.world.application import apply
@@ -190,9 +190,43 @@ def test_career_names_league_then_european_code_and_falls_back_to_the_clubs_leag
     world.records = {"cup": SeasonRecord(world.season, player.id, 868, cup.id, matches=2)}
     row = career(world, player.id)["items"][0]
     assert row["competition"] == "Ligue 1" and row["competition_nation"] == "FRA" and row["matches"] == 2
+    # A season of European matches only still names the league his club plays in, ahead of the cup.
     world.records = {"europe": SeasonRecord(world.season, player.id, 868, -101, matches=2)}
     row = career(world, player.id)["items"][0]
-    assert (row["competition"], row["competition_nation"]) == ("C1", None)
+    assert (row["competition"], row["competition_nation"]) == ("Ligue 1 · C1", "FRA")
+
+
+def test_career_names_the_division_of_a_club_outside_the_simulated_leagues(imported):
+    world = deepcopy(imported, {id(imported.config): imported.config})
+    world.competitions[-103] = Competition(-103, "Ligue Europa", "EUR", 0, [], kind="europe", code="C3")
+    simulated = {league.division_id for league in world.config.world.competitions}
+    pools = {did: pool.nation for pool in world.config.world.promotion_relegation.reserves for did in pool.division_ids}
+    pyramids = {league.nation for league in world.config.world.competitions}
+    unranked = [club for club in world.clubs.values() if club.competition_id is None and club.player_ids
+                and club.division_id not in simulated and club.division_id not in pools]
+    outside = next(club for club in unranked if (club.cup_nation or club.nation) not in pyramids)
+    player = world.players[outside.player_ids[0]]
+    # No tier is known for a division outside the pyramids: it reads as the top flight of the club's nation.
+    world.records = {"europe": SeasonRecord(world.season, player.id, outside.id, -103, matches=8)}
+    row = career(world, player.id)["items"][0]
+    assert (row["competition"], row["competition_nation"], row["matches"]) == ("D1 · C3", outside.nation, 8)
+    # Without any match, the club he was bought from still names its division rather than nothing.
+    world.records = {}
+    world.transfers = [TransferRecord(world.date, player.id, outside.id, 868, 1_000_000, season=world.season)]
+    rows = {row["club"]["id"]: row for row in career(world, player.id)["items"]}
+    assert (rows[outside.id]["competition"], rows[outside.id]["competition_nation"]) == ("D1", outside.nation)
+    assert (rows[868]["competition"], rows[868]["competition_nation"]) == ("Ligue 1", "FRA")
+    # A club of a reserve pool plays one level under the pyramid of its nation.
+    reserve = next(club for club in world.clubs.values() if club.competition_id is None and club.player_ids and pools.get(club.division_id) == "FRA")
+    world.transfers = []
+    world.records = {"europe": SeasonRecord(world.season, reserve.player_ids[0], reserve.id, -103, matches=1)}
+    row = career(world, reserve.player_ids[0])["items"][0]
+    assert (row["competition"], row["competition_nation"]) == ("D4 · C3", "FRA")
+    # In a nation with a pyramid, a division the configuration does not name lies under its reserve pool.
+    deep = next(club for club in unranked if (club.cup_nation or club.nation) == "GER")
+    world.records = {"europe": SeasonRecord(world.season, deep.player_ids[0], deep.id, -103, matches=1)}
+    row = career(world, deep.player_ids[0])["items"][0]
+    assert (row["competition"], row["competition_nation"]) == ("D4 · C3", "GER")
 
 
 def test_reserve_identification():
