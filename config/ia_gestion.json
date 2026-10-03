@@ -107,6 +107,13 @@
     "multiplicateur_prix_max_acheteur": 1.35,
     "jours_relance_proposition": 14,
     "offres_max_proposition": 5,
+    "prets": {
+      "_note": "Un club de l'IA place en reserve ou prete un joueur d'au plus age_max_ia ans, dont le potentiel estime depasse le niveau d'au moins marge_potentiel_min et qui n'est ni titulaire ni premier remplacant a son poste. Chaque semaine de mercato, un tel joueur a probabilite_hebdomadaire de chances de chercher un club d'accueil ; un club de l'IA accueille au plus emprunts_max_ia joueurs.",
+      "age_max_ia": 21,
+      "marge_potentiel_min": 5.0,
+      "emprunts_max_ia": 2,
+      "probabilite_hebdomadaire": 0.5
+    },
     "marge_depassement_club": 10.0,
     "ambition_base": 0.6,
     "ambition_poids_ego": 0.4,

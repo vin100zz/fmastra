@@ -22,6 +22,6 @@ def approaching_clubs(world: World) -> list[Club]:
         if start <= world.date <= end: break
     else: return []
     return [club for club in world.clubs.values() if club.competition_id is None
-            and len(club.player_ids) < cfg.management.guardrails.max_squad
+            and club.squad_size < cfg.management.guardrails.max_squad
             and club.wage_cap - club.wage_bill >= cfg.management.budgets.wages.weekly_minimum
             and approach_day(world.seed, club.id, start, end, cfg.management.market.dormant_clubs.approach_probability) == world.date]

@@ -11,6 +11,7 @@ from core.engine.fitness import recovered_fitness
 from core.math import clamp, weighted_choice
 from core.randomness import stream
 from .events import PlayerChanged, MatchPlayed
+from .reserves import playing_floor, reserve_days, reserve_factor
 
 
 def draw_injury(date: Date, cfg: Config, rng: Random) -> Injury:
@@ -43,10 +44,30 @@ def daily_player_events(world: World) -> list[PlayerChanged]:
     return events
 
 
+def playing_factor(world: World, player: Player, start: Date) -> float:
+    """What a player's month, begun on `start`, is worth for his progression, from 0 to 1.
+
+    In a club that plays: a floor set by its training, raised towards 1 by the minutes he played, each one counting
+    less than the one before; a month in the reserve is worth at least the reserve's own factor, in proportion to the
+    days he spent there. Anywhere else, a flat factor."""
+    cfg = world.config
+    rules = cfg.demography.progression
+    club = world.clubs.get(player.club_id) if player.club_id is not None else None
+    if club is None or club.competition_id is None: return rules.external_playing_factor
+    floor = playing_floor(club, cfg)
+    played = floor + (1 - floor) * min(player.monthly_minutes / rules.monthly_reference_minutes, 1) ** rules.minutes_exponent
+    days = reserve_days(player, start, world.date)
+    if not days: return played
+    share = min(1, days / (world.date.ordinal() - start.ordinal()))
+    return max(played, floor + max(0, reserve_factor(player, club, cfg) - floor) * share)
+
+
 def monthly_player_events(world: World) -> list[PlayerChanged]:
     cfg, rng = world.config, world.rngs["progression"]
     rules = cfg.demography.progression
     changes = []
+    # The month that ends today, the 1st.
+    start = Date(world.date.year - (world.date.month == 1), (world.date.month - 2) % 12 + 1, 1)
     # An older embedded configuration has no decline weight for attributes added since: they do not decline.
     decay_vectors = {position: tuple(rules.decline_weights.get(name, 0.0) / sum(weight * rules.decline_weights[key]
                        for key, weight in cfg.attributes.overall[position].items()) for name in ATTRIBUTE_NAMES)
@@ -54,9 +75,7 @@ def monthly_player_events(world: World) -> list[PlayerChanged]:
     for player in world.players.values():
         age = player.born.age_on(world.date)
         row = next((row for row in rules.age_curve if age <= row.max_age), rules.age_curve[-1])
-        active = player.club_id is not None and world.clubs[player.club_id].competition_id is not None
-        playing = (rules.min_playing_factor + (1 - rules.min_playing_factor) * min(player.monthly_minutes / rules.monthly_reference_minutes, 1)) if active else rules.external_playing_factor
-        growth = row.factor * playing * max(0, player.potential - player.rating) / cfg.attributes.bounds.max * rules.amplitude
+        growth = row.factor * playing_factor(world, player, start) * max(0, player.potential - player.rating) / cfg.attributes.bounds.max * rules.amplitude
         decline_age = age - rules.decline.goalkeeper_age_shift if player.position == Position.GOALKEEPER else age
         decay = next((row.points_per_month for row in rules.decline.age_curve if decline_age <= row.max_age), rules.decline.age_curve[-1].points_per_month)
         noise = rng.gauss(0, rules.noise)

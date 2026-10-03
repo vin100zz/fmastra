@@ -10,6 +10,7 @@ from collections import Counter
 from core.ai.market import market_value, expected_wage, contract_for, nominal_size, squad_quality
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
 from .human import is_human_club, listed_price
+from .reserves import accepts_reserve, in_reserve
 from .transfer_rules import frustration, recent_arrival_ids, season_arrivals, wants_to_leave
 
 
@@ -28,12 +29,14 @@ def games_by_club(world: World) -> Counter:
 
 
 def position_ranks(world: World, club: Club) -> dict[int, int]:
-    """Each player's rank by level among his club's players of his position, 0 for the best."""
+    """Each player's rank by level among his club's first-team players of his position, 0 for the best.
+
+    A player in the reserve takes no rank from the others: his own is the one he would have in the first team."""
     ranks, counts = {}, Counter()
     for pid in sorted(club.player_ids, key=lambda pid: (-world.players[pid].rating, pid)):
-        position = world.players[pid].position
-        ranks[pid] = counts[position]
-        counts[position] += 1
+        player = world.players[pid]
+        ranks[pid] = counts[player.position]
+        counts[player.position] += not in_reserve(player)
     return ranks
 
 
@@ -60,6 +63,8 @@ def contentment(world: World, player: Player, club: Club, rank: int, games: int,
     expected_share = 1 / (rank + 1)
     expected_minutes = (games if club.competition_id else 0) * cfg.engine.timing.match_seconds / 60 * expected_share
     playing_satisfaction = min(1, minutes / expected_minutes) if expected_minutes else 1
+    # The reserve plays no match: a step for a young player who would not start, nothing at all for anyone else.
+    if in_reserve(player): playing_satisfaction = 1.0 if accepts_reserve(player, club, rank, world) else 0.0
     satisfaction = rules.wage_weight * salary_satisfaction + rules.playing_time_weight * playing_satisfaction + rules.club_weight * min(1, club.reputation / max(1, player.rating))
     moral = cfg.states.moral
     target = moral.playing_time_weight * playing_satisfaction + moral.contract_weight * salary_satisfaction + moral.results_weight * satisfaction
@@ -87,6 +92,8 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
         mood = contentment(world, player, club, rank, *arrivals.get(player.id, (games[club.id], player.season_minutes)))
         expected, satisfaction, moral = mood.expected_wage, mood.satisfaction, cfg.states.moral
         events.append(PlayerChanged(player.id, morale=clamp(player.morale + moral.drift_speed * (mood.morale_target - player.morale), moral.min, moral.max)))
+        # The club a player is lent to has no say on his contract, and his owner waits for him to be back.
+        if player.loan is not None: continue
         if remaining >= rules.renewal_months and satisfaction >= rules.satisfaction_threshold: continue
         # A player who wants a bigger club does not extend; he plays out his contract or is sold.
         if wants_to_leave(player, world): continue

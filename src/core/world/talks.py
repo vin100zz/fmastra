@@ -89,13 +89,15 @@ def window_end(world: World) -> Date | None:
 def opening_obstacle(world: World, player: Player) -> str | None:
     """Why the human club cannot make an offer for this player today, or None."""
     club = world.clubs[world.controlled_club_id]
-    if player.club_id == club.id: return "Ce joueur est déjà dans votre effectif."
+    if club.id in (player.club_id, player.owner_id): return "Ce joueur est déjà dans votre effectif."
     if window_end(world) is None: return "Le mercato est fermé."
     closed = world.talks_closed.get(player.id)
     if closed is not None and closed > world.date: return f"Discussions rompues jusqu'au {closed.day_month()}."
     current = talks_for(world, player.id)
     if current is not None and current.stage != FEE_TALKS: return "Une négociation est déjà en cours."
     seller = world.clubs.get(player.club_id) if player.club_id is not None else None
+    if player.loan is not None:
+        return f"En prêt jusqu'au {player.loan.end.day_month()} {player.loan.end.year}."
     if seller is not None and player.id in recent_arrival_ids(world):
         return f"Intransférable jusqu'au {free_to_move_on(world, player.id).day_month()} : il vient d'arriver."
     if seller is not None and not can_sell(player, seller, world): return f"{seller.name} ne peut pas s'en séparer."

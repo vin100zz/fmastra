@@ -24,6 +24,9 @@ def movements(world: World, club_id: int, season: int | None, page: int) -> dict
         "arrivals": [row for row in regular if row["target"] and row["target"]["id"] == club_id],
         "departures": [row for row in regular if row["source"] and row["source"]["id"] == club_id],
         **{kind: [row for row in rows if row["kind"] == kind] for kind in ("release", "retirement", "academy", "departure_unknown")},
+        # Players lent or borrowed this season; their returns are not listed.
+        "loans_in": [row for row in rows if row["kind"] == "loan" and row["target"] and row["target"]["id"] == club_id],
+        "loans_out": [row for row in rows if row["kind"] == "loan" and row["source"] and row["source"]["id"] == club_id],
     }
     return {**v.paginate(regular, page), **nav, "sections": sections,
             "arrival_total": sum(row['fee'] for row in sections['arrivals']),
@@ -32,7 +35,8 @@ def movements(world: World, club_id: int, season: int | None, page: int) -> dict
 
 
 TRANSFER_KINDS = {'transfer', 'release', 'departure_unknown'}
-MOVEMENT_KINDS = {'transfer': TRANSFER_KINDS, 'retirement': {'retirement'}, 'academy': {'academy'}}
+# The list of a season's transfers shows the loans too; its figures (`market_summary`) leave them out.
+MOVEMENT_KINDS = {'transfer': TRANSFER_KINDS | {'loan'}, 'retirement': {'retirement'}, 'academy': {'academy'}}
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,7 +46,7 @@ class MovementFilter:
     today, his potential and whether he would join the human club."""
     search: str = ''  # normalized, in the player's name or a club's
     window: str | None = None  # 'ete' or 'hiver'
-    nature: str | None = None  # 'payant' or 'libre'
+    nature: str | None = None  # 'payant', 'libre' or 'pret'
     competition_id: int | None = None  # the league a club of the movement plays in today
     positions: frozenset[str] = frozenset()  # the player's position: today for a transfer, on the day for the others
     age_min: int = 0
@@ -86,7 +90,7 @@ def kept(world: World, row, chosen: MovementFilter) -> bool:
     clubs = [world.clubs[club_id] for club_id in (row.source_id, row.target_id) if club_id in world.clubs]
     if not named(world, row, (row.source_id, row.target_id), chosen.search): return False
     if chosen.window and summer_move(world, row.date) != (chosen.window == 'ete'): return False
-    if chosen.nature and (row.fee > 0) != (chosen.nature == 'payant'): return False
+    if chosen.nature and chosen.nature != ('pret' if row.kind == 'loan' else 'payant' if row.fee > 0 else 'libre'): return False
     if chosen.competition_id is not None and all(club.competition_id != chosen.competition_id for club in clubs): return False
     if chosen.club_id is not None and chosen.club_id not in (row.source_id, row.target_id): return False
     if chosen.positions and (player is None or player.position not in chosen.positions): return False

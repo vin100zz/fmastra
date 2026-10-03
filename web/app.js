@@ -277,6 +277,8 @@ main.addEventListener('submit',async event=>{event.preventDefault();const elemen
   await negotiate(kind,{joueur_id:Number(data.get('joueur_id')),[kind==='salaire'?'salaire_hebdo':'indemnite']:amount});
  }
  else if(element.dataset.sale)await sell(element.dataset.sale,{joueur_id:Number(data.get('joueur_id')),indemnite:Math.round(Number(data.get('montant'))*1e6)});
+ else if(element.dataset.loan==='preter')await action('/partie/preter',{joueur_id:Number(data.get('joueur_id')),club_id:Number(data.get('club_id')),duree:data.get('duree')},'Joueur prêté.');
+ else if(element.dataset.loan==='emprunter')await action('/partie/emprunter',{joueur_id:Number(data.get('joueur_id')),duree:data.get('duree')},'Joueur emprunté.');
 });
 let filterTimer;
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});
@@ -285,6 +287,7 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
  if(button.dataset.command==='liste-transferts')await action('/partie/liste-transferts',{joueur_id:Number(button.dataset.player),indemnite:null},'Joueur retiré de la liste des transferts.');
+ if(button.dataset.command==='reserve')await action('/partie/reserve',{joueur_id:Number(button.dataset.player),reserve:Boolean(button.dataset.reserve)},button.dataset.reserve?'Joueur envoyé en réserve.':'Joueur rappelé en équipe première.');
  if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
  if(button.id==='retry')render();});
 // A card head with a single link ("Voir →") follows it wherever it is clicked.

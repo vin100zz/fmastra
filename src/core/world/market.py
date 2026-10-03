@@ -58,7 +58,7 @@ def offer_limit(world: World, club: Club, contract: Contract, fee: int, reserved
     The human club may run any number of talks at once."""
     cfg = world.config
     if not is_human_club(world, club.id) and len(reserved) >= cfg.management.market.max_negotiations: return "negotiations"
-    if len(club.player_ids) + len(reserved) >= cfg.management.guardrails.max_squad: return "squad"
+    if club.squad_size + len(reserved) >= cfg.management.guardrails.max_squad: return "squad"
     if sum(offer.ceiling for offer in reserved) + fee > club.transfer_budget: return "budget"
     if club.balance - sum(offer.ceiling for offer in reserved) - fee < cfg.management.guardrails.min_balance: return "balance"
     if sum(offer.contract.weekly_wage for offer in reserved) + contract.weekly_wage + club.wage_bill > club.wage_cap: return "wages"

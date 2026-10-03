@@ -27,11 +27,13 @@ class SaleRefused(ValueError):
 
 
 NOT_OWN = "Ce joueur n'est pas dans votre effectif."
+ON_LOAN = "Ce joueur vous est prêté : il n'est pas à vendre."
 
 
 def set_listing(world: World, player: Player, fee: int | None) -> None:
     """Puts a player of the human club on its transfer list at this fee, changes the fee, or takes him off with None."""
     if not is_human_club(world, player.club_id): raise SaleRefused(NOT_OWN)
+    if player.loan is not None: raise SaleRefused(ON_LOAN)
     if fee is None: world.transfer_list.pop(player.id, None)
     else: world.transfer_list[player.id] = fee
 
@@ -39,6 +41,7 @@ def set_listing(world: World, player: Player, fee: int | None) -> None:
 def offer_obstacle(world: World, player: Player) -> str | None:
     """Why the human club cannot offer this player to the clubs today, or None."""
     if not is_human_club(world, player.club_id): return NOT_OWN
+    if player.loan is not None: return ON_LOAN
     if window_end(world) is None: return "Le mercato est fermé."
     if player.id in recent_arrival_ids(world):
         return f"Intransférable jusqu'au {free_to_move_on(world, player.id).day_month()} : il vient d'arriver."

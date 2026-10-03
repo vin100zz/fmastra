@@ -26,6 +26,22 @@ class DemographyConfigProgressionDecline:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class DemographyConfigProgressionTrainingFloor:
+    """The playing factor of a player who did not play, by the training rating of his club."""
+    lowest: float = Field(default=0.20, alias="note_1")
+    highest: float = Field(default=0.50, alias="note_20")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class DemographyConfigProgressionReserve:
+    """What a club's reserve gives a player: its playing factor, who accepts it, and the level it stops helping at."""
+    factor: float = Field(default=0.70, alias="facteur")
+    max_age: int = Field(default=21, alias="age_max")
+    level_margin: float = Field(default=6.0, alias="marge_niveau")
+    fade_span: float = Field(default=10.0, alias="plage_extinction")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class DemographyConfigProgression:
     evaluation: str = Field(alias="evaluation")
     monthly_reference_minutes: int = Field(alias="minutes_reference_par_mois")
@@ -38,6 +54,11 @@ class DemographyConfigProgression:
     decline_weights: FrozenMap[float] = Field(alias="poids_declin_par_attribut")
     potential_cap: bool = Field(alias="plafonne_par_potentiel")
     decline_cap: bool = Field(alias="declin_plafonne")
+    # Concave minutes, training floor and reserve: the defaults are what a save made before them receives.
+    minutes_exponent: float = Field(default=0.5, alias="exposant_minutes")
+    training_floor: DemographyConfigProgressionTrainingFloor = Field(
+        default_factory=DemographyConfigProgressionTrainingFloor, alias="plancher_entrainement")
+    reserve: DemographyConfigProgressionReserve = Field(default_factory=DemographyConfigProgressionReserve, alias="reserve")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

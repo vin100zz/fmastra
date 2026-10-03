@@ -11,6 +11,9 @@ const transferRows=(rows,incoming)=>sortableTable(['DATE','JOUEUR',incoming?'PRO
  date(row.date),playerLink(row.player_id,row.player),clubLink(incoming?row.source:row.target),row.fee?money(row.fee):'Libre (0 €)',
 ]),rows.map(row=>[row.date,row.player,(incoming?row.source:row.target)?.name??'Libre',row.fee||0]));
 
+// Loans carry no fee: the other club, and nothing else.
+const loanRows=(rows,incoming)=>sortableTable(['DATE','JOUEUR',incoming?'PRÊTÉ PAR':'PRÊTÉ À'],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player),clubLink(incoming?row.source:row.target)]),rows.map(row=>[row.date,row.player,(incoming?row.source:row.target)?.name??'']));
+
 export function movementsHistory(data){
  const playerRows=(rows,withAge=false)=>rows.length?sortableTable(['DATE','JOUEUR',...(withAge?['ÂGE']:[])],rows.map(row=>[date(row.date),playerLink(row.player_id,row.player),...(withAge?[row.age==null?'<span title="Âge non archivé">—</span>':`${row.age} ans`]:[])]),rows.map(row=>[row.date,row.player,...(withAge?[row.age]:[])])):empty('Aucun mouvement enregistré pour cette saison.');
  const groups=data.sections;
@@ -18,9 +21,11 @@ export function movementsHistory(data){
  const total=(key,rows)=>money(data[key]??rows.reduce((sum,row)=>sum+(row.fee||0),0));
  return seasonNavigation(data)+partial+`<p class="muted">Âges au moment du départ ou de la promotion.</p><div class="transfer-columns"><section aria-label="Arrivées"><div class="movement-heading"><h2>Arrivées</h2><strong>Total : ${total('arrival_total',groups.arrivals)}</strong></div>`+
   card(`Transferts entrants · ${groups.arrivals.length}`,transferRows(groups.arrivals,true))+
+  (groups.loans_in?.length?card(`Prêts entrants · ${groups.loans_in.length}`,loanRows(groups.loans_in,true)):'')+
   card(`Jeunes promus du centre de formation · ${groups.academy.length}`,playerRows(groups.academy,true))+
   `</section><section aria-label="Départs"><div class="movement-heading"><h2>Départs</h2><strong>Total : ${total('departure_total',groups.departures)}</strong></div>`+
   card(`Transferts sortants · ${groups.departures.length}`,transferRows(groups.departures,false))+
+  (groups.loans_out?.length?card(`Prêts sortants · ${groups.loans_out.length}`,loanRows(groups.loans_out,false)):'')+
   card(`Départs libres en fin de contrat · ${groups.release.length}`,playerRows(groups.release))+
   card(`Départs à la retraite · ${groups.retirement.length}`,playerRows(groups.retirement,true))+
   (groups.departure_unknown.length?card('Anciens départs — motif non archivé',playerRows(groups.departure_unknown)):'')+'</section></div>';

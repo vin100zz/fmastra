@@ -8,7 +8,7 @@ from typing import Any
 
 from core.config.model import Config
 from core.domain.date import Date
-from core.domain.players import Attributes, Contract, Discipline, Injury, Player, Position
+from core.domain.players import Attributes, Contract, Discipline, Injury, Loan, Player, Position
 from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition
 from core.domain.matches import (Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats, SubmittedLineup,
                                  LiveOrder, LiveMatchRecord)
@@ -18,7 +18,7 @@ from core.domain.finance import FinanceSeason, MonthlyFinance
 from core.domain.international import NationalTeam, InternationalEdition, NationalCamp, InternationalRecord, InternationalState, InternationalCareer
 from infrastructure.config.loader import config_payload, decode_config
 
-ENTITIES = {cls.__name__: cls for cls in (Date, Attributes, Contract, Discipline, Injury, Player,
+ENTITIES = {cls.__name__: cls for cls in (Date, Attributes, Contract, Discipline, Injury, Loan, Player,
             Club, ClubPersonality, Competition, Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats,
             World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot, TransferOffer, FinanceSeason, MonthlyFinance,
             SubmittedLineup, RenewalProposal, LiveOrder, LiveMatchRecord)}
@@ -77,6 +77,7 @@ def decode(value: Any) -> Any:
             for name in ("training_facilities", "youth_recruitment", "home_kit_id",
                         "home_kit_major_color", "home_kit_minor_color", "home_kit_third_color"):
                 value["fields"].setdefault(name, None)
+            value["fields"].setdefault("loaned_ids", [])
         if cls is Player:
             for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),
                                   ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []}),
@@ -85,6 +86,8 @@ def decode(value: Any) -> Any:
             for name in ("source_current_ability", "source_potential_ability"):
                 value["fields"].setdefault(name, None)
             value["fields"].setdefault("position_ratings", {"$map": []})
+            for name, default in (("loan", None), ("reserve_since", None), ("reserve_days", 0)):
+                value["fields"].setdefault(name, default)
         if cls is World and "offers" not in value["fields"]:
             value["fields"]["offers"] = {"$map": []}
         if cls is InternationalState:

@@ -1,6 +1,6 @@
 """The only entry point for applying decisions to an existing world."""
-from core.domain.date import readable_duration
-from core.domain.players import Discipline
+from core.domain.date import Date, readable_duration
+from core.domain.players import Discipline, Loan
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, TransferRecord, SeasonRecord, MovementSnapshot
 from core.domain.matches import MatchResult, stored_events
@@ -9,7 +9,7 @@ from .human import record as add_news
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
                      FinancePosted, BudgetRenewed, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
-                     OffersUpdated, RenewalProposed)
+                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded)
 
 
 def movement_snapshot(world: World, player) -> MovementSnapshot:
@@ -50,6 +50,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             add_news(world, "injury_end", f"{player.name} est de nouveau disponible", player.club_id, player.id)
         if event.reset_month:  # The monthly progression.
             player.monthly_minutes = 0
+            player.reserve_days = 0
             world.record_level(player)
     elif isinstance(event, MatchPlayed):
         _apply_match(world, event)
@@ -61,10 +62,14 @@ def apply(world: World, event: WorldEvent) -> bool:
         # A retired player leaves the world: his retirement keeps who he was, as a promotion does.
         snapshot = movement_snapshot(world, player) if event.retirement else None
         if source is not None:
+            world.clubs[source].player_ids.remove(player.id)
+            # A player on loan leaves the club that owns him and pays him.
+            source = player.owner_id
             club = world.clubs[source]
-            club.player_ids.remove(player.id)
             club.wage_bill -= player.contract.weekly_wage
-        player.club_id, player.contract = None, None
+            if player.loan is not None: club.loaned_ids.remove(player.id)
+        player.club_id, player.contract, player.loan = None, None, None
+        _leave_reserve(player)
         if event.retirement:
             from core.domain.international import InternationalCareer
             world.international.retired_careers[player.id] = InternationalCareer(
@@ -84,7 +89,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         if player.id in world.players or player.id in world.retired: raise ValueError("Reused player ID")
         if player.club_id is not None:
             club = world.clubs[player.club_id]
-            if len(club.player_ids) >= world.config.management.guardrails.max_squad or club.wage_bill + player.contract.weekly_wage > club.wage_cap:
+            if club.squad_size >= world.config.management.guardrails.max_squad or club.wage_bill + player.contract.weekly_wage > club.wage_cap:
                 return False
             club.player_ids.append(player.id)
             club.wage_bill += player.contract.weekly_wage
@@ -98,6 +103,16 @@ def apply(world: World, event: WorldEvent) -> bool:
             text = f"{player.name} rejoint le centre de formation"
             world.journal.append(JournalEntry(world.date, "academy", text, player.club_id, player.id))
             add_news(world, "academy", text, player.club_id, player.id)
+    elif isinstance(event, ReserveChanged):
+        player = world.players[event.player_id]
+        if event.reserve:
+            if player.reserve_since is None: player.reserve_since = world.date
+        else:
+            _leave_reserve(player, world.date)
+    elif isinstance(event, LoanStarted):
+        return _start_loan(world, event)
+    elif isinstance(event, LoanEnded):
+        _end_loan(world, event)
     elif isinstance(event, FinancePosted):
         club = world.clubs[event.club_id]
         book_daily_cash(world, club, event.change)
@@ -167,6 +182,8 @@ def apply(world: World, event: WorldEvent) -> bool:
 def _apply_signing(world: World, event: PlayerSigned) -> bool:
     player = world.players.get(event.player_id)
     if player is None or player.club_id != event.source_id: return False
+    # A player on loan neither moves nor signs again before he is back.
+    if player.loan is not None: return False
     club = world.clubs[event.target_id]
     guard = world.config.management.guardrails
     old_wage = player.contract.weekly_wage if event.renewal and player.contract else 0
@@ -176,12 +193,12 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         club.wage_bill += event.contract.weekly_wage - old_wage
         player.contract = event.contract
         return True
-    if event.source_id == event.target_id or len(club.player_ids) >= guard.max_squad: return False
+    if event.source_id == event.target_id or club.squad_size >= guard.max_squad: return False
     if player.id in recent_arrival_ids(world): return False
     reservations = [offer for offer in world.offers.values() if offer.target_id == club.id and offer.player_id != player.id]
     reserved_money = sum(offer.ceiling for offer in reservations)
     if event.fee + reserved_money > club.transfer_budget or club.balance - event.fee - reserved_money < guard.min_balance: return False
-    if len(club.player_ids) + len(reservations) >= guard.max_squad: return False
+    if club.squad_size + len(reservations) >= guard.max_squad: return False
     if club.wage_bill + event.contract.weekly_wage + sum(offer.contract.weekly_wage for offer in reservations) > club.wage_cap: return False
     if event.source_id is not None:
         seller = world.clubs[event.source_id]
@@ -195,6 +212,7 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         seller.transfer_budget += event.fee
         seller.season_sales += event.fee
     player.club_id, player.contract = club.id, event.contract
+    _leave_reserve(player)
     club.player_ids.append(player.id)
     club.wage_bill += event.contract.weekly_wage
     if event.fee: book_cash(world, club, transfer_index=len(world.transfers), transfer_expenses=event.fee)
@@ -210,6 +228,49 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     world.pending_renewals.pop(player.id, None)
     _off_sale(world, player.id)
     return True
+
+
+def _leave_reserve(player, today: Date | None = None) -> None:
+    """Back in a first team. Called back by his club (`today` given), the days of the month he spent in its reserve
+    still count for his progression; leaving the club, they are lost."""
+    if today is None:
+        player.reserve_days = 0
+    elif player.reserve_since is not None:
+        player.reserve_days += today.ordinal() - max(player.reserve_since, Date(today.year, today.month, 1)).ordinal()
+    player.reserve_since = None
+
+
+def _start_loan(world: World, event: LoanStarted) -> bool:
+    player = world.players.get(event.player_id)
+    if player is None or player.club_id is None or player.loan is not None or player.club_id == event.target_id: return False
+    owner, club = world.clubs[player.club_id], world.clubs[event.target_id]
+    if club.squad_size >= world.config.management.guardrails.max_squad or player.contract.end <= event.end: return False
+    owner.player_ids.remove(player.id)
+    owner.loaned_ids.append(player.id)
+    club.player_ids.append(player.id)
+    player.club_id, player.loan = club.id, Loan(owner.id, world.date, event.end)
+    _leave_reserve(player)
+    world.transfers.append(TransferRecord(world.date, player.id, owner.id, club.id, 0, "loan", world.season))
+    text = f"{player.name} est prêté à {club.name} jusqu'au {event.end.day_month()} {event.end.year}"
+    world.journal.append(JournalEntry(world.date, "loan", text, club.id, player.id))
+    for club_id in (owner.id, club.id): add_news(world, "loan", text, club_id, player.id)
+    # His owner no longer sells him nor extends his contract while he is away.
+    world.pending_renewals.pop(player.id, None)
+    _off_sale(world, player.id)
+    world.offers = {key: offer for key, offer in world.offers.items() if offer.player_id != player.id}
+    return True
+
+
+def _end_loan(world: World, event: LoanEnded) -> None:
+    player = world.players[event.player_id]
+    club, owner = world.clubs[player.club_id], world.clubs[player.loan.parent_id]
+    club.player_ids.remove(player.id)
+    owner.loaned_ids.remove(player.id)
+    owner.player_ids.append(player.id)
+    player.club_id, player.loan = owner.id, None
+    world.transfers.append(TransferRecord(world.date, player.id, club.id, owner.id, 0, "loan_return", world.season))
+    text = f"{player.name} revient de son prêt à {club.name}"
+    for club_id in (owner.id, club.id): add_news(world, "loan_return", text, club_id, player.id)
 
 
 def _off_sale(world: World, player_id: int) -> None:

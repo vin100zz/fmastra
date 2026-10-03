@@ -20,6 +20,8 @@ from .human import is_human_club, pending_lineup_match
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .talks import progress_talks
+from .loans import return_events, run_loan_round
+from .reserves import reserve_events
 from .promotion import promotion_event
 from .reputation import reputation_events
 from .squads import complete_squads
@@ -123,6 +125,7 @@ def open_day(world: World) -> None:
     review = cfg.world.key_dates.population_review
     from .international import prepare_international_day
     apply(world, DateAdvanced(world.date.add_days(1)))
+    for event in return_events(world): apply(world, event)
     for event in expiry_events(world): apply(world, event)
     for event in daily_player_events(world): apply(world, event)
     prepare_international_day(world)
@@ -130,10 +133,13 @@ def open_day(world: World) -> None:
         for event in monthly_player_events(world): apply(world, event)
     if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
         annual_review(world)
-    if world.date.ordinal() % cfg.management.market.weekly_review_days == 0:
+    weekly = world.date.ordinal() % cfg.management.market.weekly_review_days == 0
+    if weekly:
         for event in renewal_events(world): apply(world, event)
+        for event in reserve_events(world): apply(world, event)
     progress_talks(world)
     open_market = market_window(world) is not None
+    if weekly: run_loan_round(world)
     for _ in range(cfg.world.market.rounds_per_day):
         rejected = settle_offers(world, open_market)
         open_offers(world, open_market, rejected)

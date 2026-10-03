@@ -68,6 +68,20 @@ export async function clubsScreen(params,leagues=[]){
  return toolbar+`<div class="split${side?' with-side':''}" data-fit="clubs" data-rows="${rows??''}">${list}${side}</div>`;
 }
 
+// The squad in two lists: the first team, then the reserve, where the players the club has lent stand too. The user's club
+// moves a player from one to the other with the button closing his row.
+function squadCards(data,params,human){
+ const view=params.get('vue'),sorted=params.get('tri')||'position',order=params.get('ordre')||'asc';
+ const apart=player=>player.reserve||player.away,first=data.items.filter(player=>!apart(player)),second=data.items.filter(apart);
+ const move=player=>player.loan?'':`<button type="button" class="row-action" data-command="reserve" data-player="${player.id}" data-reserve="${player.reserve?'':'1'}" title="${player.reserve?'Rappeler en équipe première':'Envoyer en réserve'}" aria-label="${player.reserve?'Rappeler en équipe première':'Envoyer en réserve'}">${player.reserve?'↑':'↓'}</button>`;
+ const list=items=>playerTable({items},false,sorted,order,{view,pager:false,...(human?{action:move}:{})});
+ const count=(items,one,many)=>`${items.length} ${items.length>1?many:one}`;
+ const lent=second.filter(player=>player.away),kept=second.filter(player=>!player.away);
+ const tools=`<div class="card-tools">${playerViewSwitch(view,sorted,order)}<span class="legend">${['GB','DC','MC','BU'].map(position).join('')}</span></div>`;
+ const reserve=second.length?card(`Réserve · ${count(kept,'joueur','joueurs')}${lent.length?` · ${count(lent,'prêté','prêtés')}`:''}`,list(second)):human?card('Réserve · 0 joueur',''):'';
+ return card(`Équipe première · ${count(first,'joueur','joueurs')}`,list(first),tools)+reserve;
+}
+
 export async function clubScreen(id,section,params){
  const [club,neighbours,state]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/navigation`),api('/monde/etat')]); section=section||'squad';
  // The club run by the user also gets its lineup form.
@@ -77,7 +91,7 @@ export async function clubScreen(id,section,params){
  const crestStyle=major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:'';
  const title=`<div class="page-heading"><div class="identity">${clubNavigation(neighbours,section,section==='squad'&&params.get('vue')?query({vue:params.get('vue')}):'')}<div class="crest"${crestStyle}>${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div><div><span class="eyebrow">${nationBadge(club.nation_code,{full:true})}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : information uniquement, sans effet sur la simulation">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
  let content='';
- if(section==='squad'){const [data,overview]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`)]);const view=params.get('vue'),sorted=params.get('tri')||'position',order=params.get('ordre')||'asc'; content=clubOverview(club,overview)+card(`Effectif · ${club.squad_size} joueurs`,playerTable(data,false,sorted,order,{view}),`<div class="card-tools">${playerViewSwitch(view,sorted,order)}<span class="legend">${['GB','DC','MC','BU'].map(position).join('')}</span></div>`);}
+ if(section==='squad'){const [data,overview]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`)]);content=clubOverview(club,overview)+squadCards(data,params,human);}
  else if(section==='composition'&&human)content=await compositionContent(params,state);
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${params}`); content=card('Calendrier de la saison',fixtures(data,true)+pager(data));}
  else if(section==='transfers'){const data=await api(`/clubs/${id}/transferts?${params}`);content=movementsHistory(data);}
@@ -162,7 +176,8 @@ export async function playersScreen(params){
   +(recruiting?rangeMenu(base,params,'Prétentions',[['pretentions_max','max','min="0"']],{unit:'€',hint:'€/mois'}):'')
   +choiceSelect(params,'contrat','Contrat',[['libre','Agents libres'],['sous_contrat','Sous contrat']])
   +choiceSelect(params,'statut_club','Clubs',[['actif','Clubs actifs'],['dormant','Clubs dormants']])
-  +(recruiting?choiceSelect(params,'interesse','Intérêt',[['oui','Joueurs intéressés'],['non','Joueurs non intéressés']]):'')
+  +choiceSelect(params,'liste','Listés',[['transfert','Listés pour un transfert'],['pret','Listés pour un prêt']])
+  +(recruiting?choiceSelect(params,'interesse','Intérêt',[['oui','Intéressés par un transfert'],['pret','Intéressés par un prêt'],['non','Non intéressés']]):'')
   +`${resetButton(params)}</form>`;
  // On a wide screen a row is picked, the first one by default, and previewed beside the list.
  const selected=wide&&data.items.length?(data.items.find(player=>String(player.id)===params.get('sel'))||data.items[0]).id:null;

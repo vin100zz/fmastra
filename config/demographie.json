@@ -4,6 +4,10 @@
     "minutes_reference_par_mois": 400,
     "facteur_jeu_min": 0.35,
     "facteur_jeu_dormants_et_libres": 0.65,
+    "_note": "facteur de jeu = plancher + (1 - plancher) * (minutes du mois / reference) ^ exposant_minutes. Le plancher suit la note d'entrainement du club (1 a 20), de plancher_entrainement.note_1 a note_20 ; facteur_jeu_min pour un club sans note. Un joueur en reserve recoit au moins plancher + (reserve.facteur - plancher) * extinction * part du mois passee en reserve, l'extinction allant de 1 a 0 quand son niveau monte de (niveau vise par le club - marge_niveau - plage_extinction) a (niveau vise - marge_niveau).",
+    "exposant_minutes": 0.5,
+    "plancher_entrainement": {"note_1": 0.20, "note_20": 0.50},
+    "reserve": {"facteur": 0.70, "age_max": 21, "marge_niveau": 6.0, "plage_extinction": 10.0},
     "amplitude": 2.2,
     "bruit_ecart_type": 0.25,
     "courbe_age": [

@@ -176,6 +176,10 @@ export const mainNation = codes => {
  const [main,...others]=codes&&codes.length?codes:['—'];
  return `${nationBadge(main)}${others.length?` <span class="muted" title="${escape(others.map(nationName).join(', '))}">+${others.length}</span>`:''}`;
 };
+// A loan beside a player's name; its tooltip names the two clubs and the day he goes back.
+export const loanTag = player => player.loan ? `<span class="tag loan" title="${escape(`Prêté par ${player.loan.parent?.name} à ${player.loan.club?.name} jusqu’au ${date(player.loan.end)}`)}">Prêt</span>` : '';
+// What a club would let a player go for, or what he would come for: a transfer, a loan, both, or `none`.
+export const marketTags = (transfer, loan, none='—') => transfer||loan ? `<span class="tags">${transfer?'<span class="tag">Transfert</span>':''}${loan?'<span class="tag loan">Prêt</span>':''}</span>` : none;
 const textColumns=['position','name','nation','club','academy_club'];
 const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA'};
 const LIST_SECTIONS=['general','defense','attack','goalkeeper'].map(key=>ATTRIBUTE_SECTIONS.find(section=>section.key===key));
@@ -202,7 +206,7 @@ function playerColumns(view, withClub, options) {
  const identity=[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
  if(view==='attributs')return [...identity,...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
  if(view==='jeu')return [...identity,...COMPOSITE_SECTIONS.flatMap(section=>section.composites.map(key=>[key,compositeHeader(key),section.title]))];
- return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.']]:[]),['wage','SALAIRE / MOIS'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.season?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.'],['listed','LISTÉ']]:[]),['wage','SALAIRE / MOIS'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.season?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
 }
 // Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
 // view opens on its own default sort.
@@ -217,11 +221,11 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  const columns=playerColumns(options.view,withClub,options);
  const rows=data.items.map(player=>{
   const cells={
-   position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>`,
+   position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>${loanTag(player)}`,
    nation:mainNation(player.nationalities||[player.nation]),
    age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
-   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),interested:player.interested==null?'—':player.interested?'Oui':'<span class="muted">Non</span>',contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
+   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>'),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}%</span>`,
    form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
@@ -231,8 +235,13 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  });
  // A list beside a preview lets the user pick a row (`select`: the id of the picked one, null for none yet).
  const picking='select' in options;
+ // `action(player)` closes each row with a button of its own, under a header without a name.
+ if(options.action)rows.forEach((row,index)=>row.push(options.action(data.items[index])));
+ const headers=columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc'));
+ // A player on loan stands out: lent by the club of the list (`away`), or borrowed.
+ const rowClass=player=>[picking&&player.id===options.select?'selected':'',player.loan?(player.away?'lent':'borrowed'):''].filter(Boolean).join(' ');
  // Each header carries its column's key, which sets its width (see .player-table in theme.css).
- return `<div class="player-table">${table(columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc')),rows,undefined,picking?data.items.map(player=>player.id===options.select?'selected':''):undefined,undefined,columns.map(([key])=>`${key}-column`),columns.map(([,,heading])=>heading||null),picking?data.items.map(player=>`data-select="${player.id}"`):undefined)}</div>`+(options.pager===false?'':pager(data));
+ return `<div class="player-table">${table([...headers,...(options.action?['']:[])],rows,undefined,data.items.map(rowClass),undefined,[...columns.map(([key])=>`${key}-column`),...(options.action?['action-column']:[])],[...columns.map(([,,heading])=>heading||null),...(options.action?[null]:[])],picking?data.items.map(player=>`data-select="${player.id}"`):undefined)}</div>`+(options.pager===false?'':pager(data));
 }
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',P:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};

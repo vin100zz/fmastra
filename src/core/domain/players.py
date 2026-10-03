@@ -57,6 +57,14 @@ class Injury:
 
 
 @dataclass(slots=True)
+class Loan:
+    """A player lent by the club that owns him: he plays for `Player.club_id` until `end`, his owner pays his wage."""
+    parent_id: int
+    start: Date
+    end: Date
+
+
+@dataclass(slots=True)
 class Discipline:
     yellows: int = 0
     served_thresholds: list[int] = field(default_factory=list)
@@ -106,10 +114,20 @@ class Player:
     historical_caps: int = 0
     historical_goals: int = 0
     international_discipline: dict[int, Discipline] = field(default_factory=dict)
+    loan: Loan | None = None
+    # The day he joined his club's reserve (see core.world.reserves), where no match selects him; None in the first team.
+    # `reserve_days` counts the days of the month spent there in stretches already over.
+    reserve_since: Date | None = None
+    reserve_days: int = 0
 
     @property
     def nation(self) -> str:
         return self.nationalities[0]
+
+    @property
+    def owner_id(self) -> int | None:
+        """The club he is under contract with: the lender of a player on loan."""
+        return self.loan.parent_id if self.loan is not None else self.club_id
 
     def available(self, competition_id: int, date: Date) -> bool:
         discipline = self.discipline.get(competition_id)

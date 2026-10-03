@@ -171,6 +171,11 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.engine.timing.match_seconds == 2 * cfg.world.match_rules.half_seconds, "Match durations disagree")
     require(cfg.demography.potential_estimate.convergence_age > cfg.demography.potential_estimate.start_age, "Invalid estimate convergence")
     require(cfg.demography.progression.monthly_reference_minutes > 0, "Playing time reference must be positive")
+    growth = cfg.demography.progression
+    require(growth.minutes_exponent > 0 and 0 <= growth.training_floor.lowest <= growth.training_floor.highest <= 1,
+            "Invalid playing factor curve")
+    require(0 <= growth.reserve.factor <= 1 and growth.reserve.fade_span > 0, "Invalid reserve rules")
+    require(0 <= cfg.management.market.loans.weekly_probability <= 1 and cfg.management.market.loans.max_borrowed >= 0, "Invalid loan rules")
     require(cfg.demography.cohort.max_class_candidates > 0, "Cohort sampling needs candidates")
     require(cfg.management.market.weekly_review_days > 0 and cfg.management.budgets.weeks_per_year > 0, "Invalid management period")
     require(cfg.management.budgets.wages.weekly_minimum > 0 and cfg.demography.academies.base_weekly_wage > 0, "Wage minima must be positive")

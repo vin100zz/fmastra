@@ -51,6 +51,26 @@ class PlayerGenerated:
 
 
 @dataclass(frozen=True, slots=True)
+class ReserveChanged:
+    """A player sent to his club's reserve, or called back to its first team."""
+    player_id: int
+    reserve: bool
+
+
+@dataclass(frozen=True, slots=True)
+class LoanStarted:
+    """A player lent by his club to `target_id` until `end`."""
+    player_id: int
+    target_id: int
+    end: Date
+
+
+@dataclass(frozen=True, slots=True)
+class LoanEnded:
+    player_id: int
+
+
+@dataclass(frozen=True, slots=True)
 class FinancePosted:
     club_id: int
     change: int
@@ -108,4 +128,4 @@ class RenewalProposed:
     proposal: RenewalProposal
 
 
-WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | FinancePosted | BudgetRenewed | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed
+WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | ReserveChanged | LoanStarted | LoanEnded | FinancePosted | BudgetRenewed | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed

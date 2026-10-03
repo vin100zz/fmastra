@@ -3,7 +3,7 @@ import {calendarBlock,financeBlock,lineupBlock} from './club-overview.js';
 import {api,escape as e,heading,card,pager,money,price,date,empty,playerLink,clubLink,standingsTable,roundTitle} from './ui.js';
 
 const NEWS_LABELS={renewal_proposed:'Prolongation',renewal_signed:'Prolongation',renewal_refused:'Prolongation',offer_received:'Offre reçue',offer_accepted:'Transfert',offer_refused:'Transfert',offer_rejected:'Offre refusée',offer_expired:'Offre expirée',talks_open:'Négociation',
- transfer:'Transfert',release:'Fin de contrat',retirement:'Retraite',academy:'Formation',injury:'Blessure',injury_end:'Infirmerie',suspension:'Suspension',suspension_end:'Suspension',
+ transfer:'Transfert',loan:'Prêt',loan_return:'Prêt',release:'Fin de contrat',retirement:'Retraite',academy:'Formation',injury:'Blessure',injury_end:'Infirmerie',suspension:'Suspension',suspension_end:'Suspension',
  result:'Résultat',call_up:'Sélection',promotion:'Promotion',relegation:'Relégation',season:'Saison',cup_winner:'Trophée',europe_winner:'Trophée'};
 
 // The text of an entry with its player's name linked to his page and, for a result or an in-match injury, the match linked to its report.
@@ -41,8 +41,12 @@ function marketBlock(club,transfers,contracts) {
  const renewals=contracts.items.map(row=>`<li><span>${playerLink(row.joueur_id,row.nom)}</span><small>Demande ${monthlySalary(row.salaire_propose)} · jusqu’au ${date(row.fin_contrat_proposee)}</small><a href="#/player/${row.joueur_id}">Répondre →</a></li>`);
  const listed=transfers.liste.map(row=>`<li><span>${playerLink(row.joueur_id,row.joueur)}</span><b>${price(row.indemnite)}</b></li>`);
  const section=(title,items,none)=>`<h3>${title} · ${items.length}</h3>${items.length?`<ul class="moves">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}`;
+ // Loans either way, shown only when there is one: the arrow tells which.
+ const loan=(row,arrow)=>`<li><span>${playerLink(row.joueur_id,row.joueur)}</span><small>${arrow} ${clubLink(row.club)}</small><b>${date(row.fin)}</b></li>`;
+ const loans=[...(transfers.prets||[]).map(row=>loan(row,'→')),...(transfers.emprunts||[]).map(row=>loan(row,'←'))];
  const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.')+section('Vos offres',outgoing,'Aucune offre en cours.')
-  +section('Liste des transferts',listed,'Aucun joueur sur la liste.')+section('Prolongations',renewals,'Aucune prolongation en attente.');
+  +section('Liste des transferts',listed,'Aucun joueur sur la liste.')+section('Prolongations',renewals,'Aucune prolongation en attente.')
+  +(loans.length?section('Prêts',loans,''):'');
  return card('Transferts et contrats',`<div class="card-body">${body}</div><p class="card-note">Faites une offre ou proposez un contrat depuis la fiche d’un joueur.</p>`,`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir →</a>`,'market-card');
 }
 

@@ -66,7 +66,8 @@ export async function clubPreview(id){
  const finances=`<h3>Finances</h3>${fact('Budget transferts',money(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
   +fact('Masse salariale / mois',`<i class="gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><i style="width:${Math.min(100,used)}%"></i></i><b>${money(monthlyAmount(books.wage_bill))} / ${money(monthlyAmount(books.wage_cap))}</b>`)
   +fact('Achats de la saison',money(books.season_spent))+fact('Ventes de la saison',money(books.season_sales));
- const best=squad.items.slice(0,BEST_PLAYERS);
+ // The players the club has lent are not its to field.
+ const best=squad.items.filter(player=>!player.away).slice(0,BEST_PLAYERS);
  const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential),figure(money(player.value))]))}</div>`:'';
  const tab=(key,label)=>`<a class="button" href="#/club/${club.id}/${key}">${label}</a>`;
  return `<div class="card preview"><div class="preview-head">${crest}<h2><a href="#/club/${club.id}">${e(club.name)}</a></h2></div>`

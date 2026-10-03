@@ -25,10 +25,16 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 24
+SCHEMA_VERSION = 25
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Concave minutes, training floor, reserve and loans: an older save progresses and lends with these rules.
+    (25, ("demographie", "progression"), {
+         "exposant_minutes": 0.5, "plancher_entrainement": {"note_1": 0.2, "note_20": 0.5},
+         "reserve": {"facteur": 0.7, "age_max": 21, "marge_niveau": 6.0, "plage_extinction": 10.0}}),
+    (25, ("ia_gestion", "mercato"), {"prets": {
+         "age_max_ia": 21, "marge_potentiel_min": 5.0, "emprunts_max_ia": 2, "probabilite_hebdomadaire": 0.5}}),
     # Generated players rated at every position: an older save rates its regens, past and to come, with these rules.
     (24, ("demographie", "generation"), {"aptitudes_postes": {
          "notes_types": {

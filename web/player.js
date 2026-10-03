@@ -1,6 +1,6 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,position,empty,card,fact,appearances,positionNote,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {api,escape as e,number as n,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,position,empty,card,fact,appearances,positionNote,marketTags,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -169,15 +169,39 @@ function saleAction(player, sale) {
    +(sale.obstacle_proposition?'':fee('proposal-dialog','proposition',`Proposer ${e(player.name)} aux clubs`,'Proposer'))+offers};
 }
 
+// The durations a loan can take today, each with the day it ends.
+const LOAN_LABELS={saison:'Fin de saison',demi_saison:'Demi-saison'};
+const durationField=squad=>`<label>Durée <select name="duree">${squad.durees.map(item=>`<option value="${item.cle}">${LOAN_LABELS[item.cle]} · ${date(item.fin)}</option>`).join('')}</select></label>`;
+
+// An own player: sent to the reserve or called back, and lent to one of the clubs that would take him.
+function squadAction(player, squad) {
+ const reserve=squad.en_reserve?`<button type="button" data-command="reserve" data-player="${player.id}" data-reserve="">Rappeler en équipe première</button>`
+  :`<button type="button" data-command="reserve" data-player="${player.id}" data-reserve="1"${squad.obstacle_reserve?` disabled title="${e(squad.obstacle_reserve)}"`:''}>Envoyer en réserve</button>`;
+ if(squad.obstacle_pret)return {pills:squad.en_reserve?'<span class="pill">En réserve</span>':'',buttons:`${reserve}<button type="button" disabled title="${e(squad.obstacle_pret)}">Prêter</button>`,dialogs:''};
+ const clubs=`<label>Club <select name="club_id">${squad.clubs.map(club=>`<option value="${club.id}">${e(club.name)} · ${e(club.competition)}</option>`).join('')}</select></label>`;
+ const dialog=`<dialog id="lend-dialog" class="action-dialog"><form data-loan="preter"><span class="eyebrow">PRÊT</span><h2>Prêter ${e(player.name)}</h2><input type="hidden" name="joueur_id" value="${player.id}">${clubs}${durationField(squad)}${dialogButtons('<button class="primary" type="submit">Prêter</button>')}</form></dialog>`;
+ return {pills:squad.en_reserve?'<span class="pill">En réserve</span>':'',buttons:`${reserve}<button type="button" data-open-dialog="lend-dialog">Prêter</button>`,dialogs:dialog};
+}
+
+// Another club's player taken on loan: nothing to pay, only how long.
+function borrowAction(player, squad) {
+ if(squad.obstacle_pret)return `<button type="button" disabled title="${e(squad.obstacle_pret)}">Emprunter</button>`;
+ return `<button type="button" data-open-dialog="borrow-dialog">Emprunter</button><dialog id="borrow-dialog" class="action-dialog"><form data-loan="emprunter"><span class="eyebrow">PRÊT</span><h2>Emprunter ${e(player.name)}</h2><input type="hidden" name="joueur_id" value="${player.id}">${durationField(squad)}${dialogButtons('<button class="primary" type="submit">Emprunter</button>')}</form></dialog>`;
+}
+
 async function playerActions(player, state) {
  const clubId=state.controlled_club_id;
  if(clubId==null||player.retired)return '';
+ const actions=body=>`<div class="player-actions">${body}</div>`;
+ // On loan, to or from the user's club or between two others: nothing to decide before he is back.
+ if(player.loan)return actions(`<span class="pill">Prêté ${player.loan.parent?.id===clubId?`à ${e(player.loan.club?.name)}`:`par ${e(player.loan.parent?.name)}`} · retour le ${date(player.loan.end)}</span>`);
  if(player.club?.id===clubId){
-  const [contracts,sale]=await Promise.all([api('/ma-partie/contrats'),api(`/ma-partie/vente/${player.id}`)]);
-  const parts=[saleAction(player,sale),contractAction(player,contracts.items.find(row=>row.joueur_id===player.id))];
-  return `<div class="player-actions">${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}</div>${parts.map(part=>part.dialogs).join('')}`;
+  const [contracts,sale,squad]=await Promise.all([api('/ma-partie/contrats'),api(`/ma-partie/vente/${player.id}`),api(`/ma-partie/effectif/${player.id}`)]);
+  const parts=[saleAction(player,sale),contractAction(player,contracts.items.find(row=>row.joueur_id===player.id)),squadAction(player,squad)];
+  return actions(`${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}`)+parts.map(part=>part.dialogs).join('');
  }
- return talksAction(player,state,await api(`/ma-partie/negociation/${player.id}`));
+ const [talks,squad]=await Promise.all([api(`/ma-partie/negociation/${player.id}`),player.club?api(`/ma-partie/effectif/${player.id}`):null]);
+ return talksAction(player,state,talks)+(squad?actions(borrowAction(player,squad)):'');
 }
 
 // A line of the rail whose tooltip says more than its value.
@@ -230,6 +254,9 @@ function feeTiles(player) {
  return `<div class="rail-tiles fees">${tile('fee-value','Valeur',money(player.value),'Valeur de marché')}${asking}</div>`;
 }
 
+// Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
+const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.parent)],['Fin du prêt',date(player.loan.end)]]:[]),...(player.reserve?[['Équipe','Réserve']]:[])];
+
 // Beside the page: who he is, how he is and what his contract is, with what the user can do about it at the foot.
 // `lead` (the block stepping through the squad) sits at the left of the name.
 function rail(player, lead, actions) {
@@ -241,7 +268,7 @@ function rail(player, lead, actions) {
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
  const state=`<section class="rail-section"><h2>État</h2>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}</section>`;
  const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
-  ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[])];
+  ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[]),...loanTerms(player)];
  const contract=`<section class="rail-section"><h2>Contrat</h2>${terms.map(([label,value])=>fact(label,value)).join('')}</section>`;
  return `<aside class="card player-rail"><div class="rail-head">${lead}${flags.main}<h1>${e(player.name)}</h1></div>${tiles}${identity}${state}${contract}${actions?`<div class="rail-actions">${actions}</div>`:''}</aside>`;
 }
@@ -277,7 +304,7 @@ function internationalCareer(player) {
 // setting the two apart.
 function careerCard(player, career) {
  const totals=career.totals,nation=internationalCareer(player);
- const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']));
+ const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.loan?'Prêt':row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?n(row.average):'—']));
  const total=careerRow(['Total','',totals.fee?money(totals.fee):'—','',n(totals.matches),n(totals.goals),n(totals.assists),totals.average?n(totals.average):'—'],{name:'total'});
  const clubs=rows.length?`<tbody>${rows.join('')}${total}</tbody>`:'';
  const head=careerRow(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],{tag:'th'});
@@ -299,7 +326,8 @@ export async function playerPreview(id, state) {
  const shape=`<h3>État</h3>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
  const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[]),
-  ...(player.interested!=null?[['Intéressé',player.interested?'Oui':'Non']]:[])];
+  ...(player.transfer_listed||player.loan_listed?[['Listé',marketTags(player.transfer_listed,player.loan_listed)]]:[]),
+  ...(player.interested!=null?[['Intéressé',marketTags(player.interested,player.loan_interested,'Non')]]:[]),...loanTerms(player)];
  const roles=positionList(player.position_ratings||{},player);
  const {sections}=attributeGroups(player);
  const attributes=sections.flatMap(section=>section.items).map(attributeItem).join('');

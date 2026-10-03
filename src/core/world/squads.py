@@ -22,7 +22,7 @@ def complete_squads(world: World, club_ids: list[int]) -> int:
             missing_keeper = positions[Position.GOALKEEPER] < guard.min_goalkeepers
             if len(squad) >= guard.min_squad and not missing_keeper:
                 break
-            if len(squad) >= guard.max_squad:
+            if club.squad_size >= guard.max_squad:
                 # A promoted full squad may lack keepers after years outside simulation.
                 surplus = min((player for player in squad if player.position != Position.GOALKEEPER),
                               key=lambda player: (player.rating, player.id))

@@ -78,6 +78,22 @@ class OfferToClubs(Command):
     indemnite: int = Field(ge=0)
 
 
+class ReserveMove(Command):
+    joueur_id: int
+    reserve: bool  # True sends the player to the reserve, False calls him back to the first team
+
+
+class Lending(Command):
+    joueur_id: int
+    club_id: int
+    duree: Literal["saison", "demi_saison"]
+
+
+class Borrowing(Command):
+    joueur_id: int
+    duree: Literal["saison", "demi_saison"]
+
+
 class OfferDecision(Command):
     offre_id: str
     decision: Literal["accepter", "refuser"]
@@ -107,6 +123,10 @@ def squad_sort_key(world, column: str):
         codes = build_nation_table(world.nation_names)
         return lambda row: [codes.get(code, {}).get("display_code", code) for code in row["nationalities"]]
     return lambda row: row[column]
+
+
+# A squad of the largest size and the players it has lent fit on one page.
+SQUAD_PAGE = 100
 
 
 ClubSort = Literal["nom", "pays", "championnat", "classement", "forme", "reputation", "entrainement", "recrutement", "effectif", "age",
@@ -322,8 +342,9 @@ def router(service: GameService) -> APIRouter:
         competition_id = match.competition_id if match else world.clubs[club_id].competition_id
         context = LineupContext.from_world(world, club_id, competition_id, world.date)
         if match is None or match.date != world.date:
-            # Players away with their national team may be back by a later match.
-            context = replace(context, players=[world.players[pid] for pid in context.club.player_ids])
+            # Players away with their national team may be back by a later match; those of the reserve stay out.
+            context = replace(context, players=[player for pid in context.club.player_ids
+                                                if (player := world.players[pid]).reserve_since is None])
         return match, competition_id, context
 
     def lineup_suggestion(lineup) -> dict:
@@ -465,6 +486,44 @@ def router(service: GameService) -> APIRouter:
             if player is None: raise HTTPException(404, "Joueur introuvable.")
             return v.sale_view(world, player)
 
+    # The human club's squad beside its transfers: its reserve, and loans either way, each answered at once.
+    def manage(command: ReserveMove | Lending | Borrowing, act) -> dict:
+        from core.world.loans import LoanRefused
+        from core.world.reserves import ReserveRefused
+        with service.mutating() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            if world.live_match is not None: raise HTTPException(400, "Un match est en cours : terminez-le d'abord.")
+            player = world.players.get(command.joueur_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            if any(player.id in lineup.bench or any(pid == player.id for pid, _ in lineup.slots) for lineup in world.submitted_lineups.values()):
+                raise HTTPException(400, "Ce joueur figure dans la composition du match du jour.")
+            try: act(world, player)
+            except (LoanRefused, ReserveRefused) as refusal: raise HTTPException(400, str(refusal)) from refusal
+            return v.squad_view(world, player)
+
+    @api.post("/partie/reserve")
+    def move_to_reserve(command: ReserveMove) -> dict:
+        from core.world.reserves import set_reserve
+        return manage(command, lambda world, player: set_reserve(world, player, command.reserve))
+
+    @api.post("/partie/preter")
+    def lend_player(command: Lending) -> dict:
+        from core.world.loans import lend
+        return manage(command, lambda world, player: lend(world, player, command.club_id, command.duree))
+
+    @api.post("/partie/emprunter")
+    def borrow_player(command: Borrowing) -> dict:
+        from core.world.loans import borrow
+        return manage(command, lambda world, player: borrow(world, player, command.duree))
+
+    @api.get("/ma-partie/effectif/{player_id}")
+    def squad_options(player_id: int) -> dict:
+        with service.reading() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(player_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            return v.squad_view(world, player)
+
     @api.get("/ma-partie/transferts")
     def my_transfers() -> dict:
         with service.reading() as world:
@@ -479,7 +538,12 @@ def router(service: GameService) -> APIRouter:
                         for player_id in incoming]
             listed = [{"joueur_id": player_id, "joueur": world.players[player_id].name, "indemnite": fee}
                       for player_id in world.transfer_list if (fee := listed_price(world, player_id)) is not None]
-            return {"sortantes": outgoing, "entrantes": entrantes, "liste": listed}
+            club = world.clubs[club_id]
+            def loan_row(player, other_id: int) -> dict:
+                return {"joueur_id": player.id, "joueur": player.name, "club": v.club_ref(world, other_id), "fin": player.loan.end.iso()}
+            lent = [loan_row(world.players[pid], world.players[pid].club_id) for pid in club.loaned_ids]
+            taken = [loan_row(player, player.loan.parent_id) for pid in club.player_ids if (player := world.players[pid]).loan is not None]
+            return {"sortantes": outgoing, "entrantes": entrantes, "liste": listed, "prets": lent, "emprunts": taken}
 
     @api.get("/ma-partie/contrats")
     def pending_renewals() -> dict:
@@ -534,7 +598,7 @@ def router(service: GameService) -> APIRouter:
     @api.get("/monde/transferts")
     def global_transfers(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer", page: int = Query(1, ge=1),
                          taille: int = page_size(50), tri: str | None = None, ordre: Literal['asc', 'desc'] = 'desc',
-                         recherche: str = "", fenetre: Literal["ete", "hiver"] | None = None, nature: Literal["payant", "libre"] | None = None,
+                         recherche: str = "", fenetre: Literal["ete", "hiver"] | None = None, nature: Literal["payant", "libre", "pret"] | None = None,
                          competition: int | None = None, poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
                          montant_min: int = Query(0, ge=0), club: int | None = None, pays: str = "", selectionnes: Literal["oui"] | None = None,
                          niveau_min: float = Query(0, ge=0, le=100), niveau_max: float = Query(100, ge=0, le=100),
@@ -639,7 +703,7 @@ def router(service: GameService) -> APIRouter:
             rows = v.squad_rows(world, club_id)
             sort_key = squad_sort_key(world, tri)
             rows.sort(key=lambda row: (sort_key(row), row["id"]), reverse=ordre == "desc")
-            return v.paginate(rows, page)
+            return v.paginate(rows, page, SQUAD_PAGE)
 
     @api.get("/clubs/{club_id}/apercu")
     def club_overview(club_id: int) -> dict:
@@ -718,10 +782,11 @@ def router(service: GameService) -> APIRouter:
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
                 valeur_min: int = Query(0, ge=0), valeur_max: int | None = Query(None, ge=0), prix_max: int | None = Query(None, ge=0),
-                interesse: Literal["oui", "non"] | None = None, pretentions_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
+                interesse: Literal["oui", "non", "pret"] | None = None, liste: Literal["transfert", "pret"] | None = None,
+                pretentions_max: int | None = Query(None, ge=0), page: int = Query(1, ge=1),
                 taille: int = page_size(),
                 tri: Literal["rating", "potential", "age", "name", "position", "wage", "contract_end", "fitness", "nation", "club", "value", "asking_price",
-                             "wage_demand", "interested", "appearances", "goals", "assists", "average"] | AttributeSort | CompositeSort = "value",
+                             "wage_demand", "interested", "listed", "appearances", "goals", "assists", "average"] | AttributeSort | CompositeSort = "value",
                 ordre: Literal["asc", "desc"] = "desc") -> dict:
         with service.reading() as world:
             selected = []
@@ -743,6 +808,12 @@ def router(service: GameService) -> APIRouter:
             def demand(player) -> int | None:
                 if player.id not in demands: demands[player.id] = v.asked_wage(world, player)
                 return demands[player.id]
+            # Whether a club would let a player go, for good or on loan, and whether he would come on loan.
+            flags = v.MarketFlags(world)
+            def keen(player) -> bool:
+                """The interest the filter asks about: in a loan, or in a transfer (`non`: not in a transfer)."""
+                if interesse == "pret": return bool(flags.loan_interested(player))
+                return v.interested(world, player) is (interesse == "oui")
             for player in world.players.values():
                 wage = player.contract.weekly_wage if player.contract else 0
                 owner = world.clubs.get(player.club_id)
@@ -756,14 +827,16 @@ def router(service: GameService) -> APIRouter:
                     or (valeur_min and v.market_value(player, world) < valeur_min)
                     or (valeur_max is not None and v.market_value(player, world) > valeur_max)
                     or (prix_max is not None and (fee(player) is None or fee(player) > prix_max))
-                    or (recruiting and interesse and v.interested(world, player) is not (interesse == "oui"))
+                    or (recruiting and interesse and not keen(player))
+                    or (liste == "transfert" and not flags.transfer_listed(player)) or (liste == "pret" and not flags.loan_listed(player))
                     or (recruiting and pretentions_max is not None and (demand(player) is None or demand(player) > pretentions_max))): continue
                 selected.append(player)
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
                 if tri == 'asking_price': return fee(player) or 0, player.id
                 if tri == 'wage_demand': return demand(player) or 0, player.id
-                if tri == 'interested': return bool(v.interested(world, player)), player.id
+                if tri == 'interested': return bool(v.interested(world, player)) + bool(flags.loan_interested(player)), player.id
+                if tri == 'listed': return flags.transfer_listed(player) + flags.loan_listed(player), player.id
                 if tri in ATTRIBUTE_INDEX: return player.attributes.get(tri), player.id
                 if tri in v.COMPOSITES: return v.composite(player, tri, world.config), player.id
                 value ={"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
@@ -780,8 +853,8 @@ def router(service: GameService) -> APIRouter:
             if tri == 'wage_demand': selected.sort(key=lambda player: demand(player) is None)
             if tri == 'interested': selected.sort(key=lambda player: v.interested(world, player) is None)
             data = v.paginate(selected, page, taille)
-            data["items"] = [{**v.player_row(world, player), **quote(player), "interested": v.interested(world, player), "wage_demand": demand(player)}
-                             for player in data["items"]]
+            data["items"] = [{**v.player_row(world, player), **quote(player), **flags.row(player),
+                              "interested": v.interested(world, player), "wage_demand": demand(player)} for player in data["items"]]
             return data
 
     @api.get("/joueurs/{player_id}")

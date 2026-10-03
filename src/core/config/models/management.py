@@ -117,6 +117,15 @@ class ManagementConfigMarketDormantClubs:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketLoans:
+    """Which players an AI club sends to its reserve or out on loan; the defaults are what a save made before loans receives."""
+    max_age: int = Field(default=21, alias="age_max_ia")
+    potential_margin: float = Field(default=5.0, alias="marge_potentiel_min")
+    max_borrowed: int = Field(default=2, alias="emprunts_max_ia")
+    weekly_probability: float = Field(default=0.5, alias="probabilite_hebdomadaire")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigMarket:
     daily_proposal_probability: float = Field(alias="daily_proposal_probability")
     max_candidates_scanned: int = Field(alias="max_candidates_scanned")
@@ -162,6 +171,7 @@ class ManagementConfigMarket:
     buyer_price_multiplier: float = Field(default=1.35, alias="multiplicateur_prix_max_acheteur")
     offer_cooldown_days: int = Field(default=14, alias="jours_relance_proposition")
     max_offers_per_proposal: int = Field(default=5, alias="offres_max_proposition")
+    loans: ManagementConfigMarketLoans = Field(default_factory=ManagementConfigMarketLoans, alias="prets")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

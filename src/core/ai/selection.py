@@ -41,7 +41,9 @@ class LineupContext:
         games = sum(match.result is not None and match.season == world.season
                     and club_id in (match.home_id, match.away_id) for match in world.matches.values())
         called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
-        return cls(club, [world.players[pid] for pid in club.player_ids if pid not in called_up], competition_id, date, world.seed, games,
+        # Neither the players away with their national team nor those of the reserve.
+        return cls(club, [player for pid in club.player_ids if pid not in called_up and (player := world.players[pid]).reserve_since is None],
+                   competition_id, date, world.seed, games,
                    season_arrivals(world, club_id))
 
 

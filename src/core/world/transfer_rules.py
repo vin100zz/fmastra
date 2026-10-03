@@ -100,7 +100,8 @@ def frustration(player: Player, world: World) -> float:
     resents being by far the best player of a small club; ego raises it.
     """
     club = world.clubs.get(player.club_id) if player.club_id is not None else None
-    if club is None: return 0.0
+    # A player on loan knows the club he was lent to is a step, not his place.
+    if club is None or player.loan is not None: return 0.0
     rules = world.config.management.market
     ambition = clamp(rules.ambition_base + rules.ambition_ego_weight * player.ego, 0, 1)
     return ambition * clamp(outgrown_by(player, club, world.config) / rules.frustration_span, 0, 1)

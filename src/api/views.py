@@ -81,9 +81,16 @@ def player_name(world: World, player_id: int | None) -> str | None:
     return player.name if player else world.retired.get(player_id)
 
 
+def loan_ref(world: World, player: Player) -> dict | None:
+    """The loan a player is on: the club that owns him, the one he plays for, and the last day he spends there."""
+    loan = player.loan
+    return {"parent": club_ref(world, loan.parent_id), "club": club_ref(world, player.club_id), "end": loan.end.iso()} if loan else None
+
+
 def player_row(world: World, player: Player) -> dict:
     contract = player.contract
     return {"id": player.id, "name": player.name, "position": player.position.value,
+            "loan": loan_ref(world, player), "reserve": player.reserve_since is not None,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
             "potential": round(player.potential, 1),
             "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
@@ -118,14 +125,83 @@ def interested(world: World, player: Player) -> bool | None:
     """Whether a player accepts to join the human club; None for its own players and without a human club."""
     from core.world.transfer_rules import accepts_move
     club = world.clubs.get(world.controlled_club_id)
-    return None if club is None or player.club_id == club.id else accepts_move(player, club, world)
+    return None if club is None or club.id in (player.club_id, player.owner_id) else accepts_move(player, club, world)
 
 
 def asked_wage(world: World, player: Player) -> int | None:
     """The weekly wage he asks to join the human club, as his counter-offer quotes it; None for its own players and without a human club."""
     from core.world import talks
     club = world.clubs.get(world.controlled_club_id)
-    return None if club is None or player.club_id == club.id else talks.asked_wage(world, player)
+    return None if club is None or club.id in (player.club_id, player.owner_id) else talks.asked_wage(world, player)
+
+
+class MarketFlags:
+    """What the lists of the world tell of each player beyond his price: whether his club would let him go, for good or
+    on loan, and whether he would come to the human club on loan. Read club by club and kept for the other players of a list."""
+
+    def __init__(self, world: World) -> None:
+        self.world = world
+        self.surplus: dict[int, set[int]] = {}
+        self.lendable: dict[int, set[int]] = {}
+
+    def transfer_listed(self, player: Player) -> bool:
+        """On the human club's transfer list, or beyond the squad an AI club needs: the players it offers around."""
+        from core.ai.market import nominal_size
+        from core.world.human import is_human_club, listed_price
+        world, club = self.world, self.world.clubs.get(player.club_id)
+        if club is None or player.loan is not None: return False
+        if is_human_club(world, club.id): return listed_price(world, player.id) is not None
+        if club.competition_id is None: return False
+        if club.id not in self.surplus:
+            weakest = sorted(club.player_ids, key=lambda pid: (world.players[pid].rating, pid))
+            self.surplus[club.id] = set(weakest[:max(0, len(weakest) - nominal_size(world.config))])
+        return player.id in self.surplus[club.id] and can_sell(player, club, world)
+
+    def loan_listed(self, player: Player) -> bool:
+        """A prospect his AI club is ready to lend."""
+        from core.world.loans import lendable
+        club = self.world.clubs.get(player.club_id)
+        if club is None or player.loan is not None: return False
+        if club.id not in self.lendable: self.lendable[club.id] = {item.id for item in lendable(self.world, club)}
+        return player.id in self.lendable[club.id]
+
+    def loan_interested(self, player: Player) -> bool | None:
+        """Whether he would come to the human club on loan; None for its own players and without a human club."""
+        from core.world.loans import accepts_loan
+        club = self.world.clubs.get(self.world.controlled_club_id)
+        if club is None or club.id in (player.club_id, player.owner_id): return None
+        return player.club_id is not None and player.loan is None and accepts_loan(self.world, player, club)
+
+    def row(self, player: Player) -> dict:
+        return {"transfer_listed": self.transfer_listed(player), "loan_listed": self.loan_listed(player),
+                "loan_interested": self.loan_interested(player)}
+
+
+def squad_view(world: World, player: Player) -> dict:
+    """What the human club can do with a player beside buying or selling him: its reserve, and a loan either way.
+
+    A loan names what stops it today, the durations on offer and, for a player of the club, the clubs that would take him."""
+    from core.world import loans, reserves
+    from core.world.human import is_human_club
+    own = is_human_club(world, player.club_id) and player.loan is None
+    ends = loans.loan_ends(world)
+    data = {"pret": loan_ref(world, player), "en_reserve": player.reserve_since is not None,
+            "obstacle_reserve": reserves.reserve_obstacle(world, player) if own and player.reserve_since is None else None,
+            "sens": "sortant" if own else "entrant", "clubs": [],
+            "durees": [{"cle": key, "fin": end.iso()} for key, end in ends.items()]}
+    if player.loan is not None or world.controlled_club_id is None:
+        return {**data, "obstacle_pret": None, "durees": []}
+    # The shortest loan on offer: a contract too short for a whole season may still cover half of it.
+    end = min(ends.values(), default=None)
+    if end is None: obstacle = "Le mercato est fermé."
+    elif own:
+        obstacle = loans.lender_obstacle(world, player, end)
+        if obstacle is None:
+            data["clubs"] = [{**club_ref(world, club.id), "reputation": round(club.reputation, 1),
+                              "competition": world.competitions[club.competition_id].name} for club in loans.takers(world, player)]
+            if not data["clubs"]: obstacle = "Aucun club ne lui offrirait assez de temps de jeu."
+    else: obstacle = loans.borrowing_obstacle(world, player, end)
+    return {**data, "obstacle_pret": obstacle}
 
 
 def talks_view(world: World, player: Player) -> dict:
@@ -178,6 +254,7 @@ def player_detail(world: World, player: Player) -> dict:
     result = player_row(world, player)
     result.update(asking_quote(world, player, recent_arrival_ids(world)))
     result.update(player_morale(world, player))
+    result.update(MarketFlags(world).row(player))
     result["greed"] = player.greed
     # What the lists of the world tell a recruiter, for the preview beside them.
     result.update({"interested": interested(world, player), "wage_demand": asked_wage(world, player)})
@@ -400,12 +477,15 @@ def squad_rows(world: World, club_id: int) -> list[dict]:
     from core.world.contracts import games_by_club, position_ranks
     from core.world.transfer_rules import season_arrivals
     club = world.clubs[club_id]
-    stats = club_season_stats(world, club_id, club.player_ids)
+    stats = club_season_stats(world, club_id, [*club.player_ids, *club.loaned_ids])
     ranks, games, arrivals = position_ranks(world, club), games_by_club(world)[club_id], season_arrivals(world, club_id)
     players = [world.players[pid] for pid in club.player_ids]
-    return [{**player_row(world, player), **stats[player.id],
+    rows = [{**player_row(world, player), **stats[player.id], "away": False,
              **morale_outlook(world, player, club, ranks[player.id], *arrivals.get(player.id, (games, player.season_minutes)))}
             for player in players]
+    # The players the club has lent stay in its list (`away`), with what they did for it this season and their mood where they are.
+    return rows + [{**player_row(world, player), **stats[player.id], "away": True, **player_morale(world, player)}
+                   for player in (world.players[pid] for pid in club.loaned_ids)]
 
 
 def club_league(world: World, club_id: int | None) -> Competition | None:
@@ -474,6 +554,7 @@ def career(world: World, player_id: int) -> dict:
     fees: dict[tuple[int, int], int] = {}
     order: dict[tuple[int, int], tuple[int, bool]] = {}
     targeted = {move.target_id for move in moves if move.target_id is not None}
+    loans = {(move.season, move.target_id) for move in moves if move.kind == "loan"}
     for move in moves:
         if move.target_id is not None:
             key = (move.season, move.target_id)
@@ -489,7 +570,8 @@ def career(world: World, player_id: int) -> dict:
         rows[key] = {"season": season, "club": club_ref(world, club_id),
                      "competition": league, "competition_nation": nation,
                      "matches": 0, "substitutes": 0, "goals": 0, "assists": 0, "average": None}
-    items = [{**rows[key], "fee": fees.get(key)} for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
+    items = [{**rows[key], "fee": fees.get(key), "loan": key in loans}
+             for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
     rating_count = sum(row.rating_count for row in player_records)
     totals = {"fee": sum(fees.values()), "matches": sum(row.matches for row in player_records),
               "goals": sum(row.goals for row in player_records), "assists": sum(row.assists for row in player_records),

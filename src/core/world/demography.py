@@ -305,7 +305,7 @@ def cohort_events(world: World) -> list[PlayerGenerated]:
     allocations = Counter()
     keeper_allocations = Counter()
     keeper_counts = {club.id: sum(world.players[pid].position == Position.GOALKEEPER for pid in club.player_ids) for club in active_clubs}
-    capacity = {club.id: max(0, min(guard.max_squad - len(club.player_ids),
+    capacity = {club.id: max(0, min(guard.max_squad - club.squad_size,
                                      (club.wage_cap - club.wage_bill) // cfg.demography.academies.base_weekly_wage)) for club in world.clubs.values()}
     candidates = [club for club in active_clubs if capacity[club.id] > 0]
     external = [club for club in world.clubs.values() if club.competition_id is None and capacity[club.id] > 0]

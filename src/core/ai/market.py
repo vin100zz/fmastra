@@ -191,8 +191,13 @@ def asking_price(player: Player, seller: Club, world: World) -> int:
 
 
 def can_sell(player: Player, seller: Club, world: World) -> bool:
-    """Only the hard minimums stop a sale; any other player has his price (see `asking_price`)."""
-    if seller.competition_id is None: return True
+    """Only a loan and the hard minimums stop a sale; any other player has his price (see `asking_price`)."""
+    if player.loan is not None: return False
+    return seller.competition_id is None or can_spare(player, seller, world)
+
+
+def can_spare(player: Player, seller: Club, world: World) -> bool:
+    """Whether a club keeps its hard squad and goalkeeper minimums without a player."""
     guard = world.config.management.guardrails
     if len(seller.player_ids) <= guard.min_squad: return False
     if player.position == Position.GOALKEEPER and sum(
@@ -272,7 +277,7 @@ def short_of_players(squad: list[Player], cfg: Config) -> bool:
 
 def open_slots(club: Club, pending: list, cfg: Config) -> int:
     """New offers a club may still open beside its pending ones."""
-    return min(cfg.management.market.max_negotiations - len(pending), cfg.management.guardrails.max_squad - len(club.player_ids) - len(pending))
+    return min(cfg.management.market.max_negotiations - len(pending), cfg.management.guardrails.max_squad - club.squad_size - len(pending))
 
 
 @dataclass(slots=True)
@@ -340,7 +345,7 @@ def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> 
     for club in sorted(world.clubs.values(), key=lambda item: item.id):
         if club.id == player.club_id or is_human_club(world, club.id): continue
         if club.competition_id is None:
-            if len(club.player_ids) >= guard.max_squad or rng.random() >= cfg.management.market.dormant_clubs.approach_probability: continue
+            if club.squad_size >= guard.max_squad or rng.random() >= cfg.management.market.dormant_clubs.approach_probability: continue
             if not accepts_move(player, club, world): continue
             wage = wage_demand(player, club, world)
             if (fee > club.transfer_budget or club.balance - fee < guard.min_balance or club.wage_bill + wage > club.wage_cap
@@ -367,7 +372,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
     controller = AIController(cfg, rng)
     # Recent arrivals stay put; players the human club has agreed a fee for are no longer on the market.
     settled = recent_arrival_ids(world) | {offer.player_id for offer in world.offers.values() if offer.stage in RESERVING_STAGES}
-    candidates = [player for player in world.players.values() if player.id not in settled]
+    candidates = [player for player in world.players.values() if player.id not in settled and player.loan is None]
     # The human club's transfer list, at the fee it asks: every club with the need sees it first.
     listed = {player.id: fee for player in candidates if (fee := listed_price(world, player.id)) is not None}
     rejected = rejected or {}
@@ -458,7 +463,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         from .external_market import approaching_clubs
         surplus = [world.players[pid] for club in world.active_clubs() for pid in sorted(club.player_ids,
                    key=lambda pid: (world.players[pid].rating, pid))[:max(0, len(club.player_ids) - nominal_size(cfg))]]
-        external_pool = [player for player in surplus if player.id not in settled]
+        external_pool = [player for player in surplus if player.id not in settled and player.loan is None]
         # A listed player is part of the surplus whatever the size of the human club's squad.
         pooled = {player.id for player in external_pool}
         external_pool += [world.players[pid] for pid in listed if pid not in pooled]

@@ -123,7 +123,7 @@ const movementsTable=(columns,data,rows)=>`<div class="movements-table">${table(
 function transfersTable(data, summary){
  const columns=[['date','DATE'],['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['source','PROVENANCE'],['arrow',''],['target','DESTINATION'],['fee','MONTANT'],['value','VALEUR']];
  const record=Math.max(1,summary?.record?.fee||0,...data.items.map(row=>row.fee||0));
- const fee=row=>row.kind==='release'?'<span class="num muted">Fin de contrat</span>':row.kind==='departure_unknown'?'<span class="num muted">Motif non archivé</span>':row.fee?`<span class="bar-figure">${miniBar(row.fee/record)}<b>${money(row.fee)}</b></span>`:'<span class="num muted">Libre</span>';
+ const fee=row=>row.kind==='loan'?'<span class="num muted">Prêt</span>':row.kind==='release'?'<span class="num muted">Fin de contrat</span>':row.kind==='departure_unknown'?'<span class="num muted">Motif non archivé</span>':row.fee?`<span class="bar-figure">${miniBar(row.fee/record)}<b>${money(row.fee)}</b></span>`:'<span class="num muted">Libre</span>';
  return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),nationCell(row.nationalities),figure(row.age??'—'),levelBadge(row.rating,'Niveau actuel sur 200'),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':money(row.value))]));
 }
 
@@ -192,7 +192,7 @@ export async function worldHistoryScreen(section,params,leagues=[],state={}){
  const grade=(label,key,steps)=>rangeMenu(base,params,label,[[`${key}_min`,'min','min="1" max="200"'],[`${key}_max`,'max','min="1" max="200"']],{presets:steps.map(step=>[`≥ ${step}`,{[`${key}_min`]:step}])});
  const narrowing={
   transfer:()=>choiceLinks(base,params,'fenetre',[['','Saison'],['ete','Été'],['hiver','Hiver']],'Fenêtre')
-   +choiceLinks(base,params,'nature',[['','Tous'],['payant','Payants'],['libre','Libres']],'Type')+divisions
+   +choiceLinks(base,params,'nature',[['','Tous'],['payant','Payants'],['libre','Libres'],['pret','Prêts']],'Type')+divisions
    +choiceSelect(params,'poste','Poste',['GB','DC','DG','DD','MDC','MC','MOC','AILG','AILD','BU'].map(role=>[role,role]))
    +ageMenu(base,params,[['≤ 21',{age_max:21}],['≤ 23',{age_max:23}],['24–28',{age_min:24,age_max:28}],['≥ 29',{age_min:29}]])
    +rangeMenu(base,params,'Montant',[['montant_min','min','min="0" step="any"']],{unit:'M€',hint:'M€',presets:[['≥ 10',{montant_min:10}],['≥ 50',{montant_min:50}],['≥ 100',{montant_min:100}]]})+mine,

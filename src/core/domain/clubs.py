@@ -52,6 +52,13 @@ class Club:
     cup_nation: str | None = None
     # Reputation at import, the size the yearly revision pulls back towards; None reads as the current reputation.
     reputation_anchor: float | None = None
+    # Its players out on loan: they play for another club (see `Player.loan`) and stay on its wage bill.
+    loaned_ids: list[int] = field(default_factory=list)
+
+    @property
+    def squad_size(self) -> int:
+        """The places taken in the squad, those kept for players out on loan included."""
+        return len(self.player_ids) + len(self.loaned_ids)
 
 
 @dataclass(slots=True)

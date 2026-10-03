@@ -17,7 +17,7 @@ def validate_world(world: World) -> None:
             raise ValueError("Invalid club facility rating")
         if club.id != club_id or len(club.player_ids) != len(set(club.player_ids)):
             raise ValueError("Invalid club or duplicate squad membership")
-        if len(club.player_ids) > guard.max_squad:
+        if club.squad_size > guard.max_squad or len(club.loaned_ids) != len(set(club.loaned_ids)):
             raise ValueError(f"{club.name}: overfull squad")
         if not all(value is None or isfinite(value) and 0 <= value <= bounds.max for value in (club.reputation, club.reputation_anchor)):
             raise ValueError(f"{club.name}: invalid reputation")
@@ -28,8 +28,16 @@ def validate_world(world: World) -> None:
             player = world.players[player_id]
             if player.club_id != club_id or player.contract is None:
                 raise ValueError("Player/club/contract mismatch")
-            wages += player.contract.weekly_wage
+            # A player on loan is paid by the club that owns him.
+            if player.loan is None: wages += player.contract.weekly_wage
+            elif player.loan.parent_id == club_id or player_id not in world.clubs[player.loan.parent_id].loaned_ids:
+                raise ValueError("Loan without its owner")
             seen.add(player_id)
+        for player_id in club.loaned_ids:
+            player = world.players.get(player_id)
+            if player is None or player.loan is None or player.loan.parent_id != club_id:
+                raise ValueError("Owner without its loan")
+            wages += player.contract.weekly_wage
         if wages != club.wage_bill or wages > club.wage_cap:
             raise ValueError(f"{club.name}: invalid wage ledger")
     for player_id, player in world.players.items():
@@ -41,7 +49,7 @@ def validate_world(world: World) -> None:
         if player.id != player_id:
             raise ValueError("Player identifier mismatch")
         if player.club_id is None:
-            if player.contract is not None: raise ValueError("A free agent cannot have a contract")
+            if player.contract is not None or player.loan is not None: raise ValueError("A free agent cannot have a contract")
         elif player_id not in seen:
             raise ValueError("Missing squad membership")
         if not all(isfinite(value) and bounds.min <= value <= bounds.max for value in player.attributes.values):
