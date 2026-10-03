@@ -222,18 +222,26 @@ function nationFlags(player) {
 // "12 sél - 3 buts": the goals only once he has scored.
 const caps=player=>player.international_caps==null?'':`<b>${n(player.international_caps)} sél${player.international_goals?` - ${n(player.international_goals)} but${player.international_goals>1?'s':''}`:''}</b>`;
 
+// Market value and asking price as big tiles under level/potential; the price reads N/A when nobody can be asked for him.
+function feeTiles(player) {
+ const tile=(cls,label,value,title)=>`<div class="tile ${cls}"${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
+ const na=player.transferable===false?'Intransférable : son club refuse de le vendre':!player.club?'Sans club : aucun prix demandé':'';
+ const asking=na?tile('fee-ask na','Prix demandé','N/A',na):tile('fee-ask','Prix demandé',price(player.asking_price));
+ return `<div class="rail-tiles fees">${tile('fee-value','Valeur',money(player.value),'Valeur de marché')}${asking}</div>`;
+}
+
 // Beside the page: who he is, how he is and what his contract is, with what the user can do about it at the foot.
 // `lead` (the block stepping through the squad) sits at the left of the name.
 function rail(player, lead, actions) {
  const tile=(label,value,title,hue)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
  const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),title,levelHue(level(value)));
- const tiles=`<div class="rail-tiles">${tile('Âge',player.age,`Né le ${date(player.born)}`)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}</div>`;
+ const tiles=`<div class="rail-tiles">${tile('Âge',player.age,`Né le ${date(player.born)}`)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}</div>${feeTiles(player)}`;
  const flags=nationFlags(player);
  const identity=`<div class="rail-identity"><div class="rail-club">${clubLink(player.club)}${caps(player)}</div>${flags.others.length?fact(flags.others.length>1?'Autres nationalités':'Autre nationalité',`<span class="rail-nations">${flags.others.join('')}</span>`):''}</div>`;
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
  const state=`<section class="rail-section"><h2>État</h2>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}</section>`;
- const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],['Valeur de marché',money(player.value)],
-  ...(player.club?[['Prix minimum',player.transferable===false?'Intransférable':price(player.asking_price)]]:[])];
+ const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
+  ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[])];
  const contract=`<section class="rail-section"><h2>Contrat</h2>${terms.map(([label,value])=>fact(label,value)).join('')}</section>`;
  return `<aside class="card player-rail"><div class="rail-head">${lead}${flags.main}<h1>${e(player.name)}</h1></div>${tiles}${identity}${state}${contract}${actions?`<div class="rail-actions">${actions}</div>`:''}</aside>`;
 }
@@ -289,8 +297,7 @@ export async function playerPreview(id, state) {
  const flags=nationFlags(player);
  const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${e(item.competition)} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
  const shape=`<h3>État</h3>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
- const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`],['Valeur de marché',money(player.value)],
-  ...(player.club?[['Prix minimum',player.transferable===false?'Intransférable':price(player.asking_price)]]:[]),
+ const terms=[['Salaire mensuel',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',`${monthlySalary(player.wage_demand)} / mois`]]:[]),
   ...(player.interested!=null?[['Intéressé',player.interested?'Oui':'Non']]:[])];
  const roles=positionList(player.position_ratings||{},player);
@@ -298,7 +305,7 @@ export async function playerPreview(id, state) {
  const attributes=sections.flatMap(section=>section.items).map(attributeItem).join('');
  return `<div class="card preview"><div class="preview-head">${flags.main}<h2><a href="#/player/${player.id}">${e(player.name)}</a></h2>${position(player.position)}</div>`
   +`<div class="preview-line">${clubLink(player.club)}${caps(player)}</div>`
-  +`<div class="rail-tiles">${tile('Âge',player.age)}${grade('Niveau',player.rating)}${grade('Potentiel',player.potential)}</div>`
+  +`<div class="rail-tiles">${tile('Âge',player.age)}${grade('Niveau',player.rating)}${grade('Potentiel',player.potential)}</div>${feeTiles(player)}`
   +shape+`<h3>Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
   +(roles?`<h3>Postes</h3>${roles}`:'')+compositesGroup(player)
   +`<h3>Attributs</h3><div class="attributes-grid">${attributes}</div>`

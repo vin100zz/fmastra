@@ -615,6 +615,13 @@ a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 .tile strong{font-family:var(--display);font-stretch:semi-condensed;font-size:30px;font-weight:700;line-height:1;color:var(--strong)}
 .tile.graded{background:hsl(var(--hue) 40% 16%);color:hsl(var(--hue) 75% 68%);border-color:hsl(var(--hue) 35% 26%)}
 .tile.graded strong{color:inherit}
+.rail-tiles.fees{padding-top:0}
+.tile.fee-value{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn)}
+.tile.fee-value strong{color:var(--gold-bright)}
+.tile.fee-ask{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
+.tile.fee-ask strong{color:var(--accent-text)}
+.tile.fee-ask.na{background:var(--panel-2);border-color:var(--line);color:var(--muted);cursor:help}
+.tile.fee-ask.na strong{color:var(--muted)}
 :root[data-theme="light"] .tile.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
 /* The club with his caps on its right (under it when both do not fit on a line), then his other nationalities on a line
    of their own, flags alone. */
