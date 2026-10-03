@@ -654,7 +654,7 @@ a.bracket-score:hover{background:var(--panel-3);color:var(--strong)}
 .gauge.signed:after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:10px;background:var(--muted)}
 .rail-actions{margin-top:auto;padding:12px 14px;border-top:1px solid var(--line)}
 .player-actions button{white-space:nowrap;padding:6px 12px}
-.player-actions .pill{text-align:center;border-radius:3px}
+.player-actions .pill{text-align:center;border-radius:3px;white-space:normal}
 .player-main{min-width:0;display:flex;flex-direction:column;gap:10px}
 .player-row{display:grid;gap:10px}
 .player-row>.card{margin:0;min-width:0;display:flex;flex-direction:column}

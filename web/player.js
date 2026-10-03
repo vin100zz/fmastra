@@ -92,7 +92,7 @@ const MONTH=new Intl.DateTimeFormat('fr-FR',{month:'short'}),MONTH_YEAR=new Intl
 const calendar=({year,month})=>new Date(year,month-1,15);
 
 // `points` run month by month from the oldest to the latest, each with its level out of 200, its season and the club played for
-// (if known); seasons recorded before the monthly history have one point, at their opening. The abscissa is time, so such gaps
+// that month (if any); seasons recorded before the monthly history have one point, at their opening. The abscissa is time, so such gaps
 // keep their length. A dot marks the first point of each season and the latest one.
 // Text and dots are HTML so they keep the size of the rest of the interface; only the gridlines and the curve are stretched SVG.
 export function levelChart(points) {
@@ -131,7 +131,9 @@ function talksAction(player, state, talks) {
  if(talks.etape==='signature')return actions(`<span class="pill">Arrivée le ${date(talks.date_prevue)} · ${monthlySalary(talks.salaire)} / mois</span>`);
  const wage=talks.etape==='salaire'||!player.club&&!talks.etape;
  const label=talks.etape==='salaire'?'Négocier le contrat':wage?'Proposer un contrat':'Faire une offre';
- if(talks.obstacle)return actions(`${state.market?`<span class="pill">${e(talks.obstacle)}</span>`:''}<button class="primary" type="button" disabled title="${e(talks.obstacle)}">${label}</button>`);
+ // The pill names the obstacle; the reason that follows its colon waits in the tooltip.
+ const [barrier,reason]=(talks.obstacle||'').split(' : ');
+ if(talks.obstacle)return actions(`${state.market?`<span class="pill"${reason?` title="${e(talks.obstacle)}"`:''}>${e(barrier)}</span>`:''}<button class="primary" type="button" disabled title="${e(talks.obstacle)}">${label}</button>`);
  const counter=talks.contre_offre,amount=value=>wage?`${monthlySalary(value)} / mois`:price(value);
  const left=`${talks.tours_restants} offre${talks.tours_restants>1?'s':''} restante${talks.tours_restants>1?'s':''}`;
  const intro=wage?`Salaire actuel ${player.club?monthlySalary(player.wage)+' / mois':'—'}`:`Prix minimum ${price(player.asking_price)} · budget ${price(talks.budget)}`;
@@ -342,9 +344,7 @@ export async function playerPreview(id, state) {
 
 export async function playerScreen(id) {
  const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
- // The latest club of each season: career rows are listed newest first.
- const clubs=new Map();for(const row of history.career.items)if(!clubs.has(row.season))clubs.set(row.season,row.club);
- const points=history.trajectory.map(point=>({...point,club:clubs.get(point.season)}));
+ const points=history.trajectory;
  const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au début de chaque mois.'),'','level-card');
  const story=`<div class="player-row history">${chart}${careerCard(player,history.career)}</div>`;
  // A retired player keeps his name and his history.

@@ -63,6 +63,13 @@ test('another club’s player can receive an offer from his page, only while the
  assert.doesNotMatch(closed,/talks-dialog/);
 });
 
+test('an obstacle to an offer is named in a pill, the reason after its colon left to the tooltip',async()=>{
+ const fresh=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,obstacle:'Intransférable jusqu’au 21 septembre : il vient d’arriver.'}),()=>playerScreen(20));
+ assert.match(fresh,/<span class="pill" title="Intransférable jusqu’au 21 septembre : il vient d’arriver.">Intransférable jusqu’au 21 septembre<\/span><button class="primary" type="button" disabled/);
+ const kept=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,obstacle:'Nice ne peut pas s’en séparer.'}),()=>playerScreen(20));
+ assert.match(kept,/<span class="pill">Nice ne peut pas s’en séparer.<\/span>/);
+});
+
 test('a counter-offer comes back in the dialog, ready to accept, and agreed steps wait in a pill',async()=>{
  const countered=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,etape:'indemnite',contre_offre:3450000,tours_restants:2}),()=>playerScreen(20));
  assert.match(countered,/Nice demande 3,45\sM\s?€<\/strong> · 2 offres restantes/);

@@ -193,15 +193,16 @@ test('player page steps through the squad at the left of the name, and shows not
  assert.doesNotMatch(retired,/entity-nav/);assert.match(retired,/CARRIÈRE ARCHIVÉE/);
 });
 
-test('level chart points use the latest club of each season from the career',async()=>{
+test('level chart points use the club of their own month, not the latest club of the season in the career',async()=>{
  const marseille={id:9,name:'Marseille',major_color:'#ffffff',minor_color:'#2faee0'},lyon={id:8,name:'Lyon',major_color:'#1d3f8f',minor_color:'#d3232f'};
- const previous=history.career.items;
- history.career.items=[{...previous[0],season:2026,club:marseille},{...previous[0],season:2025,club:marseille},{...previous[0],season:2025,club:lyon}];
+ const items=history.career.items,trajectory=history.trajectory;
+ // He opened the season at Lyon and joined Marseille in the winter.
+ history.career.items=[{...items[0],season:2025,club:marseille},{...items[0],season:2025,club:lyon}];
+ history.trajectory=[{year:2025,month:7,season:2025,level:110,club:lyon},{year:2026,month:1,season:2025,level:115,club:lyon},{year:2026,month:2,season:2025,level:116,club:marseille}];
  try{
   const {html}=await render();
-  assert.match(html,/title="juillet 2025 · Marseille · niveau 110"/);assert.match(html,/title="juillet 2026 · Marseille · niveau 120"/);
-  assert.doesNotMatch(html,/Lyon · niveau/);
- }finally{history.career.items=previous;}
+  assert.deepEqual([...html.matchAll(/class="chart-point"[^>]*title="([^"]*)"/g)].map(match=>match[1]),['juillet 2025 · Lyon · niveau 110','février 2026 · Marseille · niveau 116']);
+ }finally{history.career.items=items;history.trajectory=trajectory;}
 });
 
 test('career competition column shows the flag of the league country, and none for the external market',async()=>{

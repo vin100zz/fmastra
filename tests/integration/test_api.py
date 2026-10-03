@@ -182,9 +182,36 @@ def test_player_history_gives_the_level_month_by_month_after_the_season_points_o
         trajectory = client.get(f"/api/joueurs/{player.id}/historique").json()["trajectory"]
     finally:
         world.trajectories[player.id] = kept
-    assert trajectory == [{"year": 2024, "month": 7, "season": 2024, "level": 100},
-                          {"year": 2025, "month": 6, "season": 2024, "level": 104},
-                          {"year": 2025, "month": 7, "season": 2025, "level": 106}]
+    assert [{key: point[key] for key in ("year", "month", "season", "level")} for point in trajectory] == [
+        {"year": 2024, "month": 7, "season": 2024, "level": 100},
+        {"year": 2025, "month": 6, "season": 2024, "level": 104},
+        {"year": 2025, "month": 7, "season": 2025, "level": 106}]
+
+
+def test_player_history_gives_each_month_the_club_played_for_then(client):
+    from core.domain.date import Date
+    from core.domain.world import TransferRecord, history_month
+    world = client.app.state.game.world
+    player = next(player for player in world.players.values() if player.club_id is not None)
+    first, loaner, last = [club.id for club in world.clubs.values() if club.id != player.club_id][:3]
+    kept, transfers = world.trajectories[player.id], world.transfers
+    clubs = lambda: [point["club"] and point["club"]["id"] for point in client.get(f"/api/joueurs/{player.id}/historique").json()["trajectory"]]
+    world.trajectories[player.id] = [(history_month(2024, 7), [100]), (history_month(2025, 7), [104, 105, 106, 107, 108, 109, 110, 111])]
+    try:
+        # Without any movement he never left his club.
+        world.transfers = [row for row in transfers if row.player_id != player.id]
+        assert clubs() == [player.club_id] * 9
+        # Sold in the winter, the opening of that season stays with the club he left; then a loan, its return and a release.
+        world.transfers = world.transfers + [TransferRecord(Date(2025, 9, 12), player.id, first, last, 1000, "transfer", 2025),
+                                             TransferRecord(Date(2025, 11, 1), player.id, last, loaner, 0, "loan", 2025),
+                                             TransferRecord(Date(2025, 12, 31), player.id, loaner, last, 0, "loan_return", 2025),
+                                             TransferRecord(Date(2026, 2, 3), player.id, last, None, 0, "release", 2025)]
+        assert clubs() == [first, first, first, last, last, loaner, last, last, None]
+        point = client.get(f"/api/joueurs/{player.id}/historique").json()["trajectory"][0]
+        assert point["club"] == {"id": first, "name": world.clubs[first].name, "major_color": world.clubs[first].home_kit_major_color,
+                                 "minor_color": world.clubs[first].home_kit_minor_color}
+    finally:
+        world.trajectories[player.id], world.transfers = kept, transfers
 
 
 def test_player_lists_carry_the_attributes_and_sort_on_each(client):

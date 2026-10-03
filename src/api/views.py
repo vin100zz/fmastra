@@ -493,13 +493,21 @@ def club_league(world: World, club_id: int | None) -> Competition | None:
 
 
 def level_history(world: World, player_id: int) -> list[dict]:
-    """The player's level out of 200 month by month, oldest first; seasons played before the history became monthly have a
-    single point, at their opening."""
-    points = []
+    """The player's level out of 200 month by month, oldest first, each with the club he played for that month (the one he
+    ended it at if he moved, None without a club); seasons played before the history became monthly have a single point,
+    at their opening."""
+    moves = sorted((row for row in world.transfers if row.player_id == player_id), key=lambda row: row.date)
+    player = world.players.get(player_id)
+    # Before his earliest known movement he was where it took him from; without any, he never left his club.
+    club_id = moves[0].source_id if moves else player.club_id if player else None
+    points, done = [], 0
     for start, levels in world.trajectories.get(player_id, []):
         for index, level in enumerate(levels, start):
             year, month = divmod(index, 12)
-            points.append({"year": year, "month": month + 1, "season": financial_season(world, Date(year, month + 1, 1)), "level": level})
+            while done < len(moves) and (moves[done].date.year, moves[done].date.month) <= (year, month + 1):
+                club_id, done = moves[done].target_id, done + 1
+            points.append({"year": year, "month": month + 1, "season": financial_season(world, Date(year, month + 1, 1)), "level": level,
+                           "club": club_ref(world, club_id)})
     return points
 
 
