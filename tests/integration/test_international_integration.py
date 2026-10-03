@@ -48,6 +48,7 @@ def test_national_api_and_player_history(imported, tmp_path):
         data = client.get('/api/international').json()
         assert data['enabled'] and len(data['nations']) == 211
         assert [e['year'] for e in data['editions']] == [2028]
+        assert {'titles', 'last_edition'} <= set(data['nations'][0])
         edition = client.get('/api/international/editions/2028').json()
         assert len(edition['qualification_groups']) == 10 and len(edition['matches']) == 240
         france = next(n for n in data['nations'] if n['name'] == 'France')

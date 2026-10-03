@@ -96,6 +96,14 @@ def nation_editions(world, nid):
     return rows
 
 
+def nation_summary(world, nid):
+    """What the nations list shows beside a nation's strength: its titles and how its latest finished edition went."""
+    titles = sum(1 for edition in world.international.editions.values() if edition.winner_id == nid)
+    rows = nation_editions(world, nid)
+    run = rows[0]["finals"] or rows[0]["qualification"] if rows else None
+    return {"titles": titles, "last_edition": {"name": rows[0]["name"], "label": run["label"], "winner": run["winner"]} if run else None}
+
+
 def international_leaders(records):
     """The players with the most caps and the most goals for a nation, every edition included; names come from the
     record itself since a campaign-only reinforcement never enters the player registry."""
@@ -123,7 +131,7 @@ def international_router(service):
                     "editions": [{"year": e.year, "name": e.name, "kind": e.kind,
                                   "winner": nation_ref(world, e.winner_id) if e.winner_id is not None else None}
                                  for e in sorted(world.international.editions.values(), key=lambda e: -e.year)],
-                    "nations": [nation_ref(world, n.id) for n in sorted(world.international.nations.values(), key=lambda n: (-n.strength, n.name))]}
+                    "nations": [{**nation_ref(world, n.id), **nation_summary(world, n.id)} for n in sorted(world.international.nations.values(), key=lambda n: (-n.strength, n.name))]}
 
     @api.get("/editions/{year}")
     def edition(year: int):

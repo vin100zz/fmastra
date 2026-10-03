@@ -978,3 +978,62 @@ a.button:hover{background:var(--panel-3);color:var(--strong)}
 #tooltip::after{content:"";position:absolute;left:var(--arrow,50%);width:8px;height:8px;margin-left:-4px;background:var(--panel-3);transform:rotate(45deg)}
 #tooltip[data-side=top]::after{top:100%;margin-top:-4px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 #tooltip[data-side=bottom]::after{bottom:100%;margin-bottom:-4px;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+
+/* International competitions: the edition's header and stages, the group boards, the statistics and the nations list. */
+.edition-head{flex-wrap:wrap;justify-content:space-between}
+.edition-switch{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--panel)}
+.edition-switch a{display:flex;flex-direction:column;padding:6px 14px;font-size:13px;font-weight:600;color:var(--muted);border-left:1px solid var(--line)}
+.edition-switch a:first-child{border-left:0}
+.edition-switch a:hover{color:var(--strong)}
+.edition-switch a.active{background:var(--accent);color:var(--accent-ink)}
+.edition-switch small{font-size:11px;font-weight:500;opacity:.85}
+.intl-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+.intl-groups-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.intl-split{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:10px;align-items:start}
+.intl-rail{display:grid;gap:10px}
+.intl-groups>.card,.intl-rail>.card{margin-bottom:0}
+.intl-groups .standings table,.intl-rail .standings table{table-layout:fixed}
+.intl-groups .standings td:nth-child(2),.intl-rail .standings td:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.intl-groups .standings .nation,.intl-rail .standings .nation{display:inline}
+.intl-groups .standings .flag,.intl-rail .standings .flag{margin-right:6px;vertical-align:-1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips a{padding:4px 12px;border:1px solid var(--line);border-radius:3px;background:var(--panel);font-size:13px;font-weight:600;color:var(--ink-2)}
+.chips a:hover{color:var(--strong);background:var(--panel-2)}
+.chips a.active{background:var(--strong);border-color:var(--strong);color:var(--panel)}
+.day-pills,.nations-filter{padding:10px 14px;border-bottom:1px solid var(--row-line)}
+.day-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.day-group{min-width:0;border-right:1px solid var(--row-line);border-bottom:1px solid var(--row-line)}
+.day-group h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.round-groups.stacked .round-block,.round-groups.stacked .round-group .round-block{grid-template-columns:1fr;grid-template-areas:"matches" "table"}
+.round-groups.stacked .round-table{border-left:0;border-top:1px solid var(--line)}
+.stats-panels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
+.stats-panel{display:flex;flex-direction:column;margin-bottom:0;min-width:0}
+.stats-scroll{overflow:auto;max-height:calc(100vh - 300px);min-height:260px}
+.stats-scroll th{position:sticky;top:0;z-index:1;background:var(--panel-2)}
+.stats-scroll td:nth-child(3){max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nations-split{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);gap:10px;align-items:start}
+.nations-side{display:grid;gap:10px}
+.nations-side>.card,.nations-split>.card{margin-bottom:0}
+.current-edition{border-top:3px solid var(--accent)}
+.current-edition{display:block}
+.current-edition:hover{background:var(--panel-2)}
+.current-edition h2{margin:0 0 2px;font-size:34px}
+.current-edition p{margin:0}
+a.button.primary{background:var(--accent);border-color:var(--accent-text);color:var(--accent-ink)}
+a.button.primary:hover{background:var(--accent-hover);color:var(--accent-ink)}
+.force{display:flex;align-items:center;gap:8px}
+.force-bar{width:120px;height:6px;border-radius:3px;background:var(--panel-3);overflow:hidden}
+.force-bar i{display:block;height:100%;background:var(--accent)}
+/* Three groups a row beside the leading scorers. */
+.round-with-rail{display:grid;grid-template-columns:minmax(0,1fr) 360px;align-items:start}
+.round-rail{border-left:1px solid var(--line);min-width:0}
+.round-rail h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.round-groups.stacked{grid-template-columns:repeat(3,minmax(0,1fr))}
+.round-groups.stacked .round-group{border-top:1px solid var(--line);border-right:1px solid var(--line)}
+.round-groups.stacked .round-group:nth-child(-n+3){border-top:0}
+.round-groups.stacked .round-group:nth-child(3n){border-right:0}
+@media(max-width:1700px){.round-groups.stacked{grid-template-columns:repeat(2,minmax(0,1fr))}.round-groups.stacked .round-group:nth-child(-n+3){border-top:1px solid var(--line)}.round-groups.stacked .round-group:nth-child(-n+2){border-top:0}.round-groups.stacked .round-group:nth-child(3n){border-right:1px solid var(--line)}.round-groups.stacked .round-group:nth-child(2n){border-right:0}}
+@media(max-width:1329px){.round-groups.stacked{grid-template-columns:1fr}.round-groups.stacked .round-group{border-right:0!important}.round-with-rail{grid-template-columns:1fr}.round-rail{border-left:0;border-top:1px solid var(--line)}}
+@media(max-width:1500px){.intl-groups-4,.stats-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.day-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1329px){.intl-split,.nations-split{grid-template-columns:1fr}.intl-groups{grid-template-columns:1fr}}
+@media(max-width:950px){.intl-groups-4,.stats-panels,.day-groups{grid-template-columns:1fr}}

@@ -112,4 +112,7 @@ def edition_round(world: World, year: int, which: Which) -> dict:
                    "standings": nation_standings(world, edition, group, finals)}
                   for index, group in enumerate(edition.final_groups if finals else edition.qualification_groups)] if rows else []
     day = min(match.date for match in fixtures).iso() if fixtures else None
-    return view(number, international_label(edition, number), day, groups)
+    top = sorted((row for row in world.international.records.values() if row.edition == year and row.goals > 0),
+                 key=lambda row: (-row.goals, row.matches, row.player_id))[:TOP_SCORERS]
+    return {**view(number, international_label(edition, number), day, groups),
+            "top_scorers": [{"id": row.player_id, "name": row.name, "club": nation_ref(world, row.nation_id), "goals": row.goals} for row in top]}

@@ -94,3 +94,14 @@ test('an international edition gets both tabs, before its statistics',async()=>{
   ()=>internationalScreen('2028','latest'));
  assert.ok(urls.includes('/api/international/editions/2028/journee/derniere'));
 });
+
+test('an international round lays three groups a row beside the leading scorers',()=>{
+ const club={id:-1,name:'Alpha',nation:'FRA',national:true};
+ const played={id:1,date:'2028-06-01',home:club,away:{...club,id:-2,name:'Bravo'},score:[1,0],aggregate:null,penalties:null,scorers:null};
+ const group=name=>({name,matches:[played],standings:[row(1,'A',1)]});
+ const data={round:{number:12,label:'Groupes · J2',date:'2028-06-05'},groups:['A','B','C'].map(group),top_scorers:[{id:5,name:'Buteur',club,goals:4}]};
+ const html=roundContent(data,'latest',{figures:true});
+ assert.match(html,/round-groups stacked/);
+ assert.match(html,/<aside class="round-rail"><h3>Meilleurs buteurs<\/h3>.*Buteur.*<b>4<\/b>/s);
+ assert.doesNotMatch(roundContent(data,'latest'),/round-rail/);
+});
