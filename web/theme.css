@@ -477,9 +477,15 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .bracket-slots{flex:1;display:flex;flex-direction:column}
 .bracket-pair{flex:2 1 0;display:flex;flex-direction:column;position:relative}
 .bracket-slot{flex:1 1 0;display:flex;align-items:center;position:relative;min-height:58px}
-.linked .bracket-slot::after{content:"";position:absolute;left:100%;width:14px;top:50%;border-top:1px solid var(--muted)}
-.linked .bracket-pair::before{content:"";position:absolute;left:calc(100% + 14px);top:25%;bottom:25%;border-left:1px solid var(--muted)}
-.fed .bracket-slot::before{content:"";position:absolute;right:100%;width:14px;top:50%;border-top:1px solid var(--muted)}
+.linked .bracket-slot::after{content:"";position:absolute;left:100%;width:var(--stub,14px);top:50%;border-top:1px solid var(--muted)}
+.linked .bracket-pair::before{content:"";position:absolute;left:calc(100% + var(--stub,14px));top:25%;bottom:25%;border-left:1px solid var(--muted)}
+.fed .bracket-slot::before{content:"";position:absolute;right:100%;width:var(--stub,14px);top:50%;border-top:1px solid var(--muted)}
+.bracket.sided{gap:calc(2*var(--stub));--stub:8px}
+.bracket.sided .bracket-round{flex-basis:120px;min-width:120px}
+.bracket-round.mirror.linked .bracket-slot::after{left:auto;right:100%}
+.bracket-round.mirror.linked .bracket-pair::before{left:auto;right:calc(100% + var(--stub,14px));border-left:0;border-right:1px solid var(--muted)}
+.bracket-round.mirror.fed .bracket-slot::before{right:auto;left:100%}
+.bracket-round.final.fed .bracket-slot::after{content:"";position:absolute;left:100%;width:var(--stub,14px);top:50%;border-top:1px solid var(--muted)}
 .bracket-tie{position:relative;width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:3px}
 .bracket-tie:hover{border-color:var(--muted)}
 .bracket-tie.empty{height:48px;background:transparent;border-style:dashed}
@@ -1037,3 +1043,35 @@ a.button.primary:hover{background:var(--accent-hover);color:var(--accent-ink)}
 @media(max-width:1500px){.intl-groups-4,.stats-panels{grid-template-columns:repeat(2,minmax(0,1fr))}.day-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1329px){.intl-split,.nations-split{grid-template-columns:1fr}.intl-groups{grid-template-columns:1fr}}
 @media(max-width:950px){.intl-groups-4,.stats-panels,.day-groups{grid-template-columns:1fr}}
+
+/* Wide-screen layouts of the league, cup and European competition screens. */
+.page-heading .filters{margin:0}
+.league-layout,.calendar-layout,.history-layout{display:grid;gap:10px;align-items:start}
+.league-layout{grid-template-columns:minmax(0,1fr) 360px}
+.league-layout .card,.calendar-layout .card,.history-layout .card,.stats-boards .card{margin-bottom:0}
+.league-tiles{display:flex;flex-direction:column;gap:10px}
+.league-tiles .stat-card{padding:10px 14px}.league-tiles .stat-card strong{margin:2px 0}
+.round-stepper{display:flex;align-items:center;gap:4px;margin-bottom:10px}
+.round-pills{display:flex;gap:3px;flex:1;min-width:0}
+.round-pills a,.round-step{display:grid;place-items:center;height:30px;border:1px solid var(--line);border-radius:2px;background:var(--panel);color:var(--ink-2);font-size:12px;font-weight:500}
+.round-pills a{flex:1 1 0;min-width:0}
+.round-pills a:hover,.round-step:hover{background:var(--panel-2);color:var(--strong)}
+.round-pills a.active{background:var(--panel-2);color:var(--strong);font-weight:700;box-shadow:inset 0 -2px 0 var(--accent)}
+.round-step{width:30px;flex:none;font-size:16px}.round-step.disabled{color:var(--disabled);background:transparent}
+.calendar-layout{grid-template-columns:minmax(0,1fr) 440px}
+.calendar-side{display:flex;flex-direction:column;gap:10px}
+.round-heading{margin:0 0 6px;font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.fixture-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fixture-card{background:var(--panel);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.fixture-card .fixture:last-child{border-bottom:0}
+.stats-boards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:start}
+.stats-boards>.card{grid-column:span 2}.stats-boards>.card:nth-child(n+4){grid-column:span 3}
+.history-layout{grid-template-columns:minmax(0,1fr) 440px}
+.history-layout.three{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 440px}
+.history-layout.three .history-main{grid-column:1}.history-layout.three .history-leaders{grid-column:3;grid-row:1}.history-layout.three .history-archives{grid-column:2;grid-row:1}
+.history-layout .transfer-columns{grid-template-columns:minmax(0,1fr)}
+.history-archives .season-archive{margin-bottom:10px}
+.europe-halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.europe-halves>div+div{border-left:1px solid var(--line)}
+@media(max-width:1329px){.league-layout,.calendar-layout,.history-layout,.history-layout.three{grid-template-columns:minmax(0,1fr)}.history-layout.three>*{grid-column:auto!important;grid-row:auto!important}.fixture-grid{grid-template-columns:minmax(0,1fr)}.stats-boards{grid-template-columns:minmax(0,1fr)}.stats-boards>.card,.stats-boards>.card:nth-child(n+4){grid-column:auto}.europe-halves{grid-template-columns:minmax(0,1fr)}.europe-halves>div+div{border-left:0;border-top:1px solid var(--line)}}
+.history-main,.history-archives{display:flex;flex-direction:column;gap:10px;min-width:0}

@@ -686,7 +686,8 @@ def router(service: GameService) -> APIRouter:
             matches = [world.matches[mid] for mid in competition.match_ids]
             rounds = sorted({match.round_number for match in matches})
             selected = journee or min((match.round_number for match in matches if match.result is None), default=max(rounds))
-            data = v.paginate([v.match_row(world, match) for match in matches if match.round_number == selected], page)
+            from .rounds import scorers
+            data = v.paginate([{**v.match_row(world, match), "scorers": scorers(world, match)} for match in matches if match.round_number == selected], page)
             return {**data, "round": selected, "rounds": rounds}
 
     @api.get("/competitions/{competition_id}/journee/{quand}")
@@ -704,7 +705,7 @@ def router(service: GameService) -> APIRouter:
         from .statistics import leaders, competition_leaders
         with service.reading() as world:
             world.competitions[competition_id]
-            seasons = v.paginate([{"season": year, "champion": v.club_ref(world, winner), "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None),
+            seasons = v.paginate([{"season": year, "champion": v.club_ref(world, winner), "nation": world.clubs[winner].nation if winner in world.clubs else None, "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None),
                                    "standings": v.table(world, competition_id, year)}
                                   for year, winner in reversed(world.champions.get(competition_id, []))], page)
             return {**seasons, "leaders": competition_leaders(world, competition_id)}

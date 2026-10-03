@@ -53,6 +53,6 @@ export function seasonsHistory(data){
  ]),data.items.map(row=>[row.season,row.competition??'',row.rank??'',row.reputation?.value??'',row.cup?.level??'',row.europe?.level??'',row.champion?1:0]),{ascending:[2]})+(data.total>data.page_size?pager(data):''));
  const transferCard=(title,rows,incoming)=>card(title,rows.length?transferRows(rows,incoming):empty('Aucun transfert payant enregistré.','Pas encore de transfert'));
  const {leaders,transfers}=data;
- return seasons+leadersCards(leaders,'Toutes compétitions et toutes saisons confondues, saison en cours incluse.')+'<p class="muted">Indemnités les plus élevées, hors départs libres.</p>'+
+ return seasons+leadersCards(leaders)+'<p class="muted">Indemnités les plus élevées, hors départs libres.</p>'+
   `<div class="transfer-columns"><section aria-label="Plus gros transferts entrants">${transferCard(`Plus gros transferts entrants · ${transfers.arrivals.length}`,transfers.arrivals,true)}</section><section aria-label="Plus gros transferts sortants">${transferCard(`Plus gros transferts sortants · ${transfers.departures.length}`,transfers.departures,false)}</section></div>`;
 }

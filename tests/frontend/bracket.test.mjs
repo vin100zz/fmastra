@@ -24,3 +24,20 @@ test('an undrawn round stays unjoined, unless the draw is fixed',()=>{
  assert.doesNotMatch(bracket(stages),/linked/);
  assert.match(bracket(stages,{fixed:true}),/bracket-round linked/);
 });
+
+test('a cup bracket drawn with sides runs both halves towards the final in the middle',()=>{
+ const quarters=[played(1,1,2,[1,0],1),played(2,3,4,[0,1],4),played(3,5,6,[2,2],6),played(4,7,8,[3,0],7)];
+ const semis=[played(5,1,4,[1,0],1),played(6,6,7,[0,2],7)];
+ const html=bracket([{label:'Quarts',matches:quarters},{label:'Demies',matches:semis},{label:'Finale',matches:[played(7,1,7,null,null)]}],{sides:true});
+ assert.match(html,/class="bracket sided"/);
+ // quarters and semis on each side, the final once, in the middle
+ assert.equal((html.match(/class="bracket-round[^"]*"/g)||[]).length,5);
+ assert.equal((html.match(/bracket-round[^"]*mirror/g)||[]).length,2);
+ assert.equal((html.match(/bracket-round[^"]*final/g)||[]).length,1);
+ // the first half of each round on the left, the second on the right
+ assert.deepEqual(order(html).slice(0,4),[1,2,3,4]);
+ assert.deepEqual(order(html).slice(-4),[5,6,7,8]);
+ assert.equal((html.match(/class="bracket-tie/g)||[]).length,7);
+ // one-sided draws are unchanged
+ assert.doesNotMatch(bracket([{label:'Demies',matches:semis},{label:'Finale',matches:[]}]),/sided/);
+});

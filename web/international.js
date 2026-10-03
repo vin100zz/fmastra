@@ -99,7 +99,7 @@ function squadCard(data){
 }
 function historyContent(data){
  const editions=card('Bilan par compétition',data.editions.length?table(['ÉDITION','QUALIFICATIONS','PHASE FINALE'],data.editions.map(row=>[e(row.name),editionRun(row.qualification),editionRun(row.finals)])):empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));
- return editions+leadersCards(data.leaders,'Toutes éditions confondues, édition en cours incluse.');
+ return editions+leadersCards(data.leaders);
 }
 async function nationScreen(id,tab){
  const [data,nav]=await Promise.all([api(`/international/nations/${id}`),api(`/international/nations/${id}/navigation`)]);

@@ -209,12 +209,12 @@ et Jeu). La vue suit le passage d'un club à l'autre.
 
 | Onglet | Contenu |
 |---|---|
-| Classement | position, J, V, N, D, BP, BC, différence, points, forme |
-| Calendrier | matches par journée, avec résultats |
+| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche ; à droite, quatre tuiles : meilleure attaque, meilleure défense, meilleur buteur et meilleur passeur. Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
+| Calendrier | une journée à la fois : une pastille par journée au-dessus (la journée affichée allumée, une flèche de chaque côté), puis les matches de la journée en deux colonnes, chacun avec ses buteurs et leurs minutes, la date en tête ; à droite, le classement réduit (#, points, J, différence) et les 5 meilleurs buteurs |
 | Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement et des 10 meilleurs buteurs |
 | Prochains matches | la prochaine journée ou le prochain tour, à côté du classement et des 10 meilleurs buteurs |
-| Statistiques | meilleurs buteurs, passeurs, meilleures notes moyennes, clean sheets, cartons |
-| Historique | champions par saison, meilleur buteur par saison, puis les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat, puis les classements archivés |
+| Statistiques | les cinq classements (meilleurs buteurs, passeurs, meilleures notes moyennes, cartons, clean sheets) côte à côte, 10 lignes chacun ; « Voir tout » ouvre la liste complète et paginée du classement, avec un menu pour passer de l'un à l'autre ou revenir aux cinq |
+| Historique | trois colonnes : les champions par saison avec leur meilleur buteur, puis les titres par club ; les classements archivés ; les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat |
 
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro et de
 la Coupe du monde) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
@@ -235,7 +235,10 @@ leurs buts regroupées : « Maupay (14, 75), Welbeck (56) ». Les minutes suiven
 L'onglet Tableau d'une coupe nationale (sa seule vue des tours, ouverte par défaut), la Phase
 finale d'une coupe d'Europe et la phase finale d'une édition internationale dessinent l'arbre à
 élimination directe : une colonne par tour, du premier à la finale, chaque confrontation centrée
-à droite des deux dont elle réunit les vainqueurs. Une confrontation donne, par équipe, le score
+à droite des deux dont elle réunit les vainqueurs. Le tableau d'une coupe nationale se lit des deux
+côtés : la première moitié de chaque tour va de gauche à droite, la seconde de droite à gauche, et
+les deux demi-finales rejoignent la finale au centre (la moitié de la hauteur d'un arbre à sens unique) ;
+la Phase finale d'une coupe d'Europe, avec ses barrages, reste d'un seul sens. Une confrontation donne, par équipe, le score
 de chaque match (aller puis retour, sans cumul) et, s'il y en a eu, les tirs au but entre
 parenthèses. L'équipe qualifiée est surlignée. Un clic sur le bloc ouvre le match (le retour
 une fois joué), un clic sur le nom d'une équipe ouvre sa fiche, et en aller-retour chaque score
@@ -245,8 +248,8 @@ tiré reste en cases vides non reliées ; le tableau des sélections, fixé d'av
 les tours à venir. En coupe d'Europe, les barrages occupent autant de cases que les huitièmes :
 chacun est aligné sur le huitième où son vainqueur retrouve un club classé de 1 à 8.
 
-L'onglet Palmarès d'une coupe nationale ou d'une coupe d'Europe (vainqueurs par saison) se termine par
-les mêmes deux classements de 15 joueurs. Ils additionnent toutes les saisons, la saison en cours
+L'onglet Palmarès d'une coupe nationale et l'onglet Historique d'une coupe d'Europe (vainqueurs par saison)
+gardent à droite les mêmes deux classements de 15 joueurs, l'un sous l'autre. Les vainqueurs sont suivis des titres par club (par pays en coupe d'Europe, dont l'historique s'ouvre aussi sur trois colonnes, avec au milieu le classement de la phase de ligue de la saison choisie). Ils additionnent toutes les saisons, la saison en cours
 comprise, et tous les clubs qu'un joueur a servis dans cette seule compétition (les matches et
 buts d'une autre compétition ne comptent pas) ; l'égalité se départage comme pour l'historique
 d'un club.
@@ -700,7 +703,7 @@ GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, r�
 
 GET  /api/competitions                    chacune : clubs, et rounds (journées de son calendrier, tours d'une coupe)
 GET  /api/competitions/{id}/classement
-GET  /api/competitions/{id}/calendrier?journee=
+GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (avec scorers, comme journee/derniere), numéros des journées
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison, avec le classement) | null}]}
 GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification ou de phase finale
 GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes

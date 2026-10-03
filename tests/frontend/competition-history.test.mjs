@@ -25,7 +25,7 @@ test('the leaders block ranks matches and goals side by side, links players and 
  assert.ok(html.indexOf('Joueurs les plus utilisés · 2')<html.indexOf('Meilleurs buteurs · 1'));
  assert.match(html,/href="#\/player\/1">Fidèle &lt;b&gt;/);assert.doesNotMatch(html,/Fidèle <b>/);
  assert.match(html,/412/);assert.match(html,/180/);
- assert.match(html,/Toutes saisons confondues, saison en cours incluse/);
+ assert.doesNotMatch(html,/Toutes saisons confondues/);
  assert.match(leadersCards({matches:[],goals:[]}),/Pas encore de statistiques/);
 });
 

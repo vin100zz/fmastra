@@ -279,7 +279,14 @@ export function seasonArchives(data){
 }
 
 // The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).
-export function leadersCards(leaders,note='Toutes saisons confondues, saison en cours incluse.'){
+export function leadersCards(leaders,note=''){
  const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR','MATCHS','BUTS'],rows.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,number(row.matches),number(row.goals)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
- return `<p class="muted">${escape(note)}</p><div class="transfer-columns">${list('Joueurs les plus utilisés',leaders.matches)}${list('Meilleurs buteurs',leaders.goals)}</div>`;
+ return `${note?`<p class="muted">${escape(note)}</p>`:''}<div class="transfer-columns">${list('Joueurs les plus utilisés',leaders.matches)}${list('Meilleurs buteurs',leaders.goals)}</div>`;
 }
+
+// The titles won, most first: `entries` is a list of [label, count], shown as bars against the leader's count.
+export function titlesCard(title,entries){
+ const rows=entries.filter(([,count])=>count>0).sort((a,b)=>b[1]-a[1]).slice(0,8),top=rows[0]?.[1]||1;
+ return card(title,rows.length?table(['',''].map((_,index)=>index?'TITRES':title.replace('Titres par ','').toUpperCase()),rows.map(([label,count])=>[label,`<span class="bar-figure">${miniBar(count/top)}<b>${count}</b></span>`])):empty('Aucun titre pour l’instant.','Pas encore de vainqueur'));
+}
+export const countTitles=(items,key,label)=>{const found=new Map();items.forEach(row=>{const k=key(row);if(k==null)return;const entry=found.get(k)||[label(row),0];entry[1]++;found.set(k,entry);});return [...found.values()];};
