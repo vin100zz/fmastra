@@ -77,7 +77,7 @@ def decode(value: Any) -> Any:
             for name in ("training_facilities", "youth_recruitment", "home_kit_id",
                         "home_kit_major_color", "home_kit_minor_color", "home_kit_third_color"):
                 value["fields"].setdefault(name, None)
-            value["fields"].setdefault("loaned_ids", [])
+            for name in ("loaned_ids", "borrowed_ids"): value["fields"].setdefault(name, [])
         if cls is Player:
             for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),
                                   ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []}),

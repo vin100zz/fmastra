@@ -7,9 +7,25 @@ inférieure à un point ne doit pas disparaître par arrondi.
 ## Progression mensuelle
 
 Croissance = facteur d'âge positif × facteur de temps de jeu × marge au
-potentiel normalisée × amplitude. Le facteur de jeu passe du minimum configuré
-à 1 selon les minutes du mois et la référence. La croissance cesse à l'âge
-défini par sa courbe et ne peut pas dépasser le potentiel.
+potentiel normalisée × amplitude. La croissance cesse à l'âge défini par sa
+courbe et ne peut pas dépasser le potentiel.
+
+Facteur de jeu d'un joueur d'un club simulé (`player_states.playing_factor`) :
+`plancher + (1 − plancher) × (minutes du mois ÷ minutes_reference_par_mois) ^ exposant_minutes`,
+les minutes étant bornées à la référence. L'exposant (0,5) rend la courbe concave :
+les premières minutes comptent le plus. Le plancher suit la note d'entraînement du
+club (`TrainingFacilities`, 1 à 20), en ligne droite de `plancher_entrainement.note_1`
+à `note_20` ; `facteur_jeu_min` pour un club sans note.
+
+Un joueur en réserve (`Player.reserve_since`, voir `docs/ia-gestion.md`, « Réserve et
+prêts ») reçoit au moins `plancher + (facteur de réserve − plancher) × part du mois
+passée en réserve`, le facteur de réserve valant `reserve.facteur × extinction` et
+l'extinction passant de 1 à 0 quand son niveau monte de `niveau visé − marge_niveau −
+plage_extinction` à `niveau visé − marge_niveau`. Le mois retient le plus grand des deux
+facteurs, jamais leur somme. Les jours de réserve du mois sont ceux de la période
+ouverte (`reserve_since`) et ceux des périodes closes dans le mois (`reserve_days`,
+remis à zéro à chaque progression). Un joueur prêté progresse avec les minutes jouées
+dans son club d'accueil.
 
 Le déclin est un **terme indépendant**, en points de note globale par mois,
 issu de sa propre courbe d'âge. Il n'est multiplié ni par la marge au potentiel,

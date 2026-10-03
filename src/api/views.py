@@ -125,7 +125,9 @@ def interested(world: World, player: Player) -> bool | None:
     """Whether a player accepts to join the human club; None for its own players and without a human club."""
     from core.world.transfer_rules import accepts_move
     club = world.clubs.get(world.controlled_club_id)
-    return None if club is None or club.id in (player.club_id, player.owner_id) else accepts_move(player, club, world)
+    if club is None or club.id in (player.club_id, player.owner_id): return None
+    # A player on loan moves nowhere before he is back.
+    return player.loan is None and accepts_move(player, club, world)
 
 
 def asked_wage(world: World, player: Player) -> int | None:
@@ -184,24 +186,21 @@ def squad_view(world: World, player: Player) -> dict:
     from core.world import loans, reserves
     from core.world.human import is_human_club
     own = is_human_club(world, player.club_id) and player.loan is None
-    ends = loans.loan_ends(world)
     data = {"pret": loan_ref(world, player), "en_reserve": player.reserve_since is not None,
             "obstacle_reserve": reserves.reserve_obstacle(world, player) if own and player.reserve_since is None else None,
-            "sens": "sortant" if own else "entrant", "clubs": [],
-            "durees": [{"cle": key, "fin": end.iso()} for key, end in ends.items()]}
-    if player.loan is not None or world.controlled_club_id is None:
-        return {**data, "obstacle_pret": None, "durees": []}
-    # The shortest loan on offer: a contract too short for a whole season may still cover half of it.
-    end = min(ends.values(), default=None)
-    if end is None: obstacle = "Le mercato est fermé."
+            "sens": "sortant" if own else "entrant", "clubs": [], "durees": [], "obstacle_pret": None}
+    if player.loan is not None or world.controlled_club_id is None: return data
+    # Each duration is offered only if the loan can run that long: a contract too short for a season may cover half of it.
+    check = loans.lender_obstacle if own else loans.borrowing_obstacle
+    obstacles = {key: (end, check(world, player, end)) for key, end in sorted(loans.loan_ends(world).items(), key=lambda item: item[1])}
+    data["durees"] = [{"cle": key, "fin": end.iso()} for key, (end, obstacle) in obstacles.items() if obstacle is None]
+    if not obstacles: data["obstacle_pret"] = "Le mercato est fermé."
+    elif not data["durees"]: data["obstacle_pret"] = next(iter(obstacles.values()))[1]
     elif own:
-        obstacle = loans.lender_obstacle(world, player, end)
-        if obstacle is None:
-            data["clubs"] = [{**club_ref(world, club.id), "reputation": round(club.reputation, 1),
-                              "competition": world.competitions[club.competition_id].name} for club in loans.takers(world, player)]
-            if not data["clubs"]: obstacle = "Aucun club ne lui offrirait assez de temps de jeu."
-    else: obstacle = loans.borrowing_obstacle(world, player, end)
-    return {**data, "obstacle_pret": obstacle}
+        data["clubs"] = [{**club_ref(world, club.id), "reputation": round(club.reputation, 1),
+                          "competition": world.competitions[club.competition_id].name} for club in loans.takers(world, player)]
+        if not data["clubs"]: data["obstacle_pret"] = "Aucun club ne lui offrirait assez de temps de jeu."
+    return data
 
 
 def talks_view(world: World, player: Player) -> dict:

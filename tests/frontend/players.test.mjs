@@ -12,7 +12,7 @@ async function render(query,controlled){
 
 test('with a club of his own the user filters the players on their interest and on what they ask',async()=>{
  const {html,asked}=await render('interesse=oui&pretentions_max=93000',7);
- assert.match(html,/<select name="interesse"[^>]*class="on"><option value="">Intérêt<\/option><option value="oui" selected>Joueurs intéressés<\/option><option value="non" >Joueurs non intéressés<\/option>/);
+ assert.match(html,/<select name="interesse"[^>]*class="on"><option value="">Intérêt<\/option><option value="oui" selected>Intéressés par un transfert<\/option><option value="pret" >Intéressés par un prêt<\/option><option value="non" >Non intéressés<\/option>/);
  // The bound on what they ask is folded in a menu, which reads it on its button.
  assert.match(html,/<details class="filter-menu on"><summary>Prétentions <b>≤ 93\s000 €<\/b>/);
  assert.match(html,/<label>Max\. \(€\/mois\) <input name="pretentions_max" type="number" min="0" value="93000"><\/label>/);
@@ -33,7 +33,7 @@ test('the title and the filters stand on one line: positions as chips, ranges in
  assert.deepEqual([...html.matchAll(/class="chip \w+ on"[^>]*>(\w+)</g)].map(match=>match[1]),['MC','BU']);
  assert.deepEqual([...html.matchAll(/<details class="filter-menu( on)?"><summary>([^<]+?)(?: <b>([^<]*)<\/b>)?(?:<a|<\/summary)/g)].map(match=>[match[2],match[3]]),
   [['Âge','≤ 23'],['Niveau',undefined],['Potentiel','≥ 180'],['Valeur','≥ 10 M€'],['Prix min.',undefined],['Salaire',undefined],['Prétentions',undefined]]);
- assert.deepEqual([...html.matchAll(/<select name="(\w+)"/g)].map(match=>match[1]),['contrat','statut_club','interesse']);
+ assert.deepEqual([...html.matchAll(/<select name="(\w+)"/g)].map(match=>match[1]),['contrat','statut_club','liste','interesse']);
  assert.match(html,/<button type="button" data-reset-filters >Réinitialiser<\/button><\/form>/);
  // Levels are asked on the server's scale, values in euros; without a window the server keeps its page size.
  const request=decodeURIComponent(asked.find(url=>url.includes('/joueurs?')));
@@ -44,7 +44,7 @@ test('the title and the filters stand on one line: positions as chips, ranges in
 test('the list of the world’s players adds the season’s figures, pages from the head of its card and has no preview without a wide window',async()=>{
  const {html,asked}=await render('tri=goals&ordre=desc',7);
  const headers=[...html.matchAll(/<th class="(\w+)-column"><button[^>]*data-sort="(\w+)"/g)].map(match=>match[2]);
- assert.deepEqual(headers,['position','name','nation','age','rating','potential','club','value','asking_price','wage','wage_demand','interested','contract_end','fitness','appearances','goals','assists','average']);
+ assert.deepEqual(headers,['position','name','nation','age','rating','potential','club','value','asking_price','listed','wage','wage_demand','interested','contract_end','fitness','appearances','goals','assists','average']);
  assert.match(html,/data-order="desc" data-sort="goals">BUTS</);
  assert.match(html,/<span class="num">10 \(2\)<\/span>/);assert.match(html,/<span class="num">6,8<\/span>/);
  assert.match(html,/<div class="split" data-fit="players" data-rows="">/);

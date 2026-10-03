@@ -4,7 +4,7 @@ Tous les clubs que vous ne dirigez pas, et les sélections, confient leurs match
 
 ## Le onze de départ
 
-Sont disponibles les joueurs qui ne sont ni blessés, ni suspendus dans la compétition du jour, ni partis en sélection.
+Sont disponibles les joueurs qui ne sont ni blessés, ni suspendus dans la compétition du jour, ni partis en sélection, ni placés en réserve (voir [Réserve et prêts](#/aide/reserve-et-prets)). Un joueur prêté joue pour son club d'accueil.
 
 Pour chaque place de la formation, chaque joueur disponible reçoit une valeur :
 

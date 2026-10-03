@@ -12,16 +12,33 @@ Le gain s'applique à tous les attributs à la fois, avec un petit aléa mensuel
 
 **Le facteur d'âge.**
 
-| Âge | Facteur | Gain par mois, 40 points sous le potentiel, en jouant |
+| Âge | Facteur | Gain par mois, 40 points sous le potentiel, en jouant tous les matches |
 |---|---:|---:|
 {{#chaque demographie.progression.courbe_age}}| {{age_min}} à {{age_max}} ans | {{facteur}} | {{n(facteur * 0.4 * demographie.progression.amplitude, 2)}} |
 
-**Le facteur de jeu.** Il va de {{demographie.progression.facteur_jeu_min}} pour un joueur qui n'a pas joué du mois à 1 pour un joueur qui a atteint {{demographie.progression.minutes_reference_par_mois}} minutes dans le mois, matches de sélection compris. Au-delà, jouer plus n'apporte rien. Un joueur d'un club non simulé ou sans club progresse avec un facteur fixe de {{demographie.progression.facteur_jeu_dormants_et_libres}}.
+**Le facteur de jeu.** Il part d'un plancher, ce que vaut un mois sans jouer, et monte jusqu'à 1 avec les minutes du mois, matches de sélection compris :
 
-Trois conséquences :
+```
+facteur de jeu = plancher + (1 − plancher) × (minutes du mois ÷ {{demographie.progression.minutes_reference_par_mois}}) ^ {{demographie.progression.exposant_minutes}}
+```
+
+Au-delà de {{demographie.progression.minutes_reference_par_mois}} minutes, jouer plus n'apporte rien. Chaque minute compte moins que la précédente : les premières sont les plus précieuses.
+
+**Le plancher vient de l'entraînement.** Il dépend de la note ENTRAÎNEMENT du club, sur 20 : de {{demographie.progression.plancher_entrainement.note_1}} pour une note de 1 à {{demographie.progression.plancher_entrainement.note_20}} pour une note de 20, en ligne droite entre les deux. Un club sans note a un plancher de {{demographie.progression.facteur_jeu_min}}.
+
+| Entraînement | Sans jouer | 45 min dans le mois | 90 min | 200 min | {{demographie.progression.minutes_reference_par_mois}} min |
+|---:|---:|---:|---:|---:|---:|
+| 1 | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19), 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19)) * (45 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19)) * (90 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 0 / 19)) * (200 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | 1 |
+| 10 | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19), 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19)) * (45 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19)) * (90 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 9 / 19)) * (200 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | 1 |
+| 20 | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19), 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19)) * (45 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19)) * (90 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | {{n((demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19) + (1 - (demographie.progression.plancher_entrainement.note_1 + (demographie.progression.plancher_entrainement.note_20 - demographie.progression.plancher_entrainement.note_1) * 19 / 19)) * (200 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 2)}} | 1 |
+
+Un joueur d'un club non simulé ou sans club progresse avec un facteur fixe de {{demographie.progression.facteur_jeu_dormants_et_libres}}. Un joueur placé en réserve reçoit au moins le facteur de la réserve, et un joueur prêté celui des minutes qu'il joue dans son club d'accueil (voir [Réserve et prêts](#/aide/reserve-et-prets)).
+
+Quatre conséquences :
 
 - **Plus un joueur est loin de son potentiel, plus il progresse vite.** La progression ralentit d'elle-même en approchant du plafond.
-- **Un jeune qui ne joue pas progresse près de trois fois moins vite** qu'un jeune qui joue. Environ {{n(demographie.progression.minutes_reference_par_mois / 90, 1)}} matches pleins par mois suffisent à obtenir la progression maximale.
+- **Faire entrer un jeune en fin de match rapporte beaucoup.** Quatre entrées de 30 minutes dans le mois lui donnent déjà {{pct((120 / demographie.progression.minutes_reference_par_mois) ** demographie.progression.exposant_minutes, 0)}} de l'écart entre le plancher et la progression maximale. Environ {{n(demographie.progression.minutes_reference_par_mois / 90, 1)}} matches pleins par mois donnent la progression maximale.
+- **Un bon centre d'entraînement fait progresser ceux qui ne jouent pas.** Entre le pire et le meilleur, un joueur sans temps de jeu progresse {{n(demographie.progression.plancher_entrainement.note_20 / demographie.progression.plancher_entrainement.note_1, 1)}} fois plus vite. Pour un joueur qui joue tous les matches, l'entraînement ne change rien.
 - **Après {{demographie.progression.courbe_age[-1].age_min - 1}} ans, un joueur ne progresse plus**, même s'il n'a pas atteint son potentiel.
 
 Le niveau ne dépasse jamais le potentiel : si l'aléa l'y porte, les attributs sont ramenés au plafond.
@@ -42,8 +59,7 @@ Une blessure longue après {{etats.blessures.penalite_permanente.age_minimal}} a
 
 ## Ce qui ne joue pas
 
-- **La note ENTRAÎNEMENT du club** est purement informative : elle n'accélère aucune progression.
-- Les notes de match, la forme et le moral n'ont aucun effet sur la progression. Seules les minutes comptent.
+- Les notes de match, la forme et le moral n'ont aucun effet sur la progression. Seuls comptent les minutes, l'entraînement du club et la réserve.
 - Le poste auquel le joueur est aligné ne change pas ses attributs.
 
 ## La retraite

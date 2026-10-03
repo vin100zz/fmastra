@@ -46,6 +46,12 @@ cartons et note moyenne réalisés avec ce club pendant la saison courante, ains
 Les composites du moteur de match (progression, création, frappe, jeu aérien, défense au milieu et de surface, arrêts, sorties aériennes) s'affichent sur 200 : en tête des attributs de la fiche, dans la vue Jeu des listes de joueurs et de la composition. Chaque poste a sa note, moyenne des composites qu'il demande corrigée de l'affinité au poste : à côté des maillots de la carte des aptitudes et du terrain de la composition, où un clic sur un poste compare tout l'effectif à ce poste.
 Les minutes sont affichées sans décimales et ne figurent plus dans le tableau de carrière. L'historique d'un championnat donne le classement complet de chaque saison, avec la dernière saison dépliée, et, comme celui des coupes, les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de la compétition de tous les temps ; celui d'un club résume chaque saison terminée (championnat, coupe nationale, coupe d'Europe), ses 15 joueurs les plus utilisés et ses 15 meilleurs buteurs, et ses 10 plus gros transferts à l'arrivée comme au départ.
 
+L'effectif d'un club tient en deux listes : l'équipe première, puis la réserve, où figurent aussi les joueurs prêtés à
+d'autres clubs. Un joueur en réserve ne joue aucun match mais progresse, tant qu'il est loin du niveau du club ; un joueur
+prêté joue pour un autre club jusqu'à la fin de la saison ou pour une demi-saison, son propriétaire payant son salaire. La
+liste des joueurs dit qui est listé et qui est intéressé, pour un transfert (T) ou pour un prêt (P). Le chapitre
+« Réserve et prêts » du manuel du jeu en donne les règles.
+
 **Mercato mondial**, dans le menu principal, regroupe les transferts, fins de
 contrat, retraites et promotions de tous les clubs, par saison et avec pagination.
 Toutes les colonnes de l'historique des mouvements sont triables par clic, dans les deux sens, avant pagination. Le tri est conservé lors du changement de saison. Les données absentes restent à la fin, y compris le potentiel des anciennes promotions dont le joueur a pris sa retraite.
@@ -301,7 +307,7 @@ Un joueur généré reçoit des aptitudes de même forme, tirées autour de son 
 Les notes `TrainingFacilities` et `YouthRecruitment` sont affichées sur 20 dans
 la liste et la fiche des clubs. YouthRecruitment attire les meilleurs regens de l'année
 (les meilleurs choisissent d'abord les meilleurs centres, de préférence dans leur pays) ;
-TrainingFacilities reste informatif.
+TrainingFacilities fixe ce que progresse un joueur qui joue peu : meilleur est l'entraînement, plus haut est le plancher.
 Ces données sont lues à la création d'une nouvelle partie. Les anciennes
 sauvegardes restent chargeables et conservent leurs joueurs et installations.
 

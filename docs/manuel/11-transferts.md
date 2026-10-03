@@ -1,6 +1,6 @@
 # Vos achats et vos ventes
 
-Votre club achète et vend aux mêmes prix et sous les mêmes limites que les autres (voir [Le mercato des clubs](#/aide/mercato)). Ce qui change, c'est la manière : vous négociez en direct, et rien ne se fait sans votre accord.
+Votre club achète et vend aux mêmes prix et sous les mêmes limites que les autres (voir [Le mercato des clubs](#/aide/mercato)). Ce qui change, c'est la manière : vous négociez en direct, et rien ne se fait sans votre accord. Prêter ou emprunter un joueur suit d'autres règles, plus simples (voir [Réserve et prêts](#/aide/reserve-et-prets/preter-et-emprunter)).
 
 ## Acheter un joueur
 
@@ -25,7 +25,8 @@ Vous pouvez mener autant de dossiers que vous voulez. Chacun réserve son indemn
 - Le mercato est fermé.
 - Le joueur est arrivé dans son club il y a moins de {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours.
 - Son club ne peut pas s'en séparer : il est à {{ia_gestion.garde_fous.effectif_min}} joueurs, ou c'est l'un de ses {{ia_gestion.garde_fous.gardiens_min}} derniers gardiens.
-- Le joueur refuse votre club : la colonne INTÉRESSÉ de la liste des joueurs dit Non (voir [Ce qu'un joueur accepte](#/aide/mercato/ce-qu-un-joueur-accepte)).
+- Le joueur est en prêt : il faut attendre son retour dans son club.
+- Le joueur refuse votre club : la colonne INTÉRESSÉ de la liste des joueurs n'affiche pas T (voir [Ce qu'un joueur accepte](#/aide/mercato/ce-qu-un-joueur-accepte)).
 - Vos moyens ne suivent pas : effectif plein ({{ia_gestion.garde_fous.effectif_max}} joueurs, dossiers en cours compris), budget de transferts insuffisant, trésorerie qui passerait sous {{eur(ia_gestion.garde_fous.solde_minimal_autorise)}}, ou salaire qui ferait dépasser le plafond salarial (voir [Finances](#/aide/finances)).
 
 **Le salaire compte dès l'offre d'indemnité.** Avant même que le club vendeur réponde, il faut que ce que le joueur demande tienne entre votre masse salariale et votre plafond, une fois retirés les salaires que vos autres dossiers réservent. Sinon l'offre est refusée, et le refus donne les deux montants : ce que le joueur demanderait, et ce qu'il vous reste sous le plafond.

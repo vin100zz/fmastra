@@ -39,7 +39,8 @@ const player={id:20,name:'Cible',position:'BU',secondary_positions:[],age:24,nat
 const history={career:{items:[],totals:{fee:0,matches:0,goals:0,assists:0,average:null}},trajectory:[]};
 const idle={etape:null,indemnite:null,salaire:null,contre_offre:null,tours_restants:3,date_prevue:null,obstacle:null};
 const unlisted={prix_liste:null,obstacle_proposition:null,offres:[]};
-const playerRoutes=(detail,state,talks=idle,sale=unlisted)=>({[`/joueurs/${detail.id}`]:detail,[`/ma-partie/negociation/${detail.id}`]:talks,[`/ma-partie/vente/${detail.id}`]:sale,[`/joueurs/${detail.id}/historique`]:history,[`/joueurs/${detail.id}/navigation`]:null,'/monde/etat':state,'/ma-partie/transferts':transfers,'/ma-partie/contrats':contracts});
+const noLoan={pret:null,en_reserve:false,obstacle_reserve:null,sens:'entrant',clubs:[],durees:[],obstacle_pret:'Le mercato est fermé.'};
+const playerRoutes=(detail,state,talks=idle,sale=unlisted,squad=noLoan)=>({[`/joueurs/${detail.id}`]:detail,[`/ma-partie/effectif/${detail.id}`]:squad,[`/ma-partie/negociation/${detail.id}`]:talks,[`/ma-partie/vente/${detail.id}`]:sale,[`/joueurs/${detail.id}/historique`]:history,[`/joueurs/${detail.id}/navigation`]:null,'/monde/etat':state,'/ma-partie/transferts':transfers,'/ma-partie/contrats':contracts});
 
 test('an inbox entry links its player and its match, never the whole entry but for a result',async()=>{
  const items=[{id:2,date:'2029-08-03',kind:'injury',text:'Ada Un se blesse en match',player_id:5,player:'Ada Un',match_id:40,read:false},

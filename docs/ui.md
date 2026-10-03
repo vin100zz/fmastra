@@ -152,6 +152,17 @@ entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la co
 En-tête : nom, pays, compétition, réputation, classement actuel, forme sur les
 5 derniers matches.
 
+L'onglet Effectif tient en deux listes, aux mêmes colonnes, au même tri et à la même vue :
+« Équipe première · n joueurs », puis « Réserve · n joueurs · n prêtés », qui réunit les
+joueurs placés en réserve et ceux que le club a prêtés (`away` de l'effectif). Un joueur en
+prêt porte la pastille « Prêt » après son nom (les deux clubs et la date de retour en
+infobulle) et sa ligne est teintée : en bleu pour un joueur emprunté, en bleu estompé pour
+un joueur prêté. La réserve d'un autre club n'apparaît que si elle n'est pas vide ; celle du
+club de l'utilisateur garde son titre même vide. Dans son club, chaque ligne se termine par
+un bouton carré, ↓ (envoyer en réserve) ou ↑ (rappeler en équipe première), absent pour un
+joueur en prêt ; un refus (équipe première au minimum, joueur de la composition du jour)
+s'affiche en notification.
+
 L'onglet Historique ne reprend pas les classements complets (ils restent dans l'historique de
 la compétition) et n'affiche pas de compteur « N résultats » sous le tableau ; la pagination
 n'apparaît qu'au-delà de 30 saisons. Chaque saison terminée donne le niveau atteint en coupe
@@ -398,6 +409,22 @@ pour ce joueur, à accepter ou refuser ; elle s'ouvre seule après une propositi
 a obtenu. Dans Mon club, la carte Transferts et contrats liste aussi les joueurs sur la
 liste des transferts, avec leur prix.
 
+Deux boutons suivent, pour la réserve et les prêts (`/api/ma-partie/effectif/{id}`) :
+« Envoyer en réserve », qui devient « Rappeler en équipe première » avec une pastille
+« En réserve », et « Prêter », qui ouvre une boîte de dialogue à deux listes : le club,
+parmi ceux qui accueilleraient le joueur, du plus réputé au moins réputé, et la durée
+(« Fin de saison » ou « Demi-saison », chacune avec sa date ; seules celles que le contrat
+permet). Chacun est grisé avec la raison en infobulle quand l'action est impossible. Sur la
+fiche d'un joueur d'un autre club, « Emprunter » suit « Faire une offre » : une boîte de
+dialogue demande la durée, ou le bouton est grisé avec la raison (son club ne souhaite pas
+le prêter, il n'aurait pas assez de temps de jeu, mercato fermé…). Un joueur en prêt, quel
+que soit le sens, n'a qu'une pastille : « Prêté à Nice · retour le 30 juin 2027 » ou
+« Prêté par… ». La colonne Contrat ajoute alors « Prêté par » et « Fin du prêt », et
+« Équipe : Réserve » pour un joueur en réserve ; la carrière écrit « Prêt » dans la colonne
+du transfert. Dans Mon club, la carte Transferts et contrats gagne une section « Prêts »
+quand il y en a : une ligne par joueur, → vers le club d'accueil ou ← depuis le club
+propriétaire, et la date de retour.
+
 ### Match
 
 Écran de compte rendu, consultable après simulation :
@@ -548,6 +575,18 @@ viennent en dernier quand on trie dessus. Deux filtres les accompagnent : la lis
 « Intérêt » (joueurs intéressés ou non) et la fourchette « Prétentions », un plafond
 en €/mois. Sans club, ni colonnes ni filtres.
 
+Transferts et prêts se lisent par deux initiales, nommées en infobulle : T (transfert,
+en vert) et P (prêt, en bleu). La colonne LISTÉ, après le prix minimum, dit ce que le
+club du joueur est prêt à faire (`transfer_listed`, `loan_listed`) : T pour un joueur de
+la liste des transferts de l'utilisateur ou en surnombre dans un club de l'IA, P pour un
+joueur que son club est prêt à prêter, un tiret sinon. La colonne INTÉRESSÉ dit ce que le
+joueur accepte : T pour un transfert chez l'utilisateur, P pour un prêt (`interested`,
+`loan_interested`), « Non » s'il n'accepte ni l'un ni l'autre. Dans l'aperçu, les lignes
+« Listé » et « Intéressé » l'écrivent en toutes lettres. La liste « Listés » filtre sur
+l'une ou l'autre mise en vente, pour tout le monde ; la liste « Intérêt » propose
+« Intéressés par un transfert », « Intéressés par un prêt » et « Non intéressés » (par un
+transfert). Un joueur en prêt porte la pastille « Prêt » après son nom.
+
 ### Liste des clubs
 
 Filtres serveur : les cinq pays jouables en pastilles, tous les pays dans une liste
@@ -678,7 +717,7 @@ GET  /api/monde/palmares                  champions de chaque compétition, tout
                                           current (saison en cours : {leader, round} ou {label}, null une fois le champion connu)
 GET  /api/monde/transferts?saison=&type=transfer|retirement|academy&page=&taille=&tri=&ordre=&recherche=   counts : mouvements de la saison par onglet
                   &competition=&poste=&age_min=&age_max=&club=   tous les onglets ; poste : un ou plusieurs
-                  &fenetre=ete|hiver&nature=payant|libre&montant_min=   transferts
+                  &fenetre=ete|hiver&nature=payant|libre|pret&montant_min=   transferts (les prêts, kind "loan", sont listés mais hors du résumé)
                   &selectionnes=oui   retraites
                   &pays=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&interesse=oui|non   promotions
                                           un transfert donne aussi position, nationalities, rating et value du joueur aujourd'hui (null une fois retraité)
@@ -696,6 +735,7 @@ GET  /api/clubs/{id}                      en-tête + résumé
 GET  /api/clubs/{id}/apercu               blocs d'entrée : calendrier, finances, transferts, dernier onze
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
 GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, un attribut (passe, reflexes…) ou un composite (tir, occasion_attaque…)
+                                          chaque joueur : reserve, loan ({parent, club, end} | null), away (prêté par ce club) ; 100 lignes par page
 GET  /api/clubs/{id}/calendrier
 GET  /api/clubs/{id}/finances
 GET  /api/clubs/{id}/transferts?saison=
@@ -712,13 +752,18 @@ GET  /api/competitions/{id}/navigation    compétitions du même pays : précéd
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&valeur_min=&valeur_max=&prix_max=&salaire_min=&salaire_max=
                   &nation=&club=&statut_club=&contrat=&page=&taille=&tri=   poste : un ou plusieurs, séparés par des virgules ; tri : idem, attributs, composites et chiffres de la saison (appearances, goals, assists, average) compris
-                  &interesse=oui|non&pretentions_max=   pour le club de l'utilisateur (ignorés sans club) ; tri : wage_demand, interested
+                  &interesse=oui|non|pret&pretentions_max=   pour le club de l'utilisateur (ignorés sans club) ; tri : wage_demand, interested
+                  &liste=transfert|pret   joueurs que leur club vend ou prête ; tri : listed ; chaque joueur : transfer_listed, loan_listed, loan_interested, loan, reserve
 GET  /api/joueurs/{id}                    la fiche, avec interested et wage_demand comme dans la liste
 GET  /api/joueurs/{id}/historique         carrière + trajectory : niveau sur 200 mois par mois {year, month, season, level}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
 GET  /api/matches/{id}                    compte rendu complet
 
+GET  /api/ma-partie/effectif/{id}         réserve et prêt d'un joueur : {pret, en_reserve, obstacle_reserve, sens: "sortant" | "entrant", obstacle_pret, durees: [{cle, fin}], clubs}
+POST /api/partie/reserve                  {commande_id, joueur_id, reserve: bool}
+POST /api/partie/preter                   {commande_id, joueur_id, club_id, duree: "saison" | "demi_saison"}
+POST /api/partie/emprunter                {commande_id, joueur_id, duree}
 GET  /api/ma-partie/composition?match_id=   effectif, tactiques, tactique du club (custom : [poste, ligne, colonne] | null), onze de départ, suggestions
 GET  /api/ma-partie/composition/suggestion?postes=&match_id=   meilleur onze et banc de l'IA sur les postes de la tactique du club
 POST /api/partie/composition              {commande_id, match_id, formation, titulaires, banc, perso} ; perso garde la tactique du club

@@ -156,8 +156,8 @@ test('with a club of his own the user reads what a player asks to join it and wh
  assert.match(html,/<th class="interested-column"><button data-first="desc" data-sort="interested">INTÉRESSÉ</);
  assert.ok(html.indexOf('SALAIRE / MOIS')<html.indexOf('PRÉTENTIONS')&&html.indexOf('PRÉTENTIONS')<html.indexOf('INTÉRESSÉ')&&html.indexOf('INTÉRESSÉ')<html.indexOf('CONTRAT'));
  // The demand reads as a monthly wage; a player of the user's own club has neither.
- const cells=[...html.matchAll(/<tr class="">(.*?)<\/tr>/g)].map(row=>[...row[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]).slice(10,12));
- assert.deepEqual(cells.map(([demand,interest])=>[demand.replace(/\D/g,''),interest]),[['310000','Oui'],['93000','<span class="muted">Non</span>'],['','—']]);
+ const cells=[...html.matchAll(/<tr class="">(.*?)<\/tr>/g)].map(row=>[...row[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]).slice(11,13));
+ assert.deepEqual(cells.map(([demand,interest])=>[demand.replace(/\D/g,''),interest]),[['310000','<span class="tags"><span class="tag" title="Transfert">T</span></span>'],['93000','<span class="muted">Non</span>'],['','—']]);
  // The switch keeps the sort where the columns are; other lists have neither column.
  assert.match(playerViewSwitch(null,'wage_demand','desc',true,{asking:true,recruiting:true}),/data-view="infos"[^>]*data-view-sort="wage_demand"/);
  assert.doesNotMatch(playerTable({items,total:3,page_size:30},true,'value','desc',{asking:true}),/PRÉTENTIONS|INTÉRESSÉ/);

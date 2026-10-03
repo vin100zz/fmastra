@@ -125,7 +125,8 @@ def open_day(world: World) -> None:
     review = cfg.world.key_dates.population_review
     from .international import prepare_international_day
     apply(world, DateAdvanced(world.date.add_days(1)))
-    for event in return_events(world): apply(world, event)
+    returns = return_events(world)
+    for event in returns: apply(world, event)
     for event in expiry_events(world): apply(world, event)
     for event in daily_player_events(world): apply(world, event)
     prepare_international_day(world)
@@ -133,6 +134,8 @@ def open_day(world: World) -> None:
         for event in monthly_player_events(world): apply(world, event)
     if (world.date.month, world.date.day) == (review.month, review.day) and world.last_annual_review < world.date.year:
         annual_review(world)
+    # A club that counted on borrowed players may be short once they are gone.
+    if returns: ensure_minimums(world)
     weekly = world.date.ordinal() % cfg.management.market.weekly_review_days == 0
     if weekly:
         for event in renewal_events(world): apply(world, event)

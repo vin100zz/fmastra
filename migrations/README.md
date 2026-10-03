@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 24` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 25` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -120,6 +120,15 @@ et `secondary_positions` est recalculé depuis les notes. Les joueurs déjà not
 Un regen passe ainsi d'une affinité nulle à 1 sur 20 aux postes qui lui restent fermés, comme les joueurs importés.
 `affinite_secondaire`, `postes_secondaires_possibles` et `probabilite_poste_secondaire` n'ont plus d'effet mais restent
 dans la configuration.
+
+La v25 ajoute la réserve et les prêts (`docs/ia-gestion.md`, « Réserve et prêts ») et change la progression par les minutes
+(`docs/progression-demographie.md`) : `Player.loan`, `Player.reserve_since`, `Player.reserve_days`, `Club.loaned_ids` et
+`Club.borrowed_ids`, absents d'une sauvegarde antérieure et lus avec leurs valeurs par défaut (personne n'est prêté ni en
+réserve), et deux groupes de paramètres reçus par la configuration embarquée après vérification de l'empreinte d'origine :
+`demographie.progression` (`exposant_minutes`, `plancher_entrainement`, `reserve`) et `ia_gestion.mercato.prets`. Une
+partie antérieure suit donc les nouvelles règles dès sa reprise : le facteur de jeu devient concave et son plancher suit la
+note d'entraînement du club à la prochaine progression mensuelle, les clubs de l'IA placent des joueurs en réserve à leur
+prochaine revue hebdomadaire et se prêtent des joueurs au prochain mercato. Aucun joueur n'est déplacé au chargement.
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

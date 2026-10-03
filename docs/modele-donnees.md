@@ -96,7 +96,8 @@ autour de son poste (`docs/progression-demographie.md`, Génération).
 
 TrainingFacilities et YouthRecruitment sont conservés et affichés sur 20.
 Les valeurs -1, 0 ou absentes signifient inconnues (tiret dans l'UI).
-TrainingFacilities n'a aucun effet sur la progression, les finances ou les regens.
+TrainingFacilities fixe le plancher de progression des joueurs qui jouent peu
+(`docs/progression-demographie.md`) ; il n'a aucun effet sur les finances ou les regens.
 
 HomeKitID et les trois couleurs RGB du maillot domicile (HomeKitMajorColorRGB,
 HomeKitMinorColorRGB, HomeKitThirdColorRGB) sont conservés tels quels pour
@@ -138,9 +139,9 @@ seul l'affichage les arrondit, afin de conserver les petites progressions.
 
 | Entité | Éléments indispensables |
 |---|---|
-| `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, forme, moral, fragilité, ego et agressivité stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur |
+| `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, forme, moral, fragilité, ego et agressivité stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur, prêt en cours (`Loan` : club propriétaire, début, dernier jour), jour d'entrée en réserve et jours de réserve du mois |
 | `Contract` | salaire hebdomadaire entier, signature et échéance, rôle/temps de jeu attendu, origine réelle ou synthétique |
-| `Club` | ID, noms, nation, division source, compétition simulée optionnelle, statut, capacité connue ou absente, réputation, centre, formation, personnalité, revenus de référence et facteur initial de financement, budget, plafond salarial, solde, kit domicile (ID et couleurs, optionnels) |
+| `Club` | ID, noms, nation, division source, compétition simulée optionnelle, statut, capacité connue ou absente, réputation, centre, formation, personnalité, revenus de référence et facteur initial de financement, budget, plafond salarial, solde, kit domicile (ID et couleurs, optionnels), joueurs prêtés à d'autres clubs (`loaned_ids`) et joueurs empruntés (`borrowed_ids`, compris dans `player_ids`) |
 | `ClubPersonality` | goût du risque, préférence jeunes, agressivité salariale, patience ; tirés une fois |
 | `Competition` | ID, pays, niveau, clubs, journées, références aux règles |
 | `Match` | ID, compétition, journée, date, clubs, résultat optionnel |

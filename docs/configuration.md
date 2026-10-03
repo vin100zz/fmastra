@@ -128,6 +128,15 @@ Retirer récursivement uniquement `_note`, pas toutes les clés commençant par
 Valider la configuration complète après fusion, y compris les clés inconnues
 venant des surcharges. Un benchmark ou une requête ne modifie jamais la base.
 
+Les configurations antérieures à la version 25 des sauvegardes reçoivent les valeurs
+par défaut de la progression par les minutes et de la réserve
+(`demographie.progression` : `exposant_minutes` 0,5, `plancher_entrainement` de 0,2 à
+0,5, `reserve` : `facteur` 0,7, `age_max` 21, `marge_niveau` 6, `plage_extinction` 10)
+et des prêts (`ia_gestion.mercato.prets` : `age_max_ia` 21, `marge_potentiel_min` 5,
+`emprunts_max_ia` 2, `probabilite_hebdomadaire` 0,5). L'exposant est strictement
+positif, les planchers et le facteur de réserve restent dans [0, 1], la plage
+d'extinction est strictement positive.
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

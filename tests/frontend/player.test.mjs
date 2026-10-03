@@ -403,10 +403,11 @@ test('beside a list of players, the picked one is previewed in the words of his 
  const picked={...detail,form:.91,form_bounds:[.7,1.3],morale:.72,morale_cause:'salaire',international_caps:18,international_goals:3,asking_price:592e6,transferable:true,wage_demand:21462,interested:false,expiring:false,
   position_notes:{DD:70,MC:60},composites:{progression_attaque:60,occasion_attaque:50,tir:40,tete:45,progression_defense:70,occasion_defense:65},composites_by_position:{DD:['progression_defense','progression_attaque','occasion_defense']},attribute_weights:{passe:.3}};
  const talks={etape:null,obstacle:null,contre_offre:null,tours_restants:3,budget:5e6};
- globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>url.includes('/negociation/')?talks:picked};};
+ const squad={pret:null,en_reserve:false,obstacle_reserve:null,sens:'entrant',clubs:[],durees:[],obstacle_pret:'Brest ne souhaite pas prêter Test Joueur.'};
+ globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>url.includes('/negociation/')?talks:url.includes('/effectif/')?squad:picked};};
  let html;
  try{html=await playerPreview(1,{controlled_club_id:7,market:'summer'});}finally{globalThis.fetch=previous;}
- assert.deepEqual(urls,['/api/joueurs/1','/api/ma-partie/negociation/1']);
+ assert.deepEqual(urls,['/api/joueurs/1','/api/ma-partie/negociation/1','/api/ma-partie/effectif/1']);
  assert.match(html,/^<div class="card preview"><div class="preview-head">.*<h2><a href="#\/player\/1">Test Joueur<\/a><\/h2><span class="position def">DD<\/span>/);
  assert.match(html,/18 sél - 3 buts/);
  // Condition, form and morale, then the contract with what he asks to join the user's club.

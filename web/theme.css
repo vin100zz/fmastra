@@ -1082,9 +1082,11 @@ a.button.primary:hover{background:var(--accent-hover);color:var(--accent-ink)}
 .tags .tag:first-child{margin-left:0}
 .player-table tr.lent td,.player-table tr.lent td a,.player-table tr.borrowed td:nth-child(2) a{color:var(--info)}
 .player-table tr.lent td{opacity:.8}
-.player-table .listed-column{width:92px}
-.player-table .interested-column{width:92px}
-.player-table .action-column{width:26px}
+.player-table .listed-column{width:34px}
+.split .player-table .name-column{width:140px}
+.split .player-table .club-column,.split .player-table .academy_club-column{width:112px}
+.player-table .action-column{width:20px}
+.player-table th.action-column{padding:0 4px!important}
 .player-table td:has(>.row-action){padding:1px 4px!important;text-align:center}
 .row-action{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;font-size:12px;line-height:1}
 .action-dialog select{width:100%}

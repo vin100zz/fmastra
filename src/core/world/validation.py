@@ -33,6 +33,8 @@ def validate_world(world: World) -> None:
             elif player.loan.parent_id == club_id or player_id not in world.clubs[player.loan.parent_id].loaned_ids:
                 raise ValueError("Loan without its owner")
             seen.add(player_id)
+        if sorted(club.borrowed_ids) != sorted(pid for pid in club.player_ids if world.players[pid].loan is not None):
+            raise ValueError("Borrowed players disagree with the loans")
         for player_id in club.loaned_ids:
             player = world.players.get(player_id)
             if player is None or player.loan is None or player.loan.parent_id != club_id:

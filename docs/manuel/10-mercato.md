@@ -2,7 +2,7 @@
 
 Ce chapitre décrit comment les clubs de l'IA achètent et vendent entre eux, et à vous. Ce que vous faites de votre côté est décrit dans [Vos achats et vos ventes](#/aide/transferts).
 
-Les transferts n'ont lieu que pendant les deux fenêtres : du {{date(monde.mercato.ete.debut_jour, monde.mercato.ete.debut_mois)}} au {{date(monde.mercato.ete.fin_jour, monde.mercato.ete.fin_mois)}} et du {{date(monde.mercato.hiver.debut_jour, monde.mercato.hiver.debut_mois)}} au {{date(monde.mercato.hiver.fin_jour, monde.mercato.hiver.fin_mois)}}.
+Les transferts et les prêts n'ont lieu que pendant les deux fenêtres : du {{date(monde.mercato.ete.debut_jour, monde.mercato.ete.debut_mois)}} au {{date(monde.mercato.ete.fin_jour, monde.mercato.ete.fin_mois)}} et du {{date(monde.mercato.hiver.debut_jour, monde.mercato.hiver.debut_mois)}} au {{date(monde.mercato.hiver.fin_jour, monde.mercato.hiver.fin_mois)}}.
 
 ## Ce qu'un club cherche
 
@@ -51,7 +51,7 @@ Le club retient la lecture la plus flatteuse parmi trois : la place du joueur da
 
 Un titulaire d'un club patient coûte donc jusqu'à {{n(ia_gestion.mercato.seuil_vendeur_multiplicateur * (1 + ia_gestion.mercato.poids_patience_negociation * ia_gestion.personnalite_club.patience_negociation.max) * ia_gestion.mercato.coef_prix_titulaire, 1)}} fois sa valeur ; un joueur dont son club ne se sert pas, dans un effectif en surnombre, part pour {{n((ia_gestion.mercato.seuil_vendeur_multiplicateur - ia_gestion.mercato.seuil_vendeur_reduction_surplus) * (1 + ia_gestion.mercato.poids_patience_negociation * ia_gestion.personnalite_club.patience_negociation.min) * ia_gestion.mercato.coef_prix_hors_effectif, 1)}} fois sa valeur.
 
-**Les invendables.** Tout joueur a un prix, sauf dans trois cas : son club est à l'effectif minimal de {{ia_gestion.garde_fous.effectif_min}} joueurs ; c'est un gardien et le club n'en a que {{ia_gestion.garde_fous.gardiens_min}} ; il est arrivé par transfert depuis moins de {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours.
+**Les invendables.** Tout joueur a un prix, sauf dans quatre cas : son club est à l'effectif minimal de {{ia_gestion.garde_fous.effectif_min}} joueurs ; c'est un gardien et le club n'en a que {{ia_gestion.garde_fous.gardiens_min}} ; il est arrivé par transfert depuis moins de {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours ; il est en prêt (voir [Réserve et prêts](#/aide/reserve-et-prets/les-prets)).
 
 ## Le déroulement d'une offre
 
@@ -74,7 +74,7 @@ Avant toute offre, le joueur doit accepter le club. Les règles :
 - Un joueur que son club a mis en vente tolère une baisse de {{ia_gestion.mercato.tolerance_baisse_joueur_a_vendre}} points de réputation au lieu de {{ia_gestion.mercato.tolerance_baisse_reputation}}.
 - Un joueur **qui veut partir** parce que son club est trop petit pour lui (voir [Le moral](#/aide/etats/le-moral)) est plus exigeant : il n'accepte qu'un club plus réputé de plus de {{ia_gestion.mercato.tolerance_baisse_reputation}} points, quel que soit son moral.
 
-C'est pour cela que certains joueurs ne sont « pas intéressés » par votre club : il est trop peu réputé par rapport au leur, et son niveau visé est en dessous du leur. La colonne INTÉRESSÉ de la liste des joueurs le dit pour chacun, avant toute offre.
+C'est pour cela que certains joueurs ne sont « pas intéressés » par votre club : il est trop peu réputé par rapport au leur, et son niveau visé est en dessous du leur. La colonne INTÉRESSÉ de la liste des joueurs le dit pour chacun, avant toute offre : elle affiche T quand il accepterait un transfert chez vous.
 
 **Entre plusieurs offres**, le joueur note chaque club :
 

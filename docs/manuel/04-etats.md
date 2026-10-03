@@ -59,10 +59,10 @@ moral visé = {{pct(etats.moral.poids_temps_de_jeu + etats.moral.poids_resultats
 
 Chacun des quatre termes va de 0 à 1.
 
-- **Temps de jeu** : ses minutes de la saison rapportées à celles qu'il attend. Il attend d'autant plus qu'il est bien classé à son poste dans l'effectif : le meilleur à son poste attend tous les matches du club, le deuxième la moitié, le troisième le tiers. Un joueur arrivé en cours de saison n'attend rien des matches joués avant sa venue : seuls comptent ceux du club depuis son arrivée, et les minutes qu'il y a jouées. Avant le premier match de la saison, tout le monde est satisfait.
+- **Temps de jeu** : ses minutes de la saison rapportées à celles qu'il attend. Il attend d'autant plus qu'il est bien classé à son poste dans l'effectif : le meilleur à son poste attend tous les matches du club, le deuxième la moitié, le troisième le tiers. Un joueur arrivé en cours de saison n'attend rien des matches joués avant sa venue : seuls comptent ceux du club depuis son arrivée, et les minutes qu'il y a jouées. Avant le premier match de la saison, tout le monde est satisfait. Un joueur placé en réserve ne joue aucun match : il est pleinement satisfait s'il est jeune et ne serait pas titulaire, totalement insatisfait sinon (voir [La réserve](#/aide/reserve-et-prets/la-reserve)).
 - **Salaire** : son salaire rapporté à celui que sa valeur lui fait attendre (voir [Valeur, salaires et contrats](#/aide/contrats/le-salaire-attendu)). Un joueur payé au-dessus n'est pas plus content qu'un joueur payé juste.
 - **Standing du club** : la réputation du club rapportée à la moitié du niveau du joueur. Un joueur de niveau 150 est pleinement satisfait à partir d'une réputation de 75.
-- **Frustration** : celle d'un joueur devenu trop fort pour son club.
+- **Frustration** : celle d'un joueur devenu trop fort pour son club. Un joueur prêté n'en a aucune : son club d'accueil n'est qu'une étape.
 
 **La frustration.** Chaque club vise un niveau qui dépend de sa réputation : {{ia_gestion.profil_cible.niveau_base * 2}} + {{ia_gestion.profil_cible.poids_reputation * 2}} × réputation, soit {{n(ia_gestion.profil_cible.niveau_base * 2 + ia_gestion.profil_cible.poids_reputation * 100, 0)}} pour une réputation de 50 et {{n(ia_gestion.profil_cible.niveau_base * 2 + ia_gestion.profil_cible.poids_reputation * 160, 0)}} pour 80. Un joueur qui dépasse ce niveau de plus de {{ia_gestion.mercato.marge_depassement_club * 2}} points commence à s'impatienter :
 
@@ -73,7 +73,7 @@ ambition = {{ia_gestion.mercato.ambition_base}} + {{ia_gestion.mercato.ambition_
 
 À partir d'une frustration de {{ia_gestion.mercato.seuil_depart_souhaite}}, le joueur **veut partir** : il ne prolonge plus et n'accepte qu'un club nettement plus réputé (voir [Le mercato des clubs](#/aide/mercato/ce-qu-un-joueur-accepte)). Jouer tous les matches avec un bon salaire ne suffit pas à le calmer.
 
-**Ce qui ne joue pas.** Les résultats de l'équipe, les notes de match, la forme, les titres et les blessures n'ont aucun effet sur le moral. Un joueur libre garde le moral qu'il avait.
+**Ce qui ne joue pas.** Les résultats de l'équipe, les notes de match, la forme, les titres et les blessures n'ont aucun effet sur le moral. Un joueur libre garde le moral qu'il avait. Le moral d'un joueur prêté suit sa situation dans son club d'accueil.
 
 **Son impact.**
 

@@ -2,8 +2,8 @@
 
 A loan starts during a transfer window and ends with the season, or, from the summer window, when the winter one
 opens. The player then plays, progresses and is counted as any player of the club he was lent to; his owner keeps his
-place in its squad and gets him back the day after the loan ends. Nothing is paid, nothing is negotiated: the owner
-agrees or not, and so do the player and the club he would go to.
+place in its squad (the squad limit counts him there, not where he plays) and gets him back the day after the loan
+ends. Nothing is paid, nothing is negotiated: the owner agrees or not, and so do the player and the club he would go to.
 
 AI clubs lend the prospects they would otherwise keep in their reserve (see `reserves.surplus_prospects`) to the most
 reputed club where they would play. The human club lends and borrows by its own commands, answered at once.
@@ -21,7 +21,7 @@ from .application import apply
 from .events import LoanEnded, LoanStarted
 from .human import is_human_club
 from .reserves import depth_rank, starters_at, surplus_prospects
-from .transfer_rules import outgrown_by
+from .transfer_rules import outgrown_by, target_level
 
 SEASON, HALF_SEASON = "saison", "demi_saison"
 
@@ -73,16 +73,20 @@ def would_play(world: World, player: Player, club: Club) -> bool:
     return starters > 0 and depth_rank(world, club, player) <= starters
 
 
+def good_enough(player: Player, club: Club, cfg) -> bool:
+    """At least the level a club asks of a backup: a thin position alone does not put a weak player on its pitch."""
+    return player.rating >= target_level(club, cfg) - cfg.management.target_profile.backup_discount
+
+
 def accepts_loan(world: World, player: Player, club: Club) -> bool:
-    """Whether a player would go on loan to a club: one where he would play, and not too small for him."""
-    return would_play(world, player, club) and outgrown_by(player, club, world.config) == 0
+    """Whether a loan to a club suits a player: he would play there, at a club neither above nor beneath him."""
+    return borrower_obstacle(world, player, club) is None
 
 
 def borrower_obstacle(world: World, player: Player, club: Club) -> str | None:
-    """Why a club cannot take this player on loan, or None."""
+    """Why a loan to this club makes no sense, or None."""
     if club.competition_id is None: return f"{club.name} ne joue dans aucun championnat simulé."
-    reserved = sum(offer.target_id == club.id for offer in world.offers.values())
-    if club.squad_size + reserved >= world.config.management.guardrails.max_squad: return f"L'effectif de {club.name} est complet."
+    if not good_enough(player, club, world.config): return f"{player.name} n'a pas encore le niveau pour jouer à {club.name}."
     if not would_play(world, player, club): return f"{player.name} n'aurait pas assez de temps de jeu à {club.name}."
     if outgrown_by(player, club, world.config) > 0: return f"{club.name} est trop modeste pour {player.name}."
     return None
@@ -95,15 +99,11 @@ def lendable(world: World, club: Club, end: Date | None = None) -> list[Player]:
     return [player for player in surplus_prospects(world, club) if lender_obstacle(world, player, end) is None]
 
 
-def borrowed(world: World, club: Club) -> int:
-    return sum(world.players[pid].loan is not None for pid in club.player_ids)
-
-
 def takers(world: World, player: Player) -> list[Club]:
     """The AI clubs that would take a player on loan and where he would go, the most reputed first."""
     limit = world.config.management.market.loans.max_borrowed
     clubs = [club for club in world.active_clubs() if club.id != player.club_id and not is_human_club(world, club.id)
-             and borrowed(world, club) < limit and borrower_obstacle(world, player, club) is None]
+             and len(club.borrowed_ids) < limit and borrower_obstacle(world, player, club) is None]
     return sorted(clubs, key=lambda club: (-club.reputation, club.id))
 
 

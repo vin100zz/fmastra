@@ -358,9 +358,59 @@ reçoit aucune offre, le joueur arrive libre en fin de contrat et signe où son
 salaire et sa réputation le mènent. Les joueurs libres, sans club, n'ont pas de
 frustration.
 
+## Réserve et prêts
+
+Règles dans `core/world/reserves.py` et `core/world/loans.py`, paramètres dans
+`demographie.progression.reserve` et `ia_gestion.mercato.prets`. Le manuel du jeu
+(`docs/manuel/16-reserve-et-prets.md`) en donne le détail chiffré.
+
+**Réserve.** `Player.reserve_since` est le jour d'entrée en réserve (None en équipe
+première). Un joueur en réserve n'entre dans aucun `LineupContext` : ni composition
+de l'IA, ni composition soumise, ni renfort de coupe. Il reste dans `Club.player_ids`
+et sur la masse salariale. Son rang au poste (`contracts.position_ranks`) est celui
+qu'il aurait en équipe première et il ne décale pas celui des autres ; sa satisfaction
+de temps de jeu vaut 1 s'il a `reserve.age_max` ans au plus et ne serait pas titulaire
+(rang ≥ nombre de titulaires de son poste dans la formation), 0 sinon. Un transfert,
+un prêt ou une libération le sort de la réserve.
+
+Chaque semaine (`reserves.reserve_events`), un club de l'IA y place ses espoirs en
+surnombre (`surplus_prospects`) : `age_max_ia` ans au plus, potentiel estimé par le
+club supérieur au niveau d'au moins `marge_potentiel_min`, et plus de joueurs valides
+devant lui à son poste que la formation n'en aligne. Il ne retient que ceux à qui la
+réserve rapporte plus que le plancher d'entraînement, du plus faible au plus fort,
+tant que l'équipe première garde `effectif_min` joueurs et `gardiens_min` gardiens,
+et rappelle les autres. Le club de l'utilisateur décide seul (`reserves.set_reserve`).
+
+**Prêts.** `Player.loan` (club propriétaire, début, dernier jour) ; le joueur est dans
+les `player_ids` et les `borrowed_ids` du club d'accueil, et dans les `loaned_ids` du
+propriétaire. Le propriétaire garde le salaire sur sa masse salariale et la place dans
+son effectif : `Club.squad_size`, que toutes les limites d'effectif lisent, compte les
+joueurs sous contrat avec le club, prêtés compris, empruntés exclus. Un joueur prêté
+n'est ni vendu ni prolongé (`can_sell` faux, `PlayerSigned` refusé) et n'a aucune
+frustration de club trop petit. Les mouvements `loan` et `loan_return` sont ajoutés à
+`World.transfers` ; ils ne comptent pas comme une arrivée récente.
+
+Un prêt commence pendant un mercato (`loans.loan_ends`) : jusqu'à la veille de la
+libération des contrats (« saison »), ou, en été, jusqu'à la veille de l'ouverture du
+mercato d'hiver (« demi_saison »). Un prêt conclu en été avant la fin des contrats
+court sur la saison suivante. Le retour (`return_events`) précède les expirations du
+jour. Un club ne prête pas un joueur blessé, déjà prêté, dont le contrat ne dépasse pas
+la fin du prêt, objet d'un transfert en cours, ou qui le ferait passer sous ses
+minimums (`lender_obstacle`). Un club simulé accueille un joueur qui a au moins le
+niveau visé moins `decote_doublure`, y serait titulaire ou premier remplaçant, et ne
+le dépasse pas de plus de `marge_depassement_club` (`borrower_obstacle`).
+
+Chaque semaine d'un mercato (`run_loan_round`), chaque espoir en surnombre d'un club de
+l'IA que rien n'empêche de partir a `probabilite_hebdomadaire` chances de chercher un
+club, les mieux notés d'abord ; il part jusqu'à la fin de la saison dans le club de
+l'IA le plus réputé qui l'accueille, chaque club accueillant au plus `emprunts_max_ia`
+joueurs. Le tirage a son propre flux (`loans`, graine et jour). Le club de
+l'utilisateur prête (`lend`, à un club de `takers`) et emprunte (`borrow`, un joueur de
+`lendable`) par ses propres commandes, réglées aussitôt ; aucun quota ne le limite.
+
 ## Composition et remplacements
 
-Exclure blessés et suspendus ; retenir la formation préférée si elle est
+Exclure blessés, suspendus et joueurs en réserve ; retenir la formation préférée si elle est
 remplissable, sinon la meilleure couverture. Optimiser une affectation unique
 joueur/poste, y compris pour les polyvalents et le banc. La qualité du poste
 comprend forme, fraîcheur, moral et affinité ; la rotation utilise les seuils

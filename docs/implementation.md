@@ -114,7 +114,8 @@ ne garantit pas la reproduction de son niveau réel.
   du code non commité : les rapports actuels enregistrent configuration,
   sources, graine, version Python et révision Git.
 
-Le mode joueur, les coupes et les prêts restent hors périmètre. Les rencontres
+La réserve et les prêts (version simple : ni option d'achat, ni partage du salaire, ni clause de rappel, ni quota) sont
+décrits dans `docs/ia-gestion.md`. Les rencontres
 des saisons passées (championnats, coupes et Europe) sont compactées à l'ouverture
 de la saison suivante ; les résultats et archives de carrière restent
 consultables, mais leur détail événementiel n'est pas conservé indéfiniment.

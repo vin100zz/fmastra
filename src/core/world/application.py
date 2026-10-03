@@ -63,6 +63,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         snapshot = movement_snapshot(world, player) if event.retirement else None
         if source is not None:
             world.clubs[source].player_ids.remove(player.id)
+            if player.loan is not None: world.clubs[source].borrowed_ids.remove(player.id)
             # A player on loan leaves the club that owns him and pays him.
             source = player.owner_id
             club = world.clubs[source]
@@ -244,10 +245,11 @@ def _start_loan(world: World, event: LoanStarted) -> bool:
     player = world.players.get(event.player_id)
     if player is None or player.club_id is None or player.loan is not None or player.club_id == event.target_id: return False
     owner, club = world.clubs[player.club_id], world.clubs[event.target_id]
-    if club.squad_size >= world.config.management.guardrails.max_squad or player.contract.end <= event.end: return False
+    if player.contract.end <= event.end: return False
     owner.player_ids.remove(player.id)
     owner.loaned_ids.append(player.id)
     club.player_ids.append(player.id)
+    club.borrowed_ids.append(player.id)
     player.club_id, player.loan = club.id, Loan(owner.id, world.date, event.end)
     _leave_reserve(player)
     world.transfers.append(TransferRecord(world.date, player.id, owner.id, club.id, 0, "loan", world.season))
@@ -265,6 +267,7 @@ def _end_loan(world: World, event: LoanEnded) -> None:
     player = world.players[event.player_id]
     club, owner = world.clubs[player.club_id], world.clubs[player.loan.parent_id]
     club.player_ids.remove(player.id)
+    club.borrowed_ids.remove(player.id)
     owner.loaned_ids.remove(player.id)
     owner.player_ids.append(player.id)
     player.club_id, player.loan = owner.id, None

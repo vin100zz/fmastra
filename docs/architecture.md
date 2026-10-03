@@ -36,8 +36,8 @@ relecture, pas une limite imposant un découpage artificiel. Noms Python anglais
   L'entité `Competition` stocke les données et porte un nom distinct de
   l'interface de règles. `LeagueRules` en v1.
 - `TransferRule` : valide un transfert et produit des événements, sans modifier
-  directement le monde. Les prêts pourront ajouter droits contractuels et dates
-  de retour au modèle.
+  directement le monde. Un prêt (`core/world/loans.py`) garde le contrat chez le
+  propriétaire et porte sa date de retour sur le joueur.
 - Interfaces d'import et de persistance côté cœur, adaptateurs dans
   `infrastructure`. Aucun chargement dans le moteur de match.
 

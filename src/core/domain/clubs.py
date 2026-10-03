@@ -54,11 +54,13 @@ class Club:
     reputation_anchor: float | None = None
     # Its players out on loan: they play for another club (see `Player.loan`) and stay on its wage bill.
     loaned_ids: list[int] = field(default_factory=list)
+    # Among `player_ids`, those another club lent it.
+    borrowed_ids: list[int] = field(default_factory=list)
 
     @property
     def squad_size(self) -> int:
-        """The places taken in the squad, those kept for players out on loan included."""
-        return len(self.player_ids) + len(self.loaned_ids)
+        """The players under contract with the club, which the squad limit counts: those it lent, not those it borrowed."""
+        return len(self.player_ids) - len(self.borrowed_ids) + len(self.loaned_ids)
 
 
 @dataclass(slots=True)
