@@ -1,11 +1,12 @@
 import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,kitDot,card,stat,heading,empty,toast,setNations,nationName,sortTable,nextDirection,setToday} from './ui.js';
-import {dashboard,clubsScreen,clubScreen,leagueScreen,countryScreen,playersScreen,playableNations} from './screens.js';
+import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
+import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
 import {weeklyFromMonthly} from './salaries.js';
 import {matchScreen} from './match.js';
 import {europeScreen} from './europe.js';
-import {honoursScreen} from './honours.js';
+import {honoursScreen,pickClub} from './honours.js';
 import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
 import {clubSelectScreen} from './club-select.js';
@@ -154,7 +155,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
-  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen();break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
+  else switch(screen){case 'international':html=await internationalScreen(id,section,extra);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
  if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters,details.filter-menu').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
  // A chapter of the manual opened on one of its sections; a redraw of the same address leaves the scroll where it is.
  if(moved&&parts[0]==='aide'&&parts[2])document.getElementById(`manual-${parts[2]}`)?.scrollIntoView();
@@ -326,6 +327,14 @@ document.addEventListener('keydown',event=>{
  if(event.key==='Enter'){row.querySelector('.strong a')?.click();return;}
  const next=event.key==='ArrowDown'?row.nextElementSibling:row.previousElementSibling;
  if(next){event.preventDefault();next.scrollIntoView({block:'nearest'});pickRow(next);}
+});
+// Palmarès: a club picked in the list of titled clubs or in the table of the seasons lights its titles up, without drawing
+// the page again; the address keeps it for the next redraw.
+main.addEventListener('click',event=>{
+ const marked=event.target.closest('[data-honours-club]');if(!marked||event.target.closest('a,button'))return;
+ const {params}=routeParts(),picked=pickClub(main,marked.dataset.honoursClub);
+ if(picked)params.set('sel',picked);else params.delete('sel');
+ history.replaceState(history.state,'',`${location.hash.split('?')[0]}${params.size?`?${params}`:''}`);
 });
 // A new window size changes the rows that fit and whether the side panel has room.
 let resizeTimer;

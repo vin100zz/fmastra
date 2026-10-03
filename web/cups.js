@@ -1,14 +1,6 @@
-import {api,escape as e,date,season,clubLink,playerLink,number as n,fixtures,empty,card,heading,tabs,table,pager,leadersCards} from './ui.js';
+import {api,season,clubLink,playerLink,number as n,card,heading,tabs,table,pager,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-
-export function cupSummaryCard(cup,data){
- const round=data.rounds.find(item=>item.number===(data.latest_round||1));
- const winner=data.winner?`<p class="cup-winner">🏆 ${clubLink(data.winner)}</p>`:'';
- const title=data.latest_round?'Derniers résultats':'Prochaines rencontres';
- const body=`${winner}<div class="card-body"><h3>${title} · ${e(round.label)}</h3><p class="muted">${date(round.date)}</p></div><div class="cup-fixtures">${fixtures({items:data.latest_round?round.items.filter(match=>match.score):round.items})}</div>`;
- return card(cup.name,body,`<a href="#/league/${cup.id}">Voir la coupe →</a>`);
-}
 
 export async function cupScreen(cup,section,params,lead=''){
  const menu=[['bracket','Tableau'],...ROUND_TABS,['stats','Statistiques'],['history','Palmarès']];

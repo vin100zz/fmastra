@@ -106,6 +106,25 @@ def test_world_transfers_take_filters_and_come_with_a_summary_of_the_season(clie
     assert client.get('/api/monde/transferts/resume?saison=1900').status_code == 422
 
 
+
+def test_retirements_and_promotions_take_their_filters_and_come_with_their_summaries(client):
+    world = client.app.state.game.world
+    retired = client.get('/api/monde/transferts?type=retirement&poste=GB,BU&age_min=30&competition=16&selectionnes=oui&club=1&tri=caps').json()
+    assert retired['type'] == 'retirement' and retired['sort'] == 'caps'
+    assert client.get('/api/monde/transferts?type=retirement').json()['sort'] == 'rating'
+    assert client.get('/api/monde/transferts?type=retirement&selectionnes=non').status_code == 422
+    promoted = client.get('/api/monde/transferts?type=academy&poste=MC&pays=FRA&niveau_min=20&niveau_max=90&potentiel_min=50&potentiel_max=100&interesse=oui&tri=progress').json()
+    assert promoted['type'] == 'academy' and promoted['sort'] == 'progress' and 'nations' in promoted
+    for sort in ('level', 'worth', 'wage_demand', 'interested', 'passe', 'tir'):
+        assert client.get(f'/api/monde/transferts?type=academy&tri={sort}').json()['sort'] == sort
+    assert client.get('/api/monde/transferts?type=academy&niveau_min=101').status_code == 422
+    for kind, keys in (('retirement', {'total', 'average_age', 'capped', 'oldest', 'ages', 'clubs', 'leagues'}),
+                       ('academy', {'total', 'average_potential', 'best', 'average_progress', 'bins', 'academies', 'nations'})):
+        summary = client.get(f'/api/monde/transferts/resume?type={kind}').json()
+        assert summary['season'] == world.season and keys <= summary.keys()
+    assert client.get('/api/monde/transferts/resume?type=invalid').status_code == 422
+
+
 def test_club_list_averages_its_sixteen_best_players_and_sorts_on_it(client):
     world = client.app.state.game.world
     def best(club_id: int, key: str) -> float:
@@ -355,7 +374,16 @@ def test_honours_show_every_competition_with_the_champions_of_all_seasons(client
     top = next(item for country in data['countries'] for item in country['competitions'] if item['id'] == division)
     assert [(row['season'], row['champion']['id']) for row in top['items']] == [(2026, second), (2025, first)]
     assert [(row['season'], row['champion']['id']) for row in data['europe'][0]['items']] == [(2025, second)]
+    # With the champions come the rankings drawn from them, and where the season under way stands.
+    assert data['season'] == world.season
+    assert [row['club']['id'] for row in data['clubs']] == [second, first] and data['clubs'][0]['europe'] == 1
+    assert {'players', 'scorers', 'nations'} <= data.keys() and all({'scorer', 'current'} <= item.keys() for item in blocks)
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_competitions_count_the_rounds_of_their_season(client):
+    rounds = {item['name']: item['rounds'] for item in client.get('/api/competitions').json()}
+    assert rounds['Ligue 1'] == 34 and rounds['Championship'] == 46 and rounds['Coupe de France'] == 6
 
 
 def test_commands_are_serialized_and_idempotent(client, monkeypatch):

@@ -113,7 +113,8 @@ d'observation.
 Une page n'affiche que son titre, sans ligne au-dessus ni au-dessous. Ce titre est
 celui de son entrée dans le menu de gauche : Vue d'ensemble, Clubs, Joueurs, Mercato
 mondial, Palmarès, Coupes d'Europe, Ma partie, ou le nom du pays pour la page d'un
-pays. Le Journal, onglet de Vue d'ensemble, porte ce même titre et allume la même
+pays. Les commandes de la page (recherche, filtres, choix des matches d'un pays)
+se rangent sur la même ligne, à sa droite. Le Journal, onglet de Vue d'ensemble, porte ce même titre et allume la même
 entrée du menu. Les pages championnat et coupe nationale portent le nom de la
 compétition. Les fiches club et joueur gardent leur en-tête d'identité (nationalités,
 poste, âge, club, stade), qui présente des données et non un titre.
@@ -253,15 +254,65 @@ d'un club.
 ### Palmarès
 
 Le lien **Palmarès** du menu de gauche (`#/honours`) réunit sur une page les vainqueurs
-de toutes les compétitions, sur toutes les saisons archivées. Une rangée de blocs par
-groupe : d'abord les trois coupes d'Europe (C1, C3, C4), puis chaque pays dans l'ordre
-du menu (France, Angleterre, Espagne, Italie, Allemagne) avec un bloc par division, de
-la D1 vers le bas, suivi du bloc de la coupe nationale. Chaque bloc est un tableau
-saison / champion, la saison la plus récente en premier, qui défile dans le bloc quand
-il s'allonge, et renvoie par « Historique → » à l'onglet de la compétition. Une
-compétition sans vainqueur (début de partie, ou coupe en cours) garde son bloc, avec
-un message. Le champion d'un championnat n'est connu qu'à la clôture de la saison ;
-celui d'une coupe, à la fin de sa finale.
+de toutes les compétitions, sur toutes les saisons archivées, dans un seul tableau : une
+ligne par compétition, une colonne par saison. Les lignes vont par groupe, nommé une fois
+à leur gauche : d'abord les trois coupes d'Europe (C1, C3, C4), puis chaque pays dans
+l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne), ses divisions de la D1
+vers le bas puis sa coupe nationale. Une ligne donne ce qu'est la compétition (C1, D1, D2,
+CP), son nom, qui ouvre son historique, son meilleur buteur de tous les temps avec ses
+buts, puis la saison en cours, en gris : le leader d'un championnat et le nombre de
+journées jouées, sinon le tour qui vient ; et le champion de la saison dès qu'il est
+connu (celui d'un championnat à la clôture de la saison, celui d'une coupe à la fin de sa
+finale). Suivent les saisons passées, la plus récente en premier, autant que la largeur en
+montre ; les autres se parcourent par les deux boutons de l'en-tête du tableau. Un tiret
+marque une saison sans champion.
+
+À droite du tableau, à partir de 1500 px, les clubs titrés : rang, drapeau, club, titres
+européens (EUR), de première division (D1), de coupe nationale (CP), des divisions
+inférieures (D2+) et total. La carte prend la hauteur de la fenêtre et défile ; la
+recherche de la ligne du titre ne garde que les clubs dont le nom la contient, chacun à son
+rang parmi tous. Un clic sur un club, dans cette liste ou dans le tableau, surligne tous
+ses titres sans redessiner la page ; un second clic le libère. Le club choisi est dans
+l'adresse (`sel`).
+
+Sous le tableau, trois classements, chacun omis tant qu'il n'a pas de ligne :
+
+- **Joueurs les plus titrés** (15) : poste, maillot de son club actuel puis nom, et les
+  mêmes colonnes de titres. Un joueur gagne ce que gagne, la même saison, un club pour
+  lequel il a joué au moins un match, toutes compétitions confondues : un joueur transféré
+  en cours de saison compte les titres de ses deux clubs.
+- **Titres de meilleur buteur** (15) : les saisons qu'un joueur a terminées meilleur
+  buteur d'une compétition, lesquelles, et les buts de ces saisons. Seules comptent les
+  saisons qui ont un champion ; à égalité de buts, le plus petit identifiant, comme dans
+  les statistiques de la compétition.
+- **Coupes d'Europe par pays** : le pays des clubs vainqueurs, leurs titres par coupe et
+  le total.
+
+À égalité de titres, l'ordre est le même partout : coupes d'Europe, puis championnats de
+première division, coupes nationales, et le nom.
+
+### Pays
+
+Le lien d'un pays du menu de gauche (`#/country/FRA`) met côte à côte ses divisions, de
+la plus haute à la plus basse, puis sa coupe : quatre colonnes pour la France, trois pour
+les autres. Une colonne trop étroite pour un classement passe à la ligne suivante. La ligne
+du titre porte le drapeau, le nom du pays et le choix « Derniers matches » / « Prochains
+matches » (`matches=prochains`), qui vaut pour toutes les colonnes.
+
+Une division donne, sous son nom et le nombre de journées jouées sur celles de la saison
+(« J3 / 34 », lien vers le championnat), la journée choisie : un match par ligne, le
+vainqueur en gras ; puis son classement complet (#, club, PTS, J, V, N, D, BP, BC, DIFF.,
+sans la forme) et ses cinq meilleurs buteurs. Sans journée à montrer (avant la première,
+après la dernière), le classement et les buteurs restent. Les places sont marquées par un
+trait à gauche du rang (vert pour le titre, la promotion ou la qualification directe, bleu
+pour l'Europe, jaune pour un barrage, rouge pour la relégation), et seule la ligne du club
+dirigé est colorée, comme son match.
+
+La coupe montre un de ses tours : le dernier joué, ou le premier qui reste à jouer en
+« Prochains matches ». Une rangée de boutons, un par tour, en choisit un autre (`tour`) ;
+changer de choix de matches le libère. Chaque club porte la division où il joue (D1, D2…,
+rien pour un club des divisions non simulées) ; une séance de tirs au but se lit dans
+l'infobulle du score, son vainqueur en gras. Un tour pas encore tiré le dit.
 
 ### Manuel du jeu
 
@@ -519,10 +570,16 @@ ses huit meilleurs joueurs. Au pied, un bouton par onglet de sa fiche.
 
 La ligne du titre porte les onglets Transferts, Retraites et Promotions des centres,
 chacun avec le nombre de mouvements de la saison, et à droite la saison avec ses deux
-flèches. Les filtres ne concernent que les transferts (les deux autres onglets n'ont
-que la recherche) : recherche d'un joueur ou d'un club, fenêtre (saison, été, hiver),
-type (tous, payants, libres), championnat de l'un des deux clubs, poste, âge au moment
-du transfert, montant minimum en M€, et « Mon club » quand l'utilisateur en dirige un.
+flèches. Chaque onglet a ses filtres, ses colonnes et, à droite sur un écran large, son
+résumé de la saison, qui ne suit pas les filtres : quatre tuiles, un graphique en barres,
+puis deux tableaux triés dans le navigateur, dont le premier prend la hauteur restante
+et défile dans sa carte. « Mon club » ne paraît que quand l'utilisateur en dirige un.
+
+#### Transferts
+
+Filtres : recherche d'un joueur ou d'un club, fenêtre (saison, été, hiver), type (tous,
+payants, libres), championnat de l'un des deux clubs, poste, âge au moment du transfert,
+montant minimum en M€, et « Mon club ».
 
 Un transfert donne la date, le poste, le joueur, sa nationalité, son âge au transfert,
 son niveau, le club de provenance, une flèche, le club de destination, le montant avec
@@ -530,7 +587,7 @@ une barre rapportée au record de la saison (« Libre », « Fin de contrat » o
 non archivé » sinon) et la valeur du joueur. Poste, niveau et valeur sont ceux du
 joueur aujourd'hui : un mouvement ne les archive pas, et un joueur retraité n'en a plus.
 
-Le résumé de la saison, à droite, ne suit pas les filtres :
+Le résumé de la saison :
 
 - quatre tuiles : nombre de transferts, volume des indemnités, médiane des transferts
   payants, record (le joueur en infobulle) ;
@@ -542,7 +599,52 @@ Le résumé de la saison, à droite, ne suit pas les filtres :
 - les championnats, avec les mêmes colonnes ; un club compte pour le championnat où il
   joue aujourd'hui, les autres clubs sont réunis sous « Marché extérieur », en dernier.
 
-Ces deux tableaux se trient dans le navigateur.
+#### Retraites
+
+Les retraites tombent presque toutes le même jour (la revue annuelle des effectifs) :
+la liste n'a pas de colonne de date et s'ouvre sur les meilleurs niveaux. Filtres :
+recherche, postes en pastilles, âge au départ, championnat du dernier club,
+« Internationaux » et « Mon club ».
+
+Une retraite donne le poste, le joueur, sa nationalité, son âge, son dernier club et le
+championnat de ce club, puis trois groupes de chiffres sous leur intertitre : Niveau
+(FINAL, le niveau le jour du départ, et PIC, le meilleur de son historique), Carrière
+(matches, buts, passes et note moyenne dans la partie, tous clubs confondus) et
+Sélection (sélections et buts). Le poste, les nationalités et le niveau final sont
+archivés le jour de la retraite (`snapshot` du mouvement, comme pour une promotion) :
+le joueur quitte ensuite le monde. Une retraite archivée avant cela garde un tiret au
+poste ; elle reprend son niveau dans son historique et, pour un international, la
+nation de sa sélection.
+
+Le résumé : nombre de retraites, âge moyen, internationaux, doyen (son nom en
+infobulle) ; les retraites par âge ; les clubs quittés (championnat, retraites, âge
+moyen, matches joués dans la partie par ces joueurs), les plus touchés d'abord ; les
+championnats, dont la barre se mesure aux seuls championnats simulés.
+
+#### Promotions des centres
+
+Les promotions ont toutes lieu à l'ouverture de la saison : pas de colonne de date non
+plus, et la liste s'ouvre sur les meilleurs potentiels. Filtres : recherche, postes,
+âge à la promotion, niveau actuel et potentiel (sur 200), pays et championnat du club
+formateur, « Intérêt » pour un recruteur, et « Mon club ».
+
+Une promotion donne ce que le joueur était ce jour-là et ce qu'il est aujourd'hui :
+poste, joueur, nationalité, âge à la promotion, club formateur (suivi d'une flèche et de
+son club actuel quand il l'a quitté), niveau à la promotion (PROMO), niveau actuel,
+PROGRESSION (les niveaux gagnés depuis, avec une barre de la part du chemin parcouru
+vers son potentiel), potentiel, valeur actuelle, et pour un recruteur ses prétentions et
+son intérêt. Un joueur qui a quitté le monde depuis ne garde que le jour de sa promotion.
+
+Les boutons « Infos », « Attributs » et « Jeu » de la liste Joueurs changent les
+colonnes : les deux dernières vues montrent les joueurs tels qu'ils sont aujourd'hui
+(niveau actuel, attributs ou composites), l'âge restant celui de la promotion et le
+club le club formateur. La vue Attributs prend toute la largeur, sans le résumé.
+
+Le résumé : nombre de promus, potentiel moyen, meilleur potentiel (le joueur en
+infobulle), progression moyenne depuis la promotion ; les promus par tranche de
+10 niveaux de potentiel (une tranche pour tout ce qui est sous 100) ; les centres de
+formation (promus, potentiel moyen, meilleur joueur et son potentiel, recrutement des
+jeunes), par meilleur potentiel ; les 12 pays qui ont promu le plus de joueurs.
 
 Une offre que la masse salariale ne permet pas est refusée avec les deux montants :
 « Ibrahim Mbaye demanderait 310 000 € / mois : il vous reste 260 000 € / mois sous le
@@ -567,11 +669,21 @@ POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; ench
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
 GET  /api/travaux/{id}                  statut, progression, erreur éventuelle, compétition dont le tour suit (competition)
 GET  /api/monde/journal?date=             événements du jour
-GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {europe, countries}
+GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {season, europe, countries, clubs, players, scorers, nations}
+                                          chaque compétition : items (saison, champion, pays du club), scorer (meilleur buteur de tous les temps),
+                                          current (saison en cours : {leader, round} ou {label}, null une fois le champion connu)
 GET  /api/monde/transferts?saison=&type=transfer|retirement|academy&page=&taille=&tri=&ordre=&recherche=   counts : mouvements de la saison par onglet
-                  &fenetre=ete|hiver&nature=payant|libre&competition=&poste=&age_min=&age_max=&montant_min=&club=   pour les transferts seulement
+                  &competition=&poste=&age_min=&age_max=&club=   tous les onglets ; poste : un ou plusieurs
+                  &fenetre=ete|hiver&nature=payant|libre&montant_min=   transferts
+                  &selectionnes=oui   retraites
+                  &pays=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&interesse=oui|non   promotions
                                           un transfert donne aussi position, nationalities, rating et value du joueur aujourd'hui (null une fois retraité)
-GET  /api/monde/transferts/resume?saison= {total, paid, volume, median, record, weeks: [{week, summer, count, volume}], clubs, leagues}
+                                          une retraite : position, nationalities, rating (le jour du départ), peak, league, matches, goals, assists, average, caps, caps_goals
+                                          une promotion : details (le jour de la promotion) et details.current (le joueur aujourd'hui, avec interested et wage_demand ; null s'il a quitté le monde) ; nations : pays des clubs formateurs
+                                          tri d'une promotion : level, progress, worth, wage_demand, interested, attributs et composites lisent le joueur aujourd'hui
+GET  /api/monde/transferts/resume?saison=&type=   transfer : {total, paid, volume, median, record, weeks: [{week, summer, count, volume}], clubs, leagues}
+                                          retirement : {total, average_age, capped, oldest, ages: [{age, count}], clubs, leagues}
+                                          academy : {total, average_potential, best, average_progress, bins: [{from, count}], academies, nations}
 GET  /api/manuel[/{chapitre}]             manuel : {pages: [{slug, title}], page: {slug, title, sections: [{id, title}], markdown}} ; sans partie, configuration du dépôt
 
 GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&taille=&tri=&ordre=   tri : toute colonne (classement, forme, age, valeur, budget, masse_salariale ; niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
@@ -585,7 +697,7 @@ GET  /api/clubs/{id}/finances
 GET  /api/clubs/{id}/transferts?saison=
 GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, réputation, coupe, Europe) + leaders {matches, goals} + transfers {arrivals, departures}
 
-GET  /api/competitions
+GET  /api/competitions                    chacune : clubs, et rounds (journées de son calendrier, tours d'une coupe)
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison, avec le classement) | null}]}

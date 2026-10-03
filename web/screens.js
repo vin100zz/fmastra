@@ -1,5 +1,5 @@
 import {monthlySalary,monthlyAmount,salarySearchParams} from './salaries.js';
-import {cupSummaryCard,cupScreen} from './cups.js';
+import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {financialHistory,movementsHistory,seasonsHistory} from './club-history.js';
 import {clubOverview,clubPreview} from './club-overview.js';
@@ -37,16 +37,6 @@ async function leagueSummariesSection(ordered){
 export async function dashboard(leagues){
  const ordered=leagues.filter(league=>league.level===1).sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation));
  return heading('Vue d’ensemble')+await leagueSummariesSection(ordered);
-}
-
-export async function countryScreen(nation,leagues){
- const ordered=leagues.filter(league=>league.nation===nation&&league.kind!=='cup').sort((a,b)=>a.level-b.level);
- if(!ordered.length)throw new Error('Pays introuvable.');
- const cup=leagues.find(item=>item.nation===nation&&item.kind==='cup');
- const [summaries,cupData]=await Promise.all([Promise.all(ordered.map(league=>leagueSummary(league.id))),cup?api(`/competitions/${cup.id}/coupe`):null]);
- const cards=ordered.map((league,index)=>leagueSummaryCard(league,summaries[index]));
- if(cup)cards.splice(1,0,cupSummaryCard(cup,cupData));
- return heading(nationName(nation))+`<div class="league-summaries">${cards.join('')}</div>`;
 }
 
 export async function clubsScreen(params,leagues=[]){

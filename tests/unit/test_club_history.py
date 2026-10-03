@@ -129,6 +129,166 @@ def test_market_summary_totals_the_season_by_week_club_and_league(config):
     assert (empty['total'], empty['volume'], empty['median'], empty['record'], empty['weeks'], empty['clubs']) == (0, 0, 0, None, [], [])
 
 
+
+def retired_world(config):
+    """Two clubs of one league; 101 and 201 retire with a career behind them, 102 retired before the day's snapshot was kept."""
+    from core.domain.international import InternationalCareer
+    from core.domain.world import SeasonRecord
+    world = mini_world(config)
+    S = world.season
+    world.competitions[16] = Competition(16, 'Ligue 1', 'FRA', 1, [1, 2])
+    world.clubs[2].competition_id = None
+    world.players[101].international_caps, world.players[101].international_goals, world.players[101].national_team = 34, 2, 'FRA'
+    world.players[101].born, world.players[201].born = Date(S - 35, 1, 1), Date(S - 32, 1, 1)
+    world.records = {'a': SeasonRecord(S, 101, 1, 16, matches=30, goals=4, assists=6, rating_sum=140, rating_count=20),
+                     'b': SeasonRecord(S - 1, 101, 2, 16, matches=10, goals=1, rating_sum=65, rating_count=10),
+                     'c': SeasonRecord(S, 201, 2, 16, matches=5)}
+    # A level history higher than the level on the day: its best point is the peak.
+    world.trajectories[101] = [(S * 12, [int(world.players[101].rating * 2) + 9, int(world.players[101].rating * 2)])]
+    names = {pid: world.players[pid].name for pid in (101, 102, 201)}
+    kept = {pid: (world.players[pid].position, world.players[pid].rating, tuple(world.players[pid].nationalities)) for pid in (101, 201)}
+    for pid in (101, 201): apply(world, PlayerReleased(pid, retirement=True))
+    old = world.players.pop(102)
+    world.clubs[1].player_ids.remove(102)
+    world.retired[102] = old.name
+    world.international.retired_careers[102] = InternationalCareer('ESP', 3, 0, 0, 0)
+    world.transfers.append(TransferRecord(world.date, 102, 1, None, 0, 'retirement', S, born=Date(S - 33, 6, 1)))
+    return world, names, kept
+
+
+def test_a_retirement_keeps_who_the_player_was_and_tells_his_career(config):
+    from api.club_history import world_movements
+    world, names, kept = retired_world(config)
+    S = world.season
+    record = next(row for row in world.transfers if row.player_id == 101)
+    assert record.kind == 'retirement' and record.snapshot.position == kept[101][0] and record.snapshot.rating == kept[101][1]
+    assert record.snapshot.weekly_wage == 1000 and record.snapshot.contract_end is not None
+    data = world_movements(world, S, 'retirement', 1)
+    assert data['sort'] == 'rating' and data['total'] == 3
+    rows = {row['player_id']: row for row in data['items']}
+    first = rows[101]
+    assert (first['position'], first['nationalities'], first['rating']) == (kept[101][0], list(kept[101][2]), round(kept[101][1], 1))
+    assert first['peak'] == (int(kept[101][1] * 2) + 9) / 2 > first['rating']
+    assert (first['matches'], first['goals'], first['assists'], first['average']) == (40, 5, 6, 6.83)
+    assert (first['caps'], first['caps_goals'], first['age']) == (34, 2, 35)
+    assert first['league'] == {'id': 16, 'name': 'Ligue 1'} and rows[201]['league'] is None
+    assert (rows[201]['matches'], rows[201]['average'], rows[201]['caps']) == (5, None, 0)
+    # Archived before the day's snapshot was kept: no position, no level, and of his nationalities the nation he played for.
+    old = rows[102]
+    assert (old['position'], old['rating'], old['peak'], old['nationalities'], old['caps']) == (None, None, None, ['ESP'], 3)
+    assert data['items'][-1]['player_id'] == 102
+
+
+def test_retirements_sort_and_narrow_on_what_they_tell(config):
+    from api.club_history import MovementFilter, world_movements
+    import pytest
+    world, names, kept = retired_world(config)
+    S = world.season
+    def listed(sort='rating', order='desc', **chosen):
+        return [row['player_id'] for row in world_movements(world, S, 'retirement', 1, sort, order, chosen=MovementFilter(**chosen))['items']]
+    assert listed('caps') == [101, 102, 201] and listed('caps', 'asc') == [201, 102, 101]
+    assert listed('age') == [101, 102, 201] and listed('matches', 'asc') == [102, 201, 101]
+    # Without a value to sort on, a retirement comes last whichever the order.
+    for order in ('asc', 'desc'):
+        assert listed('position', order)[-1] == 102 and listed('league', order)[-1] == 201
+    for sort in ('date', 'name', 'nation', 'source', 'peak', 'goals', 'assists', 'average', 'caps_goals'):
+        assert len(listed(sort)) == 3
+    with pytest.raises(ValueError): listed('fee')
+    assert listed(capped=True) == [101, 102]
+    assert sorted(listed(positions=frozenset({kept[201][0]}))) == [pid for pid in (101, 201) if kept[pid][0] == kept[201][0]]
+    assert listed(competition_id=16) == [101, 102] and listed(club_id=2) == [201]
+    assert listed(age_min=34) == [101] and listed(age_max=32) == [201]
+    assert listed(search='club 2') == [201]
+
+
+def test_retirement_summary_counts_ages_caps_clubs_and_leagues(config):
+    from api.club_history import retirement_summary
+    world, names, kept = retired_world(config)
+    S = world.season
+    summary = retirement_summary(world, S)
+    assert (summary['total'], summary['average_age'], summary['capped']) == (3, 33.3, 2)
+    assert summary['oldest'] == {'age': 35, 'player_id': 101, 'player': names[101]}
+    assert summary['ages'] == [{'age': 32, 'count': 1}, {'age': 33, 'count': 1}, {'age': 34, 'count': 0}, {'age': 35, 'count': 1}]
+    assert [(entry['club']['id'], entry['league'], entry['count'], entry['average_age'], entry['matches']) for entry in summary['clubs']] == [
+        (1, {'id': 16, 'name': 'Ligue 1'}, 2, 34.0, 40), (2, None, 1, 32.0, 5)]
+    assert [(entry['id'], entry['name'], entry['count']) for entry in summary['leagues']] == [(16, 'Ligue 1', 2), (None, None, 1)]
+    world.transfers = []
+    empty = retirement_summary(world, S)
+    assert (empty['total'], empty['average_age'], empty['oldest'], empty['ages'], empty['clubs']) == (0, None, None, [], [])
+
+
+def promoted_world(config):
+    """Three players promoted this season by two clubs: 999 has grown since, 998 has not, 997 was archived without a snapshot."""
+    world = mini_world(config)
+    S = world.season
+    world.competitions[16] = Competition(16, 'Ligue 1', 'FRA', 1, [1, 2])
+    world.clubs[2].competition_id, world.clubs[2].nation = None, 'ITA'
+    world.clubs[1].youth_recruitment, world.clubs[2].youth_recruitment = 18, 7
+    base = world.players[102]
+    for pid, club_id, potential in ((999, 1, 90.0), (998, 2, 70.0)):
+        young = replace(base, id=pid, name=f'Jeune {pid}', born=Date(S - 17, 1, 1), club_id=club_id, rating=40.0, potential=potential,
+                        contract=replace(base.contract))
+        assert apply(world, PlayerGenerated(young))
+    world.players[999].rating = 46.0
+    world.transfers.append(TransferRecord(world.date, 997, None, 1, 0, 'academy', S))
+    world.retired[997] = 'Jeune sans archive'
+    return world
+
+
+def test_a_promotion_tells_what_the_player_was_and_what_he_is_today(config):
+    from api.club_history import MovementFilter, world_movements
+    world = promoted_world(config)
+    S = world.season
+    states = {name: rng.getstate() for name, rng in world.rngs.items()}
+    data = world_movements(world, S, 'academy', 1, 'progress')
+    assert data['nations'] == ['FRA', 'ITA'] and data['total'] == 3
+    assert [row['player_id'] for row in data['items']] == [999, 998, 997]
+    grown, gone = data['items'][0]['details'], data['items'][2]['details']
+    assert (grown['rating'], grown['current']['rating'], grown['potential']) == (40.0, 46.0, 90.0)
+    # Without a human club nobody is asked to join it.
+    assert grown['current']['interested'] is None and grown['current']['wage_demand'] is None
+    assert set(grown['current']['attributes']) and grown['current']['club']['id'] == 1
+    assert gone['data_at'] == 'unknown' and gone['current'] is None
+    def listed(sort='level', order='desc', **chosen):
+        return [row['player_id'] for row in world_movements(world, S, 'academy', 1, sort, order, chosen=MovementFilter(**chosen))['items']]
+    assert listed('level') == [999, 998, 997] and listed('level', 'asc') == [998, 999, 997]
+    for sort in ('worth', 'wage_demand', 'interested', 'passe', 'tir'):
+        assert listed(sort)[-1] == 997 or sort in ('wage_demand', 'interested')
+        assert len(listed(sort)) == 3
+    assert listed(nation='ITA') == [998] and listed(competition_id=16) == [999, 997] and listed(club_id=2) == [998]
+    # The level filtered on is today's; a promotion without archive has neither level nor potential.
+    assert listed(rating_min=45) == [999] and listed(rating_max=45) == [998]
+    assert listed(potential_min=80) == [999] and listed(potential_max=80) == [998]
+    assert listed(age_min=17, age_max=17) == [999, 998] and listed(positions=frozenset({'GB'})) == []
+    assert listed(search='jeune 998') == [998]
+    # The interest is the human club's: without one the filter is left aside.
+    assert len(listed(interested='oui')) == 3
+    assert {name: rng.getstate() for name, rng in world.rngs.items()} == states
+
+
+def test_academy_summary_counts_potentials_progress_clubs_and_countries(config):
+    from api.club_history import academy_summary
+    world = promoted_world(config)
+    S = world.season
+    summary = academy_summary(world, S)
+    assert (summary['total'], summary['average_potential'], summary['average_progress']) == (3, 80.0, 3.0)
+    assert summary['best'] == {'potential': 90.0, 'player_id': 999, 'player': 'Jeune 999'}
+    # Potentials are counted by ten levels out of 200: 90 reads 180, 70 reads 140.
+    assert [item['from'] for item in summary['bins']] == [None, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190]
+    assert {item['from']: item['count'] for item in summary['bins'] if item['count']} == {140: 1, 180: 1}
+    assert [(entry['club']['id'], entry['count'], entry['average_potential'], entry['best']['player_id'], entry['youth_recruitment']) for entry in summary['academies']] == [
+        (1, 2, 90.0, 999, 18), (2, 1, 70.0, 998, 7)]
+    assert summary['nations'] == [{'code': 'FRA', 'count': 2, 'clubs': 1, 'average_potential': 90.0, 'best': 90.0},
+                                  {'code': 'ITA', 'count': 1, 'clubs': 1, 'average_potential': 70.0, 'best': 70.0}]
+    # The best potential of all stands in the last class, up to 200.
+    world.players[999].potential = 100.0
+    world.transfers = [replace(row, snapshot=replace(row.snapshot, potential=100.0)) if row.player_id == 999 else row for row in world.transfers]
+    assert {item['from']: item['count'] for item in academy_summary(world, S)['bins'] if item['count']} == {140: 1, 190: 1}
+    world.transfers = []
+    empty = academy_summary(world, S)
+    assert (empty['total'], empty['average_potential'], empty['best'], empty['average_progress'], empty['academies'], empty['nations']) == (0, None, None, None, [], [])
+
+
 def test_academy_sort_uses_archived_values_before_pagination_and_keeps_unknown_last(config):
     from api.club_history import world_movements
     import pytest
@@ -225,7 +385,12 @@ def test_academy_snapshot_survives_progression_and_retirement(config):
     S = world.season
     young = replace(world.players[102], id=999, name='Jeune archivé', born=Date(S - 17, 1, 1))
     assert apply(world, PlayerGenerated(young))
-    before = world_movements(world, S, 'academy', 1)['items'][0]['details']
+    def archived():
+        # What the promotion kept of the player, apart from what he is today.
+        details = world_movements(world, S, 'academy', 1)['items'][0]['details']
+        return {key: value for key, value in details.items() if key != 'current'}, details['current']
+    before, today = archived()
+    assert today['id'] == 999 and today['rating'] == round(young.rating, 1)
     assert before['age'] == 17 and before['data_at'] == 'promotion'
     assert before['wage'] == 1000 and before['nationalities']
     assert before['potential'] == round(young.potential, 1) >= young.rating
@@ -233,7 +398,7 @@ def test_academy_snapshot_survives_progression_and_retirement(config):
     young.contract.weekly_wage = 9000
     world.date, world.season = Date(S + 5, 7, 1), S + 5
     apply(world, PlayerReleased(young.id, retirement=True))
-    assert world_movements(world, S, 'academy', 1)['items'][0]['details'] == before
+    assert archived() == (before, None)
     assert movements(world, 1, S + 5, 1)['sections']['retirement'][0]['age'] == 22
     encoded = encode(world.transfers[0])
     assert decode(encoded) == world.transfers[0]
@@ -241,6 +406,10 @@ def test_academy_snapshot_survives_progression_and_retirement(config):
     assert decode(encoded).snapshot is None
     saved = ADAPTER.validate_json(ADAPTER.dump_json(SaveEnvelope(5, 'test', '3.12', '', world), by_alias=True))
     assert saved.world.transfers[0].snapshot == world.transfers[0].snapshot
+    # The retirement keeps who he was that day too, and a save carries it.
+    retired = world.transfers[-1]
+    assert retired.kind == 'retirement' and (retired.snapshot.rating, retired.snapshot.weekly_wage, retired.snapshot.position) == (99, 9000, young.position)
+    assert saved.world.transfers[-1].snapshot == retired.snapshot
 
 
 def test_academy_potential_is_exact_sorted_and_recovered_for_snapshots_archived_earlier(config):

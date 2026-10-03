@@ -12,6 +12,17 @@ from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, Playe
                      OffersUpdated, RenewalProposed)
 
 
+def movement_snapshot(world: World, player) -> MovementSnapshot:
+    """Who a player is on the day of a movement that the screens tell later on: a promotion, a retirement."""
+    from .estimates import estimate_potential
+    from core.ai.market import market_value
+    estimate = estimate_potential(player, world.date, world.seed, world.config)
+    contract = player.contract
+    return MovementSnapshot(player.born, player.nationalities, player.position, player.rating, estimate.lower, estimate.upper,
+                            contract.weekly_wage if contract else 0, market_value(player, world), contract.end if contract else None,
+                            player.fitness, player.potential)
+
+
 def apply(world: World, event: WorldEvent) -> bool:
     if isinstance(event, OffersUpdated):
         world.offers = {offer.key: offer for offer in event.offers}
@@ -47,6 +58,8 @@ def apply(world: World, event: WorldEvent) -> bool:
     elif isinstance(event, PlayerReleased):
         player = world.players[event.player_id]
         source = player.club_id
+        # A retired player leaves the world: his retirement keeps who he was, as a promotion does.
+        snapshot = movement_snapshot(world, player) if event.retirement else None
         if source is not None:
             club = world.clubs[source]
             club.player_ids.remove(player.id)
@@ -60,7 +73,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.retired[player.id] = player.name
             del world.players[player.id]
         kind = "retirement" if event.retirement else "release"
-        world.transfers.append(TransferRecord(world.date, player.id, source, None, 0, kind, world.season, born=player.born))
+        world.transfers.append(TransferRecord(world.date, player.id, source, None, 0, kind, world.season, born=player.born, snapshot=snapshot))
         text = f"{player.name} : {'fin de carrière' if event.retirement else 'fin de contrat'}"
         world.journal.append(JournalEntry(world.date, kind, text, source, player.id))
         add_news(world, kind, text, source, player.id)
@@ -79,14 +92,8 @@ def apply(world: World, event: WorldEvent) -> bool:
         world.next_id = max(world.next_id, player.id + 1)
         world.record_level(player)
         if player.club_id is not None:
-            from .estimates import estimate_potential
-            from core.ai.market import market_value
-            estimate = estimate_potential(player, world.date, world.seed, world.config)
-            snapshot = MovementSnapshot(player.born, player.nationalities, player.position, player.rating,
-                                        estimate.lower, estimate.upper, player.contract.weekly_wage,
-                                        market_value(player, world), player.contract.end, player.fitness, player.potential)
             world.transfers.append(TransferRecord(world.date, player.id, None, player.club_id, 0, "academy", world.season,
-                                                 born=player.born, snapshot=snapshot))
+                                                 born=player.born, snapshot=movement_snapshot(world, player)))
         if player.club_id and world.clubs[player.club_id].competition_id:
             text = f"{player.name} rejoint le centre de formation"
             world.journal.append(JournalEntry(world.date, "academy", text, player.club_id, player.id))

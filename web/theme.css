@@ -17,7 +17,7 @@ body{background:var(--bg)}
 :focus-visible{outline:2px solid var(--accent)}
 
 /* Titles and figures: condensed, like the match-day graphics. */
-h1,h2,.card-head h2,.stat-card strong,.scoreboard,.big-score,.date-block strong,.brand,.identity h1,.section-title,.honours-title{font-family:var(--display);font-stretch:semi-condensed}
+h1,h2,.card-head h2,.stat-card strong,.scoreboard,.big-score,.date-block strong,.brand,.identity h1,.section-title{font-family:var(--display);font-stretch:semi-condensed}
 h1{font-weight:700;letter-spacing:0;font-size:30px}
 h2{font-weight:600}
 p{color:var(--muted)}
@@ -80,7 +80,7 @@ footer{border-color:var(--line);color:var(--muted)}
 .stat-card .label,.stat-card small{color:var(--muted)}
 .stat-card .label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
 .stat-card strong{color:var(--strong);font-weight:700}
-.section-title,.honours-title{color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.section-title{color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .hero,.match-banner{background:var(--band);color:var(--ink);border:1px solid var(--line);border-radius:4px}
 .welcome h1{color:var(--strong)}
 .hero .eyebrow,.match-banner .eyebrow{color:var(--accent-text)}
@@ -288,7 +288,7 @@ h1{font-size:26px;margin:0}
 .card-head{min-height:32px;padding:0 12px!important}
 .card-head h2,.club-overview .card-head h2,.inbox .card-head h2{font-size:13px!important}
 .card-body{padding:10px 12px}
-.grid,.grid.equal,.club-overview,.my-club,.match-layout,.honours-blocks,.transfer-columns,.league-summaries{gap:10px}
+.grid,.grid.equal,.club-overview,.my-club,.match-layout,.transfer-columns,.league-summaries{gap:10px}
 .club-overview{margin-bottom:10px}
 .stat-grid{gap:10px;margin-bottom:10px}
 .stat-card{padding:10px 12px}
@@ -771,7 +771,12 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .num{display:block;text-align:right}
 .player-table :is(.age-column,.value-column,.asking_price-column,.wage-column,.wage_demand-column,.fitness-column,.appearances-column,.goals-column,.assists-column,.yellows-column,.reds-column,.average-column),
 .clubs-table :is(.rang-column,.reputation-column,.effectif-column,.age-column,.valeur-column,.budget-column,.masse_salariale-column),
-.movements-table :is(.age-column,.fee-column,.value-column),.summary-table th:nth-child(n+2){text-align:right}
+.movements-table :is(.age-column,.fee-column,.value-column,.matches-column,.goals-column,.assists-column,.average-column,.caps-column,.caps_goals-column,.progress-column,.worth-column,.wage_demand-column),
+.summary-table.figures th:nth-child(n+2),.summary-table:is(.academies,.nations) th:nth-child(2),.summary-table.nations th:nth-child(3){text-align:right}
+.summary-table.text-second th:nth-child(2){text-align:left}
+/* The clubs that trained the promoted players: the club and its best prospect share the width the figures leave. */
+.summary-table.academies table{table-layout:fixed}.summary-table.academies td{overflow:hidden;text-overflow:ellipsis}
+.summary-table.academies th:nth-child(2){width:58px}.summary-table.academies th:nth-child(3){width:68px}.summary-table.academies th:nth-child(5){width:48px}.summary-table.academies th:nth-child(6){width:66px}
 .mini-bar{flex:none;display:block;width:32px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 .mini-bar>i{display:block;height:100%;border-radius:2px;background:var(--info)}
 .mini-bar.full>i{background:var(--bad)}
@@ -796,6 +801,14 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .movements-table .rating-column{width:34px}.movements-table .source-column,.movements-table .target-column{width:160px}.movements-table .arrow-column{width:14px;padding:0!important}
 .movements-table .fee-column{width:132px}.movements-table .value-column{width:60px}.movements-table .bar-figure .mini-bar{width:56px}.movements-table .bar-figure b{min-width:58px}
 .move-arrow{display:block;margin:0 -8px;text-align:center;color:var(--muted)}
+/* Retirements: the last club and its league, then three groups of figures under their headings, a line opening each group;
+   a grouped column takes its width from its <col>, padding included. Promotions: the club that trained the player, the
+   level he had and the one he has, and a bar of what he gained on the way to his potential. */
+.movements-table col.grouped{width:58px}.movements-table col.group-start{border-left:1px solid var(--line)}.movements-table th.column-group{text-align:center;text-transform:uppercase}
+.movements-table .league-column{width:104px}
+.movements-table .academy_club-column{width:170px}.movements-table .level-column,.movements-table .potential-column{width:34px}.movements-table .rating-column:has([data-sort=rating] span){width:46px}
+.movements-table .progress-column{width:130px}.movements-table .worth-column{width:60px}.movements-table .wage_demand-column{width:76px}.movements-table .interested-column{width:62px}
+.movements-table .bar-figure.gain .mini-bar{width:80px}.bar-figure.gain .mini-bar>i{background:var(--good)}.movements-table .bar-figure.gain b{min-width:30px}
 /* Preview of the row picked in a list: the words of the player's or the club's page, in a narrow card. */
 .preview{display:flex;flex-direction:column;flex:1 0 auto!important;overflow:visible}
 .preview-head{display:flex;align-items:center;gap:10px;padding:10px 12px 0}
@@ -860,3 +873,92 @@ a.button:hover{background:var(--panel-3);color:var(--strong)}
 .week>span{height:16px;font-size:10px;line-height:16px;color:var(--muted)}
 .activity.dense .week>span{visibility:hidden}
 .activity-window>small{display:block;padding-top:2px;border-top:1px solid var(--line);font-size:10px;font-weight:600;letter-spacing:.06em;text-align:center;text-transform:uppercase;color:var(--muted)}
+
+/* Palmarès: every competition on a row and every season on a column in one table, three rankings under it, and beside them
+   (from 1500 px, the width seasonsShown() in honours.js counts with) the titled clubs, as tall as the window and scrolling in
+   their card. A club picked there, or in the table, lights its titles up. */
+.honours{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.honours .card{margin:0;min-width:0}
+.honours-main{display:flex;flex-direction:column;gap:8px;min-width:0}
+.honours-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px}
+.honours thead th{position:sticky;top:0;z-index:1}
+.honours [data-honours-club]{cursor:pointer}
+.honours-matrix table{table-layout:fixed}
+.honours-matrix td{overflow:hidden;text-overflow:ellipsis}
+.honours-matrix .nation-column{width:110px}.honours-matrix .competition-column{width:196px}.honours-matrix .scorer-column{width:170px}
+.honours-matrix tbody tr,.honours-matrix tbody tr:hover{background:none}
+.honours-matrix tbody+tbody tr:first-child td{border-top:1px solid var(--line)}
+.honours-nation{vertical-align:top;border-right:1px solid var(--row-line);border-bottom:0;font-weight:600;color:var(--strong)}
+.honours-nation .nation,.honours-table .nation{margin-right:7px;vertical-align:-1px}
+.honours-tag{display:inline-block;width:24px;margin-right:7px;border:1px solid var(--line);border-radius:2px;font-size:9.5px;font-weight:700;line-height:14px;letter-spacing:.04em;text-align:center;color:var(--muted)}
+.honours-tag.europe{background:var(--info-soft);border-color:transparent;color:var(--info)}
+.honours-tag.cup{background:var(--gold-soft);border-color:transparent;color:var(--gold-bright)}
+/* The season under way stands apart: grey for a leader or a round to come, plain for a champion already known. */
+.honours-matrix td.current{background:var(--stripe);border-left:1px solid var(--row-line);border-right:1px solid var(--row-line);color:var(--muted)}
+.honours-matrix td.current .strong{color:var(--ink)}
+.honours-live{display:inline-block;margin-left:7px;padding:0 5px;border:1px solid var(--good-line);border-radius:8px;font-size:9.5px;line-height:14px;letter-spacing:.04em;color:var(--good)}
+.honours-pair{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.honours-pair>a{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.honours-pair small{font-size:11px}
+.honours-pair b{font-weight:600;color:var(--strong)}
+.honours-matrix td.picked,.honours-table tbody tr.picked,.honours-table tbody tr.picked:hover{background:var(--own-row)}
+/* The rankings: every column but the name's has a set width, padding included, narrow enough to leave the names their room. */
+.honours-table table{table-layout:fixed}
+.honours-table th,.honours-table td{padding-left:4px!important;padding-right:4px!important;overflow:hidden;text-overflow:ellipsis}
+.honours-table th:first-child,.honours-table td:first-child{padding-left:12px!important}
+.honours-table th:last-child,.honours-table td:last-child{padding-right:12px!important}
+.honours-table .rank-column{width:34px}.honours-table .count-column{width:30px}.honours-table .total-column{width:78px}.honours-table .sum-column{width:34px}
+.honours-table .position-column{width:56px}.honours-table .competitions-column{width:40%}
+.honours-table .titles-column{width:50px}.honours-table .goals-column{width:50px}
+.honours-table :is(.rank-column,.count-column,.total-column,.sum-column){text-align:right}
+.honours-table .bar-figure .mini-bar{width:36px}.honours-table .bar-figure b{min-width:16px}
+.honours-where{color:var(--muted)}
+@media(min-width:1500px){
+ .honours{grid-template-columns:minmax(0,1fr) 400px;min-height:calc(100vh - 106px)}
+ .honours-lists{flex:1 1 0;min-height:214px;grid-template-rows:minmax(0,1fr);grid-auto-rows:minmax(0,1fr)}
+ .honours-lists>.card,.honours-board>.card{display:flex;flex-direction:column;min-height:0}
+ .honours-lists .table-scroll,.honours-board .table-scroll{flex:1 1 0;min-height:0}
+ .honours-board{position:relative}
+ .honours-board>.card{position:absolute;inset:0}
+}
+@media(max-width:1499px){.honours-board .table-scroll{max-height:420px}}
+
+/* A country: one column per division from the top down, then its cup; a column too narrow for a table goes to the next row.
+   A division gives its latest or next round, its whole table and its leading scorers; the cup, one of its rounds. A line left
+   of the rank tells the places, so that the row of the user's club is the only one coloured. */
+.toolbar h1 .nation{margin-right:10px;vertical-align:2px}.toolbar h1 .flag{width:24px;height:18px}
+.country{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:8px}
+.country>.card{margin:0;min-width:0}
+.country .card-head a{font-variant-numeric:tabular-nums}
+.country h3{display:flex;align-items:center;height:24px;margin:0;padding:0 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.country .standings+h3{border-top:1px solid var(--line)}
+.country-match{display:grid;grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);align-items:center;height:26px;padding:0 10px;border-bottom:1px solid var(--row-line);font-size:12px}
+.country-match.tie{grid-template-columns:22px minmax(0,1fr) 46px minmax(0,1fr) 22px;padding:0 8px}
+.country-match>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.country-match .home{text-align:right}
+.country-match .won{font-weight:700;color:var(--strong)}
+.country-match small{font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--muted)}
+.country-match small:last-child{text-align:right}
+.country-match .score{justify-self:center;min-width:38px;border-radius:2px;background:var(--panel-2);color:var(--ink);font-weight:700;line-height:20px;text-align:center;font-variant-numeric:tabular-nums}
+.country-match .score:hover{background:var(--panel-3)}
+.country-match .score.pending{background:none;color:var(--muted);font-weight:400}
+.country-match .score.shootout{text-decoration:underline dotted;text-underline-offset:3px}
+.country-match:has(+.standings){border-bottom:0}
+.country-match+.standings th{border-top:1px solid var(--line)}
+.country .standings table{table-layout:fixed}
+.country .standings td:nth-child(2){overflow:hidden;text-overflow:ellipsis}
+.country .standings th:first-child,.country .standings td:first-child{padding-left:10px!important}
+.country .standings tbody tr{background:none!important}
+.country .standings tbody tr:nth-child(even){background:var(--stripe)!important}
+.country .standings tbody tr:hover{background:var(--panel-3)!important}
+.country-match.own,.country .standings tbody tr.own{background:var(--own-row)!important}
+.country .standings tr:is(.promoted,.europe-direct) td:first-child{box-shadow:inset 3px 0 0 var(--good)}
+.country .standings tr.qualified-europe td:first-child{box-shadow:inset 3px 0 0 var(--info)}
+.country .standings tr.europe-playoff td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.country .standings tr.relegated td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
+.country .movement-icon{display:none}
+.country>.card>.table-scroll table{table-layout:fixed}
+.country>.card>.table-scroll td{overflow:hidden;text-overflow:ellipsis}
+.country>.card>.table-scroll .rank-column{width:38px;text-align:right}.country>.card>.table-scroll .club-column{width:38%}.country>.card>.table-scroll .goals-column{width:58px;text-align:right}
+.country-rounds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:0;border-bottom:1px solid var(--line);border-radius:0}
+.country-rounds a{justify-content:center;padding:0}

@@ -1,7 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {cupSummaryCard,cupScreen} from '../../web/cups.js';
-import {countryScreen} from '../../web/screens.js';
+import {cupScreen} from '../../web/cups.js';
 import {fixtures,playerLink} from '../../web/ui.js';
 import {matchScreen} from '../../web/match.js';
 
@@ -9,26 +8,19 @@ const cup={id:-3,name:'Coupe de France',kind:'cup',nation:'FRA',clubs:64,level:0
 const match={id:1,home:{id:1,name:'Home'},away:{id:2,name:'Away'},date:'2025-12-10',round:1,round_label:'32es de finale',score:[1,1],penalties:[4,5],winner_id:2};
 const data={season:2025,seasons:[2025],latest_round:1,winner:null,rounds:[{number:1,label:'32es de finale',date:'2025-12-10',items:Array.from({length:32},(_,i)=>({...match,id:i+1}))},...['16es de finale','8es de finale','Quarts de finale','Demi-finales','Finale'].map((label,i)=>({number:i+2,label,date:'2026-01-07',items:[]}))]};
 
-test('cup summary preserves all 32 results and distinguishes penalty scores',()=>{
- const html=cupSummaryCard(cup,data);
- assert.equal((html.match(/class="fixture"/g)||[]).length,32);
+test('a cup match names its round and tells a shoot-out apart from the score',()=>{
+ const html=fixtures({items:[match]},true);
  assert.match(html,/32es de finale/);
+ assert.doesNotMatch(html,/Journée 1/);
  assert.match(html,/1 – 1/);
  assert.match(html,/4 – 5 t.a.b./);
- assert.match(fixtures({items:[match]},true),/32es de finale/);
- assert.doesNotMatch(fixtures({items:[match]},true),/Journée 1/);
 });
 
-test('country places the cup between the first and second divisions',async()=>{
+test('the bracket is the cup’s only view of its rounds',async()=>{
  const previous=globalThis.fetch;
- globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/coupe')?data:url.includes('/calendrier')?{items:[],round:1}: {items:[]}});
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/coupe')?data:{items:[]}});
  try{
-  const html=await countryScreen('FRA',[{id:17,name:'Ligue 2',nation:'FRA',level:2,clubs:18},cup,{id:16,name:'Ligue 1',nation:'FRA',level:1,clubs:18}]);
-  assert.ok(html.indexOf('FRA · Ligue 1')<html.indexOf('Coupe de France'));
-  assert.ok(html.indexOf('Coupe de France')<html.indexOf('FRA · Ligue 2'));
-  // the title is the left-menu entry alone, with no line above or below it
-  assert.match(html,/^<div class="page-heading"><div><h1>FRA<\/h1><\/div><\/div>/);
-  // the bracket is the cup's only view of its rounds, and a league's Calendrier section lands on it
+  // a league's Calendrier section lands on the bracket
   const screen=await cupScreen(cup,'calendar',new URLSearchParams());
   assert.doesNotMatch(screen,/Les tours/);
   assert.match(screen,/class="active" href="#\/league\/-3\/bracket">Tableau/);

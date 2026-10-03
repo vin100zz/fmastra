@@ -536,16 +536,21 @@ def router(service: GameService) -> APIRouter:
                          taille: int = page_size(50), tri: str | None = None, ordre: Literal['asc', 'desc'] = 'desc',
                          recherche: str = "", fenetre: Literal["ete", "hiver"] | None = None, nature: Literal["payant", "libre"] | None = None,
                          competition: int | None = None, poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
-                         montant_min: int = Query(0, ge=0), club: int | None = None) -> dict:
+                         montant_min: int = Query(0, ge=0), club: int | None = None, pays: str = "", selectionnes: Literal["oui"] | None = None,
+                         niveau_min: float = Query(0, ge=0, le=100), niveau_max: float = Query(100, ge=0, le=100),
+                         potentiel_min: float = Query(0, ge=0, le=100), potentiel_max: float = Query(100, ge=0, le=100),
+                         interesse: Literal["oui", "non"] | None = None) -> dict:
         from .club_history import MovementFilter, world_movements
         chosen = MovementFilter(v.normalized(recherche), fenetre, nature, competition, frozenset(name for name in (poste or "").split(",") if name),
-                                age_min, age_max, montant_min, club)
+                                age_min, age_max, montant_min, club, pays or None, selectionnes == "oui", niveau_min, niveau_max,
+                                potentiel_min, potentiel_max, interesse)
         with service.reading() as world: return world_movements(world, saison, type, page, tri, ordre, taille, chosen)
 
     @api.get("/monde/transferts/resume")
-    def transfers_summary(saison: int | None = None) -> dict:
-        from .club_history import market_summary
-        with service.reading() as world: return market_summary(world, saison)
+    def transfers_summary(saison: int | None = None, type: Literal["transfer", "retirement", "academy"] = "transfer") -> dict:
+        from .club_history import academy_summary, market_summary, retirement_summary
+        summary = {"transfer": market_summary, "retirement": retirement_summary, "academy": academy_summary}[type]
+        with service.reading() as world: return summary(world, saison)
 
     @api.get("/monde/palmares")
     def honours() -> dict:
@@ -556,7 +561,10 @@ def router(service: GameService) -> APIRouter:
     def competitions() -> list[dict]:
         with service.reading() as world:
             return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level,
-                     "kind": item.kind, "code": item.code, "clubs": len(item.club_ids)} for item in world.competitions.values()]
+                     "kind": item.kind, "code": item.code, "clubs": len(item.club_ids),
+                     # A league's rounds are those of its calendar; a cup's are dated before they are drawn.
+                     "rounds": max(len(item.round_dates), max((world.matches[mid].round_number for mid in item.match_ids if mid in world.matches), default=0))}
+                    for item in world.competitions.values()]
 
     @api.get("/competitions/{competition_id}/navigation")
     def competition_navigation(competition_id: int) -> dict:
