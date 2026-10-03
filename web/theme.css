@@ -941,6 +941,8 @@ a.button:hover{background:var(--panel-3);color:var(--strong)}
 .country .standings+h3{border-top:1px solid var(--line)}
 .country-match{display:grid;grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);align-items:center;height:26px;padding:0 10px;border-bottom:1px solid var(--row-line);font-size:12px}
 .country-match.tie{grid-template-columns:22px minmax(0,1fr) 46px minmax(0,1fr) 22px;padding:0 8px}
+.country-match.with-scorers{height:auto;min-height:26px;padding-top:3px;padding-bottom:4px;row-gap:1px}
+.country-match .fixture-scorers{white-space:normal}
 .country-match>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .country-match .home{text-align:right}
 .country-match .won{font-weight:700;color:var(--strong)}
@@ -969,3 +971,10 @@ a.button:hover{background:var(--panel-3);color:var(--strong)}
 .country>.card>.table-scroll .rank-column{width:38px;text-align:right}.country>.card>.table-scroll .club-column{width:38%}.country>.card>.table-scroll .goals-column{width:58px;text-align:right}
 .country-rounds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:0;border-bottom:1px solid var(--line);border-radius:0}
 .country-rounds a{justify-content:center;padding:0}
+
+/* Infobulle HTML (tooltip.js) */
+#tooltip{position:fixed;z-index:1000;max-width:min(320px,calc(100vw - 16px));padding:7px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-3);color:var(--strong);font-size:12.5px;line-height:1.4;box-shadow:0 8px 24px var(--backdrop);pointer-events:none;overflow-wrap:anywhere}
+#tooltip[hidden]{display:none}
+#tooltip::after{content:"";position:absolute;left:var(--arrow,50%);width:8px;height:8px;margin-left:-4px;background:var(--panel-3);transform:rotate(45deg)}
+#tooltip[data-side=top]::after{top:100%;margin-top:-4px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+#tooltip[data-side=bottom]::after{bottom:100%;margin-bottom:-4px;border-left:1px solid var(--line);border-top:1px solid var(--line)}

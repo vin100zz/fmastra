@@ -1,4 +1,4 @@
-import {api,escape as e,date,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable} from './ui.js';
+import {api,escape as e,date,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable,scorersRow} from './ui.js';
 import {choiceLinks,listHref} from './listing.js';
 
 // The matches each division shows: its latest round, or on demand the next one.
@@ -6,8 +6,8 @@ const MODES=[['','Derniers matches'],['prochains','Prochains matches']];
 const SCORERS=5;
 
 // One match on a line: the home side up to the score, the away side after it, the winner in bold and the match of the user's
-// club (`own`) highlighted. In a cup, `levels` names the division of each club at the two ends, and a shoot-out is told by the
-// score's tooltip.
+// club (`own`) highlighted; under a played match, each side's scorers as on a competition's round. In a cup, `levels` names
+// the division of each club at the two ends, and a shoot-out is told by the score's tooltip.
 function matchRow(match,own,levels){
  const [home,away]=match.score||[];
  const winner=match.winner_id??(match.score&&home!==away?(home>away?match.home?.id:match.away?.id):null);
@@ -15,7 +15,9 @@ function matchRow(match,own,levels){
  const level=club=>levels?`<small>${levels[club?.id]||''}</small>`:'';
  const mine=own!=null&&[match.home?.id,match.away?.id].includes(own);
  const score=`<a class="score${match.score?'':' pending'}${match.penalties?' shootout':''}" href="#/match/${match.id}"${match.penalties?` title="Tirs au but : ${match.penalties.join(' – ')}"`:''}>${match.score?`${home} – ${away}`:'–'}</a>`;
- return `<div class="country-match${levels?' tie':''}${mine?' own':''}">${level(match.home)}${side(match.home,'home')}${score}${side(match.away,'away')}${level(match.away)}</div>`;
+ // The scorers line up under their side: in a cup, between the two ends that name the divisions.
+ const scorers=scorersRow(match.scorers),under=scorers&&levels?`<span></span>${scorers}<span></span>`:scorers;
+ return `<div class="country-match${levels?' tie':''}${scorers?' with-scorers':''}${mine?' own':''}">${level(match.home)}${side(match.home,'home')}${score}${side(match.away,'away')}${level(match.away)}${under}</div>`;
 }
 const strip=round=>`<h3>${e(round.label)}${round.date?` · ${date(round.date)}`:''}</h3>`;
 

@@ -301,7 +301,8 @@ matches » (`matches=prochains`), qui vaut pour toutes les colonnes.
 
 Une division donne, sous son nom et le nombre de journées jouées sur celles de la saison
 (« J3 / 34 », lien vers le championnat), la journée choisie : un match par ligne, le
-vainqueur en gras ; puis son classement complet (#, club, PTS, J, V, N, D, BP, BC, DIFF.,
+vainqueur en gras, et sous un match joué les buteurs de chaque équipe, alignés sous
+elle comme dans l'onglet Derniers matches ; puis son classement complet (#, club, PTS, J, V, N, D, BP, BC, DIFF.,
 sans la forme) et ses cinq meilleurs buteurs. Sans journée à montrer (avant la première,
 après la dernière), le classement et les buteurs restent. Les places sont marquées par un
 trait à gauche du rang (vert pour le titre, la promotion ou la qualification directe, bleu
