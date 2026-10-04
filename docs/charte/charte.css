@@ -1,0 +1,303 @@
+/* Touchline's charter, light theme: the reference every screen and every mockup is built from (docs/charte-graphique.md).
+   Tokens first, then the application frame, then the components. Names follow web/theme.css, which this sheet is to
+   replace screen by screen. Its boards, docs/charte/index.html, draw every token and component with it. */
+:root{
+ /* Surfaces and lines. */
+ --bg:#fff;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--stripe:#f7f9fb;--line:#d6dce4;--row-line:#e6eaef;
+ /* Inks. */
+ --strong:#0b121a;--ink:#16202b;--ink-2:#34404e;--muted:#5d6a79;
+ /* Accent: one yellow, the ink written on it, its form as text on white, its wash under a picked row. */
+ --accent:#f5c400;--accent-ink:#111418;--accent-text:#7f6200;--own-row:#fff3c4;
+ /* States, each with its wash. */
+ --good:#1a7340;--good-soft:#e1f3e7;--warn:#8a6600;--warn-soft:#fdf4d8;--bad:#bf3329;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--info:#2166a8;--info-soft:#e3eefa;
+ /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in every list. */
+ --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
+ /* Pitch. */
+ --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141ecc;
+ /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
+ --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
+ --text:"Segoe UI",system-ui,sans-serif;
+ --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;
+ --caps:.06em;
+ /* Space: 4, 8, 12, 16, 24. */
+ --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;
+ /* Shape: one radius, or a full round; the mark of what is open is 3 px on a bar, 2 px on a control. */
+ --radius:3px;--mark:3px;--mark-control:2px;
+ /* Heights. */
+ --h-bar:48px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
+}
+*{box-sizing:border-box}
+
+.app{position:relative;font:400 var(--fs-body)/18px var(--text);color:var(--ink);background:var(--bg);font-variant-numeric:tabular-nums}
+.app :is(h1,h2,h3,p,ul){margin:0;padding:0}
+.app a{color:inherit;text-decoration:none}
+.app button,.app select,.app input{font:inherit;color:inherit}
+.app svg{flex:none}
+
+/* Text. */
+.page-title{font:700 semi-condensed var(--fs-page)/32px var(--display);color:var(--strong)}
+.figure{font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
+.label{font:600 var(--fs-small)/14px var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+.small{font-size:var(--fs-small);line-height:14px}
+.strong{font-weight:600;color:var(--strong)}
+.muted{color:var(--muted)}
+.num{text-align:right}
+.center{text-align:center}
+.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.stack{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+
+/* Frame: the rail on the left, the bar on top, the page below it. */
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);height:100vh;overflow:hidden}
+.sidebar{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:10px;flex:none;height:var(--h-bar);padding:0 var(--s4);border-bottom:var(--mark) solid var(--accent);font:700 semi-condensed var(--fs-figure)/1 var(--display);letter-spacing:var(--caps);color:var(--strong)}
+.brand-mark{display:grid;place-items:center;width:28px;height:28px;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-title)/1 var(--display);letter-spacing:0}
+.nav{display:flex;flex-direction:column}
+.nav .label{margin:var(--s3) 20px var(--s1)}
+.nav a{display:flex;align-items:center;gap:var(--s3);height:32px;margin:0 var(--s2);padding:0 var(--s3);border-radius:var(--radius);font-weight:600;color:var(--ink-2)}
+.nav a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset var(--mark) 0 0 var(--accent)}
+.nav svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nav a.active svg{stroke:var(--accent-text)}
+.nav svg,.nav .kit-dot{margin:0 6px}
+.nav .kit-dot{width:16px;height:16px}
+.nav .flag{margin:0 6px}
+.nav .count{margin-left:auto}
+.sidebar-bottom{margin-top:auto;padding:var(--s2) 0 var(--s3);border-top:1px solid var(--line)}
+.sidebar-tools{display:flex;gap:var(--s1);margin:var(--s1) var(--s2) 0}
+.sidebar-tools .button:first-child{flex:1}
+.workspace{display:flex;flex-direction:column;min-width:0;min-height:0}
+.topbar{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-bar);padding:0 var(--s3) 0 var(--s4);border-bottom:var(--mark) solid var(--accent)}
+.date-block{display:flex;flex-direction:column;margin-right:auto}
+.date-block strong{font:700 semi-condensed var(--fs-title)/22px var(--display);color:var(--strong)}
+.next-matches{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.next-match{display:flex;align-items:center;gap:var(--s2);height:34px;padding:0 var(--s3) 0 var(--s2)}
+.next-match+.next-match{border-left:1px solid var(--line)}
+.next-match:first-child{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+.next-match>b{min-width:30px;font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--muted)}
+.next-match:first-child>b{color:var(--accent-text)}
+.next-match>span{display:flex;flex-direction:column}
+.next-match strong{display:flex;align-items:center;gap:var(--s1);font-weight:600;line-height:16px;color:var(--strong)}
+.next-match small{font-size:var(--fs-small);line-height:14px;color:var(--muted)}
+.next-match small.cup{color:var(--info)}
+.page{flex:1;display:flex;flex-direction:column;gap:var(--s2);min-height:0;padding:var(--s2) var(--s4) var(--s3)}
+/* A page's title, its commands on the same line. */
+.page-heading{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-head)}
+.tools{display:flex;align-items:center;gap:var(--s2);margin-left:auto}
+
+/* Controls: 28 px, 22 px in a card's head or a table's row. */
+.button{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);flex:none;height:var(--h-control);padding:0 var(--s3);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font:600 var(--fs-body)/1 var(--text);white-space:nowrap}
+.button.primary{background:var(--accent);border-color:var(--accent-text);color:var(--accent-ink)}
+.button.danger{background:none;border-color:var(--bad-line);color:var(--bad)}
+.button:disabled{background:var(--panel);color:var(--muted);opacity:.6}
+.button.square{width:var(--h-control);padding:0}
+.button.small{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
+.button.small.square{width:var(--h-control-small);padding:0}
+.button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cta{display:inline-flex;align-items:center;gap:var(--s3);flex:none;height:36px;padding:0 var(--s3) 0 var(--s4);border:1px solid var(--accent-text);border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-figure)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase}
+.field{height:var(--h-control);padding:0 var(--s2);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--ink)}
+
+/* What is open, at three levels: the tabs of a page, the choice of a view, the steps of a series. One mark: the accent. */
+.tabs{display:flex;gap:var(--s1);flex:none;height:var(--h-tabs);border-bottom:1px solid var(--line)}
+.tabs a{display:flex;align-items:center;margin-bottom:-1px;padding:0 var(--s4);border-bottom:var(--mark) solid transparent;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs a.active{color:var(--strong);border-bottom-color:var(--accent)}
+.segmented{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+.segmented>*{display:flex;align-items:center;justify-content:center;height:calc(var(--h-control) - 2px);min-width:calc(var(--h-control) - 2px);padding:0 var(--s3);border:0;border-right:1px solid var(--line);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--muted);white-space:nowrap}
+.segmented>*:last-child{border-right:0}
+.segmented>.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+.segmented.small>*{height:calc(var(--h-control-small) - 2px);min-width:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
+.segmented.steps>*{padding:0}
+.segmented.fill{display:flex}.segmented.fill>*{flex:1 1 0}
+
+/* Cards. */
+.card{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex:none;height:var(--h-head);padding:0 var(--s3);border-bottom:1px solid var(--line)}
+.card-head h2{font:600 semi-condensed var(--fs-body)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.card-head>a{font-size:var(--fs-small);font-weight:600;color:var(--muted)}
+.card-tools{display:flex;align-items:center;gap:var(--s2)}
+.card-body{padding:var(--s2) var(--s3)}
+.card>.tabs{padding:0 var(--s2);border-bottom:0}
+.section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+/* Tables: 26 px headings and rows, figures on the right. A row is a grid; each table sets its columns. */
+.table{display:flex;flex-direction:column;min-width:0}
+.tr{display:grid;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.tr>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr:nth-child(even){background:var(--stripe)}
+.tr.head{background:var(--panel-2);border-bottom-color:var(--line);font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+/* Every column sorts, and no sort moves a column: each column has a set width, and each heading keeps the place of its arrow
+   (after a text, before a figure, so that the figure's heading stays flush right). */
+.tr.head>*{padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
+.tr.head>.num{text-align:right}
+.tr.head>:not(.num)::after,.tr.head>.num::before{content:"";display:inline-block;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;vertical-align:middle;visibility:hidden}
+.tr.head>:not(.num)::after{margin-left:3px}
+.tr.head>.num::before{margin-right:3px}
+.tr.head>.sorted{color:var(--strong)}
+.tr.head>.sorted::after,.tr.head>.sorted::before{visibility:visible}
+.tr.head>.sorted.asc::after,.tr.head>.sorted.asc::before{border-top:0;border-bottom:4px solid currentColor}
+.tr.own{background:var(--own-row)}
+.tr.chosen{background:var(--good-soft)}
+.tr.lent{background:var(--info-soft)}
+.tr.invalid{background:var(--bad-soft)}
+.halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.halves>.table+.table{border-left:1px solid var(--line)}
+.tr.zone-good{box-shadow:inset var(--mark) 0 0 var(--good)}
+.tr.zone-info{box-shadow:inset var(--mark) 0 0 var(--info)}
+.tr.zone-warn{box-shadow:inset var(--mark) 0 0 var(--accent)}
+.tr.zone-bad{box-shadow:inset var(--mark) 0 0 var(--bad)}
+.cell{display:flex;align-items:center;gap:6px}
+/* A match on one line: its day, the other side, its score. */
+.match-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.match-row.next{background:var(--own-row)}
+.legend{display:flex;align-items:center;gap:var(--s3);font-size:var(--fs-small);color:var(--muted)}
+.legend i{display:inline-block;width:var(--mark);height:12px;margin-right:6px;vertical-align:-2px}
+
+/* Facts and tiles. */
+.fact{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);border-bottom:1px solid var(--row-line)}
+.fact>span{color:var(--muted)}
+.fact>strong{display:flex;align-items:center;gap:var(--s2);font-weight:600;color:var(--strong)}
+.tiles{display:flex;gap:var(--s2)}
+.tile{display:flex;flex-direction:column;justify-content:center;gap:2px;flex:1;min-width:96px;padding:6px var(--s3);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.tile strong{display:flex;align-items:baseline;gap:6px;font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
+.tile em{font:600 var(--fs-small)/1 var(--text);font-style:normal}
+
+/* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
+   graded ground with its border, a competition an outline (a solid black for a European cup). */
+.position,.rating,.score,.tag,.comp{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px;border-radius:var(--radius);white-space:nowrap}
+.position{min-width:32px;background:var(--def);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
+.position.gk{background:var(--gk)}
+.position.mid{background:var(--mid)}
+.position.att{background:var(--att)}
+.position.bench{background:var(--panel-2);color:var(--muted)}
+/* Competitions, two characters: C1 C3 C4 in Europe, L1 L2 L3 in France, D1 D2 elsewhere, C and the country's initial for a national cup (two countries may share one). */
+.comp{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text)}
+.comp.cup{border-color:var(--info);color:var(--info)}
+.comp.europe{border-color:var(--strong);background:var(--strong);color:#fff}
+.rating{min-width:30px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font:600 var(--fs-small)/1 var(--text)}
+.rating.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
+.rating.neutral{color:var(--muted)}
+.h0{--hue:4}.h30{--hue:28}.h60{--hue:50}.h90{--hue:88}.h120{--hue:135}
+.cause{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius);background:var(--panel-3);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text)}
+.score{min-width:40px;background:var(--panel-2);color:var(--ink);font:700 var(--fs-small)/1 var(--text)}
+.score.V{background:var(--good-soft);color:var(--good)}
+.score.N{background:var(--warn-soft);color:var(--warn)}
+.score.D{background:var(--bad-soft);color:var(--bad)}
+.score.pending{font-weight:400;color:var(--muted)}
+.tag{border:1px solid transparent;background:var(--panel-2);color:var(--muted);font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase}
+.tag.info{background:var(--info-soft);color:var(--info)}
+.tag.open{background:var(--good-soft);color:var(--good)}
+.tag.alert{background:var(--bad-soft);border-color:var(--bad-line);color:var(--bad);font-size:var(--fs-small);font-weight:600;letter-spacing:0;text-transform:none}
+.form{display:inline-flex;gap:2px}
+.form i{display:grid;place-items:center;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-micro)/1 var(--text)}
+.form i.V{background:var(--good-soft);color:var(--good)}
+.form i.N{background:var(--warn-soft);color:var(--warn)}
+.form i.D{background:var(--bad-soft);color:var(--bad)}
+.count{display:inline-grid;place-items:center;min-width:var(--h-chip);height:var(--h-chip);padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
+/* A club's name always follows the dot of its colours, a country's its flag. */
+.kit-dot{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1px #0000003d}
+.flag{display:inline-block;flex:none;width:16px;height:12px;box-shadow:0 0 0 1px #0a141e1f}
+.nation{display:inline-flex;align-items:center;gap:6px}
+/* What a pointer shows: never the browser's own title. Above its target, below when there is no room; the arrow points at it. */
+.tooltip{position:relative;display:inline-flex;flex-direction:column;max-width:320px;padding:var(--s1) var(--s2);border-radius:var(--radius);background:var(--strong);color:#fff;font:400 var(--fs-body)/18px var(--text);box-shadow:0 4px 12px #0a141e33}
+.tooltip::after{content:"";position:absolute;left:50%;top:100%;width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--strong);transform:rotate(45deg)}
+.tooltip.below::after{top:auto;bottom:100%;margin:0 0 -4px -4px}
+.tooltip b{font-weight:600}
+.tooltip>span{display:flex;justify-content:space-between;gap:var(--s4);font-size:var(--fs-small);line-height:16px;color:#c3ccd7}
+.tooltip>span b{color:#fff}
+.crest{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font:700 semi-condensed var(--fs-small)/1 var(--display)}
+.crest.large{width:64px;height:64px;border:3px solid #fff;box-shadow:0 1px 4px #0a141e38;font-size:var(--fs-title)}
+.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
+.gauge{display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.gauge>i{display:block;height:100%;background:var(--good)}
+.gauge.warn>i{background:var(--accent)}.gauge.bad>i{background:var(--bad)}
+.ring{position:relative;display:grid;place-items:center;flex:none;width:56px;height:56px}
+.ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke:var(--line);stroke-width:6}
+.ring circle.value{stroke:var(--good);stroke-linecap:round}
+.ring b{position:relative;font:700 var(--fs-small)/1 var(--text);color:var(--strong)}
+/* What happened to a player in a match. */
+.marks{display:inline-flex;align-items:center;gap:3px}
+.mark{display:inline-block;flex:none;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
+.mark.goal{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.mark.yellow,.mark.red{width:8px;height:11px;border-radius:1px}
+.mark.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
+.mark.red{background:var(--bad)}
+.mark.injury{width:10px;height:10px;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
+.mark.on{color:var(--good)}.mark.off{color:var(--bad)}
+
+/* A club's header: the band in its colours, its tabs under it. */
+.hero{position:relative;display:flex;align-items:center;gap:var(--s4);flex:none;height:88px;padding:0 var(--s4) 0 var(--s3);overflow:hidden}
+.hero-sash{position:absolute;inset:0;clip-path:polygon(54% 0,61% 0,53% 100%,46% 100%)}
+.hero-sash.thin{clip-path:polygon(62.5% 0,64% 0,56% 100%,54.5% 100%)}
+.hero>:not(.hero-sash){position:relative}
+.hero h1{font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
+.hero-identity{display:flex;flex-direction:column;gap:var(--s1)}
+.hero-identity span{font-weight:600}
+.hero .tiles{margin-left:auto}
+.hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
+.entity-nav{display:flex;flex-direction:column;gap:1px}
+.entity-nav>*{display:grid;place-items:center;width:20px;height:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font-size:var(--fs-micro);line-height:1}
+
+/* The pitch: one grass, one set of lines, upright (attacking upwards) or lying (attacking to the right). */
+.pitch{position:relative;flex:none;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
+.pitch::before{content:"";position:absolute;inset:8px;border:1.5px solid var(--pitch-line);background:linear-gradient(0deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px));pointer-events:none}
+.pitch::after{content:"";position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border:1.5px solid var(--pitch-line);border-radius:50%;pointer-events:none}
+.pitch-box{position:absolute;left:50%;bottom:8px;width:56%;height:15%;transform:translateX(-50%);border:1.5px solid var(--pitch-line);border-bottom:0;pointer-events:none}
+.pitch-box.far{bottom:auto;top:8px;border-bottom:1.5px solid var(--pitch-line);border-top:0}
+.pitch.lying{background:repeating-linear-gradient(90deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
+.pitch.lying::before{background:linear-gradient(90deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px))}
+.pitch.lying::after{width:auto;height:30%}
+.pitch.lying .pitch-box{left:8px;bottom:auto;top:50%;width:13%;height:56%;transform:translateY(-50%);border:1.5px solid var(--pitch-line);border-left:0}
+.pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
+
+/* A player on a pitch: the shirt of his club (body in its first colour, sleeves in its second) with his position written on
+   it, his name under it, his note on its right; affinity on its top-left corner, form on its bottom-right one, what he did
+   in the match on its left. One size, 32 px, on every pitch. */
+.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;transform:translate(-50%,-50%);color:#fff}
+.pitch-player small{max-width:100%;padding:0 var(--s1);border-radius:var(--radius);background:var(--pitch-label);font:600 var(--fs-small)/14px var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kit-shirt{position:relative;display:inline-grid;place-items:center;flex:none;width:32px;height:32px}
+.kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* Three paths: the whole shape in the sleeves' colour, the body over it, then the outline alone, so that no line runs
+   between the body and the sleeves. */
+.kit-shirt .kit-outline{fill:none;stroke:#00000073;stroke-width:1.4;stroke-linejoin:round}
+.kit-shirt b{position:relative;margin-top:5px;font:700 semi-condensed var(--fs-micro)/1 var(--display)}
+.kit-shirt.empty .kit-sleeves{fill:#ffffff26}
+.kit-shirt.empty .kit-body{fill:none}
+.kit-shirt.empty .kit-outline{stroke:#ffffffcc;stroke-dasharray:3 2}
+.kit-shirt.plain .kit-sleeves,.kit-shirt.plain .kit-body{fill:#8a9193}
+.pitch-player.picked .kit-shirt::before,.pitch-player.invalid .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
+.pitch-player.invalid .kit-shirt::before{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--bad)}
+.pitch-player.picked small{background:var(--accent);color:var(--accent-ink)}
+.pitch-player.invalid small{background:var(--bad)}
+.position-note{position:absolute;left:calc(50% + 20px);top:7px;width:max-content;line-height:0}
+.position-note.left{left:auto;right:calc(50% + 20px)}
+.pitch-marks{position:absolute;right:calc(50% + 20px);top:8px;display:flex;align-items:center;gap:3px;width:max-content;height:16px;padding:0 var(--s1);border-radius:var(--radius);background:#fffffff0;color:var(--ink);white-space:nowrap}
+.affinity-tag{position:absolute;top:-6px;left:-8px;display:grid;place-items:center;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:hsl(var(--hue) 70% 36%);color:#fff;font:700 var(--fs-micro)/1 var(--text);font-style:normal;box-shadow:0 0 0 1.5px #fff}
+.form-arrow{position:absolute;right:-6px;bottom:-3px;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 1.5px #fff}
+.form-arrow::before{content:"";position:absolute;left:3px;top:4px;border-left:4px solid transparent;border-right:4px solid transparent}
+.form-arrow.up{background:var(--good)}.form-arrow.up::before{border-bottom:5px solid #fff}
+.form-arrow.down{background:var(--bad)}.form-arrow.down::before{top:5px;border-top:5px solid #fff}
+/* The bench, under a pitch. */
+.bench{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s1)}
+.bench-slot{display:flex;align-items:center;gap:6px;min-width:0;height:var(--h-row);padding:0 var(--s2);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);font-weight:600;color:var(--strong);white-space:nowrap;overflow:hidden}
+
+/* Match report: the score between the two sides, what happened minute by minute, the two sides' figures face to face. */
+.match-banner{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;flex:none;height:72px;padding:0 var(--s4)}
+.match-banner>:last-child{justify-self:end}
+.scoreboard{display:flex;align-items:center;gap:var(--s6)}
+.scoreboard a{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-title)/1 var(--display);color:var(--strong)}
+.big-score{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong)}
+.match-sides{display:flex;align-items:center;justify-content:space-between;flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--panel-2);border-bottom:1px solid var(--line);font-weight:600;color:var(--strong)}
+.highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;height:40px;padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.highlight{display:flex;align-items:center;gap:var(--s2)}
+.highlight.away{flex-direction:row-reverse;text-align:right}
+.highlight>div{display:flex;flex-direction:column;line-height:16px}
+.highlight.away>div{align-items:flex-end}
+.minute{font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--accent-text)}
+.comparison{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;align-items:center;column-gap:var(--s3);height:36px;padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.comparison>strong{font-weight:600;color:var(--strong)}
+.comparison>strong:last-child{text-align:right}
+.comparison-center{display:flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-small);line-height:14px;color:var(--muted)}
+.comparison-bar{display:flex;width:100%;height:4px;border-radius:2px;overflow:hidden}
+.comparison-bar span{display:block;height:100%}
+
+/* Last, so that it wins over any component's display. */
+.hidden{display:none}

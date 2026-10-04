@@ -460,6 +460,7 @@ API ne consomment jamais les RNG de simulation. Voir `docs/architecture.md`.
 | `docs/ia-gestion.md` | Valorisation, besoins, mercato, contrats |
 | `docs/progression-demographie.md` | Progression, déclin, regens, marché extérieur |
 | `docs/ui.md` | Écrans et endpoints |
+| `docs/charte-graphique.md` | Charte graphique : jetons, composants, terrain et maillot, conventions d'écriture ; feuille de référence et planches dans `docs/charte/` |
 | `docs/manuel/` | Manuel du jeu affiché dans l'application : les mécanismes internes, pour le joueur |
 
 ## Ordre de construction

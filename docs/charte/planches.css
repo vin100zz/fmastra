@@ -1,0 +1,38 @@
+/* The boards of the charter (index.html): a title, then sections of specimens, each named by its token and its value.
+   Nothing here is for the application: its styles are in charte.css. */
+body{margin:0;background:var(--bg)}
+.sheet{display:flex;flex-direction:column;gap:var(--s6);width:1920px;margin:0 auto;padding:40px 48px}
+.sheet-head{display:flex;align-items:baseline;gap:var(--s4);flex:none;padding-bottom:var(--s3);border-bottom:var(--mark) solid var(--accent)}
+.sheet-head h1{font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase;color:var(--strong)}
+.sheet-grid{flex:1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:32px 40px;align-content:start;min-height:0}
+.spec{display:flex;flex-direction:column;gap:var(--s4);min-width:0}
+.spec>h2{padding-bottom:6px;border-bottom:1px solid var(--line);font:600 semi-condensed var(--fs-figure)/20px var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--strong)}
+.spec-row{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s4) 40px}
+.spec-group{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.spec-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3)}
+.sw{display:flex;flex-direction:column;width:92px}
+.sw>i{display:grid;place-items:center;height:56px;margin-bottom:var(--s1);border:1px solid var(--line);border-radius:var(--radius);font:700 var(--fs-body)/1 var(--text);font-style:normal}
+.token{font:600 var(--fs-small)/14px var(--text);color:var(--strong)}
+.value{font:400 var(--fs-small)/14px var(--text);color:var(--muted)}
+.frame{padding:var(--s3);border:1px dashed var(--line);border-radius:var(--radius)}
+/* Layouts of the specimens. */
+.type-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 80px 72px 230px;align-items:center;column-gap:16px;padding:6px 0;border-bottom:1px solid var(--row-line)}
+.type-row>:first-child{color:var(--strong);white-space:nowrap;overflow:hidden}
+.family{display:flex;flex-direction:column;gap:4px;flex:1}
+.family>strong{font-size:40px;line-height:44px;font-weight:700;color:var(--strong);white-space:nowrap}
+.measure{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.measure>i{display:block;background:var(--panel-3);border:1px solid var(--line)}
+.heights{display:flex;align-items:flex-end;gap:12px}
+.heights .measure>i{width:84px;border-radius:var(--radius)}
+.t-standings .tr{grid-template-columns:20px minmax(0,1fr) 36px 24px 24px 24px 24px 28px 28px 44px 98px}
+.spec-line.gap{gap:8px}
+.pair{display:flex;gap:16px;align-items:flex-start}
+.over{display:flex;flex-direction:column;align-items:center;gap:8px}
+.patch{position:relative;height:84px;border-radius:var(--radius);background:var(--pitch-a)}
+.patch.tall{height:112px}
+.anatomy{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
+.t-uses .tr{grid-template-columns:minmax(0,1.3fr) 64px minmax(0,1.2fr) minmax(0,1.2fr)}
+.t-rules .tr{grid-template-columns:minmax(0,1.15fr) 96px minmax(0,1.5fr)}
+.t-short .tr{grid-template-columns:20px minmax(0,1fr) 36px 24px 44px}
+.families{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 32px}
+.comp-row{display:flex;align-items:center;gap:8px;height:var(--h-row);border-bottom:1px solid var(--row-line)}
