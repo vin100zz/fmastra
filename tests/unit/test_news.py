@@ -95,7 +95,8 @@ def test_a_contract_asked_for_awaits_its_answer_on_its_message(config):
     apply(world, RenewalProposed(RenewalProposal(player.id, club.id, asked, world.date)))
     message = world.news[-1]
     assert (message.kind, message.player_id) == ("renewal_proposed", player.id)
-    assert [(line.text, line.amount, line.until) for line in message.lines] == [("current", 1000, player.contract.end), ("asked", 2000, asked.end)]
+    assert [(line.text, line.amount, line.until, line.state) for line in message.lines] == [
+        ("current", 1000, player.contract.end, ""), ("asked", 2000, asked.end, "pending")]
     assert news.awaits_answer(world, message)
     renewals.turn_down(world, player)
     assert message.lines[-1].state == "refused" and not world.pending_renewals and not news.awaits_answer(world, message)
@@ -106,6 +107,20 @@ def test_a_contract_asked_for_awaits_its_answer_on_its_message(config):
     assert renewals.sign(world, player) == asked and player.contract == asked
     assert world.news[-1].lines[-1].state == "accepted" and message.lines[-1].state == "refused"
     assert not any(news.awaits_answer(world, item) for item in world.news)
+
+
+def test_a_demand_told_before_messages_had_lines_keeps_its_terms_once_answered(config):
+    world, club = human_world(config)
+    player = world.players[club.player_ids[1]]
+    had, asked = player.contract, Contract(2000, player.contract.end.add_years(2), world.date)
+    world.pending_renewals[player.id] = RenewalProposal(player.id, club.id, asked, world.date)
+    record(world, "renewal_proposed", f"{player.name} est prêt à prolonger à 2000 €/semaine", club.id, player.id)
+    message = world.news[-1]
+    assert not message.lines and news.awaits_answer(world, message)
+    renewals.sign(world, player)
+    assert [(line.text, line.amount, line.until, line.state) for line in message.lines] == [
+        ("current", had.weekly_wage, had.end, ""), ("asked", 2000, asked.end, "accepted")]
+    assert not news.awaits_answer(world, message)
 
 
 def test_the_club_asks_a_player_for_his_terms_and_signs_them(config):

@@ -29,10 +29,9 @@ def apply(world: World, event: WorldEvent) -> bool:
     elif isinstance(event, RenewalProposed):
         proposal = event.proposal
         world.pending_renewals[proposal.player_id] = proposal
-        current = world.players[proposal.player_id].contract
-        add_news(world, "renewal_proposed", "", proposal.club_id, proposal.player_id, lines=(
-            NewsLine(amount=current.weekly_wage, until=current.end, text="current"),
-            NewsLine(amount=proposal.contract.weekly_wage, until=proposal.contract.end, text="asked", state="pending")))
+        from .news import renewal_lines
+        add_news(world, "renewal_proposed", "", proposal.club_id, proposal.player_id,
+                 lines=renewal_lines(world.players[proposal.player_id].contract, proposal.contract))
     elif isinstance(event, DateAdvanced):
         if event.date < world.date: raise ValueError("Game time cannot move backwards")
         world.date = event.date
@@ -85,6 +84,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         world.journal.append(JournalEntry(world.date, kind, text, source, player.id))
         report(world, kind, NewsLine(player_id=player.id), source)
         world.pending_renewals.pop(event.player_id, None)
+        world.refused_renewals.pop(event.player_id, None)
         _off_sale(world, player.id)
     elif isinstance(event, PlayerGenerated):
         player = event.player
@@ -194,6 +194,8 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         if event.source_id != event.target_id: return False
         club.wage_bill += event.contract.weekly_wage - old_wage
         player.contract = event.contract
+        # A demand turned down was about the contract he had.
+        world.refused_renewals.pop(player.id, None)
         return True
     if event.source_id == event.target_id or club.squad_size >= guard.max_squad: return False
     if player.id in recent_arrival_ids(world): return False
@@ -228,6 +230,7 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     if event.source_id is not None:
         add_news(world, "transfer", text, event.source_id, player.id, lines=(NewsLine(club_id=club.id),))
     world.pending_renewals.pop(player.id, None)
+    world.refused_renewals.pop(player.id, None)
     _off_sale(world, player.id)
     return True
 

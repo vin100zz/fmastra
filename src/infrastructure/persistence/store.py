@@ -26,7 +26,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 26
+SCHEMA_VERSION = 27
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -202,6 +202,7 @@ class SaveStore:
             if version < 19: _assign_greed(world, self.directory.parent / "data" / "players.csv")
             if version < 24: _rate_positions(world)
             if version < 26: _upgrade_news(world)
+            if version < 27: _recall_refusals(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -307,6 +308,17 @@ def _upgrade_news(world: World) -> None:
     # A demand left behind by a contract signed since has nothing left to ask: it no longer awaits an answer.
     world.pending_renewals = {pid: proposal for pid, proposal in world.pending_renewals.items()
                               if pid in world.players and brings_something(proposal.contract, world.players[pid].contract)}
+
+
+def _recall_refusals(world: World) -> None:
+    """Schema 27: a demand the human club turned down is no longer made again every week. The refusals an older save's
+    feed tells still stand for the players who are on the contract they had then."""
+    for item in world.news:
+        if item.kind != "renewal_proposed" or len(item.lines) < 2 or item.lines[-1].state != "refused": continue
+        player, had = world.players.get(item.player_id), item.lines[0]
+        if player is None or player.owner_id != item.club_id or player.contract is None: continue
+        if (player.contract.weekly_wage, player.contract.end) == (had.amount, had.until):
+            world.refused_renewals[player.id] = item.date
 
 
 def _upgrade_formations(world: World) -> None:

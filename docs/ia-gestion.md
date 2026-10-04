@@ -338,6 +338,9 @@ Le plafond salarial s'applique aussi aux renouvellements. À échéance inclusiv
 le joueur est libéré le lendemain si aucun nouveau contrat n'est signé.
 Les attentes et la satisfaction alimentent aussi le moral et les demandes de
 transfert. Un joueur ne disparaît pas à cause d'un refus de renouvellement.
+Dans le club de l'utilisateur, une demande refusée (`World.refused_renewals`) n'est
+pas refaite tant que ce contrat court, sauf une fois quand il entre dans ses
+`mois_avant_fin_declenchant` derniers mois après un refus plus ancien.
 
 **Ambition.** Jouer tous les matchs pour un salaire correct ne suffit pas à un joueur
 que son club ne peut plus contenter. Le dépassement `d` est l'écart entre son niveau

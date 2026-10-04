@@ -1080,8 +1080,9 @@ a.button.primary:hover{background:var(--accent-hover);color:var(--accent-ink)}
 .nav-count{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;line-height:18px;text-align:center}
 #own-club .kit-dot{width:16px;height:16px;margin:0;border-radius:3px}
 .advance-group{position:relative;display:flex}
-.advance-todo{position:absolute;top:-7px;left:-9px;z-index:1;min-width:20px;height:20px;padding:0 5px;border:0;border-radius:10px;background:var(--todo);color:var(--todo-ink);font:700 11px/20px "Segoe UI",system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--rail)}
-.advance-todo:hover{background:var(--todo)}
+/* The count overlaps the corner of Continuer without leaving the bar: the button stands 4 px under its top edge. */
+.time-controls .advance-todo{position:absolute;top:-4px;left:-7px;z-index:1;min-width:18px;height:18px;padding:0 4px;border:0;border-radius:9px;background:var(--todo);color:var(--todo-ink);font:700 11px/18px "Segoe UI",system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--rail)}
+.time-controls .advance-todo:hover{background:var(--todo)}
 #advance:disabled{cursor:not-allowed}
 
 /* The feed on the left, in a column that scrolls by itself; the message opened in the middle; the club at a glance on the

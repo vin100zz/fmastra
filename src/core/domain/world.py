@@ -147,6 +147,8 @@ class World:
     # of the Composition pitch's grid, from the goal forward.
     custom_formation: tuple[tuple[str, str, int], ...] = ()
     pending_renewals: dict[int, RenewalProposal] = field(default_factory=dict)
+    # The human club's players whose demand for a new contract it turned down, and the day it did.
+    refused_renewals: dict[int, Date] = field(default_factory=dict)
     # Players whose club or who broke off talks with the human club, until the given day.
     talks_closed: dict[int, Date] = field(default_factory=dict)
     # The human club's players it wants to sell (see core.world.sales): the fee asked for each listed player,

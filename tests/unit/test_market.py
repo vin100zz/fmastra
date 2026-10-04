@@ -834,6 +834,75 @@ def test_renewal_forks_to_a_pending_proposal_for_the_human_club(config):
     assert not [e for e in again if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
 
 
+def test_a_demand_turned_down_is_made_again_only_once_when_the_end_comes_in_sight(config, monkeypatch):
+    from collections import Counter
+    from core.world import contracts, renewals
+    from core.world.events import RenewalProposed
+    world, player = renewal_setup(config, reputation=100)
+    club = world.clubs[player.club_id]
+    world.controlled_club_id = club.id
+    # Underpaid and never fielded, with years left on his contract: he asks for a raise.
+    club.competition_id = -16
+    monkeypatch.setattr(contracts, "games_by_club", lambda world: Counter({club.id: 10}))
+    player.contract.weekly_wage //= 2
+    player.contract.end = Date(world.date.year + 3, 6, 30)
+
+    def asks():
+        events = [e for e in contracts.renewal_events(world) if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
+        for event in events: apply(world, event)
+        return bool(events)
+    assert asks()
+    renewals.turn_down(world, player)
+    assert world.refused_renewals == {player.id: world.date}
+    # Turned down, he does not ask again week after week.
+    for _ in range(4):
+        world.date = world.date.add_days(7)
+        assert not asks()
+    # The end of his contract comes in sight: he asks once more, for more years, and no longer once turned down again.
+    world.date = player.contract.end.add_days(-300)
+    assert asks() and world.pending_renewals[player.id].contract.end > player.contract.end
+    renewals.turn_down(world, player)
+    for _ in range(4):
+        world.date = world.date.add_days(7)
+        assert not asks()
+    # The club can still ask him for his terms: signed, the refusal goes with the contract it was about.
+    renewals.sign(world, player)
+    assert not world.refused_renewals
+
+
+def test_refusals_survive_a_save_and_an_older_save_recalls_those_its_feed_tells(config, tmp_path):
+    import gzip
+    import json
+    from core.domain.clubs import Competition
+    from core.domain.offers import RenewalProposal
+    from core.world import renewals
+    from core.world.events import RenewalProposed
+    from infrastructure.persistence.store import SaveStore
+    world = mini_world(config)
+    world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
+    for club in world.clubs.values(): club.competition_id = -16
+    world.rngs = {key: Random(1) for key in ("market", "matches", "states", "progression", "demography")}
+    world.controlled_club_id = 1
+    kept, extended = (world.players[pid] for pid in world.clubs[1].player_ids[:2])
+    for player in (kept, extended):
+        asked = replace(player.contract, weekly_wage=player.contract.weekly_wage + 100)
+        apply(world, RenewalProposed(RenewalProposal(player.id, 1, asked, world.date)))
+        renewals.turn_down(world, player)
+    refused = world.date
+    world.date = world.date.add_days(7)
+    # One of them signs a new contract since: the refusal was about the one he had.
+    assert apply(world, PlayerSigned(extended.id, 1, 1, replace(extended.contract, weekly_wage=1500), 0, True))
+    store = SaveStore(tmp_path)
+    path = store.save(world, "refusal")
+    assert store.load("refusal").refused_renewals == {kept.id: refused}
+    # A save of the version before did not keep them: they are read back from its feed.
+    payload = json.loads(gzip.decompress(path.read_bytes()))
+    payload["schema_version"] = 26
+    del payload["world"]["refused_renewals"]
+    path.write_bytes(gzip.compress(json.dumps(payload).encode()))
+    assert store.load("refusal").refused_renewals == {kept.id: refused}
+
+
 def test_a_newcomer_settles_before_asking_for_a_renewal(config):
     from core.world.contracts import renewal_events
     from core.world.events import RenewalProposed

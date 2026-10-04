@@ -86,7 +86,8 @@ def title(world: World, item: NewsItem) -> list[dict]:
     against = (" contre ", (rival["name"], {"club": rival["id"]})) if rival else ()
     if kind == "offer_received" and lines:
         return sentence(f"{plural(count, 'offre', 'offres')} pour ", named(world, item.player_id))
-    if kind == "renewal_proposed" and (lines or awaits_answer(world, item)):
+    # A demand always reads the same, answered or not, whatever sentence an older version wrote for it.
+    if kind == "renewal_proposed":
         return sentence(named(world, item.player_id), " veut un nouveau contrat")
     if kind == "injury" and lines:
         if one: return sentence(one, f" blessé {readable_duration(lines[0].until.ordinal() - item.date.ordinal())}")

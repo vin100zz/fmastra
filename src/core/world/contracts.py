@@ -144,6 +144,9 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
         longer = remaining < rules.renewal_months and contract.end > player.contract.end
         if proposed <= player.contract.weekly_wage and not longer: continue
         if is_human_club(world, club.id):
+            # Turned down, he does not ask again while this contract runs, save once when its end comes in sight.
+            refused = world.refused_renewals.get(player.id)
+            if refused is not None and not (remaining < rules.renewal_months <= refused.months_until(player.contract.end)): continue
             # A player on the transfer list does not ask for an extension.
             if player.id not in world.pending_renewals and listed_price(world, player.id) is None:
                 events.append(RenewalProposed(RenewalProposal(player.id, club.id, contract, world.date)))

@@ -1,9 +1,10 @@
 """The human club's contract extensions: its players' demands, and the contracts it asks them for.
 
 A player asks for a new contract when his own runs short or no longer suits him (see `contracts.renewal_events`);
-the club accepts it or turns it down. It can also ask any of its players at any time: he names the terms he would
-ask for himself, and signs at once if the club takes them. A player who wants a bigger club, or who has just
-arrived, does not extend.
+the club accepts it or turns it down. Turned down, he does not ask again while that contract runs, save once when
+its end comes in sight. The club can also ask any of its players at any time: he names the terms he would ask for
+himself, and signs at once if the club takes them. A player who wants a bigger club, or who has just arrived, does
+not extend.
 """
 from __future__ import annotations
 
@@ -49,10 +50,10 @@ def asked_terms(world: World, player: Player) -> Contract:
 def sign(world: World, player: Player) -> Contract:
     """The human club extends one of its players on his terms."""
     if (obstacle := renewal_obstacle(world, player)) is not None: raise RenewalRefused(obstacle)
-    contract = asked_terms(world, player)
+    contract, previous = asked_terms(world, player), player.contract
     if not apply(world, PlayerSigned(player.id, player.club_id, player.club_id, contract, 0, True)):
         raise RenewalRefused("Ce contrat dépasse le plafond salarial du club.")
-    answer_renewal(world, player.id, "accepted")
+    answer_renewal(world, player.id, "accepted", previous)
     world.pending_renewals.pop(player.id, None)
     return contract
 
@@ -61,5 +62,6 @@ def turn_down(world: World, player: Player) -> None:
     """The human club refuses the contract a player asked for."""
     if player.id not in world.pending_renewals:
         raise RenewalRefused("Aucune proposition de renouvellement en attente pour ce joueur.")
-    answer_renewal(world, player.id, "refused")
+    answer_renewal(world, player.id, "refused", player.contract)
     del world.pending_renewals[player.id]
+    world.refused_renewals[player.id] = world.date

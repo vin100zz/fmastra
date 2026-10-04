@@ -53,12 +53,20 @@ def answer_offer(world: World, key: str, state: str) -> None:
                 return
 
 
-def answer_renewal(world: World, player_id: int, state: str) -> None:
-    """The answer to the contract a player is asking for, on the message that told it."""
+def renewal_lines(current: Contract, asked: Contract) -> tuple[NewsLine, NewsLine]:
+    """The contract a player has, then the one he asks for, as his demand keeps them."""
+    return (NewsLine(amount=current.weekly_wage, until=current.end, text="current"),
+            NewsLine(amount=asked.weekly_wage, until=asked.end, text="asked", state=PENDING))
+
+
+def answer_renewal(world: World, player_id: int, state: str, current: Contract) -> None:
+    """The answer to the contract a player is asking for, on the message that told it; `current` is the contract he
+    had when it was given. A demand told before messages had lines receives them now, so that it keeps its terms."""
     proposal = world.pending_renewals.get(player_id)
     if proposal is None: return
     for item in reversed(world.news):
-        if (item.kind, item.player_id, item.date) == ("renewal_proposed", player_id, proposal.created) and item.lines:
+        if (item.kind, item.player_id, item.date) == ("renewal_proposed", player_id, proposal.created):
+            if not item.lines: item.lines = list(renewal_lines(current, proposal.contract))
             item.lines[-1].state = state
             return
 

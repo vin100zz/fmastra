@@ -190,7 +190,8 @@ def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
 
     listed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": 2_000_000})
     assert listed.status_code == 200 and listed.json()["prix_liste"] == 2_000_000
-    assert client.get("/api/ma-partie/transferts").json()["liste"] == [{"joueur_id": own_player, "joueur": world.players[own_player].name, "indemnite": 2_000_000}]
+    assert client.get("/api/ma-partie/transferts").json()["liste"] == [
+        {"joueur_id": own_player, "joueur": world.players[own_player].name, "poste": world.players[own_player].position.value, "indemnite": 2_000_000}]
     refused = client.post("/api/partie/liste-transferts", json={"joueur_id": other_player, "indemnite": 1})
     assert refused.status_code == 400 and refused.json()["detail"] == "Ce joueur n'est pas dans votre effectif."
 
@@ -235,8 +236,22 @@ def test_news_stay_unread_until_opened(client):
     record(world, "injury", "C indisponible jusqu'au 2027-05-01.", club_id)
     assert [row["title"] for row in client.get("/api/ma-partie/actualites").json()["items"][:3]] == [
         "C indisponible jusqu'au 1er mai", "B est suspendu 3 matchs", "A est suspendu 1 match"]
+    # A demand written as a sentence by an older version reads as today's, before and after its answer.
+    from core.domain.offers import RenewalProposal
+    from dataclasses import replace
+    asker = world.players[world.clubs[club_id].player_ids[1]]
+    asked = replace(asker.contract, weekly_wage=asker.contract.weekly_wage + 100, end=asker.contract.end.add_years(1))
+    world.pending_renewals[asker.id] = RenewalProposal(asker.id, club_id, asked, world.date)
+    record(world, "renewal_proposed", f"{asker.name} est prêt à prolonger à {asked.weekly_wage} €/semaine", club_id, asker.id)
+    demand = len(world.news) - 1
+    waiting = client.get(f"/api/ma-partie/actualites/{demand}").json()
+    assert waiting["title"] == f"{asker.name} veut un nouveau contrat" and waiting["pending"] and waiting["renewal"]["state"] == "pending"
+    assert client.post("/api/partie/renouvellement", json={"joueur_id": asker.id, "decision": "refuser"}).status_code == 200
+    refused = client.get(f"/api/ma-partie/actualites/{demand}").json()
+    assert refused["title"] == waiting["title"] and not refused["pending"]
+    assert refused["renewal"]["state"] == "refused" and refused["renewal"]["asked"] == waiting["renewal"]["asked"]
     # A page of the feed can be asked for by the message it must show.
-    assert client.get("/api/ma-partie/actualites?taille=2&message=0").json()["page"] == 3
+    assert client.get("/api/ma-partie/actualites?taille=2&message=0").json()["page"] == 4
     assert client.get("/api/ma-partie/actualites/99").status_code == 404
 
 
@@ -285,6 +300,8 @@ def test_messages_tell_their_kind_and_those_awaiting_an_answer_are_answered_from
     assert terms["demande"] and terms["obstacle"] is None and terms["salaire_propose"] == asked.weekly_wage
     assert client.post("/api/partie/renouvellement", json={"joueur_id": asking, "decision": "accepter"}).status_code == 200
     assert asker.contract == asked and client.get("/api/ma-partie/actualites/1").json()["renewal"]["state"] == "accepted"
+    # Answered or not, a message keeps its title.
+    assert client.get("/api/ma-partie/actualites/1").json()["title"] == message["title"]
     assert client.post("/api/partie/renouvellement", json={"joueur_id": asking, "decision": "accepter"}).status_code == 404
 
     # Several players in one message, one in its title.

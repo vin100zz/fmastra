@@ -92,7 +92,7 @@ Les trois termes sont ceux du [moral](#/aide/etats/le-moral). La prolongation n'
 Un club de l'IA signe aussitôt. Pour votre club, la demande arrive dans vos actualités et attend votre réponse : tant que vous ne l'avez pas donnée, « Continuer » vous y ramène avant d'avancer.
 
 - l'accepter applique le nouveau salaire et la nouvelle durée ; elle est refusée d'office si elle fait dépasser votre plafond salarial ;
-- la refuser ne règle rien : tant que les conditions sont réunies, le joueur la représente à la revue suivante ;
+- la refuser clôt la question : le joueur ne la repose pas de semaine en semaine. Il ne redemande un contrat qu'une fois, quand le sien entre dans ses {{ia_gestion.contrats.mois_avant_fin_declenchant}} derniers mois, si votre refus date d'avant. Son salaire continue de peser sur son [moral](#/aide/etats/le-moral), et « Proposer un contrat » reste possible à tout moment ;
 - un joueur placé sur votre liste des transferts ne demande plus rien.
 
 **Demander ses conditions à un joueur.** Vous n'avez pas à attendre sa demande : « Proposer un contrat » lui demande ses conditions à tout moment. Il annonce le salaire attendu, majoré de la prime d'appât du gain et jamais inférieur à son salaire actuel, pour la durée de son âge, et signe aussitôt si vous les acceptez. Il n'y a rien à négocier : ce sont ses conditions, ou rien. Il ne s'engage pas :
