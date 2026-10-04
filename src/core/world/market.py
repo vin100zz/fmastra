@@ -4,12 +4,13 @@ from collections import defaultdict
 
 from core.domain.clubs import Club
 from core.domain.players import Contract
-from core.domain.world import World
+from core.domain.world import NewsLine, World
 from core.domain.offers import TransferOffer, RESERVING_STAGES
 from core.ai.market import propose_transfers, player_offer_score, seller_accepts, can_sell, asking_price
 from .events import OffersUpdated, PlayerSigned
 from .application import apply
 from .human import is_human_club, listed_price, record
+from .news import offer_received
 from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on
 
 
@@ -49,7 +50,8 @@ def tell_buyer(world: World, offer: TransferOffer, reason: str, winner: Transfer
             text = f"Le transfert de {name} n'a pas pu être conclu : {seller_name} ne peut plus s'en séparer"
         else:
             text = f"Le transfert de {name} n'a pas pu être conclu : votre budget, votre masse salariale ou votre effectif ne le permettent plus"
-    record(world, kind, text, offer.target_id, offer.player_id)
+    clubs = dict.fromkeys(cid for cid in (offer.source_id, winner.target_id if winner else None) if cid is not None)
+    record(world, kind, text, offer.target_id, offer.player_id, lines=tuple(NewsLine(club_id=cid) for cid in clubs))
 
 
 def offer_limit(world: World, club: Club, contract: Contract, fee: int, reserved: list[TransferOffer]) -> str | None:
@@ -95,10 +97,8 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
             pending.append(offer)  # the human club's talks move on in core.world.talks, even after the window
             continue
         if not open_market:
+            # An offer the human club left unanswered lapses with the window: its message no longer awaits an answer.
             tell_buyer(world, offer, "closed")
-            if offer.awaiting_review and is_human_club(world, offer.source_id):
-                record(world, "offer_expired", f"Mercato fermé : l'offre de {world.clubs[offer.target_id].name} "
-                       f"pour {world.players[offer.player_id].name} a expiré", offer.source_id, offer.player_id)
             continue
         if offer.created >= world.date or opened[offer.player_id] + cfg.management.market.auction_days > today:
             pending.append(offer)
@@ -117,8 +117,7 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
         if seller and is_human_club(world, seller.id):
             # Cleared the auction window: every live bid on this player surfaces together for review,
             # instead of being auto-decided by seller_accepts like an AI-controlled seller.
-            if not offer.awaiting_review:
-                record(world, "offer_received", f"{buyer.name} propose {offer.fee} € pour {player.name}", seller.id, player.id)
+            if not offer.awaiting_review: offer_received(world, offer)
             pending.append(offer if offer.awaiting_review else replace(offer, awaiting_review=True))
             continue
         if seller and not seller_accepts(player, seller, offer.fee, world, rng):

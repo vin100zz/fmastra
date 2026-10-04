@@ -455,21 +455,11 @@ def club_season_stats(world: World, club_id: int, player_ids) -> dict[int, dict]
 def morale_outlook(world: World, player: Player, club, rank: int, games: int, minutes: float) -> dict:
     """Where his morale drifts week after week, what holds it down most (`salaire`, `temps_de_jeu` or `ambition`, None when
     nothing much does), and how content he is with his wage and his minutes, out of 1."""
-    from core.world.contracts import contentment
+    from core.world.contracts import contentment, morale_cause
     if player.contract is None: return {"morale_target": None, "morale_cause": None, "wage_satisfaction": None, "playing_time_satisfaction": None}
-    mood, cfg = contentment(world, player, club, rank, games, minutes), world.config
-    moral, rules = cfg.states.moral, cfg.management.contracts
-    # What each part takes off the target, by its weight there (the satisfaction a renewal weighs counts in the target too).
-    losses = {"salaire": (moral.contract_weight + moral.results_weight * rules.wage_weight) * (1 - mood.wage),
-              "temps_de_jeu": (moral.playing_time_weight + moral.results_weight * rules.playing_time_weight) * (1 - mood.playing_time),
-              "ambition": cfg.management.market.frustration_morale_weight * mood.frustration}
-    cause = max(losses, key=losses.get)
-    return {"morale_target": round(min(moral.max, max(moral.min, mood.morale_target)), 3), "morale_cause": cause if losses[cause] >= MORALE_CAUSE_MIN else None,
+    mood, moral = contentment(world, player, club, rank, games, minutes), world.config.states.moral
+    return {"morale_target": round(min(moral.max, max(moral.min, mood.morale_target)), 3), "morale_cause": morale_cause(world, mood),
             "wage_satisfaction": round(mood.wage, 3), "playing_time_satisfaction": round(mood.playing_time, 3)}
-
-
-# A part of the situation taking less than this off the morale target is not named as its cause.
-MORALE_CAUSE_MIN = 0.05
 
 
 def squad_rows(world: World, club_id: int) -> list[dict]:

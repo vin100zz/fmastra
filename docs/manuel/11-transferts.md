@@ -18,6 +18,8 @@ Le joueur arrive {{ia_gestion.mercato.delai_reponse_min_jours}} à {{ia_gestion.
 
 Un **joueur libre** se négocie directement à l'étape 3, sans indemnité, pendant un mercato.
 
+Quand le joueur ouvre la discussion sur son contrat, le message arrive dans vos actualités et attend votre réponse : « Continuer » vous y ramène tant que le salaire n'est pas convenu. Vous pouvez aussi **abandonner** le dossier, jusqu'à l'accord sur le contrat : rien n'est dû, le joueur n'est plus réservé, et vous pouvez revenir vers lui plus tard. Une fois le contrat convenu, il arrive.
+
 Vous pouvez mener autant de dossiers que vous voulez. Chacun réserve son indemnité sur votre budget de transferts et son salaire sur votre masse salariale dès l'ouverture, et les réserve jusqu'à l'arrivée du joueur ou l'échec du dossier. Tant que le contrat n'est pas négocié, le salaire réservé est celui que le joueur demande, la colonne PRÉTENTIONS de la liste des joueurs.
 
 ## Ce qui empêche une offre
@@ -38,7 +40,10 @@ Ces conditions sont revérifiées à l'arrivée du joueur. Si l'une ne tient plu
 Les clubs de l'IA s'intéressent à vos joueurs comme à tous les autres. Leur offre suit le circuit normal : elle reste ouverte {{ia_gestion.mercato.jours_encheres}} jours, le temps que d'autres clubs se déclarent, puis elle arrive dans vos actualités et attend votre réponse.
 
 - Une offre spontanée est faite à {{pct(ia_gestion.mercato.ratio_contre_offre, 0)}} du prix qu'un club de l'IA demanderait à votre place. Vous ne pouvez pas la négocier : vous l'acceptez ou vous la refusez.
+- Les offres qui arrivent le même jour pour un joueur forment un seul message. Vous y répondez une par une, ou à toutes d'un coup.
 - Accepter une offre conclut le transfert et écarte les autres offres pour ce joueur.
+- Tout accepter laisse le joueur choisir : il rejoint le club qu'il préfère parmi ceux avec qui la vente reste possible, quel que soit le montant de chaque offre.
+- Tant qu'une offre attend, « Continuer » vous ramène à son message avant d'avancer.
 - La vente est impossible si elle vous fait passer sous {{ia_gestion.garde_fous.effectif_min}} joueurs ou {{ia_gestion.garde_fous.gardiens_min}} gardiens.
 - Une offre sans réponse expire à la fermeture du mercato.
 

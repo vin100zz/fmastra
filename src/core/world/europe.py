@@ -44,6 +44,19 @@ def resolve_european_quotas(world: World, season: int) -> dict[str, tuple[int, i
     return {nation: tuple(values) for nation, values in resolved.items()}
 
 
+def league_places(ranked: list[int], cup_winner: int | None, quotas: tuple[int, int, int]) -> list[list[int]]:
+    """The clubs of a league that take its places in C1, C3 then C4: in the order of its table, the cup winner first in C3."""
+    used, places = set(), []
+    for index, count in enumerate(quotas):
+        winners = []
+        if index == 1 and count and cup_winner is not None and cup_winner not in used:
+            winners.append(cup_winner)
+        winners.extend(cid for cid in ranked if cid not in used and cid not in winners)
+        places.append(winners[:count])
+        used.update(places[-1])
+    return places
+
+
 def qualify_europe(world: World, season: int, tables: dict[int, list[Standing]] | None = None) -> None:
     """Allocate C1, cup + league C3, then C4, before domestic promotions occur."""
     if not world.european_quota_ranges:
@@ -57,21 +70,14 @@ def qualify_europe(world: World, season: int, tables: dict[int, list[Standing]] 
             raise ValueError(f"{nation}: insufficient first teams for European quotas")
         league = next((c for c in world.competitions.values()
                        if c.kind == "league" and c.level == 1 and c.nation == nation), None)
-        used = set()
         if tables is not None and league is not None:
             ranked = [row.club_id for row in tables[league.id] if row.club_id in eligible]
             cup = next(c for c in world.competitions.values() if c.kind == "cup" and c.nation == nation)
             cup_winner = next(cid for year, cid in world.champions[cup.id] if year == season - 1)
-            for index, count in enumerate(quotas):
-                winners = []
-                if index == 1 and count and cup_winner not in used:
-                    winners.append(cup_winner)
-                winners.extend(cid for cid in ranked if cid not in used and cid not in winners)
-                winners = winners[:count]
-                if len(winners) != count:
+            for index, winners in enumerate(league_places(ranked, cup_winner, quotas)):
+                if len(winners) != quotas[index]:
                     raise ValueError(f"{nation}: league cannot fill European quota")
                 selected[index].extend(winners)
-                used.update(winners)
         else:
             # First season in simulated countries: draw from D1. Abroad: all first teams.
             pool = [cid for cid in eligible if league is None or cid in league.club_ids]

@@ -10,11 +10,11 @@ import {honoursScreen,pickClub} from './honours.js';
 import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
 import {clubSelectScreen} from './club-select.js';
-import {myClubScreen} from './my-club.js';
+import {newsScreen} from './news.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
 import {awayIcon,clubPreview} from './club-overview.js';
-import {landing,setSteps,resetFlow,markNewsSeen,nextStep} from './flow.js';
+import {landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage} from './flow.js';
 import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
 
@@ -35,8 +35,19 @@ function blockOn(button,issues,title=null){
  if(issues.length){button.setAttribute('aria-disabled','true');button.title=`Composition à corriger :\n• ${issues.join('\n• ')}`;}
  else{button.removeAttribute('aria-disabled');if(title)button.title=title;else button.removeAttribute('title');}
 }
+// Actualités on screen, and the message it shows.
+const onNewsScreen=()=>routeParts().parts[0]==='actualites';
+function shownMessage(){const {parts,params}=routeParts();return parts[0]==='actualites'&&params.has('msg')?Number(params.get('msg')):null;}
+// The menu counts the messages still to read; a red count on Continuer, those awaiting an answer.
+function showNews(){
+ const unread=state.news?.unread||0,count=document.querySelector('#news-count');
+ count.textContent=unread;count.hidden=!unread;
+ const pending=state.news?.pending.length||0,todo=document.querySelector('#advance-todo');
+ todo.textContent=pending;todo.hidden=!pending||Boolean(state.live_match_id)||state.awaiting_lineup!=null;
+}
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),simulate=document.querySelector('#simulate');
+ showNews();
  // During the live match the day waits: Continuer only closes it once the final whistle has gone.
  if(state.live_match_id){
   button.innerHTML='Continuer <span>→</span>';
@@ -53,6 +64,8 @@ function updateAdvanceButton(){
  blockOn(button,issues);
  blockOn(simulate,issues,'Passer directement au résultat du match');
  simulate.hidden=!jouer;
+ // Everything read, the message on screen still awaits its answer: Continuer waits with it.
+ if(!state.awaiting_lineup&&onNewsScreen()&&newsStep(state.news,shownMessage())?.blocked){button.disabled=true;button.title='Ce message attend votre réponse';}
 }
 // The server owns the auto mode (state.auto comes from /monde/etat); the page only starts and stops it.
 const busyButtons=()=>{
@@ -82,7 +95,7 @@ function nextMatchesHtml(){
   return `<a class="next-match" href="#/match/${match.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span><span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span></a>`;
  }).join('');
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'VOTRE UNIVERS FOOTBALL';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'Bienvenue sur le banc de touche';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span class="league-code">${e(nation.slice(0,2))}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'VOTRE UNIVERS FOOTBALL';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'Bienvenue sur le banc de touche';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span class="league-code">${e(nation.slice(0,2))}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 function slotsHtml(slots){return slots.length?slots.map(slot=>`<div class="slot-row"><div><strong>${e(slot.slot==='autosave'?'Sauvegarde automatique':slot.slot)}</strong><small>${new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(slot.modified*1000))} · ${n(slot.bytes/1024/1024)} Mo</small></div><div class="slot-actions"><button data-command="load" data-slot="${e(slot.slot)}">Reprendre →</button><button class="danger" data-command="delete" data-slot="${e(slot.slot)}" aria-label="Supprimer ${e(slot.slot==='autosave'?'la sauvegarde automatique':slot.slot)}">Supprimer</button></div></div>`).join(''):empty('Vos sauvegardes apparaîtront ici.','Aucune partie enregistrée');}
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
@@ -144,7 +157,10 @@ async function sell(kind,payload){
 async function savesScreen(welcome=false){const slots=await api('/partie/slots');const intro=welcome?`<section class="hero"><div><span class="eyebrow">BIENVENUE SUR LE BANC DE TOUCHE</span><h1>Tout un monde de football.<br>À votre rythme.</h1><p>96 clubs, cinq championnats et des milliers de destins. Créez votre univers et suivez son histoire, saison après saison.</p></div><div class="hero-graphic" aria-hidden="true"></div></section>`:heading('Ma partie');let report='';if(state.exists&&!state.recovery_required){const data=await api('/partie/rapport-import');report=card('Rapport de création',`<div class="card-body"><div class="stat-grid">${stat('Joueurs retenus',n(data.counts.players))}${stat('Joueurs écartés',n(data.counts.excluded))}${stat('Joueurs actifs',n(data.counts.active_players))}${stat('Agents libres',n(data.counts.free_agents))}</div><p class="note">Au maximum ${data.max_squad} joueurs par club, dont deux places réservées aux meilleurs gardiens disponibles. Les CSV originaux restent inchangés. ${data.counts.attributes_from_source?'Les attributs et aptitudes proviennent du CSV. Les finances restent estimées.':'Cette ancienne partie utilise des attributs estimés.'}</p><details><summary>Détail des corrections à l’import</summary><pre>${e(JSON.stringify(data.counts,null,2))}</pre></details></div>`);}
 return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':''}<div class="grid equal">${card('Nouvelle partie',`<div class="card-body"><span class="eyebrow">SAISON INITIALE · 2025 / 2026</span><p>Chaque graine crée une simulation reproductible. Tous les clubs sont pilotés par l’IA.</p><form id="new-game"><label for="seed">Graine de la simulation</label><input id="seed" name="seed" type="number" min="0" max="9007199254740991" value="2025" required><div class="actions"><button class="primary" data-command="create">Créer mon univers →</button></div></form></div>`)}${card(welcome?'Reprendre une partie':'Mes sauvegardes',`<div class="card-body">${state.exists&&!state.recovery_required?`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="ma-partie"><button data-command="save">Enregistrer</button></form>`:''}${slotsHtml(slots)}</div>`)}</div>${report}</div>`;}
 
-async function render(){const version=++renderVersion;const hash=rememberFilters(location.hash);if(hash!==location.hash)history.replaceState(history.state,'',hash);const {parts,params}=routeParts();if(!main.innerHTML||main.querySelector('.loading'))main.innerHTML='<div class="loading">Chargement…</div>';
+async function render(){const version=++renderVersion;const hash=rememberFilters(location.hash);if(hash!==location.hash)history.replaceState(history.state,'',hash);const {parts,params}=routeParts();
+ // The address of the screen Actualités took the place of.
+ if(parts[0]==='mon-club'){location.hash='#/actualites';return;}
+ if(!main.innerHTML||main.querySelector('.loading'))main.innerHTML='<div class="loading">Chargement…</div>';
  const active=document.activeElement;
  const focusName=active&&main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active.name:null;
  const selection=focusName&&active.type!=='number'&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
@@ -155,12 +171,12 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
   if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
-  else switch(screen){case 'international':html=await internationalScreen(id,section,extra,params);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'mon-club':html=await myClubScreen(params);break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters,details.filter-menu').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?'clubs':parts[0]==='player'?'players':parts[0]==='mon-club'?'mon-club':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+  else switch(screen){case 'international':html=await internationalScreen(id,section,extra,params);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'actualites':html=await newsScreen(await openMessage(params));break;default:html=await dashboard(leagues);}}
+ if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu')].map(details=>details.open):[];renderedPath=path;main.innerHTML=html;main.querySelectorAll('details.filters,details.filter-menu').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?(Number(parts[1])===state.controlled_club_id?'own-club':'clubs'):parts[0]==='player'?'players':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+ // The message opened stays in sight in the feed, which scrolls by itself.
+ if(parts[0]==='actualites')main.querySelector('.news-row.selected')?.scrollIntoView({block:'nearest'});
  // A chapter of the manual opened on one of its sections; a redraw of the same address leaves the scroll where it is.
  if(moved&&parts[0]==='aide'&&parts[2])document.getElementById(`manual-${parts[2]}`)?.scrollIntoView();
- // Mon club on screen: the news it shows no longer call for a visit in the flow of Continuer.
- if(parts[0]==='mon-club'&&state.controlled_club_id!=null&&!state.live_match_id)markNewsSeen(state.news_count);
  document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
  if(focusName){const next=main.querySelector(`[data-filter] [name="${focusName}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
  // A list fitted to the window: when the rows that fit are not those it asked for, it is drawn once more with the right count.
@@ -169,6 +185,20 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  refitted=false;
  }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
 
+// Actualités opens on a message (`msg` in the address): the one asked for, else the next one to read, else one awaiting an
+// answer, else the latest. Opening it marks it as read, and the menu and Continuer follow at once.
+async function openMessage(params){
+ // An address kept from another game may name a message this one does not have.
+ if(!params.has('msg')||!(Number(params.get('msg'))<state.news_count)){
+  params.delete('msg');
+  const first=openingMessage(state.news,state.news_count);
+  if(first==null)return params;
+  params.set('msg',first);
+  history.replaceState(history.state,'',`#/actualites?${params}`);
+ }
+ try{state.news=(await api('/partie/actualites-lues',{ids:[Number(params.get('msg'))]})).news;}catch{}
+ return params;
+}
 async function command(path,payload){
  if(polling||submitting)return false;
  submitting=true;
@@ -230,7 +260,7 @@ async function pollJob(id){
     if(job.status==='done'&&job.command==='live_start'&&location.hash!=='#/direct'){location.hash='#/direct';return;}
     if(job.status!=='failed'&&['create','load'].includes(job.command))resetFlow();
     if(job.status==='done'&&job.command==='auto')setSteps([]);
-    // An advance and the end of a live match land on the round the club follows (or Mon club), then queue what Continuer shows next.
+    // An advance and the end of a live match land on the round the club follows (or Actualités), then queue what Continuer shows next.
     if(job.status!=='failed'&&['advance','live_finish'].includes(job.command)){
      const {hash,steps}=landing(job,pendingMatchRedirect);
      pendingMatchRedirect=null;setSteps(steps);
@@ -261,11 +291,17 @@ document.querySelector('#advance').addEventListener('click',()=>{
  if(state.live_match_id){if(liveStatus()==='finished')command('/direct/terminer',{});return;}
  if(state.awaiting_lineup&&!onCompositionScreen()){location.hash=compositionHash();return;}
  if(state.awaiting_lineup)return playMatch();
- // The results and Mon club still due from the last step come before the next one.
- const next=nextStep(state.news_count,location.hash.split('?')[0]);
+ // Actualités on screen reads its messages first; then come the rounds still due from the last step, and from any other
+ // page the messages left to read or to answer. The game advances once nothing is left.
+ const path=location.hash.split('?')[0];
+ const reading=onNewsScreen()?newsStep(state.news,shownMessage()):null;
+ if(reading?.blocked)return;
+ const next=reading?messageHash(reading.message):nextStep(path)||(onNewsScreen()?null:newsStep(state.news)?.message);
+ if(typeof next==='number'){location.hash=messageHash(next);return;}
  if(next){location.hash=next;return;}
  return command('/monde/avancer',{jusqu_a:'etape'});
 });
+document.querySelector('#advance-todo').addEventListener('click',()=>{const first=state.news?.pending[0];if(first!=null)location.hash=messageHash(first);});
 document.querySelector('#simulate').addEventListener('click',()=>{if(state.awaiting_lineup&&onCompositionScreen())simulateMatch();});
 // A new filter starts again from the first page, with the same sort.
 function applyFilter(form){const values={...Object.fromEntries(new FormData(form)),...Object.fromEntries(viewParams(routeParts().params))};Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
@@ -289,18 +325,18 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.dataset.command==='liste-transferts')await action('/partie/liste-transferts',{joueur_id:Number(button.dataset.player),indemnite:null},'Joueur retiré de la liste des transferts.');
  if(button.dataset.command==='reserve')await action('/partie/reserve',{joueur_id:Number(button.dataset.player),reserve:Boolean(button.dataset.reserve)},button.dataset.reserve?'Joueur envoyé en réserve.':'Joueur rappelé en équipe première.');
  if(button.dataset.command==='reponse-offre')await action('/partie/reponse-offre',{offre_id:button.dataset.offer,decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offre refusée.');
+ if(button.dataset.command==='reponse-offres')await action('/partie/reponse-offres',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Transfert accepté.':'Offres refusées.');
+ if(button.dataset.command==='prolongation')await action('/partie/prolongation',{joueur_id:Number(button.dataset.player)},'Prolongation signée.');
+ if(button.dataset.command==='abandon-negociation')await action('/partie/negociation/abandon',{joueur_id:Number(button.dataset.player)},'Négociation abandonnée.');
  if(button.id==='retry')render();});
 // A card head with a single link ("Voir →") follows it wherever it is clicked.
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
 // Player actions open in a dialog kept inside the page, so each re-render closes it.
 main.addEventListener('click',event=>{const opener=event.target.closest('[data-open-dialog]');if(opener){main.querySelector(`#${opener.dataset.openDialog}`)?.showModal();return;}const closer=event.target.closest('[data-close-dialog]');if(closer)closer.closest('dialog')?.close();});
-// Mon club inbox: clicking an entry marks it as read (a link inside it still navigates); the page redraws only when it stays put.
+// Actualités: Tout lire marks the whole feed as read.
 main.addEventListener('click',async event=>{
- const entry=event.target.closest('[data-news],[data-news-read]');if(!entry)return;
- const ids=entry.dataset.newsRead==='all'?null:[Number(entry.dataset.news)];
- if(event.target.closest('a')){entry.classList.remove('unread');api('/partie/actualites-lues',{ids}).catch(()=>{});return;}
- if(!entry.classList.contains('unread')&&!('newsRead' in entry.dataset))return;
- try{await api('/partie/actualites-lues',{ids});}catch(error){toast(error.message,true);}
+ if(!event.target.closest('[data-news-read]'))return;
+ try{await api('/partie/actualites-lues',{ids:null});}catch(error){toast(error.message,true);}
  await render();
 });
 // The list of peers in a page header closes on a click elsewhere, on a choice and on Escape; opening it centres the current entry.

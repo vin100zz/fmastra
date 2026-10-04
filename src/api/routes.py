@@ -1,7 +1,6 @@
 """Screen-oriented, paginated endpoints for the observer interface."""
 from __future__ import annotations
 
-import re
 from dataclasses import asdict, replace
 from typing import Literal
 from uuid import uuid4
@@ -9,7 +8,6 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
-from core.domain.date import Date
 from core.domain.matches import SubmittedLineup
 from core.domain.players import ATTRIBUTE_INDEX, ATTRIBUTE_NAMES
 from core.world.human import listed_price, pending_lineup_match
@@ -17,6 +15,7 @@ from core.world.transfer_rules import recent_arrival_ids
 from core.world.simulation import target_date, market_window
 from .service import GameService
 from . import navigation as nav
+from . import news
 from . import views as v
 from .nations import build_nation_table
 from .views import position_rank
@@ -99,6 +98,16 @@ class OfferDecision(Command):
     decision: Literal["accepter", "refuser"]
 
 
+class OffersDecision(Command):
+    # Every offer awaiting an answer for this player, at once.
+    joueur_id: int
+    decision: Literal["accepter", "refuser"]
+
+
+class PlayerCommand(Command):
+    joueur_id: int
+
+
 class NewsRead(Command):
     # None marks the whole feed as read.
     ids: list[int] | None = None
@@ -127,6 +136,7 @@ def squad_sort_key(world, column: str):
 
 # A squad of the largest size and the players it has lent fit on one page.
 SQUAD_PAGE = 100
+NEWS_PAGE = 30
 
 
 ClubSort = Literal["nom", "pays", "championnat", "classement", "forme", "reputation", "entrainement", "recrutement", "effectif", "age",
@@ -219,13 +229,6 @@ def club_next_matches(world, count: int = 3) -> list[dict]:
     return [{**v.match_row(world, match), "league": match.competition_id == league} for match in upcoming]
 
 
-def headline(text: str) -> str:
-    """News read as headlines; entries saved by older versions still carry "N match(s)", ISO dates and a final full stop."""
-    text = re.sub(r"\d{4}-\d{2}-\d{2}", lambda found: Date.parse(found[0]).day_month(), text)
-    text = re.sub(r"(\d+) match\(s\)", lambda found: f"{found[1]} match{'s' if int(found[1]) > 1 else ''}", text)
-    return text[:-1] if text.endswith(".") else text
-
-
 def router(service: GameService) -> APIRouter:
     api = APIRouter(prefix="/api")
     from .international import international_router
@@ -246,9 +249,11 @@ def router(service: GameService) -> APIRouter:
                              "played": sum(match.result is not None and match.season == world.season for match in world.matches.values()),
                              "fixtures": sum(match.season == world.season for match in world.matches.values()),
                              "controlled_club_id": world.controlled_club_id,
+                             "controlled_club": v.club_ref(world, world.controlled_club_id),
                              "awaiting_lineup": pending_lineup_match(world),
-                             # The feed only grows: the page compares it with its last visit to Mon club.
                              "news_count": len(world.news),
+                             # What Continuer reads before it advances: the unread messages, then those awaiting an answer.
+                             "news": news.summary(world) if world.controlled_club_id is not None else None,
                              "live_match_id": world.live_match.match_id if world.live_match else None,
                              "club_next_matches": club_next_matches(world)})
             return data
@@ -389,22 +394,43 @@ def router(service: GameService) -> APIRouter:
 
     @api.post("/partie/renouvellement")
     def respond_renewal(command: RenewalDecision) -> dict:
-        from core.world.application import apply
-        from core.world.events import PlayerSigned
-        from core.world.human import record
+        """The answer to the contract a player asked for; the message that told it keeps the answer."""
+        from core.world import renewals
         with service.mutating() as world:
             proposal = world.pending_renewals.get(command.joueur_id)
             if proposal is None or proposal.club_id != world.controlled_club_id:
                 raise HTTPException(404, "Aucune proposition de renouvellement en attente pour ce joueur.")
             player = world.players[command.joueur_id]
-            if command.decision == "accepter":
-                signed = apply(world, PlayerSigned(proposal.player_id, proposal.club_id, proposal.club_id, proposal.contract, 0, True))
-                if not signed: raise HTTPException(400, "Ce renouvellement dépasse le plafond salarial du club.")
-                record(world, "renewal_signed", f"{player.name} prolonge à {proposal.contract.weekly_wage} €/semaine", proposal.club_id, player.id)
-            else:
-                record(world, "renewal_refused", f"Prolongation refusée pour {player.name}", proposal.club_id, player.id)
-            world.pending_renewals.pop(command.joueur_id, None)
+            try: renewals.sign(world, player) if command.decision == "accepter" else renewals.turn_down(world, player)
+            except renewals.RenewalRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
         return {"joueur_id": command.joueur_id, "decision": command.decision}
+
+    @api.get("/ma-partie/contrat/{player_id}")
+    def contract_terms(player_id: int) -> dict:
+        """The contract a player of the human club would sign today, or what keeps him from extending."""
+        from core.world import renewals
+        with service.reading() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(player_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            obstacle = renewals.renewal_obstacle(world, player)
+            terms = renewals.asked_terms(world, player) if obstacle is None else None
+            return {"obstacle": obstacle, "demande": player_id in world.pending_renewals,
+                    "salaire_actuel": player.contract.weekly_wage if player.contract else None,
+                    "fin_contrat_actuelle": player.contract.end.iso() if player.contract else None,
+                    "salaire_propose": terms.weekly_wage if terms else None, "fin_contrat_proposee": terms.end.iso() if terms else None}
+
+    @api.post("/partie/prolongation")
+    def extend_contract(command: PlayerCommand) -> dict:
+        """The human club extends one of its players on the terms he names (see `/ma-partie/contrat`)."""
+        from core.world import renewals
+        with service.mutating() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(command.joueur_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            try: contract = renewals.sign(world, player)
+            except renewals.RenewalRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
+            return {"joueur_id": player.id, "salaire": contract.weekly_wage, "fin_contrat": contract.end.iso()}
 
     def negotiate(command: FeeOffer | WageOffer, offer) -> dict:
         from core.world.talks import TalksRefused
@@ -427,6 +453,17 @@ def router(service: GameService) -> APIRouter:
         from core.world.talks import offer_wage
         return negotiate(command, lambda world, player: offer_wage(world, player, command.salaire_hebdo))
 
+    @api.post("/partie/negociation/abandon")
+    def abandon_talks(command: PlayerCommand) -> dict:
+        from core.world.talks import TalksRefused, withdraw
+        with service.mutating() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(command.joueur_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            try: withdraw(world, player)
+            except TalksRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
+            return v.talks_view(world, player)
+
     @api.get("/ma-partie/negociation/{player_id}")
     def talks(player_id: int) -> dict:
         with service.reading() as world:
@@ -437,25 +474,27 @@ def router(service: GameService) -> APIRouter:
 
     @api.post("/partie/reponse-offre")
     def respond_offer(command: OfferDecision) -> dict:
-        from core.world.application import apply
-        from core.world.events import OffersUpdated
-        from core.world.human import record
-        from core.world.market import resolve_accepted_offer
+        """The answer to one offer for a player of the human club; the message that told it keeps the answer."""
+        from core.world import sales
         with service.mutating() as world:
             offer = world.offers.get(command.offre_id)
             if offer is None or offer.source_id != world.controlled_club_id or not offer.awaiting_review:
                 raise HTTPException(404, "Offre introuvable ou déjà traitée.")
-            player = world.players[offer.player_id]
-            if command.decision == "accepter":
-                signed = resolve_accepted_offer(world, offer)
-                if not signed: raise HTTPException(400, "Cette vente n'est plus possible pour le moment (effectif minimal, gardiens requis…).")
-                record(world, "offer_accepted", f"{player.name} est transféré à {world.clubs[offer.target_id].name}", offer.source_id, player.id)
-                remaining = [item for item in world.offers.values() if item.player_id != offer.player_id]
-            else:
-                record(world, "offer_refused", f"Offre refusée pour {player.name}", offer.source_id, player.id)
-                remaining = [item for item in world.offers.values() if item.key != offer.key]
-            apply(world, OffersUpdated(remaining))
+            try: sales.answer(world, offer, command.decision == "accepter")
+            except sales.SaleRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
         return {"offre_id": command.offre_id, "decision": command.decision}
+
+    @api.post("/partie/reponse-offres")
+    def respond_offers(command: OffersDecision) -> dict:
+        """Every offer awaiting an answer for a player at once: all refused, or all accepted, and he picks his club."""
+        from core.world import sales
+        with service.mutating() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            player = world.players.get(command.joueur_id)
+            if player is None: raise HTTPException(404, "Joueur introuvable.")
+            try: signed = sales.answer_all(world, player, command.decision == "accepter")
+            except sales.SaleRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
+            return {"joueur_id": player.id, "decision": command.decision, "club": v.club_ref(world, signed.target_id) if signed else None}
 
     # The human club's own players up for sale: its transfer list, and players offered to every club at once.
     def sell(command: Listing | OfferToClubs, act) -> dict:
@@ -567,14 +606,18 @@ def router(service: GameService) -> APIRouter:
                     "estimated": True}
 
     @api.get("/ma-partie/actualites")
-    def news(page: int = Query(1, ge=1)) -> dict:
+    def news_feed(page: int | None = Query(None, ge=1), message: int | None = None, taille: int = Query(NEWS_PAGE, ge=1, le=100)) -> dict:
+        """A page of the feed, newest first: the one asked for, else the one showing `message`."""
         with service.reading() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
-            rows = [{"id": index, "date": item.date.iso(), "kind": item.kind, "text": headline(item.text), "club_id": item.club_id,
-                     "player_id": item.player_id, "match_id": item.match_id, "read": item.read,
-                     "player": world.players[item.player_id].name if item.player_id in world.players else None}
-                    for index, item in reversed(list(enumerate(world.news)))]
-            return {**v.paginate(rows, page), "unread": sum(not item.read for item in world.news)}
+            return news.feed(world, page, message, taille)
+
+    @api.get("/ma-partie/actualites/{message_id}")
+    def news_message(message_id: int) -> dict:
+        with service.reading() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            if not 0 <= message_id < len(world.news): raise HTTPException(404, "Message introuvable.")
+            return news.message(world, message_id)
 
     @api.post("/partie/actualites-lues")
     def mark_news_read(command: NewsRead) -> dict:
@@ -583,7 +626,7 @@ def router(service: GameService) -> APIRouter:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
             targets = world.news if command.ids is None else [world.news[index] for index in command.ids if 0 <= index < len(world.news)]
             for item in targets: item.read = True
-            return {"unread": sum(not item.read for item in world.news)}
+            return {"unread": sum(not item.read for item in world.news), "news": news.summary(world)}
 
     @api.get("/manuel")
     @api.get("/manuel/{chapitre}")

@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 
 from core.domain.clubs import Club
 from core.domain.offers import RenewalProposal
-from core.domain.players import Player
+from core.domain.players import Contract, Player
 from core.domain.world import World
 from core.math import clamp
 from collections import Counter
@@ -74,6 +74,33 @@ def contentment(world: World, player: Player, club: Club, rank: int, games: int,
     return Contentment(expected, salary_satisfaction, playing_satisfaction, satisfaction, restless, target)
 
 
+# A part of his situation taking less than this off the morale he drifts towards is not named as its cause.
+MORALE_CAUSE_MIN = 0.05
+
+
+def morale_cause(world: World, mood: Contentment) -> str | None:
+    """What holds a player's morale down most: "salaire", "temps_de_jeu" or "ambition"; None when nothing much does."""
+    cfg = world.config
+    moral, rules = cfg.states.moral, cfg.management.contracts
+    # What each part takes off the target, by its weight there (the satisfaction a renewal weighs counts in the target too).
+    losses = {"salaire": (moral.contract_weight + moral.results_weight * rules.wage_weight) * (1 - mood.wage),
+              "temps_de_jeu": (moral.playing_time_weight + moral.results_weight * rules.playing_time_weight) * (1 - mood.playing_time),
+              "ambition": cfg.management.market.frustration_morale_weight * mood.frustration}
+    cause = max(losses, key=losses.get)
+    return cause if losses[cause] >= MORALE_CAUSE_MIN else None
+
+
+def asked_wage(player: Player, expected: float, cfg) -> int:
+    """The weekly wage a player asks to extend: what his value commands, raised by his greed, never less than he earns."""
+    return max(player.contract.weekly_wage, round(expected * (1 + cfg.management.contracts.greed_premium * player.greed)))
+
+
+def extension(world: World, player: Player, wage: int) -> Contract:
+    """The contract a player signs to stay at this wage: as long as his age allows, never ending before the one he has."""
+    contract = contract_for(player, world, wage)
+    return replace(contract, end=player.contract.end) if contract.end < player.contract.end else contract
+
+
 def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalProposed]:
     cfg = world.config
     rules = cfg.management.contracts
@@ -107,16 +134,13 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
             departure_cost = squad_quality(squad, club, cfg) - squad_quality([item for item in squad if item.id != player.id], club, cfg)
             useful = departure_cost > 0
         if not useful: continue
-        proposed = round(expected * (1 + rules.greed_premium * player.greed))
-        proposed = max(player.contract.weekly_wage, proposed)
+        proposed = asked_wage(player, expected, cfg)
         if club.wage_bill - player.contract.weekly_wage + proposed > club.wage_cap:
             # A financially constrained club can still offer the existing wage.
             proposed = player.contract.weekly_wage
         if proposed < expected and satisfaction < rules.satisfaction_threshold: continue
-        contract = contract_for(player, world, proposed)
-        # A new contract never ends before the current one, and has to bring him something: a raise, or more years
-        # once the end is in sight.
-        if contract.end < player.contract.end: contract = replace(contract, end=player.contract.end)
+        # A new contract has to bring him something: a raise, or more years once the end is in sight.
+        contract = extension(world, player, proposed)
         longer = remaining < rules.renewal_months and contract.end > player.contract.end
         if proposed <= player.contract.weekly_wage and not longer: continue
         if is_human_club(world, club.id):

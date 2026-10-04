@@ -63,7 +63,8 @@ Barre persistante en tête d'application :
   l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
   en bleu pour une coupe. Le prochain match a son délai et un soulignement en
   couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px
-- Bouton « Continuer »
+- Bouton « Continuer », avec en pastille rouge le nombre de messages d'Actualités qui attendent une réponse ; la
+  pastille ouvre le premier d'entre eux
 - Journal des événements du jour : résultats, transferts, blessures
 
 Le mode Auto (enchaîner les journées), le choix du thème clair ou sombre et le
@@ -90,13 +91,20 @@ dépasse jamais 7 jours.
 - Sinon, « Derniers matches » de ce qui s'est joué : la coupe d'Europe du club,
   la C1 s'il n'en joue aucune.
 - Rien de suivi n'a été joué (semaine creuse, date clé, décision à prendre) :
-  directement Mon club.
+  directement Actualités.
 
-Après les résultats, « Continuer » mène à Mon club si une actualité est arrivée
-depuis sa dernière visite, sinon avance directement. Ces étapes restent dues si
-l'on consulte d'autres pages entre-temps (état gardé dans l'onglet du navigateur,
-`web/flow.js`). Le mode Auto garde son propre rythme : il enchaîne toutes les
-dates de matchs du monde et ne s'arrête jamais.
+Avant d'avancer de nouveau, « Continuer » fait lire le fil (`newsStep`, `web/flow.js`) :
+
+1. tant qu'il reste des messages non lus, il ouvre le suivant dans Actualités, du plus récent au plus ancien ;
+2. tout étant lu, il ouvre un message qui attend une réponse (offre reçue, contrat demandé par un joueur, contrat à
+   négocier avec une recrue) ;
+3. ce message à l'écran, il est grisé tant que la réponse n'est pas donnée ;
+4. plus rien à lire ni à traiter : il avance.
+
+Les résultats encore dus (le tour joué après un match simulé) passent après la lecture quand on est déjà sur
+Actualités, avant elle depuis une autre page, et restent dus si l'on consulte d'autres pages entre-temps (état gardé
+dans l'onglet du navigateur). Le mode Auto garde son propre rythme : il enchaîne toutes les dates de matchs du monde
+et ne s'arrête jamais, même si des messages attendent une réponse.
 
 Une avance longue renvoie un identifiant de travail et une progression.
 Elle s'affiche dans la barre du haut, sans décaler la page : le libellé au
@@ -111,13 +119,56 @@ d'observation.
 ### Titres de page
 
 Une page n'affiche que son titre, sans ligne au-dessus ni au-dessous. Ce titre est
-celui de son entrée dans le menu de gauche : Vue d'ensemble, Clubs, Joueurs, Mercato
+celui de son entrée dans le menu de gauche : Actualités, Vue d'ensemble, Clubs, Joueurs, Mercato
 mondial, Palmarès, Coupes d'Europe, Ma partie, ou le nom du pays pour la page d'un
 pays. Les commandes de la page (recherche, filtres, choix des matches d'un pays)
 se rangent sur la même ligne, à sa droite. Le Journal, onglet de Vue d'ensemble, porte ce même titre et allume la même
 entrée du menu. Les pages championnat et coupe nationale portent le nom de la
 compétition. Les fiches club et joueur gardent leur en-tête d'identité (nationalités,
 poste, âge, club, stade), qui présente des données et non un titre.
+
+### Actualités
+
+Première entrée du menu (`#/actualites`, `web/news.js`), avec en pastille le nombre de messages non lus. Sous elle,
+le club dirigé a sa propre entrée, à ses couleurs, qui ouvre sa fiche. L'écran tient en trois colonnes ; sur un écran
+moins large les widgets passent sur une colonne, puis sous le message.
+
+**Le fil**, à gauche, défile dans sa colonne : un message par ligne, du plus récent au plus ancien, avec le badge
+coloré de sa catégorie (Transfert, Prêt, Contrat, Moral, Blessure, Suspension, Sélection, Formation, Mercato, Saison,
+Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
+lu dès qu'il est ouvert. Un point rouge marque un message qui attend une réponse, une coche celui qui l'a reçue. « Tout
+lire », au-dessus du fil, marque tout comme lu.
+
+**Le message ouvert**, au centre (`?msg=<id>` ; sans lui, le prochain à lire, sinon un message à traiter, sinon le
+dernier) : son badge, sa date, ce qu'il attend ou la réponse donnée, son titre, puis l'essentiel. Chaque nom de joueur,
+de club, de compétition ou de sélection est un lien vers sa page ; il n'y a pas de liens à part.
+
+Les événements d'un même genre le même jour font un seul message : les blessés d'un match, les suspendus, les
+convoqués, les fins de contrat, les jeunes promus. Un joueur seul tient dans le titre (« Weah blessé 3 semaines ») ;
+à plusieurs, le message liste chacun avec ce qui le concerne.
+
+| Message | Contenu |
+|---|---|
+| Offres pour un joueur (à traiter) | Sa valeur en tuile ; une ligne par offre du jour : club, indemnité, « Accepter » / « Refuser ». À plusieurs offres ouvertes, « Tout accepter » (le joueur choisit son club) et « Tout refuser ». Une offre traitée garde sa réponse : Acceptée, Refusée, Non retenue, Sans suite |
+| Un joueur veut un nouveau contrat (à traiter) | Salaire et fin de contrat, actuels et demandés ; « Accepter » / « Refuser » |
+| Un joueur est prêt à négocier son contrat (à traiter) | Indemnité convenue et club vendeur, salaire qu'il demande s'il l'a dit ; « Négocier le contrat » (la boîte de dialogue de sa fiche) et « Abandonner » |
+| Joueurs mécontents | Par joueur : ce qui pèse sur lui (temps de jeu, réserve, salaire, club trop petit) et son moral |
+| Contrats qui expirent (à 6 mois, à 1 mois) | Par joueur : son salaire, et « Proposer un contrat », qui ouvre le contrat qu'il signerait ; grisé avec la raison en infobulle s'il ne veut pas prolonger |
+| Mercato ouvert | Date de fermeture, budget de transferts, marge sous le plafond salarial, lien vers Joueurs |
+| Mercato qui ferme demain | Vos offres en cours, les joueurs dont une offre attend, budget de transferts, lien vers Joueurs |
+| Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
+| Les autres (transfert, prêt, offre refusée, promotion, trophée…) | Une phrase, ses noms en liens |
+
+Le fil ne raconte pas les résultats des matches : ils se lisent dans « Derniers matches » et le calendrier.
+
+**Les widgets**, à droite, chacun avec « Voir → » vers sa page : le classement complet de la division (PTS, V, N, P,
+BP, BC, DIFF., le club marqué), les indisponibles de l'équipe première (blessés avec leur date de retour, suspendus
+avec leurs matchs), le calendrier (derniers et prochains matches), les joueurs (cinq premiers aux buts, aux passes,
+à la note parmi ceux qui ont joué au moins la moitié des matches du plus utilisé, et aux matches), les finances (budget
+de transferts disponible en grand, masse salariale en anneau rempli à sa part du plafond, rouge à partir de 95 %).
+
+Les offres reçues, les offres en cours, la liste des transferts et les prêts du club se lisent dans l'onglet
+Transferts de sa fiche, carte « Mercato en cours ».
 
 ### Navigation entre pairs
 
@@ -406,8 +457,13 @@ demandé (valeur de marché par défaut) et devient « Retirer de la liste » av
 raison en infobulle pendant le délai de relance, hors mercato ou pour un joueur intransférable.
 Dès qu'une offre attend une réponse, « Offres reçues · n » ouvre la liste des offres
 pour ce joueur, à accepter ou refuser ; elle s'ouvre seule après une proposition qui en
-a obtenu. Dans Mon club, la carte Transferts et contrats liste aussi les joueurs sur la
+a obtenu. Dans l'onglet Transferts de son club, la carte « Mercato en cours » liste aussi les joueurs sur la
 liste des transferts, avec leur prix.
+
+« Proposer un contrat » ouvre le contrat que le joueur signerait aujourd'hui (`/api/ma-partie/contrat/{id}`) : salaire
+et fin de contrat, actuels et demandés, et « Signer ». Si le joueur a lui-même demandé ce contrat, une pastille
+« Prolongation en attente » le dit et « Refuser » accompagne « Signer ». Le bouton est grisé, la raison en infobulle,
+quand il ne veut pas prolonger.
 
 Deux boutons suivent, pour la réserve et les prêts (`/api/ma-partie/effectif/{id}`) :
 « Envoyer en réserve », qui devient « Rappeler en équipe première » avec une pastille
@@ -421,7 +477,7 @@ le prêter, il n'aurait pas assez de temps de jeu, mercato fermé…). Un joueur
 que soit le sens, n'a qu'une pastille : « Prêté à Nice · retour le 30 juin 2027 » ou
 « Prêté par… ». La colonne Contrat ajoute alors « Prêté par » et « Fin du prêt », et
 « Équipe : Réserve » pour un joueur en réserve ; la carrière écrit « Prêt » dans la colonne
-du transfert. Dans Mon club, la carte Transferts et contrats gagne une section « Prêts »
+du transfert. Dans l'onglet Transferts de son club, la carte « Mercato en cours » gagne une section « Prêts »
 quand il y en a : une ligne par joueur, → vers le club d'accueil ou ← depuis le club
 propriétaire, et la date de retour.
 
@@ -506,11 +562,11 @@ qu'il serait si les matches s'arrêtaient à la minute affichée.
   sur le terrain sous « Mi-temps ».
 - « Fin du match » laisse l'IA finir le match sans l'afficher.
 - Au coup de sifflet final, « Continuer », sur le terrain, clôt la journée et
-  mène aux « Derniers matches » de la compétition, puis à Mon club. « 2e mi-temps » et « Continuer » reprennent le style du
+  mène aux « Derniers matches » de la compétition, puis aux Actualités. « 2e mi-temps » et « Continuer » reprennent le style du
   bouton « Continuer » du bandeau (classe \`cta\`).
 
 « Simuler », à côté de « Jouer » dans le bandeau de la composition, joue le match
-sans le regarder et affiche le compte rendu, puis « Derniers matches » et Mon club. Le mode Auto ne joue jamais en direct.
+sans le regarder et affiche le compte rendu, puis « Derniers matches » et les Actualités. Le mode Auto ne joue jamais en direct.
 
 Pour un résultat analytique, signaler l'absence de détail et masquer les
 statistiques inconnues au lieu d'afficher des zéros. Garder les compositions
@@ -711,7 +767,8 @@ signaler explicitement plutôt que d'afficher des sections vides.
 ## Endpoints
 
 ```
-GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping)
+GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping),
+                                          controlled_club, news : {unread, next_unread, pending: [id]} (messages non lus, le prochain à lire, ceux à traiter)
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
@@ -765,6 +822,16 @@ GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant
 
 GET  /api/matches/{id}                    compte rendu complet
 
+GET  /api/ma-partie/actualites?page=&message=&taille=   le fil, du plus récent au plus ancien : la page demandée, sinon celle du message ;
+                                          chaque ligne : {id, date, kind, title, segments: [{text, ref?}], read, pending}
+GET  /api/ma-partie/actualites/{id}       un message : sa ligne, et selon son genre offers, renewal, talks, players, expiry, market ou review
+POST /api/partie/actualites-lues          {ids: [id] | null} ; null marque tout le fil -> {unread, news}
+POST /api/partie/reponse-offre            {commande_id, offre_id, decision: "accepter" | "refuser"}
+POST /api/partie/reponse-offres           {commande_id, joueur_id, decision} ; toutes les offres en attente pour ce joueur -> {club} signé ou null
+POST /api/partie/renouvellement           {commande_id, joueur_id, decision} ; réponse au contrat qu'un joueur demande
+GET  /api/ma-partie/contrat/{id}          le contrat qu'un joueur du club signerait : {obstacle, demande, salaire_actuel, salaire_propose, fin_contrat_actuelle, fin_contrat_proposee}
+POST /api/partie/prolongation             {commande_id, joueur_id} ; signe ce contrat
+POST /api/partie/negociation/abandon      {commande_id, joueur_id} ; abandonne un dossier d'achat avant l'accord sur le contrat
 GET  /api/ma-partie/effectif/{id}         réserve et prêt d'un joueur : {pret, en_reserve, obstacle_reserve, sens: "sortant" | "entrant", obstacle_pret, durees: [{cle, fin}], clubs}
 POST /api/partie/reserve                  {commande_id, joueur_id, reserve: bool}
 POST /api/partie/preter                   {commande_id, joueur_id, club_id, duree: "saison" | "demi_saison"}

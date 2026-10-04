@@ -80,6 +80,8 @@ ambition = {{ia_gestion.mercato.ambition_base}} + {{ia_gestion.mercato.ambition_
 - En match : de −{{pct(etats.moral.amplitude_effet_match, 0)}} à +{{pct(etats.moral.amplitude_effet_match, 0)}} sur tout ce qu'il fait.
 - Sur le marché : à {{pct(ia_gestion.mercato.moral_depart_force, 0)}} ou moins, un joueur accepte de rejoindre un club moins réputé que le sien, ce qu'il refuserait autrement.
 
+Vos actualités vous préviennent la semaine où le moral d'un de vos joueurs tombe à ce seuil, avec ce qui pèse le plus sur lui : son salaire, son temps de jeu, la réserve où il est tenu, ou un club trop petit pour lui. L'alerte n'est pas répétée tant que son moral n'est pas remonté au-dessus.
+
 Dans l'effectif, la flèche à côté du moral indique vers où il dérive, et l'icône ce qui le tire le plus vers le bas : le salaire (€), le temps de jeu (◷) ou un club trop petit (★). La fiche du joueur porte la même icône devant la barre de son moral.
 
 ## La condition physique

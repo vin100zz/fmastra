@@ -17,6 +17,7 @@ from .demography import retirement_events, cohort_events
 from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
 from .finances import structural_income, annual_funding_factor
 from .human import is_human_club, pending_lineup_match
+from .news import daily_notices, morale_alerts, morale_levels
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .talks import progress_talks
@@ -138,7 +139,9 @@ def open_day(world: World) -> None:
     if returns: ensure_minimums(world)
     weekly = world.date.ordinal() % cfg.management.market.weekly_review_days == 0
     if weekly:
+        morale = morale_levels(world)
         for event in renewal_events(world): apply(world, event)
+        morale_alerts(world, morale)
         for event in reserve_events(world): apply(world, event)
     progress_talks(world)
     open_market = market_window(world) is not None
@@ -146,6 +149,7 @@ def open_day(world: World) -> None:
     for _ in range(cfg.world.market.rounds_per_day):
         rejected = settle_offers(world, open_market)
         open_offers(world, open_market, rejected)
+    daily_notices(world)
 
 
 def close_day(world: World) -> None:

@@ -89,12 +89,22 @@ Les trois termes sont ceux du [moral](#/aide/etats/le-moral). La prolongation n'
 - **le salaire convient** : le club propose le salaire attendu, majoré de la prime d'appât du gain, et jamais moins que le salaire actuel. Si le plafond salarial ne le permet pas, il propose le salaire actuel ; un joueur insatisfait refuse alors ;
 - **le nouveau contrat apporte quelque chose** : une hausse de salaire, ou des années en plus quand le contrat se termine dans moins de {{ia_gestion.contrats.mois_avant_fin_declenchant}} mois. Un joueur insatisfait dont le contrat court encore longtemps ne demande donc qu'une hausse. Le nouveau contrat ne se termine jamais avant l'actuel.
 
-Un club de l'IA signe aussitôt. Pour votre club, la proposition arrive dans vos actualités et attend votre réponse :
+Un club de l'IA signe aussitôt. Pour votre club, la demande arrive dans vos actualités et attend votre réponse : tant que vous ne l'avez pas donnée, « Continuer » vous y ramène avant d'avancer.
 
 - l'accepter applique le nouveau salaire et la nouvelle durée ; elle est refusée d'office si elle fait dépasser votre plafond salarial ;
 - la refuser ne règle rien : tant que les conditions sont réunies, le joueur la représente à la revue suivante ;
-- vous ne pouvez pas proposer vous-même une prolongation : c'est le joueur qui la demande ;
 - un joueur placé sur votre liste des transferts ne demande plus rien.
+
+**Demander ses conditions à un joueur.** Vous n'avez pas à attendre sa demande : « Proposer un contrat » lui demande ses conditions à tout moment. Il annonce le salaire attendu, majoré de la prime d'appât du gain et jamais inférieur à son salaire actuel, pour la durée de son âge, et signe aussitôt si vous les acceptez. Il n'y a rien à négocier : ce sont ses conditions, ou rien. Il ne s'engage pas :
+
+- s'il veut partir, frustré par un club trop petit pour lui ;
+- pendant les {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours qui suivent son arrivée ;
+- si le nouveau contrat ne lui apporte ni hausse de salaire ni année de plus ;
+- tant qu'il est prêté : il faut attendre son retour.
+
+Le contrat est refusé s'il fait dépasser votre plafond salarial.
+
+**Les contrats qui arrivent à terme.** Vos actualités vous préviennent quand un contrat arrive à 6 mois de sa fin, puis à 1 mois : chaque joueur y est nommé avec son salaire, et le contrat qu'il signerait.
 
 Les joueurs dont le club ne veut plus vont au bout de leur contrat : c'est ce qui alimente le marché des joueurs libres.
 

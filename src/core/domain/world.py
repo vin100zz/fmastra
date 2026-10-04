@@ -73,6 +73,29 @@ class JournalEntry:
 
 
 @dataclass(slots=True)
+class NewsLine:
+    """One line of a message of the human club's feed: the player, club, competition or match it names, and what the
+    message says of it. What `amount`, `until`, `text`, `state` and `key` hold depends on the kind of the message
+    (see `core.world.news`)."""
+    player_id: int | None = None
+    club_id: int | None = None
+    competition_id: int | None = None
+    match_id: int | None = None
+    amount: int | None = None
+    until: Date | None = None
+    text: str = ""
+    state: str = ""
+    key: str = ""
+
+
+@dataclass(slots=True)
+class NewsItem(JournalEntry):
+    """A message of the human club's feed. Events of the same kind on the same day make one message of several lines;
+    a message written as a plain sentence has `text` and at most the lines naming who it speaks of."""
+    lines: list[NewsLine] = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class World:
     date: Date
     season: int
@@ -130,7 +153,7 @@ class World:
     # and for each player offered to every club, the day he may be offered again.
     transfer_list: dict[int, int] = field(default_factory=dict)
     offered_until: dict[int, Date] = field(default_factory=dict)
-    news: list[JournalEntry] = field(default_factory=list)
+    news: list[NewsItem] = field(default_factory=list)
     live_match: LiveMatchRecord | None = None
 
     def active_clubs(self) -> list[Club]:

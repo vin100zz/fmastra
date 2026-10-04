@@ -49,10 +49,13 @@ Chaque jour de jeu déroule les mêmes étapes, dans cet ordre :
 | {{date(monde.mercato.ete.debut_jour, monde.mercato.ete.debut_mois)}} au {{date(monde.mercato.ete.fin_jour, monde.mercato.ete.fin_mois)}} | Mercato d'été |
 | {{date(monde.saison.debut_jour, monde.saison.debut_mois)}} au {{date(monde.saison.fin_jour, monde.saison.fin_mois)}} | Championnats |
 | {{date(monde.mercato.hiver.debut_jour, monde.mercato.hiver.debut_mois)}} au {{date(monde.mercato.hiver.fin_jour, monde.mercato.hiver.fin_mois)}} | Mercato d'hiver |
+| 1er juin | Bilan de la saison de votre club, dans vos actualités |
 | Le 1er de chaque mois | Progression et déclin des joueurs |
 | Tous les {{ia_gestion.mercato.weekly_review_days}} jours | Moral et prolongations |
 
 Le bilan annuel enchaîne, dans cet ordre : les classements finaux et les champions ; les qualifications européennes ; les montées et descentes ; la révision de la [réputation](#/aide/reputation) ; les [retraites](#/aide/progression/la-retraite) ; les nouveaux [budgets](#/aide/finances) ; le calendrier de la nouvelle saison et la remise à zéro des statistiques et des cartons ; enfin l'arrivée des [regens](#/aide/regens).
+
+Vos actualités vous annoncent l'ouverture de chaque mercato, avec votre budget de transferts et votre marge sous le plafond salarial, puis sa fermeture la veille de son dernier jour, avec vos dossiers encore ouverts. Le 1er juin, le bilan de la saison donne votre place ou votre parcours dans chaque compétition, son vainqueur, la coupe d'Europe que votre classement vous ouvre, votre meilleur buteur et votre joueur le mieux noté parmi ceux notés dans au moins la moitié des matches du plus utilisé.
 
 Les contrats se terminent la veille du bilan : un joueur en fin de contrat est libre au matin du {{date(monde.dates_cles.liberation_contrats_expires.jour, monde.dates_cles.liberation_contrats_expires.mois)}}.
 

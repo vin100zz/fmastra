@@ -5,10 +5,10 @@ from core.domain.clubs import Competition
 from core.domain.date import Date
 from core.domain.international import NationalTeam, NationalCamp, InternationalRecord
 from core.domain.players import Discipline
-from core.domain.world import World, JournalEntry
+from core.domain.world import World, JournalEntry, NewsLine
 from core.domain.matches import stored_events
 from core.engine.match import PossessionEngine
-from .human import record as add_news
+from .human import report
 from core.engine.fitness import recovered_fitness
 from core.math import clamp
 from core.randomness import stream
@@ -259,7 +259,7 @@ def apply_international_result(world, edition, match, result, lineups):
             if player.id >= 0:
                 text = f"{player.name} se blesse en sélection, indisponible jusqu’au {player.injury.end.day_month()}"
                 world.journal.append(JournalEntry(world.date, "injury", text, player.club_id, player.id))
-                add_news(world, "injury", text, player.club_id, player.id)
+                report(world, "injury", NewsLine(player_id=player.id, until=player.injury.end, text="selection"), player.club_id)
     home, away = state.nations[match.home_id], state.nations[match.away_id]
     expected = 1 / (1 + pow(10, (away.strength - home.strength) / 25))
     actual = 1 if result.home_goals > result.away_goals else 0 if result.home_goals < result.away_goals else .5

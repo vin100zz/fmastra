@@ -7,11 +7,11 @@ from core.domain.clubs import Club, ClubPersonality, ClubStatus
 from core.domain.date import Date
 from core.domain.international import InternationalEdition, NationalCamp
 from core.domain.players import Player, Position
-from core.domain.world import World
+from core.domain.world import NewsLine, World
 from core.engine.abilities import generate_attributes, overall
 from core.math import clamp
 from core.randomness import stream
-from .human import record as add_news
+from .human import report
 
 ROLES = [Position.GOALKEEPER] * 3 + [Position.CENTER_BACK] * 4 + [Position.LEFT_BACK] * 2 + [Position.RIGHT_BACK] * 2 + [Position.DEFENSIVE_MIDFIELDER] * 2 + [Position.CENTRAL_MIDFIELDER] * 3 + [Position.ATTACKING_MIDFIELDER] * 2 + [Position.LEFT_WINGER, Position.RIGHT_WINGER] + [Position.STRIKER] * 3
 
@@ -115,7 +115,7 @@ def fill_camp(world: World, camp: NationalCamp, choices: dict[int, str], retain:
     camp.player_ids = [p.id for p in selected]
     for player in selected:
         if player.id in newcomers and player.id >= 0:
-            add_news(world, "call_up", f"{player.name} est convoqué avec {team.name}", player.club_id, player.id)
+            report(world, "call_up", NewsLine(player_id=player.id, text=team.name, key=str(camp.nation_id)), player.club_id)
 
 
 def camp_lineup(world: World, edition: InternationalEdition, nid: int):

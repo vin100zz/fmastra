@@ -97,7 +97,8 @@ def test_offering_a_player_asks_every_club_at_once_and_keeps_the_offers_he_prefe
     assert all(offer.awaiting_review and offer.fee == offer.ceiling == 4_000_000 and offer.source_id == 2 for offer in offers)
     assert [offer.score for offer in offers] == sorted((offer.score for offer in offers), reverse=True)
     assert all(world.offers[offer.key] == offer for offer in offers)
-    assert [(entry.kind, entry.player_id) for entry in world.news] == [("offer_received", player.id)] * len(offers)
+    assert [(entry.kind, entry.player_id) for entry in world.news] == [("offer_received", player.id)]  # one message for them all
+    assert [line.key for line in world.news[0].lines] == [offer.key for offer in offers]
     # Offered once, he can be offered again only after the cooldown.
     with pytest.raises(SaleRefused, match="Déjà proposé"): offer_to_clubs(world, player, 4_000_000)
     world.date = world.date.add_days(rules.offer_cooldown_days)

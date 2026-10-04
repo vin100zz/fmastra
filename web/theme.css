@@ -74,7 +74,7 @@ footer{border-color:var(--line);color:var(--muted)}
 /* Panels. */
 .card,.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:4px}
 .card-head{padding:0 14px!important;min-height:40px;border-color:var(--line)}
-.card-head h2,.club-overview .card-head h2,.inbox .card-head h2{font-size:15px!important;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.card-head h2,.club-overview .card-head h2{font-size:15px!important;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .card-head a{color:var(--muted);font-weight:600}
 .card-head a:hover{color:var(--strong)}
 .stat-card .label,.stat-card small{color:var(--muted)}
@@ -141,7 +141,7 @@ th button.sort-toggle:hover{color:var(--strong)}
 .fact span{color:var(--muted)}
 .attribute.key>span:first-child:after{background:var(--accent)}
 
-/* Fixtures, journal, inbox. */
+/* Fixtures, journal. */
 .fixture,.journal-row,.club-match,.moves li,.highlight-row,.timeline-row{border-color:var(--row-line)}
 .fixture .score,.club-match-score{background:var(--panel-2);color:var(--ink);border-radius:2px}
 .fixture .score:hover{background:var(--panel-3)}
@@ -155,13 +155,6 @@ th button.sort-toggle:hover{color:var(--strong)}
 .journal-icon{border-color:var(--line);color:var(--accent-text)}
 .journal-row p{color:var(--ink-3)}
 .journal-row small{color:var(--muted)}
-.inbox-item{color:var(--muted);border-color:var(--row-line)}
-.inbox-item:hover{background:var(--panel-3)}
-.inbox-item.unread{background:var(--unread);color:var(--ink)}
-.inbox-item.unread:before{background:var(--accent);width:7px;height:7px;left:4px}
-.inbox-item.unread .inbox-meta b{color:var(--accent-text)}
-.inbox-meta b{letter-spacing:.1em}
-.inbox-text{font-size:13px}
 .card-note{border-color:var(--line)}
 .season-archive[open] summary{border-color:var(--line)}
 .market-card .moves li>a{color:var(--accent-text)}
@@ -244,8 +237,9 @@ dialog::backdrop{background:var(--backdrop)}
  .job-bar{top:0!important}
  .sidebar-bottom{border-top:0;padding-top:0;top:4px!important}
  .time-controls{grid-template-columns:1fr 1fr}
- .time-controls #advance{grid-column:1/-1}
- .time-controls #simulate:not([hidden])+#advance{grid-column:auto}
+ .time-controls .advance-group{grid-column:1/-1}
+ .time-controls #simulate:not([hidden])+.advance-group{grid-column:auto}
+ .advance-group #advance{flex:1}
 }
 
 /* Density: as much as possible visible without scrolling. 48 px bar, 8-12 px gaps, 26 px table rows, one-line page headers. */
@@ -286,9 +280,9 @@ h1{font-size:26px;margin:0}
 
 .card{margin-bottom:10px}
 .card-head{min-height:32px;padding:0 12px!important}
-.card-head h2,.club-overview .card-head h2,.inbox .card-head h2{font-size:13px!important}
+.card-head h2,.club-overview .card-head h2{font-size:13px!important}
 .card-body{padding:10px 12px}
-.grid,.grid.equal,.club-overview,.my-club,.match-layout,.transfer-columns,.league-summaries{gap:10px}
+.grid,.grid.equal,.club-overview,.match-layout,.transfer-columns,.league-summaries{gap:10px}
 .club-overview{margin-bottom:10px}
 .stat-grid{gap:10px;margin-bottom:10px}
 .stat-card{padding:10px 12px}
@@ -348,15 +342,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .attribute{margin:4px 0;padding:0}
 .highlight-row{padding:5px 0}
 .match-stats .comparison{padding:2px 0}
-
-/* Inbox: tag, text and date flow on one line; long texts wrap under the tag. */
-.my-club>.inbox{top:56px;max-height:calc(100vh - 68px)}
-.inbox-item{display:flow-root;padding:5px 10px 5px 14px}
-.inbox-meta{display:contents}
-.inbox-meta b{float:left;margin:1px 7px 0 0;line-height:17px}
-.inbox-meta small{float:right;margin:1px 0 0 8px;line-height:17px}
-.inbox-text{display:block;margin:0;font-size:12.5px;line-height:18px}
-.inbox-item.unread:before{top:11px}
 
 /* Line-up editor: the whole screen within the window: toolbar on one line, pitch sized from the height, list scrolling inside. */
 .composition-card{margin-bottom:0}
@@ -446,11 +431,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-comp.cup{color:var(--info)}
 @media(max-width:1200px){.next-match:nth-child(n+3){display:none}}
 @media(max-width:950px){.next-matches{display:none}}
-
-/* Inbox: a click on an entry marks it as read; only its player and match links navigate. */
-.inbox-item{cursor:pointer}
-.inbox-text a{color:var(--strong);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
-.inbox-text a:hover{text-decoration-color:currentColor}
 
 /* Running job: inside the top bar, never pushing the page down. The label sits in the bar's free middle,
    the progress runs along its bottom edge in place of the accent line. */
@@ -1090,3 +1070,127 @@ a.button.primary:hover{background:var(--accent-hover);color:var(--accent-ink)}
 .player-table td:has(>.row-action){padding:1px 4px!important;text-align:center}
 .row-action{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;font-size:12px;line-height:1}
 .action-dialog select{width:100%}
+
+/* Actualités. The menu counts the messages still to read, a red count on Continuer those awaiting an answer; the club the
+   user runs has its own entry under it. */
+:root{--tag-contract:#2a2140;--tag-contract-ink:#b9a2ff;--tag-morale:#3a1a2e;--tag-morale-ink:#ff9bd0;--tag-ban:#3a2a14;--tag-ban-ink:#ffb45e;
+ --tag-call:#12343a;--tag-call-ink:#6fd8e0;--todo:#ff5a52;--todo-ink:#1a0b0a}
+:root[data-theme="light"]{--tag-contract:#ece6fb;--tag-contract-ink:#5b3fb0;--tag-morale:#fbe4f0;--tag-morale-ink:#a3266e;--tag-ban:#fdecd8;--tag-ban-ink:#9a4a00;
+ --tag-call:#dff3f4;--tag-call-ink:#0f6a70;--todo:#d92d20;--todo-ink:#fff}
+.nav-count{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;line-height:18px;text-align:center}
+#own-club .kit-dot{width:16px;height:16px;margin:0;border-radius:3px}
+.advance-group{position:relative;display:flex}
+.advance-todo{position:absolute;top:-7px;left:-9px;z-index:1;min-width:20px;height:20px;padding:0 5px;border:0;border-radius:10px;background:var(--todo);color:var(--todo-ink);font:700 11px/20px "Segoe UI",system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--rail)}
+.advance-todo:hover{background:var(--todo)}
+#advance:disabled{cursor:not-allowed}
+
+/* The feed on the left, in a column that scrolls by itself; the message opened in the middle; the club at a glance on the
+   right, on two columns when the window is wide enough, then on one, then under the message. Tout lire sits over the feed. */
+.news-heading{max-width:380px}
+.news-heading button{padding:5px 11px;font-size:12px;white-space:nowrap}
+.news{display:grid;grid-template-columns:380px minmax(0,1fr) 708px;gap:10px;align-items:start}
+.news>.card{margin:0}
+.news-list{position:sticky;top:56px;display:flex;flex-direction:column;max-height:calc(100vh - 112px)}
+.news-rows{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+.news-row{position:relative;display:flex;flex-direction:column;gap:3px;padding:6px 12px 7px 20px;border-bottom:1px solid var(--row-line);color:var(--ink-2)}
+.news-row:hover{background:var(--panel-3)}
+.news-row.unread{background:var(--unread);color:var(--strong);font-weight:700}
+.news-row.unread:before{content:"";position:absolute;left:8px;top:12px;width:7px;height:7px;border-radius:50%;background:var(--accent-text)}
+.news-row.selected{background:var(--panel-3);color:var(--strong);box-shadow:inset 3px 0 0 var(--accent)}
+.news-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.news-row-top small{font-size:11px;font-weight:400;color:var(--muted);white-space:nowrap}
+.news-row-title{display:flex;align-items:center;gap:8px;font-size:13px;line-height:18px}
+.news-row-title>span{flex:1;min-width:0}
+.news-tag{padding:0 6px;border-radius:2px;background:var(--own-row);color:var(--accent-text);font-size:10px;font-weight:700;letter-spacing:.08em;line-height:17px;text-transform:uppercase;white-space:nowrap}
+.news-tag.transfer{background:var(--gold-soft);color:var(--gold-bright)}
+.news-tag.contract{background:var(--tag-contract);color:var(--tag-contract-ink)}
+.news-tag.morale{background:var(--tag-morale);color:var(--tag-morale-ink)}
+.news-tag.injury{background:var(--bad-soft);color:var(--att-ink)}
+.news-tag.ban{background:var(--tag-ban);color:var(--tag-ban-ink)}
+.news-tag.call-up{background:var(--tag-call);color:var(--tag-call-ink)}
+.news-tag.market{background:var(--good-soft);color:var(--mid-ink)}
+.news-todo{flex:none;width:9px;height:9px;margin-right:3px;border-radius:50%;background:var(--todo);box-shadow:0 0 0 3px color-mix(in srgb,var(--todo) 22%,transparent)}
+.news-done{flex:none;color:var(--good);font-size:12px;font-style:normal;font-weight:700}
+
+.news-message{min-height:calc(100vh - 112px);padding:14px 18px 18px}
+.news-message-head{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.news-message-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.news-message-meta small{font-size:12px;color:var(--muted)}
+.news-status{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--good)}
+.news-status.todo{color:var(--bad)}
+.news-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.news-title h2{margin:0;font-size:24px;line-height:1.15;color:var(--strong)}
+.news-title .tile{flex:none;padding:5px 14px 4px}
+.news-title .tile strong{font-size:22px;white-space:nowrap}
+.news-message a:not(.news-more){color:var(--strong);text-decoration:underline;text-decoration-color:var(--placeholder);text-underline-offset:3px}
+.news-message a:not(.news-more):hover{text-decoration-color:currentColor}
+.news-body{display:flex;flex-direction:column;gap:14px;max-width:520px;padding-top:14px;font-size:14px}
+.news-lines{list-style:none;margin:0;padding:0}
+.news-lines li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;min-height:38px;border-bottom:1px solid var(--row-line);font-variant-numeric:tabular-nums}
+.news-lines li>:first-child a{font-weight:600}
+.news-lines li>:not(:first-child){text-align:right}
+.news-lines small{color:var(--muted);font-size:inherit}
+.news-lines.offers li{grid-template-columns:minmax(0,1fr) 90px 160px}
+.news-lines.morale li{grid-template-columns:minmax(0,170px) minmax(0,1fr) auto}
+.news-lines.morale li>:nth-child(2){text-align:left}
+.news-lines.expiry li{grid-template-columns:minmax(0,1fr) 130px 150px}
+.news-lines .market-actions{width:auto}
+.news-lines button,.news-actions button{padding:5px 12px;font-size:12px;white-space:nowrap}
+.news-state{font-size:13px;font-weight:600;color:var(--muted)}
+.news-state.good{color:var(--good)}
+.news-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px}
+.news-actions .player-actions{flex-direction:row;align-items:center}
+.news-terms{display:grid;grid-template-columns:minmax(0,1fr) 140px 140px;font-variant-numeric:tabular-nums}
+.news-terms>*{padding:8px 0;border-bottom:1px solid var(--row-line)}
+.news-terms>:nth-child(3n+1){color:var(--muted)}
+.news-terms>:not(:nth-child(3n+1)){text-align:right}
+.news-terms.review>*{text-align:left;color:var(--ink)}
+.news-terms.review>:nth-child(3n+1) a{font-weight:600}
+.news-terms b{color:var(--strong)}
+.news-terms .news-head{padding:0 0 4px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.news-facts .fact{padding:7px 0;font-size:14px}
+.news-facts .fact strong{font-weight:600}
+.news-facts .fact span a{color:inherit;text-decoration-color:var(--line)}
+.news-more{align-self:flex-start;font-weight:600;color:var(--accent-text)}
+.news-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px}
+.news-good{font-weight:600;color:var(--good)}
+.news-message .news-good a{color:inherit;text-decoration-color:var(--good-line)}
+.news-ban{color:var(--tag-ban-ink)}
+
+.news-widgets{display:grid;grid-template-columns:minmax(0,9fr) minmax(0,10fr);gap:10px;align-items:start;min-width:0}
+.news-widgets>div{min-width:0}
+.news-widgets .card{margin:0 0 10px}
+.news-widgets .card-head{min-height:30px}
+.news-widgets .card-body{padding:6px 12px 8px}
+.news-widgets h3{margin:0 0 3px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.news-widgets .muted{margin:0;font-size:12px}
+.news-widgets .moves li{align-items:center;padding:4px 0;font-size:12px}
+.news-widgets .moves li>span{flex:1 1 auto}
+.news-widgets .moves .danger,.news-widgets .moves .news-ban{font-size:11px;font-weight:400}
+.news-widgets .standings table{table-layout:fixed}
+.news-widgets .standings td:nth-child(2){overflow:hidden;text-overflow:ellipsis}
+.news-widgets .standings tr.own{background:var(--own-row)!important}
+.news-widgets .standings tr.own .club-link{color:var(--accent-text)}
+.news-leaders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;padding:10px 12px 12px!important}
+.news-leaders .moves li{font-size:13px}
+.news-finances{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:10px;padding:12px!important}
+.news-figure{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2)}
+.news-figure span,.news-figure small{font-size:11px;color:var(--muted);white-space:nowrap}
+.news-figure strong{font-family:var(--display);font-stretch:semi-condensed;font-size:26px;font-weight:700;line-height:1.1;color:var(--strong);white-space:nowrap}
+.news-figure.ring{flex-direction:row;align-items:center;justify-content:flex-start;gap:10px}
+.news-figure.ring>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.news-figure.ring strong{font-size:22px}
+.news-ring{position:relative;flex:none;width:56px;height:56px}
+.news-ring svg{display:block;width:56px;height:56px;transform:rotate(-90deg)}
+.news-ring circle{fill:none;stroke:var(--line);stroke-width:8}
+.news-ring circle.value{stroke:var(--good)}
+.news-ring.full circle.value{stroke:var(--bad)}
+.news-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--strong)}
+@media(max-width:1799px){.news{grid-template-columns:340px minmax(0,1fr) 380px}.news-heading{max-width:340px}.news-widgets{grid-template-columns:1fr;gap:0}}
+@media(max-width:1329px){.news{grid-template-columns:320px minmax(0,1fr)}.news-heading{max-width:320px}.news-message{min-height:0}.news-widgets{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+@media(max-width:950px){.news{grid-template-columns:1fr}.news-heading{max-width:none}.news-list{position:static;max-height:420px}.news-widgets{grid-template-columns:1fr;gap:0}}
+
+/* The human club's market under way, over the history of its transfers. */
+.market-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px}
+.market-card h3{margin:0 0 3px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.market-card .muted{margin:0;font-size:12px}

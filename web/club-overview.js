@@ -1,8 +1,8 @@
-import {api,escape as e,number as n,money,season,kitDot,clubLink,playerLink,card,empty,fact,pitch,table,figure,position,levelBadge,nationBadge,facilityRating,safeColor,contrastText,initials} from './ui.js';
+import {api,escape as e,number as n,money,price,date,season,kitDot,clubLink,playerLink,card,empty,fact,pitch,table,figure,position,levelBadge,nationBadge,facilityRating,safeColor,contrastText,initials} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 
 const LISTED_MOVES=3,BEST_PLAYERS=8;
-const shortDate=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
+export const shortDate=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
 const outcomeLabels={V:'Victoire',N:'Match nul',D:'Défaite'};
 
 // A red plane marks an away game (Material Design "flight" icon).
@@ -76,6 +76,23 @@ export async function clubPreview(id){
   +(club.active?`<h3>Matches</h3>${matchList([...[...data.calendar.last].reverse(),...data.calendar.next],club,'Aucun match programmé.')}`:'')
   +finances+players
   +`<div class="preview-actions"><div class="preview-tabs">${tab('squad','Effectif')}${tab('calendar','Calendrier')}${tab('finances','Finances')}${tab('transfers','Transferts')}</div></div></div>`;
+}
+
+// The human club's market under way, above the history of its transfers: the offers awaiting its answer, its own offers
+// with where their talks stand, its transfer list and the loans either way (shown only when there is one).
+export function marketBlock(transfers){
+ const offerButtons=offer=>`<button class="primary" data-command="reponse-offre" data-decision="accepter" data-offer="${e(offer.offre_id)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(offer.offre_id)}">Refuser</button>`;
+ const incoming=transfers.entrantes.flatMap(group=>group.offres.map(offer=>`<li><span>${playerLink(group.joueur_id,group.joueur)}</span><small>${clubLink(offer.acheteur)} · ${monthlySalary(offer.salaire_propose)}</small><b>${money(offer.indemnite)}</b><span class="market-actions">${offerButtons(offer)}</span></li>`));
+ // Talks show where they stand; an older offer still in its auction shows the wage it proposes.
+ const stage=offer=>({indemnite:'Contre-offre en cours',accord_club:`Réponse du joueur le ${date(offer.date_prevue)}`,salaire:'Contrat à négocier',signature:`Arrivée le ${date(offer.date_prevue)}`})[offer.etape]||monthlySalary(offer.salaire_propose);
+ const outgoing=transfers.sortantes.map(offer=>`<li><span>${playerLink(offer.joueur_id,offer.joueur)}</span><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}</small><b>${price(offer.indemnite)}</b>${offer.etape==='salaire'?`<a href="#/player/${offer.joueur_id}">Négocier →</a>`:''}</li>`);
+ const listed=transfers.liste.map(row=>`<li><span>${playerLink(row.joueur_id,row.joueur)}</span><b>${price(row.indemnite)}</b></li>`);
+ const section=(title,items,none)=>`<div><h3>${title} · ${items.length}</h3>${items.length?`<ul class="moves">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}</div>`;
+ const loan=(row,arrow)=>`<li><span>${playerLink(row.joueur_id,row.joueur)}</span><small>${arrow} ${clubLink(row.club)}</small><b>${date(row.fin)}</b></li>`;
+ const loans=[...(transfers.prets||[]).map(row=>loan(row,'→')),...(transfers.emprunts||[]).map(row=>loan(row,'←'))];
+ const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.')+section('Vos offres',outgoing,'Aucune offre en cours.')
+  +section('Liste des transferts',listed,'Aucun joueur sur la liste.')+(loans.length?section('Prêts',loans,''):'');
+ return card('Mercato en cours',`<div class="card-body market-sections">${body}</div>`,'','market-card');
 }
 
 export function clubOverview(club,data){

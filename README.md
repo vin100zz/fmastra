@@ -76,8 +76,9 @@ les données historiques manquantes sont signalées. Les dates de naissance des 
 
 **Continuer** avance jusqu'au prochain jour que suit votre club (sa division, la coupe
 de son pays, les coupes d'Europe, les sélections), montre les prochains matches s'il
-joue, sinon les derniers résultats, puis Mon club. Une offre à traiter l'arrête plus
-tôt, et il ne dépasse jamais une semaine.
+joue, sinon les derniers résultats. Avant d'avancer encore, il ouvre un à un les messages
+non lus d'Actualités, puis ceux qui attendent une réponse (offre reçue, contrat demandé,
+contrat à négocier). Une offre à traiter l'arrête plus tôt, et il ne dépasse jamais une semaine.
 
 Le bouton **▶ Auto** enchaîne les prochaines dates de matchs, championnat et coupe.
 Le mode tourne sur le serveur, pas dans la page : on peut naviguer entre les écrans,

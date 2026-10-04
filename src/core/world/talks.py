@@ -17,7 +17,7 @@ from core.ai.market import asking_price, can_sell, contract_for, wage_demand
 from core.domain.date import Date
 from core.domain.offers import TransferOffer, FEE_TALKS, AGREED_FEE, WAGE_TALKS, SIGNING
 from core.domain.players import Contract, Player
-from core.domain.world import World
+from core.domain.world import NewsLine, World
 from core.randomness import stream
 from .application import apply
 from .events import OffersUpdated
@@ -179,6 +179,15 @@ def others(world: World, player: Player) -> list[TransferOffer]:
     return [offer for offer in world.offers.values() if offer.target_id == world.controlled_club_id and offer.player_id != player.id]
 
 
+def withdraw(world: World, player: Player) -> None:
+    """The human club gives up its talks for a player: nothing is owed, and it may come back to him later. Once his
+    contract is agreed he is on his way: there is nothing left to give up."""
+    talks = talks_for(world, player.id)
+    if talks is None: raise TalksRefused("Aucune négociation en cours pour ce joueur.")
+    if talks.stage == SIGNING: raise TalksRefused("Le contrat est signé : le joueur arrive.")
+    apply(world, OffersUpdated([offer for offer in world.offers.values() if offer.key != talks.key]))
+
+
 def store(world: World, talks: TransferOffer) -> TransferOffer:
     apply(world, OffersUpdated([*(offer for offer in world.offers.values() if offer.key != talks.key), talks]))
     return talks
@@ -195,7 +204,8 @@ def answer_day(world: World, player: Player) -> Date:
 
 
 def open_wage_talks(world: World, talks: TransferOffer, player: Player) -> TransferOffer:
-    record(world, "talks_open", f"{player.name} est prêt à négocier son contrat", talks.target_id, player.id)
+    record(world, "talks_open", f"{player.name} est prêt à négocier son contrat", talks.target_id, player.id,
+           lines=(NewsLine(club_id=talks.source_id, amount=talks.fee),))
     return replace(talks, stage=WAGE_TALKS, due=None, rounds=0, counter=None)
 
 

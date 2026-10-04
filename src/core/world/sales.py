@@ -16,8 +16,9 @@ from core.domain.world import World
 from core.randomness import stream
 from .application import apply
 from .events import OffersUpdated
-from .human import is_human_club, record
-from .market import can_open_offer
+from .human import is_human_club
+from .market import can_open_offer, resolve_accepted_offer
+from .news import answer_offer, offer_received
 from .talks import window_end
 from .transfer_rules import recent_arrival_ids, free_to_move_on
 
@@ -71,6 +72,43 @@ def offer_to_clubs(world: World, player: Player, fee: int) -> list[TransferOffer
                               club.id, bid.contract, fee, fee, score, awaiting_review=True)
         offers.append(offer)
         made.append(offer)
-        record(world, "offer_received", f"{club.name} propose {fee} € pour {player.name}", player.club_id, player.id)
+        offer_received(world, offer)
     apply(world, OffersUpdated(offers))
     return made
+
+
+NO_LONGER = "Cette vente n'est plus possible pour le moment (effectif minimal, gardiens requis…)."
+
+
+def awaiting_offers(world: World, player_id: int) -> list[TransferOffer]:
+    """The offers for a player of the human club that await its answer, the one he prefers first."""
+    return sorted((offer for offer in world.offers.values()
+                   if offer.player_id == player_id and offer.awaiting_review and is_human_club(world, offer.source_id)),
+                  key=lambda offer: (-offer.score, offer.key))
+
+
+def answer(world: World, offer: TransferOffer, accept: bool) -> None:
+    """The human club's answer to one offer: accepted, the player leaves at once and his other offers fall."""
+    if not offer.awaiting_review or not is_human_club(world, offer.source_id): raise SaleRefused("Offre introuvable ou déjà traitée.")
+    if accept:
+        if not resolve_accepted_offer(world, offer): raise SaleRefused(NO_LONGER)
+        remaining = [item for item in world.offers.values() if item.player_id != offer.player_id]
+    else:
+        remaining = [item for item in world.offers.values() if item.key != offer.key]
+    answer_offer(world, offer.key, "accepted" if accept else "refused")
+    apply(world, OffersUpdated(remaining))
+
+
+def answer_all(world: World, player: Player, accept: bool) -> TransferOffer | None:
+    """Every offer awaiting an answer for a player, at once: all refused, or all accepted, and he joins the club he
+    prefers among those the sale is still possible with. Returns the offer he signed, if any."""
+    offers = awaiting_offers(world, player.id)
+    if not offers: raise SaleRefused("Aucune offre n'attend de réponse pour ce joueur.")
+    if not accept:
+        for offer in offers: answer(world, offer, False)
+        return None
+    signed = next((offer for offer in offers if resolve_accepted_offer(world, offer)), None)
+    if signed is None: raise SaleRefused(NO_LONGER)
+    for offer in offers: answer_offer(world, offer.key, "accepted" if offer is signed else "declined")
+    apply(world, OffersUpdated([item for item in world.offers.values() if item.player_id != player.id]))
+    return signed

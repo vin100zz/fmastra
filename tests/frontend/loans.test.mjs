@@ -79,7 +79,7 @@ const detail={...player,id:12,name:'Espoir',club:ref(7,'Lens'),born:'2011-01-01'
 const history={career:{items:[{season:2029,club:ref(9,'Nice'),fee:0,loan:true,competition:'Ligue 1',competition_nation:'FRA',matches:4,substitutes:1,goals:1,assists:0,average:6.9}],totals:{fee:0,matches:4,goals:1,assists:0,average:6.9}},trajectory:[]};
 const idle={etape:null,indemnite:null,salaire:null,contre_offre:null,tours_restants:3,date_prevue:null,obstacle:null};
 const routes=(shown,squadOptions)=>({[`/joueurs/${shown.id}`]:shown,[`/joueurs/${shown.id}/historique`]:history,[`/joueurs/${shown.id}/navigation`]:null,'/monde/etat':{controlled_club_id:7,market:'summer'},
- '/ma-partie/contrats':{items:[]},[`/ma-partie/vente/${shown.id}`]:{prix_liste:null,obstacle_proposition:null,offres:[]},[`/ma-partie/negociation/${shown.id}`]:idle,[`/ma-partie/effectif/${shown.id}`]:squadOptions});
+ [`/ma-partie/contrat/${shown.id}`]:{obstacle:'Le joueur n’attend pas de prolongation.',demande:false,salaire_actuel:1000,fin_contrat_actuelle:'2030-06-30',salaire_propose:null,fin_contrat_proposee:null},[`/ma-partie/vente/${shown.id}`]:{prix_liste:null,obstacle_proposition:null,offres:[]},[`/ma-partie/negociation/${shown.id}`]:idle,[`/ma-partie/effectif/${shown.id}`]:squadOptions});
 const durees=[{cle:'saison',fin:'2030-06-30'},{cle:'demi_saison',fin:'2029-12-31'}];
 
 test('an own player is sent to the reserve and lent to a club that would take him, from his page',async()=>{

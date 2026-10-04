@@ -13,7 +13,8 @@ import tempfile
 from dataclasses import replace
 from pathlib import Path
 
-from core.domain.world import World, history_level, history_month
+from core.domain.world import NewsItem, World, history_level, history_month
+from core.world.news import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
 from core.world.transfer_rules import greed_trait
@@ -25,7 +26,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 25
+SCHEMA_VERSION = 26
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -200,6 +201,7 @@ class SaveStore:
             validate_consistency(world.config)
             if version < 19: _assign_greed(world, self.directory.parent / "data" / "players.csv")
             if version < 24: _rate_positions(world)
+            if version < 26: _upgrade_news(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -295,6 +297,16 @@ def _rate_positions(world: World) -> None:
             ratings[position] = max(ratings[position], round(affinity * 20))
         player.position_ratings = ratings
         player.secondary_positions = secondary_affinities(ratings, player.position)
+
+
+def _upgrade_news(world: World) -> None:
+    """Schema 26: the human club's feed is made of messages with lines, and no longer tells the results of its matches."""
+    world.news = [item if isinstance(item, NewsItem) else
+                  NewsItem(item.date, item.kind, item.text, item.club_id, item.player_id, item.match_id, item.read)
+                  for item in world.news if item.kind != "result"]
+    # A demand left behind by a contract signed since has nothing left to ask: it no longer awaits an answer.
+    world.pending_renewals = {pid: proposal for pid, proposal in world.pending_renewals.items()
+                              if pid in world.players and brings_something(proposal.contract, world.players[pid].contract)}
 
 
 def _upgrade_formations(world: World) -> None:

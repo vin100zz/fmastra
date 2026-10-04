@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 25` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 26` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -129,6 +129,14 @@ réserve), et deux groupes de paramètres reçus par la configuration embarquée
 partie antérieure suit donc les nouvelles règles dès sa reprise : le facteur de jeu devient concave et son plancher suit la
 note d'entraînement du club à la prochaine progression mensuelle, les clubs de l'IA placent des joueurs en réserve à leur
 prochaine revue hebdomadaire et se prêtent des joueurs au prochain mercato. Aucun joueur n'est déplacé au chargement.
+
+La v26 refond le fil d'actualités du club dirigé (`docs/ui.md`, « Actualités ») : `World.news` devient une liste de
+`NewsItem`, un `JournalEntry` portant en plus des lignes (`NewsLine` : joueur, club, compétition, match, montant, date,
+libellé, état, clé). Les messages d'un même jour et d'un même genre n'en font qu'un, et ceux qui attendent une réponse
+(offres reçues, contrat demandé, contrat à négocier) la portent sur leurs lignes. Une sauvegarde antérieure se lit
+telle quelle : ses actualités deviennent des messages d'une phrase, sans ligne, et celles de genre `result` sont
+retirées, le fil ne racontant plus les résultats. Une offre reçue avant la reprise n'attend plus de réponse dans le fil :
+elle reste visible et se traite depuis la fiche du joueur. Aucun paramètre de configuration n'est ajouté.
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

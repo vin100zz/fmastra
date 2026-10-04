@@ -171,11 +171,13 @@ def test_outgoing_offer_and_incoming_offer_response(client):
     assert accepted.status_code == 200
     assert player.club_id == other_club.id
     assert incoming.key not in world.offers
-    assert world.news[-1].kind == "offer_accepted" and world.news[-1].club_id == club_id
+    assert world.news[-1].kind == "transfer" and world.news[-1].club_id == club_id
 
     news = client.get("/api/ma-partie/actualites").json()
-    assert news["items"][0]["kind"] == "offer_accepted"  # most recent first
-    assert all(row["club_id"] == club_id for row in news["items"])
+    assert news["items"][0]["kind"] == "transfer"  # most recent first
+    assert news["items"][0]["title"] == f"{player.name} rejoint {other_club.name}"
+    assert news["items"][0]["segments"] == [{"text": player.name, "ref": {"player": own_player}}, {"text": " rejoint "},
+                                           {"text": other_club.name, "ref": {"club": other_club.id}}]
 
 
 def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
@@ -218,9 +220,11 @@ def test_news_stay_unread_until_opened(client):
     news = client.get("/api/ma-partie/actualites").json()
     assert news["unread"] == 3 and [row["read"] for row in news["items"]] == [False, False, False]
     newest = news["items"][0]
-    assert newest["text"] == "Troisième" and newest["id"] == 2
+    assert newest["title"] == "Troisième" and newest["id"] == 2 and not newest["pending"]
+    assert client.get("/api/monde/etat").json()["news"] == {"unread": 3, "next_unread": 2, "pending": []}
 
-    assert client.post("/api/partie/actualites-lues", json={"ids": [newest["id"]]}).json()["unread"] == 2
+    opened = client.post("/api/partie/actualites-lues", json={"ids": [newest["id"]]}).json()
+    assert opened["unread"] == 2 and opened["news"] == {"unread": 2, "next_unread": 1, "pending": []}
     assert world.news[2].read and not world.news[0].read
     assert client.post("/api/partie/actualites-lues", json={}).json()["unread"] == 0
     assert all(row["read"] for row in client.get("/api/ma-partie/actualites").json()["items"])
@@ -229,8 +233,109 @@ def test_news_stay_unread_until_opened(client):
     record(world, "suspension", "A est suspendu 1 match(s).", club_id)
     record(world, "suspension", "B est suspendu 3 match(s).", club_id)
     record(world, "injury", "C indisponible jusqu'au 2027-05-01.", club_id)
-    assert [row["text"] for row in client.get("/api/ma-partie/actualites").json()["items"][:3]] == [
+    assert [row["title"] for row in client.get("/api/ma-partie/actualites").json()["items"][:3]] == [
         "C indisponible jusqu'au 1er mai", "B est suspendu 3 matchs", "A est suspendu 1 match"]
+    # A page of the feed can be asked for by the message it must show.
+    assert client.get("/api/ma-partie/actualites?taille=2&message=0").json()["page"] == 3
+    assert client.get("/api/ma-partie/actualites/99").status_code == 404
+
+
+def test_messages_tell_their_kind_and_those_awaiting_an_answer_are_answered_from_them(client):
+    from dataclasses import replace
+    from core.domain.offers import RenewalProposal
+    from core.domain.world import NewsLine
+    from core.world import news as feed
+    from core.world.application import apply
+    from core.world.events import RenewalProposed
+    from core.world.human import report
+    world = client.app.state.game.world
+    club, buyer = world.active_clubs()[:2]
+    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    sold, asking, hurt, other = sorted((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)[:4]
+    player = world.players[sold]
+
+    # Two offers for a player the same day: one message, answered offer by offer or all at once.
+    for key, fee in (("first", 4_000_000), ("second", 5_000_000)):
+        offer = TransferOffer(key, world.date, sold, club.id, buyer.id, player.contract, fee, fee, 1, awaiting_review=True)
+        world.offers[key] = offer
+        feed.offer_received(world, offer)
+    state = client.get("/api/monde/etat").json()
+    assert state["controlled_club"]["name"] == club.name
+    assert state["news"] == {"unread": 1, "next_unread": 0, "pending": [0]}
+    message = client.get("/api/ma-partie/actualites/0").json()
+    assert message["title"] == f"2 offres pour {player.name}" and message["pending"]
+    assert message["segments"][1] == {"text": player.name, "ref": {"player": sold}}
+    assert [(offer["key"], offer["fee"], offer["state"]) for offer in message["offers"]["offers"]] == [("second", 5_000_000, "pending"), ("first", 4_000_000, "pending")]
+    assert message["offers"]["value"] > 0 and message["offers"]["offers"][0]["club"]["id"] == buyer.id
+    refused = client.post("/api/partie/reponse-offres", json={"joueur_id": sold, "decision": "refuser"})
+    assert refused.status_code == 200 and refused.json()["club"] is None and not world.offers
+    message = client.get("/api/ma-partie/actualites/0").json()
+    assert [offer["state"] for offer in message["offers"]["offers"]] == ["refused", "refused"] and not message["pending"]
+    assert client.post("/api/partie/reponse-offres", json={"joueur_id": sold, "decision": "accepter"}).status_code == 400
+    assert client.get("/api/monde/etat").json()["news"]["pending"] == []
+
+    # A contract a player asks for, accepted from its message.
+    asker = world.players[asking]
+    asked = replace(asker.contract, weekly_wage=asker.contract.weekly_wage + 100, end=asker.contract.end.add_years(1))
+    apply(world, RenewalProposed(RenewalProposal(asking, club.id, asked, world.date)))
+    message = client.get("/api/ma-partie/actualites/1").json()
+    assert message["title"] == f"{asker.name} veut un nouveau contrat" and message["pending"]
+    assert message["renewal"]["asked"] == {"wage": asked.weekly_wage, "end": asked.end.iso()} and message["renewal"]["state"] == "pending"
+    terms = client.get(f"/api/ma-partie/contrat/{asking}").json()
+    assert terms["demande"] and terms["obstacle"] is None and terms["salaire_propose"] == asked.weekly_wage
+    assert client.post("/api/partie/renouvellement", json={"joueur_id": asking, "decision": "accepter"}).status_code == 200
+    assert asker.contract == asked and client.get("/api/ma-partie/actualites/1").json()["renewal"]["state"] == "accepted"
+    assert client.post("/api/partie/renouvellement", json={"joueur_id": asking, "decision": "accepter"}).status_code == 404
+
+    # Several players in one message, one in its title.
+    back = world.date.add_days(21)
+    report(world, "injury", NewsLine(player_id=hurt, until=back), club.id)
+    assert client.get("/api/ma-partie/actualites/2").json()["title"] == f"{world.players[hurt].name} blessé 3 semaines"
+    report(world, "injury", NewsLine(player_id=other, until=world.date.add_days(3)), club.id)
+    message = client.get("/api/ma-partie/actualites/2").json()
+    assert message["title"] == "2 joueurs blessés" and [row["days"] for row in message["players"]] == [21, 3]
+    assert message["players"][0]["player"] == {"id": hurt, "name": world.players[hurt].name, "gone": False}
+
+    # Contracts running out: the club asks each player for his terms and signs them.
+    late = world.players[other]
+    late.contract = replace(late.contract, end=world.date.add_days(150))
+    report(world, "contract_expiry", NewsLine(player_id=other, amount=late.contract.weekly_wage, until=late.contract.end), club.id, text="6")
+    message = client.get("/api/ma-partie/actualites/3").json()
+    assert message["title"] == f"Le contrat de {late.name} expire dans 6 mois" and message["expiry"]["months"] == 6
+    row = message["expiry"]["players"][0]
+    if row["obstacle"] is None:
+        signed = client.post("/api/partie/prolongation", json={"joueur_id": other})
+        assert signed.status_code == 200 and late.contract.end.iso() == row["terms"]["end"] == signed.json()["fin_contrat"]
+        assert client.get("/api/ma-partie/actualites/3").json()["expiry"]["players"][0].get("settled")
+    assert client.post("/api/partie/prolongation", json={"joueur_id": buyer.player_ids[0]}).status_code == 400
+
+    # The review of the season.
+    feed.season_review(world, club)
+    review = client.get(f"/api/ma-partie/actualites/{len(world.news) - 1}").json()
+    assert review["kind"] == "season_review" and review["title"] == f"Bilan de la saison {world.date.year - 1} / {world.date.year}"
+    league = review["review"]["competitions"][0]
+    assert league["competition"]["id"] == club.competition_id and league["rank"] >= 1 and league["winner"]["id"] in world.competitions[club.competition_id].club_ids
+
+
+def test_talks_are_given_up_from_their_message(client):
+    from core.domain.offers import WAGE_TALKS
+    from core.world.talks import open_wage_talks
+    world = client.app.state.game.world
+    club, seller = world.active_clubs()[:2]
+    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    target = world.players[seller.player_ids[0]]
+    key = f"talks:{club.id}:{target.id}"
+    world.offers[key] = open_wage_talks(world, TransferOffer(key, world.date, target.id, seller.id, club.id, target.contract, 1_000_000, 1_000_000, 0.0), target)
+    assert world.offers[key].stage == WAGE_TALKS
+    message = client.get("/api/ma-partie/actualites/0").json()
+    assert message["pending"] and message["talks"]["state"] == "pending" and message["talks"]["fee"] == 1_000_000
+    assert message["talks"]["club"]["id"] == seller.id and message["talks"]["profile"]["name"] == target.name
+    assert client.get("/api/monde/etat").json()["news"]["pending"] == [0]
+    given_up = client.post("/api/partie/negociation/abandon", json={"joueur_id": target.id})
+    assert given_up.status_code == 200 and given_up.json()["etape"] is None and key not in world.offers
+    message = client.get("/api/ma-partie/actualites/0").json()
+    assert not message["pending"] and message["talks"]["state"] == "closed"
+    assert client.post("/api/partie/negociation/abandon", json={"joueur_id": target.id}).status_code == 400
 
 
 def _play_until_pending(world):

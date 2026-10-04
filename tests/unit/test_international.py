@@ -66,7 +66,8 @@ def test_call_up_reaches_the_human_clubs_news_feed(world):
     prepare_international_day(world)
     camp = next(c for c in world.international.camps.values() if c.nation_id == team.id)
     assert scout.id in camp.player_ids  # only 20 real candidates compete for 23 places
-    assert any(item.kind == "call_up" and item.player_id == scout.id and item.club_id == club.id for item in world.news)
+    called = [line for item in world.news if item.kind == "call_up" and item.club_id == club.id for line in item.lines]
+    assert [(line.player_id, line.text, line.key) for line in called] == [(scout.id, team.name, str(team.id))]
 
 
 def test_qualification_format_and_even_year_cycles(world):

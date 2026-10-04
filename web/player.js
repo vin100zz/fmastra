@@ -125,7 +125,7 @@ const dialogButtons=confirm=>`<div class="actions"><button type="button" data-cl
 
 // Talks for another club's player: the fee with his club, then his wage (straight away for a free agent), each offer
 // answered at once in the dialog, which comes back with the counter-offer. Agreed steps wait a few days in a pill.
-function talksAction(player, state, talks) {
+export function talksAction(player, state, talks) {
  const actions=body=>`<div class="player-actions">${body}</div>`;
  if(talks.etape==='accord_club')return actions(`<span class="pill">Accord avec le club · ${price(talks.indemnite)} · réponse le ${date(talks.date_prevue)}</span>`);
  if(talks.etape==='signature')return actions(`<span class="pill">Arrivée le ${date(talks.date_prevue)} · ${monthlySalary(talks.salaire)} / mois</span>`);
@@ -145,13 +145,18 @@ function talksAction(player, state, talks) {
  return actions(`${pill}<button class="primary" type="button" data-open-dialog="talks-dialog">${label}</button>`)+dialog;
 }
 
-// Contracts are extended on the player's terms: his pending demand is accepted or turned down.
-function contractAction(player, renewal) {
- const button=`<button class="primary" type="button" data-open-dialog="contract-dialog" ${renewal?'':'disabled title="Le joueur n’attend pas de prolongation pour l’instant."'}>Proposer un contrat</button>`;
- if(!renewal)return {pills:'',buttons:button,dialogs:''};
- const terms=`<div class="card-body">${fact('Salaire actuel',`${monthlySalary(renewal.salaire_actuel)} / mois`)}${fact('Salaire demandé',`${monthlySalary(renewal.salaire_propose)} / mois`)}${fact('Fin de contrat actuelle',date(renewal.fin_contrat_actuelle))}${fact('Fin de contrat proposée',date(renewal.fin_contrat_proposee))}</div>`;
- const dialog=`<dialog id="contract-dialog" class="action-dialog"><div><span class="eyebrow">PROLONGATION</span><h2>Nouveau contrat pour ${e(player.name)}</h2><p>Le joueur est prêt à prolonger aux conditions suivantes.</p>${terms}${dialogButtons(`<button data-command="renouvellement" data-decision="refuser" data-player="${player.id}">Refuser</button><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${player.id}">Signer</button>`)}</div></dialog>`;
- return {pills:'<span class="pill">Prolongation en attente</span>',buttons:button,dialogs:dialog};
+// Contracts are extended on the player's terms (`terms`, from /ma-partie/contrat): the ones he asked for, which the club
+// accepts or turns down, or the ones he names when the club asks him. The dialog `id` shows them, ready to sign.
+export function contractDialog(player, terms, id='contract-dialog') {
+ const rows=`<div class="card-body">${fact('Salaire actuel',`${monthlySalary(terms.salaire_actuel)} / mois`)}${fact('Salaire demandé',`${monthlySalary(terms.salaire_propose)} / mois`)}${fact('Fin de contrat actuelle',date(terms.fin_contrat_actuelle))}${fact('Fin de contrat proposée',date(terms.fin_contrat_proposee))}</div>`;
+ const buttons=terms.demande?`<button data-command="renouvellement" data-decision="refuser" data-player="${player.id}">Refuser</button><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${player.id}">Signer</button>`
+  :`<button class="primary" data-command="prolongation" data-player="${player.id}">Signer</button>`;
+ return `<dialog id="${id}" class="action-dialog"><div><span class="eyebrow">PROLONGATION</span><h2>Nouveau contrat pour ${e(player.name)}</h2>${rows}${dialogButtons(buttons)}</div></dialog>`;
+}
+function contractAction(player, terms) {
+ if(terms.obstacle)return {pills:'',buttons:`<button class="primary" type="button" disabled title="${e(terms.obstacle)}">Proposer un contrat</button>`,dialogs:''};
+ return {pills:terms.demande?'<span class="pill">Prolongation en attente</span>':'',
+  buttons:'<button class="primary" type="button" data-open-dialog="contract-dialog">Proposer un contrat</button>',dialogs:contractDialog(player,terms)};
 }
 
 // An own player up for sale: on the transfer list at the fee asked, or offered to every club at once. Both dialogs take
@@ -198,8 +203,8 @@ async function playerActions(player, state) {
  // On loan, to or from the user's club or between two others: nothing to decide before he is back.
  if(player.loan)return actions(`<span class="pill">Prêté ${player.loan.parent?.id===clubId?`à ${e(player.loan.club?.name)}`:`par ${e(player.loan.parent?.name)}`} · retour le ${date(player.loan.end)}</span>`);
  if(player.club?.id===clubId){
-  const [contracts,sale,squad]=await Promise.all([api('/ma-partie/contrats'),api(`/ma-partie/vente/${player.id}`),api(`/ma-partie/effectif/${player.id}`)]);
-  const parts=[saleAction(player,sale),contractAction(player,contracts.items.find(row=>row.joueur_id===player.id)),squadAction(player,squad)];
+  const [contract,sale,squad]=await Promise.all([api(`/ma-partie/contrat/${player.id}`),api(`/ma-partie/vente/${player.id}`),api(`/ma-partie/effectif/${player.id}`)]);
+  const parts=[saleAction(player,sale),contractAction(player,contract),squadAction(player,squad)];
   return actions(`${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}`)+parts.map(part=>part.dialogs).join('');
  }
  const [talks,squad]=await Promise.all([api(`/ma-partie/negociation/${player.id}`),player.club?api(`/ma-partie/effectif/${player.id}`):null]);

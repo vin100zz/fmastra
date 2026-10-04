@@ -2,7 +2,7 @@ import {monthlySalary,monthlyAmount,salarySearchParams} from './salaries.js';
 import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {financialHistory,movementsHistory,seasonsHistory} from './club-history.js';
-import {clubOverview,clubPreview} from './club-overview.js';
+import {clubOverview,clubPreview,marketBlock} from './club-overview.js';
 import {playerPreview} from './player.js';
 import {resetButton} from './filters.js';
 import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,choiceLinks,rangeMenu,choiceSelect} from './listing.js';
@@ -94,7 +94,7 @@ export async function clubScreen(id,section,params){
  if(section==='squad'){const [data,overview]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`)]);content=clubOverview(club,overview)+squadCards(data,params,human);}
  else if(section==='composition'&&human)content=await compositionContent(params,state);
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${params}`); content=card('Calendrier de la saison',fixtures(data,true)+pager(data));}
- else if(section==='transfers'){const data=await api(`/clubs/${id}/transferts?${params}`);content=movementsHistory(data);}
+ else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${params}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market):'')+movementsHistory(data);}
  else if(section==='finances'){const data=await api(`/clubs/${id}/finances?${params}`); content=`<div class="stat-grid">${stat('Budget transferts',money(Math.max(0,data.transfer_budget-data.reserved_transfer_budget)),'Disponible hors offres en cours')}${stat('Solde',money(data.balance),'Trésorerie du club')}${stat('Revenus annuels',money(data.income),'Estimation structurelle')}${stat('Masse salariale',monthlySalary(data.wage_bill),'Par mois (moyenne)')}</div><div class="grid equal">${card('Engagements salariaux',`<div class="card-body">${fact('Masse salariale',monthlySalary(data.wage_bill)+' / mois')}${fact('Plafond',monthlySalary(data.wage_cap)+' / mois')}${fact('Offres en cours',monthlySalary(data.reserved_wages)+' / mois')}<div class="meter"><span style="width:${Math.min(100,100*data.wage_bill/Math.max(1,data.wage_cap))}%"></span></div><p>${Math.round(100*data.wage_bill/Math.max(1,data.wage_cap))}% du plafond utilisé</p></div>`)}${card('Activité de la saison',`<div class="card-body">${fact('Budget réservé aux offres',money(data.reserved_transfer_budget))}${fact('Achats',money(data.season_spent))}${fact('Ventes',money(data.season_sales))}${fact('Balance des transferts',money(data.season_sales-data.season_spent))}</div>`)}</div>`;content+=financialHistory(data.history);}
  else {const data=await api(`/clubs/${id}/historique?${params}`);content=seasonsHistory(data);}
  return title+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+tabs(`#/club/${id}`,menu,section)+content;

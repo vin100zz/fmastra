@@ -615,6 +615,7 @@ def test_settlement_surfaces_offers_for_the_human_seller_instead_of_deciding(con
     pending = world.offers[offer.key]
     assert pending.awaiting_review is True
     assert world.news and world.news[-1].kind == "offer_received" and world.news[-1].club_id == seller.id
+    assert [(line.key, line.club_id, line.amount, line.state) for line in world.news[-1].lines] == [(offer.key, buyer.id, quote, "pending")]
     # A second settlement pass does not re-announce the same offer.
     news_count = len(world.news)
     settle_offers(world, True)
@@ -948,7 +949,7 @@ def test_human_buyer_is_told_when_the_player_refuses_or_prefers_a_rival(config):
     assert world.news[-1].kind == "offer_rejected" and "refuse de rejoindre" in world.news[-1].text
 
 
-def test_offers_still_open_when_the_window_closes_are_reported_as_expired(config):
+def test_offers_still_open_when_the_window_closes_lapse_and_the_buyer_is_told(config):
     from core.world.market import settle_offers
     world, player, seller = sellable_world(config)
     own = world.players[world.clubs[1].player_ids[0]]
@@ -956,4 +957,5 @@ def test_offers_still_open_when_the_window_closes_are_reported_as_expired(config
     world.offers["in"] = TransferOffer("in", world.date, own.id, 1, seller.id, own.contract, 1, 1, 1.0, awaiting_review=True)
     settle_offers(world, False)
     assert not world.offers
-    assert [(entry.kind, entry.player_id) for entry in world.news] == [("offer_expired", own.id), ("offer_expired", player.id)]
+    # The offer the human club made is told as expired; the one it left unanswered simply no longer awaits an answer.
+    assert [(entry.kind, entry.player_id) for entry in world.news] == [("offer_expired", player.id)]

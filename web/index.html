@@ -11,7 +11,8 @@
     <a href="#/" class="brand"><span class="brand-mark">T<span>•</span></span><span>TOUCHLINE<small>FOOTBALL MANAGER LIGHT</small></span></a>
     <nav aria-label="Navigation principale">
       <p class="nav-label">VOTRE CLUB</p>
-      <a href="#/mon-club" data-nav="mon-club"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></span>Mon club</a>
+      <a href="#/actualites" data-nav="actualites"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6h17v12h-17zM3.5 7l8.5 6.5L20.5 7"/></svg></span>Actualités<b id="news-count" class="nav-count" hidden></b></a>
+      <a id="own-club" href="#/clubs" data-nav="own-club" hidden></a>
       <p class="nav-label">LE MONDE DU FOOTBALL</p>
       <a href="#/" data-nav="home"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 10h17M10 10v10"/></svg></span>Vue d’ensemble</a>
       <a href="#/clubs" data-nav="clubs"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20 6v6c0 5-3.5 8.5-8 9.5-4.5-1-8-4.5-8-9.5V6z"/></svg></span>Clubs</a>
@@ -28,7 +29,7 @@
   <div class="workspace">
     <header class="topbar"><div class="date-block"><span class="eyebrow" id="season-label">VOTRE UNIVERS FOOTBALL</span><strong id="game-date">Bienvenue sur le banc de touche</strong></div>
       <div id="job-bar" class="job-bar" hidden><span id="job-label">Simulation en cours…</span><progress id="job-progress" max="1" value="0"></progress></div>
-      <div class="time-controls"><span id="market-badge" class="pill"></span><div id="next-matches" class="next-matches"></div><button id="simulate" type="button" hidden>Simuler</button><button class="primary" id="advance">Continuer <span>→</span></button></div>
+      <div class="time-controls"><span id="market-badge" class="pill"></span><div id="next-matches" class="next-matches"></div><button id="simulate" type="button" hidden>Simuler</button><span class="advance-group"><button id="advance-todo" class="advance-todo" type="button" aria-label="Ouvrir le prochain message à traiter" hidden></button><button class="primary" id="advance">Continuer <span>→</span></button></span></div>
     </header>
     <main id="main" tabindex="-1"><div class="loading">Chargement de votre univers…</div></main>
   </div>

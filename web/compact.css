@@ -52,23 +52,8 @@ span.entity-step{background:var(--paper);color:#c3cdc7;cursor:default}
 .attribute.key>span:first-child{font-weight:700}.attribute.key>span:first-child:after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--green);vertical-align:middle}
 .attribute-others summary{cursor:pointer;font-size:11px;color:var(--muted)}
 
-/* Mon club: the inbox in a left column, the club's widgets on the rest of the screen. */
-.my-club{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:12px;align-items:start}
-.my-club>.inbox{margin:0;position:sticky;top:110px;max-height:calc(100vh - 130px);display:flex;flex-direction:column}
-.inbox .card-head{padding:9px 12px}.inbox .card-head h2{font-size:13px}.inbox-read-all{padding:4px 8px;font-size:10px;white-space:nowrap}
-.inbox-list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}.inbox .pager{padding:8px 12px}
-.inbox-item{display:block;width:100%;text-align:left;padding:8px 12px 8px 14px;border:0;border-bottom:1px solid #edf0eb;border-radius:0;background:none;font-weight:400;position:relative;color:var(--muted)}
-.inbox-item:hover{background:#f8fbf6}
-.inbox-item.unread{background:#f1f7ea;color:var(--ink)}.inbox-item.unread:before{content:"";position:absolute;left:5px;top:13px;width:5px;height:5px;border-radius:50%;background:var(--green)}
-.inbox-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px}.inbox-meta b{font-weight:600;letter-spacing:.3px;text-transform:uppercase;font-size:9px}.inbox-item.unread .inbox-meta b{color:var(--green)}
-.inbox-meta small{color:var(--muted);white-space:nowrap}.inbox-text{display:block;font-size:11px;line-height:1.45;margin-top:2px}.inbox-item.unread .inbox-text{font-weight:650}
-.my-club-widgets{grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
-.my-club-widgets .lineup-card{grid-row:span 2}.my-club-widgets .standings-card .standings-scroll{max-height:300px}.my-club-widgets .standings-card table{font-size:11px}.my-club-widgets .standings-card th,.my-club-widgets .standings-card td{padding:5px 8px}
 .standings-card tr:has(.own){background:#fff6d6}.standings-card .own{font-weight:800}
 .market-card .moves{max-height:190px;overflow-y:auto}.market-card .moves li,.action-dialog .moves li{flex-wrap:wrap}.market-card .moves li>a{font-size:10px;color:var(--green);white-space:nowrap}.market-actions{display:flex;gap:4px;width:100%;justify-content:flex-end}.market-actions button{padding:3px 8px;font-size:10px}
-@media(max-width:1329px){.my-club-widgets{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:950px){.my-club{grid-template-columns:1fr}.my-club>.inbox{position:static;max-height:420px}}
-@media(max-width:650px){.my-club-widgets{grid-template-columns:1fr}.my-club-widgets .lineup-card{grid-row:auto}}
 
 /* Player page actions (offer, contract), stacked at the foot of the rail, and their dialogs. */
 .player-actions{display:flex;flex-direction:column;gap:6px}
