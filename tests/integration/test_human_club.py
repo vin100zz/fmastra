@@ -190,7 +190,8 @@ def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
 
     listed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": 2_000_000})
     assert listed.status_code == 200 and listed.json()["prix_liste"] == 2_000_000
-    assert client.get("/api/ma-partie/transferts").json()["liste"] == [{"joueur_id": own_player, "joueur": world.players[own_player].name, "indemnite": 2_000_000}]
+    assert client.get("/api/ma-partie/transferts").json()["liste"] == [{"joueur_id": own_player, "joueur": world.players[own_player].name,
+                                                                    "poste": world.players[own_player].position.value, "indemnite": 2_000_000}]
     refused = client.post("/api/partie/liste-transferts", json={"joueur_id": other_player, "indemnite": 1})
     assert refused.status_code == 400 and refused.json()["detail"] == "Ce joueur n'est pas dans votre effectif."
 
