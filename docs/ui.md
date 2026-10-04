@@ -18,8 +18,8 @@ issus de la synthèse sont signalés comme estimés.
 ## Principes
 
 **Une charte graphique.** L'apparence est fixée par `docs/charte-graphique.md` :
-couleurs, typographie, mesures, composants, terrain et maillot, écriture des
-nombres, des montants, des classements et des compétitions. Ce document-ci dit ce
+couleurs, typographie, mesures, composants, terrain et maillot, graphiques,
+écriture des nombres, des montants, des classements et des compétitions. Ce document-ci dit ce
 que chaque écran montre. Là où il parle d'apparence et où la charte dit autre
 chose, la charte fait foi : l'écran est à aligner (section « Migration » de la
 charte), et un besoin qu'elle ne couvre pas s'y ajoute avant de se coder.

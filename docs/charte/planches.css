@@ -36,3 +36,7 @@ body{margin:0;background:var(--bg)}
 .t-short .tr{grid-template-columns:20px minmax(0,1fr) 36px 24px 44px}
 .families{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 32px}
 .comp-row{display:flex;align-items:center;gap:8px;height:var(--h-row);border-bottom:1px solid var(--row-line)}
+.t-colours .tr{grid-template-columns:minmax(0,1fr) 84px 88px minmax(0,1.7fr)}
+.swatch{display:block;flex:none;width:14px;height:14px;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #0a141e1f}
+.bar-sample{display:block;width:72px;height:8px;border-radius:4px}
+.column{display:flex;flex-direction:column;gap:32px;min-width:0}

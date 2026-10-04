@@ -30,7 +30,7 @@
 
 .app{position:relative;font:400 var(--fs-body)/18px var(--text);color:var(--ink);background:var(--bg);font-variant-numeric:tabular-nums}
 .app :is(h1,h2,h3,p,ul){margin:0;padding:0}
-.app a{color:inherit;text-decoration:none}
+:where(.app) a{color:inherit;text-decoration:none}
 .app button,.app select,.app input{font:inherit;color:inherit}
 .app svg{flex:none}
 
@@ -204,7 +204,7 @@
 .tooltip>span b{color:#fff}
 .crest{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font:700 semi-condensed var(--fs-small)/1 var(--display)}
 .crest.large{width:64px;height:64px;border:3px solid #fff;box-shadow:0 1px 4px #0a141e38;font-size:var(--fs-title)}
-.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
+svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .gauge{display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 .gauge>i{display:block;height:100%;background:var(--good)}
 .gauge.warn>i{background:var(--accent)}.gauge.bad>i{background:var(--bad)}
@@ -212,6 +212,7 @@
 .ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke:var(--line);stroke-width:6}
 .ring circle.value{stroke:var(--good);stroke-linecap:round}
+.ring.full circle.value{stroke:var(--bad)}
 .ring b{position:relative;font:700 var(--fs-small)/1 var(--text);color:var(--strong)}
 /* What happened to a player in a match. */
 .marks{display:inline-flex;align-items:center;gap:3px}
@@ -292,12 +293,21 @@
 .highlight>div{display:flex;flex-direction:column;line-height:16px}
 .highlight.away>div{align-items:flex-end}
 .minute{font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--accent-text)}
-.comparison{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;align-items:center;column-gap:var(--s3);height:36px;padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
-.comparison>strong{font-weight:600;color:var(--strong)}
-.comparison>strong:last-child{text-align:right}
-.comparison-center{display:flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-small);line-height:14px;color:var(--muted)}
-.comparison-bar{display:flex;width:100%;height:4px;border-radius:2px;overflow:hidden}
-.comparison-bar span{display:block;height:100%}
+/* Two sides compared: the figures at the ends, the label over one bar shared between them. Each part is its side's share
+   of the two figures, with a gap of the surface between the parts; nothing on either side leaves the bar empty (.none).
+   The larger figure is the strong one. A part takes its colour from its own `color`: the club's, brought into the band
+   where a mark reads on the surface (docs/charte-graphique.md, « Graphiques »). */
+.comparisons{padding:var(--s1) 0}
+.comparison{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;column-gap:var(--s3);height:36px;padding:0 var(--s3)}
+.comparison>span{color:var(--muted)}
+.comparison>span:last-child{text-align:right}
+.comparison>span.lead{font-weight:600;color:var(--strong)}
+.comparison>div{display:flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-small);line-height:14px;color:var(--ink-2)}
+.comparison-bar{display:flex;gap:2px;width:100%;height:8px}
+.comparison-bar>i{display:block;flex:0 1 0;min-width:0;height:100%;background:currentColor}
+.comparison-bar>i:first-child{border-radius:4px 0 0 4px}
+.comparison-bar>i:last-child{border-radius:0 4px 4px 0}
+.comparison-bar.none>i{background:var(--panel-3)}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

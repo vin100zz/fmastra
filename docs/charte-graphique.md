@@ -105,7 +105,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Fait, tuile | `.fact`, `.tile` | Libellé atténué, valeur forte |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count` | 18 de haut |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
-| Jauge, anneau | `.gauge`, `.ring` | Barre de 4 ; anneau pour une part d'un plafond |
+| Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 
@@ -135,6 +135,55 @@ Un seul terrain et un seul joueur, sur tous les écrans.
 | Direct · tactique | Debout | Note du match | Faits du match |
 | Joueur · aptitudes | Debout | Note au poste, sur 200 | Affinité |
 | Effectif, Actualités · dernier onze | Couché | — | — |
+
+## Graphiques
+
+Un texte n'est jamais dans la couleur de ce qu'il mesure : chiffres et libellés
+gardent les encres, la couleur reste à la barre.
+
+### Deux camps comparés
+
+`.comparison` : les statistiques d'un match, face à face.
+
+- Une ligne de 36 par statistique : le chiffre de chaque camp aux extrémités, le
+  libellé (11 / 14) au-dessus d'une seule barre partagée entre les deux.
+- La barre a 8 de haut et des bouts arrondis de 4. Chaque part vaut la part de son
+  camp dans le total des deux chiffres ; 2 de fond les séparent.
+- Rien de part et d'autre (0 – 0) laisse la barre vide, en `--panel-3`.
+- Le plus grand des deux chiffres est en gras, l'autre atténué ; à égalité, les
+  deux sont atténués.
+- Au-dessus des lignes, chaque camp est nommé de son côté, après sa pastille.
+
+### La couleur d'un club dans un graphique
+
+Une couleur de club ne se pose pas telle quelle sur le fond : un blanc y
+disparaît, un bleu nuit s'y lit comme du noir. La couleur d'un camp se calcule :
+
+1. Des deux couleurs du club, la première puis la seconde, ne garder que celles
+   qui en sont une (saturation d'au moins 0.04 en OKLCH) : ni blanc, ni gris, ni
+   noir.
+2. Ramener sa clarté entre 0.48 et 0.64 (OKLCH) et sa saturation à 0.11 au moins :
+   une couleur pâle fonce, une couleur sombre s'éclaircit.
+3. Le club qui reçoit prend sa première couleur ainsi obtenue. Le visiteur prend
+   la première des siennes qui s'en écarte d'au moins 15 (distance OKLab × 100).
+4. Sans couleur, ou sans couleur assez distincte, un camp prend le gris `--ink-2`
+   (`--muted` si l'autre camp a déjà ce gris).
+
+| Club | Couleurs | Dans un graphique |
+|---|---|---|
+| Monaco | `#e2001a`, `#ffffff` | `#e2001a`, inchangée |
+| Marseille | `#ffffff`, `#2faee0` | `#0099ca` : la seconde, foncée |
+| Paris SG | `#004170`, `#da291c` | `#206198` : la première, éclaircie |
+| Nice | `#1a1a1a`, `#d2122e` | `#d2122e` : la seconde |
+| Lille, à Monaco | `#e01e13`, `#20325f` | `#405a9b` : la seconde, la première étant trop proche du rouge de Monaco |
+| Juventus | `#ffffff`, `#111111` | `--ink-2` |
+
+### Jauge, anneau
+
+- **Jauge** (`.gauge`) : 40 × 4, à côté d'un chiffre (condition, fatigue, part
+  d'un plafond) ; verte, jaune (`.warn`) ou rouge (`.bad`).
+- **Anneau** (`.ring`) : 56, la part d'un plafond écrite en son centre ; rouge à
+  partir de 95 % (`.ring.full`).
 
 ## Conventions d'écriture
 
@@ -222,6 +271,7 @@ aligner :
 | Nombres | Virgule décimale (`number`, `money`, `price` de `web/ui.js`) ; note moyenne à un chiffre | Point décimal ; moyenne à deux chiffres |
 | Classements | Places en fonds colorés sur certains écrans, ordre des colonnes variable | Trait à gauche du rang, ordre fixe |
 | En-tête de club | Bandeau de 148, nom en 54 | Bandeau de 88, nom en 40 |
+| Le match en chiffres | Barres fines aux couleurs brutes des clubs : une couleur blanche disparaît sur le fond (`barColors`, `web/match.js`) | `.comparison`, couleurs calculées |
 | Clubs, pays | À vérifier écran par écran | Nom toujours précédé de la pastille ou du drapeau |
 | Fond | Gris (`#eef1f5`) en thème clair | Blanc |
 

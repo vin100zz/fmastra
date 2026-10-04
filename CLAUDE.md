@@ -6,10 +6,10 @@ Le projet est décrit dans `README.md` ; les principes de l'interface sont dans
 ## Charte graphique
 
 `docs/charte-graphique.md` est la référence de l'apparence : couleurs,
-typographie, mesures, composants, terrain et maillot, écriture des nombres. Sa
-feuille `docs/charte/charte.css` fait foi pour les valeurs ; ses planches
-(`docs/charte/index.html`) les montrent. La lire avant toute maquette et tout
-travail sur un écran.
+typographie, mesures, composants, terrain et maillot, graphiques, écriture des
+nombres. Sa feuille `docs/charte/charte.css` fait foi pour les valeurs ; ses
+planches (`docs/charte/index.html`) les montrent. La lire avant toute maquette
+et tout travail sur un écran.
 
 - **Toute maquette et tout développement d'interface s'y conforment** : ses
   jetons et ses composants, aucune valeur écrite en dur hors de ses échelles, ses
