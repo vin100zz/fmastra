@@ -1,5 +1,5 @@
-import {monthlySalary,monthlyAmount} from './salaries.js';
-import {calendarBlock,shortDate} from './club-overview.js';
+import {monthlySalary} from './salaries.js';
+import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
 import {api,escape as e,number as n,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,moraleReading,standingsTable,roundTitle} from './ui.js';
 
@@ -150,14 +150,6 @@ function leadersBlock(club,squad){
  const list=(title,items)=>`<div><h3>${title}</h3>${items?`<ul class="moves">${items}</ul>`:'<p class="muted">—</p>'}</div>`;
  return card('Joueurs',`<div class="card-body news-leaders">${list('Buts',top('goals'))}${list('Passes',top('assists'))}${list('Notes',top('average',played.filter(player=>player.appearances*2>=most)))}${list('Matches',top('appearances'))}</div>`,
   `<a href="#/club/${club.id}" aria-label="Voir l’effectif">Voir →</a>`);
-}
-
-// What is left to spend on transfers, and the wage bill as a ring filled to its share of the cap.
-function financesBlock(club,data){
- const budget=Math.max(0,data.transfer_budget-data.reserved_transfer_budget),used=Math.round(100*data.wage_bill/Math.max(1,data.wage_cap));
- const ring=`<span class="news-ring${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(Math.min(100,used)*1.6336).toFixed(1)} 163.4"/></svg><b>${used} %</b></span>`;
- return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong></div><div class="news-figure ring">${ring}<div><span>Masse salariale</span><strong>${money(monthlyAmount(data.wage_bill))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))} / mois</small></div></div></div>`,
-  `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
 }
 
 // Actualités: the feed on the left, the message opened in the middle (`msg`, marked as read by the page before it is drawn),

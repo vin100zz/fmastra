@@ -1,4 +1,5 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,KIT_SVG,kitStyle,clubLink,form,date,safeColor} from './ui.js';
+import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
@@ -168,7 +169,10 @@ function slotHtml(id,role,cell,index,byId){
  const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}${index===editor.picked?' picked':''}`;
  const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
  const note=player?positionNote(player,role,wantedAt(role)):'',side=noteSide(shape(),cell);
- return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}"><span class="shirt">${e(role)}${player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''}</span>${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
+ // A starter wears the club's kit; an empty place keeps the outline of a shirt.
+ const kit=player?kitStyle(editor.data.club?.major_color,editor.data.club?.minor_color):'';
+ const shirt=kit?`<span class="shirt kit" style="${kit}">${KIT_SVG}<b>${e(role)}</b>`:`<span class="shirt">${e(role)}`;
+ return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''}</span>${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
 }
 // The free cells of the grid, shown while a place of the pitch is dragged.
 function cellsHtml(){
@@ -223,17 +227,36 @@ function squadHtml(byId){
  return `<div class="table-scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
+// What the club knows of its opponent: its standing and form, the tactic it plays, its record where it plays this match, its best
+// players, those who cannot play, and the latest meeting of the two clubs.
+export function scoutingHtml(scout){
+ if(!scout)return '';
+ const {club,match,standing,record}=scout;
+ const major=safeColor(club.major_color)||'#8a9193',minor=safeColor(club.minor_color)||major;
+ const crest=`<span class="crest mini-crest" style="background:linear-gradient(155deg,${major} 55%,${minor} 55%)"><img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></span>`;
+ const person=player=>`<li>${position(player.position)}<a href="#/player/${player.id}">${e(player.name)}</a>${levelBadge(player.rating)}</li>`;
+ const out=player=>`<li>${player.injured_until?`<span class="status danger" title="Retour le ${e(date(player.injured_until))}">✚ ${e(shortDate(player.injured_until))}</span>`:`<span class="status ban">${player.suspension} match${player.suspension>1?'s':''}</span>`}<a href="#/player/${player.id}">${e(player.name)}</a></li>`;
+ const last=scout.last_meeting;
+ const meeting=last?`<a class="scout-meeting" href="#/match/${last.id}"><span>${e(last.round_label)} · ${e(last.home.name)} – ${e(last.away.name)}</span><span class="club-match-score ${last.outcome}" title="${outcomeLabels[last.outcome]}">${last.score.join(' – ')}</span></a>`:'';
+ return `<aside class="card scout-card" aria-label="Adversaire"><div class="card-head"><h2>Adversaire</h2></div><div class="card-body">`
+  +`<div class="scout-club">${crest}<div>${clubLink(club)}<small>${e(match.round_label)} · ${e(shortDate(match.date))} · ${scout.home?'Domicile':'Extérieur'}</small>${standing?`<span class="scout-standing">${standing.rank}${standing.rank===1?'er':'e'} · ${standing.points} pts ${form(standing.form)}</span>`:''}</div></div>`
+  +`<div class="scout-facts"><div><span>Tactique</span><strong>${e(club.formation||'—')}</strong></div><div><span>${record.venue==='away'?'À l’extérieur':'À domicile'}</span><strong>${record.won} V · ${record.drawn} N · ${record.lost} D</strong></div></div>`
+  +(scout.key_players.length?`<h3>Joueurs clés</h3><ul class="scout-players">${scout.key_players.map(person).join('')}</ul>`:'')
+  +(scout.absent.length?`<h3>Absents</h3><ul class="scout-players absent">${scout.absent.map(out).join('')}</ul>`:'')
+  +meeting+'</div></aside>';
+}
+
 function editorHtml(){
  const byId=new Map(editor.data.players.map(player=>[player.id,player]));
  const current=roles(),cells=shape(),problems=lineupProblems(editor,current,editor.data.players);
  const tactics=Object.keys(editor.tactics).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
- // The first problem is spelled out in the toolbar, the others counted; all of them in the tooltip.
+ // The first problem is spelled out over the list, the others counted; all of them in the tooltip.
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
  const views=[['infos','Infos'],['jeu','Jeu']].map(([key,label])=>`<button type="button" data-lineup-view="${key}" aria-pressed="${key===squadView}" class="${key===squadView?'active':''}">${label}</button>`).join('');
- return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div>${status}<div class="segmented" role="group" aria-label="Colonnes">${views}</div><button type="button" data-lineup-suggest>Meilleure composition</button></div>
-<div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
-<h3>Remplaçants</h3><div class="lineup-bench">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
-<div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>`;
+ const scout=scoutingHtml(editor.data.scouting);
+ return `<div class="lineup-layout${scout?' with-scout':''}"><div class="lineup-field"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
+<h3>Remplaçants</h3><div class="lineup-bench" style="--bench:${editor.bench.length}">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
+<div class="lineup-list"><div class="lineup-toolbar">${status}<button type="button" data-lineup-suggest>Meilleure composition</button><div class="segmented" role="group" aria-label="Colonnes">${views}</div></div><div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>${scout}</div>`;
 }
 
 function refresh(){

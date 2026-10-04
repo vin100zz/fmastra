@@ -119,8 +119,8 @@ test('the pitch shows each starter\'s note at his position beside the shirt, and
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
   assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="shirt">GB<\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141</);
   assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="shirt">MDC<i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><span class="position-note"><span[^>]*>73</);
-  // The list switches between its infos and the composites, beside the suggestion.
-  assert.match(html,/<button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><button type="button" data-lineup-suggest>/);
+  // The list switches between its infos and the composites, beside the suggestion, over the list.
+  assert.match(html,/<div class="lineup-list"><div class="lineup-toolbar"><button type="button" data-lineup-suggest>Meilleure composition<\/button><div class="segmented" role="group" aria-label="Colonnes"><button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><\/div><div class="lineup-squad"/);
  }finally{globalThis.fetch=previous;}
 });
 
@@ -199,4 +199,45 @@ test('the lineup shows form: an arrow on the shirt from ±5 %, the same beside t
   assert.match(html,/data-lineup-sort="form">FORME</);
   assert.match(html,/<td><span class="rating graded form-badge" style="--hue:120"[^>]*>\+11 %</);
  }finally{globalThis.fetch=previous;}
+});
+
+test('the tactics stand over the pitch and the substitutes on one line; starters wear the club kit, sleeves in its second colour',async()=>{
+ const player=(id,position,extra={})=>({id,name:`Joueur ${id}`,position,rating:65,potential:80,fitness:1,appearances:0,goals:0,assists:0,average:null,unavailable:null,...extra});
+ const data={match_id:14,home:true,opponent:null,bench_size:9,formations:{'4-3-3':F433,'4-4-2 plat':F442},club:{id:7,name:'Lens',major_color:'#F8D000',minor_color:'#E00000'},
+  players:[player(1,'GB'),player(2,'DC')],default:{formation:'4-3-3',titulaires:[[1,'GB']],banc:[2]},suggestions:{}};
+ const previous=globalThis.fetch;
+ globalThis.fetch=async()=>({ok:true,json:async()=>data});
+ try{
+  const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
+  assert.match(html,/<div class="lineup-field"><div class="tactics" role="group" aria-label="Tactique"><button type="button" data-tactic="4-3-3"[^]*?<\/div><div class="pitch lineup-pitch"/);
+  assert.match(html,/<div class="lineup-bench" style="--bench:9">/);
+  assert.equal((html.match(/class="bench-slot/g)||[]).length,9);
+  // The keeper wears the kit with his position on it; an empty place keeps the outline of a shirt.
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="shirt kit" style="--kit-body:#F8D000;--kit-sleeves:#E00000;--kit-ink:#1c2b22"><svg class="kit-drawing"[^]*?<\/svg><b>GB<\/b><\/span>/);
+  assert.match(html,/data-slot="1"[^>]*><span class="shirt">DG<\/span>/);
+  // Without a match there is no opponent to show.
+  assert.doesNotMatch(html,/scout-card|with-scout/);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('beside the list, the opponent: its standing and form, its tactic, its record where it plays, its best players, those out and the last meeting',async()=>{
+ const {scoutingHtml}=await import('../../web/composition.js');
+ const club={id:9,name:'Lorient <FC>',major_color:'#F84000',minor_color:'#080808',formation:'3-5-2'};
+ const scout={match:{id:50,date:'2031-01-18',round_label:'Journée 19',competition:'Ligue 1'},home:true,club,standing:{rank:14,points:19,form:'NDDVN'},
+  record:{venue:'away',won:1,drawn:3,lost:5},key_players:[{id:61,name:'Bamba Dieng',position:'BU',rating:70.5,injured_until:null,suspension:0}],
+  absent:[{id:62,name:'Théo Le Bris',position:'MC',rating:66,injured_until:'2031-02-01',suspension:0},{id:63,name:'Igor Silva',position:'DC',rating:64,injured_until:null,suspension:1}],
+  last_meeting:{id:40,round_label:'Journée 2',home:{id:9,name:'Lorient'},away:{id:7,name:'Lens'},score:[1,1],outcome:'N'}};
+ const html=scoutingHtml(scout);
+ assert.match(html,/<aside class="card scout-card" aria-label="Adversaire"><div class="card-head"><h2>Adversaire<\/h2>/);
+ assert.match(html,/Lorient &lt;FC&gt;/);assert.doesNotMatch(html,/<FC>/);
+ assert.match(html,/Journée 19 · 18 janv\. · Domicile/);
+ assert.match(html,/14e · 19 pts <span class="form"><i class="N">N<\/i>/);
+ assert.match(html,/<span>Tactique<\/span><strong>3-5-2<\/strong>/);
+ assert.match(html,/<span>À l’extérieur<\/span><strong>1 V · 3 N · 5 D<\/strong>/);
+ assert.match(html,/<h3>Joueurs clés<\/h3>.*Bamba Dieng/);
+ assert.match(html,/✚ 1 févr\.<\/span><a href="#\/player\/62">Théo Le Bris/);assert.match(html,/1 match<\/span><a href="#\/player\/63">Igor Silva/);
+ assert.match(html,/href="#\/match\/40"><span>Journée 2 · Lorient – Lens<\/span><span class="club-match-score N"/);
+ assert.equal(scoutingHtml(null),'');
+ const quiet=scoutingHtml({...scout,standing:null,absent:[],key_players:[],last_meeting:null,home:false,record:{venue:'home',won:0,drawn:0,lost:0}});
+ assert.match(quiet,/Extérieur/);assert.match(quiet,/À domicile/);assert.doesNotMatch(quiet,/Absents|Joueurs clés|scout-meeting|pts/);
 });

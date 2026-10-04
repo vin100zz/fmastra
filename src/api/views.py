@@ -373,9 +373,13 @@ def club_detail(world: World, club_id: int, standings: dict | None = None, reser
     club = world.clubs[club_id]
     standing = league_standings(world, club.competition_id, standings).get(club.id)
     if reserved is None: reserved = reserved_budgets(world)
+    held = dict(world.reputation_history.get(club.id, []))
     return {"id": club.id, "name": club.name, "nation_code": club.nation, "nation": world.nation_names.get(club.nation, club.nation),
             "competition_id": club.competition_id, "competition": world.competitions[club.competition_id].name if club.competition_id else None,
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
+            # How far the review that opened the season moved it; None before a second season.
+            "reputation_change": round(held[world.season] - held[world.season - 1], 1)
+                                 if world.season in held and world.season - 1 in held else None,
             "academy": round(club.academy, 1), "training_facilities": club.training_facilities,
             "youth_recruitment": club.youth_recruitment,
             "formation": club.formation, "squad_size": len(club.player_ids), **squad_strength(world, club_id), "standing": standing,

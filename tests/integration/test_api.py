@@ -579,17 +579,103 @@ def test_club_overview_summarises_calendar_finances_transfers_and_last_lineup(pl
     finances = played.get(f"/api/clubs/{club.id}/finances").json()
     assert overview["finances"] == {key: finances[key] for key in overview["finances"]}
     assert {"transfer_budget", "reserved_transfer_budget", "wage_bill", "wage_cap"} <= overview["finances"].keys()
-    movements = played.get(f"/api/clubs/{club.id}/transferts").json()["sections"]
-    assert overview["transfers"]["season"] == world.season
-    for side in ("arrivals", "departures"):
-        assert overview["transfers"][side]["count"] == len(movements[side])
-        assert overview["transfers"][side]["items"] == movements[side][:len(overview["transfers"][side]["items"])]
-    assert overview["transfers"]["others"] == {kind: len(movements[kind]) for kind in ("academy", "release", "retirement")}
+    # The transfers have their own tab; the landing view no longer summarises them.
+    assert set(overview) == {"calendar", "finances", "lineup"}
     lineup = overview["lineup"]
     assert lineup["match"]["id"] == last[0]["id"] and len(lineup["players"]) == 11
     detail = played.get(f"/api/matches/{lineup['match']['id']}").json()["result"]
     assert lineup["players"] == detail[f"{lineup['side']}_lineup"]
     assert played.get("/api/clubs/999999999/apercu").status_code == 404
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_club_calendar_lists_the_whole_season_with_scorers_outcomes_and_a_record_per_competition(played):
+    world = played.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club = next(iter(world.active_clubs()))
+    data = played.get(f"/api/clubs/{club.id}/calendrier").json()
+    season = [match for match in world.matches.values() if match.season == world.season and club.id in (match.home_id, match.away_id)]
+    assert data["total"] == len(data["items"]) == len(season)
+    assert [row["date"] for row in data["items"]] == sorted(row["date"] for row in data["items"])
+    for row in data["items"]:
+        if row["score"] is None:
+            assert row["scorers"] is None and row["outcome"] is None
+        else:
+            home = row["home"]["id"] == club.id
+            goals, conceded = row["score"] if home else row["score"][::-1]
+            assert row["outcome"] in "VND" and [sum(len(scorer["minutes"]) for scorer in side) for side in row["scorers"]] == row["score"]
+            if not row["penalties"]: assert row["outcome"] == ("V" if goals > conceded else "D" if goals < conceded else "N")
+    league = next(row for row in data["competitions"] if row["kind"] == "league")
+    assert data["competitions"][0] is not None and data["competitions"][0]["kind"] == "league"
+    played_league = [row for row in data["items"] if row["competition_id"] == league["id"] and row["score"]]
+    assert league["played"] == len(played_league) == league["won"] + league["drawn"] + league["lost"]
+    assert league["won"] == sum(row["outcome"] == "V" for row in played_league)
+    assert league["goals_for"] == sum(row["score"][0] if row["home"]["id"] == club.id else row["score"][1] for row in played_league)
+    rank = next(row["rank"] for row in v.table(world, league["id"]) if row["club_id"] == club.id)
+    assert league["place"] == f"{rank}{'er' if rank == 1 else 'e'}"
+    assert all(row["place"] for row in data["competitions"])
+    assert played.get("/api/clubs/999999999/calendrier").status_code == 404
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_club_finances_give_the_cash_at_the_end_of_each_month(played):
+    world = played.app.state.game.world
+    club = next(iter(world.active_clubs()))
+    history = played.get(f"/api/clubs/{club.id}/finances").json()["history"]
+    assert history["available"] and history["months"]
+    assert [month["date"] for month in history["months"]] == sorted(month["date"] for month in history["months"])
+    balance = history["opening_balance"]
+    for month in history["months"]:
+        balance += month["revenue"] - month["expenses"]
+        assert month["balance"] == balance
+    assert history["months"][-1]["balance"] == history["closing_balance"]
+    assert sum(month["revenue"] for month in history["months"]) == history["revenue"]
+    assert sum(month["expenses"] for month in history["months"]) == history["expenses"]
+
+
+def test_club_history_tells_its_honours_and_the_shape_of_its_league(played):
+    world = played.app.state.game.world
+    club = next(iter(world.active_clubs()))
+    data = played.get(f"/api/clubs/{club.id}/historique").json()
+    assert data["honours"] == {"league": 0, "cup": 0, "europe": [], "best_rank": None, "best_europe": None}
+    table = v.table(world, club.competition_id)
+    assert data["league"]["clubs"] == len(table) and data["league"]["level"] == world.competitions[club.competition_id].level
+    assert 0 < data["league"]["relegation"] < data["league"]["clubs"] and 0 < data["league"]["europe"] < data["league"]["clubs"]
+    assert played.get(f"/api/clubs/{club.id}").json()["reputation_change"] is None
+    from api.club_archive import honours
+    rows = [{"season": 2026, "rank": 2, "champion": False, "competition": "L", "cup": {"label": "Vainqueur", "level": 7, "winner": True},
+             "europe": {"code": "C3", "competition": "Ligue Europa", "label": "Vainqueur", "level": 6, "winner": True}},
+            {"season": 2025, "rank": 1, "champion": True, "competition": "L", "cup": None,
+             "europe": {"code": "C3", "competition": "Ligue Europa", "label": "Finale", "level": 5, "winner": False}},
+            {"season": 2024, "rank": 1, "champion": True, "competition": "L", "cup": None, "europe": None}]
+    assert honours(rows) == {"league": 2, "cup": 1, "europe": [{"code": "C3", "competition": "Ligue Europa", "count": 1}],
+                             "best_rank": {"rank": 1, "season": 2024, "competition": "L"},
+                             "best_europe": {"code": "C3", "competition": "Ligue Europa", "label": "Vainqueur", "level": 6, "winner": True, "season": 2026}}
+
+
+def test_the_lineup_screen_scouts_the_next_opponent(played):
+    world = played.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club = next(iter(world.active_clubs()))
+    kept, world.controlled_club_id = world.controlled_club_id, club.id
+    try:
+        lineup = played.get("/api/ma-partie/composition").json()
+    finally:
+        world.controlled_club_id = kept
+    scout = lineup["scouting"]
+    assert lineup["club"]["id"] == club.id
+    assert scout["match"]["id"] == lineup["match_id"] and scout["club"]["id"] == lineup["opponent"]["id"] and scout["home"] == lineup["home"]
+    rival = world.clubs[scout["club"]["id"]]
+    assert scout["club"]["formation"] == rival.formation
+    assert len(scout["key_players"]) <= 3
+    assert [player["rating"] for player in scout["key_players"]] == sorted((player["rating"] for player in scout["key_players"]), reverse=True)
+    assert all(player["injured_until"] or player["suspension"] for player in scout["absent"])
+    assert scout["record"]["venue"] == ("away" if scout["home"] else "home")
+    venue = [match for match in world.matches.values() if match.season == world.season and match.result and match.competition_id == rival.competition_id
+             and (match.away_id if scout["home"] else match.home_id) == rival.id]
+    assert sum(scout["record"][key] for key in ("won", "drawn", "lost")) == len(venue)
+    if scout["standing"]: assert set(scout["standing"]) == {"rank", "points", "form"}
+    if scout["last_meeting"]: assert {scout["last_meeting"]["home"]["id"], scout["last_meeting"]["away"]["id"]} == {club.id, rival.id}
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 

@@ -52,6 +52,12 @@ prêté joue pour un autre club jusqu'à la fin de la saison ou pour une demi-sa
 liste des joueurs dit qui est listé et qui est intéressé, pour un transfert (T) ou pour un prêt (P). Le chapitre
 « Réserve et prêts » du manuel du jeu en donne les règles.
 
+La fiche d'un club s'ouvre sur un en-tête à ses couleurs (tactique, entraînement, recrutement des jeunes, réputation) et sur
+son effectif, avec à côté le calendrier, le dernier onze aligné, son championnat et ses finances. Le calendrier tient en une
+ligne par match, buteurs compris, avec le bilan de chaque compétition ; les finances et l'historique se lisent en
+graphiques ; l'onglet Transferts réunit le mercato en cours et les mouvements de la saison ; la composition du club dirigé
+présente l'adversaire du prochain match.
+
 **Mercato mondial**, dans le menu principal, regroupe les transferts, fins de
 contrat, retraites et promotions de tous les clubs, par saison et avec pagination.
 Toutes les colonnes de l'historique des mouvements sont triables par clic, dans les deux sens, avant pagination. Le tri est conservé lors du changement de saison. Les données absentes restent à la fin, y compris le potentiel des anciennes promotions dont le joueur a pris sa retraite.

@@ -49,7 +49,7 @@ test('an empty reserve takes a head and nothing else for the user’s club, and 
  const routes=controlled=>({'/clubs/7':club,'/clubs/7/navigation':null,'/monde/etat':{controlled_club_id:controlled},'/clubs/7/apercu':overview,
   '/clubs/7/effectif':{items:[player],total:1,page:1,page_size:100}});
  const own=await withApi(routes(7),()=>clubScreen(7,'squad',new URLSearchParams()));
- assert.match(own,/<h2>Réserve · 0 joueur<\/h2><\/div><\/section>$/);
+ assert.match(own,/<h2>Réserve · 0 joueur<\/h2><\/div><\/section><\/div><aside class="club-widgets"/);
  assert.doesNotMatch(await withApi(routes(null),()=>clubScreen(7,'squad',new URLSearchParams())),/Réserve/);
 });
 
@@ -112,5 +112,7 @@ test('a club’s movements list the loans of the season on each side, without a 
  const row={date:'2029-08-02',player_id:4,player:'Parti',source:ref(7,'Lens'),target:ref(9,'Nice'),fee:0,kind:'loan',age:19};
  const sections={arrivals:[],departures:[],release:[],retirement:[],academy:[],departure_unknown:[],loans_in:[],loans_out:[row]};
  const html=movementsHistory({season:2029,previous_season:null,next_season:null,history_since:'2029-07-01',arrival_total:0,departure_total:0,sections});
- assert.match(html,/<h2>Prêts sortants · 1<\/h2>/);assert.match(html,/PRÊTÉ À/);assert.doesNotMatch(html,/Prêts entrants/);
+ const [arrivals,departures]=html.split('aria-label="Départs"');
+ assert.match(departures,/<span class="movement-kind loan">Prêt<\/span>.*Parti.*<a href="#\/club\/9"[^>]*>.*Nice<\/a><\/span><b class="movement-fee">—<\/b>/);
+ assert.doesNotMatch(arrivals,/movement-kind loan/);
 });
