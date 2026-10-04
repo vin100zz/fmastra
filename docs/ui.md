@@ -32,7 +32,9 @@ rafraîchissements de l'écran.
 
 **Interface minimaliste.** Pas de texte explicatif : pas de sous-titre sous un
 titre de carte, pas de ligne qui décrit comment une donnée est calculée ou
-reconstituée. Un élément secondaire se replie derrière un bouton plutôt que
+reconstituée, pas de libellé qui explique le jeu ou paraphrase l'écran. Une
+mécanique du jeu qui doit être expliquée va dans le manuel du jeu (voir « Manuel
+du jeu »), pas à l'écran. Un élément secondaire se replie derrière un bouton plutôt que
 d'occuper une barre vide, et un bouton reprend le style des autres (carré, même
 hauteur) plutôt qu'une forme propre.
 
