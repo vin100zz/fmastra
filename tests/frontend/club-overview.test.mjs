@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubOverview,clubPreview} from '../../web/club-overview.js';
+import {calendarBlock,squadWidgets,standingsExtract,lineupBlock,clubPreview,marketBlock} from '../../web/club-overview.js';
 import {pitch,kitShirtStyle,contrastRatio} from '../../web/ui.js';
 
 const club={id:7,name:'Lens',competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
@@ -12,18 +12,82 @@ const data=(over={})=>({
  calendar:{last:[match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V'}),match(2,[4,'Lille'],[7,'Lens'],{score:[1,1],outcome:'N'}),match(3,[7,'Lens'],[5,'Brest'],{score:[0,2],outcome:'D'})],
   next:[match(4,[6,'Nantes'],[7,'Lens'],{date:'2030-01-06'})]},
  finances:{transfer_budget:50e6,reserved_transfer_budget:12e6,wage_bill:400000,wage_cap:500000,reserved_wages:0,balance:1e6},
- transfers:{season:2029,arrivals:side([move(11,'Zoé Test',0),move(12,'Adam Test',3e6)],2,3e6),departures:side([],0,0),others:{academy:2,release:1,retirement:0}},
  lineup:null,...over});
+const clubOverview=(club,overview)=>squadWidgets(club,overview,null);
 
-test('each block links to the tab it summarises',()=>{
- const html=clubOverview(club,data());
- for(const tab of ['calendar','finances','transfers'])assert.match(html,new RegExp(`href="#/club/7/${tab}"`));
- for(const title of ['Calendrier','Finances','Dernier onze aligné'])assert.ok(html.includes(`<h2>${title}</h2>`));
- assert.match(html,/<h2>Transferts<\/h2>/);assert.match(html,/Saison 2029 \/ 2030/);
- assert.equal((html.match(/class="club-overview"/g)||[]).length,1);
+
+test('beside the squad, the widgets open the calendar, the last match, the league and the finances',()=>{
+ const html=squadWidgets({...club,competition_id:16},data(),null);
+ assert.match(html,/^<aside class="club-widgets" aria-label="Le club en bref">/);
+ for(const tab of ['calendar','finances'])assert.match(html,new RegExp(`href="#/club/7/${tab}"`));
+ for(const title of ['Calendrier','Dernier onze aligné','Finances'])assert.ok(html.includes(`<h2>${title}</h2>`),title);
+ // No transfers block any more, and no league without its table.
+ assert.doesNotMatch(html,/<h2>Transferts|standings-extract/);
+ assert.ok(html.indexOf('<h2>Calendrier')<html.indexOf('<h2>Dernier onze')&&html.indexOf('<h2>Dernier onze')<html.indexOf('<h2>Finances'));
 });
 
-test('calendar lists results with their outcome and the fixtures still to play',()=>{
+test('the finances widget shows the free budget, the cash and the wage bill as a ring',()=>{
+ const html=clubOverview(club,data());
+ assert.match(html,/Budget transferts<\/span><strong>38\sM\s€<\/strong><small>Trésorerie <b>1\sM\s€<\/b><\/small>/);
+ assert.match(html,/<span class="news-ring" role="img" aria-label="80 % du plafond salarial utilisé">/);
+ const over=clubOverview(club,data({finances:{...data().finances,wage_bill:600000,transfer_budget:1e6,reserved_transfer_budget:5e6}}));
+ assert.match(over,/class="news-ring full"/);assert.match(over,/120 %/);assert.match(over,/Budget transferts<\/span><strong>0\s€/);
+ assert.doesNotMatch(clubOverview(club,data({finances:{...data().finances,wage_cap:0}})),/NaN|Infinity/);
+});
+
+const row=(rank,id,name,points,difference,played=18)=>({rank,club:ref(id,name),points,difference,played,won:0,drawn:0,lost:0,goals_for:0,goals_against:0,form:'',movement:null});
+const table=Array.from({length:10},(_,index)=>row(index+1,index===5?7:20+index,index===5?'Lens':`Club ${index}`,40-index*2,10-index*2));
+
+test('the league widget shows five rows around the club, with the points then the goal difference, and the round in its title',()=>{
+ const html=standingsExtract({...club,competition_id:16},{items:table});
+ assert.match(html,/<h2>Ligue 1 – 18<span class="ordinal">e<\/span> journée<\/h2>/);
+ assert.match(html,/href="#\/league\/16"/);
+ const ranks=[...html.matchAll(/<span class="rank ?(?:first)?">(\d+)<\/span>/g)].map(match=>Number(match[1]));
+ assert.deepEqual(ranks,[4,5,6,7,8]);
+ assert.match(html,/<th class="rank-column">#<\/th><th>CLUB<\/th><th class="total-column">PTS<\/th><th class="difference-column">DIFF\.<\/th><\/tr>/);
+ assert.doesNotMatch(html,/>J<\/th>/);assert.match(html,/<tr class="own">/);
+ // At either end the five rows stay within the table.
+ assert.deepEqual([...standingsExtract({...club,competition_id:16},{items:table.map((item,index)=>({...item,club:index===0?ref(7,'Lens'):ref(30+index,`C${index}`)}))}).matchAll(/<span class="rank ?(?:first)?">(\d+)<\/span>/g)].map(match=>Number(match[1])),[1,2,3,4,5]);
+ assert.match(standingsExtract({...club,competition_id:16},{items:[row(1,7,'Lens',3,2,1)]}),/1<span class="ordinal">re<\/span> journée/);
+ assert.equal(standingsExtract(club,null),'');assert.equal(standingsExtract(club,{items:[]}),'');
+});
+
+test('the last eleven stands on a pitch attacking to the right, in the club kit, without notes',()=>{
+ assert.match(clubOverview(club,data()),/Aucun match joué/);
+ const positions=['GB','DG','DC','DC','DD','MC','MC','MC','AILG','BU','AILD'];
+ const players=positions.map((position,index)=>({id:100+index,name:`Prénom Nom<${index}>`,position,temporary:false,stats:{rating:6.5}}));
+ const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players};
+ const html=lineupBlock(club,lineup);
+ assert.equal((html.match(/class="side-pitch-player"/g)||[]).length,11);
+ assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
+ assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
+ // The body in the primary colour, the sleeves in the secondary one; no rating on the shirt.
+ assert.equal((html.match(/<span class="kit-shirt" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff">/g)||[]).length,11);
+ assert.doesNotMatch(html,/6,5|<b>/);
+ // The keeper on the left, the forward on the right; the left-back above the right-back.
+ const at=name=>{const found=html.match(new RegExp(`title="${name}" style="left:([\\d.]+)%;top:([\\d.]+)%"`));return [Number(found[1]),Number(found[2])];};
+ assert.ok(at('Prénom Nom&lt;0&gt;')[0]<at('Prénom Nom&lt;9&gt;')[0]);
+ assert.ok(at('Prénom Nom&lt;1&gt;')[1]<at('Prénom Nom&lt;4&gt;')[1]);
+ assert.match(html,/<small>Nom&lt;1&gt;<\/small>/);assert.doesNotMatch(html,/<script>|Nom<1>/);
+});
+
+test('the market under way stands in four columns: offers by player with his value, own offers, the list and the loans',()=>{
+ const html=marketBlock({entrantes:[{joueur_id:5,joueur:'Baidoo',poste:'DC',valeur:41e6,offres:[{offre_id:'a',acheteur:ref(30,'Chelsea'),indemnite:38e6,salaire_propose:1000},{offre_id:'b',acheteur:ref(31,'Spurs'),indemnite:34e6,salaire_propose:1000}]}],
+  sortantes:[{offre_id:'c',joueur_id:6,joueur:'Meïté',poste:'BU',vendeur:ref(32,'Rennes'),indemnite:12e6,salaire_propose:2000,etape:'salaire',date_prevue:null}],
+  liste:[{joueur_id:8,joueur:'Édouard',poste:'BU',indemnite:25e5}],prets:[{joueur_id:9,joueur:'Vasseur',club:ref(33,'Amiens'),fin:'2031-06-30'}],emprunts:[]},
+  {club:{available_budget:18.6e6,wage_bill:4000,wage_cap:5000},market:'winter'});
+ assert.match(html,/<span class="market-state open">Mercato d’hiver ouvert<\/span>/);
+ assert.match(html,/Budget <b>19\sM\s€<\/b>/);
+ assert.equal((html.match(/class="market-column"/g)||[]).length,4);
+ assert.match(html,/Offres reçues<span class="market-count alert">2<\/span>/);
+ assert.match(html,/Baidoo<\/a><small>valeur 41\sM\s€<\/small>/);
+ assert.equal((html.match(/data-command="reponse-offre" data-decision="accepter"/g)||[]).length,2);
+ assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier →/);
+ assert.match(html,/→ <a href="#\/club\/33"/);
+ assert.match(marketBlock({entrantes:[],sortantes:[],liste:[],prets:[],emprunts:[]}),/Mercato fermé.*Aucune offre sur vos joueurs.*Aucune offre en cours.*Aucun joueur sur la liste.*Aucun prêt en cours/);
+});
+
+test('the calendar widget lists results with their outcome and the fixtures still to play',()=>{
  const html=clubOverview(club,data());
  assert.equal((html.match(/class="club-match-score V"/g)||[]).length,1);
  assert.equal((html.match(/class="club-match-score N"/g)||[]).length,1);
@@ -49,46 +113,6 @@ test('calendar lists results with their outcome and the fixtures still to play',
  assert.ok(cup.indexOf('Nice')<cup.indexOf('Rennes'));
  const empty=clubOverview(club,data({calendar:{last:[],next:[]}}));
  assert.match(empty,/Aucun match joué/);assert.match(empty,/Aucun match programmé/);
-});
-
-test('finances show the free transfer budget and how much of the wage cap is used',()=>{
- const html=clubOverview(club,data());
- assert.match(html,/Budget transferts<\/span><strong>38\sM\s€/);
- assert.match(html,/80 % du plafond utilisé/);assert.match(html,/style="width:80%"/);
- const over=clubOverview(club,data({finances:{...data().finances,wage_bill:600000,transfer_budget:1e6,reserved_transfer_budget:5e6}}));
- assert.match(over,/style="width:100%"/);assert.match(over,/120 % du plafond utilisé/);
- assert.match(over,/Budget transferts<\/span><strong>0\s€/);
- assert.doesNotMatch(clubOverview(club,data({finances:{...data().finances,wage_cap:0}})),/NaN|Infinity/);
-});
-
-test('transfers list three arrivals and departures, count what is not shown and name the other movements',()=>{
- const many=Array.from({length:5},(_,index)=>move(20+index,`Joueur ${index}`,1e6));
- const html=clubOverview(club,data({transfers:{...data().transfers,arrivals:side(many,5,5e6)}}));
- assert.match(html,/Arrivées · 5/);assert.equal((html.match(/href="#\/player\/2\d"/g)||[]).length,3);assert.match(html,/\+ 2 autres/);
- const short=clubOverview(club,data({transfers:{...data().transfers,arrivals:side(data().transfers.arrivals.items,9,3e6)}}));
- assert.match(short,/\+ 7 autres/);
- assert.match(short,/<b>Libre<\/b>/);assert.match(short,/href="#\/player\/12"/);
- // player, club and fee share one line
- assert.match(short,/<li><span><a href="#\/player\/12">Adam Test<\/a><\/span><small><a href="#\/club\/9"[^>]*>.*?Nice<\/a><\/small><b>3\sM\s€<\/b><\/li>/);
- assert.match(short,/Départs · 0/);assert.match(short,/Aucun transfert/);
- assert.match(short,/hors transferts : 2 jeunes promus · 1 fin de contrat/);
- const none=clubOverview(club,data({transfers:{...data().transfers,others:{academy:0,release:0,retirement:0}}}));
- assert.doesNotMatch(none,/hors transferts/);assert.match(none,/Saison 2029 \/ 2030/);
-});
-
-test('the last eleven reuses the match pitch, and its absence is explained',()=>{
- assert.match(clubOverview(club,data()),/Aucun match joué/);
- const positions=['GB','DG','DC','DC','DD','MC','MC','MC','AILG','BU','AILD'];
- const players=positions.map((position,index)=>({id:100+index,name:`Prénom Nom<${index}>`,position,temporary:false,stats:{rating:6.5}}));
- const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players};
- const html=clubOverview(club,data({lineup}));
- assert.equal((html.match(/class="pitch-player /g)||[]).length,11);
- assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
- assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
- // shirts wear the club's primary colour, ratings its secondary one
- assert.equal((html.match(/<span class="shirt" style="background:linear-gradient\(135deg,#cc0000 78%,#ffd700 78%\);color:#ffd700">6,5<\/span>/g)||[]).length,11);
- // the small pitch names players by surname, the full name stays in the tooltip
- assert.match(html,/<small>Nom&lt;1&gt;<\/small>/);assert.match(html,/title="Prénom Nom&lt;1&gt;"/);assert.doesNotMatch(html,/<script>|Nom<1>/);
 });
 
 test('the pitch spreads full-backs and centre-backs on one line, from left to right',()=>{

@@ -404,7 +404,15 @@ def finances(world: World, club_id: int, season: int | None) -> dict:
     revenue = totals["income"] + totals["transfer_income"] + totals["rounding_income"]
     expenses = totals["wages"] + totals["operating_costs"] + totals["transfer_expenses"] + totals["rounding_expenses"]
     opening = record.opening_balance if record else None
+    # Month by month, in date order: what came in, what went out, and the cash left at the end of the month.
+    months, balance = [], opening
+    if record:
+        for month, amounts in sorted(record.months.items(), key=lambda item: (item[0] < review.month, item[0])):
+            came = amounts.income + amounts.transfer_income + max(0, amounts.rounding)
+            went = amounts.wages + amounts.operating_costs + amounts.transfer_expenses + max(0, -amounts.rounding)
+            balance += came - went
+            months.append({"date": Date(nav["season"] + (month < review.month), month, 1).iso(), "revenue": came, "expenses": went, "balance": balance})
     return {**nav, "since": since.iso(), "partial": since > start, "available": record is not None,
             "opening_balance": opening, "closing_balance": opening + revenue - expenses if opening is not None else None,
-            "revenue": revenue, "expenses": expenses, "net": revenue - expenses, "totals": totals,
+            "revenue": revenue, "expenses": expenses, "net": revenue - expenses, "totals": totals, "months": months,
             "entries": sorted(entries, key=lambda row: (row["date"], row["label"]), reverse=True)}

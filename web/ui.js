@@ -82,6 +82,15 @@ export const contrastRatio = (first, second) => {const [light,dark]=[luminance(f
 // A shirt in a club's kit: the primary colour for the shirt, the secondary one for its number and a corner cut on the diagonal (as the kit dot), with a halo (dark on a light
 // number, light on a dark one) when the two are too close to read.
 export const kitShirtStyle = (major, minor) => `background:linear-gradient(135deg,${major} 78%,${minor} 78%);color:${minor}${contrastRatio(major,minor)<3?`;text-shadow:${[2,2,3].map(blur=>`0 0 ${blur}px ${contrastText(minor)}`).join(',')}`:''}`;
+// A shirt drawn in a club's kit: the body in the primary colour, the sleeves in the secondary one; `label` is written on it, in
+// the ink that reads on the body. Empty without a primary colour.
+export const KIT_SVG = '<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-body" d="M8 4 14 2Q20 7 26 2L32 4 30 14V38H10V14Z"/><path class="kit-sleeves" d="M8 4 2 12 8 16 10 14ZM32 4 38 12 32 16 30 14Z"/></svg>';
+// The custom properties a kit drawing reads its colours from; empty without a primary colour.
+export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
+export const kitShirt = (major, minor, label='') => {
+ const style=kitStyle(major,minor);
+ return style?`<span class="kit-shirt" style="${style}">${KIT_SVG}${label?`<b>${label}</b>`:''}</span>`:'';
+};
 export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
 let nations={},today=null;
 // The game date, for durations counted from today (the injury column).
@@ -250,15 +259,16 @@ export const standings = (headers, rows, rowClasses, sort) => `<div class="stand
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
-// 'figures' keeps every figure and leaves the form out, for a table in a narrow column. `own` is the user's club: its row is marked.
+// 'figures' keeps every figure and leaves the form out, for a table in a narrow column; 'points' keeps the points and the goal
+// difference only, for an extract beside the squad. `own` is the user's club: its row is marked.
 export function standingsTable(data, compact=false, sortable=false, own=null, lost='D') {
  const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'';
  const rowClasses=data.items.map(row=>`${zone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
  // Direct, play-off and European places are told by the row background alone (see rowClasses); only the icons below mark a row.
  const icon=row=>row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
  const record=row=>[row.won,row.drawn,row.lost,row.goals_for,row.goals_against];
- const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club)}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
- const headers=compact==='record'?['#','CLUB','PTS','V','N',lost,'BP','BC','DIFF.']:compact==='figures'?['#','CLUB','PTS','J','V','N',lost,'BP','BC','DIFF.']:compact?['#','CLUB','PTS','J','DIFF.']:['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.','FORME'];
+ const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club)}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:compact==='points'?[]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
+ const headers=compact==='record'?['#','CLUB','PTS','V','N',lost,'BP','BC','DIFF.']:compact==='figures'?['#','CLUB','PTS','J','V','N',lost,'BP','BC','DIFF.']:compact==='points'?['#','CLUB','PTS','DIFF.']:compact?['#','CLUB','PTS','J','DIFF.']:['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.','FORME'];
  // Form sorts by the points of the last five matches.
  const points=row=>[...row.form].reduce((sum,letter)=>sum+(letter==='V'?3:letter==='N'?1:0),0);
  const values=()=>data.items.map(row=>[row.rank,row.club?.name,row.points,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference,...(compact?[]:[points(row)])]);

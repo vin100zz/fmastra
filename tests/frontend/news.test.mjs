@@ -182,8 +182,8 @@ test('the market under way stands over the history of the club’s transfers',()
  assert.match(html,/<h2>Mercato en cours<\/h2>/);
  assert.match(html,/data-command="reponse-offre" data-decision="accepter" data-offer="in-1"/);
  assert.match(html,/<a href="#\/player\/20">Négocier →<\/a>/);
- assert.match(html,/<h3>Liste des transferts · 1<\/h3><ul class="moves"><li><span><a href="#\/player\/13">Partant<\/a><\/span><b>4,5\sM\s?€<\/b><\/li>/);
- assert.doesNotMatch(html,/Prêts|Prolongations/);
+ assert.match(html,/<h3>Liste des transferts<span class="market-count">1<\/span><\/h3><ul class="market-list"><li><div class="market-line"><span class="market-player"><a href="#\/player\/13">Partant<\/a><\/span><b>4,5\sM\s?€<\/b><\/div><\/li>/);
+ assert.match(html,/Aucun prêt en cours/);assert.doesNotMatch(html,/Prolongations/);
 });
 
 const player={id:20,name:'Cible',position:'BU',secondary_positions:[],age:24,nationalities:['FRA'],club:ref(9,'Nice'),born:'2005-01-01',wage:1000,contract_end:'2030-06-30',value:2e6,asking_price:3450000,transferable:true,greed:.5,

@@ -1,15 +1,18 @@
-import {monthlySalary,monthlyAmount,salarySearchParams} from './salaries.js';
+import {monthlyAmount,salarySearchParams} from './salaries.js';
 import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
-import {financialHistory,movementsHistory,seasonsHistory} from './club-history.js';
-import {clubOverview,clubPreview,marketBlock} from './club-overview.js';
+import {movementsHistory,seasonsHistory} from './club-history.js';
+import {clubPreview,marketBlock,squadWidgets} from './club-overview.js';
+import {clubHero} from './club-hero.js';
+import {calendarContent} from './club-calendar.js';
+import {financesContent} from './club-finances.js';
 import {playerPreview} from './player.js';
 import {resetButton} from './filters.js';
 import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,choiceLinks,rangeMenu,choiceSelect} from './listing.js';
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,titlesCard,countTitles,escape as e,number as n,money,headPager,figure,miniBar,scoreBadge,leadersCards,facilityRating,season,clubLink,playerLink,position,initials,form,empty,card,stat,fact,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,safeColor,contrastText,nationBadge,nationName,sortButton,levelBadge} from './ui.js';
+import {api,date,titlesCard,countTitles,escape as e,number as n,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,nationBadge,nationName,sortButton,levelBadge} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -77,27 +80,29 @@ function squadCards(data,params,human){
  const list=items=>playerTable({items},false,sorted,order,{view,pager:false,...(human?{action:move}:{})});
  const count=(items,one,many)=>`${items.length} ${items.length>1?many:one}`;
  const lent=second.filter(player=>player.away),kept=second.filter(player=>!player.away);
- const tools=`<div class="card-tools">${playerViewSwitch(view,sorted,order)}<span class="legend">${['GB','DC','MC','BU'].map(position).join('')}</span></div>`;
+ const tools=`<div class="card-tools">${playerViewSwitch(view,sorted,order)}</div>`;
  const reserve=second.length?card(`Réserve · ${count(kept,'joueur','joueurs')}${lent.length?` · ${count(lent,'prêté','prêtés')}`:''}`,list(second)):human?card('Réserve · 0 joueur',''):'';
  return card(`Équipe première · ${count(first,'joueur','joueurs')}`,list(first),tools)+reserve;
 }
 
+// A club page: its header in its colours with the tabs, then the open tab. The squad stands beside the club's widgets.
 export async function clubScreen(id,section,params){
  const [club,neighbours,state]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/navigation`),api('/monde/etat')]); section=section||'squad';
  // The club run by the user also gets its lineup form.
  const human=state.controlled_club_id===club.id;
  const menu=[['squad','Effectif'],...(human?[['composition','Composition']]:[]),['calendar','Calendrier'],['finances','Finances'],['transfers','Transferts'],['history','Historique']];
- const major=safeColor(club.major_color), minor=safeColor(club.minor_color)||major;
- const crestStyle=major?` style="background:linear-gradient(155deg,${major} 55%,${minor} 55%);color:${contrastText(major)}"`:'';
- const title=`<div class="page-heading"><div class="identity">${clubNavigation(neighbours,section,section==='squad'&&params.get('vue')?query({vue:params.get('vue')}):'')}<div class="crest"${crestStyle}>${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div><div><span class="eyebrow">${nationBadge(club.nation_code,{full:true})}</span><h1>${e(club.name)}</h1><p>${e(club.competition||'Club dormant')} · ${n(club.capacity)} places · ${e(club.formation)}</p><p class="club-facilities"><span title="TrainingFacilities : un meilleur entraînement fait progresser davantage les joueurs qui jouent peu">Entraînement <b>${facilityRating(club.training_facilities)}</b></span><span title="YouthRecruitment : un meilleur recrutement augmente les chances de former des regens à fort potentiel">Recrutement des jeunes <b>${facilityRating(club.youth_recruitment)}</b></span></p></div></div>${club.standing?`<div><span class="pill">${club.standing.rank}${club.standing.rank===1?'er':'e'} · ${club.standing.points} points</span><p>${form(club.standing.form)}</p></div>`:''}</div>`;
+ const lead=clubNavigation(neighbours,section,section==='squad'&&params.get('vue')?query({vue:params.get('vue')}):'');
  let content='';
- if(section==='squad'){const [data,overview]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`)]);content=clubOverview(club,overview)+squadCards(data,params,human);}
+ if(section==='squad'){
+  const [data,overview,standings]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`),club.competition_id?api(`/competitions/${club.competition_id}/classement`):null]);
+  content=`<div class="club-squad-layout"><div class="club-squad">${squadCards(data,params,human)}</div>${squadWidgets(club,overview,standings)}</div>`;
+ }
  else if(section==='composition'&&human)content=await compositionContent(params,state);
- else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${params}`); content=card('Calendrier de la saison',fixtures(data,true)+pager(data));}
- else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${params}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market):'')+movementsHistory(data);}
- else if(section==='finances'){const data=await api(`/clubs/${id}/finances?${params}`); content=`<div class="stat-grid">${stat('Budget transferts',money(Math.max(0,data.transfer_budget-data.reserved_transfer_budget)),'Disponible hors offres en cours')}${stat('Solde',money(data.balance),'Trésorerie du club')}${stat('Revenus annuels',money(data.income),'Estimation structurelle')}${stat('Masse salariale',monthlySalary(data.wage_bill),'Par mois (moyenne)')}</div><div class="grid equal">${card('Engagements salariaux',`<div class="card-body">${fact('Masse salariale',monthlySalary(data.wage_bill)+' / mois')}${fact('Plafond',monthlySalary(data.wage_cap)+' / mois')}${fact('Offres en cours',monthlySalary(data.reserved_wages)+' / mois')}<div class="meter"><span style="width:${Math.min(100,100*data.wage_bill/Math.max(1,data.wage_cap))}%"></span></div><p>${Math.round(100*data.wage_bill/Math.max(1,data.wage_cap))}% du plafond utilisé</p></div>`)}${card('Activité de la saison',`<div class="card-body">${fact('Budget réservé aux offres',money(data.reserved_transfer_budget))}${fact('Achats',money(data.season_spent))}${fact('Ventes',money(data.season_sales))}${fact('Balance des transferts',money(data.season_sales-data.season_spent))}</div>`)}</div>`;content+=financialHistory(data.history);}
- else {const data=await api(`/clubs/${id}/historique?${params}`);content=seasonsHistory(data);}
- return title+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+tabs(`#/club/${id}`,menu,section)+content;
+ else if(section==='calendar')content=calendarContent(club,await api(`/clubs/${id}/calendrier`),params);
+ else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${query({saison:params.get('saison')})}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market,{club,market:state.market}):'')+movementsHistory(data,params);}
+ else if(section==='finances'){const [data,squad]=await Promise.all([api(`/clubs/${id}/finances?${query({saison:params.get('saison')})}`),api(`/clubs/${id}/effectif`)]);content=financesContent(club,data,squad);}
+ else {const data=await api(`/clubs/${id}/historique?${query({page:params.get('page')})}`);content=seasonsHistory(data,club,state.season??null);}
+ return clubHero(club,{lead,menu,section})+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+content;
 }
 
 export async function leagueScreen(id,section,params,leagues){

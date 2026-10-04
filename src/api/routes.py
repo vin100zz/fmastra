@@ -370,8 +370,10 @@ def router(service: GameService) -> APIRouter:
                 formation = context.club.formation if context.club.formation in formations else next(iter(formations))
                 default = {"formation": formation, **suggestions[formation]}
             opponent = None if match is None else match.away_id if match.home_id == club_id else match.home_id
+            from .scouting import scouting
             return {"match_id": match.id if match else None, "opponent": v.club_ref(world, opponent) if match else None,
-                    "home": match is not None and match.home_id == club_id,
+                    "home": match is not None and match.home_id == club_id, "scouting": scouting(world, match, club_id),
+                    "club": v.club_ref(world, club_id),
                     "players": [lineup_player(world, player, competition_id, stats[player.id]) for player in context.players],
                     "formations": {name: list(roles) for name, roles in formations.items()},
                     "custom": [list(place) for place in world.custom_formation] or None,
@@ -568,14 +570,18 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world:
             club_id = world.controlled_club_id
             if club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            position = lambda player_id: world.players[player_id].position.value if player_id in world.players else None
             outgoing = [{"offre_id": offer.key, "joueur_id": offer.player_id, "joueur": v.player_name(world, offer.player_id),
+                        "poste": position(offer.player_id),
                         "vendeur": v.club_ref(world, offer.source_id), "indemnite": offer.fee, "salaire_propose": offer.contract.weekly_wage,
                         "etape": offer.stage, "date_prevue": offer.due.iso() if offer.due else None}
                        for offer in world.offers.values() if offer.target_id == club_id]
             incoming = dict.fromkeys(offer.player_id for offer in world.offers.values() if offer.source_id == club_id and offer.awaiting_review)
-            entrantes = [{"joueur_id": player_id, "joueur": v.player_name(world, player_id), "offres": v.incoming_offers(world, player_id)}
+            entrantes = [{"joueur_id": player_id, "joueur": v.player_name(world, player_id), "poste": position(player_id),
+                          "valeur": v.market_value(world.players[player_id], world) if player_id in world.players else None,
+                          "offres": v.incoming_offers(world, player_id)}
                         for player_id in incoming]
-            listed = [{"joueur_id": player_id, "joueur": world.players[player_id].name, "indemnite": fee}
+            listed = [{"joueur_id": player_id, "joueur": world.players[player_id].name, "poste": position(player_id), "indemnite": fee}
                       for player_id in world.transfer_list if (fee := listed_price(world, player_id)) is not None]
             club = world.clubs[club_id]
             def loan_row(player, other_id: int) -> dict:
@@ -754,11 +760,9 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return overview(world, club_id)
 
     @api.get("/clubs/{club_id}/calendrier")
-    def club_calendar(club_id: int, page: int = Query(1, ge=1)) -> dict:
-        with service.reading() as world:
-            world.clubs[club_id]
-            return v.paginate([v.match_row(world, match) for match in sorted(world.matches.values(), key=lambda match: (match.date, match.id))
-                               if match.season == world.season and club_id in (match.home_id, match.away_id)], page)
+    def club_calendar(club_id: int) -> dict:
+        from .club_overview import season_calendar
+        with service.reading() as world: return season_calendar(world, club_id)
 
     @api.get("/clubs/{club_id}/finances")
     def finances(club_id: int, saison: int | None = None) -> dict:

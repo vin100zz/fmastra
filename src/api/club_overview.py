@@ -1,10 +1,12 @@
-"""Landing view of a club: a few lines from each tab it links to; read-only projection."""
+"""Landing view of a club and its season's calendar; read-only projections."""
 from core.domain.matches import Match
 from core.domain.world import World
+from core.world.cups import ROUND_NAMES
 from . import views as v
-from .club_history import movements
+from .club_archive import cup_run, european_run
+from .rounds import scorers
 
-LAST_MATCHES, NEXT_MATCHES, LISTED_MOVES = 5, 3, 6
+LAST_MATCHES, NEXT_MATCHES = 5, 3
 
 
 def outcome(club_id: int, match: Match) -> str:
@@ -25,15 +27,6 @@ def calendar(world: World, club_id: int, played: list[Match], upcoming: list[Mat
             "next": [v.match_row(world, match) for match in upcoming[:NEXT_MATCHES]]}
 
 
-def transfers(world: World, club_id: int) -> dict:
-    data = movements(world, club_id, None, 1)
-    sections = data["sections"]
-    def side(key: str, total: str) -> dict:
-        return {"count": len(sections[key]), "total": data[total], "items": sections[key][:LISTED_MOVES]}
-    return {"season": data["season"], "arrivals": side("arrivals", "arrival_total"), "departures": side("departures", "departure_total"),
-            "others": {kind: len(sections[kind]) for kind in ("academy", "release", "retirement")}}
-
-
 def last_lineup(world: World, club_id: int, played: list[Match]) -> dict | None:
     """The eleven of the latest match that kept one; archived results carry none."""
     for match in reversed(played):
@@ -50,4 +43,55 @@ def overview(world: World, club_id: int) -> dict:
     played = [match for match in matches if match.result]
     upcoming = [match for match in matches if not match.result]
     return {"calendar": calendar(world, club_id, played, upcoming), "finances": v.finance_summary(world, club_id),
-            "transfers": transfers(world, club_id), "lineup": last_lineup(world, club_id, played)}
+            "lineup": last_lineup(world, club_id, played)}
+
+
+def place(world: World, club_id: int, competition_id: int, matches: list[Match]) -> str:
+    """Where the club stands in a competition of the season: its rank in a league or a league phase, otherwise the round
+    it is to play next, the round it went out in, or the title."""
+    competition = world.competitions[competition_id]
+    rank = lambda: next((row["rank"] for row in v.table(world, competition_id) if row["club_id"] == club_id), None)
+    if competition.kind == "league":
+        found = rank()
+        return f"{found}{'er' if found == 1 else 'e'}" if found else "—"
+    coming = [match for match in matches if not match.result]
+    if competition.kind == "europe":
+        run = european_run(world, matches, club_id)
+        if coming and coming[0].round_number <= world.config.world.europe.league_rounds or run and run["label"] == "Phase de ligue" and not coming:
+            found = rank()
+            return f"{found}{'er' if found == 1 else 'e'} de la phase de ligue" if found else "Phase de ligue"
+        label = v.match_row(world, coming[0])["round_label"] if coming else run["label"] if run else "—"
+    else:
+        run = cup_run(matches, club_id)
+        label = ROUND_NAMES[coming[0].round_number - 1] if coming else run["label"] if run else "—"
+    last = max((match for match in matches if match.result), key=lambda match: (match.date, match.id), default=None)
+    out = not coming and last is not None and last.result.winner_id not in (None, club_id) and not (run and run["winner"])
+    return f"Éliminé · {label}" if out else label
+
+
+def season_calendar(world: World, club_id: int) -> dict:
+    """Every match of the club's season, each played one with its scorers and its outcome, and for each competition its record
+    and where the club stands."""
+    world.clubs[club_id]
+    matches = sorted((match for match in world.matches.values() if match.season == world.season and club_id in (match.home_id, match.away_id)),
+                     key=lambda match: (match.date, match.id))
+    rows = [{**v.match_row(world, match), "scorers": scorers(world, match), "outcome": outcome(club_id, match) if match.result else None}
+            for match in matches]
+    by_competition: dict[int, list[Match]] = {}
+    for match in matches: by_competition.setdefault(match.competition_id, []).append(match)
+    competitions = []
+    for competition_id, games in by_competition.items():
+        competition = world.competitions[competition_id]
+        record = {"played": 0, "won": 0, "drawn": 0, "lost": 0, "goals_for": 0, "goals_against": 0}
+        for match in games:
+            if not match.result: continue
+            home = match.home_id == club_id
+            record["played"] += 1
+            record[{"V": "won", "N": "drawn", "D": "lost"}[outcome(club_id, match)]] += 1
+            record["goals_for"] += match.result.home_goals if home else match.result.away_goals
+            record["goals_against"] += match.result.away_goals if home else match.result.home_goals
+        competitions.append({"id": competition_id, "name": competition.name, "kind": competition.kind, "code": competition.code,
+                             "place": place(world, club_id, competition_id, games), **record})
+    # The league first, then the national cup, then Europe.
+    competitions.sort(key=lambda row: ({"league": 0, "cup": 1, "europe": 2}.get(row["kind"], 3), row["id"]))
+    return {"items": rows, "total": len(rows), "page": 1, "page_size": max(1, len(rows)), "competitions": competitions}
