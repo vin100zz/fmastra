@@ -688,6 +688,11 @@ def router(service: GameService) -> APIRouter:
         from .honours import honours as world_honours
         with service.reading() as world: return world_honours(world)
 
+    @api.get("/recherche")
+    def search(q: str = Query("", max_length=100), type: Literal["joueurs", "clubs", "competitions", "selections"] | None = None) -> dict:
+        from .search import search as find
+        with service.reading() as world: return find(world, q, type)
+
     @api.get("/competitions")
     def competitions() -> list[dict]:
         with service.reading() as world:

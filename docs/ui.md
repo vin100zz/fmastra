@@ -74,6 +74,7 @@ Barre persistante en tête d'application :
   l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
   en bleu pour une coupe. Le prochain match a son délai et un soulignement en
   couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px
+- Un bouton à la loupe, à gauche de ces matchs : la recherche globale (voir « Recherche globale »)
 - Bouton « Continuer », avec en pastille rouge le nombre de messages d'Actualités qui attendent une réponse ; la
   pastille ouvre le premier d'entre eux
 - Journal des événements du jour : résultats, transferts, blessures
@@ -200,6 +201,42 @@ côté : leur triangle est grisé. Un groupe d'un seul élément n'affiche pas l
 Changer de club conserve l'onglet ouvert (Finances reste sur Finances). Les clubs
 homonymes de la source (un club et son doublon sans joueurs) affichent leur effectif
 entre parenthèses. Dans le menu des joueurs, chaque nom est précédé de la couleur de son poste. Les coupes d'Europe gardent leurs onglets de coupe.
+
+### Recherche globale
+
+Un bouton à la loupe dans la barre du haut, à gauche des prochains matchs, et le
+raccourci Ctrl K ouvrent une boîte de dialogue (`web/search.js`) qui mène à la fiche
+d'un joueur, d'un club, d'une compétition (championnat, coupe nationale, coupe
+d'Europe) ou d'une sélection nationale. Elle n'existe qu'avec une partie et un club
+choisi, et pas pendant un match en direct. Son apparence est dans la charte
+(« Recherche globale »).
+
+La recherche se fait sur le serveur (`api/search.py`), à chaque frappe, à partir de
+deux lettres :
+
+- sans casse ni accents : « ribery » trouve « Ribéry », « odegaard » « Ødegaard » ;
+- sans ordre : « ribéry fra » et « franck rib » trouvent « Franck Ribéry » ; chaque
+  mot tapé doit trouver un mot du nom qui lui soit propre ;
+- sur une partie du nom : « bommel » trouve « van der Bommel ». Un mot tapé trouve
+  un mot du nom en entier, par son début, ou en son milieu à partir de trois
+  lettres (« dinho ») ;
+- sans ponctuation : « ngolo » et « n'golo » trouvent « N'Golo », « zaire emery » et
+  « zaire-emery » « Zaïre-Emery ».
+
+Les résultats, 12 au plus, viennent dans cet ordre : le nom entier, puis un mot
+entier, un début de mot, un milieu de mot. À correspondance égale : sélections,
+compétitions, clubs, joueurs ; puis la sélection la plus forte, les compétitions du
+pays du club dirigé avant les coupes d'Europe et les autres pays (championnats par
+niveau, puis coupe), les clubs actifs avant les dormants et par réputation, les
+joueurs du club dirigé puis le meilleur niveau, les retraités en dernier. Dans la
+liste « Tout », sélections, compétitions et clubs ne prennent d'abord que 2, 3 et
+3 lignes, pour laisser la place aux joueurs ; ils prennent celles qui restent. Le
+choix du type (Joueurs, Clubs, Compétitions, Sélections) ne garde qu'un genre.
+
+Les flèches déplacent la ligne choisie, Entrée ouvre sa fiche, Échap ferme, comme un
+clic hors de la boîte. Le nom affiché est celui des fiches (le nom d'usage d'un
+joueur) : c'est sur lui que porte la recherche. L'Euro et la Coupe du monde ne sont
+pas dans la recherche : leurs pages restent sous « Sélections nationales ».
 
 ### Club
 
@@ -853,6 +890,9 @@ POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; ench
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
 GET  /api/travaux/{id}                  statut, progression, erreur éventuelle, compétition dont le tour suit (competition)
 GET  /api/monde/journal?date=             événements du jour
+GET  /api/recherche?q=&type=joueurs|clubs|competitions|selections   recherche globale : {items}, 12 au plus, la meilleure correspondance d'abord
+                                          chaque item : kind (player, club, competition, nation), id, name, marks ([début, fin[ des lettres tapées dans le nom)
+                                          player : position, club, retired ; club : major_color, minor_color, nation, competition ; competition : competition ({id, name, kind, code, nation, level}) ; nation : nation (code)
 GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {season, europe, countries, clubs, players, scorers, nations}
                                           chaque compétition : items (saison, champion, pays du club), scorer (meilleur buteur de tous les temps),
                                           current (saison en cours : {leader, round} ou {label}, null une fois le champion connu)

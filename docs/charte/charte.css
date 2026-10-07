@@ -16,6 +16,8 @@
  --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141ecc;
  /* The line of a curve. */
  --series-1:#2a78d6;
+ /* The veil over the page under a dialog. */
+ --backdrop:#0f172a66;
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
  --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
  --text:"Segoe UI",system-ui,sans-serif;
@@ -326,6 +328,25 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .rank-zone.relegation{fill:var(--bad-soft)}
 .rank-zone-label{font-size:var(--fs-small);font-weight:600;fill:var(--muted)}
 
+/* The search of the whole game: a dialog over the veiled page (in a mockup, .veil lays the veil and holds the dialog).
+   Its head is a bar: a glass, the field, the kinds on its right. Its list holds every kind together, the best match
+   first. A line found opens its page as a whole: first the badge that tells its kind (a position, a club's colours, a
+   competition, a flag), in a column as wide as a position so that names line up; then its name, the letters typed in the
+   strong ink; last what tells it from its namesakes, in the muted ink. The line Enter opens is the chosen one. */
+.veil{position:absolute;inset:0;z-index:4;display:flex;align-items:flex-start;justify-content:center;padding-top:calc(2*var(--h-bar));background:var(--backdrop)}
+.palette{flex:none;width:720px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 12px 32px #1a2d3a2e;overflow:hidden}
+.palette-head{display:flex;align-items:center;gap:var(--s2);height:var(--h-bar);padding:0 var(--s3);border-bottom:var(--mark) solid var(--accent)}
+.palette-head>svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.palette-head>input{flex:1;min-width:0;height:100%;padding:0;border:0;outline:0;background:none;font-size:var(--fs-figure);color:var(--strong)}
+.results>p{height:var(--h-row);padding:0 var(--s3);line-height:var(--h-row);color:var(--muted)}
+.result{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line);color:var(--ink)}
+.result:last-child{border-bottom:0}
+.result>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result>:first-child{display:grid;place-items:center;overflow:visible}
+.result>:last-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.result b{font-weight:600;color:var(--strong)}
+.result.chosen{background:var(--own-row)}
+
 /* Under the pointer (.hover shows the state on a board). One ground for whatever is under it, --panel-3; what is open,
    picked or tinted keeps its own. Nothing else moves: no colour, no border, no shadow.
    A link — a name that leads to its page, a score to its match, « Voir → » — has the colour of the text that carries it
@@ -335,11 +356,11 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .prose a{color:var(--accent-text)}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
-:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fact,.highlight-row):is(:hover,.hover){background:var(--panel-3)}
-a:is(.tr,.match-row){cursor:pointer}
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fact,.highlight-row,.result:not(.chosen)):is(:hover,.hover){background:var(--panel-3)}
+a:is(.tr,.match-row,.result){cursor:pointer}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
-.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,.entity-nav>a,.pitch-player):is(:hover,.hover){text-decoration:none}
+.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,.entity-nav>a,.pitch-player):is(:hover,.hover){text-decoration:none}
 :is(.nav a,.segmented>a,.segmented>button,.button,.entity-nav>*):not(.active,.primary,.danger,:disabled):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
 :is(.button.primary,.cta):is(:hover,.hover){background:var(--accent-hover)}

@@ -819,3 +819,31 @@ def test_competitions_navigate_within_their_country(client):
     ending = client.get(f"/api/competitions/{cup['id']}/navigation").json()
     assert ending["previous"]["name"] == "National" and ending["next"] is None and ending["items"] == data["items"]
     assert client.get("/api/competitions/999999/navigation").status_code == 404
+
+
+def test_the_search_finds_players_clubs_competitions_and_national_teams_by_name(client):
+    world = client.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    find = lambda query, type=None: client.get("/api/recherche", params={"q": query, **({"type": type} if type else {})}).json()["items"]
+    player = max(world.players.values(), key=lambda item: item.rating)
+    # Typed without case nor accents, its words in the other order, the last one unfinished.
+    typed = " ".join(reversed(v.normalized(player.name).split()))[:-1]
+    assert player.id in [item["id"] for item in find(typed, "joueurs")]
+    club = max(world.active_clubs(), key=lambda item: item.reputation)
+    first = find(club.name.upper(), "clubs")[0]
+    assert (first["kind"], first["id"], first["name"]) == ("club", club.id, club.name) and first["competition"]["id"] == club.competition_id
+    # Without a human club, Europe comes before the countries; with one, its own country comes first.
+    assert [item["name"] for item in find("ligue", "competitions")][:3] == ["Ligue des champions", "Ligue Europa", "Ligue 1"]
+    world.controlled_club_id = next(item.id for item in world.active_clubs() if item.nation == "FRA")
+    try:
+        assert [item["name"] for item in find("ligue", "competitions")][:3] == ["Ligue 1", "Ligue 2", "Ligue des champions"]
+    finally:
+        world.controlled_club_id = None
+    france = find("fran", "selections")
+    assert [(item["name"], item["nation"]) for item in france] == [("France", "FRA")] if world.international.nations else france == []
+    mixed = find("fra")
+    assert 0 < len(mixed) <= 12 and {item["kind"] for item in mixed} >= {"competition", "club", "player"}
+    assert all(item["marks"] and all(0 <= start < end <= len(item["name"]) for start, end in item["marks"]) for item in mixed)
+    assert find("") == [] and find("f") == [] and find("zzzzqqq") == []
+    assert client.get("/api/recherche?q=fra&type=arbitres").status_code == 422
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states

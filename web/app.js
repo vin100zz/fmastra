@@ -17,6 +17,7 @@ import {awayIcon,clubPreview} from './club-overview.js';
 import {landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage} from './flow.js';
 import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
+import {initSearch} from './search.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
@@ -25,6 +26,8 @@ let renderedPath=null,state={},leagues=[],nationsLoaded=false,renderVersion=0,po
 // A list fitted to the window is drawn again once it has measured the rows that fit (`refitted`: that second pass is under way).
 let refitted=false,previewVersion=0;
 const main=document.querySelector('#main');
+// The search of the whole game leads to pages: it needs a game and its club, and waits while a live match holds the screen.
+const showSearch=initSearch(()=>Boolean(state.exists)&&!state.recovery_required&&state.controlled_club_id!=null&&!state.live_match_id);
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the round's results).
 // Simuler, beside Jouer on the composition screen, skips the live match and shows its report first (see flow.js).
 const compositionHash=()=>`#/club/${state.controlled_club_id}/composition`;
@@ -81,6 +84,7 @@ const busyButtons=()=>{
  button.setAttribute('aria-pressed',String(auto));
  button.setAttribute('aria-label',auto?'Mettre en pause les journées automatiques':'Passer les journées automatiquement');
  button.title=auto?'Arrêter après le jour en cours':'Enchaîner automatiquement les prochaines journées';
+ showSearch();
 };
 // Each new date of the auto mode redraws the screen: the list of peers the user is browsing stays open where it was.
 function reopenMenu(scroll){const menu=main.querySelector('.entity-menu');if(!menu)return;menu.open=true;menu.querySelector('.entity-menu-panel').scrollTop=scroll;}

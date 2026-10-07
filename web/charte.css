@@ -61,7 +61,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .segmented>*,.tactics button,.edition-switch a{display:flex;align-items:center;justify-content:center;height:calc(var(--h-control) - 2px);padding:0 var(--s3);border:0;border-right:1px solid var(--line);border-radius:0;background:none;font-family:var(--text);font-size:var(--fs-body);font-weight:600;color:var(--muted);white-space:nowrap}
 .segmented>*:last-child,.tactics button:last-child,.edition-switch a:last-child{border-right:0}
 .segmented>.active,.tactics button.active,.tactics button[aria-pressed="true"],.edition-switch a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
-.card-head .segmented>*{height:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
+.card-head .segmented>*,.segmented.small>*{height:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
 .edition-switch a{flex-direction:row;gap:var(--s2);border-left:0}
 .edition-switch small{font-size:var(--fs-small);font-weight:400}
 .round-stepper{gap:0;margin-bottom:var(--s2)}
@@ -193,6 +193,28 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 :root[data-theme="light"] #tooltip{padding:var(--s1) var(--s2);border:0;background:var(--strong);color:#fff;font-size:var(--fs-body);line-height:18px;box-shadow:0 4px 12px #0a141e33}
 :root[data-theme="light"] #tooltip::after{border:0;background:var(--strong)}
 
+/* The search of the whole game: a square button in the bar, and its dialog over the veiled page. The head of the dialog
+   is a bar: a glass, the field, the kinds on its right. Its list holds every kind together, the best match first. A line
+   found opens its page as a whole: the badge that tells its kind in a column as wide as a position, its name with the
+   letters typed in the strong ink, then what tells it from its namesakes. The line Enter opens is the chosen one. */
+#search-open{display:grid;place-items:center;flex:none;width:var(--h-control);padding:0}
+#search-open[hidden]{display:none}
+#search-open svg,.palette-head>svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var(--h-bar)) auto auto;padding:0;overflow:hidden}
+.palette-head{display:flex;align-items:center;gap:var(--s2);height:var(--h-bar);padding:0 var(--s3);border-bottom:var(--mark) solid var(--accent)}
+.palette-head>svg{color:var(--muted)}
+#search input{flex:1;min-width:0;height:100%;padding:0;border:0;border-radius:0;outline:0;background:none;font-size:var(--fs-figure);color:var(--strong)}
+#search input::-webkit-search-cancel-button{display:none}
+.results>p{height:var(--h-row);margin:0;padding:0 var(--s3);font-size:var(--fs-body);line-height:var(--h-row);color:var(--muted)}
+.result{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line);outline-offset:-2px;color:var(--ink)}
+.result:last-child{border-bottom:0}
+.result>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result>:first-child{display:grid;place-items:center;overflow:visible}
+.result>:last-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.result .kit-dot{margin:0}
+.result b{font-weight:600;color:var(--strong)}
+.result.chosen{background:var(--own-row)}
+
 /* The pitch: one grass, one set of lines, upright (the side attacks upwards) or lying (to the right, the left-back on top). */
 .pitch,.lineup-card .pitch,.pitch.ratings{position:relative;flex:none;min-height:0;height:auto;aspect-ratio:68/88;margin:var(--s3);border:0;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
 .pitch::before{content:"";position:absolute;inset:8px;border:1.5px solid var(--pitch-line);background:linear-gradient(0deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px));pointer-events:none}
@@ -301,14 +323,14 @@ a{text-decoration-thickness:1px;text-underline-offset:2px}
 a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:underline}
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
-:is(nav,.sidebar,.segmented,.chips,.presets,.entity-menu-panel,.filter-menu) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match):is(:hover,:focus-visible){text-decoration-line:none}
+:is(nav,.sidebar,.segmented,.chips,.presets,.entity-menu-panel,.filter-menu) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
 a.pitch-player:is(:hover,:focus-visible) small{text-decoration:underline 1px;text-underline-offset:2px}
 /* A row of a table or of a list, a fact: the ground. A tinted row is more specific than this and keeps its tint; a
    heading set among the rows is not a row. */
 tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):hover{background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
 .player-table tbody tr:where(:not(.selected,.chosen)):hover td:nth-child(2){background:var(--panel-3)}
-:where(.fixture,.country-match,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.biggest-transfers li,.honours-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.current-edition):hover{background:var(--panel-3)}
+:where(.fixture,.country-match,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.biggest-transfers li,.honours-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.current-edition,.result):hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */

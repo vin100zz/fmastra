@@ -54,6 +54,7 @@ la structure HTML des spécimens.
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
+| `--backdrop` | Voile sur la page, sous une boîte de dialogue |
 | `--series-1` | Le trait et les points d'une courbe |
 
 Trois familles de pastilles ne se ressemblent jamais :
@@ -78,6 +79,7 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 | `--fs-page` | 26 / 32 | 700 | Titre de page |
 | `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour |
 | `--fs-figure` | 16 / 20 | 700 | Action principale, délai |
+| `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
 | `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`) |
 | `--fs-body` | 13 / 18 | 400, 600 | Texte, cellule, onglet, bouton |
 | `--fs-small` | 11 / 14 | 400, 600 | En-tête de colonne, libellé, légende |
@@ -116,6 +118,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
+| Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
 
 ### Sous le pointeur
@@ -129,7 +132,7 @@ lien, ni bordure, ni ombre.
 | Lien : le nom d'un club, d'un joueur, d'un pays, d'une compétition, le score d'un match, « Voir → » | La couleur du texte qui le porte, non souligné | Souligné (trait de 1, à 2 du texte), même couleur |
 | Lien dans une phrase : le manuel, le titre et le texte d'une actualité (`.prose`) | `--accent-text`, non souligné | Souligné, même couleur |
 | Ligne d'un tableau ou d'une liste, fait | Son fond | `--panel-3` ; la ligne teintée (club dirigé, ligne choisie, état) garde sa teinte |
-| Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier | Son fond | `--panel-3` et la main ; aucun texte souligné |
+| Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
 | Bouton, option d'un choix, pas d'une série, filtre, entrée du menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
 | Joueur sur un terrain | Son nom | Son nom souligné |
@@ -140,6 +143,34 @@ lien, ni bordure, ni ombre.
   « Voir → » qui se souligne.
 - Un graphique garde ses propres réactions (repère, infobulle) : voir
   « Graphiques ».
+
+### Recherche globale
+
+Un bouton carré à la loupe, dans la barre du haut à gauche des prochains matchs,
+et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
+(`--backdrop`), à 96 du haut.
+
+- **Tête** : une barre de 48, soulignée de l'accent : la loupe, la saisie en 16,
+  puis le choix du type (`.segmented.small` : Tout, Joueurs, Clubs,
+  Compétitions, Sélections).
+- **Liste** : une seule, tous types mêlés, la meilleure correspondance d'abord ;
+  12 lignes de 26 au plus. Rien sous deux lettres tapées ; « Aucun résultat »,
+  atténué, quand rien n'est trouvé.
+- **Ligne** : elle ouvre sa fiche tout entière. D'abord la pastille de son
+  genre, dans une colonne de 32 (la largeur d'un poste) pour que les noms
+  s'alignent ; puis son nom, les lettres tapées en 600 dans l'encre forte ;
+  enfin, à droite et atténué, ce qui la distingue de ses homonymes.
+- **Le genre n'est jamais écrit** : la pastille le dit.
+- **Ligne choisie** : celle qu'Entrée ouvre a le fond `--own-row`, la première
+  par défaut ; les flèches la déplacent. Sous le pointeur, une autre ligne prend
+  `--panel-3`.
+
+| Genre | Pastille | À droite |
+|---|---|---|
+| Joueur | Son poste | Son club, après sa pastille ; « Libre » sans club ; « Retraité », sans poste |
+| Club | La pastille à ses couleurs | Le drapeau de son pays, puis la pastille de sa division |
+| Compétition | Sa pastille | Son pays, après son drapeau ; rien pour une coupe d'Europe |
+| Sélection | Son drapeau | Rien |
 
 ## Terrain et maillot
 
@@ -344,4 +375,5 @@ Ce qui reste :
 
 Les écrans `/squad`, `/composition`, `/match` et `/europe` ont une maquette de
 référence à la charte : canevas Design
-<https://claude.ai/artifact/MbJqDASJNFF8a6Tu3Lph4a>.
+<https://claude.ai/artifact/MbJqDASJNFF8a6Tu3Lph4a>. La recherche globale a la
+sienne (proposition B) : <https://claude.ai/artifact/JMuUqZ4JkvAsYQMh6uJoNU>.
