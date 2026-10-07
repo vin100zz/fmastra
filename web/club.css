@@ -216,8 +216,6 @@
 /* Historique: the charts and the honours, the seasons, the leaders. */
 .history-side{display:flex;flex-direction:column;gap:12px;min-width:0}
 .history-side>.card{margin:0}
-.rank-zone.europe{fill:var(--info-soft)}.rank-zone.relegation{fill:var(--bad-soft)}
-.rank-zone-label{font-size:11px;font-weight:600}.rank-zone-label.europe{fill:var(--info)}.rank-zone-label.relegation{fill:var(--bad)}
 .honours-list li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:46px;padding:0 16px;border-bottom:1px solid var(--row-line)}
 .honours-list li:last-child{border-bottom:0}
 .honours-list b{display:block;font-size:13px}.honours-list small{font-size:13px;color:var(--muted)}
@@ -227,7 +225,7 @@
 .rank-chip,.run-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--radius);background:var(--panel-2);color:var(--ink-2);font-size:13px;font-weight:600;white-space:nowrap}
 .rank-chip{min-width:36px;justify-content:center;font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:700}
 .rank-chip.first,.run-chip.won{background:var(--gold-soft);color:var(--gold-bright)}
-.rank-chip.europe{background:var(--info-soft);color:var(--info)}.rank-chip.relegation{background:var(--bad-soft);color:var(--bad)}
+.rank-chip.europe{background:var(--info-soft);color:var(--info)}.rank-chip.promotion{background:var(--good-soft);color:var(--good)}.rank-chip.relegation{background:var(--bad-soft);color:var(--bad)}
 .run-europe{display:inline-flex;align-items:center;gap:8px}
 .seasons-card{margin-bottom:12px}
 .history-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}

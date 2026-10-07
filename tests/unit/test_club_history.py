@@ -492,3 +492,47 @@ def test_legacy_history_uses_evidence_and_does_not_invent_old_finances(config):
     assert len(world.transfers) == 3
     assert finances(world, 1, S)['available'] is False
     assert finances(world, 1, S)['since'] == f'{S + 3}-07-03'
+
+
+def test_career_has_a_row_for_each_season_at_a_club_and_names_the_league_of_that_season(config):
+    from api.views import career
+    from core.domain.matches import Match
+    from core.domain.world import SeasonRecord
+    world = mini_world(config)
+    S = world.season
+    world.competitions = {16: Competition(16, 'Ligue 1', 'FRA', 1, [1, 2]), 17: Competition(17, 'Ligue 2', 'FRA', 2, [])}
+    world.record_level(world.players[101])
+    world.season, world.date = S + 4, Date(S + 4, 9, 1)
+    # His club played Ligue 1, then Ligue 2, then a season out of the simulated leagues, and Ligue 1 again since.
+    world.matches = {index: Match(index, league, season, 1, Date(season, 8, 1), 1, 2)
+                     for index, (season, league) in enumerate(((S, 16), (S + 1, 17), (S + 3, 16), (S + 4, 16)))}
+    world.records = {'a': SeasonRecord(S, 101, 1, 16, matches=3, rating_sum=18, rating_count=3)}
+    data = career(world, 101)
+    # Seasons without a match nor a movement are his too; a season in the reserve pool reads one level under the pyramid.
+    assert [(row['season'], row['club']['id'], row['competition'], row['competition_nation'], row['matches'], row['average']) for row in data['items']] == [
+        (S + 4, 1, 'Ligue 1', 'FRA', 0, None), (S + 3, 1, 'Ligue 1', 'FRA', 0, None), (S + 2, 1, 'D4', 'FRA', 0, None),
+        (S + 1, 1, 'Ligue 2', 'FRA', 0, None), (S, 1, 'Ligue 1', 'FRA', 3, 6.0)]
+    assert all(row['fee'] is None and not row['loan'] for row in data['items'])
+    assert data['totals'] == {'fee': 0, 'matches': 3, 'goals': 0, 'assists': 0, 'average': 6.0}
+    # A player whose level history does not tell when he entered the game keeps the rows of what he did.
+    world.trajectories = {}
+    assert [row['season'] for row in career(world, 101)['items']] == [S]
+
+
+def test_career_reads_a_summer_move_at_the_club_joined_and_a_later_one_at_both(config):
+    from api.views import career
+    world = mini_world(config)
+    S = world.season
+    world.competitions = {16: Competition(16, 'Ligue 1', 'FRA', 1, [1, 2])}
+    world.record_level(world.players[101])
+    world.season, world.date = S + 4, Date(S + 4, 9, 1)
+    # Sold in the summer of his second season, back in the winter of his third, released when his fourth ended.
+    world.transfers = [TransferRecord(Date(S + 1, 8, 5), 101, 1, 2, 500, 'transfer', S + 1),
+                       TransferRecord(Date(S + 3, 1, 10), 101, 2, 1, 0, 'transfer', S + 2),
+                       TransferRecord(Date(S + 4, 7, 1), 101, 1, None, 0, 'release', S + 3)]
+    expected = [(S + 3, 1), (S + 2, 1), (S + 2, 2), (S + 1, 2), (S, 1)]
+    assert [(row['season'], row['club']['id']) for row in career(world, 101)['items']] == expected
+    assert [row['fee'] for row in career(world, 101)['items']] == [None, 0, None, 500, None]
+    # Once retired, he keeps the same career.
+    world.retired[101] = world.players.pop(101).name
+    assert [(row['season'], row['club']['id']) for row in career(world, 101)['items']] == expected

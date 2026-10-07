@@ -637,18 +637,20 @@ def test_club_history_tells_its_honours_and_the_shape_of_its_league(played):
     world = played.app.state.game.world
     club = next(iter(world.active_clubs()))
     data = played.get(f"/api/clubs/{club.id}/historique").json()
-    assert data["honours"] == {"league": 0, "cup": 0, "europe": [], "best_rank": None, "best_europe": None}
+    assert data["honours"] == {"league": [], "cup": 0, "europe": [], "best_rank": None, "best_europe": None}
     table = v.table(world, club.competition_id)
-    assert data["league"]["clubs"] == len(table) and data["league"]["level"] == world.competitions[club.competition_id].level
-    assert 0 < data["league"]["relegation"] < data["league"]["clubs"] and 0 < data["league"]["europe"] < data["league"]["clubs"]
+    league = next(item for item in data["leagues"] if item["id"] == club.competition_id)
+    assert len(data["leagues"]) == 1 and league["name"] == world.competitions[club.competition_id].name
+    assert league["clubs"] == len(table) and league["level"] == world.competitions[club.competition_id].level
+    assert 0 < league["relegation"] < league["clubs"] and 0 < league["europe"] + league["promotion"] < league["clubs"]
     assert played.get(f"/api/clubs/{club.id}").json()["reputation_change"] is None
     from api.club_archive import honours
-    rows = [{"season": 2026, "rank": 2, "champion": False, "competition": "L", "cup": {"label": "Vainqueur", "level": 7, "winner": True},
+    rows = [{"season": 2026, "rank": 2, "champion": False, "competition": "L", "level": 1, "cup": {"label": "Vainqueur", "level": 7, "winner": True},
              "europe": {"code": "C3", "competition": "Ligue Europa", "label": "Vainqueur", "level": 6, "winner": True}},
-            {"season": 2025, "rank": 1, "champion": True, "competition": "L", "cup": None,
+            {"season": 2025, "rank": 1, "champion": True, "competition": "L", "level": 1, "cup": None,
              "europe": {"code": "C3", "competition": "Ligue Europa", "label": "Finale", "level": 5, "winner": False}},
-            {"season": 2024, "rank": 1, "champion": True, "competition": "L", "cup": None, "europe": None}]
-    assert honours(rows) == {"league": 2, "cup": 1, "europe": [{"code": "C3", "competition": "Ligue Europa", "count": 1}],
+            {"season": 2024, "rank": 1, "champion": True, "competition": "L", "level": 1, "cup": None, "europe": None}]
+    assert honours(rows) == {"league": [{"competition": "L", "level": 1, "count": 2}], "cup": 1, "europe": [{"code": "C3", "competition": "Ligue Europa", "count": 1}],
                              "best_rank": {"rank": 1, "season": 2024, "competition": "L"},
                              "best_europe": {"code": "C3", "competition": "Ligue Europa", "label": "Vainqueur", "level": 6, "winner": True, "season": 2026}}
 

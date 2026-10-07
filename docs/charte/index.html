@@ -60,6 +60,9 @@
 <div class="sw"><i style="background: var(--pitch-b)"></i><span class="token">--pitch-b</span><span class="value">#429c5f</span></div>
 <div class="sw"><i style="background: var(--pitch-a); box-shadow: inset 0 0 0 10px var(--pitch-a), inset 0 0 0 12px var(--pitch-line)"></i><span class="token">--pitch-line</span><span class="value">blanc à 70 %</span></div>
 </div></div>
+<div class="spec-group"><span class="label">Courbe</span><div class="spec-line">
+<div class="sw"><i style="background: var(--series-1)"></i><span class="token">--series-1</span><span class="value">#2a78d6</span></div>
+</div></div>
 </div>
 </section>
 
@@ -549,6 +552,59 @@
 </div>
 </section>
 </div>
+
+<section class="spec" style="grid-column: span 7">
+<h2>Classement au fil des saisons · .club-chart</h2>
+<section class="card" style="width: 1024px">
+<div class="card-head"><h2>Classement en championnat</h2></div>
+<div class="card-body">
+<svg class="club-chart" viewBox="0 0 1000 318" role="img" aria-label="Classement en championnat par saison">
+<rect class="rank-zone europe" x="112" y="18.0" width="788" height="39.3"/>
+<text class="rank-zone-label" x="912" y="41.6">Europe</text>
+<rect class="rank-zone relegation" x="112" y="120.4" width="788" height="25.6"/>
+<text class="rank-zone-label" x="912" y="137.2">Relégation</text>
+<text class="cc-tick" x="100" y="86.0" text-anchor="end">Ligue 1</text>
+<line class="cc-grid" x1="112" x2="900" y1="152.0" y2="152.0"/>
+<rect class="rank-zone promotion" x="112" y="158.0" width="788" height="25.6"/>
+<text class="rank-zone-label" x="912" y="174.8">Montée</text>
+<rect class="rank-zone relegation" x="112" y="260.4" width="788" height="25.6"/>
+<text class="rank-zone-label" x="912" y="277.2">Relégation</text>
+<text class="cc-tick" x="100" y="226.0" text-anchor="end">Ligue 2</text>
+<text class="cc-tick" x="112.0" y="308" text-anchor="middle">26-27</text>
+<text class="cc-tick" x="269.6" y="308" text-anchor="middle">27-28</text>
+<text class="cc-tick" x="427.2" y="308" text-anchor="middle">28-29</text>
+<text class="cc-tick" x="584.8" y="308" text-anchor="middle">29-30</text>
+<text class="cc-tick" x="742.4" y="308" text-anchor="middle">30-31</text>
+<text class="cc-tick" x="900.0" y="308" text-anchor="middle">31-32 · en cours</text>
+<polyline class="cc-line" points="112.0,30.8 269.6,140.0"/>
+<polyline class="cc-line" points="269.6,140.0 427.2,198.1"/>
+<polyline class="cc-line" points="427.2,198.1 584.8,177.6"/>
+<polyline class="cc-line" points="584.8,177.6 742.4,24.0"/>
+<polyline class="cc-line dashed" points="742.4,24.0 900.0,24.0"/>
+<circle class="cc-point" cx="112.0" cy="30.8" r="6"/>
+<text class="cc-value" x="112.0" y="54.8" text-anchor="middle">2e</text>
+<circle class="cc-point" cx="269.6" cy="140.0" r="6"/>
+<text class="cc-value" x="269.6" y="128.0" text-anchor="middle">18e</text>
+<circle class="cc-point" cx="427.2" cy="198.1" r="6"/>
+<text class="cc-value" x="427.2" y="186.1" text-anchor="middle">6e</text>
+<circle class="cc-point" cx="584.8" cy="177.6" r="6"/>
+<text class="cc-value" x="584.8" y="165.6" text-anchor="middle">3e</text>
+<circle class="cc-point" cx="742.4" cy="24.0" r="6"/>
+<text class="cc-value" x="742.4" y="48.0" text-anchor="middle">1er</text>
+<circle class="cc-point open" cx="900.0" cy="24.0" r="6"/>
+<text class="cc-value" x="900.0" y="48.0" text-anchor="middle">1er</text>
+</svg>
+</div>
+</section>
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Trait</span> <span class="value">2, en --series-1, entre deux saisons qui se suivent ; pointillé vers la saison en cours</span></span>
+<span><span class="token">Point</span> <span class="value">6 de rayon, cerné du fond ; ouvert pour la saison en cours</span></span>
+<span><span class="token">Rang</span> <span class="value">16 en --display : sous son point pour les deux premières places, dessus sinon</span></span>
+<span><span class="token">Étage</span> <span class="value">un par division, la plus haute en haut, son nom à gauche ; 192 pour une division, 64 de plus par division, 24 entre deux</span></span>
+<span><span class="token">Places</span> <span class="value">Europe en --info-soft · montée en --good-soft · relégation en --bad-soft ; leur nom à droite, en --muted</span></span>
+<span><span class="token">Saison hors championnat</span> <span class="value">sa place reste vide sur l’axe, le trait s’interrompt</span></span>
+</div>
+</section>
 
 </div>
 </div>

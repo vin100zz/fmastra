@@ -67,7 +67,7 @@ def test_a_club_outside_the_leagues_still_gets_its_cup_seasons_and_none_for_what
     world = archive_world(config)
     world.matches = {1: game(1, CUP, 2025, 1, 1, 8, winner=8), 2: game(2, LEAGUE, 2025, 1, 2, 3)}
     rows = seasons(world, 1)
-    assert rows == [{'season': 2025, 'rank': None, 'champion': False, 'competition_id': None, 'competition': None,
+    assert rows == [{'season': 2025, 'rank': None, 'champion': False, 'competition_id': None, 'competition': None, 'level': None,
                      'cup': {'label': '32es de finale', 'level': 1, 'winner': False}, 'europe': None, 'reputation': None}]
     assert seasons(world, 4) == []
 
@@ -138,3 +138,25 @@ def test_history_paginates_seasons_only_and_leaves_the_state_alone(config):
     assert (first['total'], len(first['items']), len(second['items'])) == (40, 30, 10)
     assert first['leaders'] == second['leaders'] and first['transfers'] == second['transfers']
     assert {name: rng.getstate() for name, rng in world.rngs.items()} == states
+
+
+def test_history_knows_each_division_the_club_played_in_and_reads_its_best_rank_in_the_highest(config):
+    world = archive_world(config)
+    world.competitions[17] = Competition(17, 'Ligue 2', 'FRA', 2, [3, 4])
+    # Second of Ligue 1, then first of Ligue 2: the home side wins.
+    world.matches = {1: game(1, LEAGUE, 2025, 1, 2, 1), 2: game(2, 17, 2026, 1, 1, 2)}
+    data = history(world, 1, 1)
+    assert [(row['season'], row['competition'], row['level'], row['rank']) for row in data['items']] == [(2026, 'Ligue 2', 2, 1), (2025, 'Ligue 1', 1, 2)]
+    # The leagues of its seasons and the one it plays in today, the highest first, each with its places as it stands.
+    assert [(league['id'], league['name'], league['level'], league['clubs']) for league in data['leagues']] == [(LEAGUE, 'Ligue 1', 1, 2), (17, 'Ligue 2', 2, 2)]
+    assert data['leagues'][0]['promotion'] == 0 and data['leagues'][1]['europe'] == 0 and data['leagues'][1]['promotion'] > 0
+    assert all({'europe', 'promotion', 'relegation'} <= set(league) for league in data['leagues'])
+    # A title a division below does not beat a second place in the top flight, and is told with its division.
+    assert data['honours']['best_rank'] == {'rank': 2, 'season': 2025, 'competition': 'Ligue 1'}
+    assert data['honours']['league'] == [{'competition': 'Ligue 2', 'level': 2, 'count': 1}]
+    world.matches[3] = game(3, LEAGUE, 2024, 1, 1, 2)
+    world.matches[4] = game(4, 17, 2023, 1, 1, 2)
+    assert history(world, 1, 1)['honours']['league'] == [{'competition': 'Ligue 1', 'level': 1, 'count': 1}, {'competition': 'Ligue 2', 'level': 2, 'count': 2}]
+    # A club out of the simulated leagues today keeps the leagues of its past seasons.
+    world.clubs[1].competition_id = None
+    assert [league['id'] for league in history(world, 1, 1)['leagues']] == [LEAGUE, 17]

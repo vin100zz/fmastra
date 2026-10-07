@@ -285,6 +285,12 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .comparison-bar>i:first-child{border-radius:4px 0 0 4px}
 .comparison-bar>i:last-child{border-radius:0 4px 4px 0}
 .comparison-bar.none>i{background:var(--panel-3)}
+/* A league rank season after season: a storey for each division the club has played in. In each, the places that lead
+   somewhere are tinted as a table marks them (Europe, promotion, relegation), and named on the right in the muted ink. */
+.rank-zone.europe{fill:var(--info-soft)}
+.rank-zone.promotion{fill:var(--good-soft)}
+.rank-zone.relegation{fill:var(--bad-soft)}
+.rank-zone-label{font-size:var(--fs-small);font-weight:600;fill:var(--muted)}
 
 /* Under the pointer (docs/charte-graphique.md, « Sous le pointeur »). One ground for whatever is under it, --panel-3; what
    is open, picked or tinted keeps its own. Nothing else moves: no colour, no border, no shadow.

@@ -54,6 +54,7 @@ la structure HTML des spécimens.
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
+| `--series-1` | Le trait et les points d'une courbe |
 
 Trois familles de pastilles ne se ressemblent jamais :
 
@@ -112,6 +113,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count` | 18 de haut ; un poste, 32 de large |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
+| Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
@@ -207,6 +209,26 @@ disparaît, un bleu nuit s'y lit comme du noir. La couleur d'un camp se calcule 
 | Nice | `#1a1a1a`, `#d2122e` | `#d2122e` : la seconde |
 | Lille, à Monaco | `#e01e13`, `#20325f` | `#405a9b` : la seconde, la première étant trop proche du rouge de Monaco |
 | Juventus | `#ffffff`, `#111111` | `--ink-2` |
+
+### Classement au fil des saisons
+
+`.club-chart` : le rang d'un club en championnat, saison après saison, dessiné à
+la largeur de sa carte.
+
+- Un trait de 2 en `--series-1` relie les saisons qui se suivent ; un point de 6
+  de rayon, cerné du fond, marque chacune. La saison en cours est un point
+  ouvert, au bout d'un trait pointillé.
+- Le rang s'écrit à son point, en 16 `--display` : dessous pour les deux
+  premières places, dessus sinon.
+- Un étage par division où le club a joué, la plus haute en haut, son nom à
+  gauche : une saison de Ligue 2 se lit sous celles de Ligue 1. Une seule
+  division occupe 192 de haut, chaque division de plus en ajoute 64 ; 24
+  séparent deux étages, un trait `--row-line` en leur milieu.
+- Dans chaque étage, les places de la division sont teintées comme un
+  classement les marque : Europe en `--info-soft`, montée en `--good-soft`,
+  relégation en `--bad-soft`. Leur nom est à droite, en `--muted`.
+- Une saison hors des championnats simulés garde sa place sur l'axe et
+  interrompt le trait.
 
 ### Jauge, anneau
 
@@ -307,6 +329,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
 | Sous le pointeur | Une seule règle pour les liens, les lignes et les commandes, dans `web/charte.css` ; les autres feuilles n'en disent plus rien (`tests/frontend/charte.test.mjs`) |
 | Palmarès | Pastilles de compétition de la charte (`competitionBadge`), filtres de poste aux couleurs des postes |
+| Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
 
 Ce qui reste :
 

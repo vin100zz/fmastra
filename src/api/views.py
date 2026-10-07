@@ -506,16 +506,34 @@ def level_history(world: World, player_id: int) -> list[dict]:
     return points
 
 
-def career_league(world: World, club_id: int | None, levels: dict) -> tuple[str | None, str | None]:
-    """What a club's league reads as in a career, with its nation: the name of a simulated league; outside them "D" and
-    the level of the club's division (`levels`, see `division_levels`). The source gives no level to the other divisions:
-    such a club plays one level under the deepest known one of its nation, hence in the top flight of a nation without
-    any simulated league."""
+def played_leagues(world: World, keys: set[tuple[int, int]]) -> dict[tuple[int, int], Competition]:
+    """The league each of these (season, club) played, read from its matches: a club changes division over the seasons.
+    Nothing for a season it spent outside the simulated leagues."""
+    seasons, found = {season for season, _ in keys}, {}
+    for match in world.matches.values():
+        if match.season not in seasons: continue
+        for club_id in (match.home_id, match.away_id):
+            if (match.season, club_id) in keys and world.competitions[match.competition_id].kind == "league":
+                found[(match.season, club_id)] = world.competitions[match.competition_id]
+    return found
+
+
+def career_league(world: World, club_id: int | None, levels: dict, season: int, played: dict) -> tuple[str | None, str | None]:
+    """What a club's league reads as in the career row of a season, with its nation: the name of the simulated league it
+    played that season (`played`, see `played_leagues`; the one it is in for the season under way); outside them "D" and
+    the level of the club's division (`levels`, see `division_levels`). A club that has entered the simulated leagues
+    since came from the reserve pool of their nation. The source gives no level to the other divisions: such a club plays
+    one level under the deepest known one of its nation, hence in the top flight of a nation without any simulated
+    league."""
     club = world.clubs.get(club_id)
     if club is None: return None, None
-    league = club_league(world, club_id)
+    today = club_league(world, club_id)
+    league = played.get((season, club_id)) or (today if season == world.season else None)
     if league: return league.name, league.nation
-    if club.division_id in levels:
+    if today:
+        nation = today.nation
+        level = max(known for country, known in levels.values() if country == nation)
+    elif club.division_id in levels:
         nation, level = levels[club.division_id]
     else:
         nation = club.cup_nation or club.nation
@@ -523,17 +541,36 @@ def career_league(world: World, club_id: int | None, levels: dict) -> tuple[str 
     return f"D{level}", nation
 
 
+def held_seasons(world: World, player_id: int, moves: list) -> list[tuple[int, int]]:
+    """Each season a player opened at a club, as (season, club), from the one he entered the game in (the first point of
+    his level history) to the one under way; `moves` are his movements, oldest first. A season whose first half saw him
+    leave is not counted for the club he left: a summer move reads at the club he joined."""
+    runs, player = world.trajectories.get(player_id), world.players.get(player_id)
+    if not runs: return []
+    year, month = divmod(runs[0][0], 12)
+    opening = world.config.world.key_dates.population_review.month
+    # Before his earliest known movement he was where it took him from; without any, he never left his club.
+    club_id, done, held = moves[0].source_id if moves else player.club_id if player else None, 0, []
+    for season in range(financial_season(world, Date(year, month + 1, 1)), world.season + 1):
+        while done < len(moves) and moves[done].season < season:
+            club_id, done = moves[done].target_id, done + 1
+        left = moves[done].date if done < len(moves) and moves[done].season == season else None
+        if club_id is not None and (left is None or (left.year - season) * 12 + left.month - opening >= 6):
+            held.append((season, club_id))
+    return held
+
+
 def career(world: World, player_id: int) -> dict:
     from core.world.reputation import division_levels
     levels = division_levels(world.config)
     player_records =[row for row in world.records.values() if row.player_id == player_id]
     rows = {}
+    def row_of(season: int, club_id: int) -> dict:
+        return rows.setdefault((season, club_id), {"season": season, "club": club_ref(world, club_id),
+                                                   "competitions": {}, "matches": 0, "substitutes": 0, "goals": 0, "assists": 0,
+                                                   "rating_sum": 0, "rating_count": 0})
     for record in player_records:
-        key = (record.season, record.club_id)
-        rows.setdefault(key, {"season": record.season, "club": club_ref(world, record.club_id),
-                             "competitions": {}, "matches": 0, "substitutes": 0, "goals": 0, "assists": 0,
-                             "rating_sum": 0, "rating_count": 0})
-        row = rows[key]
+        row = row_of(record.season, record.club_id)
         competition = world.competitions[record.competition_id]
         # A row names the league division and the European cup code; national cups stay in the totals only.
         label = competition.name if competition.kind == "league" else competition.code if competition.kind == "europe" else None
@@ -541,17 +578,6 @@ def career(world: World, player_id: int) -> dict:
         if competition.kind == "league": row["nation"] = competition.nation
         for field in ("matches", "substitutes", "goals", "assists", "rating_sum", "rating_count"):
             row[field] += getattr(record, field)
-    for (_, club_id), row in rows.items():
-        labels = row.pop("competitions")
-        # The league comes first, the one he played in or else his club's (a club outside the simulated leagues, or a season
-        # of cup matches only), then the European cup.
-        league, nation = career_league(world, club_id, levels)
-        played = [label for label, european in labels.items() if not european] or ([league] if league else [])
-        row["competition"] = " · ".join([*played, *(label for label, european in labels.items() if european)]) or None
-        row["competition_nation"] = row.pop("nation", None) or nation
-        count = row.pop("rating_count")
-        total = row.pop("rating_sum")
-        row["average"] = round(total / count, 2) if count else None
     moves = sorted((row for row in world.transfers if row.player_id == player_id and row.season is not None), key=lambda row: row.date)
     fees: dict[tuple[int, int], int] = {}
     order: dict[tuple[int, int], tuple[int, bool]] = {}
@@ -565,13 +591,20 @@ def career(world: World, player_id: int) -> dict:
         # A source club never reached as a target is where the player was before the earliest tracked transfer.
         if move.source_id is not None and move.source_id not in targeted:
             order.setdefault((move.season, move.source_id), (move.date.ordinal(), False))
-    for key in order:
-        if key in rows: continue
-        season, club_id = key
-        league, nation = career_league(world, club_id, levels)
-        rows[key] = {"season": season, "club": club_ref(world, club_id),
-                     "competition": league, "competition_nation": nation,
-                     "matches": 0, "substitutes": 0, "goals": 0, "assists": 0, "average": None}
+    # A club he joined or sat a whole season at has its row, even without a match.
+    for key in (*order, *held_seasons(world, player_id, moves)): row_of(*key)
+    played = played_leagues(world, set(rows))
+    for (season, club_id), row in rows.items():
+        labels = row.pop("competitions")
+        # The league comes first, the one he played in or else his club's that season (a club outside the simulated leagues,
+        # a season of cup matches only or without a match), then the European cup.
+        league, nation = career_league(world, club_id, levels, season, played)
+        named = [label for label, european in labels.items() if not european] or ([league] if league else [])
+        row["competition"] = " · ".join([*named, *(label for label, european in labels.items() if european)]) or None
+        row["competition_nation"] = row.pop("nation", None) or nation
+        count = row.pop("rating_count")
+        total = row.pop("rating_sum")
+        row["average"] = round(total / count, 2) if count else None
     items = [{**rows[key], "fee": fees.get(key), "loan": key in loans}
              for key in sorted(rows, key=lambda key: (key[0], order.get(key, (-1, False))), reverse=True)]
     rating_count = sum(row.rating_count for row in player_records)

@@ -48,13 +48,13 @@ def seasons(world: World, club_id: int) -> list[dict]:
     held = dict(world.reputation_history.get(club_id, []))
     rows = []
     for year in sorted(finished, reverse=True):
-        row = {"season": year, "rank": None, "champion": False, "competition_id": None, "competition": None, "cup": None, "europe": None,
-               "reputation": reputation_held(held, year)}
+        row = {"season": year, "rank": None, "champion": False, "competition_id": None, "competition": None, "level": None,
+               "cup": None, "europe": None, "reputation": reputation_held(held, year)}
         for competition_id, matches in finished[year].items():
             competition = world.competitions[competition_id]
             if competition.kind == "league":
                 rank = next(item["rank"] for item in v.table(world, competition_id, year) if item["club_id"] == club_id)
-                row.update(rank=rank, champion=rank == 1, competition_id=competition_id, competition=competition.name)
+                row.update(rank=rank, champion=rank == 1, competition_id=competition_id, competition=competition.name, level=competition.level)
             elif competition.kind == "cup":
                 row["cup"] = cup_run(matches, club_id)
             elif competition.kind == "europe":
@@ -80,33 +80,41 @@ def biggest_transfers(world: World, club_id: int) -> dict:
 
 
 def honours(rows: list[dict]) -> dict:
-    """What the finished seasons won: league titles, national cups, European cups by competition, and the best league rank
-    and European run, the earliest season first at equal merit."""
+    """What the finished seasons won: league titles by division (the highest first), national cups, European cups by
+    competition, and the best league rank (in the highest division the club played) and European run, the earliest season
+    first at equal merit."""
+    league: dict[tuple[int, str], dict] = {}
     europe: dict[str, dict] = {}
     for row in rows:
+        if row["champion"]:
+            entry = league.setdefault((row["level"], row["competition"]), {"competition": row["competition"], "level": row["level"], "count": 0})
+            entry["count"] += 1
         if row["europe"] and row["europe"]["winner"]:
             entry = europe.setdefault(row["europe"]["code"], {"code": row["europe"]["code"], "competition": row["europe"]["competition"], "count": 0})
             entry["count"] += 1
     ranked = [row for row in rows if row["rank"] is not None]
-    best = min(ranked, key=lambda row: (row["rank"], row["season"]), default=None)
+    best = min(ranked, key=lambda row: (row["level"], row["rank"], row["season"]), default=None)
     runs = [row for row in rows if row["europe"]]
     furthest = max(runs, key=lambda row: (row["europe"]["level"], -row["season"]), default=None)
-    return {"league": sum(row["champion"] for row in rows), "cup": sum(bool(row["cup"] and row["cup"]["winner"]) for row in rows),
+    return {"league": [league[key] for key in sorted(league)], "cup": sum(bool(row["cup"] and row["cup"]["winner"]) for row in rows),
             "europe": sorted(europe.values(), key=lambda entry: entry["code"]),
             "best_rank": {"rank": best["rank"], "season": best["season"], "competition": best["competition"]} if best else None,
             "best_europe": {**furthest["europe"], "season": furthest["season"]} if furthest else None}
 
 
-def league_shape(world: World, club_id: int) -> dict | None:
-    """The size of the club's league today and its places at each end, to draw the seasons against."""
-    competition_id = world.clubs[club_id].competition_id
-    if competition_id is None: return None
-    rows = v.table(world, competition_id)
-    return {"clubs": len(rows), "europe": sum(row["movement"] in ("champion", "europe", "promotion") for row in rows),
-            "relegation": sum(row["movement"] == "relegation" for row in rows), "level": world.competitions[competition_id].level}
+def league_shape(world: World, competition_id: int) -> dict:
+    """The size of a league today and its places at each end, to draw a club's seasons in it against."""
+    competition, rows = world.competitions[competition_id], v.table(world, competition_id)
+    return {"id": competition_id, "name": competition.name, "level": competition.level, "clubs": len(rows),
+            "europe": sum(row["movement"] in ("champion", "europe") for row in rows),
+            "promotion": sum(row["movement"] == "promotion" for row in rows),
+            "relegation": sum(row["movement"] == "relegation" for row in rows)}
 
 
 def history(world: World, club_id: int, page: int) -> dict:
     rows = seasons(world, club_id)
-    return {**v.paginate(rows, page), "honours": honours(rows), "league": league_shape(world, club_id),
+    # The leagues the club has played in and the one it plays in today, the highest first.
+    played = {row["competition_id"] for row in rows} | {world.clubs[club_id].competition_id}
+    leagues = sorted((league_shape(world, competition_id) for competition_id in played if competition_id is not None), key=lambda league: league["level"])
+    return {**v.paginate(rows, page), "honours": honours(rows), "leagues": leagues,
             "leaders": leaders(world, club_id), "transfers": biggest_transfers(world, club_id)}

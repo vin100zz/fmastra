@@ -14,6 +14,8 @@
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  /* Pitch. */
  --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141ecc;
+ /* The line of a curve. */
+ --series-1:#2a78d6;
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
  --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
  --text:"Segoe UI",system-ui,sans-serif;
@@ -307,6 +309,22 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .comparison-bar>i:first-child{border-radius:4px 0 0 4px}
 .comparison-bar>i:last-child{border-radius:0 4px 4px 0}
 .comparison-bar.none>i{background:var(--panel-3)}
+/* A league rank season after season, drawn to the width of its card: a line of 2 through a point for each season, the one
+   under way an open point at the end of a dashed line, the rank written by its point. A storey for each division the club
+   has played in, the highest on top, a line between two storeys; in each, the places that lead somewhere are tinted as a
+   table marks them (Europe, promotion, relegation), and named on the right in the muted ink. */
+.club-chart{display:block;width:100%;height:auto;overflow:visible;font-family:var(--text)}
+.cc-grid{stroke:var(--row-line);stroke-width:1}
+.cc-tick{font-size:var(--fs-body);fill:var(--muted)}
+.cc-value{font:700 semi-condensed var(--fs-figure)/1 var(--display);fill:var(--strong)}
+.cc-line{fill:none;stroke:var(--series-1);stroke-width:2;stroke-linejoin:round}
+.cc-line.dashed{stroke-dasharray:5 5}
+.cc-point{fill:var(--series-1);stroke:var(--panel);stroke-width:2}
+.cc-point.open{fill:var(--panel);stroke:var(--series-1)}
+.rank-zone.europe{fill:var(--info-soft)}
+.rank-zone.promotion{fill:var(--good-soft)}
+.rank-zone.relegation{fill:var(--bad-soft)}
+.rank-zone-label{font-size:var(--fs-small);font-weight:600;fill:var(--muted)}
 
 /* Under the pointer (.hover shows the state on a board). One ground for whatever is under it, --panel-3; what is open,
    picked or tinted keeps its own. Nothing else moves: no colour, no border, no shadow.

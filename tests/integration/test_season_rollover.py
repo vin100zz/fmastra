@@ -113,7 +113,7 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
             assert row['season'] == first and row['cup' if kind == 'cup' else 'europe']['winner'] is True
             assert row['cup' if kind == 'cup' else 'europe']['level'] == 7
         body = client.get(f'/api/clubs/{promoted}/historique').json()
-        assert set(body) == {'items', 'total', 'page', 'page_size', 'leaders', 'transfers', 'honours', 'league'}
+        assert set(body) == {'items', 'total', 'page', 'page_size', 'leaders', 'transfers', 'honours', 'leagues'}
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
         assert response.json()['items'][0]['standings'] == previous[18]
