@@ -11,7 +11,7 @@ from core.ai.market import market_value, expected_wage, contract_for, nominal_si
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
 from .human import is_human_club, listed_price
 from .reserves import accepts_reserve, in_reserve
-from .transfer_rules import frustration, recent_arrival_ids, season_arrivals, wants_to_leave
+from .transfer_rules import frustration, held_back, recent_arrival_ids, season_arrivals, wants_to_leave
 
 
 def expiry_events(world: World) -> list[PlayerReleased]:
@@ -44,13 +44,14 @@ def position_ranks(world: World, club: Club) -> dict[int, int]:
 class Contentment:
     """What a player under contract makes of his situation: his wage against the one his value commands, his minutes
     against those his rank at his position promises (each out of 1), what a renewal weighs, how restless a club beneath
-    him makes him, and the morale he drifts towards each week."""
+    him makes him, the morale he drifts towards each week, and what being held back takes off it."""
     expected_wage: float
     wage: float
     playing_time: float
     satisfaction: float
     frustration: float
     morale_target: float
+    held: float = 0.0
 
 
 def contentment(world: World, player: Player, club: Club, rank: int, games: int, minutes: float) -> Contentment:
@@ -71,7 +72,9 @@ def contentment(world: World, player: Player, club: Club, rank: int, games: int,
     # Playing every match and earning a fair wage does not settle a player whose club is beneath him.
     restless = frustration(player, world)
     target -= cfg.management.market.frustration_morale_weight * restless
-    return Contentment(expected, salary_satisfaction, playing_satisfaction, satisfaction, restless, target)
+    # He wants to leave and his club shut the door on every offer: that weighs on him too.
+    held = cfg.management.market.offers.untouchable_morale_loss if held_back(player, world) else 0.0
+    return Contentment(expected, salary_satisfaction, playing_satisfaction, satisfaction, restless, target - held, held)
 
 
 # A part of his situation taking less than this off the morale he drifts towards is not named as its cause.
@@ -79,13 +82,16 @@ MORALE_CAUSE_MIN = 0.05
 
 
 def morale_cause(world: World, mood: Contentment) -> str | None:
-    """What holds a player's morale down most: "salaire", "temps_de_jeu" or "ambition"; None when nothing much does."""
+    """What holds a player's morale down most: "salaire", "temps_de_jeu", "ambition" or "intransferable" (he wants to
+    leave and is not for sale); None when nothing much does."""
     cfg = world.config
     moral, rules = cfg.states.moral, cfg.management.contracts
     # What each part takes off the target, by its weight there (the satisfaction a renewal weighs counts in the target too).
+    ambition = cfg.management.market.frustration_morale_weight * mood.frustration
+    # Held back, the club beneath him and the door it shut are one and the same grievance.
     losses = {"salaire": (moral.contract_weight + moral.results_weight * rules.wage_weight) * (1 - mood.wage),
               "temps_de_jeu": (moral.playing_time_weight + moral.results_weight * rules.playing_time_weight) * (1 - mood.playing_time),
-              "ambition": cfg.management.market.frustration_morale_weight * mood.frustration}
+              "ambition": 0.0 if mood.held else ambition, "intransferable": ambition + mood.held if mood.held else 0.0}
     cause = max(losses, key=losses.get)
     return cause if losses[cause] >= MORALE_CAUSE_MIN else None
 

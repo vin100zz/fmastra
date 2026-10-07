@@ -14,9 +14,10 @@ from core.domain.offers import RESERVING_STAGES
 from core.domain.world import World
 from core.engine.abilities import overall
 from core.math import clamp, interpolate
+from core.randomness import stream
 from core.world.estimates import estimate_potential
 from core.world.events import PlayerSigned
-from core.world.human import is_human_club, listed_price
+from core.world.human import is_human_club, listed_price, untouchable
 from core.world.transfer_rules import recent_arrival_ids, accepts_move
 from core.world.importation.synthesis import intrinsic_value, expected_wage
 from .assignment import maximize_assignment
@@ -26,6 +27,12 @@ from .assignment import maximize_assignment
 class Need:
     position: Position
     gap: float
+
+
+@dataclass(frozen=True, slots=True)
+class Bid(PlayerSigned):
+    """A signing a club aims at, at the fee asked for the player, and the most it would pay for him (see `price_limit`)."""
+    limit: int = 0
 
 
 def nominal_size(cfg: Config) -> int:
@@ -191,8 +198,8 @@ def asking_price(player: Player, seller: Club, world: World) -> int:
 
 
 def can_sell(player: Player, seller: Club, world: World) -> bool:
-    """Only a loan and the hard minimums stop a sale; any other player has his price (see `asking_price`)."""
-    if player.loan is not None: return False
+    """Only a loan, the hard minimums and the human club's word stop a sale; any other player has his price (see `asking_price`)."""
+    if player.loan is not None or untouchable(world, player.id): return False
     return seller.competition_id is None or can_spare(player, seller, world)
 
 
@@ -241,14 +248,45 @@ def wage_demand(player: Player, club: Club, world: World) -> int:
     return max(cfg.management.budgets.wages.weekly_minimum, round(wage))
 
 
-def overpriced(player: Player, buyer: Club, fee: int, world: World) -> bool:
-    """Whether a fee the human club set itself (transfer list, offer to clubs) is more than a buyer pays.
+def window_stamp(world: World) -> str:
+    """Names the transfer window open today: what a club makes of a player holds for the whole window."""
+    for name in ("summer", "winter"):
+        window = getattr(world.config.world.market, name)
+        if (Date(world.date.year, window.start_month, window.start_day) <= world.date
+                <= Date(world.date.year, window.end_month, window.end_day)): return f"{world.date.year}:{name}"
+    return world.date.iso()
 
-    A buyer pays the player's usual asking price, as any buyer does in the course of the
-    market, or up to `buyer_price_multiplier` times the value it sees in him if that is higher.
+
+def price_limit(player: Player, buyer: Club, world: World, need: float) -> int:
+    """The most a club pays for a player, whatever is asked for him.
+
+    The value it sees in him, times `buyer_price_multiplier` when it hardly needs him and up to
+    `need_premium` more when it needs him most (`need`, from 0 to 1, see `Plan.need`). A club with
+    an appetite for risk pays more, a cautious one less, and each club has its own reading of each
+    player, drawn once for the window: two clubs never value a player quite alike.
     """
-    if fee <= round(market_value(player, world, buyer) * world.config.management.market.buyer_price_multiplier): return False
-    return fee > asking_price(player, world.clubs[player.club_id], world)
+    rules, offers = world.config.management.market, world.config.management.market.offers
+    appetite = 1 + offers.risk_weight * (buyer.personality.risk_appetite - 0.5)
+    reading = 1 + stream(world.seed, "price-limit", buyer.id, player.id, window_stamp(world)).gauss(0, offers.noise)
+    return round(market_value(player, world, buyer) * (rules.buyer_price_multiplier + offers.need_premium * clamp(need, 0, 1))
+                 * appetite * max(0.5, reading))
+
+
+def outside_need(player: Player, buyer: Club, world: World) -> float:
+    """How much an unsimulated club needs a player: it has no squad to measure it on, so it is drawn for the window."""
+    return stream(world.seed, "outside-need", buyer.id, player.id, window_stamp(world)).random()
+
+
+def opening_share(buyer: Club, cfg: Config) -> float:
+    """The share of its price limit a club opens at when no price is asked: a patient club opens lower."""
+    rules = cfg.management.market
+    return rules.counteroffer_ratio + rules.offers.opening_spread * (0.5 - buyer.personality.negotiation_patience)
+
+
+def raises_allowed(buyer: Club, cfg: Config) -> int:
+    """How many times a club raises an offer turned down before giving up: a patient club raises more often, by less."""
+    offers = cfg.management.market.offers
+    return round(offers.min_raises + (offers.max_raises - offers.min_raises) * buyer.personality.negotiation_patience)
 
 
 def reinforced_positions(world: World) -> dict[int, set[Position]]:
@@ -301,6 +339,13 @@ class Plan:
         if (quality <= self.quality or quality - self.quality < cfg.management.market.minimum_quality_gain) and not required: return None
         return quality
 
+    def need(self, player: Player, quality: float, cfg: Config) -> float:
+        """How much the club needs the player, from 0 to 1: the quality he adds to its squad against
+        `full_need_gain`, and 1 for a player it must sign to reach a hard minimum."""
+        if len(self.projected) < cfg.management.guardrails.min_squad or self.missing_keeper and player.position == Position.GOALKEEPER:
+            return 1.0
+        return clamp((quality - self.quality) / cfg.management.market.offers.full_need_gain, 0, 1)
+
     def take(self, player: Player, fee: int, wage: int, quality: float) -> None:
         self.projected.append(player)
         self.quality = quality
@@ -330,13 +375,13 @@ def recruitment_plan(world: World, club: Club, pending: list, slots: int, reinfo
                 short_of_players(squad, cfg), missing_keeper)
 
 
-def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> list[PlayerSigned]:
+def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> list[Bid]:
     """The clubs that bid, at this fee, for a player the human club offers to every club today.
 
     An active club decides as in its daily review, without waiting for it: a need at his
     position not already covered, room for a new offer, the means, and at least the
     minimum quality gain. A dormant club with room takes its chance with its
-    approach probability. Neither pays more than `overpriced` allows.
+    approach probability. Neither pays more than its `price_limit`.
     """
     cfg = world.config
     guard = cfg.management.guardrails
@@ -348,25 +393,33 @@ def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> 
             if club.squad_size >= guard.max_squad or rng.random() >= cfg.management.market.dormant_clubs.approach_probability: continue
             if not accepts_move(player, club, world): continue
             wage = wage_demand(player, club, world)
-            if (fee > club.transfer_budget or club.balance - fee < guard.min_balance or club.wage_bill + wage > club.wage_cap
-                    or overpriced(player, club, fee, world)): continue
-            bids.append(PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee))
+            limit = price_limit(player, club, world, outside_need(player, club, world))
+            if fee > club.transfer_budget or club.balance - fee < guard.min_balance or club.wage_bill + wage > club.wage_cap or fee > limit: continue
+            bids.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
             continue
         pending = [offer for offer in world.offers.values() if offer.target_id == club.id]
         slots = open_slots(club, pending, cfg)
         if slots <= 0 or any(offer.player_id == player.id for offer in pending) or not accepts_move(player, club, world): continue
         plan = recruitment_plan(world, club, pending, slots, reinforced[club.id])
         wage = wage_demand(player, club, world)
-        if player.position in plan.covered or wage > plan.wages or fee > plan.money or overpriced(player, club, fee, world): continue
+        if player.position in plan.covered or wage > plan.wages or fee > plan.money: continue
         if not any(need.position == player.position and (need.gap > 0 or plan.urgent) for need in needs_for(club, plan.projected, cfg)): continue
-        if plan.improved_quality(player, cfg) is None: continue
-        bids.append(PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee))
+        quality = plan.improved_quality(player, cfg)
+        if quality is None: continue
+        limit = price_limit(player, club, world, plan.need(player, quality, cfg))
+        if fee > limit: continue
+        bids.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
     return bids
 
 
 def propose_transfers(world: World, rng: Random, emergency: bool = False,
-                      rejected: dict[int, set[int]] | None = None) -> list[PlayerSigned]:
-    """Snapshot all proposals before applying any; competing offers share a round."""
+                      rejected: dict[int, set[int]] | None = None) -> list[Bid]:
+    """Snapshot all proposals before applying any; competing offers share a round.
+
+    Each proposal names the fee asked for the player (his club's asking price, or the fee the
+    human club listed him at) and the most the buyer would pay: a club leaves a player whose
+    price is beyond what it would pay for him to others.
+    """
     from .controller import AIController
     cfg = world.config
     controller = AIController(cfg, rng)
@@ -376,6 +429,10 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
     # The human club's transfer list, at the fee it asks: every club with the need sees it first.
     listed = {player.id: fee for player in candidates if (fee := listed_price(world, player.id)) is not None}
     rejected = rejected or {}
+
+    def turned_away(club: Club, player: Player) -> bool:
+        """The human club turned this club's offer down for good in this window; listed since, he is offered to all."""
+        return player.id not in listed and club.id in world.turned_away.get(player.id, ())
     proposals = []
     opening_day = any((world.date.month, world.date.day) == (window.start_month, window.start_day)
                       for window in (cfg.world.market.summer, cfg.world.market.winter))
@@ -445,17 +502,20 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             pool.sort(key=lambda player: (player.id not in listed, -player.rating, player.id))
             considered = 0
             for player in pool:
-                if not available(player) or not accepts_move(player, club, world): continue
+                if not available(player) or turned_away(club, player) or not accepts_move(player, club, world): continue
                 wage = wage_demand(player, club, world)
                 if wage > plan.wages: continue
                 fee = price(player)
-                if fee > plan.money or player.id in listed and overpriced(player, club, fee, world): continue
+                if fee > plan.money: continue
                 # Shortlist only affordable, sellable players, not the richest stars.
                 if considered >= cfg.management.market.shortlist_size: break
                 considered += 1
                 quality = plan.improved_quality(player, cfg)
                 if quality is None: continue
-                proposals.append(PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee))
+                # Asked more than he is worth to this club, he is left to a club that needs him more.
+                limit = price_limit(player, club, world, plan.need(player, quality, cfg))
+                if fee > limit: continue
+                proposals.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
                 plan.take(player, fee, wage, quality)
                 break
     # Each external club has one scheduled opportunity per transfer window.
@@ -472,12 +532,12 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             choices = rng.sample(external_pool, min(len(external_pool), cfg.management.market.shortlist_size))
             choices.sort(key=lambda player: (-player.rating, player.id))
             for player in choices:
-                if not available(player) or not accepts_move(player, club, world): continue
+                if not available(player) or turned_away(club, player) or not accepts_move(player, club, world): continue
                 fee = price(player)
                 wage = wage_demand(player, club, world)
-                if player.id in listed and overpriced(player, club, fee, world): continue
+                limit = price_limit(player, club, world, outside_need(player, club, world))
+                if fee > limit: continue
                 if fee <= club.transfer_budget and club.balance - fee >= cfg.management.guardrails.min_balance and club.wage_bill + wage <= club.wage_cap:
-                    offer = PlayerSigned(player.id, player.club_id, club.id, contract_for(player, world, wage), fee)
-                    proposals.append(offer)
+                    proposals.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
                     break
     return proposals

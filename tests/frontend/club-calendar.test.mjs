@@ -1,14 +1,30 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {calendarContent,competitionCode,competitionBadge} from '../../web/club-calendar.js';
+import {setCompetitions,setNations} from '../../web/ui.js';
 
-test('a competition reads by a short name: the code of a European cup, otherwise its initials up to its number',()=>{
+test('a competition reads in two characters: its code in Europe, L or D and its level for a league, C and its country for a cup',()=>{
+ setNations({FRA:{name:'France'},ENG:{name:'Angleterre'},GER:{name:'Allemagne'},ESP:{name:'Espagne'}});
+ assert.equal(competitionCode({name:'Ligue 2',kind:'league',nation:'FRA',level:2}),'L2');
+ assert.equal(competitionCode({name:'National',kind:'league',nation:'FRA',level:3}),'L3');
+ assert.equal(competitionCode({name:'Premier League',kind:'league',nation:'ENG',level:1}),'D1');
+ assert.equal(competitionCode({name:'La Liga 2',kind:'league',nation:'ESP',level:2}),'D2');
+ assert.equal(competitionCode({name:'Coupe de France',kind:'cup',nation:'FRA'}),'CF');
+ assert.equal(competitionCode({name:'Coupe du Roi',kind:'cup',nation:'ESP'}),'CE');
+ // Two countries may share a code: England and Germany both read CA.
+ assert.equal(competitionCode({name:'FA Cup',kind:'cup',nation:'ENG'}),'CA');assert.equal(competitionCode({name:'Coupe d’Allemagne',kind:'cup',nation:'GER'}),'CA');
+ // A screen that only names a competition finds the rest in what the game lists.
+ setCompetitions([{id:-3,name:'Coupe de France',kind:'cup',nation:'FRA',level:0},{id:11,name:'Premier League',kind:'league',nation:'ENG',level:1}]);
+ assert.equal(competitionCode({id:-3,name:'Coupe de France'}),'CF');assert.equal(competitionCode({name:'Premier League'}),'D1');
+ assert.equal(competitionBadge({name:'Premier League'}),'<span class="competition-code league" title="Premier League">D1</span>');
+ setCompetitions([]);setNations({});
+ // A competition the game does not list keeps the initials of its name.
  assert.equal(competitionCode({name:'Ligue 1 McDonald’s',kind:'league'}),'L1');
  assert.equal(competitionCode({name:'Coupe de France',kind:'cup'}),'CdF');
  assert.equal(competitionCode({name:'Premier League',kind:'league'}),'PL');
  assert.equal(competitionCode({name:'FA Cup',kind:'cup'}),'FAC');
  assert.equal(competitionCode({name:'Ligue Europa',kind:'europe',code:'C3'}),'C3');
- assert.equal(competitionBadge({name:'Ligue des champions',kind:'europe',code:'C1'}),'<span class="competition-code europe c1" title="Ligue des champions">C1</span>');
+ assert.equal(competitionBadge({name:'Ligue des champions',kind:'europe',code:'C1'}),'<span class="competition-code europe" title="Ligue des champions">C1</span>');
  assert.match(competitionBadge({name:'Coupe <de> France',kind:'cup'}),/class="competition-code cup" title="Coupe &lt;de&gt; France">C&lt;F</);
 });
 

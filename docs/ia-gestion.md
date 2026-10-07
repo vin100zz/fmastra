@@ -191,8 +191,26 @@ chaque poste, les `talents_visibles` (10) meilleurs joueurs vendables en plus de
 son échantillon aléatoire de `max_candidates_scanned` candidats, sinon un
 joueur fort à un poste peu fourni n'atteint un acheteur que par hasard. Les
 offres d'un même joueur sont décidées ensemble lorsque la plus ancienne est
-ouverte depuis `jours_encheres` jours (2) : les rivaux qui arrivent entre-temps
-sont départagés par le score du joueur, où la réputation du club pèse.
+ouverte depuis `jours_encheres` jours (2). Un acheteur seul paie le prix demandé.
+Des rivaux surenchérissent (`outbid`, `core/world/market.py`) : chacun suit jusqu'à
+ce qu'il peut atteindre (`reach` : son prix maximum, dans la limite de son budget et
+de sa trésorerie une fois déduites les réservations de ses autres offres) ; le plus
+offrant s'arrête `pas_surenchere` (2 %) au-dessus du suivant, les autres finissent à
+leur propre limite. Le vendeur retient les offres à moins de `tolerance_vendeur`
+(5 %) de la plus haute, et le joueur choisit parmi elles par son score, où la
+réputation du club pèse ; l'indemnité est celle du club choisi.
+
+**Prix maximum d'un acheteur** (`price_limit`, `core/ai/market.py`). Chaque club a,
+pour chaque joueur, un prix qu'il ne dépasse pas : la valeur qu'il lui voit ×
+(`multiplicateur_prix_max_acheteur` + `offres.prime_besoin` × besoin) × (1 +
+`offres.poids_appetit_risque` × (appétit du risque − 0,5)) × une lecture propre au
+club et au joueur, tirée une fois par fenêtre (gaussienne d'écart-type
+`offres.bruit_ecart_type`, flux `price-limit`). Le besoin, de 0 à 1, est le gain de
+qualité pondérée que le joueur apporte à l'effectif projeté, rapporté à
+`offres.gain_besoin_plein` ; il vaut 1 pour une recrue exigée par un minimum, et il
+est tiré pour la fenêtre (flux `outside-need`) pour un club dormant, qui n'a pas
+d'effectif simulé. Un club ne propose rien pour un joueur dont le prix demandé
+dépasse ce maximum : il passe au candidat suivant.
 
 À l'ouverture de chaque fenêtre, chaque club évalue son effectif et peut ouvrir
 jusqu'à `negociations_actives_max` dossiers sur des postes différents (trois).
@@ -210,8 +228,10 @@ après rechargement et lorsque la fenêtre estivale traverse le bilan annuel.
 
 La shortlist est constituée après les contrôles de disponibilité, de salaire
 et de prix. Un poste sans candidat viable n'empêche pas d'examiner les suivants.
-Le plafond offert et le prix demandé partagent le même calcul, selon le statut
-du joueur chez le vendeur. L'offre initiale reste négociable jusqu'à ce plafond.
+Le prix demandé suit le statut du joueur chez le vendeur ; il est public, et
+l'acheteur l'offre tel quel en le réservant (`TransferOffer.ceiling`), son prix
+maximum (`TransferOffer.limit`) ne servant qu'à surenchérir. Une offre relevée
+réserve son nouveau montant.
 Un refus définitif ou une concurrence perdue libère les réservations et permet
 une recherche immédiate d'alternative, en excluant le joueur refusé pour ce tour
 et sans ouvrir davantage de dossiers que le nombre de pistes perdues.
@@ -245,6 +265,29 @@ partie existante, est expliquée dans les actualités quand elle échoue (refus 
 vendeur ou du joueur, offre rivale, clôture). Les offres reçues encore en attente à
 la clôture sont signalées comme expirées.
 
+**Offres reçues par l'utilisateur** (`core/world/sales.py`). Aucun prix n'est demandé
+pour ses joueurs. Un club ne vient que si son prix maximum atteint le prix qu'un club
+IA demanderait à sa place, qu'il réserve, et ouvre à une part de ce maximum :
+`ratio_contre_offre` (0,75), décalé de `offres.ecart_ouverture` × (0,5 − patience du
+club), le montant étant arrondi en dessous à trois chiffres significatifs. Les offres
+en cours pour un joueur surenchérissent à chaque règlement (`surface`) : une offre
+relevée est annoncée de nouveau, la ligne de son ancien montant passant à l'état
+« relevée ». L'utilisateur accepte, refuse ou contre-propose :
+
+- un refus (`raised`) fait revenir l'acheteur `delai_reponse_min_jours` à
+  `delai_reponse_max_jours` jours plus tard (`TransferOffer.due`) avec une offre plus
+  haute ; il se donne de `offres.relances_min` à `offres.relances_max` relances selon
+  sa patience (`raises_allowed`) et répartit sur elles l'écart à ce qu'il peut
+  atteindre, la dernière étant sa limite. Sans relance ni marge, il abandonne :
+  `World.turned_away` le retient et il ne revient pas pour ce joueur avant la fenêtre
+  suivante (la clôture vide le registre), sauf si le joueur est listé ou proposé ;
+- une contre-proposition (`counter`) conclut la vente au prix nommé s'il tient sous ce
+  que l'acheteur peut atteindre, et vaut refus sinon.
+
+L'utilisateur peut déclarer un joueur **intransférable** (`set_untouchable`,
+`World.not_for_sale`) : `can_sell` le refuse à tous, ses offres en cours tombent et il
+quitte la liste. Le lister ou le proposer lève la déclaration ; un prêt la conserve.
+
 Pour vendre, l'utilisateur place un de ses joueurs sur sa **liste des transferts**, ou
 le **propose aux clubs** (`core/world/sales.py`). Dans les deux cas il fixe le prix
 demandé, et les offres suivent le circuit des offres reçues : en attente de sa réponse,
@@ -255,8 +298,8 @@ avec une actualité.
   Chaque club qui recherche à son poste le voit, quel que soit son tirage de
   candidats, et l'examine avant les autres. Les clubs dormants le comptent dans le
   surplus qu'ils démarchent, quelle que soit la taille de l'effectif. L'acheteur
-  offre directement le prix demandé, sans le ratio de contre-offre. Un joueur listé ne
-  demande pas de prolongation.
+  offre directement le prix demandé, sans ouvrir plus bas ni surenchérir (sa limite
+  est ce prix). Un joueur listé ne demande pas de prolongation.
 - **Proposer aux clubs.** Pendant le mercato, tous les clubs examinent le joueur le
   jour même, à ce prix. Un club actif décide comme dans sa revue quotidienne, sans
   attendre son tirage : un besoin à ce poste non encore couvert, une place de
@@ -268,10 +311,8 @@ avec une actualité.
   `jours_relance_proposition` (14) jours. Refusé à un joueur arrivé récemment, ou
   dont le départ passerait sous l'effectif ou les gardiens minimaux.
 
-Un prix fixé par l'utilisateur n'est payé que s'il ne dépasse pas le plus haut de deux
-montants : le prix demandé habituel du joueur, que tout acheteur paie dans le cours
-normal du marché, et la valeur de marché que l'acheteur lui voit, multipliée par
-`multiplicateur_prix_max_acheteur` (1,35). Un joueur listé, ou proposé depuis moins de
+Un prix fixé par l'utilisateur n'est payé que s'il ne dépasse pas le prix maximum de
+l'acheteur, comme tout prix demandé. Un joueur listé, ou proposé depuis moins de
 `jours_relance_proposition` jours, sait qu'il n'entre plus dans les plans de son club :
 il accepte un club moins réputé jusqu'à `tolerance_baisse_joueur_a_vendre` (15 points)
 au lieu de `tolerance_baisse_reputation`. Un joueur qui veut partir garde sa propre
@@ -354,7 +395,10 @@ l'aggrave. Elle est évaluée chaque semaine :
   converge ensuite à la vitesse de dérive habituelle ;
 - au-dessus de `seuil_depart_souhaite`, le joueur veut partir : il ne prolonge pas
   son contrat, qu'il termine ou qu'il quitte par transfert, et `accepts_move` ne lui
-  laisse que les clubs nettement plus réputés que le sien (voir le mercato).
+  laisse que les clubs nettement plus réputés que le sien (voir le mercato) ;
+- s'il veut partir et que l'utilisateur l'a déclaré intransférable (`held_back`), la
+  cible de son moral perd encore `offres.malus_moral_intransferable` (0,2), et la
+  cause nommée de son moral devient `intransferable`.
 
 Le club le vend s'il reçoit son prix (règle d'invendabilité levée ci-dessus). S'il ne
 reçoit aucune offre, le joueur arrive libre en fin de contrat et signe où son

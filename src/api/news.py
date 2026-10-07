@@ -16,7 +16,8 @@ from . import views as v
 AGGREGATED = {"injury", "injury_end", "suspension", "academy", "release", "retirement", "call_up", "morale", "contract_expiry"}
 WINDOWS = {"summer": "d’été", "winter": "d’hiver"}
 MORALE = {"temps_de_jeu": "est mécontent de son temps de jeu", "reserve": "ne veut plus être en réserve",
-          "salaire": "est mécontent de son salaire", "ambition": "vise un club plus prestigieux", "": "est mécontent"}
+          "salaire": "est mécontent de son salaire", "ambition": "vise un club plus prestigieux",
+          "intransferable": "veut partir, mais n’est pas à vendre", "": "est mécontent"}
 
 
 def headline(text: str) -> str:
@@ -85,7 +86,10 @@ def title(world: World, item: NewsItem) -> list[dict]:
     rival = opponent(world, item)
     against = (" contre ", (rival["name"], {"club": rival["id"]})) if rival else ()
     if kind == "offer_received" and lines:
-        return sentence(f"{plural(count, 'offre', 'offres')} pour ", named(world, item.player_id))
+        # A message of raised offers only says so; beside a new one they are offers like the others.
+        raised = all(line.text == "raised" for line in lines)
+        what = plural(count, "offre relevée", "offres relevées") if raised else plural(count, "offre", "offres")
+        return sentence(f"{what} pour ", named(world, item.player_id))
     # A demand always reads the same, answered or not, whatever sentence an older version wrote for it.
     if kind == "renewal_proposed":
         return sentence(named(world, item.player_id), " veut un nouveau contrat")
@@ -148,15 +152,19 @@ def squad_line(world: World, player_id: int, **fields) -> dict:
 
 
 def offers_body(world: World, item: NewsItem) -> dict:
+    """The offers of a message, highest first, each with its answer; the value of the player and whether the club
+    keeps him off the market (`untouchable`), both None once he has left it."""
     from core.ai.market import market_value
+    from core.world.human import untouchable
     player = world.players.get(item.player_id)
+    own = player is not None and player.club_id == item.club_id
 
     def state(line) -> str:
         if line.state != PENDING: return line.state
         offer = world.offers.get(line.key)
         return PENDING if offer is not None and offer.awaiting_review else "lapsed"
-    return {"player": player_ref(world, item.player_id),
-            "value": market_value(player, world) if player is not None and player.club_id == item.club_id else None,
+    return {"player": player_ref(world, item.player_id), "value": market_value(player, world) if own else None,
+            "untouchable": untouchable(world, player.id) if own else None,
             "offers": [{"key": line.key, "club": v.club_ref(world, line.club_id), "fee": line.amount, "state": state(line)}
                        for line in sorted(item.lines, key=lambda line: (-line.amount, line.key))]}
 

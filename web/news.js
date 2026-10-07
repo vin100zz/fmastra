@@ -1,7 +1,7 @@
 import {monthlySalary} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,moraleReading,standingsTable,roundTitle} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,moraleReading,standingsTable,roundTitle} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -17,7 +17,7 @@ const ANSWERED=new Set(['offer_received','renewal_proposed','talks_open']);
 
 // Amounts are written in full euros and weekly wages in the stored sentences, as in the simulation; they read like every
 // other amount, a wage as a rounded monthly one.
-const amounts=text=>text.replace(/(\d+) €(\/semaine)?/g,(_,amount,weekly)=>weekly?`${monthlySalary(Number(amount))}/mois`:price(Number(amount)));
+const amounts=text=>text.replace(/(\d+) €(\/semaine)?/g,(_,amount,weekly)=>weekly?monthlySalary(Number(amount)):price(Number(amount)));
 const competitionHref=competition=>competition.kind==='europe'?`#/europe/${competition.code}`:`#/league/${competition.id}`;
 const PAGES={transfers:'#/transfers',players:'#/players',honours:'#/honours'};
 function refHref(ref){
@@ -34,8 +34,8 @@ const named=player=>player.gone?e(player.name):`<a href="#/player/${player.id}">
 const lines=(rows,modifier='')=>`<ul class="news-lines${modifier?` ${modifier}`:''}">${rows.map(cells=>`<li>${cells.join('')}</li>`).join('')}</ul>`;
 const absence=days=>days<7?`${days} jour${days>1?'s':''}`:days<30?`${Math.round(days/7)} semaine${Math.round(days/7)>1?'s':''}`:`${Math.max(1,Math.round(days/30))} mois`;
 const moraleBadge=value=>`<span class="rating graded" style="--hue:${moraleReading({morale:value/100}).hue}" title="Moral">${value} %</span>`;
-const MORALE={temps_de_jeu:'Mécontent de son temps de jeu',reserve:'Ne veut plus être en réserve',salaire:'Mécontent de son salaire',ambition:'Vise un club plus prestigieux'};
-const OFFER_STATES={accepted:['Acceptée','good'],refused:['Refusée',''],declined:['Non retenue',''],lapsed:['Sans suite','']};
+const MORALE={temps_de_jeu:'Mécontent de son temps de jeu',reserve:'Ne veut plus être en réserve',salaire:'Mécontent de son salaire',ambition:'Vise un club plus prestigieux',intransferable:'Veut partir, mais n’est pas à vendre'};
+const OFFER_STATES={accepted:['Acceptée','good'],refused:['Refusée',''],raised:['Relevée',''],declined:['Non retenue',''],lapsed:['Sans suite','']};
 
 function listRow(item,shown){
  const state=item.pending?'<i class="news-todo" role="img" aria-label="À traiter"></i>':ANSWERED.has(item.kind)?'<i class="news-done" role="img" aria-label="Traité">✓</i>':'';
@@ -43,24 +43,30 @@ function listRow(item,shown){
  return `<li><a class="news-row${item.read?'':' unread'}${current?' selected':''}" href="#/actualites?msg=${item.id}"${current?' aria-current="true"':''}><span class="news-row-top">${tag(item.kind)}<small>${shortDate(item.date)}</small></span><span class="news-row-title"><span>${amounts(e(item.title))}</span>${state}</span></a></li>`;
 }
 
-// The offers of a day for a player: each is answered on its line; with several still open, both buttons at the foot answer
-// them all, and accepting them all lets the player pick his club.
+// The offers of a day for a player: each is accepted, turned down or answered with the club's own price (in a dialog of its
+// own) on its line; with several still open, both buttons at the foot answer them all, and accepting them all lets the player
+// pick his club. While he is the club's and on the market, the last button keeps him off it.
 function offersBody(data){
  const open=data.offers.filter(offer=>offer.state==='pending');
- const answer=offer=>offer.state==='pending'?`<span class="market-actions"><button${open.length===1?' class="primary"':''} data-command="reponse-offre" data-decision="accepter" data-offer="${e(offer.key)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(offer.key)}">Refuser</button></span>`
+ const dialog=index=>`counter-dialog-${index}`;
+ const answer=(offer,index)=>offer.state==='pending'?`<span class="market-actions"><button${open.length===1?' class="primary"':''} data-command="reponse-offre" data-decision="accepter" data-offer="${e(offer.key)}">Accepter</button><button type="button" data-open-dialog="${dialog(index)}">Contre-proposer</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(offer.key)}">Refuser</button></span>`
   :`<span class="news-state ${OFFER_STATES[offer.state]?.[1]||''}">${OFFER_STATES[offer.state]?.[0]||''}</span>`;
- const all=open.length>1?`<div class="news-actions"><button class="primary" data-command="reponse-offres" data-decision="accepter" data-player="${data.player.id}">Tout accepter</button><button class="danger" data-command="reponse-offres" data-decision="refuser" data-player="${data.player.id}">Tout refuser</button></div>`:'';
- return lines(data.offers.map(offer=>[`<span>${clubLink(offer.club)}</span>`,`<b>${price(offer.fee)}</b>`,answer(offer)]),'offers')+all;
+ const counter=(offer,index)=>offer.state==='pending'?`<dialog id="${dialog(index)}" class="action-dialog"><form data-counter="${e(offer.key)}"><span class="eyebrow">VENTE</span><h2>Votre prix pour ${e(data.player.name)}</h2><p>${e(offer.club?.name||'')} offre ${price(offer.fee)}</p><label>Prix demandé (M€) <input name="montant" type="number" min="0" step="0.01" value="${Math.ceil(offer.fee/1e4)/100}" required></label><div class="actions"><button type="button" data-close-dialog>Annuler</button><button class="primary" type="submit">Proposer</button></div></form></dialog>`:'';
+ const all=open.length>1?`<button class="primary" data-command="reponse-offres" data-decision="accepter" data-player="${data.player.id}">Tout accepter</button><button class="danger" data-command="reponse-offres" data-decision="refuser" data-player="${data.player.id}">Tout refuser</button>`:'';
+ const keep=open.length&&data.untouchable===false?`<button data-command="intransferable" data-kept="1" data-player="${data.player.id}">Déclarer intransférable</button>`:'';
+ return lines(data.offers.map((offer,index)=>[`<span>${clubLink(offer.club)}</span>`,`<b>${price(offer.fee)}</b>`,answer(offer,index)]),'offers')
+  +(all||keep?`<div class="news-actions">${all}${keep}</div>`:'')+data.offers.map(counter).join('');
 }
 function offersStatus(data){
- const accepted=data.offers.find(offer=>offer.state==='accepted');
+ const accepted=data.offers.find(offer=>offer.state==='accepted'),several=data.offers.length>1;
  if(accepted)return `Offre acceptée · ${e(accepted.club?.name||'')}`;
- return data.offers.some(offer=>offer.state==='refused')?(data.offers.length>1?'Offres refusées':'Offre refusée'):'Sans suite';
+ if(data.offers.some(offer=>offer.state==='refused'))return several?'Offres refusées':'Offre refusée';
+ return data.offers.some(offer=>offer.state==='raised')?(several?'Offres relevées':'Offre relevée'):'Sans suite';
 }
 
 function renewalBody(data){
  const terms=`<div class="news-terms"><span></span><span class="news-head">ACTUEL</span><span class="news-head">DEMANDÉ</span>`
-  +`<span>Salaire / mois</span><span>${monthlySalary(data.current.wage)}</span><b>${monthlySalary(data.asked.wage)}</b>`
+  +`<span>Salaire</span><span>${monthlySalary(data.current.wage)}</span><b>${monthlySalary(data.asked.wage)}</b>`
   +`<span>Fin de contrat</span><span>${date(data.current.end)}</span><b>${date(data.asked.end)}</b></div>`;
  const actions=data.state==='pending'?`<div class="news-actions"><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${data.player.id}">Accepter</button><button class="danger" data-command="renouvellement" data-decision="refuser" data-player="${data.player.id}">Refuser</button></div>`:'';
  return terms+actions;
@@ -71,7 +77,7 @@ const renewalStatus=data=>data.state==='accepted'?`Prolongé jusqu’au ${date(d
 function talksBody(data){
  const fee=data.club?fact('Indemnité convenue',`${price(data.fee)} · ${clubLink(data.club)}`):'';
  if(data.state!=='pending')return fee?`<div class="news-facts">${fee}</div>`:'';
- const asked=data.talks.contre_offre?fact('Salaire demandé',`${monthlySalary(data.talks.contre_offre)} / mois`):'';
+ const asked=data.talks.contre_offre?fact('Salaire demandé',monthlySalary(data.talks.contre_offre)):'';
  return `<div class="news-facts">${fee}${asked}</div><div class="news-actions">${talksAction(data.profile,{market:true},data.talks)}<button class="danger" data-command="abandon-negociation" data-player="${data.player.id}">Abandonner</button></div>`;
 }
 const talksStatus=data=>data.state==='agreed'?`Arrivée le ${date(data.arrival)}`:'Négociation terminée';
@@ -93,7 +99,7 @@ function expiryBody(data){
   const id=`contract-dialog-${item.player.id}`;
   const offer=item.settled?'':item.obstacle?`<button type="button" disabled title="${e(item.obstacle)}">Proposer un contrat</button>`
    :`<button type="button" data-open-dialog="${id}">Proposer un contrat</button>${contractDialog(item.player,{demande:item.demande,salaire_actuel:item.terms.current_wage,salaire_propose:item.terms.wage,fin_contrat_actuelle:item.end,fin_contrat_proposee:item.terms.end},id)}`;
-  return [`<span>${named(item.player)}</span>`,`<span>${monthlySalary(item.wage)} <small>/ mois</small></span>`,`<span>${offer}</span>`];
+  return [`<span>${named(item.player)}</span>`,`<span>${monthlySalary(item.wage)}</span>`,`<span>${offer}</span>`];
  };
  return lines(data.players.map(row),'expiry');
 }
@@ -101,7 +107,7 @@ function expiryBody(data){
 function marketBody(data,club){
  const players=list=>list.map(named).join(' · ');
  const budget=`<div class="fact"><span><a href="#/club/${club.id}/finances">Budget transferts</a></span><strong>${money(data.budget)}</strong></div>`;
- const facts=data.end?fact('Fermeture',date(data.end))+budget+fact('Marge salariale / mois',monthlySalary(Math.max(0,data.wages)))
+ const facts=data.end?fact('Fermeture',date(data.end))+budget+fact('Marge salariale',monthlySalary(Math.max(0,data.wages)))
   :(data.talks.length?fact('Vos offres en cours',players(data.talks)):'')+(data.offers.length?fact('Offres reçues',players(data.offers)):'')+budget;
  return `<div class="news-facts">${facts}</div><a class="news-more" href="#/players">Joueurs →</a>`;
 }
@@ -112,7 +118,7 @@ function reviewBody(data,club){
  const table=rows?`<div class="news-terms review"><span></span><span class="news-head">${e(club.name)}</span><span class="news-head">VAINQUEUR</span>${rows}</div>`:'';
  const europe=data.europe?`<span class="news-good">Qualifié pour la <a href="${competitionHref(data.europe)}">${e(data.europe.name)}</a> ${season(data.season+1)}</span>`:'<span></span>';
  const players=(data.scorer?fact('Meilleur buteur',`${named(data.scorer.player)} · ${data.scorer.goals} but${data.scorer.goals>1?'s':''}`):'')
-  +(data.rating?fact('Meilleure note',`${named(data.rating.player)} · ${n(data.rating.average)}`):'');
+  +(data.rating?fact('Meilleure note',`${named(data.rating.player)} · ${averageNote(data.rating.average)}`):'');
  return `${table}<div class="news-foot">${europe}<a class="news-more" href="#/honours">Palmarès →</a></div>${players?`<div class="news-facts">${players}</div>`:''}`;
 }
 
@@ -130,7 +136,7 @@ function messagePane(message,club){
 
 function standingsBlock(club,standings){
  if(!standings)return card('Classement',empty('Votre club ne dispute pas de championnat simulé.','Pas de classement'));
- return card(roundTitle('Classement',standings.items),standingsTable(standings,'record',false,club.id,'P'),`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
+ return card(roundTitle('Classement',standings.items),standingsTable(standings,'record',false,club.id),`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
 }
 
 // The first-team players who cannot play: injured, with the day they are back, or suspended.
@@ -146,7 +152,7 @@ function unavailableBlock(club,squad){
 function leadersBlock(club,squad){
  const played=squad.items.filter(player=>player.appearances>0),most=Math.max(0,...played.map(player=>player.appearances));
  const top=(key,among=played)=>among.filter(player=>player[key]>0).sort((a,b)=>b[key]-a[key]||b.appearances-a.appearances||a.id-b.id).slice(0,5)
-  .map(player=>`<li><span>${playerLink(player.id,player.name)}</span><b>${n(player[key])}</b></li>`).join('');
+  .map(player=>`<li><span>${playerLink(player.id,player.name)}</span><b>${key==='average'?averageNote(player[key]):n(player[key])}</b></li>`).join('');
  const list=(title,items)=>`<div><h3>${title}</h3>${items?`<ul class="moves">${items}</ul>`:'<p class="muted">—</p>'}</div>`;
  return card('Joueurs',`<div class="card-body news-leaders">${list('Buts',top('goals'))}${list('Passes',top('assists'))}${list('Notes',top('average',played.filter(player=>player.appearances*2>=most)))}${list('Matches',top('appearances'))}</div>`,
   `<a href="#/club/${club.id}" aria-label="Voir l’effectif">Voir →</a>`);

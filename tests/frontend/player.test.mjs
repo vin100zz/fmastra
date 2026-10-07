@@ -80,11 +80,12 @@ test('level chart points take the colours of the club played for, and stay neutr
 
 test('position pitch places ratings of 10 or more on the field and outlines the main position',()=>{
  const html=positionPitch({GB:1,DD:20,MC:12,MDC:10,DC:9,BU:null},'DD');
- assert.equal((html.match(/class="shirt graded"/g)||[]).length,3);
- assert.match(html,/<button type="button" class="pitch-player main picked" data-composite-role="DD" aria-pressed="true" style="left:85%;top:70%"><span class="shirt graded" style="--hue:120" title="DD : 20 \/ 20">20</);
+ assert.equal((html.match(/class="kit-shirt/g)||[]).length,3);
+ assert.match(html,/<button type="button" class="pitch-player main picked" data-composite-role="DD" aria-pressed="true" style="left:85%;top:70%" title="DD : 20 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DD<\/b><\/span>/);
  assert.equal((html.match(/pitch-player main/g)||[]).length,1);
- assert.match(html,/<small>MC<\/small>/);assert.match(html,/title="MDC : 10 \/ 20">10</);
- assert.doesNotMatch(html,/<small>(GB|DC|BU)</);
+ // The position is written on the shirt; an affinity below 20 stands on its corner.
+ assert.match(html,/title="MC : 12 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MC<\/b><i class="affinity-tag" style="--hue:\d+" title="Affinité MC : 12 \/ 20">12<\/i><\/span>/);assert.match(html,/title="MDC : 10 \/ 20">/);
+ assert.doesNotMatch(html,/<b>(GB|DC|BU)</);assert.doesNotMatch(html,/<small>/);
  assert.equal(positionPitch({GB:1,DC:9},'DC'),'');
 });
 
@@ -95,7 +96,7 @@ const playing={...detail,composites:COMPOSITE_VALUES,composites_by_position:BY_P
 
 test('each position of the pitch of aptitudes carries its note out of 200 beside the shirt, and the main one starts picked',()=>{
  const html=positionPitch({DD:20,MC:12,GB:1},'DD',playing);
- assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="shirt graded"[^>]*>20<\/span><span class="position-note left"><span class="rating graded" style="--hue:\d+" title="Note au poste DD : Défense au milieu, Progression, Défense de surface, affinité au poste comprise">97</);
+ assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="kit-shirt[^]*?<b>DD<\/b><\/span><span class="position-note left"><span class="rating graded" style="--hue:\d+" title="Note au poste DD : Défense au milieu, Progression, Défense de surface, affinité au poste comprise">97</);
  assert.match(html,/data-composite-role="MC" aria-pressed="false"[^>]*>.*?<span class="position-note"><span[^>]*>86</);
  assert.equal(positionPitch({DD:20},'DD',playing,'MC').match(/aria-pressed="true"/g),null);
  // Without notes (an older server), the shirts stand alone.
@@ -264,7 +265,7 @@ test('the rail draws condition, form and morale as bars, and names what weighs o
  const html=state((await render(fit)).html);
  assert.match(html,/<span>Condition<\/span><strong><i class="gauge" aria-hidden="true"><i style="width:83%"><\/i><\/i><b>83 %<\/b>/);
  // Form runs from the middle of its bar: +9 % of the 30 % it may reach is 15 % of the bar, to the right.
- assert.match(html,/title="Forme 1,09 : [^"]*"><span>Forme<\/span><strong><i class="gauge signed" aria-hidden="true"><i class="up" style="left:50%;width:15\.0%"><\/i><\/i><b>\+9 %<\/b>/);
+ assert.match(html,/title="Forme 1\.09 : [^"]*"><span>Forme<\/span><strong><i class="gauge signed" aria-hidden="true"><i class="up" style="left:50%;width:15\.0%"><\/i><\/i><b>\+9 %<\/b>/);
  assert.match(html,/title="Moral 61 %, vers 50 % · pèse surtout : son temps de jeu · salaire : 100 % de ce qu&#39;il attend · temps de jeu : 40 % de ce qu&#39;il attend"><span>Moral<\/span><strong><span class="morale-cause" title="Pèse surtout : son temps de jeu">◷<\/span><i class="gauge graded" style="--hue:\d+" aria-hidden="true"><i style="width:61%"><\/i><\/i><b>61 %<\/b>/);
  assert.match(html,/<span>Blessure<\/span><strong><span class="available">Disponible<\/span>/);
  const low=state((await render({...fit,form:.88})).html);
@@ -286,13 +287,14 @@ test('the rail counts yellow cards over all competitions and names a suspension 
  assert.doesNotMatch(rail((await render()).html),/Suspension/);
 });
 
-test('the rail carries salary, contract end, market value and asking price',async()=>{
+test('the rail carries salary and contract end; the market value and the asking price stand in tiles',async()=>{
  const side=rail((await render({...detail,asking_price:2500000})).html);
  const contract=side.slice(side.indexOf('>Contrat<'));
- for(const label of ['Salaire mensuel','Fin du contrat','Valeur de marché','Prix minimum'])assert.ok(contract.includes(`<div class="fact"><span>${label}</span>`),label);
- assert.match(rail((await render({...detail,transferable:false})).html),/Prix minimum<\/span><strong>Intransférable</);
+ for(const label of ['Salaire','Fin du contrat'])assert.ok(contract.includes(`<div class="fact"><span>${label}</span>`),label);
+ assert.match(side,/<span>Valeur<\/span><strong>/);assert.match(side,/<span>Prix demandé<\/span><strong>2\.5\sM€<\/strong>/);
+ assert.match(rail((await render({...detail,transferable:false})).html),/<span>Prix demandé<\/span><strong>N\/A<\/strong>/);
  const free=rail((await render({...detail,club:null,wage:0,contract_end:null})).html);
- assert.match(free,/Salaire mensuel<\/span><strong>—<\/strong>/);assert.doesNotMatch(free,/Prix minimum/);
+ assert.match(free,/Salaire<\/span><strong>—<\/strong>/);
 });
 
 test('attributes are graded badges without bars, and greed closes Général in a plain badge',async()=>{
@@ -314,14 +316,14 @@ test('the career card is one table: the clubs, then the national team under its 
   assert.equal((card.match(/<table/g)||[]).length,1);
   assert.match(card,/<thead><tr><th>SAISON<\/th><th>CLUB<\/th><th>TRANSFERT<\/th><th>COMPÉTITION<\/th><th>MATCHS<\/th><th>BUTS<\/th><th>PASSES<\/th><th>NOTE<\/th><\/tr><\/thead>/);
   // A gap sets the clubs and the national team apart.
-  assert.match(card,/<tr class="total"><td>Total<\/td><td><\/td><td>—<\/td><td><\/td><td>4<\/td><td>1<\/td><td>0<\/td><td>6,5<\/td><\/tr><\/tbody><tbody class="career-gap" aria-hidden="true"><tr><td colspan="8"><\/td><\/tr><\/tbody><tbody><tr class="nation-head">/);
+  assert.match(card,/<tr class="total"><td>Total<\/td><td><\/td><td>—<\/td><td><\/td><td>4<\/td><td>1<\/td><td>0<\/td><td>6\.50<\/td><\/tr><\/tbody><tbody class="career-gap" aria-hidden="true"><tr><td colspan="8"><\/td><\/tr><\/tbody><tbody><tr class="nation-head">/);
   // The nation's name spans the four columns the national team has no use for, so that its figures fall under the clubs'.
   const nation=card.slice(card.indexOf('<tr class="nation-head">'));
   assert.match(nation,/^<tr class="nation-head"><th colspan="4"><a href="#\/international\/nation\/-12"><span class="nation" title="Sénégal"><img[^>]*>Sénégal<\/span><\/a><\/th><th>MATCHS<\/th><th>BUTS<\/th><th>PASSES<\/th><th>NOTE<\/th><\/tr>/);
   // Editions newest first, then what he had played before the game, then his totals with the mean of every rated match.
   assert.deepEqual([...nation.matchAll(/<tr>(.*?)<\/tr>/g)].map(match=>match[1].replace(/<[^>]+>/g,'|').replace(/\|+/g,'|')),
-   ['|2028|5|2|2|7|','|2026|3|1|0|6,5|','|Historique importé|12|2|—|—|']);
-  assert.match(nation,/<tr class="total"><td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>2<\/td><td>6,9<\/td><\/tr><\/tbody><\/table>/);
+   ['|2028|5|2|2|7.00|','|2026|3|1|0|6.50|','|Historique importé|12|2|—|—|']);
+  assert.match(nation,/<tr class="total"><td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>2<\/td><td>6\.86<\/td><\/tr><\/tbody><\/table>/);
   // An edition without any rated match, and a player never capped.
   const unrated=(await render({...capped,historical_caps:0,historical_goals:0,international_records:[{edition:2028,matches:1,goals:0,assists:0,rating_sum:0,rating_count:0,average:null}]})).html;
   assert.match(unrated,/<td colspan="4"><a href="#\/international\/2028">2028<\/a><\/td><td>1<\/td><td>0<\/td><td>0<\/td><td>—<\/td>/);
@@ -413,7 +415,7 @@ test('beside a list of players, the picked one is previewed in the words of his 
  assert.match(html,/18 sél - 3 buts/);
  // Condition, form and morale, then the contract with what he asks to join the user's club.
  for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3>${title}</h3>`),title);
- assert.match(html,/<span>Forme<\/span>.*−9 %/);assert.match(html,/<span>Prétentions<\/span><strong>93\s000\s€ \/ mois<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
+ assert.match(html,/<span>Forme<\/span>.*−9 %/);assert.match(html,/<span>Prétentions<\/span><strong>93\sk€<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
  assert.doesNotMatch(html,/Blessure|Cartons/);
  // His positions, best note first, then what the engine reads of him and his attributes.
  assert.match(html,/class="position-row picked" data-composite-role="DD"/);

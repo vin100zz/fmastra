@@ -1,19 +1,8 @@
-import {escape as e,surname,empty,clubLink,season} from './ui.js';
+import {escape as e,surname,empty,clubLink,season,competitionBadge} from './ui.js';
 import {awayIcon,outcomeLabels} from './club-overview.js';
 
-// Words written in lower case in a competition's initials ("Coupe de France" reads CdF).
-const SMALL=new Set(['de','du','des','del','della','di','da','do','la','le','les','el','d','of','the','und','y']);
-// The short name on a competition's badge: a European cup's code, otherwise the initials of its name up to its number, if it
-// has one ("Ligue 1 McDonald's" reads L1); an acronym keeps its letters.
-export function competitionCode({name,kind,code}){
- if(kind==='europe'&&code)return code;
- const words=String(name||'').replace(/[’'-]/g,' ').split(/\s+/).filter(Boolean);
- const number=words.findIndex(word=>/^\d+$/.test(word));
- const kept=number>=0?words.slice(0,number+1):words;
- return kept.map(word=>/^\d+$/.test(word)||/^[A-Z]{2,}$/.test(word)?word:SMALL.has(word.toLowerCase())?word[0].toLowerCase():word[0].toUpperCase()).join('').slice(0,4)||'—';
-}
-// The badge of a competition, coloured by its kind (and by its code for a European cup), its full name in the tooltip.
-export const competitionBadge=competition=>`<span class="competition-code ${competition.kind}${competition.kind==='europe'&&competition.code?` ${e(competition.code.toLowerCase())}`:''}" title="${e(competition.name)}">${e(competitionCode(competition))}</span>`;
+// The badge of a competition and its two characters are the same on every screen (ui.js).
+export {competitionCode,competitionBadge} from './ui.js';
 
 const day=value=>new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
 // A round as short as it reads: J12 for a league round, the round of a cup as it is named.

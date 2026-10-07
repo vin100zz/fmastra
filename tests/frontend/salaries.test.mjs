@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {roundSalary,monthlySalary,salarySearchParams} from '../../web/salaries.js';
+import {roundSalary,monthlySalary,amount,salarySearchParams} from '../../web/salaries.js';
 
 test('salary rounding follows the requested two-significant-digit examples',()=>{
  for(const [value,expected] of [[92854,93000],[257628,260000],[1314589,1300000],[0,0],[7,7],[99999,100000]]){
@@ -8,12 +8,17 @@ test('salary rounding follows the requested two-significant-digit examples',()=>
  }
 });
 
-test('monthly salary uses 52 weeks per year and full euro amounts',()=>{
- const digits=value=>monthlySalary(value).replace(/\D/g,'');
- assert.equal(digits(12000),'52000');
- assert.equal(digits(300000),'1300000');
- assert.equal(digits(0),'0');
- assert.equal(digits(null),'0');
+test('monthly salary uses 52 weeks per year and is written in €, k€ or M€, with a point',()=>{
+ const written=value=>monthlySalary(value).replace(/\s/g,' ');
+ assert.equal(written(12000),'52 k€');
+ assert.equal(written(300000),'1.3 M€');
+ assert.equal(written(150),'650 €');
+ assert.equal(written(0),'0 €');
+ assert.equal(written(null),'0 €');
+ // An amount just under a thousand of its unit moves up to the next one rather than reading "1 000 k€".
+ assert.equal(amount(999600).replace(/\s/g,' '),'1 M€');
+ assert.equal(amount(1234567,3).replace(/\s/g,' '),'1.23 M€');
+ assert.equal(amount(2.4e9).replace(/\s/g,' '),'2 400 M€');
 });
 
 test('monthly filter bounds select exact eligible weekly wages without changing the form',()=>{

@@ -59,10 +59,10 @@ test('a club row tells its rank and form, its squad and its money',async()=>{
  assert.match(first[5],/<span class="form"><i class="V">V<\/i><i class="V">V<\/i><i class="N">N<\/i>/);
  assert.match(first[6],/<i style="width:80%"><\/i><\/i><b>80<\/b>/);
  assert.match(first[7],/title="Entraînement sur 20">18</);assert.equal(first[8],'—');
- assert.equal(first[10],'<span class="num">27,4</span>');
- assert.match(first[13],/520\sM\s€/);assert.match(first[14],/91\sM\s€/);
+ assert.equal(first[10],'<span class="num">27.4</span>');
+ assert.match(first[13],/520\sM€/);assert.match(first[14],/91\sM€/);
  // The wage bill reads by the month; its bar fills with the share of the cap and turns red from 95 %.
- assert.match(first[15],/<i class="mini-bar full" aria-hidden="true"><i style="width:95%"><\/i><\/i><b>8,2\sM\s€<\/b>/);
+ assert.match(first[15],/<i class="mini-bar full" aria-hidden="true"><i style="width:95%"><\/i><\/i><b>8\.2\sM€<\/b>/);
  assert.match(second[3],/Marché extérieur/);assert.deepEqual([second[4],second[5]],['—','—']);
  assert.equal(second[10],'<span class="num">—</span>');assert.equal(second[13],'<span class="num">—</span>');assert.equal(second[15],'<span class="num">—</span>');
  assert.doesNotMatch(html,/NaN|undefined|null/);

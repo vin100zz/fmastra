@@ -21,7 +21,7 @@ const api=url=>url.endsWith('/navigation')?null:url.includes('/classement')?stan
 
 test('the league table keeps its points first and sits beside the four leaders it does not show',async()=>{
  const {html}=await withApi(api,()=>leagueScreen(16,'table',new URLSearchParams(),[league]));
- assert.match(html,/<th class="rank-column">#<\/th><th>CLUB<\/th><th class="total-column">PTS<\/th>/);
+ assert.match(html,/<th class="rank-column"[^>]*><button class="sort-toggle" data-table-sort>#<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>CLUB<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th>/);
  assert.match(html,/class="league-layout"/);
  assert.match(html,/Meilleure attaque[^]*Club 4[^]*24 buts/);
  assert.match(html,/Meilleure défense[^]*Club 4[^]*26 buts encaissés/);
@@ -66,8 +66,8 @@ test('the European league phase is two tables of eighteen, and its history is ca
  assert.ok(halves.indexOf('Club 18')<halves.indexOf('Club 19'));
  assert.match(html,/1–8 : huitièmes directs/);
  assert.match(html,/>Historique<\/a>/);assert.doesNotMatch(html,/Palmarès/);
- // the season is chosen on the title line
- assert.ok(html.indexOf('name="saison"')<html.indexOf('europe-cups'));
+ // the cup, then the season, are chosen on the title line; the sections are the only row of tabs
+ assert.ok(html.indexOf('<nav class="segmented europe-cups"')<html.indexOf('name="saison"')&&html.indexOf('name="saison"')<html.indexOf('<nav class="tabs"'));assert.equal((html.match(/<nav class="tabs"/g)||[]).length,1);
 });
 
 test('the European history is three columns: winners and titles by country, the league phase of the chosen season, the leaders',async()=>{

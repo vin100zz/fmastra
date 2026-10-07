@@ -12,7 +12,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,titlesCard,countTitles,escape as e,number as n,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,nationBadge,nationName,sortButton,levelBadge} from './ui.js';
+import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchives,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -29,7 +29,7 @@ async function leagueSummary(id){
 
 function leagueSummaryCard(league,data){
  const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>${roundTitle('Classement',data.standings.items)}</h3><div class="standings-scroll">${standingsTable(data.standings,'record')}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
- return card(`${e(league.nation)} · ${e(league.name)}`,content,`<a href="#/league/${league.id}">Voir le championnat →</a>`);
+ return `<section class="card"><div class="card-head"><h2>${nationFlag(league.nation)}${e(league.name)}</h2><a href="#/league/${league.id}">Voir le championnat →</a></div>${content}</section>`;
 }
 
 async function leagueSummariesSection(ordered){
@@ -116,7 +116,7 @@ export async function leagueScreen(id,section,params,leagues){
 
 // The statistics a league's overview lists side by side, ten rows each; the whole list of one opens from the card.
 const STATISTICS=[['buteurs','Meilleurs buteurs'],['passeurs','Meilleurs passeurs'],['notes','Meilleures notes'],['cartons','Cartons jaunes'],['clean_sheets','Clean sheets par club']];
-const statisticRows=(data,category,start=0)=>data.items.map((row,index)=>[start+index+1,row.id?playerLink(row.id,row.name):clubLink(row.club),...(category==='clean_sheets'?[]:[clubLink(row.club)]),`<b>${n(row.value)}</b>`]);
+const statisticRows=(data,category,start=0)=>data.items.map((row,index)=>[start+index+1,row.id?playerLink(row.id,row.name):clubLink(row.club),...(category==='clean_sheets'?[]:[clubLink(row.club)]),`<b>${category==='notes'?averageNote(row.value):n(row.value)}</b>`]);
 const statisticHeaders=category=>['#',category==='clean_sheets'?'CLUB':'JOUEUR',...(category==='clean_sheets'?[]:['CLUB']),'TOTAL'];
 
 // The standings beside the four leaders they do not show: best attack and defence, top scorer and top provider.
@@ -177,8 +177,8 @@ export async function playersScreen(params){
   +level('Niveau','niveau',[120,140,160])+level('Potentiel','potentiel',[160,170,180,190])
   +rangeMenu(base,params,'Valeur',[['valeur_min','min',amount],['valeur_max','max',amount]],{unit:'M€',hint:'M€'})
   +rangeMenu(base,params,'Prix min.',[['prix_max','max',amount]],{unit:'M€',hint:'M€'})
-  +rangeMenu(base,params,'Salaire',[['salaire_min','min','min="0"'],['salaire_max','max','min="0"']],{unit:'€',hint:'€/mois'})
-  +(recruiting?rangeMenu(base,params,'Prétentions',[['pretentions_max','max','min="0"']],{unit:'€',hint:'€/mois'}):'')
+  +rangeMenu(base,params,'Salaire',[['salaire_min','min','min="0"'],['salaire_max','max','min="0"']],{unit:'€',hint:'€'})
+  +(recruiting?rangeMenu(base,params,'Prétentions',[['pretentions_max','max','min="0"']],{unit:'€',hint:'€'}):'')
   +choiceSelect(params,'contrat','Contrat',[['libre','Agents libres'],['sous_contrat','Sous contrat']])
   +choiceSelect(params,'statut_club','Clubs',[['actif','Clubs actifs'],['dormant','Clubs dormants']])
   +choiceSelect(params,'liste','Listés',[['transfert','Listés pour un transfert'],['pret','Listés pour un prêt']])

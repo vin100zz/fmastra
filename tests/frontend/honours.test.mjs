@@ -36,7 +36,7 @@ test('the honours page is one table: a row per competition by group in the order
  assert.match(html,/^<form class="toolbar" data-filter><h1>Palmarès<\/h1><input name="recherche" type="search"/);
  const matrix=part(html,'honours-matrix','honours-lists');
  assert.match(matrix,/<h2>12 compétitions · 2 saisons<\/h2>/);
- assert.equal(count(matrix,/<tbody>/g),4);assert.equal(count(matrix,/class="honours-tag/g),12);
+ assert.equal(count(matrix,/<tbody>/g),4);assert.equal(count(matrix,/class="competition-code/g),12);
  // Europe, then France, England and Spain, whatever the order the server answered in; a group names itself once, over its rows
  assert.ok(matrix.indexOf('Europe')<matrix.indexOf('Coupe de France')&&matrix.indexOf('Coupe de France')<matrix.indexOf('FA Cup')&&matrix.indexOf('FA Cup')<matrix.indexOf('Coupe du Roi'));
  assert.match(matrix,/<td class="honours-nation" rowspan="3"><a href="#\/europe">Europe<\/a>/);
@@ -50,10 +50,10 @@ test('a row gives the competition, its leading scorer, where the season stands a
  const {html}=await screen();
  const matrix=part(html,'honours-matrix','honours-lists');
  // the name opens the history of the competition, after what it is
- assert.match(matrix,/<a href="#\/europe\/C1\/history"><span class="honours-tag europe">C1<\/span><span class="strong">Ligue des champions<\/span><\/a>/);
- assert.match(matrix,/<a href="#\/league\/16\/history"><span class="honours-tag league">D1<\/span>/);
- assert.match(matrix,/<a href="#\/league\/18\/history"><span class="honours-tag league">D3<\/span>/);
- assert.match(matrix,/<a href="#\/league\/-3\/history"><span class="honours-tag cup">CP<\/span>/);
+ assert.match(matrix,/<a href="#\/europe\/C1\/history"><span class="competition-code europe" title="Ligue des champions">C1<\/span><span class="strong">Ligue des champions<\/span><\/a>/);
+ assert.match(matrix,/<a href="#\/league\/16\/history"><span class="competition-code league" title="Ligue 1">L1<\/span>/);
+ assert.match(matrix,/<a href="#\/league\/18\/history"><span class="competition-code league" title="National">L3<\/span>/);
+ assert.match(matrix,/<a href="#\/league\/-3\/history"><span class="competition-code cup" title="Coupe de France">CF<\/span>/);
  assert.match(matrix,/<a href="#\/player\/9">Buteur &lt;i&gt;<\/a><b>31<\/b>/);
  // under way: the round to come, the leader of a league with its rounds played, or the champion once known
  assert.match(matrix,/<td class="current">Phase de ligue · Journée 1<\/td>/);
@@ -70,17 +70,17 @@ test('the titled clubs stand beside the table, searched by name, and the picked 
  const board=part(html,'honours-board');
  assert.match(board,/<h2>4 clubs titrés<\/h2>/);
  assert.equal(count(board,/data-honours-club="/g),4);
- assert.match(board,/<th class="count-column"><span title="Coupes d’Europe">EUR<\/span><\/th>/);
+ assert.match(board,/<th class="count-column"[^>]*><button class="sort-toggle" data-table-sort><span title="Coupes d’Europe">EUR<\/span><\/button><\/th>/);
  // a count of zero is left blank
- assert.match(board,/data-honours-club="3"><td><span class="num">2<\/span><\/td><td>.*?Milan.*?<\/td><td><span class="num">1<\/span><\/td><td><span class="num"><\/span><\/td>/);
+ assert.match(board,/data-honours-club="3"><td[^>]*><span class="num">2<\/span><\/td><td[^>]*>.*?Milan.*?<\/td><td[^>]*><span class="num">1<\/span><\/td><td[^>]*><span class="num"><\/span><\/td>/);
  assert.doesNotMatch(html,/class="picked"|class=" picked"|current picked/);
  const picked=(await screen(data,'sel=1')).html;
  assert.equal(count(picked,/<td class="picked" data-honours-club="1">/g),3);assert.equal(count(picked,/<td class="current picked" data-honours-club="1">/g),1);
- assert.match(picked,/<tr class="picked" data-honours-club="1">/);
+ assert.match(picked,/<tr class="picked"[^>]* data-honours-club="1">/);
  // a search keeps the rank a club has among all, without accents or case
  const found=part((await screen(data,'recherche=MIL')).html,'honours-board');
  assert.equal(count(found,/data-honours-club="/g),1);
- assert.match(found,/<h2>4 clubs titrés<\/h2>/);assert.match(found,/<td><span class="num">2<\/span><\/td><td>.*?Milan/);
+ assert.match(found,/<h2>4 clubs titrés<\/h2>/);assert.match(found,/<td[^>]*><span class="num">2<\/span><\/td><td[^>]*>.*?Milan/);
  assert.match(part((await screen(data,'recherche=zzz')).html,'honours-board'),/Aucun résultat/);
 });
 
@@ -92,13 +92,13 @@ test('three rankings stand under the table: the players by titles, by seasons en
  // the club a player is at now goes by its kit, named in its tooltip
  const kit={...club(1,'Paris'),major_color:'#004070',minor_color:'#d82818'};
  const dressed=part((await screen({...data,players:[{...data.players[0],club:kit},data.players[1]]})).html,'honours-lists','honours-board');
- assert.match(dressed,/<span class="position mid">MC<\/span><\/td><td><span title="Paris"><i class="kit-dot" style="background:linear-gradient\(135deg,#004070 50%,#d82818 50%\)" aria-hidden="true"><\/i><\/span><span class="strong"><a href="#\/player\/11">Titré<\/a><\/span><\/td>/);
+ assert.match(dressed,/<span class="position mid">MC<\/span><\/td><td[^>]*><span title="Paris"><i class="kit-dot" style="background:linear-gradient\(135deg,#004070 50%,#d82818 50%\)" aria-hidden="true"><\/i><\/span><span class="strong"><a href="#\/player\/11">Titré<\/a><\/span><\/td>/);
  // a retired player has neither a position nor a club left
- assert.match(lists,/<td><\/td><td><span class="strong"><a href="#\/player\/12">Ancien<\/a><\/span><\/td>/);
+ assert.match(lists,/<td[^>]*><\/td><td[^>]*><span class="strong"><a href="#\/player\/12">Ancien<\/a><\/span><\/td>/);
  assert.match(lists,/<h2>Titres de meilleur buteur<\/h2>/);
- assert.match(lists,/Buteur &lt;i&gt;<\/a><\/span><\/td><td><span class="honours-where" title="C1 ×2 · Ligue 1">C1 ×2 · Ligue 1<\/span><\/td><td><span class="num"><b>3<\/b><\/span><\/td><td><span class="num">60<\/span><\/td>/);
+ assert.match(lists,/Buteur &lt;i&gt;<\/a><\/span><\/td><td[^>]*><span class="honours-where" title="C1 ×2 · Ligue 1">C1 ×2 · Ligue 1<\/span><\/td><td[^>]*><span class="num"><b>3<\/b><\/span><\/td><td[^>]*><span class="num">60<\/span><\/td>/);
  assert.match(lists,/<h2>Coupes d’Europe par pays<\/h2>/);
- assert.match(lists,/<th>PAYS<\/th><th class="count-column">C1<\/th><th class="count-column">C3<\/th><th class="count-column">C4<\/th><th class="total-column">TOTAL<\/th>/);
+ assert.match(lists,/<th[^>]*><button class="sort-toggle" data-table-sort>PAYS<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>C1<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>C3<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>C4<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>TOTAL<\/button><\/th>/);
  assert.ok(lists.indexOf('Italie')<lists.indexOf('France'));
 });
 
@@ -106,7 +106,7 @@ test('before the first title, the table keeps every competition and the rankings
  const empty={season:2025,europe:data.europe.map(item=>({...item,items:[],scorer:null,current:null})),countries:[{...data.countries[2]}],clubs:[],players:[],scorers:[],nations:[]};
  const {html}=await screen(empty);
  assert.match(html,/<h2>5 compétitions<\/h2>/);
- assert.equal(count(html,/class="honours-tag/g),5);
+ assert.equal(count(html,/class="competition-code/g),5);
  assert.match(html,/<th class="current">2025 \/ 2026<span class="honours-live">EN COURS<\/span><\/th><\/tr>/);
  assert.doesNotMatch(html,/honours-lists/);
  assert.match(part(html,'honours-board'),/<h2>0 club titré<\/h2>.*Pas encore de palmarès/);

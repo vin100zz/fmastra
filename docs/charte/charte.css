@@ -6,8 +6,8 @@
  --bg:#fff;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--stripe:#f7f9fb;--line:#d6dce4;--row-line:#e6eaef;
  /* Inks. */
  --strong:#0b121a;--ink:#16202b;--ink-2:#34404e;--muted:#5d6a79;
- /* Accent: one yellow, the ink written on it, its form as text on white, its wash under a picked row. */
- --accent:#f5c400;--accent-ink:#111418;--accent-text:#7f6200;--own-row:#fff3c4;
+ /* Accent: one yellow, the same under the pointer, the ink written on it, its form as text on white, its wash under a picked row. */
+ --accent:#f5c400;--accent-hover:#e6b800;--accent-ink:#111418;--accent-text:#7f6200;--own-row:#fff3c4;
  /* States, each with its wash. */
  --good:#1a7340;--good-soft:#e1f3e7;--warn:#8a6600;--warn-soft:#fdf4d8;--bad:#bf3329;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--info:#2166a8;--info-soft:#e3eefa;
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in every list. */
@@ -123,16 +123,14 @@
 .tr>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr:nth-child(even){background:var(--stripe)}
 .tr.head{background:var(--panel-2);border-bottom-color:var(--line);font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-/* Every column sorts, and no sort moves a column: each column has a set width, and each heading keeps the place of its arrow
-   (after a text, before a figure, so that the figure's heading stays flush right). */
-.tr.head>*{padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
+/* Every column sorts, and no sort moves a column: each column has a set width, and the arrow of a heading stands in the
+   heading's right margin (the gap between two columns), where it takes no room. */
+.tr.head>*{position:relative;overflow:visible;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
 .tr.head>.num{text-align:right}
-.tr.head>:not(.num)::after,.tr.head>.num::before{content:"";display:inline-block;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;vertical-align:middle;visibility:hidden}
-.tr.head>:not(.num)::after{margin-left:3px}
-.tr.head>.num::before{margin-right:3px}
+.tr.head>*::after{content:"";position:absolute;right:-7px;top:50%;margin-top:-2px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;visibility:hidden}
 .tr.head>.sorted{color:var(--strong)}
-.tr.head>.sorted::after,.tr.head>.sorted::before{visibility:visible}
-.tr.head>.sorted.asc::after,.tr.head>.sorted.asc::before{border-top:0;border-bottom:4px solid currentColor}
+.tr.head>.sorted::after{visibility:visible}
+.tr.head>.sorted.asc::after{border-top:0;border-bottom:4px solid currentColor}
 .tr.own{background:var(--own-row)}
 .tr.chosen{background:var(--good-soft)}
 .tr.lent{background:var(--info-soft)}
@@ -162,11 +160,12 @@
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
    graded ground with its border, a competition an outline (a solid black for a European cup). */
 .position,.rating,.score,.tag,.comp{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px;border-radius:var(--radius);white-space:nowrap}
-.position{min-width:32px;background:var(--def);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
+/* A position is as wide whatever its code, so what follows it lines up; a word in its place (REMP, SORTI) is as wide as it reads. */
+.position{width:32px;padding:0;background:var(--def);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
 .position.gk{background:var(--gk)}
 .position.mid{background:var(--mid)}
 .position.att{background:var(--att)}
-.position.bench{background:var(--panel-2);color:var(--muted)}
+.position.bench{grid-template-columns:none;width:auto;min-width:32px;padding:0 5px;background:var(--panel-2);color:var(--muted)}
 /* Competitions, two characters: C1 C3 C4 in Europe, L1 L2 L3 in France, D1 D2 elsewhere, C and the country's initial for a national cup (two countries may share one). */
 .comp{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text)}
 .comp.cup{border-color:var(--info);color:var(--info)}
@@ -308,6 +307,27 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .comparison-bar>i:first-child{border-radius:4px 0 0 4px}
 .comparison-bar>i:last-child{border-radius:0 4px 4px 0}
 .comparison-bar.none>i{background:var(--panel-3)}
+
+/* Under the pointer (.hover shows the state on a board). One ground for whatever is under it, --panel-3; what is open,
+   picked or tinted keeps its own. Nothing else moves: no colour, no border, no shadow.
+   A link — a name that leads to its page, a score to its match, « Voir → » — has the colour of the text that carries it
+   and no underline; under the pointer it is underlined, in the same colour. In a sentence (.prose), where nothing else
+   tells it apart, it is written in the accent's ink. */
+:where(.app) a:is(:hover,.hover){text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.prose a{color:var(--accent-text)}
+/* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
+   underlines nothing. */
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fact,.highlight-row):is(:hover,.hover){background:var(--panel-3)}
+a:is(.tr,.match-row){cursor:pointer}
+/* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
+   takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
+.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,.entity-nav>a,.pitch-player):is(:hover,.hover){text-decoration:none}
+:is(.nav a,.segmented>a,.segmented>button,.button,.entity-nav>*):not(.active,.primary,.danger,:disabled):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+:is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
+:is(.button.primary,.cta):is(:hover,.hover){background:var(--accent-hover)}
+.button.danger:is(:hover,.hover){background:var(--bad-soft)}
+/* On a pitch, a player's name is what underlines. */
+.pitch-player:is(:hover,.hover) small{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

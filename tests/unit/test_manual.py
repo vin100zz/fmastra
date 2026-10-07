@@ -14,12 +14,12 @@ SCOPE = {"etats": {"forme": {"min": 0.7, "max": 1.3}}, "courbe": [{"age": 16, "r
          "postes": {"GB": {"reflexes": 0.4, "jeu_tete": 0.6}}, "classes": [[1, 35], [35, 50]]}
 
 
-def test_figures_are_written_the_french_way_without_float_noise():
+def test_figures_are_written_with_a_point_and_amounts_by_unit_without_float_noise():
     assert number(5400) == "5\u202f400" and number(14404) == "14\u202f404"
-    assert number(0.0042) == "0,0042" and number(0.58 * 100) == "58" and number(-0.4) == "\u22120,4"
-    assert number(38.4615) == "38,46" and number(38.4615, 1) == "38,5" and number(12345.678) == "12\u202f346"
-    assert percentage(0.05) == "5\u00a0%" and percentage(0.0003, 2) == "0,03\u00a0%"
-    assert euros(900 * 52 / 12) == "3\u202f900\u00a0€" and euros(2_800_000) == "2,8\u00a0M€" and euros(-5_000_000) == "\u22125\u00a0M€"
+    assert number(0.0042) == "0.0042" and number(0.58 * 100) == "58" and number(-0.4) == "\u22120.4"
+    assert number(38.4615) == "38.46" and number(38.4615, 1) == "38.5" and number(12345.678) == "12\u202f346"
+    assert percentage(0.05) == "5\u00a0%" and percentage(0.0003, 2) == "0.03\u00a0%"
+    assert euros(900 * 52 / 12) == "3.9\u00a0k€" and euros(850) == "850\u00a0€" and euros(999_600) == "1\u00a0M€" and euros(2_800_000) == "2.8\u00a0M€" and euros(-5_000_000) == "\u22125\u00a0M€"
 
 
 def test_an_expression_reads_the_configuration_and_computes_on_it():
@@ -27,7 +27,7 @@ def test_an_expression_reads_the_configuration_and_computes_on_it():
     assert evaluate("courbe[-1].ratio * 2", SCOPE) == 0.9 and evaluate("postes['GB'].reflexes", SCOPE) == 0.4
     assert evaluate("pct(sigmoide(0), 0)", SCOPE) == "50\u00a0%" and evaluate("date(1, 7)", SCOPE) == "1er juillet"
     assert evaluate("poids(postes.GB)", SCOPE) == "jeu de tête 60\u00a0%, réflexes 40\u00a0%"
-    assert evaluate("n(min(1, 0.04 * 5 ** 1.9), 2)", SCOPE) == "0,85"
+    assert evaluate("n(min(1, 0.04 * 5 ** 1.9), 2)", SCOPE) == "0.85"
     kinship = {"parentes": {"DC": {"MC": 6.0, "MDC": 9.0}, "GB": {}}}
     assert evaluate("notes(parentes.DC)", kinship) == "MDC 9, MC 6" and evaluate("notes(parentes.GB)", kinship) == MISSING
 
@@ -48,7 +48,7 @@ def test_a_repeated_line_is_written_for_each_item_of_a_list_or_a_mapping():
 
 def test_what_an_old_configuration_lacks_reads_as_missing_unless_strict():
     body = "Forme de {{etats.forme.min}} à {{etats.forme.plafond}}.\n{{#chaque etats.absent}}| {{cle}} |\nFin."
-    assert render(body, SCOPE) == f"Forme de 0,7 à {MISSING}.\nFin."
+    assert render(body, SCOPE) == f"Forme de 0.7 à {MISSING}.\nFin."
     with pytest.raises(ManualError):
         render(body, SCOPE, strict=True)
 

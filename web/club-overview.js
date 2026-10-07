@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,facilityRating,safeColor,contrastText,initials,surname,standingsTable} from './ui.js';
+import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,facilityRating,safeColor,contrastText,initials,surname,standingsTable,competitionBadge} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 
 const BEST_PLAYERS=8;
@@ -13,7 +13,7 @@ function matchRow(match,club){
  const home=match.home.id===club.id,opponent=home?match.away:match.home;
  const score=match.score?`<span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span>`:'<span class="club-match-score pending">À venir</span>';
  const shootout=match.penalties?`t.a.b. ${match.penalties.join(' – ')}`:'';
- const badge=match.competition!==club.competition?`<span class="competition-badge">${e(match.competition)}</span>`:'';
+ const badge=match.competition!==club.competition?competitionBadge({id:match.competition_id,name:match.competition}):'';
  const detail=`${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${shootout?` · ${shootout}`:''}`;
  return `<a class="club-match" href="#/match/${match.id}" title="${e(detail)}"><span class="club-match-date">${shortDate(match.date)}</span><span class="club-match-who"><b>${kitDot(opponent)}${e(opponent.name)}</b>${home?'':awayIcon}${badge}${shootout?`<small>${e(shootout)}</small>`:''}</span>${score}</a>`;
 }
@@ -32,7 +32,7 @@ export function financesBlock(club,data,{balance=false}={}){
  const budget=Math.max(0,data.transfer_budget-data.reserved_transfer_budget),used=Math.round(100*data.wage_bill/Math.max(1,data.wage_cap));
  const ring=`<span class="news-ring${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(Math.min(100,used)*1.6336).toFixed(1)} 163.4"/></svg><b>${used} %</b></span>`;
  const cash=balance?`<small>Trésorerie <b>${money(data.balance)}</b></small>`:'';
- return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Masse salariale</span><strong>${money(monthlyAmount(data.wage_bill))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))} / mois</small></div></div></div>`,
+ return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Masse salariale</span><strong>${money(monthlyAmount(data.wage_bill))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
   `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
 }
 
@@ -44,15 +44,18 @@ export function sidePitch(players,club,label){
  const line=player=>['DG','DC','DD'].includes(player.position)?'defence':DEPTH[player.position]??55;
  const rows={};players.forEach(player=>(rows[line(player)]??=[]).push(player));
  Object.values(rows).forEach(row=>row.sort((a,b)=>(LATERAL[a.position]??1)-(LATERAL[b.position]??1)));
+ // Two lines of one player each in the middle would write their names over each other: they step aside, one up, one down.
+ const alone=Object.values(rows).filter(row=>row.length===1&&['MDC','MC','MOC'].includes(row[0].position)).sort((a,b)=>DEPTH[a[0].position]-DEPTH[b[0].position]);
+ const aside=new Map(alone.length>1?alone.map((row,index)=>[row[0],index%2?62:38]):[]);
  const marks=players.map(player=>{
   const row=rows[line(player)];
-  let across=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));
+  let across=aside.get(player)??50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));
   if(player.position==='AILG')across=15;if(player.position==='AILD')across=85;
-  const shirt=player.temporary?'<span class="kit-shirt temporary"></span>':kitShirt(club.major_color,club.minor_color)||`<span class="kit-shirt plain"></span>`;
+  const shirt=kitShirt(player.temporary?null:club.major_color,club.minor_color,player.position);
   const tag=player.temporary?'span':'a',link=player.temporary?' title="Joueur temporaire"':` href="#/player/${player.id}" title="${e(player.name)}"`;
-  return `<${tag} class="side-pitch-player"${link} style="left:${DEPTH[player.position]??55}%;top:${across}%">${shirt}<small>${e(surname(player.name))}</small></${tag}>`;
+  return `<${tag} class="pitch-player"${link} style="left:${DEPTH[player.position]??55}%;top:${across}%">${shirt}<small>${e(surname(player.name))}</small></${tag}>`;
  }).join('');
- return `<div class="side-pitch" aria-label="${e(label)}"><i class="side-pitch-lines" aria-hidden="true"></i><i class="side-pitch-box left" aria-hidden="true"></i><i class="side-pitch-box right" aria-hidden="true"></i>${marks}</div>`;
+ return `<div class="pitch lying" aria-label="${e(label)}">${PITCH_BOXES}${marks}</div>`;
 }
 
 export function lineupBlock(club,lineup){
@@ -88,7 +91,7 @@ export async function clubPreview(id){
  const tiles=`<div class="rail-tiles">${tile('Réputation',n(club.reputation))}${standing?tile('Classement',`${standing.rank}${standing.rank===1?'er':'e'}`)+tile('Points',standing.points):''}</div>`;
  const books=data.finances,used=Math.round(100*books.wage_bill/Math.max(1,books.wage_cap));
  const finances=`<h3>Finances</h3>${fact('Budget transferts',money(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
-  +fact('Masse salariale / mois',`<i class="gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><i style="width:${Math.min(100,used)}%"></i></i><b>${money(monthlyAmount(books.wage_bill))} / ${money(monthlyAmount(books.wage_cap))}</b>`)
+  +fact('Masse salariale',`<i class="gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><i style="width:${Math.min(100,used)}%"></i></i><b>${money(monthlyAmount(books.wage_bill))} / ${money(monthlyAmount(books.wage_cap))}</b>`)
   +fact('Achats de la saison',money(books.season_spent))+fact('Ventes de la saison',money(books.season_sales));
  // The players the club has lent are not its to field.
  const best=squad.items.filter(player=>!player.away).slice(0,BEST_PLAYERS);

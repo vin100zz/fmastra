@@ -31,11 +31,12 @@ const signed=value=>value>0?`+${n(value)}`:value<0?`−${n(-value)}`:'0';
 export function clubHero(club,{lead='',menu,section}){
  const colors=heroColors(club.major_color,club.minor_color);
  const change=club.reputation_change==null?'':`<em class="${club.reputation_change<0?'down':'up'}">${signed(club.reputation_change)}</em>`;
- const facts=[club.competition?null:'Club dormant',club.capacity?`${n(club.capacity)} places`:null].filter(Boolean).join(' · ');
+ // One line over the name: the flag, the competition (« Club dormant » outside a league), the ground's capacity.
+ const facts=[club.competition||club.nation||null,club.competition?null:'Club dormant',club.capacity?`${n(club.capacity)} places`:null].filter(Boolean).join(' · ');
  const tabs=menu.map(([key,label])=>`<a class="${key===section?'active':''}" href="#/club/${club.id}/${key}"${key===section?' aria-current="page"':''}>${e(label)}</a>`).join('');
  return `<header class="club-hero${colors?'':' plain'}"${colors?` style="${colors}"`:''}><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div>`
   +`<div class="club-hero-main">${lead}<div class="crest club-hero-crest">${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></div>`
-  +`<div class="club-hero-identity"><span class="club-hero-league">${nationFlag(club.nation_code)}${e(club.competition||club.nation||'')}</span><h1>${e(club.name)}</h1>${facts?`<p>${facts}</p>`:''}</div>`
+  +`<div class="club-hero-identity"><span class="club-hero-league">${nationFlag(club.nation_code)}${e(facts)}</span><h1>${e(club.name)}</h1></div>`
   +`<div class="club-hero-tiles">${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities))}`
   +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes')}${tile('Réputation',club.reputation==null?'—':n(club.reputation),change)}</div></div></div>`
   +`<nav class="club-hero-tabs" aria-label="Sections">${tabs}</nav></header>`;

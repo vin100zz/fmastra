@@ -15,7 +15,7 @@ test('with a club of his own the user filters the players on their interest and 
  assert.match(html,/<select name="interesse"[^>]*class="on"><option value="">Intérêt<\/option><option value="oui" selected>Intéressés par un transfert<\/option><option value="pret" >Intéressés par un prêt<\/option><option value="non" >Non intéressés<\/option>/);
  // The bound on what they ask is folded in a menu, which reads it on its button.
  assert.match(html,/<details class="filter-menu on"><summary>Prétentions <b>≤ 93\s000 €<\/b>/);
- assert.match(html,/<label>Max\. \(€\/mois\) <input name="pretentions_max" type="number" min="0" value="93000"><\/label>/);
+ assert.match(html,/<label>Max\. \(€\) <input name="pretentions_max" type="number" min="0" value="93000"><\/label>/);
  assert.match(html,/data-sort="wage_demand">PRÉTENTIONS</);assert.match(html,/data-sort="interested">INTÉRESSÉ</);
  // The request carries the bound as a weekly wage.
  assert.ok(asked.some(url=>url.includes('interesse=oui')&&url.includes('pretentions_max=21462')));
@@ -46,7 +46,7 @@ test('the list of the world’s players adds the season’s figures, pages from 
  const headers=[...html.matchAll(/<th class="(\w+)-column"><button[^>]*data-sort="(\w+)"/g)].map(match=>match[2]);
  assert.deepEqual(headers,['position','name','nation','age','rating','potential','club','value','asking_price','listed','wage','wage_demand','interested','contract_end','fitness','appearances','goals','assists','average']);
  assert.match(html,/data-order="desc" data-sort="goals">BUTS</);
- assert.match(html,/<span class="num">10 \(2\)<\/span>/);assert.match(html,/<span class="num">6,8<\/span>/);
+ assert.match(html,/<span class="num">10 \(2\)<\/span>/);assert.match(html,/<span class="num">6\.84<\/span>/);
  assert.match(html,/<div class="split" data-fit="players" data-rows="">/);
  assert.doesNotMatch(html,/class="pager"|data-select|class="side"/);
  assert.equal(asked.length,2);

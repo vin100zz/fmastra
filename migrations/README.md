@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 27` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 28` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -144,6 +144,18 @@ départs ») : `World.refused_renewals` associe à chaque joueur le jour du refu
 demande est à l'état `refused`) sont repris, le dernier par joueur, pour les joueurs qui ont encore le contrat que le
 message leur connaissait (même salaire, même fin). Un message d'avant la v26, sans ligne, ne dit pas sa réponse : ce
 refus-là n'est pas repris et le joueur peut redemander une fois. Aucun paramètre de configuration n'est ajouté.
+
+La v28 donne à chaque acheteur son prix maximum et fait monter les offres (`docs/ia-gestion.md`, « Mercato ») :
+`TransferOffer.limit` (le prix maximum de l'acheteur), `World.not_for_sale` (joueurs que le club dirigé déclare
+intransférables, avec le jour) et `World.turned_away` (par joueur, les clubs éconduits pour la fenêtre en cours), et la
+section `ia_gestion.mercato.offres` (dix paramètres, `MIGRATION_DEFAULTS` en fait foi), reçue par la configuration
+embarquée après vérification de l'empreinte d'origine. Une sauvegarde antérieure se lit telle quelle : personne n'est
+intransférable ni éconduit, et ses offres en cours, sans limite propre, ne montent pas au-delà de ce qu'elles
+réservaient (le prix demandé) ; celles qui attendaient la réponse du club dirigé à 75 % de ce prix y montent dès que
+plusieurs se disputent le joueur. `TransferOffer.countered` marque désormais une offre relevée, `due` et `rounds`
+servent aussi aux relances d'une offre refusée par le club dirigé. `ratio_contre_offre` et
+`multiplicateur_prix_max_acheteur` gardent leurs valeurs et changent d'emploi (`docs/configuration.md`). Une partie
+antérieure suit les nouvelles règles dès sa reprise ; aucun transfert passé n'est modifié.
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

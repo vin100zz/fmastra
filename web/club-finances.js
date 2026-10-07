@@ -1,8 +1,8 @@
-import {escape as e,money,date,card,empty,sortableTable,playerLink} from './ui.js';
+import {escape as e,money,price,date,card,empty,sortableTable,playerLink} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {seasonNavigation} from './club-history.js';
 
-const euros=value=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
+const euros=price;
 const signedMoney=value=>value>0?`+${money(value)}`:value<0?`−${money(-value)}`:money(0);
 const monthName=value=>new Intl.DateTimeFormat('fr-FR',{month:'short'}).format(new Date(`${value}T12:00:00`));
 const monthLong=value=>new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'}).format(new Date(`${value}T12:00:00`));
@@ -73,9 +73,9 @@ function splitBars(history){
 function salariesCard(squad){
  const players=(squad?.items||[]).filter(player=>!player.away&&player.wage>0).sort((a,b)=>b.wage-a.wage);
  const shown=players.slice(0,SALARIES),rest=players.slice(SALARIES),top=shown[0]?.wage||1;
- const rows=shown.map(player=>`<li><span>${playerLink(player.id,player.name)}</span><i style="width:${Math.round(100*player.wage/top)}%" title="${e(`${player.name} : ${monthlySalary(player.wage)} par mois`)}"></i><b>${monthlySalary(player.wage)}</b></li>`).join('');
+ const rows=shown.map(player=>`<li><span>${playerLink(player.id,player.name)}</span><i style="width:${Math.round(100*player.wage/top)}%" title="${e(`${player.name} : ${monthlySalary(player.wage)}`)}"></i><b>${monthlySalary(player.wage)}</b></li>`).join('');
  const more=rest.length?`<p class="muted">+ ${rest.length} autre${rest.length>1?'s':''} · ${money(monthlyAmount(rest.reduce((sum,player)=>sum+player.wage,0)))}</p>`:'';
- return card('Salaires',rows?`<div class="card-body"><ul class="salary-bars">${rows}</ul>${more}</div>`:empty('Aucun salaire à payer.','Effectif vide'),'<span class="card-hint">par mois</span>','salaries-card');
+ return card('Salaires',rows?`<div class="card-body"><ul class="salary-bars">${rows}</ul>${more}</div>`:empty('Aucun salaire à payer.','Effectif vide'),'','salaries-card');
 }
 
 // A key figure of the tab: its label, its amount and a line or a bar under it.
@@ -91,7 +91,7 @@ export function financesContent(club,data,squad){
  const figures=`<div class="finance-figures">`
   +figure('Budget transferts',money(free),reserved?`<span class="split-bar thin"><i class="revenue" style="flex:${free} 1 0"></i><i class="revenue-soft" style="flex:${reserved} 1 0"></i></span><small>${money(reserved)} réservés aux offres en cours</small>`:'')
   +figure('Trésorerie',money(data.balance),opening!=null?`<small><b class="${data.balance>=opening?'good':'bad'}">${signedMoney(data.balance-opening)}</b> depuis l’ouverture de la saison</small>`:'')
-  +figure('Masse salariale',`${money(monthlyAmount(data.wage_bill))}<em>/ mois</em>`,`<span class="wage-gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial"><i style="width:${Math.min(100,used)}%"></i><b></b></span><small><b>${used} %</b> du plafond de ${money(monthlyAmount(data.wage_cap))}</small>`)
+  +figure('Masse salariale',money(monthlyAmount(data.wage_bill)),`<span class="wage-gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial"><i style="width:${Math.min(100,used)}%"></i><b></b></span><small><b>${used} %</b> du plafond de ${money(monthlyAmount(data.wage_cap))}</small>`)
   +figure('Balance des transferts',signedMoney(balance),`<small>Achats <b>${money(data.season_spent)}</b> · Ventes <b>${money(data.season_sales)}</b></small>`,balance>0?'good':balance<0?'bad':'')
   +`</div>`;
  const nav=seasonNavigation(history,true);

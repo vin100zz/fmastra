@@ -114,6 +114,19 @@
       "emprunts_max_ia": 2,
       "probabilite_hebdomadaire": 0.5
     },
+    "offres": {
+      "_note": "Prix maximum d'un acheteur = valeur qu'il voit x (multiplicateur_prix_max_acheteur + prime_besoin x besoin) x (1 + poids_appetit_risque x (appetit - 0.5)) x (1 + bruit), le besoin valant gain de qualite / gain_besoin_plein, borne a 1. Sans prix demande (joueur du club dirige), il ouvre a ratio_contre_offre de ce maximum, decale de ecart_ouverture selon sa patience, puis releve son offre de relances_min a relances_max fois apres un refus. Des offres rivales surencherissent par pas de pas_surenchere ; le vendeur retient celles a moins de tolerance_vendeur de la plus haute. malus_moral_intransferable : moral vise en moins pour un joueur qui veut partir et que le club dirige declare intransferable.",
+      "prime_besoin": 1.5,
+      "gain_besoin_plein": 10.0,
+      "poids_appetit_risque": 0.3,
+      "bruit_ecart_type": 0.06,
+      "ecart_ouverture": 0.2,
+      "relances_min": 1,
+      "relances_max": 3,
+      "pas_surenchere": 0.02,
+      "tolerance_vendeur": 0.05,
+      "malus_moral_intransferable": 0.2
+    },
     "marge_depassement_club": 10.0,
     "ambition_base": 0.6,
     "ambition_poids_ego": 0.4,

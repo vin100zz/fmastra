@@ -37,7 +37,7 @@ test('the leading scorers of the competition follow its table, ranked, and only 
  const html=roundContent({...league,groups:[{...league.groups[0],top_scorers}]},'latest');
  assert.match(html,/<div class="round-block with-top-scorers">/);
  assert.ok(html.indexOf('round-table')<html.indexOf('round-top-scorers'));
- assert.match(html,/<div class="round-top-scorers">.*<th>JOUEUR<\/th><th>CLUB<\/th><th>BUTS<\/th>.*<td>1<\/td><td><a href="#\/player\/101">Neal Maupay<\/a><\/td>.*<b>7<\/b>.*<td>2<\/td><td><span class="temporary-player"/);
+ assert.match(html,/<div class="round-top-scorers">.*<th[^>]*><button class="sort-toggle" data-table-sort>JOUEUR<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>CLUB<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>BUTS<\/button><\/th>.*<td[^>]*>1<\/td><td[^>]*><a href="#\/player\/101">Neal Maupay<\/a><\/td>.*<b>7<\/b>.*<td[^>]*>2<\/td><td[^>]*><span class="temporary-player"/);
  for(const none of [[],null,undefined])assert.doesNotMatch(roundContent({...league,groups:[{...league.groups[0],top_scorers:none}]},'latest'),/top-scorers/);
 });
 

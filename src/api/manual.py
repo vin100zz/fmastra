@@ -51,7 +51,7 @@ def number(value: float, decimals: int | None = None) -> str:
         value = round(value, max(0, 3 - math.floor(math.log10(abs(value)))))
     whole, _, fraction = f"{abs(value):.10f}".rstrip("0").partition(".")
     groups = re.sub(r"(?<=\d)(?=(\d{3})+$)", NARROW_SPACE, whole)
-    return (MINUS if value < 0 else "") + groups + (f",{fraction}" if fraction else "")
+    return (MINUS if value < 0 else "") + groups + (f".{fraction}" if fraction else "")
 
 
 def percentage(value: float, decimals: int | None = None) -> str:
@@ -59,10 +59,11 @@ def percentage(value: float, decimals: int | None = None) -> str:
 
 
 def euros(value: float) -> str:
-    """An amount to three significant digits, in millions from one million up."""
-    if abs(value) >= 1e6:
-        return f"{number(float(f'{value / 1e6:.3g}'))}{HARD_SPACE}M€"
-    return f"{number(float(f'{value:.3g}'))}{HARD_SPACE}€"
+    """An amount to three significant digits: in €, in k€ from a thousand up, in M€ from a million up."""
+    for divisor, unit in ((1, "€"), (1e3, "k€"), (1e6, "M€")):
+        rounded = float(f"{value / divisor:.3g}")
+        if abs(rounded) < 1000 or unit == "M€":
+            return f"{number(rounded)}{HARD_SPACE}{unit}"
 
 
 def weights(values: Mapping[str, float]) -> str:

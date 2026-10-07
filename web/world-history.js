@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,date,season,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,season,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query} from './ui.js';
 import {monthlySalary} from './salaries.js';
 import {resetButton} from './filters.js';
 import {wideScreen,fittedRows,sidePanel,searchField,positionChips,choiceLinks,toggleLink,rangeMenu,choiceSelect} from './listing.js';
@@ -137,7 +137,7 @@ function retirementsTable(data){
  const count=value=>figure(n(value??0));
  return movementsTable(columns,data,data.items.map(row=>[row.position?position(row.position):'—',playerCell(row),nationCell(row.nationalities),figure(row.age??'—'),clubLink(row.source),
   row.league?e(row.league.name):row.source?external:'—',levelBadge(row.rating,'Niveau à la retraite sur 200'),levelBadge(row.peak,'Meilleur niveau sur 200'),
-  count(row.matches),count(row.goals),count(row.assists),figure(row.average?n(row.average):'—'),figure(row.caps?n(row.caps):'—'),figure(row.caps?n(row.caps_goals):'—')]));
+  count(row.matches),count(row.goals),count(row.assists),figure(row.average?averageNote(row.average):'—'),figure(row.caps?n(row.caps):'—'),figure(row.caps?n(row.caps_goals):'—')]));
 }
 
 // A promotion tells what the player was that day and what he is today: the level he had, the one he has, how far that took

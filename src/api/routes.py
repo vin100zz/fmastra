@@ -95,7 +95,13 @@ class Borrowing(Command):
 
 class OfferDecision(Command):
     offre_id: str
-    decision: Literal["accepter", "refuser"]
+    decision: Literal["accepter", "refuser", "contre"]
+    indemnite: int | None = Field(default=None, gt=0)  # the price the club names with "contre"
+
+
+class Untouchable(Command):
+    joueur_id: int
+    intransferable: bool  # True keeps the player off the market, False puts him back on it
 
 
 class OffersDecision(Command):
@@ -476,15 +482,21 @@ def router(service: GameService) -> APIRouter:
 
     @api.post("/partie/reponse-offre")
     def respond_offer(command: OfferDecision) -> dict:
-        """The answer to one offer for a player of the human club; the message that told it keeps the answer."""
+        """The answer to one offer for a player of the human club; the message that told it keeps the answer.
+
+        With "contre" the club names its own price: `vendu` tells whether the buyer took it."""
         from core.world import sales
         with service.mutating() as world:
             offer = world.offers.get(command.offre_id)
             if offer is None or offer.source_id != world.controlled_club_id or not offer.awaiting_review:
                 raise HTTPException(404, "Offre introuvable ou déjà traitée.")
-            try: sales.answer(world, offer, command.decision == "accepter")
+            if command.decision == "contre" and command.indemnite is None: raise HTTPException(400, "Indiquez votre prix.")
+            sold = command.decision == "accepter"
+            try:
+                if command.decision == "contre": sold = sales.counter(world, offer, command.indemnite)
+                else: sales.answer(world, offer, sold)
             except sales.SaleRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
-        return {"offre_id": command.offre_id, "decision": command.decision}
+        return {"offre_id": command.offre_id, "decision": command.decision, "vendu": sold}
 
     @api.post("/partie/reponse-offres")
     def respond_offers(command: OffersDecision) -> dict:
@@ -498,8 +510,9 @@ def router(service: GameService) -> APIRouter:
             except sales.SaleRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
             return {"joueur_id": player.id, "decision": command.decision, "club": v.club_ref(world, signed.target_id) if signed else None}
 
-    # The human club's own players up for sale: its transfer list, and players offered to every club at once.
-    def sell(command: Listing | OfferToClubs, act) -> dict:
+    # The human club's own players up for sale: its transfer list, and players offered to every club at once; and
+    # those it keeps off the market.
+    def sell(command: Listing | OfferToClubs | Untouchable, act) -> dict:
         from core.world.sales import SaleRefused
         with service.mutating() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
@@ -518,6 +531,11 @@ def router(service: GameService) -> APIRouter:
     def offer_to_clubs(command: OfferToClubs) -> dict:
         from core.world.sales import offer_to_clubs
         return sell(command, lambda world, player: {"proposees": len(offer_to_clubs(world, player, command.indemnite))})
+
+    @api.post("/partie/intransferable")
+    def keep_player(command: Untouchable) -> dict:
+        from core.world.sales import set_untouchable
+        return sell(command, lambda world, player: set_untouchable(world, player, command.intransferable) or {})
 
     @api.get("/ma-partie/vente/{player_id}")
     def sale(player_id: int) -> dict:

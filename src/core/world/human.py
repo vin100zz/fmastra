@@ -22,6 +22,12 @@ def on_sale(world: World, player_id: int) -> bool:
     return until is not None and until > world.date and player is not None and is_human_club(world, player.club_id)
 
 
+def untouchable(world: World, player_id: int) -> bool:
+    """Whether the human club declared one of its players not for sale (see `core.world.sales.set_untouchable`)."""
+    player = world.players.get(player_id)
+    return player_id in world.not_for_sale and player is not None and is_human_club(world, player.club_id)
+
+
 def pending_lineup_match(world: World) -> int | None:
     """The human club's match today with no lineup submitted yet, or None."""
     club_id = world.controlled_club_id

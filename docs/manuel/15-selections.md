@@ -7,11 +7,11 @@ Un joueur qui a plusieurs nationalités n'est lié à aucune sélection tant qu'
 Avant cela, à chaque rassemblement, il penche pour la nation la plus attirante parmi les siennes :
 
 ```
-attrait = 0,3 × force de la nation − 2 × retard sur le dernier sélectionnable à son poste + attachement
+attrait = 0.3 × force de la nation − 2 × retard sur le dernier sélectionnable à son poste + attachement
 ```
 
 - **La force de la nation** attire : à chances égales, un joueur préfère la meilleure sélection.
-- **Le retard** compte bien davantage : s'il est moins bon que le dernier joueur que cette nation retiendrait à son poste, chaque point de retard (sur 200) lui coûte autant que 3,3 points de force. Un bon joueur barré dans une grande sélection choisit donc la plus petite, où il jouera.
+- **Le retard** compte bien davantage : s'il est moins bon que le dernier joueur que cette nation retiendrait à son poste, chaque point de retard (sur 200) lui coûte autant que 3.3 points de force. Un bon joueur barré dans une grande sélection choisit donc la plus petite, où il jouera.
 - **L'attachement** est une préférence personnelle fixe, de −2 à +2, propre à chaque joueur et à chaque nation.
 
 Les joueurs du fichier de départ qui ont déjà des sélections gardent leur nation.
@@ -38,7 +38,7 @@ note = niveau à ce poste + 6 × (forme − 1) + 6 × (condition − 1) + aléa
 ```
 
 - **Le niveau prime.** Il est recalculé avec les poids du poste à pourvoir : un milieu peut être retenu comme arrière s'il y est assez à l'aise.
-- **La forme et la condition** ne font que départager : une forme de 1,20 vaut 1,2 point de niveau, une condition de 80 % en coûte autant.
+- **La forme et la condition** ne font que départager : une forme de 1.20 vaut 1.2 point de niveau, une condition de 80 % en coûte autant.
 - **L'aléa**, entre −{{international.selection_noise * 2}} et +{{international.selection_noise * 2}} points, tiré pour chaque joueur à chaque rassemblement, fait tourner les listes entre joueurs de niveau voisin.
 - **Un blessé** n'est pas appelé. **Un suspendu** peut l'être : sa suspension se purge pendant le rassemblement.
 - Ni le club, ni le temps de jeu en club, ni le moral, ni l'âge n'entrent dans le choix.
@@ -66,7 +66,7 @@ Une nation qui n'a pas assez de joueurs pour remplir sa liste reçoit des joueur
 
 Chaque nation a une force sur 100, qui sert aux tirages, à l'attrait des binationaux et au niveau des renforts.
 
-- Après chaque match, le vainqueur gagne et le perdant perd jusqu'à 0,8 point, d'autant plus que le résultat est inattendu ; un nul rapproche les deux.
+- Après chaque match, le vainqueur gagne et le perdant perd jusqu'à 0.8 point, d'autant plus que le résultat est inattendu ; un nul rapproche les deux.
 - Au lancement de chaque campagne, deux ans avant le tournoi, la force fait un dixième du chemin vers un mélange de sa valeur de référence (60 %) et du niveau moyen de ses 23 meilleurs joueurs (40 %).
 
 ## Les compétitions

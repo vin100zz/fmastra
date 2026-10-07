@@ -262,7 +262,7 @@ def _start_loan(world: World, event: LoanStarted) -> bool:
     for club_id in (owner.id, club.id): add_news(world, "loan", text, club_id, player.id, lines=(NewsLine(club_id=club.id),))
     # His owner no longer sells him nor extends his contract while he is away.
     world.pending_renewals.pop(player.id, None)
-    _off_sale(world, player.id)
+    _off_sale(world, player.id, away=True)
     world.offers = {key: offer for key, offer in world.offers.items() if offer.player_id != player.id}
     return True
 
@@ -280,10 +280,13 @@ def _end_loan(world: World, event: LoanEnded) -> None:
     for club_id in (owner.id, club.id): add_news(world, "loan_return", text, club_id, player.id, lines=(NewsLine(club_id=club.id),))
 
 
-def _off_sale(world: World, player_id: int) -> None:
-    """A player who left his club is no longer on its transfer list nor waiting to be offered again."""
+def _off_sale(world: World, player_id: int, away: bool = False) -> None:
+    """A player who left his club is no longer on its transfer list nor waiting to be offered again, and what it
+    decided about the offers for him no longer stands. Lent (`away`), he stays not for sale if it declared him so."""
     world.transfer_list.pop(player_id, None)
     world.offered_until.pop(player_id, None)
+    world.turned_away.pop(player_id, None)
+    if not away: world.not_for_sale.pop(player_id, None)
 
 
 def _archived(result: MatchResult) -> MatchResult:

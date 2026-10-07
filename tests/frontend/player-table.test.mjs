@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,playerViewSwitch,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances} from '../../web/ui.js';
+import {playerTable,playerViewSwitch,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -12,9 +12,9 @@ test('standings show promotion and relegation places from the API',()=>{
 test('standings give European qualification places a blue background, matching promotion/relegation backgrounds',()=>{
  const rows=[{rank:1,movement:'champion'},{rank:2,movement:'europe'},{rank:3,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
  const html=standingsTable({items:rows});
- assert.match(html,/<tr class="qualified-europe">/);
- assert.match(html,/<tr class="promoted">/);
- assert.match(html,/<tr class="relegated">/);
+ assert.match(html,/<tr class="qualified-europe"[^>]*>/);
+ assert.match(html,/<tr class="promoted"[^>]*>/);
+ assert.match(html,/<tr class="relegated"[^>]*>/);
  // the background says it all: no "Europe" text next to the club
  assert.doesNotMatch(html,/qualification-europe|Europe</);
 });
@@ -26,7 +26,7 @@ test('player list shows the main nationality, counts the others, and the value w
  // The main nationality with its flag; the others are counted and named in a tooltip.
  assert.match(html,/title="France"/);assert.match(html,/<span class="muted" title="Espagne">\+1<\/span>/);
  assert.match(html,/flags\/fr.svg/);assert.doesNotMatch(html,/flags\/es.svg/);
- assert.match(html,/data-order="desc" data-sort="value">VALEUR</);assert.match(html,/1,3/);
+ assert.match(html,/data-order="desc" data-sort="value">VALEUR</);assert.match(html,/1\.3/);
  const imported=playerTable({items:[{...player,nationalities:['POR','XOP'],nationality_names:['Portugal','Angola']}],total:1,page_size:30},true);
  assert.match(imported,/POR/);assert.match(imported,/title="Angola">\+1</);assert.doesNotMatch(imported,/XOP/);
 });
@@ -36,7 +36,8 @@ test('potential follows current level and academy columns preserve unknown data'
  assert.ok(html.indexOf('NIV.') < html.indexOf('POT.'));
  assert.match(html,/title="Potentiel sur 200">180</);assert.doesNotMatch(html,/POT\. EST\./);
  assert.match(html,/À la promotion/);assert.match(html,/CLUB FORMATEUR/);
- assert.doesNotMatch(html,/data-sort/);
+ // Without the server's sorting the list still sorts, in the browser, by what its cells show.
+ assert.doesNotMatch(html,/data-sort=/);assert.match(html,/<table data-sortable>/);
  const missing=playerTable({items:[{id:2,name:'Retraité',nationalities:[],data_at:'unknown'}],total:1,page_size:50},true,'','desc',{sortable:false,academy:true});
  assert.match(missing,/Non archivées/);assert.doesNotMatch(missing,/NaN|undefined|0 €/);
 });
@@ -103,7 +104,18 @@ test('sortable tables carry the raw value of every cell and start ranks from the
  const html=sortableTable(['#','CLUB'],['<b>1</b>','<i>Lens</i>'].map(cell=>[cell,cell]),[[1,'Lens'],[2,'<script>']],{ascending:[0]});
  assert.match(html,/<table data-sortable>/);assert.match(html,/<th data-first="asc"><button class="sort-toggle" data-table-sort>#<\/button><\/th><th><button/);
  assert.match(html,/<td data-value="1">/);assert.match(html,/data-value="&lt;script&gt;"/);assert.doesNotMatch(html,/<script>/);
- assert.doesNotMatch(standingsTable({items:[{rank:1,club:{id:1,name:'A'},form:''}]}),/data-sortable/);
+ // Every table sorts: one that gives no values sorts by what its cells show, unless it is told not to.
+ assert.match(standingsTable({items:[{rank:1,club:{id:1,name:'A'},form:''}]}),/<table data-sortable>/);
+ assert.doesNotMatch(table(['A'],[['1']],undefined,undefined,false),/data-sortable|<button/);
+ assert.match(table(['A',''],[['1','<button>↓</button>']]),/<th><button class="sort-toggle" data-table-sort>A<\/button><\/th><th><\/th>/);
+});
+
+test('a table without values sorts by what its cells show: a figure, an amount in its unit, a date, otherwise its text',()=>{
+ assert.equal(sortValue('<span class="num">1.2\u00a0M€</span>'),'1200000');assert.equal(sortValue('950\u00a0k€'),'950000');assert.equal(sortValue('850 €'),'850');
+ assert.equal(sortValue('−3 %'),'-3');assert.equal(sortValue('+11 %'),'11');assert.equal(sortValue('12 (3)'),'12');assert.equal(sortValue('1\u202f263'),'1263');
+ assert.equal(sortValue('7.81'),'7.81');assert.equal(sortValue('—'),'');assert.equal(sortValue(''),'');
+ assert.ok(Number(sortValue('30 juin 2033'))>Number(sortValue('3 nov. 2030'))&&Number(sortValue('1er juil. 2031'))>Number(sortValue('30 juin 2031')));
+ assert.equal(sortValue('<a href="#/club/7" class="club-link">Lens</a>'),'Lens');assert.equal(sortValue('2 – 1'),'2 – 1');
 });
 
 test('sorting orders by raw values, keeps unknown ones last and ties in page order',()=>{
@@ -121,8 +133,8 @@ test('sorting orders by raw values, keeps unknown ones last and ties in page ord
 test('figures stand on the right of their column, and the condition has its bar',()=>{
  const html=playerTable({items:[{...player,fitness:.77}],total:1,page_size:30});
  assert.match(html,/<td><span class="num">20<\/span><\/td>/);
- assert.match(html,/<span class="num">1,3\sM\s€<\/span>/);
- assert.match(html,/<span class="status"><i class="mini-bar" aria-hidden="true"><i style="width:77%"><\/i><\/i>77%<\/span>/);
+ assert.match(html,/<span class="num">1\.3\sM€<\/span>/);
+ assert.match(html,/<span class="status"><i class="mini-bar" aria-hidden="true"><i style="width:77%"><\/i><\/i>77\s%<\/span>/);
 });
 
 test('a list beside a preview marks the picked row and lets each row be picked; its pages can stand elsewhere',()=>{
@@ -144,7 +156,7 @@ test('appearances show the substitute entries in brackets after the starts',()=>
 test('the player list shows the lowest fee a club accepts, sortable, or that it will not sell',()=>{
  const html=playerTable({items:[{...player,asking_price:25100000,transferable:true},{...player,id:2,asking_price:null,transferable:false}],total:2,page_size:30},true,'asking_price','desc',{asking:true});
  assert.match(html,/data-sort="asking_price"/);assert.match(html,/data-order="desc" data-sort="asking_price">PRIX MIN\.</);
- assert.match(html,/25,1\sM\s?€/);
+ assert.match(html,/25\.1\sM€/);
  assert.match(html,/<span class="muted">Intransférable<\/span>/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
 });
@@ -154,10 +166,10 @@ test('with a club of his own the user reads what a player asks to join it and wh
  const html=playerTable({items,total:3,page_size:30},true,'wage_demand','desc',{asking:true,recruiting:true});
  assert.match(html,/<th class="wage_demand-column"><button data-first="desc" data-order="desc" data-sort="wage_demand">PRÉTENTIONS</);
  assert.match(html,/<th class="interested-column"><button data-first="desc" data-sort="interested">INTÉRESSÉ</);
- assert.ok(html.indexOf('SALAIRE / MOIS')<html.indexOf('PRÉTENTIONS')&&html.indexOf('PRÉTENTIONS')<html.indexOf('INTÉRESSÉ')&&html.indexOf('INTÉRESSÉ')<html.indexOf('CONTRAT'));
+ assert.ok(html.indexOf('SALAIRE')<html.indexOf('PRÉTENTIONS')&&html.indexOf('PRÉTENTIONS')<html.indexOf('INTÉRESSÉ')&&html.indexOf('INTÉRESSÉ')<html.indexOf('CONTRAT'));
  // The demand reads as a monthly wage; a player of the user's own club has neither.
  const cells=[...html.matchAll(/<tr class="">(.*?)<\/tr>/g)].map(row=>[...row[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]).slice(11,13));
- assert.deepEqual(cells.map(([demand,interest])=>[demand.replace(/\D/g,''),interest]),[['310000','<span class="tags"><span class="tag" title="Transfert">T</span></span>'],['93000','<span class="muted">Non</span>'],['','—']]);
+ assert.deepEqual(cells.map(([demand,interest])=>[demand.replace(/\D/g,''),interest]),[['310','<span class="tags"><span class="tag" title="Transfert">T</span></span>'],['93','<span class="muted">Non</span>'],['','—']]);
  // The switch keeps the sort where the columns are; other lists have neither column.
  assert.match(playerViewSwitch(null,'wage_demand','desc',true,{asking:true,recruiting:true}),/data-view="infos"[^>]*data-view-sort="wage_demand"/);
  assert.doesNotMatch(playerTable({items,total:3,page_size:30},true,'value','desc',{asking:true}),/PRÉTENTIONS|INTÉRESSÉ/);
@@ -227,9 +239,9 @@ test('the squad shows form as its signed effect and morale with where it drifts 
  const html=playerTable({items:rows,total:3,page_size:30},false,'form','desc');
  assert.match(html,/data-order="desc" data-sort="form">FORME</);assert.match(html,/data-sort="morale">MORAL</);
  // +11 % in green, −9 % in red, grey within 2 %.
- assert.match(html,/<span class="rating graded form-badge" style="--hue:120" title="Forme 1,11 : tout ce qu&#39;il fait en match compte 11 % de plus">\+11 %</);
- assert.match(html,/style="--hue:0" title="Forme 0,91 : tout ce qu&#39;il fait en match compte 9 % de moins">−9 %</);
- assert.match(html,/<span class="rating form-badge neutral" title="Forme 1,02 : il joue à son niveau">\+2 %</);
+ assert.match(html,/<span class="rating graded form-badge" style="--hue:120" title="Forme 1\.11 : tout ce qu&#39;il fait en match compte 11 % de plus">\+11 %</);
+ assert.match(html,/style="--hue:0" title="Forme 0\.91 : tout ce qu&#39;il fait en match compte 9 % de moins">−9 %</);
+ assert.match(html,/<span class="rating form-badge neutral" title="Forme 1\.02 : il joue à son niveau">\+2 %</);
  // Morale: an arrow towards its target, the cause below 70 %, the detail in the tooltip.
  assert.match(html,/<span class="morale-cell" title="Moral 63 %, vers 66 % · pèse surtout : son salaire · salaire : 10 % de ce qu&#39;il attend · temps de jeu : 100 % de ce qu&#39;il attend"><span class="rating graded" style="--hue:\d+">63 %<\/span><span class="trend-slot"><span class="trend up">▲<\/span><\/span><span class="morale-cause">€<\/span>/);
  assert.match(html,/>44 %<\/span><span class="trend-slot"><span class="trend down">▼<\/span><\/span><span class="morale-cause">◷</);

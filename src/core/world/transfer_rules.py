@@ -6,7 +6,7 @@ from core.domain.players import Player
 from core.domain.world import World
 from core.math import clamp, interpolate
 from core.randomness import stream
-from .human import on_sale
+from .human import on_sale, untouchable
 
 
 def greed_trait(loyalty: float | None, cfg: Config, seed: int, player_id: int) -> float:
@@ -110,6 +110,12 @@ def frustration(player: Player, world: World) -> float:
 def wants_to_leave(player: Player, world: World) -> bool:
     """A restless player refuses to renew and accepts only a clearly bigger club."""
     return frustration(player, world) >= world.config.management.market.leave_threshold
+
+
+def held_back(player: Player, world: World) -> bool:
+    """A player who wants to leave and whom the human club declared not for sale: it weighs on his morale
+    (see `core.world.contracts.contentment`)."""
+    return untouchable(world, player.id) and wants_to_leave(player, world)
 
 
 def accepts_move(player: Player, target: Club, world: World) -> bool:

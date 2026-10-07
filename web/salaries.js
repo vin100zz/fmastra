@@ -1,6 +1,14 @@
 // Contracts remain weekly in the simulation; the UI shows a monthly average.
 const weeksPerYear=52;
-const currency=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+// An amount is written in €, k€ or M€ (€ below 1 000, k€ below 1 000 000, M€ beyond), to `digits` significant figures, with
+// a point as its decimal separator (docs/charte-graphique.md).
+const figures=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:3});
+export function amount(value,digits=2){
+ for(const [divisor,unit] of [[1,'€'],[1e3,'k€'],[1e6,'M€']]){
+  const rounded=Number(((value??0)/divisor).toPrecision(digits));
+  if(Math.abs(rounded)<1000||unit==='M€')return `${figures.format(rounded).replace(',','.')}\u00a0${unit}`;
+ }
+}
 
 export function roundSalary(value){
  if(!value)return 0;
@@ -9,7 +17,8 @@ export function roundSalary(value){
 }
 
 export const monthlyAmount=weekly=>roundSalary((weekly??0)*weeksPerYear/12);
-export const monthlySalary=weekly=>currency.format(monthlyAmount(weekly));
+// A wage is always shown per month: no screen says so again.
+export const monthlySalary=weekly=>amount(monthlyAmount(weekly));
 export const weeklyFromMonthly=monthly=>Math.round(monthly*12/weeksPerYear);
 
 export function salarySearchParams(params){

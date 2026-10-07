@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,date,card,heading,table,sortableTable,standings,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag,money,duration} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,card,heading,table,sortableTable,standings,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag,money,duration} from './ui.js';
 import {nationNavigation} from './navigation.js';
 import {monthlySalary} from './salaries.js';
 import {bracket} from './bracket.js';
@@ -43,7 +43,7 @@ function statistics(data){
  return `<div class="stats-panels">${[
   panel('Meilleurs buteurs',['#','JOUEUR','NATION','MJ','BUTS'],listed(byGoals,row=>[`<b>${row.goals}</b>`])),
   panel('Meilleurs passeurs',['#','JOUEUR','NATION','MJ','PASSES'],listed(byAssists,row=>[`<b>${row.assists}</b>`])),
-  panel('Meilleure note moyenne',['#','JOUEUR','NATION','MJ','NOTE'],listed(byRating,row=>[`<b>${n(rating(row))}</b>`]),`<span class="muted">${MIN_RATED_MATCHES} matchs min.</span>`),
+  panel('Meilleure note moyenne',['#','JOUEUR','NATION','MJ','NOTE'],listed(byRating,row=>[`<b>${averageNote(rating(row))}</b>`]),`<span class="muted">${MIN_RATED_MATCHES} matchs min.</span>`),
   panel('Meilleures attaques',['#','NATION','BUTS'],attacks.map((row,index)=>[index+1,clubLink(row.team),`<b>${row.goals}</b>`]))
  ].join('')}</div>`;
 }
@@ -92,7 +92,7 @@ function squadCard(data){
  const title=`${data.camp.upcoming?'Rassemblement':'Dernier rassemblement'} du ${date(data.camp.start)} au ${date(data.camp.end)}`;
  // The same columns, in the same order, as the club and player lists.
  const fitness=p=>p.injured_until?`<span class="status danger" title="Retour le ${e(date(p.injured_until))}">✚ ${duration(p.injured_until)}</span>`:p.suspension?`<span class="status danger">▰ ${p.suspension} match${p.suspension>1?'s':''}</span>`:`<span class="status">${Math.round(p.fitness*100)}%</span>`;
- return card(title,sortableTable(['POSTE','JOUEUR','ÂGE','NIV.','POT.','CLUB','VALEUR','SALAIRE / MOIS','CONTRAT','ÉTAT','SÉL.','BUTS'],data.squad.map(p=>[
+ return card(title,sortableTable(['POSTE','JOUEUR','ÂGE','NIV.','POT.','CLUB','VALEUR','SALAIRE','CONTRAT','ÉTAT','SÉL.','BUTS'],data.squad.map(p=>[
   position(p.position),`<span class="strong">${playerLink(p.id,p.name)}</span>`,p.age??'—',levelBadge(p.rating,'Niveau actuel sur 200'),levelBadge(p.potential,'Potentiel sur 200'),p.id<0?'—':clubLink(p.club),
   p.value==null?'—':money(p.value),p.wage==null?'—':monthlySalary(p.wage),`<span class="${p.expiring?'danger':''}">${date(p.contract_end)}</span>`,fitness(p),p.caps,p.goals]),
   data.squad.map(p=>[p.position,p.name,p.age??'',p.rating,p.potential??'',p.club?.name??'',p.value??'',p.wage??'',p.contract_end??'',p.injured_until||p.suspension?-1:p.fitness,p.caps,p.goals])));

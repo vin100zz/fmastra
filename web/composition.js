@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,KIT_SVG,kitStyle,clubLink,form,date,safeColor} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,PITCH_BOXES,clubLink,form,date,safeColor} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -170,9 +170,8 @@ function slotHtml(id,role,cell,index,byId){
  const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
  const note=player?positionNote(player,role,wantedAt(role)):'',side=noteSide(shape(),cell);
  // A starter wears the club's kit; an empty place keeps the outline of a shirt.
- const kit=player?kitStyle(editor.data.club?.major_color,editor.data.club?.minor_color):'';
- const shirt=kit?`<span class="shirt kit" style="${kit}">${KIT_SVG}<b>${e(role)}</b>`:`<span class="shirt">${e(role)}`;
- return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''}</span>${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
+ const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player,inside:player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''});
+ return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
 }
 // The free cells of the grid, shown while a place of the pitch is dragged.
 function cellsHtml(){
@@ -219,7 +218,7 @@ function squadHtml(byId){
    name:`<span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span>`,
    rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),
    fatigue:`<span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span>`,
-   form:formBadge(player.form),appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?number(player.average):'—'};
+   form:formBadge(player.form),appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?averageNote(player.average):'—'};
   const cell=([column,,opens])=>{const classes=[column==='name'?'strong':'',opens?'group-start':''].filter(Boolean).join(' ');
    return `<td${classes?` class="${classes}"`:''}>${column in cells?cells[column]:compositeCell(player,column,wanted||player.key_composites)}</td>`;};
   return `<tr data-player="${player.id}" draggable="true" class="${spot?'chosen':''}${player.unavailable?' invalid':''}${spot?.kind==='slot'&&spot.index===editor.picked?' picked':''}">${shown.map(cell).join('')}</tr>`;
@@ -254,7 +253,7 @@ function editorHtml(){
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
  const views=[['infos','Infos'],['jeu','Jeu']].map(([key,label])=>`<button type="button" data-lineup-view="${key}" aria-pressed="${key===squadView}" class="${key===squadView?'active':''}">${label}</button>`).join('');
  const scout=scoutingHtml(editor.data.scouting);
- return `<div class="lineup-layout${scout?' with-scout':''}"><div class="lineup-field"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
+ return `<div class="lineup-layout${scout?' with-scout':''}"><div class="lineup-field"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${PITCH_BOXES}${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench" style="--bench:${editor.bench.length}">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-list"><div class="lineup-toolbar">${status}<button type="button" data-lineup-suggest>Meilleure composition</button><div class="segmented" role="group" aria-label="Colonnes">${views}</div></div><div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>${scout}</div>`;
 }
@@ -339,7 +338,7 @@ function install(){
   const role=pitch?roles()[dragged.slot]:spot?.kind==='slot'?roles()[spot.index]:player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}${player?player.unavailable?' invalid':'':' empty'}`;
-  token.innerHTML=`<span class="shirt">${e(role)}</span><small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small>`;
+  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player})}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small>`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {calendarBlock,squadWidgets,standingsExtract,lineupBlock,clubPreview,marketBlock} from '../../web/club-overview.js';
-import {pitch,kitShirtStyle,contrastRatio} from '../../web/ui.js';
+import {pitch,contrastRatio} from '../../web/ui.js';
 
 const club={id:7,name:'Lens',competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
 const ref=(id,name)=>({id,name,major_color:'#aa0000',minor_color:'#ffcc00'});
@@ -28,7 +28,7 @@ test('beside the squad, the widgets open the calendar, the last match, the leagu
 
 test('the finances widget shows the free budget, the cash and the wage bill as a ring',()=>{
  const html=clubOverview(club,data());
- assert.match(html,/Budget transferts<\/span><strong>38\sM\s€<\/strong><small>Trésorerie <b>1\sM\s€<\/b><\/small>/);
+ assert.match(html,/Budget transferts<\/span><strong>38\sM€<\/strong><small>Trésorerie <b>1\sM€<\/b><\/small>/);
  assert.match(html,/<span class="news-ring" role="img" aria-label="80 % du plafond salarial utilisé">/);
  const over=clubOverview(club,data({finances:{...data().finances,wage_bill:600000,transfer_budget:1e6,reserved_transfer_budget:5e6}}));
  assert.match(over,/class="news-ring full"/);assert.match(over,/120 %/);assert.match(over,/Budget transferts<\/span><strong>0\s€/);
@@ -44,26 +44,26 @@ test('the league widget shows five rows around the club, with the points then th
  assert.match(html,/href="#\/league\/16"/);
  const ranks=[...html.matchAll(/<span class="rank ?(?:first)?">(\d+)<\/span>/g)].map(match=>Number(match[1]));
  assert.deepEqual(ranks,[4,5,6,7,8]);
- assert.match(html,/<th class="rank-column">#<\/th><th>CLUB<\/th><th class="total-column">PTS<\/th><th class="difference-column">DIFF\.<\/th><\/tr>/);
- assert.doesNotMatch(html,/>J<\/th>/);assert.match(html,/<tr class="own">/);
+ assert.match(html,/<th class="rank-column"[^>]*><button class="sort-toggle" data-table-sort>#<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>CLUB<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th><th class="difference-column"[^>]*><button class="sort-toggle" data-table-sort>DIFF\.<\/button><\/th><\/tr>/);
+ assert.doesNotMatch(html,/>J<\/th>/);assert.match(html,/<tr class="own"[^>]*>/);
  // At either end the five rows stay within the table.
  assert.deepEqual([...standingsExtract({...club,competition_id:16},{items:table.map((item,index)=>({...item,club:index===0?ref(7,'Lens'):ref(30+index,`C${index}`)}))}).matchAll(/<span class="rank ?(?:first)?">(\d+)<\/span>/g)].map(match=>Number(match[1])),[1,2,3,4,5]);
  assert.match(standingsExtract({...club,competition_id:16},{items:[row(1,7,'Lens',3,2,1)]}),/1<span class="ordinal">re<\/span> journée/);
  assert.equal(standingsExtract(club,null),'');assert.equal(standingsExtract(club,{items:[]}),'');
 });
 
-test('the last eleven stands on a pitch attacking to the right, in the club kit, without notes',()=>{
+test('the last eleven lies on the charter\'s pitch attacking to the right, in the club kit with each position on its shirt, without notes',()=>{
  assert.match(clubOverview(club,data()),/Aucun match joué/);
  const positions=['GB','DG','DC','DC','DD','MC','MC','MC','AILG','BU','AILD'];
  const players=positions.map((position,index)=>({id:100+index,name:`Prénom Nom<${index}>`,position,temporary:false,stats:{rating:6.5}}));
  const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players};
  const html=lineupBlock(club,lineup);
- assert.equal((html.match(/class="side-pitch-player"/g)||[]).length,11);
+ assert.match(html,/<div class="pitch lying" aria-label="Onze aligné par Lens">/);assert.equal((html.match(/class="pitch-player"/g)||[]).length,11);
  assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
  assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
- // The body in the primary colour, the sleeves in the secondary one; no rating on the shirt.
+ // The body in the primary colour, the sleeves in the secondary one; the position on the shirt, no note beside it.
  assert.equal((html.match(/<span class="kit-shirt" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff">/g)||[]).length,11);
- assert.doesNotMatch(html,/6,5|<b>/);
+ assert.equal((html.match(/<b>(GB|DG|DC|DD|MC|AILG|BU|AILD)<\/b>/g)||[]).length,11);assert.doesNotMatch(html,/6[.,]5|position-note/);
  // The keeper on the left, the forward on the right; the left-back above the right-back.
  const at=name=>{const found=html.match(new RegExp(`title="${name}" style="left:([\\d.]+)%;top:([\\d.]+)%"`));return [Number(found[1]),Number(found[2])];};
  assert.ok(at('Prénom Nom&lt;0&gt;')[0]<at('Prénom Nom&lt;9&gt;')[0]);
@@ -77,10 +77,10 @@ test('the market under way stands in four columns: offers by player with his val
   liste:[{joueur_id:8,joueur:'Édouard',poste:'BU',indemnite:25e5}],prets:[{joueur_id:9,joueur:'Vasseur',club:ref(33,'Amiens'),fin:'2031-06-30'}],emprunts:[]},
   {club:{available_budget:18.6e6,wage_bill:4000,wage_cap:5000},market:'winter'});
  assert.match(html,/<span class="market-state open">Mercato d’hiver ouvert<\/span>/);
- assert.match(html,/Budget <b>19\sM\s€<\/b>/);
+ assert.match(html,/Budget <b>19\sM€<\/b>/);
  assert.equal((html.match(/class="market-column"/g)||[]).length,4);
  assert.match(html,/Offres reçues<span class="market-count alert">2<\/span>/);
- assert.match(html,/Baidoo<\/a><small>valeur 41\sM\s€<\/small>/);
+ assert.match(html,/Baidoo<\/a><small>valeur 41\sM€<\/small>/);
  assert.equal((html.match(/data-command="reponse-offre" data-decision="accepter"/g)||[]).length,2);
  assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier →/);
  assert.match(html,/→ <a href="#\/club\/33"/);
@@ -106,9 +106,9 @@ test('the calendar widget lists results with their outcome and the fixtures stil
  // a league game needs no competition; a cup tie or a shootout is named on the opponent's line
  assert.doesNotMatch(html,/<small>Ligue 1/);
  const cup=clubOverview(club,data({calendar:{last:[match(5,[7,'Lens'],[8,'Rennes'],{competition:'Coupe de France',score:[1,1],penalties:[4,3],outcome:'V'}),match(6,[9,'Nice'],[7,'Lens'],{competition:'Coupe de France',score:[0,1],outcome:'V'})],next:[]}}));
- assert.match(cup,/Rennes<\/b><span class="competition-badge">Coupe de France<\/span><small>t\.a\.b\. 4 – 3<\/small>/);
+ assert.match(cup,/Rennes<\/b><span class="competition-code" title="Coupe de France">CdF<\/span><small>t\.a\.b\. 4 – 3<\/small>/);
  assert.match(cup,/title="Coupe de France · Journée 19 · Domicile · t\.a\.b\. 4 – 3"/);
- assert.match(cup,/Nice<\/b><svg class="away".*?<\/svg><span class="competition-badge">Coupe de France<\/span><\/span>/);
+ assert.match(cup,/Nice<\/b><svg class="away".*?<\/svg><span class="competition-code" title="Coupe de France">CdF<\/span><\/span>/);
  // played matches read oldest first, like the upcoming ones
  assert.ok(cup.indexOf('Nice')<cup.indexOf('Rennes'));
  const empty=clubOverview(club,data({calendar:{last:[],next:[]}}));
@@ -117,29 +117,32 @@ test('the calendar widget lists results with their outcome and the fixtures stil
 
 test('the pitch spreads full-backs and centre-backs on one line, from left to right',()=>{
  const back=['DD','DC','DG','DC','DC'].map((position,index)=>({id:index,name:`P${index}`,position}));
- const placed=[...pitch(back).matchAll(/left:([\d.]+)%;top:(\d+)%"><span class="shirt">(\w+)/g)].map(([, left,, position])=>[position,Number(left)]).sort((a,b)=>a[1]-b[1]);
+ const placed=[...pitch(back).matchAll(/left:([\d.]+)%;top:(\d+)%"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>(\w+)/g)].map(([, left,, position])=>[position,Number(left)]).sort((a,b)=>a[1]-b[1]);
  assert.deepEqual(placed.map(([position])=>position),['DG','DC','DC','DC','DD']);
  assert.deepEqual(placed.map(([,left])=>left),[11,30.5,50,69.5,89]);
  const pair=[...pitch(['BU','BU'].map((position,index)=>({id:index,name:'B',position}))).matchAll(/left:([\d.]+)%/g)].map(match=>Number(match[1]));
  assert.deepEqual(pair,[35,65]);
 });
 
-test('the mini pitch shirts players in the club kit and keeps the number readable',()=>{
+test('the match pitch shirts each side in its kit, the position on the shirt and the note of the match beside it',()=>{
  const line=[{id:1,name:'Ada Un',position:'GB',stats:{rating:7}},{id:-2,name:'Bob Deux',position:'BU',temporary:true,stats:{rating:6}},{id:3,name:'Cy Trois',position:'MC'}];
- const shirts=html=>[...html.matchAll(/<span class="shirt"([^>]*)>/g)].map(match=>match[1]);
- const red=' style="background:linear-gradient(135deg,#cc0000 78%,#ffd700 78%);color:#ffd700"';
- assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}})),[red,'',red]);
- // no kit (the match page): the colour still comes from the position
- assert.deepEqual(shirts(pitch(line)),['','','']);
- // the secondary colour is always kept; a halo appears only when it is too close to the primary one to read
- assert.ok(contrastRatio('#cc0000','#ffd700')>=3&&contrastRatio('#f8f8f8','#f8c028')<3);
- assert.equal(kitShirtStyle('#cc0000','#ffd700'),'background:linear-gradient(135deg,#cc0000 78%,#ffd700 78%);color:#ffd700');
- assert.equal(kitShirtStyle('#f8f8f8','#f8c028'),'background:linear-gradient(135deg,#f8f8f8 78%,#f8c028 78%);color:#f8c028;text-shadow:0 0 2px #1c2b22,0 0 2px #1c2b22,0 0 3px #1c2b22');
- assert.match(kitShirtStyle('#101010','#121212'),/color:#121212;text-shadow:0 0 2px #ffffff/);
- // a missing secondary colour reuses the primary one, so it gets the halo too; an unsafe colour is never written out
- assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/background:linear-gradient\(135deg,#204080 78%,#204080 78%\);color:#204080;text-shadow:0 0 2px #ffffff/);
- assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'red;background:url(x)',minor:'#ffffff'}})),['','','']);
- assert.deepEqual(shirts(pitch(line,'x',{kit:{major:null,minor:null}})),['','','']);
+ const shirts=html=>[...html.matchAll(/<span class="kit-shirt([^"]*)"( style="[^"]*")?>/g)].map(match=>`${match[1]}${match[2]||''}`);
+ const red=' style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff"';
+ // a match-only player keeps a grey shirt; without a kit every shirt is grey
+ assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}})),[red,' plain',red]);
+ assert.deepEqual(shirts(pitch(line)),[' plain',' plain',' plain']);
+ const html=pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}});
+ assert.match(html,/^<div class="pitch" aria-label="x"><i class="pitch-box" aria-hidden="true"><\/i><i class="pitch-box far" aria-hidden="true"><\/i>/);
+ // the position is written on the shirt; the note of the match stands beside it, one figure after the point
+ assert.match(html,/<b>GB<\/b><\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note du match">7\.0<\/span><\/span><small>Ada Un<\/small>/);
+ assert.match(html,/<b>MC<\/b><\/span><small>Cy Trois<\/small>/);
+ // one drawing for every shirt: the whole shape in the sleeves' colour, the body over it, the outline alone
+ assert.equal((html.match(/<path class="kit-sleeves"/g)||[]).length,3);assert.equal((html.match(/<path class="kit-outline"/g)||[]).length,3);
+ assert.ok(contrastRatio('#cc0000','#ffd700')>=3);
+ // a missing secondary colour reuses the primary one; an unsafe colour is never written out
+ assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/--kit-body:#204080;--kit-sleeves:#204080;/);
+ assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'red;background:url(x)',minor:'#ffffff'}})),[' plain',' plain',' plain']);
+ assert.deepEqual(shirts(pitch(line,'x',{kit:{major:null,minor:null}})),[' plain',' plain',' plain']);
 });
 
 test('beside the list of clubs, the picked one is previewed: standing, matches, money, best players and a way to each tab',async()=>{
@@ -155,7 +158,7 @@ test('beside the list of clubs, the picked one is previewed: standing, matches, 
  // Its last results and next fixtures, as on its page.
  assert.equal((html.match(/class="club-match"/g)||[]).length,4);
  // Budget left for a bid; the wage bill by the month against its cap, red from 95 %.
- assert.match(html,/Budget transferts<\/span><strong>38\sM\s€/);
+ assert.match(html,/Budget transferts<\/span><strong>38\sM€/);
  assert.match(html,/<i class="gauge full" role="img" aria-label="96 % du plafond salarial utilisé"><i style="width:96%">/);
  // The eight best players, best first.
  assert.deepEqual([...html.matchAll(/#\/player\/(\d+)/g)].map(match=>Number(match[1])),[100,101,102,103,104,105,106,107]);

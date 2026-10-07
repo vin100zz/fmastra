@@ -30,7 +30,7 @@ test('each side lists every kind of movement by date with its badge, its club an
  assert.deepEqual(names,[4,2,1]);
  assert.match(arrivals,/<span class="movement-kind academy">Jeune promu<\/span>.*Centre de formation/);
  assert.match(arrivals,/Libre<\/a><\/span><span class="movement-age">24 ans<\/span><span class="movement-club"><span class="muted">Libre<\/span><\/span><b class="movement-fee">Libre<\/b>/);
- assert.match(arrivals,/9,5\sM\s€<\/b>/);
+ assert.match(arrivals,/9\.5\sM€<\/b>/);
  assert.match(departures,/<span class="movement-kind release">Fin de contrat<\/span>/);assert.match(departures,/<span class="movement-kind retirement">Retraite<\/span><span class="position">—<\/span>/);
  assert.match(departures,/<span class="movement-kind loan">Prêt<\/span>/);
  assert.match(html,/<span title="Âge non archivé">—<\/span>/);
@@ -39,9 +39,9 @@ test('each side lists every kind of movement by date with its badge, its club an
 
 test('the season reads in figures: spending, takings, the balance, the biggest sale and the biggest signing',()=>{
  const html=movements();
- assert.match(html,/<span>Dépenses<\/span><strong>9,5\sM\s€<\/strong>/);assert.match(html,/<span>Recettes<\/span><strong>32\sM\s€<\/strong>/);
- assert.match(html,/<span>Balance<\/span><strong class="good">\+23\sM\s€<\/strong>/);
- assert.match(html,/<span>Plus grosse vente<\/span><p><a href="#\/player\/3">Vendu<\/a> <small>→ Newcastle<\/small><\/p><\/div><strong>32\sM\s€<\/strong>/);
+ assert.match(html,/<span>Dépenses<\/span><strong>9\.5\sM€<\/strong>/);assert.match(html,/<span>Recettes<\/span><strong>32\sM€<\/strong>/);
+ assert.match(html,/<span>Balance<\/span><strong class="good">\+23\sM€<\/strong>/);
+ assert.match(html,/<span>Plus grosse vente<\/span><p><a href="#\/player\/3">Vendu<\/a> <small>→ Newcastle<\/small><\/p><\/div><strong>32\sM€<\/strong>/);
  assert.match(html,/<span>Plus grosse recrue<\/span><p><a href="#\/player\/1">Recrue<\/a> <small>← Toulouse<\/small>/);
  assert.match(html,/class="season-steps"/);
  // Without a paid transfer there is no record to show.
@@ -76,9 +76,9 @@ test('the seasons table shows the rank, the reputation, the national cup and the
  const html=seasonsHistory(seasonsData(),club,2027);
  for(const label of ['COUPE NATIONALE','COUPE D’EUROPE','CLASSEMENT','PALMARÈS','RÉPUTATION'])assert.ok(html.includes(label),label);
  assert.match(html,/<span class="run-chip">Quarts de finale<\/span>/);assert.match(html,/<span class="run-chip won">✦ Vainqueur<\/span>/);
- assert.match(html,/<span class="competition-code europe c1" title="Ligue des champions">C1<\/span><span class="run-chip">Phase de ligue<\/span>/);
+ assert.match(html,/<span class="competition-code europe" title="Ligue des champions">C1<\/span><span class="run-chip">Phase de ligue<\/span>/);
  assert.match(html,/<span class="rank-chip europe">3e<\/span>/);assert.match(html,/<span class="rank-chip first">1er<\/span>/);
- assert.match(html,/88,4 <span class="bad">−3,1<\/span>/);assert.match(html,/91,5<\/td>/);
+ assert.match(html,/88\.4 <span class="bad">−3\.1<\/span>/);assert.match(html,/91\.5<\/td>/);
  assert.match(html,/data-value="4"/);assert.match(html,/data-value="7"/);assert.match(html,/data-value="88.4"/);
  assert.doesNotMatch(html,/undefined|null|NaN/);
  assert.doesNotMatch(html,/Classement complet|season-archive|class="pager"/);
@@ -114,8 +114,8 @@ test('the leaders are bars against the first of them, and the biggest transfers 
  assert.match(html,/href="#\/player\/1">Buteur &lt;b&gt;<\/a><\/span><i style="width:100%"><\/i><b>80<\/b>/);
  assert.match(html,/href="#\/player\/3">Second<\/a><\/span><i style="width:50%"><\/i><b>40<\/b>/);
  assert.doesNotMatch(html,/Buteur <b>/);
- assert.match(html,/Recrue<\/a> <small>← Lyon<\/small><\/span><small>26-27<\/small><b>25\sM\s€<\/b>/);
- assert.match(html,/Vendu<\/a> <small>→ Milan<\/small><\/span><small>25-26<\/small><b>40\sM\s€<\/b>/);
+ assert.match(html,/Recrue<\/a> <small>← Lyon<\/small><\/span><small>26-27<\/small><b>25\sM€<\/b>/);
+ assert.match(html,/Vendu<\/a> <small>→ Milan<\/small><\/span><small>25-26<\/small><b>40\sM€<\/b>/);
  const none=seasonsHistory(seasonsData({total:0,items:[],leaders:{matches:[],goals:[]},transfers:{arrivals:[],departures:[]}}),club,2027);
  assert.match(none,/Pas encore de statistiques/);assert.match(none,/Aucun transfert payant enregistré/);assert.match(none,/Pas encore de saison terminée/);
 });

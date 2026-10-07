@@ -8,14 +8,16 @@ Le projet est décrit dans `README.md` ; les principes de l'interface sont dans
 `docs/charte-graphique.md` est la référence de l'apparence : couleurs,
 typographie, mesures, composants, terrain et maillot, graphiques, écriture des
 nombres. Sa feuille `docs/charte/charte.css` fait foi pour les valeurs ; ses
-planches (`docs/charte/index.html`) les montrent. La lire avant toute maquette
+planches (`docs/charte/index.html`) les montrent ; `web/charte.css` l'applique
+aux écrans. La lire avant toute maquette
 et tout travail sur un écran.
 
 - **Toute maquette et tout développement d'interface s'y conforment** : ses
   jetons et ses composants, aucune valeur écrite en dur hors de ses échelles, ses
   conventions d'écriture (point décimal, salaires mensuels, ordre des colonnes
   d'un classement, pastilles de compétition, club après sa pastille, pays après
-  son drapeau, colonnes triables de largeur fixe, infobulles).
+  son drapeau, colonnes triables de largeur fixe, infobulles, liens non soulignés
+  et un seul effet sous le pointeur).
 - **Ce que la charte ne couvre pas s'y ajoute dans le même changement**
   (composant, variante, convention) : la règle dans `docs/charte-graphique.md`,
   le style dans `charte.css`, un spécimen sur la planche. Pas de style propre à

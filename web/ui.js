@@ -1,13 +1,17 @@
-import {monthlySalary} from './salaries.js';
+import {monthlySalary,amount} from './salaries.js';
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
-export const number = value => new Intl.NumberFormat('fr-FR', {maximumFractionDigits:1}).format(value ?? 0);
+// Every number is written with a point as its decimal separator (docs/charte-graphique.md).
+export const number = value => new Intl.NumberFormat('fr-FR', {maximumFractionDigits:1}).format(value ?? 0).replace(',','.');
+// A match's note has one figure after the point, a season's average two.
+export const matchNote = value => Number(value).toFixed(1);
+export const averageNote = value => Number(value).toFixed(2);
 // Matches played as starts, with the ones coming off the bench in brackets: "12 (3)", or just "12" without any.
 export const appearances = (total, substitutes=0) => substitutes ? `${number(total-substitutes)} (${number(substitutes)})` : number(total);
 export const minutes = value => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(value??0);
 export const facilityRating = value => value == null ? '—' : `${number(value)} / 20`;
-export const money = value => new Intl.NumberFormat('fr-FR', {style:'currency',currency:'EUR',maximumFractionDigits:0,maximumSignificantDigits:2,notation:Math.abs(value)>=1e6?'compact':'standard'}).format(value ?? 0);
+export const money = value => amount(value,2);
 // A fee to act on (an asking price, a counter-offer): three significant digits, as the server rounds it up.
-export const price = value => new Intl.NumberFormat('fr-FR', {style:'currency',currency:'EUR',maximumSignificantDigits:3,notation:Math.abs(value)>=1e6?'compact':'standard'}).format(value ?? 0);
+export const price = value => amount(value,3);
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
 export const level = value => value==null ? null : Math.round(value*2);
 // Red (hue 0) at `low` or less, yellow (50) at `mid`, green (120) at `high` or more.
@@ -15,9 +19,12 @@ const gradeHue = (value, low, mid, high) => {const clamped=Math.max(low,Math.min
 // Level and potential are out of 200 (the median player is 110); attributes and position ratings are out of 20 (median 10).
 export const levelHue = score => gradeHue(score,70,110,150);
 export const scoreHue = score => gradeHue(score,4,10,16);
+// A match's note, out of 10: red at 6 or less, yellow at 6.75, green from 7.5.
+export const noteHue = score => gradeHue(score,6,6.75,7.5);
 const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</span>`;
 export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
 export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
+export const matchNoteBadge = (value, title='Note du match') => value==null ? '' : gradedBadge(matchNote(value),noteHue(value),title);
 // A player's note at a position, out of 200 like the level: the mean of the composites `keys` that position asks for, times the
 // engine's factor for his affinity there (see /api). The pitches of the lineup and of the player page show it beside the shirt.
 export const positionNote = (player, role, keys=[]) => player?.position_notes?.[role]==null ? ''
@@ -25,7 +32,7 @@ export const positionNote = (player, role, keys=[]) => player?.position_notes?.[
 // Form as its effect on all a player does in a match: 1.11 reads "+11 %"; within ±2 % it changes nothing (`neutral`).
 export const formReading = form => {
  const pct=Math.round((form-1)*100),neutral=Math.abs(pct)<=2,text=pct>0?`+${pct} %`:pct<0?`−${-pct} %`:'0 %';
- return {pct,neutral,text,title:`Forme ${form.toFixed(2).replace('.',',')} : ${neutral?'il joue à son niveau':`tout ce qu'il fait en match compte ${Math.abs(pct)} % de ${pct>0?'plus':'moins'}`}`};
+ return {pct,neutral,text,title:`Forme ${form.toFixed(2)} : ${neutral?'il joue à son niveau':`tout ce qu'il fait en match compte ${Math.abs(pct)} % de ${pct>0?'plus':'moins'}`}`};
 };
 // In green or red; grey when neutral.
 export const formBadge = form => {
@@ -36,11 +43,11 @@ export const formBadge = form => {
 // An arrow for a form worth at least 5 % either way in a match: on the lineup's pitch, and beside the note at a position.
 export const formArrow = form => {
  const pct=form==null?0:Math.round((form-1)*100);
- return Math.abs(pct)<5?'':`<i class="form-arrow ${pct>0?'up':'down'}" title="Forme ${pct>0?'+':'−'}${Math.abs(pct)} %">${pct>0?'▲':'▼'}</i>`;
+ return Math.abs(pct)<5?'':`<i class="form-arrow ${pct>0?'up':'down'}" title="Forme ${pct>0?'+':'−'}${Math.abs(pct)} %"></i>`;
 };
 // Morale below this names what holds it down.
 const MORALE_LOW=.7;
-const MORALE_CAUSES={salaire:['€','son salaire'],temps_de_jeu:['◷','son temps de jeu'],ambition:['★','un club en dessous de son niveau']};
+const MORALE_CAUSES={salaire:['€','son salaire'],temps_de_jeu:['◷','son temps de jeu'],ambition:['★','un club en dessous de son niveau'],intransferable:['⊘','son départ refusé']};
 // A morale read for display: out of 100 with its hue, where it drifts week after week, its main cause ([icon, words]; only when
 // low, unless `always`) and the sentence telling it all (squad rows and player page of /api).
 export function moraleReading(player, always=false) {
@@ -79,19 +86,45 @@ export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
 const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.03928?value/12.92:((value+.055)/1.055)**2.4); return .2126*r+.7152*g+.0722*b;};
 export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
-// A shirt in a club's kit: the primary colour for the shirt, the secondary one for its number and a corner cut on the diagonal (as the kit dot), with a halo (dark on a light
-// number, light on a dark one) when the two are too close to read.
-export const kitShirtStyle = (major, minor) => `background:linear-gradient(135deg,${major} 78%,${minor} 78%);color:${minor}${contrastRatio(major,minor)<3?`;text-shadow:${[2,2,3].map(blur=>`0 0 ${blur}px ${contrastText(minor)}`).join(',')}`:''}`;
-// A shirt drawn in a club's kit: the body in the primary colour, the sleeves in the secondary one; `label` is written on it, in
-// the ink that reads on the body. Empty without a primary colour.
-export const KIT_SVG = '<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-body" d="M8 4 14 2Q20 7 26 2L32 4 30 14V38H10V14Z"/><path class="kit-sleeves" d="M8 4 2 12 8 16 10 14ZM32 4 38 12 32 16 30 14Z"/></svg>';
+// The one shirt of every pitch (docs/charte-graphique.md): the club's kit, the body in its first colour and the sleeves in its
+// second, an outline around the whole and no line between them; `label` (a position) is written on it in the ink that reads
+// on the body. Grey without colours, a dashed outline for an `empty` place; `inside` adds what stands on its corners.
+const SHIRT_SHAPE='M10 4 15 2.5Q20 7 25 2.5L30 4 39 10.5 35 17 33 13V38H7V13L5 17 1 10.5Z',SHIRT_BODY='M10 4 15 2.5Q20 7 25 2.5L30 4 33 13V38H7V13Z';
+export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
 // The custom properties a kit drawing reads its colours from; empty without a primary colour.
 export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='') => {
- const style=kitStyle(major,minor);
- return style?`<span class="kit-shirt" style="${style}">${KIT_SVG}${label?`<b>${label}</b>`:''}</span>`:'';
+export const kitShirt = (major, minor, label='', {inside='', empty=false}={}) => {
+ const style=empty?'':kitStyle(major,minor);
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}${inside}</span>`;
 };
+// The lines of a pitch's two penalty areas; the rest is drawn by the style sheet.
+export const PITCH_BOXES = '<i class="pitch-box" aria-hidden="true"></i><i class="pitch-box far" aria-hidden="true"></i>';
 export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
+// A club's colour in a chart (docs/charte-graphique.md, « Graphiques »). A kit colour is not laid as it is on the ground: a
+// white one vanishes there, a midnight blue reads as black. Of the club's two colours, the first that is one (neither white,
+// grey nor black) is kept, its lightness brought between .48 and .64 and its chroma to .11 at least (OKLCH).
+const toLinear = value => {value/=255;return value<=.04045?value/12.92:((value+.055)/1.055)**2.4;};
+const toSrgb = value => Math.round(255*Math.min(1,Math.max(0,value<=.0031308?12.92*value:1.055*value**(1/2.4)-.055)));
+function oklch(hex){
+ const [r,g,b]=[1,3,5].map(index=>toLinear(parseInt(hex.slice(index,index+2),16)));
+ const l=Math.cbrt(.4122214708*r+.5363325363*g+.0514459929*b),m=Math.cbrt(.2119034982*r+.6806995451*g+.1073969566*b),s=Math.cbrt(.0883024619*r+.2817188376*g+.6299787005*b);
+ const L=.2104542553*l+.793617785*m-.0040720468*s,a=1.9779984951*l-2.428592205*m+.4505937099*s,c=.0259040371*l+.7827717662*m-.808675766*s;
+ return [L,Math.hypot(a,c),Math.atan2(c,a)];
+}
+function fromOklch([L,C,h]){
+ const a=C*Math.cos(h),b=C*Math.sin(h);
+ const l=(L+.3963377774*a+.2158037573*b)**3,m=(L-.1055613458*a-.0638541728*b)**3,s=(L-.0894841775*a-1.291485548*b)**3;
+ return '#'+[4.0767416621*l-3.3077115913*m+.2309699292*s,-1.2684380046*l+2.6097574011*m-.3413193965*s,-.0041960863*l-.7034186147*m+1.707614701*s].map(value=>toSrgb(value).toString(16).padStart(2,'0')).join('');
+}
+const chartTone = colour => {const [L,C,h]=oklch(colour);return fromOklch([Math.min(.64,Math.max(.48,L)),Math.max(.11,C),h]);};
+const chartCandidates = club => [club?.major_color,club?.minor_color].map(safeColor).filter(colour=>colour&&oklch(colour)[1]>=.04).map(chartTone);
+const colourDistance = (first, second) => {const [L1,C1,h1]=oklch(first),[L2,C2,h2]=oklch(second);return 100*Math.hypot(L1-L2,C1*Math.cos(h1)-C2*Math.cos(h2),C1*Math.sin(h1)-C2*Math.sin(h2));};
+// The two sides of a comparison: home keeps its first colour, away takes the first of its own that stands 15 apart from it
+// (OKLab × 100); a side without one takes an ink grey.
+export function chartColours(home, away){
+ const first=chartCandidates(home)[0]||null,second=chartCandidates(away).find(colour=>!first||colourDistance(first,colour)>=15)||null;
+ return [first||'var(--ink-2)',second||(first?'var(--ink-2)':'var(--muted)')];
+}
 let nations={},today=null;
 // The game date, for durations counted from today (the injury column).
 export const setToday = value => today=value;
@@ -109,6 +142,28 @@ const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}
 export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return `<span class="nation" title="${escape(info?.name||code||'')}">${flagImage(info)}${escape(label)}</span>`;};
 // The flag alone, named in its tooltip, for compact cells; empty when the nation or its flag is unknown.
 export const nationFlag = code => nations[code]?.flag ? `<span class="nation" title="${escape(nations[code].name||code)}">${flagImage(nations[code])}</span>` : '';
+let competitions=new Map();
+// What the game says of each competition (/api/competitions), found again by its id or by its name.
+export const setCompetitions = list => competitions=new Map((list||[]).flatMap(item=>[[item.id,item],[item.name,item]]));
+const known = competition => ({...competition,...(competitions.get(competition.id)??competitions.get(competition.name))});
+// Words written in lower case in a competition's initials ("Coupe de France" reads CdF).
+const SMALL=new Set(['de','du','des','del','della','di','da','do','la','le','les','el','d','of','the','und','y']);
+// The two characters on a competition's badge (docs/charte-graphique.md): its code for a European cup, C and the initial of
+// its country for a national cup, L and its level for a French league, D and its level for another country's. A competition
+// the game does not list keeps the initials of its name, up to its number if it has one.
+export function competitionCode(competition){
+ const {name,kind,code,nation,level}=known(competition);
+ if(kind==='europe'&&code)return code;
+ if(kind==='cup'&&nation)return `C${nationName(nation)[0].toUpperCase()}`;
+ if(kind==='league'&&nation&&level)return `${nation==='FRA'?'L':'D'}${level}`;
+ const words=String(name||'').replace(/[’'-]/g,' ').split(/\s+/).filter(Boolean);
+ const number=words.findIndex(word=>/^\d+$/.test(word));
+ const kept=number>=0?words.slice(0,number+1):words;
+ return kept.map(word=>/^\d+$/.test(word)||/^[A-Z]{2,}$/.test(word)?word:SMALL.has(word.toLowerCase())?word[0].toLowerCase():word[0].toUpperCase()).join('').slice(0,4)||'—';
+}
+// The badge of a competition: an outline for a league, a blue one for a national cup, a solid one for a European cup; its
+// full name in the tooltip.
+export const competitionBadge = competition => {const {name,kind}=known(competition);return `<span class="competition-code${kind?` ${kind}`:''}" title="${escape(name)}">${escape(competitionCode(competition))}</span>`;};
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 export const clubLink = club => club ? `<a href="#/${club.national?'international/nation':'club'}/${club.id}" class="club-link">${club.national?`<span class="nation">${nationFlag(club.nation)}${escape(club.name)}</span>`:`${kitDot(club)}${escape(club.name)}`}</a>` : '<span class="muted">Libre</span>';
 export const playerLink = (id, name) => id<0?`<span class="temporary-player" title="Joueur temporaire hors du marché des transferts">${escape(name || 'Joueur temporaire')} <small>(temp.)</small></span>`:`<a href="#/player/${id}">${escape(name || 'Joueur archivé')}</a>`;
@@ -130,8 +185,24 @@ export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sect
 // `headClasses` gives each column's header a class ('' for none). `groups` names the heading over each column (null for none): the columns
 // under one heading share it on a first header row and have their own headers on a second one, the others span both rows.
 // `rowAttributes` adds attributes to each body row ('' for none).
+const MONTHS=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+// What a cell sorts by when its table gives no value for it: the figure it shows (an amount in its unit, a percentage, a
+// count before its brackets), a date as the screens write it, otherwise its text; nothing for an empty cell.
+export function sortValue(cell){
+ const shown=String(cell??'').replace(/<[^>]*>/g,'').replace(/&[a-z#0-9]+;/gi,' ').replace(/\s+/g,' ').trim();
+ if(!shown||shown==='—')return '';
+ const figure=/^([+−-]?) ?(\d[\d ]*(?:\.\d+)?) ?(M€|k€|€|%)?(?: ?\(.*\))?$/.exec(shown);
+ if(figure){const value=Number(figure[2].replace(/ /g,''))*({'M€':1e6,'k€':1e3}[figure[3]]||1);return String(figure[1]&&figure[1]!=='+'?-value:value);}
+ const day=/^(?:[a-zé]+\.? )?(\d{1,2})(?:er)? ([a-zéû]+)\.? (\d{4})$/i.exec(shown);
+ const month=day?MONTHS.findIndex(name=>day[2].toLowerCase().startsWith(name)):-1;
+ return month>=0?String(Date.UTC(Number(day[3]),month,Number(day[1]))):shown;
+}
+// `sort` gives the raw value behind each cell (see sortableTable); without it the table sorts by what its cells show, unless
+// the server sorts it (its headings are buttons already), headings stand over its columns, or `sort` is false.
 export function table(headers, rows, footer, rowClasses, sort, headClasses, groups, rowAttributes) {
- const head=item=>sort?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
+ if(sort===undefined&&rows.length&&!groups?.some(Boolean)&&!headers.some(header=>String(header).includes('<button')))
+  sort={values:rows.map(row=>row.map(sortValue)),ascending:headers.flatMap((header,index)=>header==='#'?[index]:[])};
+ const head=item=>sort&&item!==''?`<button class="sort-toggle" data-table-sort>${item}</button>`:item;
  const cell=(cell,index,column)=>sort?`<td data-value="${escape(sort.values[index][column]??'')}">${cell}</td>`:`<td>${cell}</td>`;
  const first=index=>sort?.ascending?.includes(index)?' data-first="asc"':'';
  const th=(index,span='')=>`<th${span}${headClasses?.[index]?` class="${headClasses[index]}"`:''}${first(index)}>${head(headers[index])}</th>`;
@@ -216,7 +287,7 @@ function playerColumns(view, withClub, options) {
  const identity=[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
  if(view==='attributs')return [...identity,...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
  if(view==='jeu')return [...identity,...COMPOSITE_SECTIONS.flatMap(section=>section.composites.map(key=>[key,compositeHeader(key),section.title]))];
- return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.'],['listed','<span title="Listé par son club : pour un transfert (T), pour un prêt (P)">LISTÉ</span>']]:[]),['wage','SALAIRE / MOIS'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.season?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
+ return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.'],['listed','<span title="Listé par son club : pour un transfert (T), pour un prêt (P)">LISTÉ</span>']]:[]),['wage','SALAIRE'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.season?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
 }
 // Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
 // view opens on its own default sort.
@@ -236,10 +307,10 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
    value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
    wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
-   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}%</span>`,
+   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}\u00a0%</span>`,
    form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
-   appearances:figure(appearances(player.appearances,player.substitutes)),goals:figure(player.goals??'—'),assists:figure(player.assists??'—'),yellows:figure(player.yellows??'—'),reds:figure(player.reds??'—'),average:figure(player.average?number(player.average):'—'),
+   appearances:figure(appearances(player.appearances,player.substitutes)),goals:figure(player.goals??'—'),assists:figure(player.assists??'—'),yellows:figure(player.yellows??'—'),reds:figure(player.reds??'—'),average:figure(player.average?averageNote(player.average):'—'),
   };
   return columns.map(([key])=>key in ATTRIBUTES?attributeCell(player,key):key in COMPOSITES?compositeCell(player,key):cells[key]);
  });
@@ -261,14 +332,14 @@ export function roundTitle(title,items){const round=Math.max(0,...items.map(row=
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
 // 'figures' keeps every figure and leaves the form out, for a table in a narrow column; 'points' keeps the points and the goal
 // difference only, for an extract beside the squad. `own` is the user's club: its row is marked.
-export function standingsTable(data, compact=false, sortable=false, own=null, lost='D') {
+export function standingsTable(data, compact=false, sortable=false, own=null) {
  const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'';
  const rowClasses=data.items.map(row=>`${zone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
  // Direct, play-off and European places are told by the row background alone (see rowClasses); only the icons below mark a row.
  const icon=row=>row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
  const record=row=>[row.won,row.drawn,row.lost,row.goals_for,row.goals_against];
  const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club)}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:compact==='points'?[]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
- const headers=compact==='record'?['#','CLUB','PTS','V','N',lost,'BP','BC','DIFF.']:compact==='figures'?['#','CLUB','PTS','J','V','N',lost,'BP','BC','DIFF.']:compact==='points'?['#','CLUB','PTS','DIFF.']:compact?['#','CLUB','PTS','J','DIFF.']:['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.','FORME'];
+ const headers=compact==='record'?['#','CLUB','PTS','V','N','D','BP','BC','DIFF.']:compact==='figures'?['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.']:compact==='points'?['#','CLUB','PTS','DIFF.']:compact?['#','CLUB','PTS','J','DIFF.']:['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.','FORME'];
  // Form sorts by the points of the last five matches.
  const points=row=>[...row.form].reduce((sum,letter)=>sum+(letter==='V'?3:letter==='N'?1:0),0);
  const values=()=>data.items.map(row=>[row.rank,row.club?.name,row.points,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference,...(compact?[]:[points(row)])]);
@@ -278,17 +349,22 @@ export function standingsTable(data, compact=false, sortable=false, own=null, lo
 const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(surname(scorer.name))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(surname(scorer.name))}</a>`} (${scorer.minutes.join(', ')})`).join(', ');
 export const scorersRow = scorers => scorers&&scorers.some(side=>side.length)?`<div class="fixture-scorers home">${scorerList(scorers[0])}</div><span></span><div class="fixture-scorers">${scorerList(scorers[1])}</div>`:'';
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;const scorers=scorersRow(match.scorers);return `${label}<div class="fixture${scorers?' with-scorers':''}"><div class="home">${clubLink(match.home)}</div><a class="score ${match.score?'':'pending'}" href="#/match/${match.id}">${match.score?match.score.join(' – '):'À venir'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</a><div>${clubLink(match.away)}</div>${scorers}</div>`;}).join('');}
-// `compact` names players by surname, for a pitch a few hundred pixels wide; `kit` ({major, minor} hex colours) shirts them in a club's colours
-// instead of one colour per position (match-only players keep their grey shirt); `marks(player)` adds icons beside a shirt.
+// The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
+// grey) with his position on it, his name under it (his surname when `compact`), his note of the match on its right (on its
+// left along the right touchline) and what he did (`marks(player)`) on its left.
 export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null}={}){
- const colors=safeColor(kit?.major)?{major:kit.major,minor:safeColor(kit.minor)||kit.major}:null;
  const bands={GB:90,DC:75,DG:69,DD:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
  // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
  const line=player=>['DG','DC','DD'].includes(player.position)?'defence':bands[player.position]??45;
  const lateral={DG:0,DC:1,DD:2};
  const rows={};lineup.forEach(player=>(rows[line(player)]??=[]).push(player));
  Object.values(rows).forEach(row=>row.sort((a,b)=>(lateral[a.position]??1)-(lateral[b.position]??1)));
- return `<div class="pitch" aria-label="${escape(label)}">${lineup.map(player=>{const row=rows[line(player)];const y=bands[player.position]??45;let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;return `<${player.temporary?'span':'a'} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player ${group(player.position)} ${player.temporary?'temporary-player':''}" style="left:${x}%;top:${y}%"><span class="shirt"${colors&&!player.temporary?` style="${kitShirtStyle(colors.major,colors.minor)}"`:''}>${player.stats?.rating?number(player.stats.rating):player.position}</span>${marks?marks(player):''}<small>${escape(compact?surname(player.name):player.name)}${player.temporary?' (temp.)':''}</small></${player.temporary?'span':'a'}>`;}).join('')}</div>`;
+ return `<div class="pitch" aria-label="${escape(label)}">${PITCH_BOXES}${lineup.map(player=>{
+  const row=rows[line(player)],y=bands[player.position]??45;
+  let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
+  const tag=player.temporary?'span':'a',note=player.stats?.rating?`<span class="position-note${x>80?' left':''}">${matchNoteBadge(player.stats.rating)}</span>`:'';
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position)}${marks?marks(player):''}${note}<small>${escape(compact?surname(player.name):player.name)}${player.temporary?' (temp.)':''}</small></${tag}>`;
+ }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};
 export function toast(message,error=false){const element=document.querySelector('#toast');element.textContent=message;element.classList.toggle('error',error);element.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>element.hidden=true,error?9000:4500);}

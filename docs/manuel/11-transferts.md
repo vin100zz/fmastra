@@ -37,24 +37,39 @@ Ces conditions sont revérifiées à l'arrivée du joueur. Si l'une ne tient plu
 
 ## Recevoir une offre
 
-Les clubs de l'IA s'intéressent à vos joueurs comme à tous les autres. Leur offre suit le circuit normal : elle reste ouverte {{ia_gestion.mercato.jours_encheres}} jours, le temps que d'autres clubs se déclarent, puis elle arrive dans vos actualités et attend votre réponse.
+Les clubs de l'IA s'intéressent à vos joueurs comme à tous les autres. Un club ne vient que pour un joueur qu'il pourrait payer au prix qu'un club de l'IA demanderait à votre place, la colonne PRIX MIN. : son [prix maximum](#/aide/mercato/le-prix-maximum-d-un-acheteur) doit l'atteindre. Son offre reste ouverte {{ia_gestion.mercato.jours_encheres}} jours, le temps que d'autres clubs se déclarent, puis elle arrive dans vos actualités et attend votre réponse.
 
-- Une offre spontanée est faite à {{pct(ia_gestion.mercato.ratio_contre_offre, 0)}} du prix qu'un club de l'IA demanderait à votre place. Vous ne pouvez pas la négocier : vous l'acceptez ou vous la refusez.
-- Les offres qui arrivent le même jour pour un joueur forment un seul message. Vous y répondez une par une, ou à toutes d'un coup.
-- Accepter une offre conclut le transfert et écarte les autres offres pour ce joueur.
-- Tout accepter laisse le joueur choisir : il rejoint le club qu'il préfère parmi ceux avec qui la vente reste possible, quel que soit le montant de chaque offre.
+**Le montant diffère d'un club à l'autre.** Vous n'affichez pas de prix, alors chaque club ouvre sous son prix maximum, que vous ne connaissez pas : à {{pct(ia_gestion.mercato.ratio_contre_offre, 0)}} de ce maximum en moyenne, de {{pct(ia_gestion.mercato.ratio_contre_offre - ia_gestion.mercato.offres.ecart_ouverture * (ia_gestion.personnalite_club.patience_negociation.max - 0.5), 0)}} pour le club le plus patient à {{pct(ia_gestion.mercato.ratio_contre_offre + ia_gestion.mercato.offres.ecart_ouverture * (0.5 - ia_gestion.personnalite_club.patience_negociation.min), 0)}} pour le plus pressé. Un club qui a grand besoin du joueur offre donc plus qu'un autre.
+
+**À plusieurs, ils surenchérissent**, avant de vous parvenir puis à chaque nouveau venu : le plus offrant se place {{pct(ia_gestion.mercato.offres.pas_surenchere, 0)}} au-dessus du maximum du suivant, les autres montent à leur propre maximum. Une offre relevée vous est annoncée de nouveau ; son ancien montant ne tient plus.
+
+Les offres qui arrivent le même jour pour un joueur forment un seul message. Vous répondez à chacune, ou à toutes d'un coup :
+
+- **Accepter** conclut le transfert et écarte les autres offres pour ce joueur.
+- **Refuser** fait revenir le club {{ia_gestion.mercato.delai_reponse_min_jours}} à {{ia_gestion.mercato.delai_reponse_max_jours}} jours plus tard, avec une offre plus haute. Il se donne de {{ia_gestion.mercato.offres.relances_min}} à {{ia_gestion.mercato.offres.relances_max}} relances selon sa patience et répartit sur elles ce qui le sépare de son maximum : un club pressé y va d'un coup, un club patient par petits pas, et la dernière relance est toujours son maximum. Refusé une fois de plus, ou déjà à son maximum, il abandonne : il ne revient plus pour ce joueur avant le mercato suivant.
+- **Contre-proposer**, c'est donner votre prix. S'il tient sous le maximum du club, le transfert est conclu à ce prix, aussitôt. Sinon le club le prend comme un refus : il relance ou il abandonne.
+- **Tout accepter** laisse le joueur choisir : il rejoint le club qu'il préfère parmi ceux avec qui la vente reste possible, quel que soit le montant de chaque offre.
+
+Refuser sans fin a donc un prix : vous ne savez pas laquelle de ses offres est la dernière d'un club.
+
 - Tant qu'une offre attend, « Continuer » vous ramène à son message avant d'avancer.
 - La vente est impossible si elle vous fait passer sous {{ia_gestion.garde_fous.effectif_min}} joueurs ou {{ia_gestion.garde_fous.gardiens_min}} gardiens.
-- Une offre sans réponse expire à la fermeture du mercato.
+- Une offre sans réponse expire à la fermeture du mercato, et les clubs que vous avez éconduits peuvent revenir au suivant.
 
-Pour vendre à votre prix plutôt qu'à celui de l'acheteur, utilisez la liste des transferts ou la proposition aux clubs.
+Pour vendre à votre prix sans attendre celui des acheteurs, utilisez la liste des transferts ou la proposition aux clubs. Pour ne plus recevoir d'offres, déclarez le joueur intransférable.
+
+## Déclarer un joueur intransférable
+
+Un joueur déclaré intransférable ne reçoit plus aucune offre. Les offres en cours pour lui tombent, refusées, et il quitte la liste des transferts. Vous pouvez le rendre transférable à tout moment ; le mettre sur la liste ou le proposer aux clubs le remet aussi sur le marché. Il peut toujours être prêté.
+
+La contrepartie : un joueur **qui veut partir** (voir [Le moral](#/aide/etats/le-moral)) le vit mal. Tant que vous le retenez, le moral qu'il vise baisse de {{n(ia_gestion.mercato.offres.malus_moral_intransferable * 100, 0)}} points de plus, en sus de sa frustration. Un joueur qui ne veut pas partir n'y perd rien.
 
 ## La liste des transferts
 
 Placer un joueur sur la liste, c'est afficher durablement un prix. Tant qu'il y figure :
 
 - tout club de l'IA qui cherche un joueur à son poste l'examine **en premier**, avant tous les autres joueurs du monde ;
-- un club intéressé offre **votre prix**, directement, sans ouvrir plus bas ;
+- un club intéressé offre **votre prix**, directement, sans ouvrir plus bas ni surenchérir, même s'il vous avait fait une offre que vous aviez refusée ;
 - les clubs non simulés qui se manifestent le comptent parmi les joueurs qu'ils regardent ;
 - le joueur sait qu'il n'est plus désiré : il accepte un club jusqu'à {{ia_gestion.mercato.tolerance_baisse_joueur_a_vendre}} points de réputation en dessous du vôtre, au lieu de {{ia_gestion.mercato.tolerance_baisse_reputation}}, et ne demande plus de prolongation.
 
@@ -85,9 +100,6 @@ La proposition sert à savoir tout de suite si un prix trouve preneur ; la liste
 
 ## Le prix qu'un club accepte de payer
 
-Que le joueur soit listé ou proposé, un acheteur refuse un prix qu'il juge excessif. Il paie au plus le plus haut de deux montants :
+Que le joueur soit listé ou proposé, un acheteur ne paie jamais plus que son [prix maximum](#/aide/mercato/le-prix-maximum-d-un-acheteur) : de {{ia_gestion.mercato.multiplicateur_prix_max_acheteur}} fois la valeur qu'il voit dans le joueur s'il en a à peine besoin, à {{n(ia_gestion.mercato.multiplicateur_prix_max_acheteur + ia_gestion.mercato.offres.prime_besoin, 2)}} fois s'il en a le plus besoin, un peu plus ou un peu moins selon le club.
 
-- {{ia_gestion.mercato.multiplicateur_prix_max_acheteur}} fois la valeur qu'il voit dans le joueur ;
-- le [prix demandé](#/aide/mercato/le-prix-demande) habituel du joueur, celui qu'un club de l'IA afficherait à votre place.
-
-Au-delà, aucun club ne suit. En dessous, le prix n'est jamais le seul critère : il faut encore que le club ait un besoin au poste, la marge salariale pour ce que le joueur demande, et que le joueur accepte d'y aller.
+Au-delà, ce club ne suit pas. En dessous, le prix n'est jamais le seul critère : il faut encore que le club ait un besoin au poste, la marge salariale pour ce que le joueur demande, et que le joueur accepte d'y aller.

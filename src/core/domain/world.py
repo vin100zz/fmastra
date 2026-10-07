@@ -155,6 +155,11 @@ class World:
     # and for each player offered to every club, the day he may be offered again.
     transfer_list: dict[int, int] = field(default_factory=dict)
     offered_until: dict[int, Date] = field(default_factory=dict)
+    # The human club's players it declared not for sale, and the day it did: no club makes an offer for them.
+    not_for_sale: dict[int, Date] = field(default_factory=dict)
+    # For each player of the human club, the clubs whose offer it turned down for good in the window open today:
+    # they do not come back for him before the next one.
+    turned_away: dict[int, list[int]] = field(default_factory=dict)
     news: list[NewsItem] = field(default_factory=list)
     live_match: LiveMatchRecord | None = None
 

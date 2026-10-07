@@ -31,13 +31,13 @@ test('the header names the club and its ground, then its tactic, its training, i
  const html=clubHero(club,{lead:'<div class="entity-nav"></div>',menu,section:'calendar'});
  assert.match(html,/^<header class="club-hero" style="--hero-field:#F8D000;/);
  assert.match(html,/<div class="club-hero-main"><div class="entity-nav"><\/div><div class="crest club-hero-crest">L&lt;<img class="crest-logo" src="\/crests\/TCM1_7.png"/);
- assert.match(html,/<h1>Lens &lt;RC&gt;<\/h1><p>38 223 places<\/p>/);assert.doesNotMatch(html,/<RC>/);
+ assert.match(html,/Ligue 1 · 38 223 places<\/span><h1>Lens &lt;RC&gt;<\/h1><\/div>/);assert.doesNotMatch(html,/<RC>/);
  assert.match(html,/<span>Tactique<\/span><strong>4-3-3<\/strong>/);
  // The facilities are out of 20 without saying so; no league standing nor form in the header.
  assert.match(html,/<span>Entraînement<\/span><strong>16<\/strong>/);assert.match(html,/title="Recrutement des jeunes"><span>Recrutement<\/span><strong>13<\/strong>/);
  assert.doesNotMatch(html,/\/ 20|Classement|class="form"/);
- assert.match(html,/<span>Réputation<\/span><strong>73,1<em class="up">\+1,2<\/em><\/strong>/);
- assert.match(clubHero({...club,reputation_change:-0.5},{menu,section:'squad'}),/<em class="down">−0,5<\/em>/);
+ assert.match(html,/<span>Réputation<\/span><strong>73\.1<em class="up">\+1\.2<\/em><\/strong>/);
+ assert.match(clubHero({...club,reputation_change:-0.5},{menu,section:'squad'}),/<em class="down">−0\.5<\/em>/);
  assert.doesNotMatch(clubHero({...club,reputation_change:null},{menu,section:'squad'}),/<em/);
 });
 
@@ -46,5 +46,5 @@ test('the tabs close the header, the open one marked',()=>{
  assert.match(html,/<nav class="club-hero-tabs" aria-label="Sections"><a class="" href="#\/club\/7\/squad">Effectif<\/a><a class="active" href="#\/club\/7\/calendar" aria-current="page">Calendrier<\/a>/);
  // A dormant club without colours keeps a plain band and says it plays no league.
  const dormant=clubHero({...club,competition:null,nation:'France',major_color:null},{menu,section:'squad'});
- assert.match(dormant,/<header class="club-hero plain">/);assert.match(dormant,/<p>Club dormant · 38 223 places<\/p>/);
+ assert.match(dormant,/<header class="club-hero plain">/);assert.match(dormant,/France · Club dormant · 38 223 places<\/span><h1>/);
 });

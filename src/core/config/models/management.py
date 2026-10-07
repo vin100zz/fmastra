@@ -126,6 +126,21 @@ class ManagementConfigMarketLoans:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketOffers:
+    """What a buyer pays at most, how it opens and raises, and how rivals outbid each other; the defaults are what a save made before receives."""
+    need_premium: float = Field(default=1.5, alias="prime_besoin")
+    full_need_gain: float = Field(default=10.0, alias="gain_besoin_plein")
+    risk_weight: float = Field(default=0.3, alias="poids_appetit_risque")
+    noise: float = Field(default=0.06, alias="bruit_ecart_type")
+    opening_spread: float = Field(default=0.2, alias="ecart_ouverture")
+    min_raises: int = Field(default=1, alias="relances_min")
+    max_raises: int = Field(default=3, alias="relances_max")
+    outbid_step: float = Field(default=0.02, alias="pas_surenchere")
+    seller_tolerance: float = Field(default=0.05, alias="tolerance_vendeur")
+    untouchable_morale_loss: float = Field(default=0.2, alias="malus_moral_intransferable")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigMarket:
     daily_proposal_probability: float = Field(alias="daily_proposal_probability")
     max_candidates_scanned: int = Field(alias="max_candidates_scanned")
@@ -172,6 +187,7 @@ class ManagementConfigMarket:
     offer_cooldown_days: int = Field(default=14, alias="jours_relance_proposition")
     max_offers_per_proposal: int = Field(default=5, alias="offres_max_proposition")
     loans: ManagementConfigMarketLoans = Field(default_factory=ManagementConfigMarketLoans, alias="prets")
+    offers: ManagementConfigMarketOffers = Field(default_factory=ManagementConfigMarketOffers, alias="offres")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

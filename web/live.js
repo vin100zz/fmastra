@@ -1,6 +1,6 @@
 // The human club's match played live: the 2D pitch fed one segment at a time, the stats, the other matches of
 // the day with the table as it stands, and the Tactique panel. The screen is modal until the final whistle.
-import {api,escape as e,number as n,card,roundTitle,kitDot,kitShirtStyle,position,group,surname,toast} from './ui.js';
+import {api,escape as e,number as n,matchNote,card,roundTitle,kitDot,kitShirt,matchNoteBadge,PITCH_BOXES,position,group,surname,toast} from './ui.js';
 import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,highlightsCard} from './match.js';
 import {pitchLayout,changeFormation} from './composition.js';
@@ -60,11 +60,11 @@ function squadHtml(){
  const kit=replayTeams(view.state)[view.state.side];
  const item=player=>{
   const tired=Math.round((1-player.fitness)*100);
-  const marks=[player.goals?`<span class="match-mark goal">⚽${player.goals>1?`×${player.goals}`:''}</span>`:'',
+  const marks=[player.goals?`<span class="match-mark goal">${player.goals>1?`×${player.goals}`:''}</span>`:'',
    ...Array.from({length:player.red?Math.min(1,player.yellows):player.yellows},()=>'<span class="match-mark booking yellow"></span>'),
    player.red?'<span class="match-mark booking red"></span>':'',player.injured?'<span class="match-mark injury"></span>':''].join('');
-  const title=`${player.name} · ${player.position}${player.rating!=null?` · note ${n(player.rating)}`:''} · fatigue ${tired} %`;
-  return `<div class="live-player ${player.state}" title="${e(title)}"><span class="live-player-shirt" style="${kitShirtStyle(kit.major,kit.minor)}">${player.rating!=null?n(player.rating):''}</span><span class="live-player-name">${e(surname(player.name))}</span><span class="live-player-marks">${marks}</span><span class="fatigue-bar${tired>=30?' danger':''}"><i style="width:${Math.min(100,tired)}%"></i></span></div>`;
+  const title=`${player.name} · ${player.position}${player.rating!=null?` · note ${matchNote(player.rating)}`:''} · fatigue ${tired} %`;
+  return `<div class="live-player ${player.state}" title="${e(title)}">${kitShirt(kit.major,kit.minor,player.position)}${matchNoteBadge(player.rating)}<span class="live-player-name">${e(surname(player.name))}</span><span class="live-player-marks">${marks}</span><span class="fatigue-bar${tired>=30?' danger':''}"><i style="width:${Math.min(100,tired)}%"></i></span></div>`;
  };
  const squad=view.shown.manager.squad;
  return `${squad.filter(player=>player.starter).map(item).join('')}<span class="live-squad-gap"></span>${squad.filter(player=>!player.starter).map(item).join('')}`;
@@ -135,9 +135,11 @@ const squad=()=>new Map([...view.manager.vacancies.map(player=>({...player,injur
 const hurt=player=>player.injured||view.decision?.player_id===player.id;
 const marks=player=>`${hurt(player)?'<span class="lineup-icon injury" aria-label="Blessé">✚</span>':''}${player.yellows?'<span class="match-mark booking yellow"></span>':''}`;
 
+// The shirt of the user's side, with a position on it.
+const ownShirt=role=>{const kit=replayTeams(view.state)[view.state.side];return kitShirt(kit.major,kit.minor,role);};
 function tacticsSlotHtml(slot,place,index,byId){
  const player=byId.get(slot.id);
- return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}"><span class="shirt">${e(slot.role)}</span><small>${marks(player)}${e(surname(player.name))}</small></div>`;
+ return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(slot.role)}<small>${marks(player)}${e(surname(player.name))}</small></div>`;
 }
 // Those on the pitch in the order of positions, then the substitutes, then the players taken off in the draft.
 function tacticsListHtml(byId){
@@ -164,7 +166,7 @@ function tacticsHtml(){
  const counters=`<span class="lineup-fixture">Remplacements <b>${manager.substitutions_left}</b> · Fenêtres <b>${halftime?'∞':manager.windows_left}</b></span>`;
  const blocked=problems.length?` aria-disabled="true" title="${e(problems.join('\n'))}"`:'';
  return `<div class="lineup-toolbar"><div class="tactics" role="group" aria-label="Tactique">${formations}</div><div class="tactics" role="group" aria-label="Mentalité">${mentalities}</div>${counters}${status}<div class="live-tactics-actions"><button type="button" data-live="annuler">Annuler</button><button type="button" class="primary" data-live="valider"${blocked}>${halftime?'Valider':'Reprendre'}</button></div></div>
-<div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch">${draft.slots.map((slot,index)=>tacticsSlotHtml(slot,layout[index],index,byId)).join('')}</div></div>
+<div class="lineup-layout"><div class="lineup-field"><div class="pitch lineup-pitch">${PITCH_BOXES}${draft.slots.map((slot,index)=>tacticsSlotHtml(slot,layout[index],index,byId)).join('')}</div></div>
 <div class="lineup-squad" data-list-drop>${tacticsListHtml(byId)}</div></div>`;
 }
 const dialog=()=>document.querySelector('#live-tactics');
@@ -301,7 +303,7 @@ if(globalThis.document){
   const player=squad().get(dragged),role=view.draft.slots.find(slot=>slot.id===dragged)?.role??player.natural??player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}`;
-  token.innerHTML=`<span class="shirt">${e(role)}</span><small>${e(surname(player.name))}</small>`;
+  token.innerHTML=`${ownShirt(role)}<small>${e(surname(player.name))}</small>`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

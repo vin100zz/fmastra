@@ -117,8 +117,8 @@ test('the pitch shows each starter\'s note at his position beside the shirt, and
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="shirt">GB<\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141</);
-  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="shirt">MDC<i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><span class="position-note"><span[^>]*>73</);
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>GB<\/b><\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141</);
+  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MDC<\/b><i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><span class="position-note"><span[^>]*>73</);
   // The list switches between its infos and the composites, beside the suggestion, over the list.
   assert.match(html,/<div class="lineup-list"><div class="lineup-toolbar"><button type="button" data-lineup-suggest>Meilleure composition<\/button><div class="segmented" role="group" aria-label="Colonnes"><button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><\/div><div class="lineup-squad"/);
  }finally{globalThis.fetch=previous;}
@@ -164,7 +164,7 @@ test('the editor offers the club\'s own tactic beside the others, on its cells, 
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
   assert.match(html,/data-tactic="4-3-3" aria-pressed="false" class="">4-3-3<\/button><button type="button" data-tactic="Perso" aria-pressed="true" class="active">Perso</);
-  assert.match(html,/data-slot="8" data-player="2" draggable="true" style="left:50%;top:33%"[^>]*><span class="shirt">MOC</);
+  assert.match(html,/data-slot="8" data-player="2" draggable="true" style="left:50%;top:33%"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MOC</);
   // Empty places move too; the keeper's cell and the taken ones are not offered.
   assert.match(html,/class="pitch-player lineup-slot mid empty" data-slot="6" draggable="true" style="left:32%;top:47%"/);
   assert.equal((html.match(/data-cell=/g)||[]).length,25-10);
@@ -193,9 +193,9 @@ test('the lineup shows form: an arrow on the shirt from ±5 %, the same beside t
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/data-player="1"[^>]*><span class="shirt">DG<i class="form-arrow up" title="Forme \+11 %">▲<\/i><\/span><span class="position-note below">/);
-  assert.match(html,/data-player="2"[^>]*><span class="shirt">DC<i class="form-arrow down" title="Forme −5 %">▼<\/i><\/span><span class="position-note">/);
-  assert.match(html,/data-player="3"[^>]*><span class="shirt">DC<\/span><span class="position-note left">/);
+  assert.match(html,/data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DG<\/b><i class="form-arrow up" title="Forme \+11 %"><\/i><\/span><span class="position-note below">/);
+  assert.match(html,/data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DC<\/b><i class="form-arrow down" title="Forme −5 %"><\/i><\/span><span class="position-note">/);
+  assert.match(html,/data-player="3"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DC<\/b><\/span><span class="position-note left">/);
   assert.match(html,/data-lineup-sort="form">FORME</);
   assert.match(html,/<td><span class="rating graded form-badge" style="--hue:120"[^>]*>\+11 %</);
  }finally{globalThis.fetch=previous;}
@@ -213,8 +213,8 @@ test('the tactics stand over the pitch and the substitutes on one line; starters
   assert.match(html,/<div class="lineup-bench" style="--bench:9">/);
   assert.equal((html.match(/class="bench-slot/g)||[]).length,9);
   // The keeper wears the kit with his position on it; an empty place keeps the outline of a shirt.
-  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="shirt kit" style="--kit-body:#F8D000;--kit-sleeves:#E00000;--kit-ink:#1c2b22"><svg class="kit-drawing"[^]*?<\/svg><b>GB<\/b><\/span>/);
-  assert.match(html,/data-slot="1"[^>]*><span class="shirt">DG<\/span>/);
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt" style="--kit-body:#F8D000;--kit-sleeves:#E00000;--kit-ink:#1c2b22"><svg class="kit-drawing"[^]*?<\/svg><b>GB<\/b><\/span>/);
+  assert.match(html,/data-slot="1"[^>]*><span class="kit-shirt empty"><svg[^]*?<\/svg><b>DG<\/b><\/span>/);
   // Without a match there is no opponent to show.
   assert.doesNotMatch(html,/scout-card|with-scout/);
  }finally{globalThis.fetch=previous;}

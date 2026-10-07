@@ -1,16 +1,22 @@
-"""Persistent transfer negotiations with budget reservations and settlement."""
+"""Persistent transfer negotiations with budget reservations and settlement.
+
+An offer reserves a fee on its buyer's budget and may rise above it, as far as the buyer's own price limit and
+means allow (see `reach`): when rivals bid for the same player (see `outbid`), and for a player of the human club
+each time it turns the offer down (see `core.world.sales`).
+"""
 from dataclasses import replace
 from collections import defaultdict
+from math import ceil
 
 from core.domain.clubs import Club
 from core.domain.players import Contract
 from core.domain.world import NewsLine, World
 from core.domain.offers import TransferOffer, RESERVING_STAGES
-from core.ai.market import propose_transfers, player_offer_score, seller_accepts, can_sell, asking_price
+from core.ai.market import propose_transfers, player_offer_score, can_sell, asking_price, opening_share
 from .events import OffersUpdated, PlayerSigned
 from .application import apply
 from .human import is_human_club, listed_price, record
-from .news import offer_received
+from .news import answer_offer, offer_received
 from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on
 
 
@@ -18,6 +24,12 @@ def quoted_minimum(amount: int) -> int:
     """An asking price rounded up to three significant digits, as the news feed shows amounts."""
     step = 10 ** max(0, len(str(amount)) - 3)
     return -(-amount // step) * step
+
+
+def quoted_offer(amount: int) -> int:
+    """A fee offered, cut down to three significant digits: it never reads above what the buyer meant to pay."""
+    step = 10 ** max(0, len(str(max(0, amount))) - 3)
+    return max(0, amount) // step * step
 
 
 def tell_buyer(world: World, offer: TransferOffer, reason: str, winner: TransferOffer | None = None) -> None:
@@ -78,9 +90,67 @@ def resolve_accepted_offer(world: World, offer: TransferOffer) -> bool:
     return can_still_sell and apply(world, PlayerSigned(offer.player_id, offer.source_id, offer.target_id, offer.contract, offer.fee))
 
 
+def spending_room(world: World, club: Club, reserved: list[TransferOffer]) -> int:
+    """What a club can still commit to a fee beside what these offers reserve."""
+    return (min(club.transfer_budget, club.balance - world.config.management.guardrails.min_balance)
+            - sum(offer.ceiling for offer in reserved))
+
+
+def reach(world: World, offer: TransferOffer) -> int:
+    """The highest fee an offer can rise to: its buyer's price limit, within the means its other offers leave it,
+    and never less than it already offers. An offer without a limit of its own stops at what it reserved."""
+    if offer.limit is None: return max(offer.fee, offer.ceiling)
+    others = [other for other in world.offers.values() if other.target_id == offer.target_id and other.key != offer.key]
+    return max(offer.fee, min(offer.limit, spending_room(world, world.clubs[offer.target_id], others)))
+
+
+def outbid(world: World, bids: list[TransferOffer], asked: int | None = None) -> dict[str, int]:
+    """The fee of each of the offers rivalling for one player, once they have raised each other.
+
+    Every buyer follows as far as it can reach: the keenest stops one step above the reach of the next, the others
+    end at their own. Alone, an offer does not move. `asked` is the price asked for the player, known to all: the
+    bidding starts from it. Without one (a player of the human club), each offer starts from what it already is.
+    """
+    step = world.config.management.market.offers.outbid_step
+    ranked = sorted(((reach(world, offer), offer) for offer in bids), key=lambda item: (-item[0], item[1].key))
+    fees = {}
+    for index, (top, offer) in enumerate(ranked):
+        start = offer.fee if asked is None else asked
+        fees[offer.key] = top if index else min(top, max(start, ceil(ranked[1][0] * (1 + step)) if len(ranked) > 1 else start))
+    return fees
+
+
+def surface(world: World, bids: list[TransferOffer]) -> list[TransferOffer]:
+    """The offers for a player of the human club that reach it today, beside those still awaiting its answer.
+
+    Rivals raise each other first (see `outbid`). Each new offer, and each one raised since the club was told of it,
+    is told to it: a raised offer no longer stands at the fee its earlier message gave.
+    """
+    fees, shown = outbid(world, bids), []
+    for offer in bids:
+        told, fee = offer.awaiting_review, fees[offer.key]
+        if told and fee == offer.fee:
+            shown.append(offer)
+            continue
+        if told: answer_offer(world, offer.key, "raised")
+        # Raised by its rivals before the club ever saw it, an offer is simply made at its fee.
+        offer = replace(offer, fee=fee, ceiling=max(offer.ceiling, fee), countered=offer.countered or told, awaiting_review=True, due=None)
+        offer_received(world, offer)
+        shown.append(offer)
+    return shown
+
+
 def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
+    """Decides the offers that are due, player by player, and returns the players each club failed to sign.
+
+    The offers for a player are decided together once the oldest has been open for the auction period. A club of
+    the AI sells at its asking price to a lone buyer; rivals outbid each other (see `outbid`), the seller keeps the
+    offers within `seller_tolerance` of the highest, and the player picks his club among them. The human club decides
+    for its own players: their offers reach it and await its answer.
+    """
     pending = []
-    accepted = defaultdict(list)
+    due = defaultdict(list)
+    decided = {}
     rejected = defaultdict(set)
     cfg, rng = world.config, world.rngs["market"]
     settled = recent_arrival_ids(world)
@@ -100,7 +170,12 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
             # An offer the human club left unanswered lapses with the window: its message no longer awaits an answer.
             tell_buyer(world, offer, "closed")
             continue
-        if offer.created >= world.date or opened[offer.player_id] + cfg.management.market.auction_days > today:
+        if offer.due is not None:
+            # Turned down by the human club, the buyer comes back with its raised offer on the day it set.
+            if offer.due > world.date:
+                pending.append(offer)
+                continue
+        elif not offer.awaiting_review and (offer.created >= world.date or opened[offer.player_id] + cfg.management.market.auction_days > today):
             pending.append(offer)
             continue
         player = world.players.get(offer.player_id)
@@ -113,29 +188,39 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
             rejected[offer.target_id].add(offer.player_id)
             tell_buyer(world, offer, "player")
             continue
-        seller = world.clubs.get(offer.source_id)
-        if seller and is_human_club(world, seller.id):
-            # Cleared the auction window: every live bid on this player surfaces together for review,
-            # instead of being auto-decided by seller_accepts like an AI-controlled seller.
-            if not offer.awaiting_review: offer_received(world, offer)
-            pending.append(offer if offer.awaiting_review else replace(offer, awaiting_review=True))
+        due[offer.player_id].append(offer)
+    # The clubs the human club turned away may come back at the next window.
+    if not open_market: world.turned_away.clear()
+    for player_id, bids in sorted(due.items()):
+        player, seller = world.players[player_id], world.clubs.get(bids[0].source_id)
+        if seller is not None and is_human_club(world, seller.id):
+            # Cleared the auction window: every live bid on this player reaches the club together, instead of
+            # being decided for it as for a seller of the AI.
+            pending.extend(surface(world, bids))
             continue
-        if seller and not seller_accepts(player, seller, offer.fee, world, rng):
-            if not offer.countered and offer.fee < offer.ceiling:
-                pending.append(replace(offer, fee=offer.ceiling, countered=True))
-            else:
-                rejected[offer.target_id].add(offer.player_id)
+        sells = seller is None or can_sell(player, seller, world)
+        # An unsimulated club turns down even its asking price, by chance.
+        if sells and seller is not None and seller.competition_id is None:
+            sells = rng.random() < cfg.management.market.dormant_clubs.acceptance_probability
+        asked = asking_price(player, seller, world) if seller is not None else 0
+        able = [offer for offer in bids if sells and reach(world, offer) >= asked]
+        for offer in bids:
+            if offer not in able:
+                rejected[offer.target_id].add(player_id)
                 tell_buyer(world, offer, "seller")
-            continue
-        accepted[offer.player_id].append(offer)
+        if not able: continue
+        fees = outbid(world, able, asked)
+        best = max(fees.values())
+        kept = [offer for offer in able if fees[offer.key] >= best * (1 - cfg.management.market.offers.seller_tolerance)]
+        decided[player_id] = (able, kept, fees)
     # Reservations are released before final constraints are checked by the applicator.
     apply(world, OffersUpdated(pending))
-    for player_id, offers in sorted(accepted.items()):
-        highest = max(offer.score for offer in offers)
-        tied = sorted((offer for offer in offers if offer.score == highest), key=lambda item: item.key)
+    for player_id, (able, kept, fees) in sorted(decided.items()):
+        highest = max(offer.score for offer in kept)
+        tied = sorted((offer for offer in kept if offer.score == highest), key=lambda item: item.key)
         offer = tied[rng.randrange(len(tied))]
-        signed = resolve_accepted_offer(world, offer)
-        for other in offers:
+        signed = resolve_accepted_offer(world, replace(offer, fee=fees[offer.key]))
+        for other in able:
             if other.key != offer.key or not signed:
                 rejected[other.target_id].add(player_id)
                 tell_buyer(world, other, "outbid" if other.key != offer.key else "failed", offer)
@@ -157,10 +242,15 @@ def open_offers(world: World, open_market: bool, rejected: dict[int, set[int]] |
         if not can_open_offer(world, club, event.contract, event.fee, reserved): continue
         player = world.players[event.player_id]
         score = player_offer_score(player, club, event.contract.weekly_wage, world) + rng.gauss(0, cfg.management.market.player_score.noise)
-        # The human club named the fee of a listed player: buyers offer it outright.
-        fee = event.fee if listed_price(world, player.id) is not None else round(event.fee * cfg.management.market.counteroffer_ratio)
+        # A price is asked for the player, known to all: his club's asking price, or the fee the human club listed him at.
+        fee, limit = event.fee, event.limit
+        if listed_price(world, player.id) is not None:
+            limit = fee  # the human club named its price: buyers offer it outright, and no more
+        elif is_human_club(world, event.source_id):
+            # No price is asked for a player of the human club: the buyer opens under its limit, and may raise.
+            fee = quoted_offer(min(spending_room(world, club, reserved), round(limit * opening_share(club, cfg))))
         offers.append(TransferOffer(f"{world.date.iso()}:{club.id}:{player.id}", world.date, player.id,
-                                    event.source_id, club.id, event.contract, fee, event.fee, score))
+                                    event.source_id, club.id, event.contract, fee, max(fee, event.fee), score, limit=limit))
     apply(world, OffersUpdated(offers))
 
 

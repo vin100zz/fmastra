@@ -23,7 +23,8 @@ export async function europeScreen(code,section,params,competitions){
  section=SECTIONS.some(([key])=>key===section)?section:'table';
  const data=await api(`/competitions/${cup.id}/europe?${params}`);
  const year=`saison=${data.season}`;
- const nav=`<nav class="tabs europe-cups" aria-label="Coupe d’Europe">${cups.map(item=>`<a class="${cup.id===item.id?'active':''}" href="#/europe/${item.code}/${section}?${year}">${e(item.code)} · ${e(item.name)}</a>`).join('')}</nav>`;
+ // One row of tabs a screen: the cup is chosen on the title's line, the tabs are the sections of the cup.
+ const nav=`<nav class="segmented europe-cups" aria-label="Coupe d’Europe">${cups.map(item=>`<a class="${cup.id===item.id?'active':''}" href="#/europe/${item.code}/${section}?${year}">${e(item.code)} · ${e(item.name)}</a>`).join('')}</nav>`;
  const menu=`<nav class="tabs" aria-label="Rubrique">${SECTIONS.map(([key,label])=>`<a class="${section===key?'active':''}" href="#/europe/${cup.code}/${key}?${year}">${label}</a>`).join('')}</nav>`;
  const selector=`<form class="filters" data-filter><label>Saison <select name="saison">${data.seasons.map(value=>`<option value="${value}" ${value===data.season?'selected':''}>${season(value)}</option>`).join('')}</select></label><button>Afficher</button></form>`;
  let content='';
@@ -51,6 +52,6 @@ export async function europeScreen(code,section,params,competitions){
   const final=data.standings.length?card(`Classement de la phase de ligue · ${season(data.season)}`,standingsTable({items:data.standings},'figures')):'';
   content=`<div class="history-layout three"><div class="history-main">${winners}${byNation}</div><div class="history-leaders">${leadersCards(history.leaders)}</div><div class="history-archives">${final}</div></div>`;
  }
- return heading('Coupes d’Europe',selector)+nav+menu+
+ return heading('Coupes d’Europe',`<div>${nav}${selector}</div>`)+menu+
   (data.winner?`<div class="notice cup-winner">🏆 ${e(cup.name)} : ${clubLink(data.winner)}</div>`:'')+content;
 }

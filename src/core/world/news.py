@@ -4,7 +4,9 @@ calendar brings (transfer windows, contracts running out, unhappy players, the r
 A message of one of these kinds has no sentence of its own: the pages write it from its lines (see `NewsLine`).
 
 - `offer_received`, about a player: one line per offer, `key` the offer, `club_id` the buyer, `amount` the fee and
-  `state` its answer: PENDING, then "accepted", "refused", or "declined" for an accepted fee the player did not pick.
+  `state` its answer: PENDING, then "accepted", "refused", "declined" for an accepted fee the player did not pick, or
+  "raised" once the buyer has offered more (the higher offer has a line of its own, in the message of its day);
+  `text` is "raised" for an offer that was lower when it was first made.
 - `renewal_proposed`, about a player: the contract he has (`text` "current") then the one he asks for ("asked"), each
   with `amount` its weekly wage and `until` its end; the `state` of the asked one is the answer.
 - `injury`, `injury_end`, `suspension`, `release`, `retirement`, `academy`, `loan_return`: one line per player,
@@ -41,15 +43,17 @@ REVIEW_DAY = (6, 1)
 
 def offer_received(world: World, offer: TransferOffer) -> None:
     """An offer for a player of the human club now awaits its answer: the offers of a day for him make one message."""
-    report(world, "offer_received", NewsLine(club_id=offer.target_id, amount=offer.fee, state=PENDING, key=offer.key),
-           offer.source_id, offer.player_id)
+    report(world, "offer_received", NewsLine(club_id=offer.target_id, amount=offer.fee, state=PENDING, key=offer.key,
+                                             text="raised" if offer.countered else ""), offer.source_id, offer.player_id)
 
 
-def answer_offer(world: World, key: str, state: str) -> None:
+def answer_offer(world: World, key: str, state: str, amount: int | None = None) -> None:
+    """The answer given to an offer, on the last line that told it; `amount` when the fee agreed is not the one it told."""
     for item in reversed(world.news):
-        for line in item.lines:
+        for line in reversed(item.lines):
             if item.kind == "offer_received" and line.key == key:
                 line.state = state
+                if amount is not None: line.amount = amount
                 return
 
 

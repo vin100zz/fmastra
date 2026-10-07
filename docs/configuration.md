@@ -137,6 +137,18 @@ et des prêts (`ia_gestion.mercato.prets` : `age_max_ia` 21, `marge_potentiel_mi
 positif, les planchers et le facteur de réserve restent dans [0, 1], la plage
 d'extinction est strictement positive.
 
+Les configurations antérieures à la version 28 des sauvegardes reçoivent les valeurs
+par défaut des offres (`ia_gestion.mercato.offres` : `prime_besoin` 1,5,
+`gain_besoin_plein` 10, `poids_appetit_risque` 0,3, `bruit_ecart_type` 0,06,
+`ecart_ouverture` 0,2, `relances_min` 1, `relances_max` 3, `pas_surenchere` 0,02,
+`tolerance_vendeur` 0,05, `malus_moral_intransferable` 0,2). La prime, le bruit, le
+pas et l'écart d'ouverture sont positifs ou nuls, le gain strictement positif ;
+`ratio_contre_offre` ± la moitié de `ecart_ouverture` reste dans ]0, 1], les relances
+sont ordonnées, la tolérance du vendeur et le malus restent dans [0, 1].
+`ratio_contre_offre` et `multiplicateur_prix_max_acheteur` changent de sens : la part
+de son prix maximum à laquelle un acheteur ouvre face à l'utilisateur, et le multiple
+de la valeur qu'il paie au plus sans besoin.
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

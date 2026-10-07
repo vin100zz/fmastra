@@ -69,6 +69,14 @@ def validate_consistency(cfg: Config) -> None:
             "A player put up for sale cannot be stricter about a smaller club than any other player")
     require(market.buyer_price_multiplier > 0 and market.offer_cooldown_days >= 1 and market.max_offers_per_proposal >= 1,
             "Offering a player needs a positive price multiplier, a cooldown of a day or more and at least one offer")
+    offers = market.offers
+    require(offers.need_premium >= 0 and offers.full_need_gain > 0 and 0 <= offers.risk_weight < 2 and offers.noise >= 0,
+            "A buyer's price limit needs a nonnegative need premium and noise, a positive full gain and a risk weight within [0, 2)")
+    require(0 <= offers.opening_spread and market.counteroffer_ratio + offers.opening_spread / 2 <= 1
+            and market.counteroffer_ratio - offers.opening_spread / 2 > 0, "A buyer must open within (0, 1] of its price limit")
+    require(0 <= offers.min_raises <= offers.max_raises and offers.outbid_step >= 0 and 0 <= offers.seller_tolerance < 1,
+            "Raises must be ordered, the outbidding step nonnegative and the seller's tolerance within [0, 1)")
+    require(0 <= offers.untouchable_morale_loss <= 1, "The morale loss of a player held back must be within [0, 1]")
     wages = cfg.management.contracts
     require(wages.greed_source_low < wages.greed_source_reference < wages.greed_source_high,
             "Appetite for money source notes must be increasing")

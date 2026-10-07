@@ -1,5 +1,5 @@
 import {replayCard} from './match-replay.js';
-import {api,escape as e,number as n,date,clubLink,playerLink,empty,card,table,pitch,kitDot,safeColor,contrastText,contrastRatio,kitShirtStyle} from './ui.js';
+import {api,escape as e,number as n,matchNoteBadge,date,clubLink,playerLink,empty,card,table,pitch,kitDot,safeColor,contrastText,contrastRatio,chartColours} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
@@ -31,7 +31,7 @@ function marksOf(player,{substitutions=true}={}){
  const yellows=player.red?.secondYellow?Math.min(1,player.yellows):player.yellows;
  return [
   substitutions&&player.on!=null?onIcon(player.on):'',
-  player.goals?icon('goal',`⚽${player.goals>1?`×${player.goals}`:''}`,`${player.goals} but${player.goals>1?'s':''}`):'',
+  player.goals?icon('goal',player.goals>1?`×${player.goals}`:'',`${player.goals} but${player.goals>1?'s':''}`):'',
   ...Array.from({length:yellows},()=>icon('booking yellow','','Carton jaune')),
   player.red?icon('booking red','',`${player.red.secondYellow?'Deuxième carton jaune':'Carton rouge'} (${player.red.minute}′)`):'',
   player.injury!=null?icon('injury','',`Blessé à la ${player.injury}e minute`):'',
@@ -41,10 +41,10 @@ function marksOf(player,{substitutions=true}={}){
 
 function lineupCard(match,side,marks){
  const result=match.result,kit=kitOf(match[side],side);
- const shirt=player=>`<span class="bench-shirt"${player.temporary?'':` style="${kitShirtStyle(kit.major,kit.minor)}"`}>${player.stats?.rating?n(player.stats.rating):''}</span>`;
- const bench=result[`${side}_bench`].map(player=>{const events=marks[player.id];return [`<span class="bench-player${events?.on==null?' unused':''}">${shirt(player)}${playerLink(player.id,player.name)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—'];});
+ const bench=result[`${side}_bench`].map(player=>{const events=marks[player.id];return [`<span class="bench-player${events?.on==null?' unused':''}">${playerLink(player.id,player.name)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—',matchNoteBadge(player.stats?.rating)||'—'];});
  const onPitch=player=>{const html=marksOf(marks[player.id]);return html?`<span class="pitch-marks">${html}</span>`:'';};
- return card(match[side].name,pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch})+table(['REMPLAÇANTS','ENTRÉE'],bench),'','match-lineup');
+ const team=match[side];
+ return `<section class="card match-lineup"><div class="card-head"><h2>${kitDot(team)}${e(team.name)}</h2></div>${pitch(result[`${side}_lineup`],`Composition de ${team.name}`,{compact:true,kit,marks:onPitch})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
 }
 
 // Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.
@@ -59,10 +59,14 @@ const sidesHead=match=>`<div class="match-sides"><span>${kitDot(match.home)}${e(
 
 export function statsCard(match){
  const result=match.result,home=result.home_stats,away=result.away_stats,totalPoss=home.possession_seconds+away.possession_seconds;
- const [homeColor,awayColor]=barColors(kitOf(match.home,'home'),kitOf(match.away,'away'));
+ const [homeColor,awayColor]=chartColours(match.home,match.away);
  const stats=[['Buts attendus (xG)',home.xg,away.xg],['Tirs',home.shots,away.shots],['Tirs cadrés',home.on_target,away.on_target],['Possession',100*home.possession_seconds/Math.max(1,totalPoss),100*away.possession_seconds/Math.max(1,totalPoss)],['Corners',home.corners,away.corners],['Coups francs',home.free_kicks,away.free_kicks],['Cartons jaunes',home.yellows,away.yellows],['Cartons rouges',home.reds,away.reds]];
- const rows=stats.map(([label,a=0,b=0])=>{const unit=label==='Possession'?'%':'';return `<div class="comparison"><strong>${n(a)}${unit}</strong><div class="comparison-center">${label}<div class="comparison-bar"><span style="width:${a+b?a/(a+b)*100:50}%;background:${homeColor}"></span><span style="width:${a+b?b/(a+b)*100:50}%;background:${awayColor}"></span></div></div><strong>${n(b)}${unit}</strong></div>`;}).join('');
- return card('Le match en chiffres',`<div class="card-body">${sidesHead(match)}${rows}</div>`,'','match-stats');
+ // One bar a line, shared between the two sides by their part of the two figures; the larger figure is the strong one.
+ const rows=stats.map(([label,a=0,b=0])=>{
+  const unit=label==='Possession'?'\u00a0%':'',total=a+b;
+  return `<div class="comparison"><span class="${a>b?'lead':''}">${n(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${n(b)}${unit}</span></div>`;
+ }).join('');
+ return card('Le match en chiffres',`${sidesHead(match)}<div class="comparisons">${rows}</div>`,'','match-stats');
 }
 
 // Goals, injuries and red cards in the order they came, the home side's on the left and the away side's on the right.
@@ -71,12 +75,12 @@ export function highlightsCard(match,link=playerLink){
  const events=match.result.events.filter(event=>['goal','injury','red'].includes(event.kind)&&event.period!==3);
  const content=event=>{
   const label=event.kind==='goal'?'But':event.kind==='injury'?'Blessure':event.detail==='second_yellow'?'Deuxième carton jaune':'Carton rouge';
-  const mark=event.kind==='goal'?icon('goal','⚽',label):event.kind==='injury'?icon('injury','',label):icon('booking red','',label);
+  const mark=event.kind==='goal'?icon('goal','',label):event.kind==='injury'?icon('injury','',label):icon('booking red','',label);
   const detail=event.kind==='goal'&&event.secondary?`Passe de ${link(event.secondary_id,event.secondary)}`:label;
   return `${mark}<div><strong>${event.player?link(event.player_id,event.player):'—'}</strong><small>${detail}</small></div>`;
  };
  const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
- return card('Les temps forts',`<div class="card-body">${sidesHead(match)}${rows||empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
+ return card('Les temps forts',`${sidesHead(match)}<div class="card-body">${rows||empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
 }
 
 export async function matchScreen(id){

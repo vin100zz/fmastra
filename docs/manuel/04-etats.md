@@ -19,7 +19,7 @@ La condition est de loin le facteur le plus lourd, la forme vient ensuite, le mo
 
 ## La forme
 
-La forme dit si un joueur traverse une bonne ou une mauvaise période. Elle commence à {{etats.forme.initiale}}. Les listes et la fiche du joueur l'affichent comme un pourcentage (+8 % pour une forme de 1,08) ; sur la fiche, une barre le situe entre les deux extrêmes.
+La forme dit si un joueur traverse une bonne ou une mauvaise période. Elle commence à {{etats.forme.initiale}}. Les listes et la fiche du joueur l'affichent comme un pourcentage (+8 % pour une forme de 1.08) ; sur la fiche, une barre le situe entre les deux extrêmes.
 
 **Ce qui la fait bouger.** Uniquement les matches où le joueur est noté, en club comme en sélection. Après chacun, la forme se rapproche d'une cible fixée par sa note :
 
@@ -30,10 +30,10 @@ forme = forme + {{etats.forme.vitesse_convergence}} × (cible − forme) + un pe
 
 | Note du match | Forme visée |
 |---:|---:|
-| 5,0 | {{n(1 + etats.forme.sensibilite_note * (5 - etats.forme.note_reference), 2)}} |
-| 6,5 | {{n(1 + etats.forme.sensibilite_note * (6.5 - etats.forme.note_reference), 2)}} |
-| 7,5 | {{n(1 + etats.forme.sensibilite_note * (7.5 - etats.forme.note_reference), 2)}} |
-| 8,5 | {{n(1 + etats.forme.sensibilite_note * (8.5 - etats.forme.note_reference), 2)}} |
+| 5.0 | {{n(1 + etats.forme.sensibilite_note * (5 - etats.forme.note_reference), 2)}} |
+| 6.5 | {{n(1 + etats.forme.sensibilite_note * (6.5 - etats.forme.note_reference), 2)}} |
+| 7.5 | {{n(1 + etats.forme.sensibilite_note * (7.5 - etats.forme.note_reference), 2)}} |
+| 8.5 | {{n(1 + etats.forme.sensibilite_note * (8.5 - etats.forme.note_reference), 2)}} |
 | 10 | {{n(1 + etats.forme.sensibilite_note * (10 - etats.forme.note_reference), 2)}} |
 
 Chaque match comble {{pct(etats.forme.vitesse_convergence, 0)}} de l'écart : il faut plusieurs bonnes notes d'affilée pour installer une grande forme, et autant de mauvaises pour la perdre.
@@ -55,9 +55,10 @@ moral visé = {{pct(etats.moral.poids_temps_de_jeu + etats.moral.poids_resultats
            + {{pct(etats.moral.poids_satisfaction_contrat + etats.moral.poids_resultats_club * ia_gestion.contrats.poids_salaire, 0)}} × salaire
            + {{pct(etats.moral.poids_resultats_club * ia_gestion.contrats.poids_club, 0)}} × standing du club
            − {{pct(ia_gestion.mercato.poids_frustration_moral, 0)}} × frustration
+           − {{n(ia_gestion.mercato.offres.malus_moral_intransferable * 100, 0)}} points s'il veut partir et que vous l'avez déclaré intransférable
 ```
 
-Chacun des quatre termes va de 0 à 1.
+Chacun des quatre premiers termes va de 0 à 1.
 
 - **Temps de jeu** : ses minutes de la saison rapportées à celles qu'il attend. Il attend d'autant plus qu'il est bien classé à son poste dans l'effectif : le meilleur à son poste attend tous les matches du club, le deuxième la moitié, le troisième le tiers. Un joueur arrivé en cours de saison n'attend rien des matches joués avant sa venue : seuls comptent ceux du club depuis son arrivée, et les minutes qu'il y a jouées. Avant le premier match de la saison, tout le monde est satisfait. Un joueur placé en réserve ne joue aucun match : il est pleinement satisfait s'il est jeune et ne serait pas titulaire, totalement insatisfait sinon (voir [La réserve](#/aide/reserve-et-prets/la-reserve)).
 - **Salaire** : son salaire rapporté à celui que sa valeur lui fait attendre (voir [Valeur, salaires et contrats](#/aide/contrats/le-salaire-attendu)). Un joueur payé au-dessus n'est pas plus content qu'un joueur payé juste.
@@ -71,7 +72,7 @@ frustration = ambition × (dépassement au-delà de la marge ÷ {{ia_gestion.mer
 ambition = {{ia_gestion.mercato.ambition_base}} + {{ia_gestion.mercato.ambition_poids_ego}} × trait d'ambition
 ```
 
-À partir d'une frustration de {{ia_gestion.mercato.seuil_depart_souhaite}}, le joueur **veut partir** : il ne prolonge plus et n'accepte qu'un club nettement plus réputé (voir [Le mercato des clubs](#/aide/mercato/ce-qu-un-joueur-accepte)). Jouer tous les matches avec un bon salaire ne suffit pas à le calmer.
+À partir d'une frustration de {{ia_gestion.mercato.seuil_depart_souhaite}}, le joueur **veut partir** : il ne prolonge plus et n'accepte qu'un club nettement plus réputé (voir [Le mercato des clubs](#/aide/mercato/ce-qu-un-joueur-accepte)). Jouer tous les matches avec un bon salaire ne suffit pas à le calmer. Le déclarer intransférable lui ferme la porte et pèse sur son moral tant qu'il le reste (voir [Vos achats et vos ventes](#/aide/transferts/declarer-un-joueur-intransferable)).
 
 **Ce qui ne joue pas.** Les résultats de l'équipe, les notes de match, la forme, les titres et les blessures n'ont aucun effet sur le moral. Un joueur libre garde le moral qu'il avait. Le moral d'un joueur prêté suit sa situation dans son club d'accueil.
 
@@ -80,9 +81,9 @@ ambition = {{ia_gestion.mercato.ambition_base}} + {{ia_gestion.mercato.ambition_
 - En match : de −{{pct(etats.moral.amplitude_effet_match, 0)}} à +{{pct(etats.moral.amplitude_effet_match, 0)}} sur tout ce qu'il fait.
 - Sur le marché : à {{pct(ia_gestion.mercato.moral_depart_force, 0)}} ou moins, un joueur accepte de rejoindre un club moins réputé que le sien, ce qu'il refuserait autrement.
 
-Vos actualités vous préviennent la semaine où le moral d'un de vos joueurs tombe à ce seuil, avec ce qui pèse le plus sur lui : son salaire, son temps de jeu, la réserve où il est tenu, ou un club trop petit pour lui. L'alerte n'est pas répétée tant que son moral n'est pas remonté au-dessus.
+Vos actualités vous préviennent la semaine où le moral d'un de vos joueurs tombe à ce seuil, avec ce qui pèse le plus sur lui : son salaire, son temps de jeu, la réserve où il est tenu, un club trop petit pour lui, ou un départ que vous lui refusez. L'alerte n'est pas répétée tant que son moral n'est pas remonté au-dessus.
 
-Dans l'effectif, la flèche à côté du moral indique vers où il dérive, et l'icône ce qui le tire le plus vers le bas : le salaire (€), le temps de jeu (◷) ou un club trop petit (★). La fiche du joueur porte la même icône devant la barre de son moral.
+Dans l'effectif, la flèche à côté du moral indique vers où il dérive, et l'icône ce qui le tire le plus vers le bas : le salaire (€), le temps de jeu (◷), un club trop petit (★) ou un départ refusé (⊘). La fiche du joueur porte la même icône devant la barre de son moral.
 
 ## La condition physique
 

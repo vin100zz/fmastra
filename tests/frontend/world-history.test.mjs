@@ -63,7 +63,7 @@ test('a transfer tells who the player is, from where to where, and its fee again
  assert.match(paid[1],/<span class="position att">BU<\/span>/);assert.match(paid[3],/flags\/ma\.svg.*title="Pays-Bas">\+1</);
  assert.equal(paid[4],'<span class="num">22</span>');assert.match(paid[5],/title="Niveau actuel sur 200">163</);
  assert.match(paid[6],/Como/);assert.match(paid[7],/→/);assert.match(paid[8],/Man City/);
- assert.match(paid[9],/<i style="width:100%"><\/i><\/i><b>350\sM\s€<\/b>/);assert.match(paid[10],/160\sM\s€/);
+ assert.match(paid[9],/<i style="width:100%"><\/i><\/i><b>350\sM€<\/b>/);assert.match(paid[10],/160\sM€/);
  assert.deepEqual([free[1],free[3],free[5]],['—','—','—']);assert.match(free[9],/Libre/);assert.equal(free[10],'<span class="num">—</span>');
  assert.match(released[8],/Libre/);assert.match(released[9],/Fin de contrat/);
  // The pages step from the head of the card; without a wide window there is no summary beside the list.
@@ -77,10 +77,10 @@ test('the weeks of a season are drawn window by window, only the busiest of each
  assert.deepEqual([...counts.matchAll(/<em>([^<]+)<\/em>/g)].map(match=>match[1]),['100','200','300','400']);
  assert.deepEqual([...counts.matchAll(/<b style="bottom:([\d.]+)%">(\d+)<\/b>/g)].map(match=>[match[2],match[1]]),[['70','17.5'],['306','76.5']]);
  assert.deepEqual([...counts.matchAll(/<span>(\d\d\/\d\d)<\/span>/g)].map(match=>match[1]),['02/07','09/07','31/12','07/01']);
- assert.match(counts,/title="Semaine du 2 juil\. 2029 : 70 transferts, 1,3\sMd\s€"/);
+ assert.match(counts,/title="Semaine du 2 juil\. 2029 : 70 transferts, 1\s300\sM€"/);
  // By fees, the busiest weeks are not the same.
  const volume=activityChart(weeks,2029,'volume');
- assert.deepEqual([...volume.matchAll(/<b style="bottom:[\d.]+%">([^<]+)<\/b>/g)].map(match=>match[1].replace(/\s/g,' ')),['1,4 Md €','5,2 Md €']);
+ assert.deepEqual([...volume.matchAll(/<b style="bottom:[\d.]+%">([^<]+)<\/b>/g)].map(match=>match[1].replace(/\s/g,' ')),['1 400 M€','5 200 M€']);
  assert.match(volume,/aria-label="Indemnités par semaine"/);
 });
 
@@ -103,7 +103,7 @@ test('a retirement tells the level, the career and the caps of who left, under t
  assert.match(cells[0],/class="position def">DC</);assert.match(cells[2],/flags\/it\.svg/);assert.equal(cells[3],'<span class="num">32</span>');
  assert.match(cells[4],/Real Sociedad/);assert.equal(cells[5],'La Liga');
  assert.match(cells[6],/title="Niveau à la retraite sur 200">153</);assert.match(cells[7],/title="Meilleur niveau sur 200">156</);
- assert.deepEqual(cells.slice(8).map(cell=>cell.replace(/<[^>]+>/g,'')),['154','13','1','6,9','34','2']);
+ assert.deepEqual(cells.slice(8).map(cell=>cell.replace(/<[^>]+>/g,'')),['154','13','1','6.90','34','2']);
  // Positions as chips, the age in a menu, internationals and the user's club as switches.
  assert.deepEqual([...html.matchAll(/class="chip (?:gk|def|mid|att) on"[^>]*>(\w+)</g)].map(match=>match[1]),['GB','DC']);
  assert.match(html,/<summary>Âge <b>≥ 33<\/b>/);
@@ -128,7 +128,7 @@ test('a promotion tells the level then and now, the way covered to the potential
  assert.match(cells[5],/title="Niveau à la promotion sur 200">81</);assert.match(cells[6],/title="Niveau actuel sur 200">98</);
  // 17 levels gained of the 114 between his level then and his potential.
  assert.match(cells[7],/<span class="bar-figure gain"><i class="mini-bar" aria-hidden="true"><i style="width:15%"><\/i><\/i><b>\+17<\/b><\/span>/);
- assert.match(cells[8],/title="Potentiel sur 200">195</);assert.match(cells[9],/750\s000\s€/);assert.match(cells[10],/350\s000\s€/);assert.equal(cells[11],'Oui');
+ assert.match(cells[8],/title="Potentiel sur 200">195</);assert.match(cells[9],/750\sk€/);assert.match(cells[10],/350\sk€/);assert.equal(cells[11],'Oui');
  assert.doesNotMatch(cells[4],/→/);
  // Levels and potentials go to the server on its scale; a class opens on its best prospects.
  const request=decodeURIComponent(asked[0]);
@@ -176,7 +176,7 @@ test('the summary of the retirements counts them, their ages, and the clubs and 
  const html=retirementSummary({total:875,average_age:33.4,capped:315,oldest:{age:36,player_id:5,player:'Robin Zentner'},ages:[{age:33,count:250},{age:34,count:271}],
   clubs:[{club:club(1,'Catania'),league:{id:33,name:'Serie B'},count:7,average_age:33.1,matches:354},{club:club(2,'Al Nassr'),league:null,count:4,average_age:33.5,matches:51}],
   leagues:[{id:12,name:'Championship',count:54,average_age:33.3,matches:3956},{id:null,name:null,count:456,average_age:33.5,matches:7012}]});
- assert.deepEqual([...html.matchAll(/<span class="label">([^<]+)<\/span><strong>([^<]+)</g)].map(match=>`${match[1]}:${match[2]}`),['Retraites:875','Âge moyen:33,4','Internationaux:315','Doyen:36 ans']);
+ assert.deepEqual([...html.matchAll(/<span class="label">([^<]+)<\/span><strong>([^<]+)</g)].map(match=>`${match[1]}:${match[2]}`),['Retraites:875','Âge moyen:33.4','Internationaux:315','Doyen:36 ans']);
  assert.match(html,/<div class="stat-card" title="Robin Zentner">/);
  assert.match(html,/title="34 ans : 271 retraites"/);
  assert.match(html,/<div class="summary-table figures text-second">/);
@@ -195,7 +195,7 @@ test('the summary of the promotions counts potentials out of 200, the clubs that
   bins:[{from:null,count:23},{from:100,count:41},{from:190,count:2}],
   academies:[{club:{id:3,name:'Jong Holland',major_color:'#F8F8F8',minor_color:'#002080'},count:2,average_potential:80.3,best:{potential:97.6,player_id:9,player:'Randal Hansen'},youth_recruitment:18}],
   nations:[{code:'FRA',count:90,clubs:42,average_potential:65,best:83.5},{code:'ITA',count:45,clubs:44,average_potential:64.5,best:95.1}]});
- assert.deepEqual([...html.matchAll(/<span class="label">([^<]+)<\/span><strong>([^<]+)</g)].map(match=>`${match[1]}:${match[2]}`),['Promus:639','Pot. moyen:133','Meilleur:195','Progression:+11,3']);
+ assert.deepEqual([...html.matchAll(/<span class="label">([^<]+)<\/span><strong>([^<]+)</g)].map(match=>`${match[1]}:${match[2]}`),['Promus:639','Pot. moyen:133','Meilleur:195','Progression:+11.3']);
  assert.deepEqual([...html.matchAll(/class="week" title="([^"]+)"/g)].map(match=>match[1]),['Moins de 100 : 23 joueurs','De 100 à 109 : 41 joueurs','De 190 à 200 : 2 joueurs']);
  assert.match(html,/Jong Holland.*<span class="num">2<\/span>.*>161<.*#\/player\/9">Randal Hansen<.*>195<.*>18</);
  assert.match(html,/title="France">.*France.*<i style="width:100%"><\/i><\/i><b>90<\/b>.*<span class="num">42<\/span>.*>130<.*>167</);

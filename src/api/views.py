@@ -225,11 +225,12 @@ def incoming_offers(world: World, player_id: int) -> list[dict]:
 
 
 def sale_view(world: World, player: Player) -> dict:
-    """A player of the human club: the fee asked if he is on its transfer list, what stops offering him to the clubs, and the offers awaiting an answer."""
-    from core.world.human import listed_price
+    """A player of the human club: the fee asked if he is on its transfer list, whether it keeps him off the market,
+    what stops offering him to the clubs, and the offers awaiting an answer."""
+    from core.world.human import listed_price, untouchable
     from core.world.sales import offer_obstacle
-    return {"prix_liste": listed_price(world, player.id), "obstacle_proposition": offer_obstacle(world, player),
-            "offres": incoming_offers(world, player.id)}
+    return {"prix_liste": listed_price(world, player.id), "intransferable": untouchable(world, player.id),
+            "obstacle_proposition": offer_obstacle(world, player), "offres": incoming_offers(world, player.id)}
 
 
 def international_records(world: World, player_id: int) -> list[dict]:
@@ -457,8 +458,8 @@ def club_season_stats(world: World, club_id: int, player_ids) -> dict[int, dict]
 
 
 def morale_outlook(world: World, player: Player, club, rank: int, games: int, minutes: float) -> dict:
-    """Where his morale drifts week after week, what holds it down most (`salaire`, `temps_de_jeu` or `ambition`, None when
-    nothing much does), and how content he is with his wage and his minutes, out of 1."""
+    """Where his morale drifts week after week, what holds it down most (`salaire`, `temps_de_jeu`, `ambition` or
+    `intransferable`, None when nothing much does), and how content he is with his wage and his minutes, out of 1."""
     from core.world.contracts import contentment, morale_cause
     if player.contract is None: return {"morale_target": None, "morale_cause": None, "wage_satisfaction": None, "playing_time_satisfaction": None}
     mood, moral = contentment(world, player, club, rank, games, minutes), world.config.states.moral

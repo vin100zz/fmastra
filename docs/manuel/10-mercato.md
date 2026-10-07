@@ -22,7 +22,7 @@ Pour le poste recherché, il examine :
 - les {{ia_gestion.mercato.talents_visibles}} meilleurs joueurs vendables de ce poste, que tous les clubs connaissent ;
 - les joueurs de ce poste que vous avez placés sur votre liste des transferts, examinés en premier.
 
-Il les passe en revue du meilleur au moins bon et écarte ceux qui sont invendables, qui refuseraient de venir, dont le salaire demandé dépasse sa marge salariale ou dont le prix dépasse ses moyens. Parmi les {{ia_gestion.mercato.taille_shortlist}} premiers qui restent, il fait une offre au premier qui **améliore vraiment son effectif** : le gain doit valoir au moins {{ia_gestion.mercato.gain_qualite_min_recrutement * 2}} points de niveau sur une place de titulaire, davantage sur une place de rotation ou de doublure, qui pèsent moins.
+Il les passe en revue du meilleur au moins bon et écarte ceux qui sont invendables, qui refuseraient de venir, dont le salaire demandé dépasse sa marge salariale ou dont le prix dépasse ses moyens. Parmi les {{ia_gestion.mercato.taille_shortlist}} premiers qui restent, il fait une offre au premier qui **améliore vraiment son effectif** : le gain doit valoir au moins {{ia_gestion.mercato.gain_qualite_min_recrutement * 2}} points de niveau sur une place de titulaire, davantage sur une place de rotation ou de doublure, qui pèsent moins. Il faut encore que le prix demandé tienne sous son [prix maximum](#/aide/mercato/le-prix-maximum-d-un-acheteur) pour ce joueur : sinon il le laisse à un club qui en a davantage besoin et passe au suivant.
 
 Ses moyens sont son budget de transferts et sa trésorerie (voir [Finances](#/aide/finances)), diminués de ce que ses offres en cours ont déjà réservé.
 
@@ -51,17 +51,39 @@ Le club retient la lecture la plus flatteuse parmi trois : la place du joueur da
 
 Un titulaire d'un club patient coûte donc jusqu'à {{n(ia_gestion.mercato.seuil_vendeur_multiplicateur * (1 + ia_gestion.mercato.poids_patience_negociation * ia_gestion.personnalite_club.patience_negociation.max) * ia_gestion.mercato.coef_prix_titulaire, 1)}} fois sa valeur ; un joueur dont son club ne se sert pas, dans un effectif en surnombre, part pour {{n((ia_gestion.mercato.seuil_vendeur_multiplicateur - ia_gestion.mercato.seuil_vendeur_reduction_surplus) * (1 + ia_gestion.mercato.poids_patience_negociation * ia_gestion.personnalite_club.patience_negociation.min) * ia_gestion.mercato.coef_prix_hors_effectif, 1)}} fois sa valeur.
 
-**Les invendables.** Tout joueur a un prix, sauf dans quatre cas : son club est à l'effectif minimal de {{ia_gestion.garde_fous.effectif_min}} joueurs ; c'est un gardien et le club n'en a que {{ia_gestion.garde_fous.gardiens_min}} ; il est arrivé par transfert depuis moins de {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours ; il est en prêt (voir [Réserve et prêts](#/aide/reserve-et-prets/les-prets)).
+**Les invendables.** Tout joueur a un prix, sauf dans quatre cas : son club est à l'effectif minimal de {{ia_gestion.garde_fous.effectif_min}} joueurs ; c'est un gardien et le club n'en a que {{ia_gestion.garde_fous.gardiens_min}} ; il est arrivé par transfert depuis moins de {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours ; il est en prêt (voir [Réserve et prêts](#/aide/reserve-et-prets/les-prets)). Votre club peut en plus déclarer un de ses joueurs intransférable (voir [Vos achats et vos ventes](#/aide/transferts/declarer-un-joueur-intransferable)).
+
+## Le prix maximum d'un acheteur
+
+Face au prix demandé, chaque club a pour chaque joueur un prix qu'il ne dépasse pas. Il ne dépend pas du vendeur, mais de ce que le joueur apporterait à l'acheteur.
+
+```
+prix maximum = valeur que le club voit dans le joueur
+             × ({{ia_gestion.mercato.multiplicateur_prix_max_acheteur}} + {{ia_gestion.mercato.offres.prime_besoin}} × besoin)
+             × (1 + {{ia_gestion.mercato.offres.poids_appetit_risque}} × (appétit du risque − 0.5))
+             × lecture du joueur
+```
+
+- Le **besoin** va de 0 à 1. C'est le gain que le joueur apporterait à son effectif, celui qui décide déjà du recrutement, rapporté à {{ia_gestion.mercato.offres.gain_besoin_plein * 2}} points de niveau sur une place de titulaire. Un club sous l'effectif minimal, ou qui cherche le gardien qui lui manque, a un besoin de 1.
+- L'**appétit du risque** est un trait du club, tiré à la création de la partie entre {{ia_gestion.personnalite_club.appetit_risque.min}} et {{ia_gestion.personnalite_club.appetit_risque.max}} : certains clubs paient durablement plus cher que d'autres, de {{pct(ia_gestion.mercato.offres.poids_appetit_risque * (ia_gestion.personnalite_club.appetit_risque.min - 0.5), 0)}} à +{{pct(ia_gestion.mercato.offres.poids_appetit_risque * (ia_gestion.personnalite_club.appetit_risque.max - 0.5), 0)}}.
+- La **lecture du joueur** est propre à chaque club et à chaque joueur. Elle est tirée une fois par mercato autour de 1, avec un écart-type de {{pct(ia_gestion.mercato.offres.bruit_ecart_type, 0)}} : deux clubs n'ont jamais tout à fait le même prix maximum pour un joueur.
+
+Un club qui a à peine besoin d'un joueur n'en donne donc guère plus de {{ia_gestion.mercato.multiplicateur_prix_max_acheteur}} fois sa valeur ; celui qui en a le plus besoin va jusqu'à {{n(ia_gestion.mercato.multiplicateur_prix_max_acheteur + ia_gestion.mercato.offres.prime_besoin, 2)}} fois, davantage s'il aime le risque. C'est ce qui fait qu'un titulaire, demandé bien au-dessus de sa valeur, ne part que vers un club à qui il manque vraiment.
+
+Ce maximum reste borné par les moyens du club : son budget de transferts et sa trésorerie, diminués de ce que ses autres offres réservent.
 
 ## Le déroulement d'une offre
 
-1. L'acheteur ouvre à {{pct(ia_gestion.mercato.ratio_contre_offre, 0)}} du prix demandé, en réservant le prix entier sur son budget et le salaire du joueur sur sa masse salariale.
+1. Le prix demandé est connu de tous : l'acheteur l'offre tel quel, en le réservant sur son budget et le salaire du joueur sur sa masse salariale.
 2. Toutes les offres pour un même joueur sont tranchées ensemble, une fois que la plus ancienne a {{ia_gestion.mercato.jours_encheres}} jours : les concurrents ont le temps de se déclarer.
-3. Le vendeur refuse toute offre sous son prix. L'acheteur monte alors une fois, au prix demandé ; son offre est réexaminée le lendemain.
-4. Si plusieurs clubs sont au prix, **c'est le joueur qui choisit** (voir plus bas), pas le plus offrant.
-5. Le transfert est conclu si, à cet instant, l'acheteur a toujours le budget, la masse salariale et la place, et si le vendeur peut toujours se séparer du joueur. Les offres perdantes libèrent leurs réservations.
+3. Seul, l'acheteur paie le prix demandé, même s'il aurait donné davantage.
+4. À plusieurs, **les acheteurs surenchérissent** : chacun suit tant que son prix maximum et ses moyens le permettent. Le plus offrant s'arrête {{pct(ia_gestion.mercato.offres.pas_surenchere, 0)}} au-dessus du maximum du suivant ; les autres finissent à leur propre maximum. Plus un joueur est disputé, plus il part cher.
+5. Le vendeur ne retient que les offres à moins de {{pct(ia_gestion.mercato.offres.tolerance_vendeur, 0)}} de la plus haute. Parmi elles, **c'est le joueur qui choisit** (voir plus bas), pas forcément le plus offrant ; l'indemnité payée est celle du club qu'il choisit.
+6. Le transfert est conclu si, à cet instant, l'acheteur a toujours le budget, la masse salariale et la place, et si le vendeur peut toujours se séparer du joueur. Les offres perdantes libèrent leurs réservations.
 
 À la fermeture du mercato, les offres encore ouvertes tombent.
+
+Vous ne demandez pas de prix pour vos joueurs : les offres que vous recevez se négocient autrement (voir [Vos achats et vos ventes](#/aide/transferts/recevoir-une-offre)).
 
 ## Ce qu'un joueur accepte
 
@@ -91,8 +113,8 @@ Une petite part de hasard s'y ajoute. À salaire égal, un joueur préfère donc
 
 Les clubs non simulés participent des deux côtés, avec des règles plus simples.
 
-- **Comme vendeurs** : ils demandent {{ia_gestion.mercato.clubs_dormants.multiplicateur_prix_demande}} fois la valeur du joueur, quel que soit son statut, et n'ont pas d'effectif minimal à protéger. Même au prix, ils n'acceptent que {{pct(ia_gestion.mercato.clubs_dormants.probabilite_acceptation_offre_au_prix, 0)}} des offres.
-- **Comme acheteurs** : chacun a, à chaque fenêtre, {{pct(ia_gestion.mercato.clubs_dormants.probabilite_demarchage_par_fenetre, 0)}} de chances de se manifester, un seul jour de la fenêtre. Il regarde alors quelques joueurs parmi les joueurs en surnombre des clubs simulés, ceux de votre liste des transferts et les joueurs libres, et prend le meilleur qu'il peut s'offrir.
+- **Comme vendeurs** : ils demandent {{ia_gestion.mercato.clubs_dormants.multiplicateur_prix_demande}} fois la valeur du joueur, quel que soit son statut, et n'ont pas d'effectif minimal à protéger. Même au prix, ils ne vendent que {{pct(ia_gestion.mercato.clubs_dormants.probabilite_acceptation_offre_au_prix, 0)}} du temps : sinon toutes les offres pour le joueur sont refusées.
+- **Comme acheteurs** : chacun a, à chaque fenêtre, {{pct(ia_gestion.mercato.clubs_dormants.probabilite_demarchage_par_fenetre, 0)}} de chances de se manifester, un seul jour de la fenêtre. Il regarde alors quelques joueurs parmi les joueurs en surnombre des clubs simulés, ceux de votre liste des transferts et les joueurs libres, et prend le meilleur qu'il peut s'offrir sous son prix maximum. Faute d'effectif simulé, son besoin est tiré au hasard pour le mercato.
 
 ## Les recrutements d'urgence
 

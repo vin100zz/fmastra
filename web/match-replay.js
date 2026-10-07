@@ -681,7 +681,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(!(await this.carry(shotFrom,{duration:420})))return false;
   }
   const outcome=sequence.outcome?.kind,blocked=outcome==='off_target'&&sequence.outcome.detail==='blocked';
-  const xg=shot.xg!=null?` <small>xG ${shot.xg.toFixed(2).replace('.',',')}</small>`:'';
+  const xg=shot.xg!=null?` <small>xG ${shot.xg.toFixed(2)}</small>`:'';
   const keeper=shot.secondary_id!=null&&this.dots[other].has(shot.secondary_id)?{side:other,id:shot.secondary_id}:this.keeperOf(other);
   if(keeper)involved.push(keeper.id);
   if(blocked&&this.dots[other].has(sequence.outcome.secondary_id))involved.push(sequence.outcome.secondary_id);

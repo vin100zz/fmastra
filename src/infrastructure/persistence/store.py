@@ -26,10 +26,15 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 27
+SCHEMA_VERSION = 28
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Buyers' own price limits, raised offers and outbidding: an older save trades with these rules.
+    (28, ("ia_gestion", "mercato"), {"offres": {
+         "prime_besoin": 1.5, "gain_besoin_plein": 10.0, "poids_appetit_risque": 0.3, "bruit_ecart_type": 0.06,
+         "ecart_ouverture": 0.2, "relances_min": 1, "relances_max": 3, "pas_surenchere": 0.02, "tolerance_vendeur": 0.05,
+         "malus_moral_intransferable": 0.2}}),
     # Concave minutes, training floor, reserve and loans: an older save progresses and lends with these rules.
     (25, ("demographie", "progression"), {
          "exposant_minutes": 0.5, "plancher_entrainement": {"note_1": 0.2, "note_20": 0.5},

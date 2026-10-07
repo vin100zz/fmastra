@@ -9,6 +9,8 @@ maquette et tout écran s'y conforment.
 | `docs/charte/charte.css` | La feuille de référence : jetons, cadre de l'application, composants. Elle fait foi pour les valeurs |
 | `docs/charte/index.html` | Les planches : chaque jeton et chaque composant dessinés avec cette feuille. À ouvrir dans un navigateur |
 | `docs/charte/planches.css` | La mise en page des planches ; rien que l'application utilise |
+| `web/charte.css` | La charte appliquée aux écrans : ses règles sur le balisage de l'application, chargées en dernier |
+| `web/theme.css` | Les jetons de l'application ; `tests/frontend/charte.test.mjs` les tient égaux à ceux de la feuille de référence |
 
 La charte couvre le thème clair. Le thème sombre garde les mêmes jetons ; ses
 valeurs restent celles de `web/theme.css` tant qu'elles n'ont pas été revues.
@@ -23,7 +25,8 @@ valeurs restent celles de `web/theme.css` tant qu'elles n'ont pas été revues.
   `charte.css`, un spécimen sur la planche. Pas de style propre à un écran pour
   ce qui peut resservir.
 - Une demande qui change l'apparence change la charte : valeur dans
-  `charte.css`, légende de la planche, règle ici si elle en dépend.
+  `charte.css`, légende de la planche, règle ici si elle en dépend ; puis
+  l'application : le jeton dans `web/theme.css`, la règle dans `web/charte.css`.
 - Une maquette part de `charte.css`, copiée telle quelle, jamais de styles
   réécrits.
 - Un écran aligné sur la charte est retiré de la section « Migration ».
@@ -40,12 +43,13 @@ la structure HTML des spécimens.
 |---|---|
 | `--bg`, `--panel` | Fond de la page et des cartes : blanc |
 | `--panel-2` | En-tête de tableau, bouton, choix ouvert, tuile en relief |
-| `--panel-3` | Survol |
+| `--panel-3` | Ce qui est sous le pointeur (voir « Sous le pointeur ») |
 | `--stripe` | Une ligne de tableau sur deux |
 | `--line`, `--row-line` | Bordures ; séparation des lignes |
 | `--strong`, `--ink`, `--ink-2`, `--muted` | Encres, de la plus forte au libellé atténué |
 | `--accent`, `--accent-ink` | Le jaune de l'application et l'encre écrite dessus : action principale, marque de ce qui est ouvert |
-| `--accent-text` | L'accent en texte sur fond blanc |
+| `--accent-hover` | L'action principale sous le pointeur |
+| `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase |
 | `--own-row` | Ligne du club dirigé, ligne choisie |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
@@ -56,7 +60,9 @@ Trois familles de pastilles ne se ressemblent jamais :
 - **Note** : fond pâle gradué et sa bordure, du rouge (jusqu'à 70 sur 200, 4
   sur 20) au jaune (110 ; 10) puis au vert (à partir de 150 ; 16).
 - **Poste** : couleur pleine, hors de cette échelle (bleu-vert, indigo, violet,
-  magenta), la même pour un poste dans toutes les listes.
+  magenta), la même pour un poste dans toutes les listes. Largeur fixe de 32,
+  quel que soit le code : ce qui suit la pastille s'aligne d'une ligne à
+  l'autre.
 - **Compétition** : contour, ou noir plein pour une coupe d'Europe.
 
 ### Typographie
@@ -103,11 +109,35 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile` | Libellé atténué, valeur forte |
-| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count` | 18 de haut |
+| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count` | 18 de haut ; un poste, 32 de large |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
+| Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
+
+### Sous le pointeur
+
+Ce qui se trouve sous le pointeur prend un seul fond, `--panel-3`. Ce qui est
+ouvert, choisi ou teinté garde le sien. Rien d'autre ne bouge : ni couleur d'un
+lien, ni bordure, ni ombre.
+
+| Élément | Au repos | Sous le pointeur |
+|---|---|---|
+| Lien : le nom d'un club, d'un joueur, d'un pays, d'une compétition, le score d'un match, « Voir → » | La couleur du texte qui le porte, non souligné | Souligné (trait de 1, à 2 du texte), même couleur |
+| Lien dans une phrase : le manuel, le titre et le texte d'une actualité (`.prose`) | `--accent-text`, non souligné | Souligné, même couleur |
+| Ligne d'un tableau ou d'une liste, fait | Son fond | `--panel-3` ; la ligne teintée (club dirigé, ligne choisie, état) garde sa teinte |
+| Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier | Son fond | `--panel-3` et la main ; aucun texte souligné |
+| Bouton, option d'un choix, pas d'une série, filtre, entrée du menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Onglet, en-tête de colonne | `--muted` | `--strong` |
+| Joueur sur un terrain | Son nom | Son nom souligné |
+
+- Une pastille qui mène quelque part (le score d'un match) est un lien : son
+  texte se souligne, son fond ne change pas.
+- Dans une carte dont l'en-tête entier ouvre une page, c'est son lien
+  « Voir → » qui se souligne.
+- Un graphique garde ses propres réactions (repère, infobulle) : voir
+  « Graphiques ».
 
 ## Terrain et maillot
 
@@ -243,8 +273,10 @@ pays ajouté suit la règle : CP pour le Portugal.
 ### Tableaux
 
 - Toutes les colonnes de tous les tableaux se trient.
-- Chaque colonne a une largeur fixe, et chaque en-tête garde la place de sa
-  flèche (après un texte, avant un chiffre) : trier ne déplace aucune colonne.
+- Chaque colonne garde sa largeur : la flèche d'un en-tête se loge dans sa
+  marge, où elle ne prend pas de place ; trier ne déplace aucune colonne.
+- Un tableau qui ne donne pas de valeur de tri se trie sur ce que ses cellules
+  affichent : un chiffre, un montant dans son unité, une date, sinon le texte.
 - En-têtes et lignes de 26 ; chiffres alignés à droite, sous un en-tête aligné
   de même.
 
@@ -256,24 +288,36 @@ sa cible (dessous faute de place), une flèche vers elle.
 
 ## Migration
 
-Au 4 octobre 2026, l'application (`web/style.css`, `compact.css`, `theme.css`,
-`club.css`, `match-replay.css`) ne suit pas encore la charte. Ce qui reste à
-aligner :
+Depuis le 4 octobre 2026, les écrans suivent la charte : `web/charte.css`, chargée
+après les feuilles d'origine, porte ses règles, et ces feuilles ont été ramenées à
+ses échelles (tailles, graisses, rayons, capitales).
 
-| Sujet | Aujourd'hui | Charte |
-|---|---|---|
-| Échelles | 39 tailles de police, 11 graisses, 25 rayons, plus de 30 espacements | 7 tailles, 3 graisses, 1 rayon, 5 espacements |
-| Onglets | `.tabs`, `.club-hero-tabs`, `.tabs.europe-cups` (deux rangées sur Coupes d'Europe), `.round-pills`, `.preview-tabs` | `.tabs`, `.segmented`, `.segmented.steps` |
-| Terrains | `.pitch`, `.lineup-pitch`, `.side-pitch`, `.pitch.ratings` | `.pitch`, debout ou couché |
-| Maillots | `.shirt`, `.shirt.kit`, `.kit-shirt`, `.bench-shirt`, `.live-player-shirt` | `.kit-shirt` |
-| Pastilles de poste | Fonds pâles aux teintes de l'échelle des notes | Couleurs pleines hors de cette échelle |
-| Pastilles de compétition | Initiales du nom (`competitionCode`, `web/club-calendar.js`) | Codes de deux caractères |
-| Nombres | Virgule décimale (`number`, `money`, `price` de `web/ui.js`) ; note moyenne à un chiffre | Point décimal ; moyenne à deux chiffres |
-| Classements | Places en fonds colorés sur certains écrans, ordre des colonnes variable | Trait à gauche du rang, ordre fixe |
-| En-tête de club | Bandeau de 148, nom en 54 | Bandeau de 88, nom en 40 |
-| Le match en chiffres | Barres fines aux couleurs brutes des clubs : une couleur blanche disparaît sur le fond (`barColors`, `web/match.js`) | `.comparison`, couleurs calculées |
-| Clubs, pays | À vérifier écran par écran | Nom toujours précédé de la pastille ou du drapeau |
-| Fond | Gris (`#eef1f5`) en thème clair | Blanc |
+| Sujet | Fait |
+|---|---|
+| Échelles | Sept tailles, trois graisses, un rayon, dans toutes les feuilles |
+| Fond | Blanc en thème clair |
+| Onglets | `.tabs` partout, en-tête de club compris ; sur Coupes d'Europe, la coupe se choisit en `.segmented` sur la ligne du titre |
+| Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`) |
+| Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
+| Nombres | Point décimal, notes à un et deux chiffres, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `amount`), y compris dans le manuel |
+| Classements | Trait à gauche du rang, ordre des colonnes unique |
+| En-tête de club | Bandeau de 88, nom en 40 |
+| Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) |
+| Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
+| Pays | Drapeau dans le menu et sur la Vue d'ensemble |
+| Sous le pointeur | Une seule règle pour les liens, les lignes et les commandes, dans `web/charte.css` ; les autres feuilles n'en disent plus rien (`tests/frontend/charte.test.mjs`) |
+| Palmarès | Pastilles de compétition de la charte (`competitionBadge`), filtres de poste aux couleurs des postes |
+
+Ce qui reste :
+
+| Sujet | État |
+|---|---|
+| Thème sombre | Hors charte : il garde ses valeurs et fonctionne avec les mêmes composants, sans avoir été revu |
+| Feuilles d'origine | `style.css`, `compact.css`, `theme.css`, `club.css`, `match-replay.css` restent chargées sous `web/charte.css` ; leurs règles devenues sans effet sont à retirer |
+| Banc d'un match | L'API ne donne pas le poste d'un remplaçant : la liste n'a pas de pastille de poste |
+| Manuel | Ses tableaux (Markdown) ne se trient pas |
+| Direct | Non contrôlé à l'écran : il faut jouer un match |
+| Petits écrans | Non contrôlés |
 
 Les écrans `/squad`, `/composition`, `/match` et `/europe` ont une maquette de
 référence à la charte : canevas Design

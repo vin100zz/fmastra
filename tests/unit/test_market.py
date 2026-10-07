@@ -268,7 +268,7 @@ def recruitment_world(config, probability=1):
 
 
 def test_buyer_can_pay_useful_players_actual_asking_price(config, monkeypatch):
-    from core.ai.market import asking_price, market_value, seller_accepts
+    from core.ai.market import Bid, asking_price, market_value, seller_accepts
     from core.world.market import open_offers, settle_offers
     import core.world.market as market
     world = recruitment_world(config)
@@ -285,16 +285,57 @@ def test_buyer_can_pay_useful_players_actual_asking_price(config, monkeypatch):
     assert quote > old_ceiling
     assert not seller_accepts(player, seller, old_ceiling, world, Random(1))
     assert seller_accepts(player, seller, quote, world, Random(1))
-    event = PlayerSigned(player.id, seller.id, 1, player.contract, quote)
+    event = Bid(player.id, seller.id, 1, player.contract, quote, limit=2 * quote)
     monkeypatch.setattr(market, "propose_transfers", lambda *args, **kwargs: [event])
     open_offers(world, True)
+    # The asking price is known to all: the buyer offers it outright, and reserves no more.
+    offer = next(iter(world.offers.values()))
+    assert (offer.fee, offer.ceiling, offer.limit) == (quote, quote, 2 * quote)
     close_auction(world)
     settle_offers(world, True)
-    assert next(iter(world.offers.values())).countered
-    world.date = world.date.add_days(1)
-    settle_offers(world, True)
+    # Alone, it pays the asking price, however much more it would have paid.
     assert player.club_id == 1
-    assert world.transfers[-1].fee <= quote
+    assert world.transfers[-1].fee == quote
+
+
+def test_a_clubs_price_limit_follows_its_need_its_appetite_and_its_own_reading(config):
+    from core.ai.market import market_value, price_limit
+    world = mini_world(config)
+    player, buyer = world.players[201], world.clubs[1]
+    rules = config.management.market
+    value = market_value(player, world, buyer)
+    limits = [price_limit(player, buyer, world, need) for need in (0, 0.5, 1)]
+    assert limits[0] < limits[1] < limits[2]
+    # Its reading of the player is drawn once for the window: asked again, the club says the same.
+    assert price_limit(player, buyer, world, 1) == limits[2]
+    # Two clubs never read a player quite alike.
+    assert price_limit(player, replace(buyer, id=77), world, 1) != limits[2]
+    # Without that reading, the limit is the value seen times the multiplier, raised by the need.
+    quiet = replace(rules, offers=replace(rules.offers, noise=0.0))
+    world.config = replace(config, management=replace(config.management, market=quiet))
+    assert price_limit(player, buyer, world, 0) == round(value * rules.buyer_price_multiplier)
+    assert price_limit(player, buyer, world, 1) == round(value * (rules.buyer_price_multiplier + rules.offers.need_premium))
+    assert price_limit(player, buyer, world, 5) == price_limit(player, buyer, world, 1)
+    # A club with an appetite for risk pays more, a cautious one less.
+    bold, cautious = (replace(buyer, personality=replace(buyer.personality, risk_appetite=appetite)) for appetite in (0.9, 0.1))
+    assert price_limit(player, cautious, world, 1) < price_limit(player, buyer, world, 1) < price_limit(player, bold, world, 1)
+
+
+def test_a_club_leaves_a_player_asked_more_than_he_is_worth_to_it(config):
+    from core.ai.market import propose_transfers, needs_for, asking_price
+    world = recruitment_world(config)
+    buyer = world.clubs[1]
+    priority = needs_for(buyer, [world.players[pid] for pid in buyer.player_ids], world.config)[0].position
+    star = add_star(world, world.clubs[2], position=priority)
+    world.clubs[2].reputation = 50
+    bid = next(p for p in propose_transfers(world, Random(1)) if p.player_id == star.id)
+    assert bid.fee == asking_price(star, world.clubs[2], world) <= bid.limit
+    # A club that would not pay that much for him turns to another player.
+    rules = world.config.management.market
+    tight = replace(rules, buyer_price_multiplier=1.0, offers=replace(rules.offers, need_premium=0.0))
+    world.config = replace(world.config, management=replace(world.config.management, market=tight))
+    proposals = [p for p in propose_transfers(world, Random(1)) if p.target_id == buyer.id]
+    assert proposals and all(p.player_id != star.id for p in proposals)
 
 
 def test_parallel_recruitment_covers_distinct_positions_and_pending_offers(config):
@@ -627,6 +668,74 @@ def extra_buyer(world, club_id):
                 ClubPersonality(.5, .5, .5, .5), [], wage_cap=1000000000, transfer_budget=1000000000, balance=1000000000)
     world.clubs[club_id] = club
     return club
+
+
+def rival_offers(world, player, seller, bidders):
+    """Offers for a player at his asking price, one per buyer: `bidders` gives each its price limit as a multiple of
+    that price, and the score the player gives its club. Returns the asking price."""
+    from core.ai.market import asking_price
+    quote = asking_price(player, seller, world)
+    for club_id, (limit, score) in bidders.items():
+        if club_id not in world.clubs: extra_buyer(world, club_id)
+        fee = min(quote, round(quote * limit))
+        world.offers[str(club_id)] = TransferOffer(str(club_id), world.date, player.id, seller.id, club_id, player.contract,
+                                                   fee, fee, score, limit=round(quote * limit))
+    return quote
+
+
+def auction_world(config):
+    """Club 2 can let player 201 go: a like-for-like cover stays."""
+    world = recruitment_world(config)
+    seller, player = world.clubs[2], world.players[201]
+    cover = replace(player, id=800)
+    world.players[cover.id] = cover
+    seller.player_ids.append(cover.id)
+    return world, player, seller
+
+
+@pytest.mark.parametrize("scores,winner", [((1.0, 2.0, 9.0), 3), ((2.0, 1.0, 9.0), 1)])
+def test_rivals_outbid_each_other_and_the_player_picks_among_the_highest_offers(config, scores, winner):
+    from math import ceil
+    from core.world.market import settle_offers
+    world, player, seller = auction_world(config)
+    quote = rival_offers(world, player, seller, {1: (1.5, scores[0]), 3: (1.3, scores[1]), 4: (1.0, scores[2])})
+    before = seller.balance
+    close_auction(world)
+    rejected = settle_offers(world, True)
+    # The keenest stops one step above the reach of the next, who ends at its own; the third cannot follow, and the
+    # player's liking for its club no longer counts. Between the two highest offers, he picks.
+    step = config.management.market.offers.outbid_step
+    fees = {1: ceil(round(quote * 1.3) * (1 + step)), 3: round(quote * 1.3)}
+    assert player.club_id == winner and world.transfers[-1].fee == fees[winner] > quote
+    assert seller.balance == before + fees[winner]
+    assert rejected == {club_id: {player.id} for club_id in (1, 3, 4) if club_id != winner}
+
+
+def test_a_lone_buyer_pays_the_asking_price_and_one_that_cannot_reach_it_is_turned_down(config):
+    from core.world.market import settle_offers
+    world, player, seller = auction_world(config)
+    quote = rival_offers(world, player, seller, {1: (0.99, 5.0), 3: (1.6, 1.0)})
+    close_auction(world)
+    assert settle_offers(world, True) == {1: {player.id}}
+    assert player.club_id == 3 and world.transfers[-1].fee == quote
+
+
+def test_a_bid_rises_no_further_than_the_buyers_means(config):
+    from core.world.market import outbid, reach
+    world, player, seller = auction_world(config)
+    quote = rival_offers(world, player, seller, {1: (3.0, 1.0), 3: (2.0, 1.0)})
+    rich, other = world.offers["1"], world.offers["3"]
+    assert (reach(world, rich), reach(world, other)) == (3 * quote, 2 * quote)
+    # What its other offers reserve is no longer there to raise this one.
+    buyer = world.clubs[1]
+    buyer.transfer_budget = buyer.balance = 4 * quote
+    world.offers["else"] = TransferOffer("else", world.date, 202, seller.id, 1, player.contract, 0, 2 * quote, 1.0)
+    assert reach(world, rich) == 2 * quote
+    # Never less than it already offers, and an offer made before buyers had a limit stops at what it reserved.
+    buyer.transfer_budget = 0
+    assert reach(world, rich) == quote
+    assert reach(world, replace(other, limit=None, ceiling=quote + 5)) == quote + 5
+    assert outbid(world, [rich], quote) == {"1": quote}
 
 
 def test_rival_bids_during_the_auction_period_compete_on_player_score(config):

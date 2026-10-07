@@ -186,7 +186,8 @@ def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
     client.post("/api/partie/choisir-club", json={"club_id": club.id})
     own_player = min((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)
     other_player = world.active_clubs()[1].player_ids[0]
-    assert client.get(f"/api/ma-partie/vente/{own_player}").json() == {"prix_liste": None, "obstacle_proposition": None, "offres": []}
+    assert client.get(f"/api/ma-partie/vente/{own_player}").json() == {
+        "prix_liste": None, "intransferable": False, "obstacle_proposition": None, "offres": []}
 
     listed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": 2_000_000})
     assert listed.status_code == 200 and listed.json()["prix_liste"] == 2_000_000
@@ -204,6 +205,56 @@ def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
 
     removed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": None}).json()
     assert removed["prix_liste"] is None and client.get("/api/ma-partie/transferts").json()["liste"] == []
+
+    # Declared not for sale, his offers fall and no club can buy him; listing him puts him back on the market.
+    kept = client.post("/api/partie/intransferable", json={"joueur_id": own_player, "intransferable": True}).json()
+    assert kept["intransferable"] and kept["offres"] == [] and own_player in world.not_for_sale
+    assert not any(offer.player_id == own_player for offer in world.offers.values())
+    assert not client.get(f"/api/joueurs/{own_player}").json()["transferable"]
+    assert client.post("/api/partie/intransferable", json={"joueur_id": other_player, "intransferable": True}).status_code == 400
+    listed = client.post("/api/partie/liste-transferts", json={"joueur_id": own_player, "indemnite": 2_000_000}).json()
+    assert not listed["intransferable"] and listed["prix_liste"] == 2_000_000
+    kept = client.post("/api/partie/intransferable", json={"joueur_id": own_player, "intransferable": True}).json()
+    assert kept["intransferable"] and kept["prix_liste"] is None
+    back = client.post("/api/partie/intransferable", json={"joueur_id": own_player, "intransferable": False}).json()
+    assert not back["intransferable"] and client.get(f"/api/joueurs/{own_player}").json()["transferable"]
+
+
+def test_an_offer_is_answered_with_the_clubs_own_price_and_a_refusal_brings_a_higher_one(client):
+    from core.world import news as feed
+    from core.world.market import settle_offers
+    world = client.app.state.game.world
+    club = world.active_clubs()[0]
+    room = lambda item: item.id != club.id and item.squad_size < world.config.management.guardrails.max_squad
+    buyer = max((item for item in world.active_clubs() if room(item)), key=lambda item: item.transfer_budget)
+    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    own_player = min((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)
+    player = world.players[own_player]
+    offer = TransferOffer("unasked", world.date, own_player, club.id, buyer.id, player.contract, 1_000_000, 1_000_000, 1,
+                          awaiting_review=True, limit=2_000_000)
+    world.offers[offer.key] = offer
+    feed.offer_received(world, offer)
+    answer = lambda **fields: client.post("/api/partie/reponse-offre", json={"offre_id": offer.key, **fields})
+    assert answer(decision="contre").status_code == 400  # a price must be named
+    assert answer(decision="contre", indemnite=1_000_000).status_code == 400  # and a higher one than the offer
+    # Beyond what the buyer pays, the price named is a refusal: it comes back a few days later with a higher offer.
+    reply = answer(decision="contre", indemnite=2_000_001).json()
+    waiting = world.offers[offer.key]
+    assert reply["vendu"] is False and player.club_id == club.id and not waiting.awaiting_review and waiting.fee > offer.fee
+    message = client.get("/api/ma-partie/actualites/0").json()
+    assert message["title"] == f"1 offre pour {player.name}" and not message["pending"]
+    assert message["offers"]["untouchable"] is False and [row["state"] for row in message["offers"]["offers"]] == ["refused"]
+    world.date = waiting.due
+    settle_offers(world, True)
+    message = client.get("/api/ma-partie/actualites/1").json()
+    assert message["title"] == f"1 offre relevée pour {player.name}" and message["pending"]
+    assert [(row["fee"], row["state"]) for row in message["offers"]["offers"]] == [(waiting.fee, "pending")]
+    # Within it, the sale is made at the price named.
+    reply = answer(decision="contre", indemnite=1_900_000).json()
+    assert reply["vendu"] is True and player.club_id == buyer.id and world.transfers[-1].fee == 1_900_000
+    message = client.get("/api/ma-partie/actualites/1").json()
+    assert [(row["fee"], row["state"]) for row in message["offers"]["offers"]] == [(1_900_000, "accepted")]
+    assert message["offers"]["untouchable"] is None
 
 
 def test_news_requires_a_selected_club(client):

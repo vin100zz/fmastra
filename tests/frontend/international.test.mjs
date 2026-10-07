@@ -10,7 +10,7 @@ const edition={year:2028,name:'Euro 2028',qualification_groups:[{name:'A',rows:[
 test('international tables give the full record, rank the seconds and escape nation labels',()=>{
  const html=editionContent(edition);
  assert.match(html,/Classement des deuxièmes/);
- assert.match(html,/<th class="count-column">N<\/th><th class="count-column">P<\/th>/);
+ assert.match(html,/<th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>N<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>P<\/button><\/th>/);
  assert.doesNotMatch(html,/places qualificatives/);
  assert.match(html,/France &lt;test&gt;/);
  assert.match(clubLink(nation),/href="#\/international\/nation\/-1001"/);
@@ -37,7 +37,7 @@ test('nation page shows a big flag, prev/next navigation, camp status and drops 
   assert.match(html,/Rassemblement/);
   assert.match(html,/temporary-player/);
   assert.match(html,/data-value="60"/);
-  assert.match(html,/POSTE.*JOUEUR.*ÂGE.*NIV\..*POT\..*CLUB.*VALEUR.*SALAIRE \/ MOIS.*CONTRAT.*ÉTAT.*SÉL\..*BUTS/s);
+  assert.match(html,/POSTE.*JOUEUR.*ÂGE.*NIV\..*POT\..*CLUB.*VALEUR.*SALAIRE.*CONTRAT.*ÉTAT.*SÉL\..*BUTS/s);
   assert.doesNotMatch(html,/Joueurs éligibles/);
   assert.match(html,/>Effectif<\/a>/);
   assert.match(html,/>Calendrier<\/a>/);
