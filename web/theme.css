@@ -1061,7 +1061,7 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 @media(max-width:1329px){.league-layout,.calendar-layout,.history-layout,.history-layout.three{grid-template-columns:minmax(0,1fr)}.history-layout.three>*{grid-column:auto!important;grid-row:auto!important}.fixture-grid{grid-template-columns:minmax(0,1fr)}.stats-boards{grid-template-columns:minmax(0,1fr)}.stats-boards>.card,.stats-boards>.card:nth-child(n+4){grid-column:auto}.europe-halves{grid-template-columns:minmax(0,1fr)}.europe-halves>div+div{border-left:0;border-top:1px solid var(--line)}}
 .history-main,.history-archives{display:flex;flex-direction:column;gap:10px;min-width:0}
 
-/* Loans and the reserve: a tag beside a name, a tint on the row of a player lent or borrowed, a square button closing a row. */
+/* Loans and the reserve: a tag beside a name, a tint on the row of a player lent or borrowed. */
 .tag{display:inline-block;margin-left:5px;padding:0 5px;border:1px solid var(--good-line);border-radius:var(--radius);color:var(--good);font-size:10px;font-weight:600;line-height:14px;vertical-align:1px}
 .tag.loan{border-color:var(--info);color:var(--info)}
 .tags .tag:first-child{margin-left:0}
@@ -1070,10 +1070,6 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .player-table .listed-column{width:34px}
 .split .player-table .name-column{width:140px}
 .split .player-table .club-column,.split .player-table .academy_club-column{width:112px}
-.player-table .action-column{width:20px}
-.player-table th.action-column{padding:0 4px!important}
-.player-table td:has(>.row-action){padding:1px 4px!important;text-align:center}
-.row-action{display:inline-grid;place-items:center;width:20px;height:20px;padding:0;font-size:13px;line-height:1}
 .action-dialog select{width:100%}
 
 /* Actualités. The menu counts the messages still to read, a red count on Continuer those awaiting an answer; the club the

@@ -37,12 +37,10 @@ test('the squad is two lists: the first team, then the reserve with the players 
  assert.doesNotMatch(html,/data-command="reserve"/);
 });
 
-test('the user’s club moves a player between the two lists with the button closing his row, except a player on loan',async()=>{
+test('the lists of the user’s club hold no button either: a player moves between them from his menu or his page',async()=>{
  const html=await squadScreen(7);
- assert.match(html,/data-command="reserve" data-player="1" data-reserve="1" title="Envoyer en réserve"[^>]*>↓<\/button>/);
- assert.match(html,/data-command="reserve" data-player="3" data-reserve="" title="Rappeler en équipe première"[^>]*>↑<\/button>/);
- assert.doesNotMatch(html,/data-player="2"|data-player="4"/);
- assert.match(html,/<th class="action-column"><\/th>/);
+ assert.doesNotMatch(html,/data-command="reserve"|action-column/);
+ assert.match(html,/<th class="average-column"><button[^>]*>NOTE<\/button><\/th><\/tr>/);
 });
 
 test('an empty reserve takes a head and nothing else for the user’s club, and no place at all for another club',async()=>{

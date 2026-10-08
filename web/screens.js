@@ -72,12 +72,11 @@ export async function clubsScreen(params,leagues=[]){
 }
 
 // The squad in two lists: the first team, then the reserve, where the players the club has lent stand too. The user's club
-// moves a player from one to the other with the button closing his row.
+// moves a player from one to the other from his menu or his page.
 function squadCards(data,params,human){
  const view=params.get('vue'),sorted=params.get('tri')||'position',order=params.get('ordre')||'asc';
  const apart=player=>player.reserve||player.away,first=data.items.filter(player=>!apart(player)),second=data.items.filter(apart);
- const move=player=>player.loan?'':`<button type="button" class="row-action" data-command="reserve" data-player="${player.id}" data-reserve="${player.reserve?'':'1'}" title="${player.reserve?'Rappeler en équipe première':'Envoyer en réserve'}" aria-label="${player.reserve?'Rappeler en équipe première':'Envoyer en réserve'}">${player.reserve?'↑':'↓'}</button>`;
- const list=items=>playerTable({items},false,sorted,order,{view,pager:false,...(human?{action:move}:{})});
+ const list=items=>playerTable({items},false,sorted,order,{view,pager:false});
  const count=(items,one,many)=>`${items.length} ${items.length>1?many:one}`;
  const lent=second.filter(player=>player.away),kept=second.filter(player=>!player.away);
  const tools=`<div class="card-tools">${playerViewSwitch(view,sorted,order)}</div>`;

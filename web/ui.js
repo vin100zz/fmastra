@@ -316,13 +316,11 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  });
  // A list beside a preview lets the user pick a row (`select`: the id of the picked one, null for none yet).
  const picking='select' in options;
- // `action(player)` closes each row with a button of its own, under a header without a name.
- if(options.action)rows.forEach((row,index)=>row.push(options.action(data.items[index])));
  const headers=columns.map(([key,label])=>options.sortable===false?label:sortButton(key,label,sorted,order,textColumns.includes(key)?'asc':'desc'));
  // A player on loan stands out: lent by the club of the list (`away`), or borrowed.
  const rowClass=player=>[picking&&player.id===options.select?'selected':'',player.loan?(player.away?'lent':'borrowed'):''].filter(Boolean).join(' ');
  // Each header carries its column's key, which sets its width (see .player-table in theme.css).
- return `<div class="player-table">${table([...headers,...(options.action?['']:[])],rows,undefined,data.items.map(rowClass),undefined,[...columns.map(([key])=>`${key}-column`),...(options.action?['action-column']:[])],[...columns.map(([,,heading])=>heading||null),...(options.action?[null]:[])],picking?data.items.map(player=>`data-select="${player.id}"`):undefined)}</div>`+(options.pager===false?'':pager(data));
+ return `<div class="player-table">${table(headers,rows,undefined,data.items.map(rowClass),undefined,columns.map(([key])=>`${key}-column`),columns.map(([,,heading])=>heading||null),picking?data.items.map(player=>`data-select="${player.id}"`):undefined)}</div>`+(options.pager===false?'':pager(data));
 }
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',P:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};

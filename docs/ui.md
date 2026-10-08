@@ -297,10 +297,10 @@ réunit les joueurs placés en réserve et ceux que le club a prêtés (`away` d
 prêt porte la pastille « Prêt » après son nom (les deux clubs et la date de retour en infobulle) et sa
 ligne est teintée : en bleu pour un joueur emprunté, en bleu estompé pour un joueur prêté. La réserve
 d'un autre club n'apparaît que si elle n'est pas vide ; celle du club de l'utilisateur garde son titre
-même vide. Dans son club, chaque ligne se termine par un bouton carré, ↓ (envoyer en réserve) ou ↑
-(rappeler en équipe première), absent pour un joueur en prêt ; un refus (équipe première au minimum,
-joueur de la composition du jour) s'affiche en notification. La colonne NAT donne le drapeau et le
-code de la nationalité principale.
+même vide. Aucune ligne ne porte de bouton : dans son club, un joueur passe d'une liste à l'autre
+par son menu (clic droit) ou par sa fiche. La colonne NAT donne le drapeau et le code de la
+nationalité principale. Les colonnes sont larges comme leur en-tête ou leur plus longue valeur :
+sur un écran de 1920, la liste tient à côté des widgets sans défiler de côté.
 
 À droite des listes (dessous sous 1250 px), une colonne de widgets, chacun avec « Voir → » vers ce
 qu'il résume :

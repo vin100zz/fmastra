@@ -34,8 +34,7 @@ select,input:not([type=checkbox]):not([type=radio]):not([type=range]){height:var
 .chip.nation-chip,.chip.toggle{font-size:var(--fs-body);font-weight:400}
 .chip.on.nation-chip,.chip.on.toggle{font-weight:600}
 .card-head button,.card-head a.button,.head-pager button,.pager button,td button,.market-actions button,.news-lines button,.news-actions button,.news-heading button,.season-steps button,.live-tactics-actions button{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
-.head-pager button,.season-steps button,.row-action{width:var(--h-control-small);padding:0}
-.row-action{height:var(--h-control-small)}
+.head-pager button,.season-steps button{width:var(--h-control-small);padding:0}
 th button,button.pitch-player,.position-row,.entity-menu>summary,.advance-todo,.replay-marker,.replay-start{height:auto;font-weight:inherit;line-height:inherit}
 th button{padding:0;font-size:inherit;white-space:inherit}
 .position-row{height:var(--h-row);padding:0 var(--s3);font-size:var(--fs-body);font-weight:400}
@@ -374,10 +373,21 @@ small{font-size:var(--fs-small)}
 .player-table .nation-column,.split .player-table .nation-column{width:84px}
 .player-table .rating-column,.player-table .potential-column{width:36px}
 .player-table .wage-column,.split .player-table .wage-column{width:64px}
-.player-table .contract_end-column,.split .player-table .contract_end-column,.club-squad .player-table .contract_end-column{width:84px}
+.player-table .contract_end-column,.split .player-table .contract_end-column{width:84px}
 .player-table .fitness-column{width:68px}
 .player-table .form-column{width:52px}
 .player-table .morale-column{width:92px}
+/* A club's squad stands beside its widgets: no column wider than its heading or the longest value it shows, so that the
+   list fits a 1920 px screen without scrolling sideways. */
+.club-squad .player-table .position-column{width:36px}
+.club-squad .player-table .nation-column{width:72px}
+.club-squad .player-table .age-column{width:24px}
+.club-squad .player-table :is(.rating-column,.potential-column,.goals-column){width:30px}
+.club-squad .player-table :is(.value-column,.wage-column){width:48px}
+.club-squad .player-table :is(.contract_end-column,.morale-column){width:72px}
+.club-squad .player-table .form-column{width:44px}
+.club-squad .player-table :is(.assists-column,.yellows-column,.reds-column){width:20px}
+.club-squad .player-table .average-column{width:32px}
 .card-head h2 .nation{margin-right:6px;vertical-align:-1px}
 .preview .position-row{height:var(--h-row)}
 .toolbar .season-navigation button{width:var(--h-control);height:var(--h-control)}

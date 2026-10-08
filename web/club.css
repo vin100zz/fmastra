@@ -279,6 +279,5 @@
 .status.ban{color:var(--warn)}
 .scout-meeting{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--row-line);font-size:13px;color:var(--ink-2)}
 @media(max-width:1400px){.composition-card .lineup-layout.with-scout{grid-template-columns:auto minmax(0,1fr)}.composition-card .scout-card{grid-column:1/-1}}
-.club-squad .player-table .contract_end-column{width:78px}
 .honours-list strong .honour-text{font-size:16px}
 .movement-record p,.finance-split p,.calendar-record p{color:var(--ink)}
