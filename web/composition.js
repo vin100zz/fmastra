@@ -148,6 +148,16 @@ export function lineupSubmission(){
   perso:current.tactics[CUSTOM]?.map(item=>[item.role,item.line,item.column])??null};
 }
 
+// What the menu of a player (player-menu.js) opens with on the editor, for the place or the row `element` that carries him:
+// out of the lineup when he is in it, onto the next free place otherwise. Null away from the editor, and for a player who
+// is not of the squad (the opponent's).
+export function lineupAction(element,id){
+ if(!element.closest?.('#lineup-form')||!mounted()||!editor.data.players.some(player=>player.id===id))return null;
+ const send={'lineup-move':id};
+ if(where(editor,id))return {label:'Sortir de la composition',send};
+ return {label:'Mettre dans la composition',send,obstacle:nextFree(editor,roles())?null:'Aucune place libre.'};
+}
+
 const unavailableIcon=player=>player.unavailable==='injured'?'<span class="lineup-icon injury" title="Blessé" aria-label="Blessé">✚</span>'
  :player.unavailable==='suspended'?`<span class="lineup-icon suspension" title="Suspendu${player.match_suspension?` (${player.match_suspension} match${player.match_suspension>1?'s':''})`:''}" aria-label="Suspendu"></span>`:'';
 const fatigue=player=>Math.round((1-player.fitness)*100);
@@ -368,16 +378,15 @@ function install(){
   else if('slot' in target.dataset&&id==null)update(place(editor,Number(target.dataset.player),{kind:'slot',index:slot}));
   else update(place(editor,id,'slot' in target.dataset?{kind:'slot',index:Number(target.dataset.slot)}:{kind:'bench',index:Number(target.dataset.bench)}));
  });
- document.addEventListener('contextmenu',event=>{
-  const item=event.target.closest?.('[data-player]');
-  if(!item||!inside(item)||!mounted())return;
-  const id=Number(item.dataset.player);
-  event.preventDefault();
-  // Right click takes a selected player out, and puts an unselected one on the next free place.
-  if(where(editor,id))update(remove(editor,id));
-  else{const target=nextFree(editor,roles());if(target)update(place(editor,id,target));}
- });
  document.addEventListener('click',event=>{
+  // The first row of a player's menu takes him out of the lineup, or puts him on the next free place (`lineupAction`).
+  const move=event.target.closest?.('[data-lineup-move]');
+  if(move&&mounted()){
+   const id=Number(move.dataset.lineupMove);
+   if(where(editor,id))update(remove(editor,id));
+   else{const target=nextFree(editor,roles());if(target)update(place(editor,id,target));}
+   return;
+  }
   // A click on a position of the pitch compares the squad on it; a second click, or another tactic, lets it go.
   const slot=event.target.closest?.('.lineup-pitch [data-slot]');
   if(slot&&inside(slot)&&mounted()){pick(editor.picked===Number(slot.dataset.slot)?null:Number(slot.dataset.slot));return;}

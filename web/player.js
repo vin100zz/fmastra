@@ -125,26 +125,41 @@ export function levelChart(points) {
 
 const dialogButtons=confirm=>`<div class="actions"><button type="button" data-close-dialog>Annuler</button>${confirm}</div>`;
 
+// What the user can do about a player is said once and drawn twice: a button of his page, a row of his menu
+// (player-menu.js). `open` names the dialog it opens, `send` the command it sends at once (its data in the order of its
+// attributes), `obstacle` why it cannot be done today; `note` is where it stands, which the menu writes beside it.
+// The ids of the dialogs follow a `scope`, so that the ones of a menu never meet the ones of the page under it.
+export const actionData=({open,send})=>open?` data-open-dialog="${open}"`:Object.entries(send).map(([key,value])=>` data-${key}="${value}"`).join('');
+const actionButton=(row,primary=false)=>`<button${primary?' class="primary"':''} type="button"${row.obstacle?` disabled title="${e(row.obstacle)}"`:actionData(row)}>${row.label}</button>`;
+
 // Talks for another club's player: the fee with his club, then his wage (straight away for a free agent), each offer
-// answered at once in the dialog, which comes back with the counter-offer. Agreed steps wait a few days in a pill.
-export function talksAction(player, state, talks) {
- const actions=body=>`<div class="player-actions">${body}</div>`;
- if(talks.etape==='accord_club')return actions(`<span class="pill">Accord avec le club · ${price(talks.indemnite)} · réponse le ${date(talks.date_prevue)}</span>`);
- if(talks.etape==='signature')return actions(`<span class="pill">Arrivée le ${date(talks.date_prevue)} · ${monthlySalary(talks.salaire)}</span>`);
+// answered at once in the dialog, which comes back with the counter-offer. Agreed steps wait a few days: `state` tells
+// them, and nothing is left to do.
+function talksPart(player, talks, scope='') {
+ if(talks.etape==='accord_club')return {state:`Accord avec le club · ${price(talks.indemnite)} · réponse le ${date(talks.date_prevue)}`,rows:[],dialogs:''};
+ if(talks.etape==='signature')return {state:`Arrivée le ${date(talks.date_prevue)} · ${monthlySalary(talks.salaire)}`,rows:[],dialogs:''};
  const wage=talks.etape==='salaire'||!player.club&&!talks.etape;
  const label=talks.etape==='salaire'?'Négocier le contrat':wage?'Proposer un contrat':'Faire une offre';
- // The pill names the obstacle; the reason that follows its colon waits in the tooltip.
- const [barrier,reason]=(talks.obstacle||'').split(' : ');
- if(talks.obstacle)return actions(`${state.market?`<span class="pill"${reason?` title="${e(talks.obstacle)}"`:''}>${e(barrier)}</span>`:''}<button class="primary" type="button" disabled title="${e(talks.obstacle)}">${label}</button>`);
+ if(talks.obstacle)return {rows:[{label,obstacle:talks.obstacle}],dialogs:''};
  const counter=talks.contre_offre,amount=value=>wage?monthlySalary(value):price(value);
  const left=`${talks.tours_restants} offre${talks.tours_restants>1?'s':''} restante${talks.tours_restants>1?'s':''}`;
  const intro=wage?`Salaire actuel ${player.club?monthlySalary(player.wage):'—'}`:`Prix minimum ${price(player.asking_price)} · budget ${price(talks.budget)}`;
  const field=wage?`<label>Salaire proposé (€) <input name="montant" type="number" min="1" step="1" value="${Math.max(1,monthlyAmount(counter||player.wage))}" required></label>`
   :`<label>Indemnité proposée (M€) <input name="montant" type="number" min="0" step="0.01" value="${counter?counter/1e6:Math.round((player.value||0)/1e6)}" required></label>`;
  const accept=counter?`<button type="submit" name="accepter" value="${counter}">Accepter ${amount(counter)}</button>`:'';
- const dialog=`<dialog id="talks-dialog" class="action-dialog"><form id="talks-form" data-kind="${wage?'salaire':'indemnite'}"><span class="eyebrow">${wage?'CONTRAT':'MERCATO'}</span><h2>${wage?'Contrat':'Offre'} pour ${e(player.name)}</h2><p>${intro}</p>${counter?`<p><strong>${wage?e(player.name):e(player.club.name)} demande ${amount(counter)}</strong> · ${left}</p>`:''}<input type="hidden" name="joueur_id" value="${player.id}">${field}${dialogButtons(`${accept}<button class="primary" type="submit">Proposer</button>`)}</form></dialog>`;
- const pill=counter?`<span class="pill">Contre-offre · ${amount(counter)}</span>`:'';
- return actions(`${pill}<button class="primary" type="button" data-open-dialog="talks-dialog">${label}</button>`)+dialog;
+ const dialog=`<dialog id="${scope}talks-dialog" class="action-dialog"><form id="${scope}talks-form" data-kind="${wage?'salaire':'indemnite'}"><span class="eyebrow">${wage?'CONTRAT':'MERCATO'}</span><h2>${wage?'Contrat':'Offre'} pour ${e(player.name)}</h2><p>${intro}</p>${counter?`<p><strong>${wage?e(player.name):e(player.club.name)} demande ${amount(counter)}</strong> · ${left}</p>`:''}<input type="hidden" name="joueur_id" value="${player.id}">${field}${dialogButtons(`${accept}<button class="primary" type="submit">Proposer</button>`)}</form></dialog>`;
+ return {rows:[{label,open:`${scope}talks-dialog`,note:counter?`Contre-offre · ${amount(counter)}`:''}],dialogs:dialog};
+}
+// On a page: a pill for what waits or for the counter-offer, then the button.
+export function talksAction(player, state, talks) {
+ const actions=body=>`<div class="player-actions">${body}</div>`,pill=text=>`<span class="pill">${text}</span>`;
+ const part=talksPart(player,talks);
+ if(part.state)return actions(pill(part.state));
+ const [row]=part.rows;
+ // The pill names the obstacle; the reason that follows its colon waits in the tooltip.
+ const [barrier,reason]=(talks.obstacle||'').split(' : ');
+ const told=talks.obstacle?(state.market?`<span class="pill"${reason?` title="${e(talks.obstacle)}"`:''}>${e(barrier)}</span>`:''):row.note?pill(row.note):'';
+ return actions(`${told}${actionButton(row,true)}`)+part.dialogs;
 }
 
 // Contracts are extended on the player's terms (`terms`, from /ma-partie/contrat): the ones he asked for, which the club
@@ -155,29 +170,29 @@ export function contractDialog(player, terms, id='contract-dialog') {
   :`<button class="primary" data-command="prolongation" data-player="${player.id}">Signer</button>`;
  return `<dialog id="${id}" class="action-dialog"><div><span class="eyebrow">PROLONGATION</span><h2>Nouveau contrat pour ${e(player.name)}</h2>${rows}${dialogButtons(buttons)}</div></dialog>`;
 }
-function contractAction(player, terms) {
- if(terms.obstacle)return {pills:'',buttons:`<button class="primary" type="button" disabled title="${e(terms.obstacle)}">Proposer un contrat</button>`,dialogs:''};
- return {pills:terms.demande?'<span class="pill">Prolongation en attente</span>':'',
-  buttons:'<button class="primary" type="button" data-open-dialog="contract-dialog">Proposer un contrat</button>',dialogs:contractDialog(player,terms)};
+function contractAction(player, terms, scope='') {
+ const row={label:'Proposer un contrat',...(terms.obstacle?{obstacle:terms.obstacle}:{open:`${scope}contract-dialog`,note:terms.demande?'En attente':''})};
+ return {pills:terms.demande&&!terms.obstacle?'<span class="pill">Prolongation en attente</span>':'',rows:[row],buttons:actionButton(row,true),
+  dialogs:terms.obstacle?'':contractDialog(player,terms,row.open)};
 }
 
 // An own player up for sale: on the transfer list at the fee asked, or offered to every club at once. Both dialogs take
 // the fee; the offers awaiting an answer, whichever way they came, open in a dialog of their own. Declared not for sale,
 // he receives none; either way of selling him puts him back on the market.
-function saleAction(player, sale) {
+function saleAction(player, sale, scope='') {
  const listed=sale.prix_liste!=null,kept=Boolean(sale.intransferable);
  const fee=(id,kind,title,confirm)=>`<dialog id="${id}" class="action-dialog"><form data-sale="${kind}"><span class="eyebrow">VENTE</span><h2>${title}</h2><p>Valeur ${price(player.value)}</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Prix demandé (M€) <input name="montant" type="number" min="0" step="0.01" value="${Math.round((listed?sale.prix_liste:player.value||0)/1e4)/100}" required></label>${dialogButtons(`<button class="primary" type="submit">${confirm}</button>`)}</form></dialog>`;
- const list=listed?`<button type="button" data-command="liste-transferts" data-player="${player.id}">Retirer de la liste</button>`
-  :`<button type="button" data-open-dialog="listing-dialog">Mettre sur la liste</button>`;
- const offer=sale.obstacle_proposition?`<button type="button" disabled title="${e(sale.obstacle_proposition)}">Proposer aux clubs</button>`
-  :`<button type="button" data-open-dialog="proposal-dialog">Proposer aux clubs</button>`;
- const received=sale.offres.length?`<button type="button" data-open-dialog="offers-dialog">Offres reçues · ${sale.offres.length}</button>`:'';
- const rows=sale.offres.map(item=>`<li><span>${clubLink(item.acheteur)}</span><small>${monthlySalary(item.salaire_propose)}</small><b>${price(item.indemnite)}</b><span class="market-actions"><button class="primary" data-command="reponse-offre" data-decision="accepter" data-offer="${e(item.offre_id)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(item.offre_id)}">Refuser</button></span></li>`).join('');
- const offers=sale.offres.length?`<dialog id="offers-dialog" class="action-dialog"><div><span class="eyebrow">OFFRES REÇUES</span><h2>Offres pour ${e(player.name)}</h2><ul class="moves">${rows}</ul><div class="actions"><button type="button" data-close-dialog>Fermer</button></div></div></dialog>`:'';
- const keep=`<button type="button" data-command="intransferable" data-kept="${kept?'':'1'}" data-player="${player.id}">${kept?'Rendre transférable':'Déclarer intransférable'}</button>`;
- return {pills:listed?`<span class="pill">Sur la liste · ${price(sale.prix_liste)}</span>`:kept?'<span class="pill">Intransférable</span>':'',buttons:received+list+offer+keep,
-  dialogs:(listed?'':fee('listing-dialog','liste',`Mettre ${e(player.name)} sur la liste`,'Mettre sur la liste'))
-   +(sale.obstacle_proposition?'':fee('proposal-dialog','proposition',`Proposer ${e(player.name)} aux clubs`,'Proposer'))+offers};
+ const list=listed?{label:'Retirer de la liste',note:price(sale.prix_liste),send:{command:'liste-transferts',player:player.id}}:{label:'Mettre sur la liste',open:`${scope}listing-dialog`};
+ const offer={label:'Proposer aux clubs',...(sale.obstacle_proposition?{obstacle:sale.obstacle_proposition}:{open:`${scope}proposal-dialog`})};
+ const received=sale.offres.length?[{label:'Offres reçues',note:String(sale.offres.length),open:`${scope}offers-dialog`}]:[];
+ const lines=sale.offres.map(item=>`<li><span>${clubLink(item.acheteur)}</span><small>${monthlySalary(item.salaire_propose)}</small><b>${price(item.indemnite)}</b><span class="market-actions"><button class="primary" data-command="reponse-offre" data-decision="accepter" data-offer="${e(item.offre_id)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(item.offre_id)}">Refuser</button></span></li>`).join('');
+ const offers=sale.offres.length?`<dialog id="${scope}offers-dialog" class="action-dialog"><div><span class="eyebrow">OFFRES REÇUES</span><h2>Offres pour ${e(player.name)}</h2><ul class="moves">${lines}</ul><div class="actions"><button type="button" data-close-dialog>Fermer</button></div></div></dialog>`:'';
+ const keep={label:kept?'Rendre transférable':'Déclarer intransférable',send:{command:'intransferable',kept:kept?'':'1',player:player.id}};
+ return {pills:listed?`<span class="pill">Sur la liste · ${price(sale.prix_liste)}</span>`:kept?'<span class="pill">Intransférable</span>':'',rows:[...received,list,offer,keep],
+  // On the page, the offers are counted on their button.
+  buttons:[...received.map(row=>({...row,label:`${row.label} · ${row.note}`})),list,offer,keep].map(row=>actionButton(row)).join(''),
+  dialogs:(listed?'':fee(list.open,'liste',`Mettre ${e(player.name)} sur la liste`,'Mettre sur la liste'))
+   +(sale.obstacle_proposition?'':fee(offer.open,'proposition',`Proposer ${e(player.name)} aux clubs`,'Proposer'))+offers};
 }
 
 // The durations a loan can take today, each with the day it ends.
@@ -185,34 +200,56 @@ const LOAN_LABELS={saison:'Fin de saison',demi_saison:'Demi-saison'};
 const durationField=squad=>`<label>Durée <select name="duree">${squad.durees.map(item=>`<option value="${item.cle}">${LOAN_LABELS[item.cle]} · ${date(item.fin)}</option>`).join('')}</select></label>`;
 
 // An own player: sent to the reserve or called back, and lent to one of the clubs that would take him.
-function squadAction(player, squad) {
- const reserve=squad.en_reserve?`<button type="button" data-command="reserve" data-player="${player.id}" data-reserve="">Rappeler en équipe première</button>`
-  :`<button type="button" data-command="reserve" data-player="${player.id}" data-reserve="1"${squad.obstacle_reserve?` disabled title="${e(squad.obstacle_reserve)}"`:''}>Envoyer en réserve</button>`;
- if(squad.obstacle_pret)return {pills:squad.en_reserve?'<span class="pill">En réserve</span>':'',buttons:`${reserve}<button type="button" disabled title="${e(squad.obstacle_pret)}">Prêter</button>`,dialogs:''};
+function squadAction(player, squad, scope='') {
+ const reserve=squad.en_reserve?{label:'Rappeler en équipe première',send:{command:'reserve',player:player.id,reserve:''}}
+  :{label:'Envoyer en réserve',send:{command:'reserve',player:player.id,reserve:'1'},obstacle:squad.obstacle_reserve};
+ const lend={label:'Prêter',...(squad.obstacle_pret?{obstacle:squad.obstacle_pret}:{open:`${scope}lend-dialog`})};
  const clubs=`<label>Club <select name="club_id">${squad.clubs.map(club=>`<option value="${club.id}">${e(club.name)} · ${e(club.competition)}</option>`).join('')}</select></label>`;
- const dialog=`<dialog id="lend-dialog" class="action-dialog"><form data-loan="preter"><span class="eyebrow">PRÊT</span><h2>Prêter ${e(player.name)}</h2><input type="hidden" name="joueur_id" value="${player.id}">${clubs}${durationField(squad)}${dialogButtons('<button class="primary" type="submit">Prêter</button>')}</form></dialog>`;
- return {pills:squad.en_reserve?'<span class="pill">En réserve</span>':'',buttons:`${reserve}<button type="button" data-open-dialog="lend-dialog">Prêter</button>`,dialogs:dialog};
+ const dialog=squad.obstacle_pret?'':`<dialog id="${lend.open}" class="action-dialog"><form data-loan="preter"><span class="eyebrow">PRÊT</span><h2>Prêter ${e(player.name)}</h2><input type="hidden" name="joueur_id" value="${player.id}">${clubs}${durationField(squad)}${dialogButtons('<button class="primary" type="submit">Prêter</button>')}</form></dialog>`;
+ return {pills:squad.en_reserve?'<span class="pill">En réserve</span>':'',rows:[reserve,lend],buttons:actionButton(reserve)+actionButton(lend),dialogs:dialog};
 }
 
 // Another club's player taken on loan: nothing to pay, only how long.
-function borrowAction(player, squad) {
- if(squad.obstacle_pret)return `<button type="button" disabled title="${e(squad.obstacle_pret)}">Emprunter</button>`;
- return `<button type="button" data-open-dialog="borrow-dialog">Emprunter</button><dialog id="borrow-dialog" class="action-dialog"><form data-loan="emprunter"><span class="eyebrow">PRÊT</span><h2>Emprunter ${e(player.name)}</h2><input type="hidden" name="joueur_id" value="${player.id}">${durationField(squad)}${dialogButtons('<button class="primary" type="submit">Emprunter</button>')}</form></dialog>`;
+function borrowAction(player, squad, scope='') {
+ const row={label:'Emprunter',...(squad.obstacle_pret?{obstacle:squad.obstacle_pret}:{open:`${scope}borrow-dialog`})};
+ return {rows:[row],buttons:actionButton(row),dialogs:squad.obstacle_pret?'':`<dialog id="${row.open}" class="action-dialog"><form data-loan="emprunter"><span class="eyebrow">PRÊT</span><h2>Emprunter ${e(player.name)}</h2><input type="hidden" name="joueur_id" value="${player.id}">${durationField(squad)}${dialogButtons('<button class="primary" type="submit">Emprunter</button>')}</form></dialog>`};
 }
+
+// What the game says of an own player (his contract, his sale, his place in the squad) and of another club's (the talks,
+// and the loan when he has a club).
+const ownTerms=player=>Promise.all([api(`/ma-partie/contrat/${player.id}`),api(`/ma-partie/vente/${player.id}`),api(`/ma-partie/effectif/${player.id}`)]);
+const otherTerms=player=>Promise.all([api(`/ma-partie/negociation/${player.id}`),player.club?api(`/ma-partie/effectif/${player.id}`):null]);
+// On loan, to or from the user's club or between two others: nothing to decide before he is back.
+const loanState=(player,clubId)=>`Prêté ${player.loan.parent?.id===clubId?`à ${e(player.loan.club?.name)}`:`par ${e(player.loan.parent?.name)}`} · retour le ${date(player.loan.end)}`;
 
 async function playerActions(player, state) {
  const clubId=state.controlled_club_id;
  if(clubId==null||player.retired)return '';
  const actions=body=>`<div class="player-actions">${body}</div>`;
- // On loan, to or from the user's club or between two others: nothing to decide before he is back.
- if(player.loan)return actions(`<span class="pill">Prêté ${player.loan.parent?.id===clubId?`à ${e(player.loan.club?.name)}`:`par ${e(player.loan.parent?.name)}`} · retour le ${date(player.loan.end)}</span>`);
+ if(player.loan)return actions(`<span class="pill">${loanState(player,clubId)}</span>`);
  if(player.club?.id===clubId){
-  const [contract,sale,squad]=await Promise.all([api(`/ma-partie/contrat/${player.id}`),api(`/ma-partie/vente/${player.id}`),api(`/ma-partie/effectif/${player.id}`)]);
+  const [contract,sale,squad]=await ownTerms(player);
   const parts=[saleAction(player,sale),contractAction(player,contract),squadAction(player,squad)];
   return actions(`${parts.map(part=>part.pills).join('')}${parts.map(part=>part.buttons).join('')}`)+parts.map(part=>part.dialogs).join('');
  }
- const [talks,squad]=await Promise.all([api(`/ma-partie/negociation/${player.id}`),player.club?api(`/ma-partie/effectif/${player.id}`):null]);
- return talksAction(player,state,talks)+(squad?actions(borrowAction(player,squad)):'');
+ const [talks,squad]=await otherTerms(player),loan=squad?borrowAction(player,squad):null;
+ return talksAction(player,state,talks)+(loan?actions(loan.buttons+loan.dialogs):'');
+}
+
+// The menu of a player (player-menu.js) holds the actions of his page, in groups: the squad, his contract and his sale for
+// one of the user's; the talks and the loan for another club's. Where nothing can be decided, his `state` says why:
+// retired, on loan, or waiting for the next step of talks already agreed.
+export async function playerMenu(player, state, scope) {
+ const clubId=state.controlled_club_id;
+ if(player.retired)return {state:'Retraité',groups:[],dialogs:''};
+ if(player.loan)return {state:loanState(player,clubId),groups:[],dialogs:''};
+ if(player.club?.id===clubId){
+  const [contract,sale,squad]=await ownTerms(player);
+  const parts=[squadAction(player,squad,scope),contractAction(player,contract,scope),saleAction(player,sale,scope)];
+  return {state:null,groups:parts.map(part=>part.rows),dialogs:parts.map(part=>part.dialogs).join('')};
+ }
+ const [talks,squad]=await otherTerms(player),deal=talksPart(player,talks,scope),loan=squad?borrowAction(player,squad,scope):null;
+ return {state:deal.state||null,groups:[[...deal.rows,...(loan?loan.rows:[])]],dialogs:deal.dialogs+(loan?loan.dialogs:'')};
 }
 
 // A line of the rail whose tooltip says more than its value.

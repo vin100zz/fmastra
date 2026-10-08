@@ -192,6 +192,18 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .entity-menu-panel,.filter-panel,dialog,#toast{border-radius:var(--radius)}
 :root[data-theme="light"] #tooltip{padding:var(--s1) var(--s2);border:0;background:var(--strong);color:#fff;font-size:var(--fs-body);line-height:18px;box-shadow:0 4px 12px #0a141e33}
 :root[data-theme="light"] #tooltip::after{border:0;background:var(--strong)}
+/* A player's menu, at the pointer on a right click: what can be done with him, in the words of his page. Rows of 26: an
+   action and, on its right in the muted ink, where it stands; a line between two groups; where nothing can be decided, the
+   player's state alone. An action that cannot be taken stays in its place, dimmed, its reason in its tooltip. Its host
+   holds the dialogs of its actions, takes no room in the page and stands over it. */
+#player-menu{position:fixed;left:0;top:0;z-index:20}
+.menu{position:fixed;display:flex;flex-direction:column;min-width:216px;padding:var(--s1) 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 4px 12px #0a141e33;font-size:var(--fs-body);line-height:18px;white-space:nowrap;color:var(--ink)}
+.menu>button{display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;border-radius:0;background:none;font-weight:400;text-align:left;color:inherit;outline-offset:-2px}
+.menu>button>span,.menu>p{color:var(--muted)}
+.menu>button:focus-visible{background:var(--panel-3);color:var(--strong)}
+.menu>button:is(:disabled,[aria-disabled="true"]),.menu>button[aria-disabled="true"]:hover{background:none;color:var(--muted);opacity:.6;cursor:default}
+.menu>hr{width:100%;margin:var(--s1) 0;border:0;border-top:1px solid var(--row-line)}
+.menu>p{display:flex;align-items:center;flex:none;height:var(--h-row);margin:0;padding:0 var(--s3)}
 
 /* The search of the whole game: a square button in the bar, and its dialog over the veiled page. The head of the dialog
    is a bar: a glass, the field, the kinds on its right. Its list holds every kind together, the best match first. A line
@@ -324,12 +336,16 @@ a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:un
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
 :is(nav,.sidebar,.segmented,.chips,.presets,.entity-menu-panel,.filter-menu) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
-a.pitch-player:is(:hover,:focus-visible) small{text-decoration:underline 1px;text-underline-offset:2px}
+:is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) small{text-decoration:underline 1px;text-underline-offset:2px}
+/* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
+   line on the ground. */
+a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}
+:is(li,.bench-slot).targeted{background:var(--panel-3)}
 /* A row of a table or of a list, a fact: the ground. A tinted row is more specific than this and keeps its tint; a
    heading set among the rows is not a row. */
-tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):hover{background:var(--panel-3)}
+tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted){background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
-.player-table tbody tr:where(:not(.selected,.chosen)):hover td:nth-child(2){background:var(--panel-3)}
+.player-table tbody tr:where(:not(.selected,.chosen)):is(:hover,.targeted) td:nth-child(2){background:var(--panel-3)}
 :where(.fixture,.country-match,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.biggest-transfers li,.honours-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.current-edition,.result):hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its

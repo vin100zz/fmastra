@@ -205,6 +205,16 @@
 .tooltip b{font-weight:600}
 .tooltip>span{display:flex;justify-content:space-between;gap:var(--s4);font-size:var(--fs-small);line-height:16px;color:#c3ccd7}
 .tooltip>span b{color:#fff}
+/* A player's menu, opened at the pointer on a right click (a mockup places it itself): what can be done with him, in the
+   words of his page. Rows of 26: an action and, on its right in the muted ink, where it stands; a line between two groups;
+   where nothing can be decided, the player's state alone. An action that cannot be taken stays in its place, dimmed, its
+   reason in a tooltip. */
+.menu{display:inline-flex;flex-direction:column;min-width:216px;padding:var(--s1) 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 4px 12px #0a141e33;font:400 var(--fs-body)/18px var(--text);white-space:nowrap;color:var(--ink)}
+.menu>button{display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;background:none;text-align:left}
+.menu>button>span,.menu>p{color:var(--muted)}
+.menu>button:is(:disabled,[aria-disabled="true"]){color:var(--muted);opacity:.6}
+.menu>hr{width:100%;margin:var(--s1) 0;border:0;border-top:1px solid var(--row-line)}
+.menu>p{display:flex;align-items:center;flex:none;height:var(--h-row);padding:0 var(--s3)}
 .crest{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font:700 semi-condensed var(--fs-small)/1 var(--display)}
 .crest.large{width:64px;height:64px;border:3px solid #fff;box-shadow:0 1px 4px #0a141e38;font-size:var(--fs-title)}
 svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
@@ -362,6 +372,7 @@ a:is(.tr,.match-row,.result){cursor:pointer}
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
 .app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,.entity-nav>a,.pitch-player):is(:hover,.hover){text-decoration:none}
 :is(.nav a,.segmented>a,.segmented>button,.button,.entity-nav>*):not(.active,.primary,.danger,:disabled):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+.menu>button:not(:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
 :is(.button.primary,.cta):is(:hover,.hover){background:var(--accent-hover)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}

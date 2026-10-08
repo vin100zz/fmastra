@@ -119,6 +119,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
+| Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
 
 ### Sous le pointeur
@@ -133,7 +134,7 @@ lien, ni bordure, ni ombre.
 | Lien dans une phrase : le manuel, le titre et le texte d'une actualité (`.prose`) | `--accent-text`, non souligné | Souligné, même couleur |
 | Ligne d'un tableau ou d'une liste, fait | Son fond | `--panel-3` ; la ligne teintée (club dirigé, ligne choisie, état) garde sa teinte |
 | Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
-| Bouton, option d'un choix, pas d'une série, filtre, entrée du menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne du menu d'un joueur | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
 | Joueur sur un terrain | Son nom | Son nom souligné |
 
@@ -143,6 +144,8 @@ lien, ni bordure, ni ombre.
   « Voir → » qui se souligne.
 - Un graphique garde ses propres réactions (repère, infobulle) : voir
   « Graphiques ».
+- Ce que vise le menu d'un joueur garde cet état tant que le menu est ouvert :
+  sa ligne le fond, son nom le soulignement.
 
 ### Recherche globale
 
@@ -171,6 +174,33 @@ et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
 | Club | La pastille à ses couleurs | Le drapeau de son pays, puis la pastille de sa division |
 | Compétition | Sa pastille | Son pays, après son drapeau ; rien pour une coupe d'Europe |
 | Sélection | Son drapeau | Rien |
+
+### Menu d'un joueur
+
+Un clic droit sur un joueur (son nom, sa ligne dans une liste, son maillot sur
+un terrain) ouvre `.menu` au pointeur : ce que la fiche du joueur permet, dans
+les mêmes mots. Il s'ouvre vers la droite et le bas ; vers la gauche ou le haut
+faute de place.
+
+- **Ligne** : 26 de haut, en 13 / 18, 216 de large au moins. Ni icône, ni
+  en-tête : la cible du menu est marquée sur la page (voir « Sous le
+  pointeur »).
+- **Où en est une action** : à droite de son libellé, dans l'encre atténuée
+  (« Retirer de la liste · 45 M€ », « Offres reçues · 2 », « Proposer un
+  contrat · En attente », « Faire une offre · Contre-offre · 62 M€ »).
+- **Groupes** : un trait `--row-line` entre deux, 4 de part et d'autre.
+- **Action impossible** : elle reste à sa place, grisée comme un bouton
+  désactivé ; sa raison est dans son infobulle.
+- **Rien à décider** : l'état du joueur seul, sur une ligne atténuée (« Prêté à
+  Lorient · retour le 30 juin 2026 », « Accord avec le club · … », « Arrivée
+  le … », « Retraité »).
+- **Fermeture** : un choix, un clic ailleurs, Échap, un défilement.
+
+| Joueur | Groupes, dans cet ordre |
+|---|---|
+| Du club dirigé | Effectif : Envoyer en réserve ou Rappeler en équipe première, Prêter · Contrat : Proposer un contrat · Vente : Offres reçues, Mettre sur la liste ou Retirer de la liste, Proposer aux clubs, Déclarer intransférable ou Rendre transférable |
+| D'un autre club | Faire une offre, Négocier le contrat ou Proposer un contrat (joueur libre), puis Emprunter |
+| Sur l'écran Composition | D'abord « Sortir de la composition » ou « Mettre dans la composition », seul dans son groupe |
 
 ## Terrain et maillot
 
@@ -361,6 +391,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Sous le pointeur | Une seule règle pour les liens, les lignes et les commandes, dans `web/charte.css` ; les autres feuilles n'en disent plus rien (`tests/frontend/charte.test.mjs`) |
 | Palmarès | Pastilles de compétition de la charte (`competitionBadge`), filtres de poste aux couleurs des postes |
 | Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
+| Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 
 Ce qui reste :
 
@@ -376,4 +407,5 @@ Ce qui reste :
 Les écrans `/squad`, `/composition`, `/match` et `/europe` ont une maquette de
 référence à la charte : canevas Design
 <https://claude.ai/artifact/MbJqDASJNFF8a6Tu3Lph4a>. La recherche globale a la
-sienne (proposition B) : <https://claude.ai/artifact/JMuUqZ4JkvAsYQMh6uJoNU>.
+sienne (proposition B) : <https://claude.ai/artifact/JMuUqZ4JkvAsYQMh6uJoNU>,
+le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>.

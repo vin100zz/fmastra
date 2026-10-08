@@ -40,3 +40,6 @@ body{margin:0;background:var(--bg)}
 .swatch{display:block;flex:none;width:14px;height:14px;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #0a141e1f}
 .bar-sample{display:block;width:72px;height:8px;border-radius:4px}
 .column{display:flex;flex-direction:column;gap:32px;min-width:0}
+/* A menu stands where its specimen is; the tooltip of one of its rows, over that row. */
+.spec .menu{position:relative;align-self:flex-start}
+.menu-tip{position:absolute;z-index:1;left:50%;transform:translateX(-50%);width:max-content}

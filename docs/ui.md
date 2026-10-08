@@ -238,6 +238,36 @@ clic hors de la boîte. Le nom affiché est celui des fiches (le nom d'usage d'u
 joueur) : c'est sur lui que porte la recherche. L'Euro et la Coupe du monde ne sont
 pas dans la recherche : leurs pages restent sous « Sélections nationales ».
 
+### Menu d'un joueur
+
+Un clic droit sur un joueur ouvre, au pointeur, ce que sa fiche permet
+(`web/player-menu.js`) : mêmes actions, mêmes libellés, mêmes boîtes de dialogue,
+mêmes raisons quand une action est impossible. Son apparence est dans la charte
+(« Menu d'un joueur »).
+
+Le joueur visé est celui du lien ou de l'élément cliqué (son nom, son maillot sur un
+terrain, une place de la composition) ; à défaut, celui de la ligne d'un tableau ou
+d'une liste qui ne nomme que lui. Sa ligne, ou son nom, reste marquée tant que le
+menu est ouvert. Hors d'un joueur, dans une boîte de dialogue ou dans un champ, le
+clic droit garde le menu du navigateur. Le menu n'existe qu'avec un club choisi, et
+pas pendant un match en direct.
+
+| Joueur | Le menu |
+|---|---|
+| Du club dirigé | « Envoyer en réserve » ou « Rappeler en équipe première », « Prêter » ; « Proposer un contrat » (« En attente » à droite si le joueur l'a demandé) ; « Offres reçues » et leur nombre, « Mettre sur la liste » ou « Retirer de la liste » et son prix, « Proposer aux clubs », « Déclarer intransférable » ou « Rendre transférable » |
+| D'un autre club | « Faire une offre » (la contre-offre à droite), « Négocier le contrat » une fois l'indemnité convenue, puis « Emprunter » |
+| Libre | « Proposer un contrat » |
+| Prêté, retraité, accord ou arrivée en attente | Son état seul, sans action (« Prêté à Nice · retour le 30 juin 2027 ») ; « Emprunter », grisé, suit un accord en attente |
+| Sur l'écran Composition | En tête, « Sortir de la composition », ou « Mettre dans la composition » (la prochaine place libre ; grisé quand il n'y en a plus) |
+
+Une action qui demande une précision (prix, club, durée, contrat) ouvre la boîte de
+dialogue de la fiche ; les autres partent tout de suite. La réponse à une offre ou à
+une proposition aux clubs rouvre la boîte, comme sur la fiche. Le menu se ferme sur un
+choix, un clic ailleurs, Échap, un défilement ou un nouvel affichage de la page ;
+les flèches parcourent ses lignes, Entrée choisit. Le serveur est interrogé à
+l'ouverture (`/api/joueurs/{id}`, puis `/api/ma-partie/contrat`, `vente`, `effectif`
+ou `negociation`) : le menu dit toujours l'état du jour.
+
 ### Club
 
 | Onglet | Contenu |
@@ -617,8 +647,8 @@ L'onglet Composition du club dirigé : à gauche les tactiques, au-dessus du ter
 et les remplaçants sur une ligne (autant de places que `bench_size`) ; au centre la liste de
 l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, « Meilleure
 composition » et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
-glisse un joueur sur un poste ou sur le banc ; un clic droit sort un joueur de la composition ou met
-un joueur sur la prochaine place libre ; « Meilleure composition » reprend la suggestion de l'IA pour la
+glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
+ou le met sur la prochaine place libre, avant ses autres actions ; « Meilleure composition » reprend la suggestion de l'IA pour la
 tactique affichée. Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
 seconde) marqué de son poste ; une place vide garde le contour d'un maillot.
 

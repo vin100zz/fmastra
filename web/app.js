@@ -18,6 +18,7 @@ import {landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage}
 import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
 import {initSearch} from './search.js';
+import {openPlayerMenu,showPlayerDialog} from './player-menu.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
@@ -131,8 +132,11 @@ async function action(path,payload,success){
  catch(error){toast(error.message,true);return false;}
  finally{submitting=false;await render();}
 }
+// A dialog comes back with the answer to what it sent, once the page is drawn again: the page's own, or the one of a
+// player's menu (`menu`), drawn again with him.
+const reopen=(name,player,menu)=>menu?showPlayerDialog(main,state,player,name):main.querySelector(`#${name}`)?.showModal();
 // Talks answer at once: the dialog comes back with the counter-offer until an agreement or a break-off.
-async function negotiate(kind,payload){
+async function negotiate(kind,payload,menu){
  if(polling||submitting)return;
  submitting=true;busyButtons();
  let reply=null;
@@ -143,10 +147,10 @@ async function negotiate(kind,payload){
  }
  catch(error){toast(error.message,true);}
  finally{submitting=false;await render();}
- if(reply?.resultat==='contre_offre')main.querySelector('#talks-dialog')?.showModal();
+ if(reply?.resultat==='contre_offre')await reopen('talks-dialog',payload.joueur_id,menu);
 }
 // An own player goes on the transfer list, or is offered to every club: their offers come back at once in a dialog.
-async function sell(kind,payload){
+async function sell(kind,payload,menu){
  if(polling||submitting)return;
  submitting=true;busyButtons();
  let reply=null;
@@ -156,7 +160,7 @@ async function sell(kind,payload){
  }
  catch(error){toast(error.message,true);}
  finally{submitting=false;await render();}
- if(reply?.proposees)main.querySelector('#offers-dialog')?.showModal();
+ if(reply?.proposees)await reopen('offers-dialog',payload.joueur_id,menu);
 }
 // The club names its own price for an offer: the buyer takes it and the player is sold, or takes it as a refusal.
 async function counterOffer(payload){
@@ -317,14 +321,15 @@ document.querySelector('#advance-todo').addEventListener('click',()=>{const firs
 document.querySelector('#simulate').addEventListener('click',()=>{if(state.awaiting_lineup&&onCompositionScreen())simulateMatch();});
 // A new filter starts again from the first page, with the same sort.
 function applyFilter(form){const values={...Object.fromEntries(new FormData(form)),...Object.fromEntries(viewParams(routeParts().params))};Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
-main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element);if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
- else if(element.id==='talks-form'){
+main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element),inMenu=Boolean(element.closest('#player-menu'));if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
+ // The form of the talks, on a page or in a player's menu (`data-kind`: what is being agreed).
+ else if(element.dataset.kind){
   // Accepting a counter-offer sends it as is (euros, or the weekly wage); the field is typed in M€ or €/month.
   const kind=element.dataset.kind,accepted=event.submitter?.name==='accepter',typed=Number(data.get('montant'));
   const amount=accepted?Number(event.submitter.value):kind==='salaire'?weeklyFromMonthly(typed):Math.round(typed*1e6);
-  await negotiate(kind,{joueur_id:Number(data.get('joueur_id')),[kind==='salaire'?'salaire_hebdo':'indemnite']:amount});
+  await negotiate(kind,{joueur_id:Number(data.get('joueur_id')),[kind==='salaire'?'salaire_hebdo':'indemnite']:amount},inMenu);
  }
- else if(element.dataset.sale)await sell(element.dataset.sale,{joueur_id:Number(data.get('joueur_id')),indemnite:Math.round(Number(data.get('montant'))*1e6)});
+ else if(element.dataset.sale)await sell(element.dataset.sale,{joueur_id:Number(data.get('joueur_id')),indemnite:Math.round(Number(data.get('montant'))*1e6)},inMenu);
  else if(element.dataset.counter)await counterOffer({offre_id:element.dataset.counter,indemnite:Math.round(Number(data.get('montant'))*1e6)});
  else if(element.dataset.loan==='preter')await action('/partie/preter',{joueur_id:Number(data.get('joueur_id')),club_id:Number(data.get('club_id')),duree:data.get('duree')},'Joueur prêté.');
  else if(element.dataset.loan==='emprunter')await action('/partie/emprunter',{joueur_id:Number(data.get('joueur_id')),duree:data.get('duree')},'Joueur emprunté.');
@@ -347,6 +352,8 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
 // Player actions open in a dialog kept inside the page, so each re-render closes it.
 main.addEventListener('click',event=>{const opener=event.target.closest('[data-open-dialog]');if(opener){main.querySelector(`#${opener.dataset.openDialog}`)?.showModal();return;}const closer=event.target.closest('[data-close-dialog]');if(closer)closer.closest('dialog')?.close();});
+// A right click on a player opens his menu (player-menu.js); its commands wait like the page's while the game is busy.
+main.addEventListener('contextmenu',async event=>{if(await openPlayerMenu(event,main,state))busyButtons();});
 // Actualités: Tout lire marks the whole feed as read.
 main.addEventListener('click',async event=>{
  if(!event.target.closest('[data-news-read]'))return;

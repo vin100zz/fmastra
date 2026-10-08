@@ -278,6 +278,91 @@
 </div>
 </section>
 
+<section class="spec" style="grid-column: span 12">
+<h2>Menu d’un joueur</h2>
+<div class="spec-row">
+<div class="spec-group"><span class="label">.menu · un joueur du club dirigé</span>
+<div class="menu" role="menu" aria-label="Un joueur du club dirigé">
+<button type="button" role="menuitem">Envoyer en réserve</button>
+<button type="button" role="menuitem" class="hover">Prêter</button>
+<hr>
+<button type="button" role="menuitem">Proposer un contrat</button>
+<hr>
+<button type="button" role="menuitem">Mettre sur la liste</button>
+<button type="button" role="menuitem">Proposer aux clubs</button>
+<button type="button" role="menuitem">Déclarer intransférable</button>
+</div>
+</div>
+<div class="spec-group"><span class="label">Où en est une action · à droite, atténué</span>
+<div class="menu" role="menu" aria-label="Où en est une action">
+<button type="button" role="menuitem">Rappeler en équipe première</button>
+<button type="button" role="menuitem">Prêter</button>
+<hr>
+<button type="button" role="menuitem">Proposer un contrat<span>En attente</span></button>
+<hr>
+<button type="button" role="menuitem">Offres reçues<span>2</span></button>
+<button type="button" role="menuitem">Retirer de la liste<span>45 M€</span></button>
+<button type="button" role="menuitem">Proposer aux clubs</button>
+<button type="button" role="menuitem">Rendre transférable</button>
+</div>
+</div>
+<div class="spec-group"><span class="label">Action impossible · grisée, sa raison en infobulle</span>
+<div class="menu" role="menu" aria-label="Action impossible">
+<button type="button" role="menuitem">Envoyer en réserve</button>
+<button type="button" role="menuitem" aria-disabled="true">Prêter</button>
+<hr>
+<button type="button" role="menuitem">Proposer un contrat</button>
+<hr>
+<button type="button" role="menuitem">Mettre sur la liste</button>
+<button type="button" role="menuitem" aria-disabled="true">Proposer aux clubs</button>
+<button type="button" role="menuitem">Déclarer intransférable</button>
+<span class="menu-tip" style="top: -2px"><span class="tooltip" role="tooltip">Le mercato est fermé.</span></span>
+</div>
+</div>
+<div class="spec-group"><span class="label">Sur Composition · la composition d’abord</span>
+<div class="menu" role="menu" aria-label="Sur Composition">
+<button type="button" role="menuitem">Sortir de la composition</button>
+<hr>
+<button type="button" role="menuitem">Envoyer en réserve</button>
+<button type="button" role="menuitem">Prêter</button>
+<hr>
+<button type="button" role="menuitem">Proposer un contrat</button>
+<hr>
+<button type="button" role="menuitem">Mettre sur la liste</button>
+<button type="button" role="menuitem">Proposer aux clubs</button>
+<button type="button" role="menuitem">Déclarer intransférable</button>
+</div>
+</div>
+<div class="column" style="gap: 16px">
+<div class="spec-group"><span class="label">Un joueur d’un autre club</span>
+<div class="menu" role="menu" aria-label="Un joueur d’un autre club">
+<button type="button" role="menuitem">Faire une offre<span>Contre-offre · 62 M€</span></button>
+<button type="button" role="menuitem">Emprunter</button>
+</div>
+</div>
+<div class="spec-group"><span class="label">Un joueur libre</span>
+<div class="menu" role="menu" aria-label="Un joueur libre">
+<button type="button" role="menuitem">Proposer un contrat</button>
+</div>
+</div>
+<div class="spec-group"><span class="label">Rien à décider · son état seul</span>
+<div class="menu" role="menu" aria-label="Rien à décider">
+<p>Prêté à Lorient · retour le 30 juin 2026</p>
+</div>
+</div>
+</div>
+<div class="spec-group" style="flex: 0 0 100%">
+<div class="spec-line"><span class="token">Ouverture</span><span class="value">clic droit sur un joueur : son nom, sa ligne dans une liste, son maillot sur un terrain</span></div>
+<div class="spec-line"><span class="token">Place</span><span class="value">au pointeur, vers la droite et le bas ; vers la gauche ou le haut faute de place</span></div>
+<div class="spec-line"><span class="token">Ligne</span><span class="value">26, en 13 / 18 ; 216 de large au moins ; sous le pointeur, --panel-3 (Prêter)</span></div>
+<div class="spec-line"><span class="token">Groupes</span><span class="value">un trait --row-line entre deux : effectif, contrat, vente ; offre et prêt pour un autre club</span></div>
+<div class="spec-line"><span class="token">Libellés</span><span class="value">ceux de la fiche du joueur, sans icône ni en-tête</span></div>
+<div class="spec-line"><span class="token">Cible</span><span class="value">sa ligne ou son nom gardent l’état « sous le pointeur » tant que le menu est ouvert</span></div>
+<div class="spec-line"><span class="token">Fermeture</span><span class="value">un choix, un clic ailleurs, Échap, un défilement</span></div>
+</div>
+</div>
+</section>
+
 </div>
 </div>
 
