@@ -8,7 +8,7 @@ from .finances import book_cash, book_daily_cash
 from .human import record as add_news, report
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
-                     FinancePosted, BudgetRenewed, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
+                     FinancePosted, BudgetRenewed, BudgetShifted, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
                      OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded)
 
 
@@ -123,9 +123,21 @@ def apply(world: World, event: WorldEvent) -> bool:
     elif isinstance(event, BudgetRenewed):
         club = world.clubs[event.club_id]
         club.income, club.wage_cap, club.transfer_budget = event.income, event.wage_cap, event.transfer_budget
+        club.wage_shift = event.wage_shift
         if event.funding_factor is not None: club.funding_factor = event.funding_factor
         club.previous_rank = event.rank
         club.season_spent = club.season_sales = 0
+    elif isinstance(event, BudgetShifted):
+        club = world.clubs[event.club_id]
+        moved = event.weekly * world.config.management.budgets.weeks_per_year
+        reserved = [offer for offer in world.offers.values() if offer.target_id == club.id]
+        # Each side gives what it has free: the cap stays over the wages paid and reserved, the budget over the fees reserved.
+        if event.weekly < 0 and club.wage_cap + event.weekly < club.wage_bill + sum(offer.contract.weekly_wage for offer in reserved): return False
+        if event.weekly > 0 and club.transfer_budget - moved < sum(offer.ceiling for offer in reserved): return False
+        # A share between two budgets: no cash moves.
+        club.wage_cap += event.weekly
+        club.transfer_budget -= moved
+        club.wage_shift += event.weekly
     elif isinstance(event, ReputationRevised):
         world.clubs[event.club_id].reputation = event.reputation
     elif isinstance(event, DivisionsChanged):

@@ -1,5 +1,5 @@
 import {escape as e,money,price,date,card,empty,sortableTable,playerLink} from './ui.js';
-import {monthlySalary,monthlyAmount} from './salaries.js';
+import {monthlySalary,monthlyAmount,yearlyAmount,weeklyFromMonthly} from './salaries.js';
 import {seasonNavigation} from './club-history.js';
 
 const euros=price;
@@ -81,17 +81,69 @@ function salariesCard(squad){
 // A key figure of the tab: its label, its amount and a line or a bar under it.
 const figure=(label,value,extra='',modifier='')=>`<div class="finance-figure${modifier?` ${modifier}`:''}"><span>${label}</span><strong>${value}</strong>${extra}</div>`;
 
-// The Finances tab: four key figures, the cash month by month, the best-paid players, the money in and out each month and where
-// it came from and went to; the journal of every entry stays folded under them. The season arrows change all but the key figures.
+// The share of a club's means between its transfer budget and its wage cap, for a weekly wage cap of `cap` (the one it has, by
+// default): the budget left free, the part of the cap its wages take, and the parts of the bar on either side of the handle, in
+// euros of a season. `moved` is what that cap takes from the budget; negative, what it gives back.
+export function budgetShare(data,cap=data.wage_cap){
+ const moved=yearlyAmount(cap-data.wage_cap),held=data.reserved_transfer_budget||0,wagesHeld=yearlyAmount(data.reserved_wages),bill=yearlyAmount(data.wage_bill);
+ const free=Math.max(0,data.transfer_budget-held),room=Math.max(0,yearlyAmount(data.wage_cap)-bill-wagesHeld);
+ const used=Math.round(100*(bill+wagesHeld)/Math.max(1,yearlyAmount(cap)));
+ return {cap,moved,free:free-moved,used,
+  // What is committed stands at the two ends; what the handle has just given a side stands against it.
+  budget:[['held',held],['',free-Math.max(0,moved)],['',Math.max(0,-moved)]],
+  wages:[['',Math.max(0,moved)],['',room-Math.max(0,-moved)],['held',wagesHeld],[used>=95?'held full':'held',bill]]};
+}
+// A round step for the handle: the monthly amount three pixels of its bar are worth, raised to 1, 2 or 5 times a power of ten.
+export function shareStep(total,width){
+ const raw=Math.max(1,total/12/Math.max(1,width)*3),power=10**Math.floor(Math.log10(raw));
+ return [1,2,5,10].map(base=>base*power).find(value=>value>=raw);
+}
+// The weekly wage cap the handle stands on where `wanted` is asked: the nearest round monthly amount, the cap the club has when
+// it is back within half a step of it, and nothing the club cannot set.
+export function snapCap(data,wanted,step){
+ const [lowest,highest]=data.wage_cap_range,monthly=weekly=>yearlyAmount(weekly)/12;
+ const cap=Math.abs(monthly(wanted)-monthly(data.wage_cap))<step/2?data.wage_cap:weeklyFromMonthly(Math.round(monthly(wanted)/step)*step);
+ return Math.min(highest,Math.max(lowest,cap));
+}
+// The wage cap of a handle dragged `dx` pixels along the free part of a bar `width` wide: to the left, the cap takes from the budget.
+export function draggedCap(data,dx,width){
+ const total=data.transfer_budget+yearlyAmount(data.wage_cap);
+ return snapCap(data,data.wage_cap-dx/Math.max(1,width)*total/yearlyAmount(1),shareStep(total,width));
+}
+// The wage cap one step of the arrow keys away from `cap`: `direction` 1 towards wages, -1 towards transfers.
+export function steppedCap(data,cap,direction,width){
+ const step=shareStep(data.transfer_budget+yearlyAmount(data.wage_cap),width);
+ return snapCap(data,cap+direction*step*12/yearlyAmount(1),step);
+}
+const HANDLE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg>';
+const signedPrice=value=>value>0?`+${price(value)}`:`−${price(-value)}`;
+// What the block of the share holds for a wage cap of `cap`: each envelope named at its end with its figure, and what it gains
+// or gives up beside it when the cap is not the club's own; the bar, with its handle for the club the user runs (`dragged`
+// while he holds it); under the bar, what each end has committed.
+export function shareContent(data,cap=data.wage_cap,dragged=false){
+ const share=budgetShare(data,cap),delta=value=>share.moved?`<em>${signedPrice(value)}</em>`:'';
+ const parts=(side,list)=>list.map(([kind,value])=>value>0?`<i class="${side}${kind?` ${kind}`:''}" style="flex-grow:${value}"></i>`:'').join('');
+ const handle=data.wage_cap_range?`<button type="button" class="balance-handle${dragged?' dragged':''}" data-command="budgets" aria-label="Déplacer la répartition entre budget de transferts et plafond salarial">${HANDLE}</button>`:'';
+ return `<div class="balance-end"><span>Budget transferts</span><strong>${price(share.free)}${delta(-share.moved)}</strong></div>`
+  +`<div class="balance-end right"><span>Plafond salarial</span><strong>${delta(share.moved/12)}${price(yearlyAmount(cap)/12)}</strong></div>`
+  +`<div class="balance-bar">${parts('budget',share.budget)}${handle}${parts('wages',share.wages)}</div>`
+  +(data.reserved_transfer_budget?`<small class="balance-note"><b>${money(data.reserved_transfer_budget)}</b> réservés aux offres en cours</small>`:'')
+  +`<small class="balance-note right">Masse salariale <b>${price(yearlyAmount(data.wage_bill)/12)}</b>${data.reserved_wages?` + <b>${price(yearlyAmount(data.reserved_wages)/12)}</b> réservés`:''} · <b>${share.used} %</b></small>`;
+}
+// The block itself, over two of the four columns of the key figures; it carries what its handle needs to move (budget-share.js).
+const SHARE_FIELDS=['transfer_budget','reserved_transfer_budget','wage_bill','wage_cap','reserved_wages','wage_cap_range'];
+const shareBlock=data=>`<section class="finance-figure balance" aria-label="Répartition des budgets"${data.wage_cap_range?` data-share="${e(JSON.stringify(Object.fromEntries(SHARE_FIELDS.map(name=>[name,data[name]]))))}"`:''}>${shareContent(data)}</section>`;
+
+// The Finances tab: the share of the budgets and two key figures, the cash month by month, the best-paid players, the money in
+// and out each month and where it came from and went to; the journal of every entry stays folded under them. The season arrows
+// change all but the key figures.
 export function financesContent(club,data,squad){
- const history=data.history,reserved=data.reserved_transfer_budget,free=Math.max(0,data.transfer_budget-reserved);
- const used=Math.round(100*data.wage_bill/Math.max(1,data.wage_cap)),balance=data.season_sales-data.season_spent;
+ const history=data.history,balance=data.season_sales-data.season_spent;
  // The cash gained since the season opened reads against the accounts of the season under way only.
  const opening=history.available&&history.next_season==null?history.opening_balance:null;
  const figures=`<div class="finance-figures">`
-  +figure('Budget transferts',money(free),reserved?`<span class="split-bar thin"><i class="revenue" style="flex:${free} 1 0"></i><i class="revenue-soft" style="flex:${reserved} 1 0"></i></span><small>${money(reserved)} réservés aux offres en cours</small>`:'')
+  +shareBlock(data)
   +figure('Trésorerie',money(data.balance),opening!=null?`<small><b class="${data.balance>=opening?'good':'bad'}">${signedMoney(data.balance-opening)}</b> depuis l’ouverture de la saison</small>`:'')
-  +figure('Masse salariale',money(monthlyAmount(data.wage_bill)),`<span class="wage-gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial"><i style="width:${Math.min(100,used)}%"></i><b></b></span><small><b>${used} %</b> du plafond de ${money(monthlyAmount(data.wage_cap))}</small>`)
   +figure('Balance des transferts',signedMoney(balance),`<small>Achats <b>${money(data.season_spent)}</b> · Ventes <b>${money(data.season_sales)}</b></small>`,balance>0?'good':balance<0?'bad':'')
   +`</div>`;
  const nav=seasonNavigation(history,true);

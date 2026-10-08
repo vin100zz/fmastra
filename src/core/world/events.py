@@ -85,6 +85,15 @@ class BudgetRenewed:
     transfer_budget: int
     rank: int | None
     funding_factor: float | None = None
+    # What the club keeps of the share it chose between its two budgets, already counted in `wage_cap` and `transfer_budget`.
+    wage_shift: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class BudgetShifted:
+    """Weekly wages a club moves from its transfer budget to its wage cap; negative, from the cap to the budget."""
+    club_id: int
+    weekly: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,4 +137,4 @@ class RenewalProposed:
     proposal: RenewalProposal
 
 
-WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | ReserveChanged | LoanStarted | LoanEnded | FinancePosted | BudgetRenewed | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed
+WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | ReserveChanged | LoanStarted | LoanEnded | FinancePosted | BudgetRenewed | BudgetShifted | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed

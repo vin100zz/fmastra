@@ -160,16 +160,40 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 #own-club .kit-dot{width:16px;height:16px;border-radius:50%}
 .nation .flag,.flag{border-radius:0}
 .morale-cause{width:var(--h-chip);height:var(--h-chip);font-size:var(--fs-micro)}
-.fitness,.meter,.mini-bar,.gauge,.fatigue-bar,.force-bar,.wage-gauge{height:4px;border-radius:2px}
+.fitness,.meter,.mini-bar,.gauge,.fatigue-bar,.force-bar{height:4px;border-radius:2px}
 .news-ring circle{stroke-width:6}
 
 /* Figures: the label over the figure, at 20 px. */
 .stat-card{padding:6px var(--s3)}
-.stat-card .label,.tile span,.club-hero-tile span,.finance-figure>span,.news-figure span,.scout-facts span,.movement-balance span,.movement-record span{font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-.stat-card strong,.tile strong,.preview .tile strong,.club-hero-tile strong,.finance-figure>strong,.news-figure strong,.news-figure.ring strong,.scout-facts strong,.movement-balance strong,.movement-record>strong,.honours-list strong,.finance-split p strong,.news-title .tile strong,.side-inner .stat-card strong,.league-tiles .stat-card strong{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-title);font-weight:700;line-height:24px;letter-spacing:0}
+.stat-card .label,.tile span,.club-hero-tile span,.finance-figure>span,.balance-end>span,.news-figure span,.scout-facts span,.movement-balance span,.movement-record span{font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+.stat-card strong,.tile strong,.preview .tile strong,.club-hero-tile strong,.finance-figure>strong,.balance-end>strong,.news-figure strong,.news-figure.ring strong,.scout-facts strong,.movement-balance strong,.movement-record>strong,.honours-list strong,.finance-split p strong,.news-title .tile strong,.side-inner .stat-card strong,.league-tiles .stat-card strong{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-title);font-weight:700;line-height:24px;letter-spacing:0}
 .stat-card strong{margin:2px 0 0}
 .finance-figure{gap:2px;padding:var(--s2) var(--s3);border-radius:var(--radius)}
 .finance-figure>strong em{font-size:var(--fs-small)}
+/* A share that moves (.balance): two envelopes on one bar, each named at its end with its figure. What is committed is in
+   the full colour, at the two ends; what is free is in the pale one, and the handle stands where the two free parts meet:
+   it stops at what is committed. While it is held, it carries the accent and each figure shows what it gains or gives up;
+   the share is set when it is let go. Under the bar, what each end has committed. */
+.finance-figure.balance{display:grid;grid-column:span 2;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s1) var(--s3);align-items:center}
+.balance-end{display:flex;flex-direction:column;gap:2px;min-width:0}
+.balance-end.right{align-items:flex-end}
+.balance-end>strong{display:flex;align-items:baseline;gap:6px;color:var(--strong);white-space:nowrap}
+.balance-end em{font:600 var(--fs-small)/1 var(--text);font-style:normal;color:var(--muted)}
+.balance-bar{grid-column:1/-1;display:flex;align-items:center;gap:2px;height:var(--h-control-small)}
+.balance-bar>i{flex:0 1 0;min-width:0;height:8px}
+.balance-bar>i:first-child{border-radius:4px 0 0 4px}
+.balance-bar>i:last-child{border-radius:0 4px 4px 0}
+.balance-bar>.budget{background:var(--series-1-soft)}
+.balance-bar>.budget.held{background:var(--series-1)}
+.balance-bar>.wages{background:var(--series-2-soft)}
+.balance-bar>.wages.held{background:var(--series-2)}
+.balance-bar>.wages.held.full{background:var(--bad)}
+.balance-handle{display:grid;place-items:center;flex:none;width:var(--h-control-small);height:var(--h-control-small);padding:0;cursor:ew-resize;touch-action:none}
+.balance-handle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.balance-handle.dragged{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+.balance .balance-note{font-size:var(--fs-small);line-height:14px;color:var(--muted);white-space:nowrap}
+.balance .balance-note.right{grid-column:2;text-align:right}
+.balance .balance-note b{font-weight:600;color:var(--strong)}
 .tile{border-radius:var(--radius)}
 
 /* A club's header: an 88 px band in its colours, its tabs under it. */

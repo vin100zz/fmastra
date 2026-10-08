@@ -19,6 +19,7 @@ import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
 import {initSearch} from './search.js';
 import {openPlayerMenu,showPlayerDialog} from './player-menu.js';
+import {initBudgetShare} from './budget-share.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
@@ -352,6 +353,8 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
 // Player actions open in a dialog kept inside the page, so each re-render closes it.
 main.addEventListener('click',event=>{const opener=event.target.closest('[data-open-dialog]');if(opener){main.querySelector(`#${opener.dataset.openDialog}`)?.showModal();return;}const closer=event.target.closest('[data-close-dialog]');if(closer)closer.closest('dialog')?.close();});
+// The handle of the budgets' share, on the Finances tab of the user's club, sets the wage cap it is let go on.
+initBudgetShare(main,cap=>action('/partie/budgets',{plafond_hebdo:cap}));
 // A right click on a player opens his menu (player-menu.js); its commands wait like the page's while the game is busy.
 main.addEventListener('contextmenu',async event=>{if(await openPlayerMenu(event,main,state))busyButtons();});
 // Actualités: Tout lire marks the whole feed as read.

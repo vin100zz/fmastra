@@ -16,6 +16,7 @@ from .contracts import expiry_events, renewal_events
 from .demography import retirement_events, cohort_events
 from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
 from .finances import structural_income, annual_funding_factor
+from .budgets import carried_shift
 from .human import is_human_club, pending_lineup_match
 from .news import daily_notices, morale_alerts, morale_levels
 from .player_states import daily_player_events, monthly_player_events, match_event
@@ -91,9 +92,12 @@ def annual_review(world: World) -> None:
             missing = max(0, guard.min_squad - len(club.player_ids),
                           guard.min_goalkeepers - sum(world.players[pid].position == "GB" for pid in club.player_ids))
             minimum_wages += missing * cfg.demography.academies.base_weekly_wage
-        cap = max(minimum_wages, round(income * rules.wage_income_share / rules.weeks_per_year))
+        cap = round(income * rules.wage_income_share / rules.weeks_per_year)
         budget = max(0, round(income * rules.transfer_income_share + club.balance * rules.transfer_balance_share))
-        apply(world, BudgetRenewed(club.id, income, cap, budget, rank, funding_factor))
+        # The share the club chose between its two budgets is paid again, as far as the new ones allow.
+        shift = carried_shift(club.wage_shift, cap, budget, minimum_wages, rules.weeks_per_year)
+        apply(world, BudgetRenewed(club.id, income, max(minimum_wages, cap + shift), budget - shift * rules.weeks_per_year, rank,
+                                   funding_factor, shift))
     matches = season_fixtures(world, world.date.year)
     apply(world, SeasonOpened(world.date.year, matches, champions))
     complete_squads(world, list(incoming))

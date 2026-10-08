@@ -60,8 +60,11 @@
 <div class="sw"><i style="background: var(--pitch-b)"></i><span class="token">--pitch-b</span><span class="value">#429c5f</span></div>
 <div class="sw"><i style="background: var(--pitch-a); box-shadow: inset 0 0 0 10px var(--pitch-a), inset 0 0 0 12px var(--pitch-line)"></i><span class="token">--pitch-line</span><span class="value">blanc à 70 %</span></div>
 </div></div>
-<div class="spec-group"><span class="label">Courbe</span><div class="spec-line">
+<div class="spec-group"><span class="label">Séries</span><div class="spec-line">
 <div class="sw"><i style="background: var(--series-1)"></i><span class="token">--series-1</span><span class="value">#2a78d6</span></div>
+<div class="sw"><i style="background: var(--series-1-soft)"></i><span class="token">--series-1-soft</span><span class="value">#9ec5f4</span></div>
+<div class="sw"><i style="background: var(--series-2)"></i><span class="token">--series-2</span><span class="value">#eb6834</span></div>
+<div class="sw"><i style="background: var(--series-2-soft)"></i><span class="token">--series-2-soft</span><span class="value">#f6ae8f</span></div>
 </div></div>
 </div>
 </section>
@@ -719,6 +722,44 @@
 <span><span class="token">Étage</span> <span class="value">un par division, la plus haute en haut, son nom à gauche ; 192 pour une division, 64 de plus par division, 24 entre deux</span></span>
 <span><span class="token">Places</span> <span class="value">Europe en --info-soft · montée en --good-soft · relégation en --bad-soft ; leur nom à droite, en --muted</span></span>
 <span><span class="token">Saison hors championnat</span> <span class="value">sa place reste vide sur l’axe, le trait s’interrompt</span></span>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 5">
+<h2>Répartition réglable · .balance</h2>
+<div class="spec-group">
+<section class="balance" aria-label="Répartition des budgets, au repos">
+<div class="balance-end"><span class="label">Budget transferts</span><span class="figure">203 M€</span></div>
+<div class="balance-end right"><span class="label">Plafond salarial</span><span class="figure">4.29 M€</span></div>
+<div class="balance-bar"><i class="budget" style="flex-grow: 202.53"></i><button type="button" class="button small square balance-handle" aria-label="Déplacer la répartition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"></path></svg></button><i class="wages" style="flex-grow: 2.88"></i><i class="wages held" style="flex-grow: 48.65"></i></div>
+<span class="balance-note right">Masse salariale <b>4.05 M€</b> · <b>94 %</b></span>
+</section>
+<section class="balance" aria-label="Répartition des budgets, poignée tenue">
+<div class="balance-end"><span class="label">Budget transferts</span><span class="figure">167 M€<em>−36 M€</em></span></div>
+<div class="balance-end right"><span class="label">Plafond salarial</span><span class="figure"><em>+3 M€</em>7.29 M€</span></div>
+<div class="balance-bar"><i class="budget" style="flex-grow: 166.53"></i><button type="button" class="button small square balance-handle dragged" aria-label="Déplacer la répartition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"></path></svg></button><i class="wages" style="flex-grow: 36"></i><i class="wages" style="flex-grow: 2.88"></i><i class="wages held" style="flex-grow: 48.65"></i></div>
+<span class="balance-note right">Masse salariale <b>4.05 M€</b> · <b>56 %</b></span>
+</section>
+<section class="balance" aria-label="Répartition des budgets, une offre en cours">
+<div class="balance-end"><span class="label">Budget transferts</span><span class="figure">107 M€</span></div>
+<div class="balance-end right"><span class="label">Plafond salarial</span><span class="figure">7.29 M€</span></div>
+<div class="balance-bar"><i class="budget held" style="flex-grow: 60"></i><i class="budget" style="flex-grow: 106.53"></i><button type="button" class="button small square balance-handle" aria-label="Déplacer la répartition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"></path></svg></button><i class="wages" style="flex-grow: 13.92"></i><i class="wages held" style="flex-grow: 24.96"></i><i class="wages held" style="flex-grow: 48.65"></i></div>
+<span class="balance-note"><b>60 M€</b> réservés aux offres en cours</span>
+<span class="balance-note right">Masse salariale <b>4.05 M€</b> + <b>2.08 M€</b> réservés · <b>84 %</b></span>
+</section>
+<section class="balance" aria-label="Répartition des budgets, en butée sur la masse salariale">
+<div class="balance-end"><span class="label">Budget transferts</span><span class="figure">205 M€<em>+2.88 M€</em></span></div>
+<div class="balance-end right"><span class="label">Plafond salarial</span><span class="figure"><em>−240 k€</em>4.05 M€</span></div>
+<div class="balance-bar"><i class="budget" style="flex-grow: 202.53"></i><i class="budget" style="flex-grow: 2.88"></i><button type="button" class="button small square balance-handle dragged" aria-label="Déplacer la répartition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"></path></svg></button><i class="wages held full" style="flex-grow: 48.65"></i></div>
+<span class="balance-note right">Masse salariale <b>4.05 M€</b> · <b>100 %</b></span>
+</section>
+</div>
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Barre</span> <span class="value">8 de haut, bouts arrondis de 4, 2 de fond entre deux parts ; chaque part à la mesure de son montant sur une saison</span></span>
+<span><span class="token">Plein, pâle</span> <span class="value">ce qui est engagé, aux deux bouts · ce qui est libre, de part et d’autre de la poignée</span></span>
+<span><span class="token">Poignée</span> <span class="value">un bouton carré de 22, à la rencontre des deux parts libres ; elle s’arrête sur ce qui est engagé</span></span>
+<span><span class="token">Tenue</span> <span class="value">le trait de l’accent sous la poignée, et à côté de chaque chiffre ce qu’il gagne ou cède ; lâchée, la part est fixée</span></span>
+<span><span class="token">Rouge</span> <span class="value">la part engagée d’un plafond, à partir de 95 %</span></span>
 </div>
 </section>
 

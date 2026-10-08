@@ -394,9 +394,13 @@ def club_detail(world: World, club_id: int, standings: dict | None = None, reser
 
 def finance_summary(world: World, club_id: int) -> dict:
     club = world.clubs[club_id]
-    data = {name: getattr(club, name) for name in ("balance", "income", "transfer_budget", "wage_bill", "wage_cap", "season_spent", "season_sales")}
+    from core.world.budgets import cap_range
+    from core.world.human import is_human_club
+    data = {name: getattr(club, name) for name in ("balance", "income", "transfer_budget", "wage_bill", "wage_cap", "wage_shift", "season_spent", "season_sales")}
     data["reserved_transfer_budget"] = sum(offer.ceiling for offer in world.offers.values() if offer.target_id == club_id)
     data["reserved_wages"] = sum(offer.contract.weekly_wage for offer in world.offers.values() if offer.target_id == club_id)
+    # The wage caps the human club can set by moving its budgets, lowest and highest (weekly, like every wage of the API).
+    data["wage_cap_range"] = list(cap_range(world, club)) if is_human_club(world, club_id) else None
     return data
 
 

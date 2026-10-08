@@ -145,6 +145,19 @@ vente déjà inscrite au solde ne doit pas être ajoutée une seconde fois lors 
 recalcul en cours de saison : conserver une enveloppe de début de saison et
 son journal de mouvements.
 
+Répartition des budgets (`core.world.budgets`) : un club peut déplacer ce qu'il
+a de libre entre son budget de transferts et son plafond salarial. Un euro de
+plafond hebdomadaire vaut `semaines_par_an` euros de budget, soit une saison de
+ce salaire ; aucune trésorerie ne bouge. Le plafond reste au-dessus de la masse
+salariale et des salaires réservés par les offres en cours, le budget au-dessus
+des indemnités qu'elles réservent. L'écart choisi est gardé sur le club
+(`wage_shift`, hebdomadaire, positif vers les salaires) et reconduit au bilan
+annuel : vers les salaires, dans la limite de ce que le nouveau budget paie ;
+vers les transferts, dans la limite de ce que le nouveau plafond laisse
+au-dessus des salaires à honorer. Seul le club de l'utilisateur s'en sert
+(`POST /api/partie/budgets`) ; l'IA garde un écart nul, et son bilan annuel est
+inchangé.
+
 Toute signature doit respecter simultanément plafond salarial, enveloppe de
 transfert, solde minimal, effectif maximal et gardiens requis du vendeur. Les
 transferts déplacent réellement de l'argent entre clubs. Les agents libres ne

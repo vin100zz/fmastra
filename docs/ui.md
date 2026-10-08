@@ -275,7 +275,7 @@ ou `negociation`) : le menu dit toujours l'état du jour.
 | Effectif | la liste triable à gauche (poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200), les widgets du club à droite |
 | Composition | le terrain du club dirigé, la liste de l'effectif et l'adversaire (voir « Composition ») |
 | Calendrier | une ligne par match de la saison, buteurs compris, et le bilan de chaque compétition |
-| Finances | quatre chiffres clés, la trésorerie et les flux du mois en graphiques, les salaires, la répartition, le journal replié |
+| Finances | la répartition des budgets et deux chiffres clés, la trésorerie et les flux du mois en graphiques, les salaires, la répartition, le journal replié |
 | Transferts | le mercato en cours (club dirigé), le bilan de la saison, ses arrivées et ses départs |
 | Historique | le classement et la réputation de chaque saison en graphiques, le palmarès, une ligne par saison terminée, les leaders et les plus gros transferts |
 
@@ -323,16 +323,25 @@ bilan de chaque compétition : la place (rang en championnat ou en phase de ligu
 jouer, le tour de l'élimination ou « Vainqueur »), les matches, victoires, nuls et défaites en barre,
 les buts marqués et encaissés ; une compétition pas encore jouée ne donne que sa place.
 
-**Finances.** Quatre chiffres : le budget de transferts disponible avec la part réservée aux offres
-en cours, la trésorerie et ce qu'elle a gagné depuis l'ouverture de la saison en cours, la masse
-salariale mensuelle avec sa jauge sur le plafond (repère à 95 %), la balance des transferts de la
-saison (achats, ventes). Dessous, la trésorerie à la fin de chaque mois sur les douze mois de la
+**Finances.** En tête, sur une ligne : la répartition des budgets, sur la moitié de la largeur, puis
+deux chiffres : la trésorerie et ce qu'elle a gagné depuis l'ouverture de la saison en cours, la
+balance des transferts de la saison (achats, ventes). La répartition (`.balance` de la charte) met
+sur une même barre le budget de transferts disponible, à gauche, et le plafond salarial mensuel, à
+droite, chaque part à la mesure de son montant sur une saison : en plein ce qui est engagé (les
+indemnités réservées aux offres en cours, la masse salariale et les salaires réservés), en pâle ce qui
+est libre. Sous la barre, la part réservée aux offres et la masse salariale avec sa part du plafond ;
+la masse salariale passe au rouge à partir de 95 %. Dans le club de l'utilisateur, une poignée sépare
+les deux parts libres : glissée, ou déplacée aux flèches gauche et droite, elle montre le budget et
+le plafond qu'elle donnerait, avec ce que chacun gagne ou cède ; lâchée, elle les fixe
+(`POST /api/partie/budgets`), sans confirmation. Elle s'arrête sur ce qui est engagé et se pose sur
+des plafonds ronds, ou sur celui d'où elle est partie. Les montants de la répartition ont trois
+chiffres significatifs. Dessous, la trésorerie à la fin de chaque mois sur les douze mois de la
 saison, la plus grosse vente et le plus gros achat nommés sur leur mois ; les dix plus gros salaires
 mensuels de l'effectif (hors joueurs prêtés), les autres additionnés ; les revenus et les dépenses
 de chaque mois côte à côte ; la répartition des revenus (structurels, ventes) et des dépenses
 (salaires, achats, fonctionnement), les régularisations d'arrondi masquées sous 1 % ; enfin le
 journal financier, replié. Les flèches de saison, dans la carte de la trésorerie, changent tout sauf
-les quatre chiffres.
+la ligne de tête.
 
 **Transferts.** Pour le club dirigé, le mercato en cours sur quatre colonnes : les offres reçues
 regroupées par joueur (avec sa valeur), chacune avec « Accepter » / « Refuser » ; ses offres et où en
@@ -950,6 +959,10 @@ GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste,
 GET  /api/clubs/{id}/calendrier           tous les matches de la saison, chacun avec scorers et outcome (V/N/D du côté du club, null à venir) ;
                                           competitions : {id, name, kind, code, place, played, won, drawn, lost, goals_for, goals_against}
 GET  /api/clubs/{id}/finances?saison=     résumé + history (journal de la saison ; months : {date, revenue, expenses, balance} en fin de mois)
+                                          résumé : balance, income, transfer_budget, reserved_transfer_budget, wage_bill, wage_cap, reserved_wages,
+                                          wage_shift (salaires passés du budget au plafond), season_spent, season_sales, et pour le club de
+                                          l'utilisateur wage_cap_range : [plafond le plus bas, le plus haut] qu'il peut fixer (null ailleurs) ; salaires hebdomadaires
+POST /api/partie/budgets                  {commande_id, plafond_hebdo} ; déplace les budgets du club pour ce plafond salarial -> le résumé des finances
 GET  /api/clubs/{id}/transferts?saison=
 GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, division et son niveau, réputation, coupe, Europe) + honours {league : titres par division [{competition, level, count}], cup, europe, best_rank, best_europe} + leagues : les divisions de ces saisons et celle d'aujourd'hui {id, name, level, clubs, europe, promotion, relegation}
                                           + league {clubs, europe, relegation, level} (championnat actuel) + leaders {matches, goals} + transfers {arrivals, departures} (avec season)

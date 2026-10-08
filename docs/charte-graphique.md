@@ -55,7 +55,7 @@ la structure HTML des spécimens.
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
-| `--series-1` | Le trait et les points d'une courbe |
+| `--series-1`, `--series-2` et leur `-soft` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre |
 
 Trois familles de pastilles ne se ressemblent jamais :
 
@@ -116,6 +116,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
+| Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
@@ -298,6 +299,29 @@ la largeur de sa carte.
 - **Anneau** (`.ring`) : 56, la part d'un plafond écrite en son centre ; rouge à
   partir de 95 % (`.ring.full`).
 
+### Répartition réglable
+
+`.balance` : deux enveloppes sur une même barre, et la poignée qui déplace leur
+part (le budget de transferts et le plafond salarial d'un club).
+
+- Chaque enveloppe est nommée à son bout, son chiffre dessous : la première à
+  gauche, la seconde à droite, alignée à droite.
+- La barre a 8 de haut et des bouts arrondis de 4 ; 2 de fond séparent deux
+  parts. Chaque part vaut son montant sur une saison : la barre entière est la
+  somme des deux enveloppes.
+- Ce qui est engagé est en couleur pleine, aux deux bouts ; ce qui est libre en
+  pâle, de part et d'autre de la poignée. La première enveloppe est en
+  `--series-1`, la seconde en `--series-2`.
+- La poignée est un bouton carré de 22, à la rencontre des deux parts libres.
+  Elle s'arrête sur ce qui est engagé, et se déplace aussi aux flèches gauche et
+  droite. Un écran qui ne permet pas le réglage montre la barre sans poignée.
+- Tenue, la poignée porte le trait de l'accent ; à côté de chaque chiffre
+  s'écrit, atténué, ce qu'il gagne ou cède. Lâchée, la part est fixée : ni
+  confirmation, ni annulation.
+- Sous la barre, en 11 / 14 : à gauche ce que la première enveloppe a d'engagé,
+  à droite ce qu'occupe la seconde et sa part du plafond.
+- La part engagée d'un plafond passe au rouge à partir de 95 % (`.full`).
+
 ## Conventions d'écriture
 
 ### Nombres
@@ -392,6 +416,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Palmarès | Pastilles de compétition de la charte (`competitionBadge`), filtres de poste aux couleurs des postes |
 | Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
+| Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
 
 Ce qui reste :
 
@@ -408,4 +433,5 @@ Les écrans `/squad`, `/composition`, `/match` et `/europe` ont une maquette de
 référence à la charte : canevas Design
 <https://claude.ai/artifact/MbJqDASJNFF8a6Tu3Lph4a>. La recherche globale a la
 sienne (proposition B) : <https://claude.ai/artifact/JMuUqZ4JkvAsYQMh6uJoNU>,
-le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>.
+le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>,
+comme la répartition des budgets : <https://claude.ai/artifact/Ga78jdTYs5RHHZweXDyjYd>.

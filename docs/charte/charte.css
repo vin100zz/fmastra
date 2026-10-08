@@ -14,8 +14,8 @@
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  /* Pitch. */
  --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141ecc;
- /* The line of a curve. */
- --series-1:#2a78d6;
+ /* Series: the line of a curve, a second series beside it, and the pale form of each for what is free of a share. */
+ --series-1:#2a78d6;--series-1-soft:#9ec5f4;--series-2:#eb6834;--series-2-soft:#f6ae8f;
  /* The veil over the page under a dialog. */
  --backdrop:#0f172a66;
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
@@ -227,6 +227,29 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .ring circle.value{stroke:var(--good);stroke-linecap:round}
 .ring.full circle.value{stroke:var(--bad)}
 .ring b{position:relative;font:700 var(--fs-small)/1 var(--text);color:var(--strong)}
+/* A share that moves: two envelopes on one bar, each named at its end with its figure. What is committed is in the full
+   colour, at the two ends; what is free is in the pale one, and the handle (a small square button) stands where the two
+   free parts meet: it stops at what is committed. While it is held, it carries the accent and each figure shows what it
+   gains or gives up; the share is set when it is let go. Under the bar, what each end has committed. */
+.balance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s1) var(--s3);align-items:center;padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.balance-end{display:flex;flex-direction:column;gap:2px;min-width:0}
+.balance-end.right{align-items:flex-end}
+.balance-end .figure{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.balance-end em{font:600 var(--fs-small)/1 var(--text);font-style:normal;color:var(--muted)}
+.balance-bar{grid-column:1/-1;display:flex;align-items:center;gap:2px;height:var(--h-control-small)}
+.balance-bar>i{flex:0 1 0;min-width:0;height:8px}
+.balance-bar>i:first-child{border-radius:4px 0 0 4px}
+.balance-bar>i:last-child{border-radius:0 4px 4px 0}
+.balance-bar>.budget{background:var(--series-1-soft)}
+.balance-bar>.budget.held{background:var(--series-1)}
+.balance-bar>.wages{background:var(--series-2-soft)}
+.balance-bar>.wages.held{background:var(--series-2)}
+.balance-bar>.wages.held.full{background:var(--bad)}
+.balance-handle{cursor:ew-resize}
+.balance-handle.dragged{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+.balance-note{min-height:14px;font-size:var(--fs-small);line-height:14px;color:var(--muted);white-space:nowrap}
+.balance-note.right{grid-column:2;text-align:right}
+.balance-note b{font-weight:600;color:var(--strong)}
 /* What happened to a player in a match. */
 .marks{display:inline-flex;align-items:center;gap:3px}
 .mark{display:inline-block;flex:none;font:700 var(--fs-micro)/1 var(--text);font-style:normal}

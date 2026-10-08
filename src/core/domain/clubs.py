@@ -56,6 +56,9 @@ class Club:
     loaned_ids: list[int] = field(default_factory=list)
     # Among `player_ids`, those another club lent it.
     borrowed_ids: list[int] = field(default_factory=list)
+    # Weekly wages the club moved from its transfer budget to its wage cap (negative: from the cap to the budget); the
+    # annual review carries it over (see `core.world.budgets`).
+    wage_shift: int = 0
 
     @property
     def squad_size(self) -> int:

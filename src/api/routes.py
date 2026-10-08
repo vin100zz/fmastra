@@ -82,6 +82,10 @@ class ReserveMove(Command):
     reserve: bool  # True sends the player to the reserve, False calls him back to the first team
 
 
+class BudgetShare(Command):
+    plafond_hebdo: int = Field(ge=0)  # the weekly wage cap the club wants: its transfer budget pays the rise, or gets the cut back
+
+
 class Lending(Command):
     joueur_id: int
     club_id: int
@@ -574,6 +578,15 @@ def router(service: GameService) -> APIRouter:
     def borrow_player(command: Borrowing) -> dict:
         from core.world.loans import borrow
         return manage(command, lambda world, player: borrow(world, player, command.duree))
+
+    @api.post("/partie/budgets")
+    def share_budgets(command: BudgetShare) -> dict:
+        """The human club's means moved between its transfer budget and its wage cap; answers its finances."""
+        from core.world.budgets import BudgetRefused, set_wage_cap
+        with service.mutating() as world:
+            try: set_wage_cap(world, command.plafond_hebdo)
+            except BudgetRefused as refusal: raise HTTPException(400, str(refusal)) from refusal
+            return v.finance_summary(world, world.controlled_club_id)
 
     @api.get("/ma-partie/effectif/{player_id}")
     def squad_options(player_id: int) -> dict:

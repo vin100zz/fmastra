@@ -48,7 +48,7 @@ Les résultats sportifs ne rapportent donc rien sur le moment. Ils paient l'ét�
 plafond salarial annuel = {{pct(ia_gestion.budgets.part_revenus_salaires, 0)}} du revenu annuel
 ```
 
-Il est fixé lors du bilan annuel et ne bouge plus de la saison. Il est strict : aucune signature et aucune prolongation ne peut faire dépasser la masse salariale. Si le revenu baisse au point que le plafond passerait sous la masse salariale déjà engagée, le plafond est maintenu à cette masse : le club ne peut plus rien signer de plus cher, mais n'est forcé à aucune vente.
+Il est fixé lors du bilan annuel ; pendant la saison, seule votre [répartition des budgets](#/aide/finances/la-repartition-des-budgets) le déplace. Il est strict : aucune signature et aucune prolongation ne peut faire dépasser la masse salariale. Si le revenu baisse au point que le plafond passerait sous la masse salariale déjà engagée, le plafond est maintenu à cette masse : le club ne peut plus rien signer de plus cher, mais n'est forcé à aucune vente.
 
 Les salaires réservés par vos offres en cours comptent dans la masse salariale.
 
@@ -65,6 +65,28 @@ Pendant la saison, chaque vente l'augmente de son montant et chaque achat le dim
 Un achat doit satisfaire deux limites à la fois : tenir dans le budget, et ne pas faire passer la trésorerie sous {{eur(ia_gestion.garde_fous.solde_minimal_autorise)}}.
 
 Le budget non dépensé n'est pas reporté tel quel. L'argent, lui, reste en trésorerie, et {{pct(ia_gestion.budgets.part_solde_transfert, 0)}} de cette trésorerie reviennent dans le budget suivant : économiser une saison donne des moyens la suivante.
+
+## La répartition des budgets
+
+Le plafond salarial et le budget de transferts sont deux parts d'une même enveloppe, et vous choisissez où passe la limite entre elles : dans l'onglet Finances de votre club, la poignée de la barre déplace de l'argent de l'une à l'autre, à tout moment et sans frais.
+
+```
+1 € de plafond salarial par mois = 12 € de budget de transferts
+```
+
+Relever le plafond coûte donc une saison du salaire qu'il autorise ; l'abaisser rend la même somme au budget. Les clubs dirigés par l'IA gardent la répartition du bilan annuel.
+
+Seul ce qui est libre se déplace :
+
+- le plafond ne descend pas sous la masse salariale, salaires réservés par vos offres en cours compris ;
+- le budget ne descend pas sous les indemnités que ces offres réservent.
+
+Déplacer un budget ne déplace pas d'argent : la trésorerie ne change pas, et un achat doit toujours tenir dans la trésorerie. Les salaires signés grâce à un plafond relevé, eux, se paient jour après jour. Une masse salariale et un fonctionnement qui dépassent le revenu annuel vident la trésorerie saison après saison.
+
+**Au bilan annuel**, votre écart au plafond de la formule est reconduit :
+
+- relevé, le plafond l'est de nouveau, et le nouveau budget de transferts paie d'abord cette saison de salaires. S'il n'y suffit pas, l'écart est réduit à ce qu'il paie, et le plafond ne passe jamais sous la masse salariale engagée ;
+- abaissé, le plafond l'est de nouveau, autant que la masse salariale le permet, et la somme rejoint le nouveau budget de transferts.
 
 ## La trésorerie
 

@@ -20,6 +20,8 @@ export const monthlyAmount=weekly=>roundSalary((weekly??0)*weeksPerYear/12);
 // A wage is always shown per month: no screen says so again.
 export const monthlySalary=weekly=>amount(monthlyAmount(weekly));
 export const weeklyFromMonthly=monthly=>Math.round(monthly*12/weeksPerYear);
+// What a weekly wage costs over a season, to the euro: what a budget is measured against.
+export const yearlyAmount=weekly=>(weekly??0)*weeksPerYear;
 
 export function salarySearchParams(params){
  const result=new URLSearchParams(params);

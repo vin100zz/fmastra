@@ -134,11 +134,7 @@
 .finance-figure.good>strong{color:var(--good)}.finance-figure.bad>strong{color:var(--bad)}
 .finance-figure small{font-size:13px;color:var(--muted)}
 .finance-figure small b{color:var(--ink)}.finance-figure small b.good{color:var(--good)}.finance-figure small b.bad{color:var(--bad)}
-.split-bar.thin{height:6px;margin-top:4px}.split-bar i{border-radius:0}.split-bar i:first-child{border-radius:var(--radius) 0 0 var(--radius)}.split-bar i:last-child{border-radius:0 var(--radius) var(--radius) 0}.split-bar i:only-child{border-radius:var(--radius)}
-.wage-gauge{position:relative;display:block;height:6px;margin-top:4px;border-radius:var(--radius);background:var(--panel-3)}
-.wage-gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:var(--radius);background:var(--series-2)}
-.wage-gauge.full i{background:var(--bad)}
-.wage-gauge b{position:absolute;left:95%;top:-3px;width:2px;height:12px;background:var(--bad)}
+.split-bar i{border-radius:0}.split-bar i:first-child{border-radius:var(--radius) 0 0 var(--radius)}.split-bar i:last-child{border-radius:0 var(--radius) var(--radius) 0}.split-bar i:only-child{border-radius:var(--radius)}
 .finance-row,.history-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:12px;margin-bottom:12px;align-items:stretch}
 .finance-row>.card,.history-row>.card{margin:0}
 .salary-bars,.leader-bars,.biggest-transfers,.honours-list{list-style:none;margin:0;padding:0}

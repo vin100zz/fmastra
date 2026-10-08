@@ -161,6 +161,11 @@ Sans changer de version, `InternationalRecord` garde les notes de match d'une é
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses
 éditions déjà jouées restent sans note, et aucune n'est inventée.
 
+Sans changer de version non plus, `Club.wage_shift` retient les salaires hebdomadaires qu'un club a fait passer de son
+budget de transferts à son plafond salarial (`docs/ia-gestion.md`, « Comptabilité »). Le champ a une valeur par
+défaut : une sauvegarde antérieure se lit telle quelle, sans écart, et garde ses budgets ; aucun paramètre de
+configuration n'est ajouté.
+
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle
 version et une migration explicite. Tester la reprise déterministe avant de
 changer les modèles. Modifier les coefficients du dossier `config` n'altère pas

@@ -76,7 +76,10 @@ versées sur chaque période.
 Sur la fiche d'un club, **Finances** présente les revenus et dépenses par
 saison : revenus structurels, salaires, fonctionnement, indemnités de transfert
 et arrondis comptables, avec les soldes d'ouverture et de clôture. Les flux
-réguliers sont regroupés par mois. **Transferts** distingue les arrivées,
+réguliers sont regroupés par mois. En tête de l'onglet, une barre met côte à côte
+le budget de transferts et le plafond salarial ; dans le club dirigé, sa poignée
+déplace de l'argent de l'un à l'autre (12 € de budget pour 1 € de plafond
+mensuel), dès qu'on la relâche. **Transferts** distingue les arrivées,
 départs transférés, fins de contrat, retraites et jeunes promus. Les arrivées sont à gauche, les départs à droite, avec leurs montants totaux. Les âges des regens et retraités sont ceux au moment du mouvement ; une donnée non archivée est indiquée par un tiret. Les flèches
 **Précédent / Suivant** permettent de parcourir les saisons dans ces deux onglets.
 Pour une ancienne sauvegarde, les comptes détaillés commencent à la mise à jour ;
