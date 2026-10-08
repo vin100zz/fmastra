@@ -5,8 +5,11 @@ from fastapi import APIRouter
 from core.world.international import group_table, best_seconds, edition_matches
 from . import navigation as nav
 from . import views as v
+from .nations import kit_colors
 from .statistics import LISTED_PLAYERS
 
+# The two characters on an edition's badge (docs/charte-graphique.md, « Compétitions »).
+EDITION_CODES = {"euro": "EU", "world": "CM"}
 FINALS_LABELS = {"euro": {14: "Quarts de finale", 15: "Demi-finales", 16: "Finale"},
                   "world": {14: "Huitièmes de finale", 15: "Quarts de finale", 16: "Demi-finales", 17: "Finale"}}
 
@@ -33,6 +36,7 @@ def international_match_row(world, match):
     label = round_label(edition, number)
     return {"id": match.id, "date": match.date.iso(), "round": number, "season": edition.year,
             "competition_id": edition.competition_id, "competition": edition.name, "international": True,
+            "competition_code": EDITION_CODES[edition.kind],
             "aggregate": None, "first_leg_id": None, "home": nation_ref(world, match.home_id),
             "away": nation_ref(world, match.away_id), "score": [match.result.home_goals, match.result.away_goals] if match.result else None,
             "penalties": match.result.penalties if match.result else None, "winner_id": match.result.winner_id if match.result else None,
@@ -44,10 +48,14 @@ def record_rows(world, year=None, nid=None):
             if (year is None or row.edition == year) and (nid is None or row.nation_id == nid)]
 
 
+def standing_row(world, row):
+    return {**asdict(row), "difference": row.difference, "nation": nation_ref(world, row.club_id)}
+
+
 def edition_view(world, year):
     edition = world.international.editions[year]
     def row_view(row):
-        return {**asdict(row), "difference": row.difference, "nation": nation_ref(world, row.club_id)}
+        return standing_row(world, row)
     def groups_view(groups, finals):
         return [{"name": chr(65 + index), "rows": [row_view(row) for row in group_table(world, edition, group, finals)]}
                 for index, group in enumerate(groups)]
@@ -104,6 +112,118 @@ def nation_summary(world, nid):
     return {"titles": titles, "last_edition": {"name": rows[0]["name"], "label": run["label"], "winner": run["winner"]} if run else None}
 
 
+def edition_group(world, edition, nid):
+    """A nation's group in an edition: its group of the finals once it is drawn into one, otherwise its qualifying group;
+    none for a nation the edition leaves out."""
+    for finals, groups in ((True, edition.final_groups), (False, edition.qualification_groups)):
+        for index, group in enumerate(groups):
+            if nid in group:
+                return {"year": edition.year, "edition": edition.name, "finals": finals, "name": chr(65 + index),
+                        # The places that qualify: the first of a qualifying group, the first two of a group of the finals.
+                        "places": 2 if finals else 1,
+                        "rows": [standing_row(world, row) for row in group_table(world, edition, group, finals)]}
+    return None
+
+
+def current_edition(world):
+    """The edition under way, or the latest one once it is over; none before the first."""
+    editions = sorted(world.international.editions.values(), key=lambda edition: edition.year)
+    return next((item for item in editions if item.winner_id is None), editions[-1] if editions else None)
+
+
+def nation_group(world, nid):
+    """The group a nation plays in: of the edition under way, of the latest one once it is over."""
+    edition = current_edition(world)
+    return edition_group(world, edition, nid) if edition else None
+
+
+def edition_place(world, edition, nid):
+    """Where a nation stands in an edition, as a club's calendar says it of a cup: its rank in its group while the groups
+    are played, then the round it is to play, the round it went out in, or the title (`winner`)."""
+    if edition.winner_id == nid:
+        return {"place": "Vainqueur", "winner": True}
+    if edition.runner_up_id == nid:
+        return {"place": "Finaliste", "winner": False}
+    group, labels = edition_group(world, edition, nid), FINALS_LABELS[edition.kind]
+    if group is None:
+        return {"place": "—", "winner": False}
+    rank = next(index for index, row in enumerate(group["rows"], 1) if row["nation"]["id"] == nid)
+    standing = f"{rank}{'er' if rank == 1 else 'e'} du groupe {group['name']}"
+    if not group["finals"]:
+        # Its qualifiers are still played, or it went no further.
+        return {"place": "Éliminé · Qualifications" if edition.final_groups else standing, "winner": False}
+    finals = sorted((m for m in edition_matches(world, edition, 11) if nid in (m.home_id, m.away_id)), key=lambda m: (m.date, m.id))
+    coming = [m for m in finals if not m.result]
+    if coming:
+        number = coming[0].round_number
+        return {"place": standing if number <= 13 else labels[number], "winner": False}
+    played = [m for m in finals if m.round_number >= 14]
+    if played:
+        last = played[-1]
+        # The day a round ends, its winners wait for the next one to be drawn.
+        through = last.result.winner_id == nid and last.round_number + 1 in labels
+        return {"place": labels[last.round_number + 1] if through else f"Éliminé · {labels[last.round_number]}", "winner": False}
+    drawn = bool(edition_matches(world, edition, 14)) or edition.winner_id is not None
+    return {"place": "Éliminé · Phase de groupes" if drawn else standing, "winner": False}
+
+
+def nation_calendar(world, nid, year=None):
+    """A nation's matches of one edition, each played one with its scorers and its outcome, its group in that edition, and
+    for each edition it played, the latest first, where it stands or stood and its record. `year` picks the edition: by
+    default the one under way if the nation plays in it, otherwise the latest it played in."""
+    from .club_overview import outcome, record
+    from .rounds import scorers
+    world.international.nations[nid]
+    by_edition: dict[int, list] = {}
+    for match in world.international.matches.values():
+        if nid in (match.home_id, match.away_id):
+            by_edition.setdefault(match.season, []).append(match)
+    if not by_edition:
+        return {"edition": None, "editions": [], "items": [], "group": None, "competitions": []}
+    editions = [world.international.editions[item] for item in sorted(by_edition, reverse=True)]
+    current = current_edition(world)
+    picked = year if year in by_edition else current.year if current.year in by_edition else editions[0].year
+    games = sorted(by_edition[picked], key=lambda m: (m.date, m.id))
+    return {"edition": picked, "editions": [{"year": edition.year, "name": edition.name} for edition in editions],
+            "items": [{**international_match_row(world, m), "scorers": scorers(world, m), "outcome": outcome(nid, m) if m.result else None}
+                      for m in games],
+            "group": edition_group(world, world.international.editions[picked], nid),
+            "competitions": [{"id": edition.competition_id, "year": edition.year, "name": edition.name, "kind": "international",
+                              "code": EDITION_CODES[edition.kind], **edition_place(world, edition, nid), **record(nid, by_edition[edition.year])}
+                             for edition in editions]}
+
+
+def camp_rows(world, camp):
+    """The players of a camp as a squad lists them, each with his caps and goals for the selection and what he did in the
+    camp's edition: matches, goals, assists, average."""
+    edition = world.international.editions[camp.edition]
+    rows = []
+    for pid in camp.player_ids:
+        player = get_player_or_none(world, pid)
+        if player is None:
+            continue
+        discipline = player.international_discipline.get(edition.competition_id)
+        record = world.international.records.get(f"{edition.year}:{pid}")
+        row = v.player_row(world, player)
+        if pid < 0:
+            # A campaign-only reinforcement has neither a club nor a contract.
+            row.update({"value": None, "wage": None, "contract_end": None, "expiring": False})
+        rows.append({**row, "id": pid, "caps": player.international_caps, "international_goals": player.international_goals,
+                     "suspension": discipline.suspended_matches if discipline else 0,
+                     "appearances": record.matches if record else 0, "substitutes": 0,
+                     "goals": record.goals if record else 0, "assists": record.assists if record else 0,
+                     "average": round(record.rating_sum / record.rating_count, 2) if record and record.rating_count else None})
+    return rows
+
+
+def sorted_rows(world, rows, column, descending):
+    """A camp's list in the order of one of its columns; a figure a player lacks (a reinforcement's value) stays last."""
+    from .routes import squad_sort_key
+    key = (lambda row: v.normalized(row["club"]["name"]) if row["club"] else None) if column == "club" else squad_sort_key(world, column)
+    known = sorted((row for row in rows if key(row) is not None), key=lambda row: (key(row), row["id"]), reverse=descending)
+    return known + [row for row in rows if key(row) is None]
+
+
 def international_leaders(records):
     """The players with the most caps and the most goals for a nation, every edition included; names come from the
     record itself since a campaign-only reinforcement never enters the player registry."""
@@ -121,7 +241,12 @@ def international_leaders(records):
             "goals": top("goals", lambda t: (-t["goals"], t["matches"]))}
 
 
+NationSquadSort = Literal["position", "name", "club", "age", "rating", "potential", "value", "wage", "contract_end", "fitness",
+                          "form", "caps", "international_goals", "appearances", "goals", "assists", "average"]
+
+
 def international_router(service):
+    from .routes import AttributeSort, CompositeSort
     api = APIRouter(prefix="/international")
 
     @api.get("")
@@ -145,33 +270,34 @@ def international_router(service):
             return round_view(world, year, quand)
 
     @api.get("/nations/{nation_id}")
-    def nation(nation_id: int):
+    def nation(nation_id: int, tri: NationSquadSort | AttributeSort | CompositeSort = "position", ordre: Literal["asc", "desc"] = "asc"):
+        from .club_overview import LAST_MATCHES, NEXT_MATCHES, last_lineup, outcome
         with service.reading() as world:
             team = world.international.nations[nation_id]
             camp, upcoming = world.international.camps.get(nation_id), True
             if camp is None:
                 camp, upcoming = world.international.last_camps.get(nation_id), False
-            players = []
-            if camp:
-                for pid in camp.player_ids:
-                    player = get_player_or_none(world, pid)
-                    if player is None:
-                        continue
-                    competition_id = world.international.editions[camp.edition].competition_id
-                    discipline = player.international_discipline.get(competition_id)
-                    row = v.player_row(world, player)
-                    if pid < 0:
-                        # A campaign-only reinforcement has neither a club nor a contract.
-                        row.update({"value": None, "wage": None, "contract_end": None, "expiring": False})
-                    players.append({**row, "id": pid, "caps": player.international_caps, "goals": player.international_goals,
-                                    "suspension": discipline.suspended_matches if discipline else 0})
-            return {**nation_ref(world, nation_id), "reference_strength": team.reference_strength,
+            matches = [m for m in sorted(world.international.matches.values(), key=lambda m: (m.date, m.id)) if nation_id in (m.home_id, m.away_id)]
+            played, coming = [m for m in matches if m.result], [m for m in matches if not m.result]
+            group = nation_group(world, nation_id)
+            return {**nation_ref(world, nation_id), **kit_colors(team.name), "reference_strength": team.reference_strength,
+                    # The edition the nation plays and how far it stands in it, for the header of its page.
+                    "competition": {"year": group["year"], "name": group["edition"],
+                                    "stage": "Phase finale" if group["finals"] else "Qualifications"} if group else None,
                     "camp": {"start": camp.start.iso(), "end": camp.end.iso(), "finals": camp.finals, "upcoming": upcoming} if camp else None,
-                    "squad": players,
-                    "matches": [international_match_row(world, m) for m in sorted(world.international.matches.values(), key=lambda m: (m.date, m.id))
-                                if nation_id in (m.home_id, m.away_id)],
+                    "squad": sorted_rows(world, camp_rows(world, camp), tri, ordre == "desc") if camp else [],
+                    # Beside the squad, as on a club's page: the latest and the next matches, the last eleven, the group.
+                    "calendar": {"last": [{**international_match_row(world, m), "outcome": outcome(nation_id, m)} for m in reversed(played[-LAST_MATCHES:])],
+                                 "next": [international_match_row(world, m) for m in coming[:NEXT_MATCHES]]},
+                    "lineup": last_lineup(world, nation_id, played),
+                    "group": group,
                     "editions": nation_editions(world, nation_id),
                     "leaders": international_leaders(r for r in world.international.records.values() if r.nation_id == nation_id)}
+
+    @api.get("/nations/{nation_id}/calendrier")
+    def nation_matches(nation_id: int, edition: int | None = None):
+        with service.reading() as world:
+            return nation_calendar(world, nation_id, edition)
 
     @api.get("/nations/{nation_id}/navigation")
     def nation_navigation(nation_id: int):

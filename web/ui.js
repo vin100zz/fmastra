@@ -142,18 +142,20 @@ const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}
 export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return `<span class="nation" title="${escape(info?.name||code||'')}">${flagImage(info)}${escape(label)}</span>`;};
 // The flag alone, named in its tooltip, for compact cells; empty when the nation or its flag is unknown.
 export const nationFlag = code => nations[code]?.flag ? `<span class="nation" title="${escape(nations[code].name||code)}">${flagImage(nations[code])}</span>` : '';
+// Where a nation's flag is served from, for a flag drawn larger than in a line of text; empty when it has none.
+export const flagUrl = code => nations[code]?.flag ? `/flags/${nations[code].flag}.svg` : '';
 let competitions=new Map();
 // What the game says of each competition (/api/competitions), found again by its id or by its name.
 export const setCompetitions = list => competitions=new Map((list||[]).flatMap(item=>[[item.id,item],[item.name,item]]));
 const known = competition => ({...competition,...(competitions.get(competition.id)??competitions.get(competition.name))});
 // Words written in lower case in a competition's initials ("Coupe de France" reads CdF).
 const SMALL=new Set(['de','du','des','del','della','di','da','do','la','le','les','el','d','of','the','und','y']);
-// The two characters on a competition's badge (docs/charte-graphique.md): its code for a European cup, C and the initial of
-// its country for a national cup, L and its level for a French league, D and its level for another country's. A competition
-// the game does not list keeps the initials of its name, up to its number if it has one.
+// The two characters on a competition's badge (docs/charte-graphique.md): its code for a European cup or for an edition of
+// the selections (EU, CM), C and the initial of its country for a national cup, L and its level for a French league, D and its
+// level for another country's. A competition the game does not list keeps the initials of its name, up to its number if it has one.
 export function competitionCode(competition){
  const {name,kind,code,nation,level}=known(competition);
- if(kind==='europe'&&code)return code;
+ if((kind==='europe'||kind==='international')&&code)return code;
  if(kind==='cup'&&nation)return `C${nationName(nation)[0].toUpperCase()}`;
  if(kind==='league'&&nation&&level)return `${nation==='FRA'?'L':'D'}${level}`;
  const words=String(name||'').replace(/[’'-]/g,' ').split(/\s+/).filter(Boolean);
@@ -283,10 +285,17 @@ export const compositeCell = (player, key, wanted=player.key_composites) => {
 // A player list's columns, [key, header, heading over it]: contract, state and season by default, the attributes by section in the
 // 'attributs' view, the composites by section in the 'jeu' view. `recruiting` adds what the user's club needs to know before a bid:
 // the wage a player asks to join it, and whether he accepts to. `season` adds the season's figures to a list of the whole world.
+// `selection` is the list of a selection's camp: a club's squad list with each player's club where his nationality stands,
+// then his caps and goals for the selection and what he did in the edition of the camp.
 function playerColumns(view, withClub, options) {
- const identity=[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
+ const identity=options.selection?[['position','POSTE'],['name','JOUEUR'],['club','CLUB'],['age','ÂGE'],['rating','NIV.'],['potential','POT.']]
+  :[['position','POSTE'],['name','JOUEUR'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[])];
  if(view==='attributs')return [...identity,...LIST_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,`<span title="${ATTRIBUTES[key]}">${ATTRIBUTE_SHORT[key]}</span>`,section.title]))];
  if(view==='jeu')return [...identity,...COMPOSITE_SECTIONS.flatMap(section=>section.composites.map(key=>[key,compositeHeader(key),section.title]))];
+ if(options.selection)return [...identity,['value','VALEUR'],['wage','SALAIRE'],['contract_end','CONTRAT'],['fitness','ÉTAT'],['form','FORME'],
+  ['caps','<span title="Sélections">SÉL.</span>'],['international_goals','<span title="Buts en sélection">BUTS</span>'],
+  ['appearances','<span title="Matches joués dans l’édition">MJ</span>'],['goals','<span title="Buts dans l’édition">B</span>'],
+  ['assists','<span title="Passes décisives dans l’édition">PD</span>'],['average','<span title="Note moyenne dans l’édition">NOTE</span>']];
  return [['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['potential','POT.'],...(withClub?[['club','CLUB']]:[]),['value','VALEUR'],...(options.asking?[['asking_price','PRIX MIN.'],['listed','<span title="Listé par son club : pour un transfert (T), pour un prêt (P)">LISTÉ</span>']]:[]),['wage','SALAIRE'],...(options.recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[]),['contract_end','CONTRAT'],['fitness','ÉTAT'],...(!withClub?[['form','FORME'],['morale','MORAL'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['yellows','CJ'],['reds','CR'],['average','NOTE']]:[]),...(options.season?[['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']]:[]),...(options.academy?[['promotion_date','PROMOTION'],['academy_club','CLUB FORMATEUR'],['data_at','DONNÉES']]:[])];
 }
 // Switches a player list between its views, for the head of its card. The sort goes along when the other view has its column; otherwise that
@@ -304,7 +313,8 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>${loanTag(player)}`,
    nation:mainNation(player.nationalities||[player.nation]),
-   age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'?'—':clubLink(player.club),
+   age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
+   caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
    value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
    wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}\u00a0%</span>`,

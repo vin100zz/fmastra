@@ -10,18 +10,27 @@ const roundShort=label=>String(label||'').replace(/^Journée (\d+)$/,'J$1').repl
 // One side's scorers by surname, each with the minutes of his goals: "Ivanović 8’ 64’ · Aouad 89’".
 const scorerList=side=>(side||[]).map(scorer=>`${scorer.id<0?e(surname(scorer.name)):`<a href="#/player/${scorer.id}" title="${e(scorer.name)}">${e(surname(scorer.name))}</a>`} ${scorer.minutes.map(minute=>`${e(minute)}’`).join(' ')}`).join(' · ');
 
-function calendarRow(match,club,competitions,next){
+// `written` writes the day and `round` the round, as a club's season reads them unless told otherwise. A selection's match
+// on neutral ground is not an away game.
+function calendarRow(match,club,competitions,next,{written=day,round=roundShort}={}){
  const home=match.home.id===club.id,opponent=home?match.away:match.home,competition=competitions.get(match.competition_id)||{name:match.competition,kind:'league'};
+ const neutral=match.international&&match.neutral;
  // The score reads from the club's side, its goals first; a shoot-out is told beside the opponent.
  const score=match.score?(home?match.score:[...match.score].reverse()).join('–'):'—';
  const shootout=match.penalties?`t.a.b. ${(home?match.penalties:[...match.penalties].reverse()).join('–')}`:'';
  const [ours,theirs]=match.scorers?(home?match.scorers:[...match.scorers].reverse()):[[],[]];
- const detail=`${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}`;
+ const detail=`${match.competition} · ${match.round_label} · ${neutral?'Terrain neutre':home?'Domicile':'Extérieur'}`;
  return `<div class="calendar-row${match.score?'':' coming'}${next?' next':''}" data-competition="${match.competition_id}">`
-  +`<span class="calendar-date">${day(match.date)}</span>${competitionBadge(competition)}<span class="calendar-round" title="${e(match.round_label)}">${e(roundShort(match.round_label))}</span>`
-  +`<span class="calendar-venue">${home?'':awayIcon}</span><span class="calendar-opponent">${clubLink(opponent)}${next?'<em>Prochain</em>':''}${shootout?`<small>${e(shootout)}</small>`:''}</span>`
+  +`<span class="calendar-date">${written(match.date)}</span>${competitionBadge(competition)}<span class="calendar-round" title="${e(match.round_label)}">${e(round(match.round_label))}</span>`
+  +`<span class="calendar-venue">${home||neutral?'':awayIcon}</span><span class="calendar-opponent">${clubLink(opponent)}${next?'<em>Prochain</em>':''}${shootout?`<small>${e(shootout)}</small>`:''}</span>`
   +`<a class="calendar-score${match.outcome?` ${match.outcome}`:''}" href="#/match/${match.id}" title="${e(match.outcome?`${outcomeLabels[match.outcome]} · ${detail}`:detail)}">${score}</a>`
   +`<span class="calendar-scorers">${scorerList(ours)}</span><span class="calendar-scorers theirs">${scorerList(theirs)}</span></div>`;
+}
+// The lines of a calendar, a club's or a selection's (`team`): `competitions` holds what is known of each by its id, the
+// first match still to play stands out, `options` are calendarRow's.
+export function calendarRows(matches,team,competitions,options){
+ const nextId=matches.find(match=>!match.score)?.id;
+ return `<div class="calendar-rows">${matches.map(match=>calendarRow(match,team,competitions,match.id===nextId,options)).join('')}</div>`;
 }
 
 // Where the club stands in each competition of the season: its place, its record as a bar of wins, draws and losses, its goals.

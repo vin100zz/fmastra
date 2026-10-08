@@ -8,6 +8,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 from api.app import create_app
+from api.views import normalized
 from core.domain.date import Date
 from core.world.international import prepare_international_day
 from core.world.cups import season_fixtures
@@ -55,6 +56,38 @@ def test_national_api_and_player_history(imported, tmp_path):
         nation = client.get(f"/api/international/nations/{france['id']}").json()
         assert len(nation['squad']) == 23 and nation['camp']
         assert {'age', 'potential', 'club', 'value', 'wage', 'contract_end'} <= set(nation['squad'][0])
+        # Its page wears a club's header and widgets: its kit, the edition it plays, its next matches, its group.
+        assert (nation['major_color'], nation['minor_color']) == ('#1f3f94', '#ffffff')
+        assert nation['competition'] == {'year': 2028, 'name': 'Euro 2028', 'stage': 'Qualifications'}
+        assert nation['calendar']['last'] == [] and len(nation['calendar']['next']) == 3 and nation['lineup'] is None
+        assert all(m['competition_code'] == 'EU' and france['id'] in (m['home']['id'], m['away']['id']) for m in nation['calendar']['next'])
+        group = nation['group']
+        assert (group['year'], group['finals'], group['places']) == (2028, False, 1) and len(group['name']) == 1
+        assert france['id'] in [row['nation']['id'] for row in group['rows']] and len(group['rows']) in (5, 6)
+        # The list is sorted by the server as a club's squad is, on the position by default; what a player did in the edition goes with it.
+        assert {'caps', 'international_goals', 'appearances', 'goals', 'assists', 'average', 'form'} <= set(nation['squad'][0])
+        assert nation['squad'][0]['position'] == 'GB' and all(p['appearances'] == 0 and p['average'] is None for p in nation['squad'])
+        capped = client.get(f"/api/international/nations/{france['id']}?tri=caps&ordre=desc").json()['squad']
+        assert [p['caps'] for p in capped] == sorted((p['caps'] for p in capped), reverse=True)
+        by_club = client.get(f"/api/international/nations/{france['id']}?tri=club").json()['squad']
+        clubs = [normalized(p['club']['name']) for p in by_club if p['club']]
+        # A reinforcement has no club: it stays last.
+        assert len(clubs) > 1 and clubs == sorted(clubs) and all(p['club'] is None for p in by_club[len(clubs):])
+        assert client.get(f"/api/international/nations/{france['id']}?tri=passe&ordre=desc").status_code == 200
+        assert client.get(f"/api/international/nations/{france['id']}?tri=morale").status_code == 422
+        # Its calendar: the matches of the edition under way, its group there, its record in each edition it played.
+        calendar = client.get(f"/api/international/nations/{france['id']}/calendrier").json()
+        assert calendar['edition'] == 2028 and calendar['editions'] == [{'year': 2028, 'name': 'Euro 2028'}]
+        assert len(calendar['items']) == 2 * (len(group['rows']) - 1) and calendar['group'] == group
+        assert all(m['outcome'] is None and m['scorers'] is None and france['id'] in (m['home']['id'], m['away']['id']) for m in calendar['items'])
+        assert [m['id'] for m in calendar['items'][:3]] == [m['id'] for m in nation['calendar']['next']]
+        record = calendar['competitions'][0]
+        assert (record['code'], record['kind'], record['played'], record['winner']) == ('EU', 'international', 0, False)
+        assert record['place'].endswith(f" du groupe {group['name']}")
+        # A year it played nothing in opens the default edition; the matches no longer travel with the squad.
+        assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=2030").json()['edition'] == 2028
+        assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=x").status_code == 422
+        assert 'matches' not in nation
         match = client.get(f"/api/matches/{edition['matches'][0]['id']}").json()
         assert match['international'] and match['home']['national']
         pid = next(p['id'] for p in nation['squad'] if p['id'] >= 0)

@@ -217,6 +217,8 @@
 .menu>p{display:flex;align-items:center;flex:none;height:var(--h-row);padding:0 var(--s3)}
 .crest{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font:700 semi-condensed var(--fs-small)/1 var(--display)}
 .crest.large{width:64px;height:64px;border:3px solid #fff;box-shadow:0 1px 4px #0a141e38;font-size:var(--fs-title)}
+/* In a selection's header, which is a club's, its flag fills the disc where a crest stands. */
+.crest.large>img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .gauge{display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 .gauge>i{display:block;height:100%;background:var(--good)}

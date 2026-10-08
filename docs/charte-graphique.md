@@ -101,14 +101,14 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 
 | Composant | Classes | Règle |
 |---|---|---|
-| Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club sur sa fiche |
+| Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club ou de la sélection sur sa fiche |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : coupe d'Europe, derniers ou prochains matches, tactique, colonnes |
 | Pas d'une série | `.segmented.steps` | Journées, saisons |
 | Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Carré, 28 ; 22 dans une carte ou une ligne |
 | Action principale | `.cta` | Une seule par écran |
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
-| En-tête de club | `.hero` | Bandeau de 88 aux couleurs du club, ses onglets dessous |
+| En-tête de club, de sélection | `.hero` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Clubs et pays » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile` | Libellé atténué, valeur forte |
@@ -211,9 +211,9 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   1.5 à 8 du bord. Debout (l'équipe attaque vers le haut) ou couché
   (`.pitch.lying`, vers la droite, latéral gauche en haut) : mêmes herbe, lignes
   et maillots.
-- **Maillot** (`.kit-shirt`) : 32, aux couleurs du club (corps dans la première,
-  manches dans la seconde), un contour autour, aucun trait entre le corps et les
-  manches. Le poste est écrit dessus, dans l'encre lisible sur le corps. La
+- **Maillot** (`.kit-shirt`) : 32, aux couleurs du club ou de la sélection (corps
+  dans la première, manches dans la seconde), un contour autour, aucun trait
+  entre le corps et les manches. Le poste est écrit dessus, dans l'encre lisible sur le corps. La
   couleur de poste reste dans les listes, pas sur le terrain.
 - **Autour du maillot** : le nom dessous, sur une étiquette sombre ; la note à
   droite (à gauche le long de la touche droite) ; l'affinité sous 20 sur le coin
@@ -362,6 +362,7 @@ Une pastille de deux caractères.
 | Famille | Codes | Apparence |
 |---|---|---|
 | Coupes d'Europe | C1 (Ligue des champions), C3 (Ligue Europa), C4 (Ligue Conférence) | Noir plein |
+| Sélections | EU (Euro), CM (Coupe du monde) | Noir plein |
 | Championnats de France | L1, L2, L3 | Contour gris |
 | Autres championnats | D1, D2, précédés du drapeau du pays | Contour gris |
 | Coupes nationales | C et l'initiale du pays : CF, CE, CA, CI | Contour bleu |
@@ -376,6 +377,12 @@ pays ajouté suit la règle : CP pour le Portugal.
   dans un en-tête.
 - Le nom d'un pays suit toujours son drapeau (16 × 12). Une nationalité en
   colonne : le drapeau, puis le code de trois lettres.
+- Une sélection a deux couleurs, celles de son maillot, comme un club : elles
+  font son bandeau et ses maillots sur un terrain. Son en-tête est celui d'un
+  club ; son drapeau remplit le disque où un club a son écusson. Dans une liste,
+  son nom suit son drapeau, jamais une pastille de couleurs.
+- Une liste de joueurs d'une sélection donne le club de chacun là où celle d'un
+  club donne sa nationalité.
 
 ### Tableaux
 
@@ -409,6 +416,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Nombres | Point décimal, notes à un et deux chiffres, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `amount`), y compris dans le manuel |
 | Classements | Trait à gauche du rang, ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40 |
+| Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU et CM ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
@@ -434,4 +442,5 @@ référence à la charte : canevas Design
 <https://claude.ai/artifact/MbJqDASJNFF8a6Tu3Lph4a>. La recherche globale a la
 sienne (proposition B) : <https://claude.ai/artifact/JMuUqZ4JkvAsYQMh6uJoNU>,
 le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>,
-comme la répartition des budgets : <https://claude.ai/artifact/Ga78jdTYs5RHHZweXDyjYd>.
+comme la répartition des budgets : <https://claude.ai/artifact/Ga78jdTYs5RHHZweXDyjYd>
+et la fiche d'une sélection (proposition A) : <https://claude.ai/artifact/THiSHcUqdwdres8yWJc5NR>.

@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,facilityRating,safeColor,contrastText,initials,surname,standingsTable,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,surname,standingsTable,competitionBadge} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 
 const BEST_PLAYERS=8;
@@ -8,14 +8,18 @@ export const outcomeLabels={V:'Victoire',N:'Match nul',D:'Défaite'};
 // A red plane marks an away game (Material Design "flight" icon).
 export const awayIcon='<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><title>Match à l’extérieur</title><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
 
-// One line per match: opponent, plane if away, then a badge naming the competition when it is not the club's championship.
+// A side by its name: a selection's after its flag, a club's after the dot of its colours.
+const sideName=side=>side.national?`<span class="nation">${nationFlag(side.nation)}${e(side.name)}</span>`:`${kitDot(side)}${e(side.name)}`;
+
+// One line per match: opponent, plane if away, then a badge naming the competition when it is not the club's championship
+// (for a selection, the edition it plays). A selection's match on neutral ground is not an away game.
 function matchRow(match,club){
- const home=match.home.id===club.id,opponent=home?match.away:match.home;
+ const home=match.home.id===club.id,opponent=home?match.away:match.home,neutral=match.international&&match.neutral;
  const score=match.score?`<span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span>`:'<span class="club-match-score pending">À venir</span>';
  const shootout=match.penalties?`t.a.b. ${match.penalties.join(' – ')}`:'';
- const badge=match.competition!==club.competition?competitionBadge({id:match.competition_id,name:match.competition}):'';
- const detail=`${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${shootout?` · ${shootout}`:''}`;
- return `<a class="club-match" href="#/match/${match.id}" title="${e(detail)}"><span class="club-match-date">${shortDate(match.date)}</span><span class="club-match-who"><b>${kitDot(opponent)}${e(opponent.name)}</b>${home?'':awayIcon}${badge}${shootout?`<small>${e(shootout)}</small>`:''}</span>${score}</a>`;
+ const badge=match.competition!==club.competition?competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})}):'';
+ const detail=`${match.competition} · ${match.round_label} · ${neutral?'Terrain neutre':home?'Domicile':'Extérieur'}${shootout?` · ${shootout}`:''}`;
+ return `<a class="club-match" href="#/match/${match.id}" title="${e(detail)}"><span class="club-match-date">${shortDate(match.date)}</span><span class="club-match-who"><b>${sideName(opponent)}</b>${home||neutral?'':awayIcon}${badge}${shootout?`<small>${e(shootout)}</small>`:''}</span>${score}</a>`;
 }
 
 // No heading: a score tells a played match from one still to come.
@@ -58,10 +62,11 @@ export function sidePitch(players,club,label){
  return `<div class="pitch lying" aria-label="${e(label)}">${PITCH_BOXES}${marks}</div>`;
 }
 
-export function lineupBlock(club,lineup){
- if(!lineup)return card('Dernier onze aligné',empty('Le club n’a pas encore de composition enregistrée.','Aucun match joué'),'','lineup-card');
+// `none` says that no eleven is kept yet, in the words of the page: a club's by default.
+export function lineupBlock(club,lineup,none='Le club n’a pas encore de composition enregistrée.'){
+ if(!lineup)return card('Dernier onze aligné',empty(none,'Aucun match joué'),'','lineup-card');
  const {match}=lineup,home=match.home.id===club.id,opponent=home?match.away:match.home;
- const result=`<a class="lineup-match" href="#/match/${match.id}"><span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span><span>${home?'contre':'à'} ${kitDot(opponent)}${e(opponent.name)}<small>${shortDate(match.date)} · ${e(match.competition)} · ${e(match.round_label)}</small></span></a>`;
+ const result=`<a class="lineup-match" href="#/match/${match.id}"><span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span><span>${home||match.international&&match.neutral?'contre':'à'} ${sideName(opponent)}<small>${shortDate(match.date)} · ${e(match.competition)} · ${e(match.round_label)}</small></span></a>`;
  return card('Dernier onze aligné',result+sidePitch(lineup.players,club,`Onze aligné par ${club.name}`),`<a href="#/match/${match.id}" aria-label="Voir le match">Voir →</a>`,'lineup-card');
 }
 

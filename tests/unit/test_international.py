@@ -280,3 +280,100 @@ def test_international_shootout_and_suspension(world):
     next_lineup = camp_lineup(world, edition, match.home_id)
     assert player.id not in [slot.player.id for slot in next_lineup.slots]
     assert player.id not in [p.id for p in next_lineup.bench]
+
+
+def test_a_nations_group_follows_it_from_its_qualifiers_to_its_finals(world):
+    from api.international import nation_group
+    edition = world.international.editions[2028]
+    group = nation_group(world, edition.qualification_groups[0][0])
+    assert (group["year"], group["edition"], group["finals"], group["name"], group["places"]) == (2028, "Euro 2028", False, "A", 1)
+    assert {row["nation"]["id"] for row in group["rows"]} == set(edition.qualification_groups[0])
+    # The qualifiers leave out the nations of the other confederations.
+    outsider = next(nation.id for nation in world.international.nations.values() if nation.federation != "Europe")
+    assert nation_group(world, outsider) is None
+    finish_rounds(world, edition, 1, 10)
+    group = nation_group(world, edition.final_groups[1][0])
+    assert (group["finals"], group["name"], group["places"], len(group["rows"])) == (True, "B", 2, 4)
+    # A nation knocked out keeps the group it played in.
+    out = next(nid for members in edition.qualification_groups for nid in members if nid not in edition.qualifiers)
+    assert nation_group(world, out)["finals"] is False
+
+
+def test_a_camps_list_carries_the_editions_figures_and_sorts_with_what_is_unknown_last(world):
+    from api.international import camp_rows, sorted_rows
+    from core.domain.international import InternationalRecord
+    team, players = real_players(world)
+    world.date = Date(2026, 8, 31)
+    prepare_international_day(world)
+    camp = world.international.camps[team.id]
+    rows = camp_rows(world, camp)
+    assert [row["id"] for row in rows] == camp.player_ids and len(rows) == 23
+    assert all(row["appearances"] == 0 and row["goals"] == 0 and row["average"] is None for row in rows)
+    called = next(pid for pid in camp.player_ids if pid >= 0)
+    get_player(world, called).international_caps = 7
+    world.international.records[f"2028:{called}"] = InternationalRecord(called, "x", team.id, 2028, matches=3, goals=2, assists=1, rating_sum=21.3, rating_count=3)
+    row = next(row for row in camp_rows(world, camp) if row["id"] == called)
+    assert (row["caps"], row["appearances"], row["goals"], row["assists"], row["average"]) == (7, 3, 2, 1, 7.1)
+    # A reinforcement has no value: whichever way the column runs, it stays last.
+    reinforcements = {row["id"] for row in rows if row["value"] is None}
+    assert reinforcements and all(pid < 0 for pid in reinforcements)
+    for descending in (False, True):
+        ordered = sorted_rows(world, rows, "value", descending)
+        known = [row["value"] for row in ordered if row["value"] is not None]
+        assert known == sorted(known, reverse=descending)
+        assert {row["id"] for row in ordered[len(known):]} == reinforcements
+    assert sorted_rows(world, camp_rows(world, camp), "caps", True)[0]["id"] == called
+
+
+def test_a_nations_calendar_lists_one_edition_with_its_group_and_where_it_stands_in_each(world):
+    from api.international import edition_place, nation_calendar
+    edition = world.international.editions[2028]
+    members = edition.qualification_groups[0]
+    nid = members[0]
+    data = nation_calendar(world, nid)
+    assert (data["edition"], data["editions"]) == (2028, [{"year": 2028, "name": "Euro 2028"}])
+    # Home and away against each of the others, in the order they are played, nothing played yet.
+    assert len(data["items"]) == 2 * (len(members) - 1)
+    assert [item["date"] for item in data["items"]] == sorted(item["date"] for item in data["items"])
+    assert all(item["outcome"] is None and item["scorers"] is None and item["competition_code"] == "EU" for item in data["items"])
+    assert (data["group"]["name"], data["group"]["finals"]) == ("A", False)
+    row = data["competitions"][0]
+    assert (row["id"], row["year"], row["kind"], row["code"], row["played"], row["winner"]) == (edition.competition_id, 2028, "international", "EU", 0, False)
+    assert row["place"].endswith(" du groupe A")
+    # A nation of another confederation plays nothing while the qualifiers run.
+    outsider = next(nation.id for nation in world.international.nations.values() if nation.federation != "Europe")
+    assert nation_calendar(world, outsider) == {"edition": None, "editions": [], "items": [], "group": None, "competitions": []}
+    assert edition_place(world, edition, outsider) == {"place": "—", "winner": False}
+
+    finish_rounds(world, edition, 1, 10)
+    played = nation_calendar(world, nid)["competitions"][0]
+    # Every match went to the home side: as many wins as defeats, a goal for each.
+    assert (played["played"], played["won"], played["drawn"], played["lost"]) == (2 * (len(members) - 1), len(members) - 1, 0, len(members) - 1)
+    assert (played["goals_for"], played["goals_against"]) == (len(members) - 1, len(members) - 1)
+    out = next(item for group in edition.qualification_groups for item in group if item not in edition.qualifiers)
+    assert edition_place(world, edition, out) == {"place": "Éliminé · Qualifications", "winner": False}
+    through = edition.final_groups[1][0]
+    assert edition_place(world, edition, through)["place"].endswith(" du groupe B")
+    assert nation_calendar(world, through)["group"]["finals"] is True
+    results = nation_calendar(world, out)["items"]
+    assert {item["outcome"] for item in results} == {"V", "D"} and all(item["scorers"] == [[], []] for item in results)
+
+    finish_rounds(world, edition, 11, 13)
+    quarters = edition_matches(world, edition, 14, 14)
+    assert edition_place(world, edition, quarters[0].home_id) == {"place": "Quarts de finale", "winner": False}
+    beaten = next(item for group in edition.final_groups for item in group if not any(item in (m.home_id, m.away_id) for m in quarters))
+    assert edition_place(world, edition, beaten) == {"place": "Éliminé · Phase de groupes", "winner": False}
+    for number in (14, 15, 16):
+        finish_rounds(world, edition, number, number)
+    assert edition_place(world, edition, edition.winner_id) == {"place": "Vainqueur", "winner": True}
+    assert edition_place(world, edition, edition.runner_up_id) == {"place": "Finaliste", "winner": False}
+    assert edition_place(world, edition, quarters[0].away_id) == {"place": "Éliminé · Quarts de finale", "winner": False}
+
+    # The edition under way comes first and opens by default; another one is picked by its year.
+    create_edition(world, 2030)
+    later = nation_calendar(world, nid)
+    assert later["edition"] == 2030 and [item["year"] for item in later["editions"]] == [2030, 2028]
+    assert [row["code"] for row in later["competitions"]] == ["CM", "EU"]
+    assert nation_calendar(world, nid, 2028)["edition"] == 2028 and nation_calendar(world, nid, 2026)["edition"] == 2030
+    # Out of the qualifiers of a World Cup, a nation of another confederation keeps nothing to show.
+    assert nation_calendar(world, outsider)["items"] == []

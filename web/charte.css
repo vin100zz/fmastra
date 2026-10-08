@@ -138,7 +138,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .rating.form-badge,.player-table .rating.form-badge{min-width:42px}
 .competition-code,.competition-badge{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text);letter-spacing:0}
 .competition-code.cup,.competition-badge.cup{border-color:var(--info);background:var(--panel);color:var(--info)}
-.competition-code.europe,.competition-code.europe:is(.c1,.c3,.c4),.competition-badge.europe{border-color:var(--strong);background:var(--strong);color:var(--panel)}
+.competition-code.europe,.competition-code.europe:is(.c1,.c3,.c4),.competition-code.international,.competition-badge.europe{border-color:var(--strong);background:var(--strong);color:var(--panel)}
 .club-match-score,.calendar-score,.country-match .score,.fixture .score{min-width:40px;background:var(--panel-2);color:var(--ink);font:700 var(--fs-small)/1 var(--text)}
 .club-match-score.V,.calendar-score.V{background:var(--good-soft);color:var(--good)}
 .club-match-score.N,.calendar-score.N{background:var(--warn-soft);color:var(--warn)}
@@ -210,6 +210,9 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-hero-tiles{gap:var(--s2)}
 .club-hero-tile{min-width:96px;gap:2px;padding:6px var(--s3);border-radius:var(--radius)}
 .club-hero-tile em{font:600 var(--fs-small)/1 var(--text)}
+/* A selection's header is a club's: its flag fills the disc where a crest stands. */
+.club-hero-crest .crest-flag{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
+.club-hero .crest.club-hero-crest:has(.crest-flag){color:transparent}
 
 /* Menus and what a pointer shows. */
 .entity-menu-panel,.filter-panel,dialog,#toast{border-radius:var(--radius)}
@@ -412,6 +415,18 @@ small{font-size:var(--fs-small)}
 .club-squad .player-table .form-column{width:44px}
 .club-squad .player-table :is(.assists-column,.yellows-column,.reds-column){width:20px}
 .club-squad .player-table .average-column{width:32px}
+/* The list of a selection's camp stands the same way: each player's club where a club's list names his nationality, then
+   his caps and his goals for the selection. */
+.club-squad .player-table .club-column{width:120px}
+.club-squad .player-table :is(.caps-column,.international_goals-column){width:30px}
+.player-table :is(.caps-column,.international_goals-column){text-align:right}
+/* A selection's calendar, a club's: a round of the finals reads in full, and the column on the right holds a group's whole
+   table over the record in each edition. */
+.selection-calendar{grid-template-columns:minmax(0,1fr) 560px}
+.selection-calendar .calendar-row{grid-template-columns:92px 44px 104px 18px minmax(170px,210px) 58px minmax(0,1.4fr) minmax(0,.8fr)}
+.selection-calendar .calendar-side{gap:var(--s2)}
+.edition-records .competition-code{margin-right:6px}
+@media(max-width:1329px){.selection-calendar{grid-template-columns:minmax(0,1fr)}}
 .card-head h2 .nation{margin-right:6px;vertical-align:-1px}
 .preview .position-row{height:var(--h-row)}
 .toolbar .season-navigation button{width:var(--h-control);height:var(--h-control)}

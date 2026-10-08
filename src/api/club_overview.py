@@ -46,6 +46,19 @@ def overview(world: World, club_id: int) -> dict:
             "lineup": last_lineup(world, club_id, played)}
 
 
+def record(club_id: int, matches: list[Match]) -> dict:
+    """What a side did over the played matches of a list: its results from its own side, its goals for and against."""
+    totals = {"played": 0, "won": 0, "drawn": 0, "lost": 0, "goals_for": 0, "goals_against": 0}
+    for match in matches:
+        if not match.result: continue
+        home = match.home_id == club_id
+        totals["played"] += 1
+        totals[{"V": "won", "N": "drawn", "D": "lost"}[outcome(club_id, match)]] += 1
+        totals["goals_for"] += match.result.home_goals if home else match.result.away_goals
+        totals["goals_against"] += match.result.away_goals if home else match.result.home_goals
+    return totals
+
+
 def place(world: World, club_id: int, competition_id: int, matches: list[Match]) -> str:
     """Where the club stands in a competition of the season: its rank in a league or a league phase, otherwise the round
     it is to play next, the round it went out in, or the title."""
@@ -82,16 +95,8 @@ def season_calendar(world: World, club_id: int) -> dict:
     competitions = []
     for competition_id, games in by_competition.items():
         competition = world.competitions[competition_id]
-        record = {"played": 0, "won": 0, "drawn": 0, "lost": 0, "goals_for": 0, "goals_against": 0}
-        for match in games:
-            if not match.result: continue
-            home = match.home_id == club_id
-            record["played"] += 1
-            record[{"V": "won", "N": "drawn", "D": "lost"}[outcome(club_id, match)]] += 1
-            record["goals_for"] += match.result.home_goals if home else match.result.away_goals
-            record["goals_against"] += match.result.away_goals if home else match.result.home_goals
         competitions.append({"id": competition_id, "name": competition.name, "kind": competition.kind, "code": competition.code,
-                             "place": place(world, club_id, competition_id, games), **record})
+                             "place": place(world, club_id, competition_id, games), **record(club_id, games)})
     # The league first, then the national cup, then Europe.
     competitions.sort(key=lambda row: ({"league": 0, "cup": 1, "europe": 2}.get(row["kind"], 3), row["id"]))
     return {"items": rows, "total": len(rows), "page": 1, "page_size": max(1, len(rows)), "competitions": competitions}

@@ -1,15 +1,22 @@
-import {api,escape as e,number as n,averageNote,date,card,heading,table,sortableTable,standings,empty,clubLink,playerLink,position,fixtures,tabs,levelBadge,leadersCards,nationFlag,money,duration} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,card,heading,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,tabs,leadersCards,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
 import {nationNavigation} from './navigation.js';
-import {monthlySalary} from './salaries.js';
+import {nationHero} from './club-hero.js';
+import {calendarBlock,lineupBlock} from './club-overview.js';
+import {calendarRows} from './club-calendar.js';
 import {bracket} from './bracket.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
 const GROUP_ROUNDS=10,FINAL_GROUP_ROUNDS=13;
 
-export function internationalStandings(rows,places=0){
- const rowClasses=rows.map((row,i)=>i<places?'promoted':'');
- return standings(['#','NATION','PTS','J','V','N','P','BP','BC','DIFF.'],rows.map((row,i)=>[
-  i+1,clubLink(row.nation),`<strong>${row.points}</strong>`,row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,row.difference]),rowClasses);
+// `extract` keeps the points and the goal difference only, written as a league's extract beside a club's squad writes them;
+// `own` is the nation whose page shows the table: its row is marked.
+export function internationalStandings(rows,places=0,{extract=false,own=null}={}){
+ const rowClasses=rows.map((row,i)=>`${i<places?'promoted':''}${row.nation.id===own?' own':''}`.trim());
+ const difference=row=>row.difference>0?`+${row.difference}`:row.difference;
+ if(extract)return standings(['#','NATION','PTS','DIFF.'],rows.map((row,i)=>[
+  `<span class="rank ${i?'':'first'}">${i+1}</span>`,`<span class="strong">${clubLink(row.nation)}</span>`,`<b>${row.points}</b>`,difference(row)]),rowClasses);
+ return standings(['#','NATION','PTS','J','V','N','D','BP','BC','DIFF.'],rows.map((row,i)=>[
+  i+1,clubLink(row.nation),`<strong>${row.points}</strong>`,row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,difference(row)]),rowClasses);
 }
 
 // The stages of an edition, from the qualifications to the final, each one done, current or still to come.
@@ -87,26 +94,70 @@ const NATION_TABS=[['squad','Effectif'],['calendar','Calendrier'],['history','Hi
 // A run in a competition, in the same style as a club's cup and European runs: the label alone, or starred when it was won.
 const editionRun=run=>run?(run.winner?`✦ ${e(run.label)}`:e(run.label)):'—';
 
-function squadCard(data){
+// The days of a camp, "du 9 au 17 novembre 2028": the month and the year are written once when its two ends share them.
+const DAY={day:'numeric'},MONTH={month:'long'},YEAR={year:'numeric'};
+const written=(value,options)=>new Intl.DateTimeFormat('fr-FR',options).format(new Date(`${value}T12:00:00`));
+export function campDays(start,end){
+ const year=start.slice(0,4)===end.slice(0,4),month=year&&start.slice(5,7)===end.slice(5,7);
+ return `du ${written(start,{...DAY,...(month?{}:MONTH),...(year?{}:YEAR)})} au ${written(end,{...DAY,...MONTH,...YEAR})}`;
+}
+// The list of a camp, a club's squad list: the same views, sorted by the server on the column picked in the address.
+function squadCard(data,params){
  if(!data.camp)return card('Sélection',empty('La prochaine liste de 23 sera annoncée au début du rassemblement.','Aucun rassemblement en cours'));
- const title=`${data.camp.upcoming?'Rassemblement':'Dernier rassemblement'} du ${date(data.camp.start)} au ${date(data.camp.end)}`;
- // The same columns, in the same order, as the club and player lists.
- const fitness=p=>p.injured_until?`<span class="status danger" title="Retour le ${e(date(p.injured_until))}">✚ ${duration(p.injured_until)}</span>`:p.suspension?`<span class="status danger">▰ ${p.suspension} match${p.suspension>1?'s':''}</span>`:`<span class="status">${Math.round(p.fitness*100)}%</span>`;
- return card(title,sortableTable(['POSTE','JOUEUR','ÂGE','NIV.','POT.','CLUB','VALEUR','SALAIRE','CONTRAT','ÉTAT','SÉL.','BUTS'],data.squad.map(p=>[
-  position(p.position),`<span class="strong">${playerLink(p.id,p.name)}</span>`,p.age??'—',levelBadge(p.rating,'Niveau actuel sur 200'),levelBadge(p.potential,'Potentiel sur 200'),p.id<0?'—':clubLink(p.club),
-  p.value==null?'—':money(p.value),p.wage==null?'—':monthlySalary(p.wage),`<span class="${p.expiring?'danger':''}">${date(p.contract_end)}</span>`,fitness(p),p.caps,p.goals]),
-  data.squad.map(p=>[p.position,p.name,p.age??'',p.rating,p.potential??'',p.club?.name??'',p.value??'',p.wage??'',p.contract_end??'',p.injured_until||p.suspension?-1:p.fitness,p.caps,p.goals])));
+ const view=params.get('vue'),sorted=params.get('tri')||'position',order=params.get('ordre')||'asc',count=data.squad.length;
+ const title=`${data.camp.upcoming?'Rassemblement':'Dernier rassemblement'} ${campDays(data.camp.start,data.camp.end)} · ${count} joueur${count>1?'s':''}`;
+ return card(title,playerTable({items:data.squad},true,sorted,order,{view,pager:false,selection:true}),`<div class="card-tools">${playerViewSwitch(view,sorted,order,true,{selection:true})}</div>`);
+}
+// The group the selection plays in, beside its list as a club's league stands beside its squad: every nation of the group,
+// the places that qualify marked, titled with the last round counted.
+// `own` is the selection whose page it is; `extract` keeps the points and the goal difference, for the column of widgets.
+function groupCard(group,own,extract=false){
+ if(!group)return '';
+ const round=Math.max(0,...group.rows.map(row=>row.played));
+ const title=`Groupe ${e(group.name)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
+ return `<section class="card standings-card${extract?' standings-extract':''}"><div class="card-head"><h2>${title}</h2><a href="#/international/${group.year}/${group.finals?'finals':'qualifications'}" aria-label="Voir le groupe">Voir →</a></div>${internationalStandings(group.rows,group.places,{extract,own})}</section>`;
+}
+// The Effectif tab, laid out as a club's: the list, and on its right the calendar, the last eleven and the group.
+function squadContent(nation,params){
+ // The widgets of a club read its competition by name: a match of another edition carries its badge.
+ const team={...nation,competition:nation.competition?.name};
+ return `<div class="club-squad-layout"><div class="club-squad">${squadCard(nation,params)}</div><aside class="club-widgets" aria-label="La sélection en bref">`
+  +`${calendarBlock(team,nation.calendar,`#/international/nation/${nation.id}/calendar`)}${lineupBlock(team,nation.lineup,'La sélection n’a pas encore joué.')}${groupCard(nation.group,nation.id,true)}</aside></div>`;
+}
+// A selection's round as short as it reads: J3 in its qualifiers, the stage of the finals in full.
+const editionRound=label=>String(label||'').replace(/^Qualifications · /,'');
+// Where the selection stands or stood in each edition it played, the latest first, and its record there.
+function recordCard(rows){
+ const place=row=>row.winner?`<span class="strong">✦ ${e(row.place)}</span>`:e(row.place);
+ return card('Bilan',`<div class="edition-records">${standings(['COMPÉTITION','PLACE','J','V','N','D','BP','BC'],rows.map(row=>[
+  `${competitionBadge(row)}<a class="strong" href="#/international/${row.year}/finals">${e(row.name)}</a>`,place(row),row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against]))}</div>`);
+}
+// The Calendrier tab, a club's: one line per match of an edition, the day (with its year: an edition runs over two), the
+// edition's badge, the round, a plane away, the other side, the score from the selection's side and the scorers of either
+// side. The edition is picked in the head of the card (`edition` in the address; the one under way by default). Beside
+// the matches, the group of that edition in full and the record in each edition played.
+function calendarContent(nation,data){
+ if(!data.items.length)return `<section class="card">${empty('Aucun match programmé pour cette sélection.','Calendrier vide')}</section>`;
+ const competitions=new Map(data.competitions.map(row=>[row.id,row]));
+ const choice=item=>`<button type="button" data-param="edition" data-param-value="${item.year}" aria-pressed="${item.year===data.edition}" class="${item.year===data.edition?'active':''}">${e(item.name)}</button>`;
+ const editions=data.editions.length>1?`<div class="segmented" role="group" aria-label="Édition">${data.editions.map(choice).join('')}</div>`:'';
+ return `<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2>${editions}</div>`
+  +`${calendarRows(data.items,nation,competitions,{written:date,round:editionRound})}</section><aside class="calendar-side">${groupCard(data.group,nation.id)}${recordCard(data.competitions)}</aside></div>`;
 }
 function historyContent(data){
  const editions=card('Bilan par compétition',data.editions.length?table(['ÉDITION','QUALIFICATIONS','PHASE FINALE'],data.editions.map(row=>[e(row.name),editionRun(row.qualification),editionRun(row.finals)])):empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));
  return editions+leadersCards(data.leaders);
 }
-async function nationScreen(id,tab){
- const [data,nav]=await Promise.all([api(`/international/nations/${id}`),api(`/international/nations/${id}/navigation`)]);
+// A selection's page: a club's header in its colours with the tabs, then the open tab. Only the list of the Effectif tab
+// reads the sort of the address, only the Calendrier tab its edition.
+async function nationScreen(id,tab,params=new URLSearchParams()){
  tab=NATION_TABS.some(([key])=>key===tab)?tab:'squad';
- const title=`<div class="page-heading"><div class="identity">${nationNavigation(nav,tab)}<div class="crest">${nationFlag(data.nation)}</div><div><span class="eyebrow">${e(data.federation)} · Force ${n(data.strength)} / 100</span><h1>${e(data.name)}</h1></div></div></div>`;
- const content=tab==='calendar'?card('Calendrier et résultats',fixtures({items:data.matches},true)):tab==='history'?historyContent(data):squadCard(data);
- return title+tabs(`#/international/nation/${id}`,NATION_TABS,tab)+content;
+ const sort=tab==='squad'?query({tri:params.get('tri'),ordre:params.get('ordre')}):'';
+ const edition=/^\d+$/.test(params.get('edition')||'')?`?edition=${params.get('edition')}`:'';
+ const [data,nav,calendar]=await Promise.all([api(`/international/nations/${id}${sort?`?${sort}`:''}`),api(`/international/nations/${id}/navigation`),
+  tab==='calendar'?api(`/international/nations/${id}/calendrier${edition}`):null]);
+ const content=tab==='calendar'?calendarContent(data,calendar):tab==='history'?historyContent(data):squadContent(data,params);
+ return nationHero(data,{lead:nationNavigation(nav,tab),menu:NATION_TABS,section:tab})+content;
 }
 
 // The edition not won yet: the one under way, or the next to come.
@@ -136,7 +187,7 @@ function titlesCard(editions){
  return wins.size?card('Nations les plus titrées',table(['NATION','TITRES'],[...wins.values()].sort((a,b)=>b.titles-a.titles||a.team.name.localeCompare(b.team.name,'fr')).map(row=>[clubLink(row.team),`★ ${row.titles}`]))):'';
 }
 export async function internationalScreen(id,section,tab,params=new URLSearchParams()){
- if(id==='nation')return nationScreen(section,tab);
+ if(id==='nation')return nationScreen(section,tab,params);
  const data=await api('/international');
  if(!data.enabled)return heading('Sélections nationales')+card('Nouvelle partie nécessaire',empty('Cette sauvegarde conserve son calendrier de clubs. Créez une nouvelle partie pour activer les sélections nationales.'));
  if(id){
