@@ -26,6 +26,8 @@ const tile=(label,value,extra='',title='',hue=null)=>`<div class="club-hero-tile
 const signed=value=>value>0?`+${n(value)}`:value<0?`−${n(-value)}`:'0';
 // What fills the disc of a club: its initials, under its crest when the game has one.
 const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()">`;
+// What fills the disc of a selection: its initials, under its flag when it has one.
+const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`;};
 
 // The band and what closes it, a club's, a selection's or a player's: `colors` is what heroColors gives, `lead` steps
 // between peers, `crest` fills the disc, `facts` is the line over the `name`, `after` what follows the name on its line,
@@ -57,10 +59,26 @@ export function clubHero(club,{lead='',menu,section}){
 // The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its confederation
 // and the edition it plays over its name, then its strength. `lead` steps between the selections of the confederation.
 export function nationHero(nation,{lead='',menu,section}){
- const flag=flagUrl(nation.nation);
  const facts=[nation.federation,nation.competition?.name,nation.competition?.stage].filter(Boolean).join(' · ');
  return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section),
-  crest:`${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`,facts:e(facts),tiles:tile('Force',n(nation.strength))});
+  crest:nationCrest(nation),facts:e(facts),tiles:tile('Force',n(nation.strength))});
+}
+
+// A side of a match without colours keeps the panel's, whatever the other side wears.
+const PLAIN_SIDE='--hero-field:var(--panel-2);--hero-ink:var(--ink);--hero-sash:transparent;--crest-major:var(--panel-3);--crest-minor:var(--panel-3);--crest-ink:var(--ink)';
+const sideColors=team=>heroColors(team.major_color,team.minor_color)||PLAIN_SIDE;
+
+// The header of a match is the two sides' headers in one band: the side at home on the left, the other on the right, each in
+// its colours with its sash, its crest (a selection's flag) and its name, a link to its page. The score stands on a tile
+// where they meet, over what settled a tie (the aggregate, the shoot-out). `foot` is what stands under the band.
+export function matchHero(match,foot=''){
+ const side=(team,away)=>`<div class="match-hero-side${away?' away':''}"${away?` style="${sideColors(team)}"`:''}><div class="crest club-hero-crest">${team.national?nationCrest(team):clubCrest(team)}</div>`
+  +`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a></div>`;
+ const settled=[match.aggregate?`Cumul ${match.aggregate.join(' – ')}`:'',match.penalties?`${match.penalties.join(' – ')} t.a.b.`:''].filter(Boolean).join(' · ');
+ return `<header class="club-hero match-hero" style="${sideColors(match.home)}"><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i>`
+  +`<span style="${sideColors(match.away)}"><i class="field"></i><i></i><i class="thin"></i></span></div>`
+  +`<div class="club-hero-main">${side(match.home,false)}<div class="club-hero-tile match-score"><strong class="big-score">${match.score?match.score.join(' : '):'VS'}</strong>${settled?`<span>${settled}</span>`:''}</div>`
+  +`${side(match.away,true)}</div></div>${foot}</header>`;
 }
 
 // What a player did for his selection, on one tile of three columns: its flag over its code (the nation he plays for, else

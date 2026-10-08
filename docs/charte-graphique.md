@@ -110,6 +110,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-club`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « En-tête d'un joueur » |
+| En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent. Voir « En-tête d'un match » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
@@ -206,6 +207,27 @@ sans disque.
   Une commande impossible reste à sa place, grisée, sa raison en infobulle.
   Sans club dirigé, pas de barre.
 
+### En-tête d'un match
+
+Le compte rendu d'un match s'ouvre sur un seul bandeau (`.hero.duel`), partagé
+entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
+
+- **Chaque moitié** est l'en-tête de son camp : ses couleurs (un maillot proche
+  du blanc cède la place à sa seconde couleur, comme pour un club), son
+  écharpe, son écusson sur le disque (le drapeau pour une sélection), son nom en
+  40, lien vers sa fiche. Un camp sans couleurs garde le fond `--panel-2`.
+- **Score** : en 40, sur une tuile là où les deux moitiés se rejoignent ; « VS »
+  avant le match. Dessous, sur une ligne, ce qui a départagé : « Cumul 3 – 3 »,
+  « 4 – 2 t.a.b. ».
+- **Barre** (`.hero-bar`) : 36. À gauche (`.match-facts`) la pastille de la
+  compétition, le tour en gras, puis, atténués, le jour, les places du stade,
+  « Terrain neutre » ; enfin « Vainqueur : » et le camp qualifié, quand le match
+  en désigne un. À droite, les commandes de 28 : « Match aller », puis
+  « Résumé 2D ».
+- **Les noms ne sont écrits qu'ici.** Sur le reste de l'écran, rien ne nomme un
+  camp : celui qui reçoit est à gauche (sa composition, ses temps forts, sa part
+  des barres). Les compositions n'ont pas de titre.
+
 ### Menu d'un joueur
 
 Un clic droit sur un joueur (son nom, sa ligne dans une liste, son maillot sur
@@ -276,7 +298,8 @@ gardent les encres, la couleur reste à la barre.
 - Rien de part et d'autre (0 – 0) laisse la barre vide, en `--panel-3`.
 - Le plus grand des deux chiffres est en gras, l'autre atténué ; à égalité, les
   deux sont atténués.
-- Au-dessus des lignes, chaque camp est nommé de son côté, après sa pastille.
+- Les camps ne sont pas nommés : celui qui reçoit est à gauche, comme dans le
+  bandeau du match.
 
 ### La couleur d'un club dans un graphique
 
@@ -478,6 +501,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 | Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
+| Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`) |
 | Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
 
 Ce qui reste :
@@ -499,3 +523,5 @@ le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>,
 comme la répartition des budgets : <https://claude.ai/artifact/Ga78jdTYs5RHHZweXDyjYd>
 et la fiche d'une sélection (proposition A) : <https://claude.ai/artifact/THiSHcUqdwdres8yWJc5NR>,
 et celle d'un joueur (proposition D, bloc sélection 3) : <https://claude.ai/artifact/1dXpFEK4mUHwaxcZmX8q7s>.
+Le compte rendu d'un match a été redessiné depuis (proposition A) :
+<https://claude.ai/artifact/X8NKTayKm5YXFuCJQTBWKo> ; sa planche du canevas montre l'ancienne bannière.

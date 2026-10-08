@@ -649,6 +649,11 @@ def lineup_rows(world: World, result: MatchResult, side: str) -> list[dict]:
 def match_detail(world: World, match: Match) -> dict:
     data = match_row(world, match)
     data["capacity"] = None if match.neutral or match.id in world.international.matches else world.clubs[match.home_id].capacity
+    if match.id in world.international.matches:
+        # A selection wears its kit as a club does: the report's band and its shirts read the same keys.
+        from .nations import kit_colors
+        for side in ("home", "away"):
+            data[side] = {**data[side], **kit_colors(data[side]["name"])}
     result = match.result
     if result is None:
         data["result"] = None

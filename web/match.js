@@ -1,5 +1,6 @@
 import {replayCard} from './match-replay.js';
-import {api,escape as e,number as n,matchNoteBadge,date,clubLink,playerLink,empty,card,table,pitch,kitDot,safeColor,contrastText,contrastRatio,chartColours} from './ui.js';
+import {matchHero} from './club-hero.js';
+import {api,escape as e,number as n,matchNoteBadge,date,clubLink,playerLink,empty,card,table,pitch,competitionBadge,safeColor,contrastText,contrastRatio,chartColours} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
@@ -43,8 +44,8 @@ function lineupCard(match,side,marks){
  const result=match.result,kit=kitOf(match[side],side);
  const bench=result[`${side}_bench`].map(player=>{const events=marks[player.id];return [`<span class="bench-player${events?.on==null?' unused':''}">${playerLink(player.id,player.name)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—',matchNoteBadge(player.stats?.rating)||'—'];});
  const onPitch=player=>{const html=marksOf(marks[player.id]);return html?`<span class="pitch-marks">${html}</span>`:'';};
- const team=match[side];
- return `<section class="card match-lineup"><div class="card-head"><h2>${kitDot(team)}${e(team.name)}</h2></div>${pitch(result[`${side}_lineup`],`Composition de ${team.name}`,{compact:true,kit,marks:onPitch})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
+ // No heading: the side at home is on the left of the page, as in the band.
+ return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
 }
 
 // Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.
@@ -55,18 +56,17 @@ export function replayTeams(match){
  return {home:{name:match.home.name,major:homeMajor,minor:minor(homeMajor,home),keeper},away:{name:match.away.name,major:awayMajor,minor:minor(awayMajor,away),keeper}};
 }
 
-const sidesHead=match=>`<div class="match-sides"><span>${kitDot(match.home)}${e(match.home.name)}</span><span>${kitDot(match.away)}${e(match.away.name)}</span></div>`;
-
 export function statsCard(match){
  const result=match.result,home=result.home_stats,away=result.away_stats,totalPoss=home.possession_seconds+away.possession_seconds;
  const [homeColor,awayColor]=chartColours(match.home,match.away);
  const stats=[['Buts attendus (xG)',home.xg,away.xg],['Tirs',home.shots,away.shots],['Tirs cadrés',home.on_target,away.on_target],['Possession',100*home.possession_seconds/Math.max(1,totalPoss),100*away.possession_seconds/Math.max(1,totalPoss)],['Corners',home.corners,away.corners],['Coups francs',home.free_kicks,away.free_kicks],['Cartons jaunes',home.yellows,away.yellows],['Cartons rouges',home.reds,away.reds]];
- // One bar a line, shared between the two sides by their part of the two figures; the larger figure is the strong one.
+ // One bar a line, shared between the two sides by their part of the two figures, the home side's on the left; the larger
+ // figure is the strong one.
  const rows=stats.map(([label,a=0,b=0])=>{
   const unit=label==='Possession'?'\u00a0%':'',total=a+b;
   return `<div class="comparison"><span class="${a>b?'lead':''}">${n(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${n(b)}${unit}</span></div>`;
  }).join('');
- return card('Le match en chiffres',`${sidesHead(match)}<div class="comparisons">${rows}</div>`,'','match-stats');
+ return card('Le match en chiffres',`<div class="comparisons">${rows}</div>`,'','match-stats');
 }
 
 // Goals, injuries and red cards in the order they came, the home side's on the left and the away side's on the right.
@@ -80,16 +80,21 @@ export function highlightsCard(match,link=playerLink){
   return `${mark}<div><strong>${event.player?link(event.player_id,event.player):'—'}</strong><small>${detail}</small></div>`;
  };
  const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
- return card('Les temps forts',`${sidesHead(match)}<div class="card-body">${rows||empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
+ return card('Les temps forts',rows?`<div class="highlights">${rows}</div>`:`<div class="card-body">${empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
 }
 
 export async function matchScreen(id){
  const match=await api(`/matches/${id}`);
- const context=`<div class="match-context"><span class="eyebrow">${e(match.competition)} · ${e(match.round_label||`Journée ${match.round}`)}</span><p>${date(match.date,true)}${match.neutral?' · Terrain neutre':''}</p>${match.first_leg_id?`<p><a href="#/match/${match.first_leg_id}">Voir le match aller</a></p>`:''}${match.winner_id?`<p>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</p>`:''}</div>`;
  const result=match.result;
- // The 2D summary exists only for a played match with details; its toggle takes the banner's free right column.
+ // The 2D summary exists only for a played match with details; its toggle is the last command under the band.
  const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
- const header=`<section class="match-banner">${context}<div class="scoreboard"><div>${clubLink(match.home)}</div><div class="big-score">${match.score?match.score.join(' : '):'VS'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</div><div>${clubLink(match.away)}</div></div>${replay.toggle?`<div class="match-actions">${replay.toggle}</div>`:''}</section>`;
+ // Under the band: the competition and the round, the day and the ground, who went through; then the first leg and the summary.
+ const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})});
+ const where=[date(match.date,true),match.capacity?`${n(match.capacity)} places`:'',match.neutral?'Terrain neutre':''].filter(Boolean).join(' · ');
+ const winner=match.winner_id?`<span>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</span>`:'';
+ const commands=`${match.first_leg_id?`<a class="button" href="#/match/${match.first_leg_id}">Match aller</a>`:''}${replay.toggle}`;
+ const header=matchHero(match,`<div class="club-hero-bar"><div class="hero-pills"><div class="match-facts">${badge}<strong>${e(match.round_label||`Journée ${match.round}`)}</strong><span class="muted">${where}</span>${winner}</div></div>`
+  +`${commands?`<div class="hero-commands">${commands}</div>`:''}</div>`);
  if(!result)return header+card('Avant-match',empty('Cette rencontre sera simulée à sa date prévue.','Le coup d’envoi approche'));
  if(!result.home_stats)return header+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
  const marks=playerEvents(result.events);

@@ -28,7 +28,7 @@ body{background:var(--bg)}
 :focus-visible{outline:2px solid var(--accent)}
 
 /* Titles and figures: condensed, like the match-day graphics. */
-h1,h2,.card-head h2,.stat-card strong,.scoreboard,.big-score,.date-block strong,.brand,.identity h1,.section-title{font-family:var(--display);font-stretch:semi-condensed}
+h1,h2,.card-head h2,.stat-card strong,.big-score,.date-block strong,.brand,.identity h1,.section-title{font-family:var(--display);font-stretch:semi-condensed}
 h1{font-weight:700;letter-spacing:0;font-size:26px}
 h2{font-weight:600}
 p{color:var(--muted)}
@@ -91,10 +91,10 @@ footer{border-color:var(--line);color:var(--muted)}
 .stat-card .label{font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase}
 .stat-card strong{color:var(--strong);font-weight:700}
 .section-title{color:var(--muted);text-transform:uppercase;letter-spacing:var(--caps)}
-.hero,.match-banner{background:var(--band);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius)}
+.hero{background:var(--band);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius)}
 .welcome h1{color:var(--strong)}
-.hero .eyebrow,.match-banner .eyebrow{color:var(--accent-text)}
-.hero p,.match-banner p{color:var(--muted)}
+.hero .eyebrow{color:var(--accent-text)}
+.hero p{color:var(--muted)}
 .hero-graphic{border-color:#2f5a41;background:repeating-linear-gradient(0deg,#1d4a3266 0 25px,#22533a66 25px 50px)}
 .hero-graphic:before,.hero-graphic:after{border-color:#ffffff38}
 .pitch-dot{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
@@ -189,8 +189,6 @@ tfoot td{background:var(--panel-2);border-color:var(--line)}
 .temporary-player{color:var(--muted)}
 
 /* Match. */
-.scoreboard .big-score{color:var(--strong);letter-spacing:var(--caps);font-weight:700}
-.match-sides{border-color:var(--line)}
 .comparison-bar{background:var(--line)}
 .comparison-bar span:first-child{background:var(--accent)}
 .comparison-bar span:last-child{background:#e23a3a}
@@ -299,7 +297,6 @@ h1{font-size:26px;margin:0}
 .stat-card strong{font-size:20px;margin:4px 0 2px}
 .hero{min-height:0;padding:14px 18px;margin-bottom:10px}
 .welcome .hero{padding:28px}
-.match-banner{padding:8px 14px;margin-bottom:10px}
 .notice{padding:6px 10px;margin-bottom:8px}
 .filters{margin-bottom:8px;gap:6px}
 .filters input,.filters select{padding:5px 8px}

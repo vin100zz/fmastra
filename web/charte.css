@@ -80,7 +80,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .card-head a{font-size:var(--fs-small);font-weight:600}
 .card-body{padding:var(--s2) var(--s3)}
 .grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.history-row,.movement-summary,.history-side,.history-leaders,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.league-tiles,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
-.club-hero,.club-overview,.stat-grid,.match-banner,.match-replay-card,.finance-figures,.finance-row,.history-row,.movement-summary,.seasons-card,.match-layout .card{margin-bottom:var(--s2)}
+.club-hero,.club-overview,.stat-grid,.match-replay-card,.finance-figures,.finance-row,.history-row,.movement-summary,.seasons-card,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
 .history-archives .season-archive{margin-bottom:var(--s2)}
 .section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.entity-menu-scope,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
@@ -231,6 +231,22 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
 .hero-pills{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-right:auto}
 .hero-commands{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
+/* A match's header is the two sides' headers in one band: the side at home on the left, the other on the right, each in its
+   colours with its sash (the away side's own are set on its half and on its side). The score stands on a tile where they
+   meet, over what settled a tie. Under the band, where a player has his bar: the competition, the round, the day and the
+   ground on the left, the commands on the right. */
+.match-hero .club-hero-main{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:var(--s6);padding:0 var(--s3)}
+.match-hero .club-hero-art i{clip-path:polygon(38% 0,41% 0,33% 100%,30% 100%)}
+.match-hero .club-hero-art i.thin{clip-path:polygon(36% 0,36.75% 0,28.75% 100%,28% 100%)}
+.match-hero .club-hero-art span i{clip-path:polygon(67% 0,70% 0,62% 100%,59% 100%)}
+.match-hero .club-hero-art span i.thin{clip-path:polygon(71.25% 0,72% 0,64% 100%,63.25% 100%)}
+.match-hero .club-hero-art span i.field{background:var(--hero-field);opacity:1;clip-path:polygon(54% 0,100% 0,100% 100%,46% 100%)}
+.match-hero-side{display:flex;align-items:center;gap:var(--s4);min-width:0;color:var(--hero-ink,var(--ink))}
+.match-hero-side.away{flex-direction:row-reverse}
+.match-hero-name{min-width:0;font:700 var(--fs-hero)/1 var(--display);font-stretch:semi-condensed;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
+.club-hero-tile.match-score{align-items:center;min-width:0;padding:var(--s1) var(--s4)}
+.match-score .big-score{font-size:var(--fs-hero);line-height:1;white-space:nowrap}
+.match-facts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
 
 /* A player's page: under his header, a card of facts saying how he is, then what his contract holds; beside it his
    attributes and his positions, then his career and his level over time. Rows and strips of 26, as a table's. */
@@ -367,13 +383,14 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .live-player{gap:2px}
 .live-player-name{font-size:var(--fs-small)}
 
-/* Match report: the score between the two sides, what happened minute by minute, the two sides' figures on shared bars. */
+/* Match report: under its header, what happened minute by minute and the two sides' figures on shared bars, between the
+   two line-ups. Nothing names a side again: the one at home is on the left, as in the band. */
 @media(min-width:1330px){.match-layout{grid-template-columns:480px minmax(0,1fr) 480px}}
-.match-banner{border-radius:var(--radius)}
-.match-banner .scoreboard{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-title);font-weight:700}
-.match-banner .scoreboard .big-score{font-size:var(--fs-hero);line-height:1;letter-spacing:0}
-.match-sides,.match-stats .match-sides{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--panel-2);border-bottom:1px solid var(--line);font-size:var(--fs-body);font-weight:600;color:var(--strong)}
+.highlights{padding:0 var(--s3)}
 .highlight-row{min-height:40px;padding:0;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)}
+.highlights .highlight-row:last-child{border-bottom:0}
+.highlight.home{flex-direction:row;text-align:left}
+.highlight.away{flex-direction:row-reverse;text-align:right}
 .highlight-row .minute,.timeline-row .minute{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-figure);font-weight:700;color:var(--accent-text)}
 /* Two sides compared: the figures at the ends, the label over one bar shared between them. Each part is its side's share of
    the two figures, with a gap of the surface between the parts; nothing on either side leaves the bar empty. The larger

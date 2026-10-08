@@ -90,6 +90,8 @@ def test_national_api_and_player_history(imported, tmp_path):
         assert 'matches' not in nation
         match = client.get(f"/api/matches/{edition['matches'][0]['id']}").json()
         assert match['international'] and match['home']['national']
+        # A selection's report carries its kit under the keys of a club's.
+        assert {'major_color', 'minor_color'} <= set(match['home']) and {'major_color', 'minor_color'} <= set(match['away'])
         pid = next(p['id'] for p in nation['squad'] if p['id'] >= 0)
         profile = client.get(f'/api/joueurs/{pid}').json()
         assert 'international_caps' in profile and 'historical_goals' in profile

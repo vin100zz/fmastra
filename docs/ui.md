@@ -699,14 +699,20 @@ message (« il vient d'arriver ») reste dans son infobulle.
 
 Écran de compte rendu, consultable après simulation :
 
-- Score, compétition, journée, stade
+- L'en-tête d'un match (charte, « En-tête d'un match ») : le bandeau partagé entre les deux camps, celui qui
+  reçoit à gauche, le score entre eux avec le cumul et les tirs au but dessous ; dans la barre, la compétition,
+  le tour, le jour, le stade et le vainqueur à gauche, « Match aller » et « Résumé 2D » à droite
+- Le nom des deux camps n'est écrit que dans le bandeau : sur le reste de l'écran, ce qui est à gauche est au
+  camp qui reçoit
+- Trois colonnes : la composition d'un camp, les temps forts et les chiffres, la composition de l'autre
+- Temps forts : buts, blessures et cartons rouges dans l'ordre du match, la minute au milieu, chaque camp à
+  son bord
 - xG, tirs, possession, corners, cartons : une barre par ligne, partagée entre les deux camps, chacun à sa
   couleur (charte, « Graphiques »)
-- Fil chronologique des événements avec joueurs nommés
-- Compositions des deux équipes sur le terrain de la charte : le poste sur le maillot, la note du match à sa
-  droite, les faits du match à sa gauche ; les remplaçants en liste, avec leur entrée et leur note
-- Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D » à droite
-  du bandeau du score l'ouvre et lance la lecture, puis le replie (la lecture se
+- Compositions des deux équipes sur le terrain de la charte, sans titre : le poste sur le maillot, la note du
+  match à sa droite, les faits du match à sa gauche ; les remplaçants en liste, avec leur entrée et leur note
+- Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
+  de la barre de l'en-tête, l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
@@ -1062,7 +1068,7 @@ GET  /api/joueurs/{id}/historique         carrière (chaque ligne : competition,
                                           championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
-GET  /api/matches/{id}                    compte rendu complet
+GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection
 
 GET  /api/ma-partie/actualites?page=&message=&taille=   le fil, du plus récent au plus ancien : la page demandée, sinon celle du message ;
                                           chaque ligne : {id, date, kind, title, segments: [{text, ref?}], read, pending}

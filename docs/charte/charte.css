@@ -300,6 +300,22 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);flex:none;min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
 .hero-pills{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-right:auto}
 .command-group{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
+/* A match's header is the two sides' headers in one band: the side at home on the left, the other on the right, each in
+   its colours with its sash, its crest and its name. The score stands on a tile where they meet, over what settled a
+   tie (the aggregate, the shoot-out). Under the band, where a player has his bar: the competition, the round, the day
+   and the ground on the left, the commands on the right. */
+.hero.duel{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:var(--s6);padding:0 var(--s3)}
+.hero-sash.away-field{clip-path:polygon(54% 0,100% 0,100% 100%,46% 100%)}
+.hero-sash.home-band{clip-path:polygon(38% 0,41% 0,33% 100%,30% 100%)}
+.hero-sash.home-band.thin{clip-path:polygon(36% 0,36.75% 0,28.75% 100%,28% 100%)}
+.hero-sash.away-band{clip-path:polygon(67% 0,70% 0,62% 100%,59% 100%)}
+.hero-sash.away-band.thin{clip-path:polygon(71.25% 0,72% 0,64% 100%,63.25% 100%)}
+.hero-side{display:flex;align-items:center;gap:var(--s4);min-width:0}
+.hero-side.away{flex-direction:row-reverse}
+.hero-side h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero .tile.match-score{align-items:center;min-width:0;padding:var(--s1) var(--s4)}
+.big-score{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong);white-space:nowrap}
+.match-facts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
 
 /* The pitch: one grass, one set of lines, upright (attacking upwards) or lying (attacking to the right). */
 .pitch{position:relative;flex:none;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
@@ -344,18 +360,14 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .bench{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s1)}
 .bench-slot{display:flex;align-items:center;gap:6px;min-width:0;height:var(--h-row);padding:0 var(--s2);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);font-weight:600;color:var(--strong);white-space:nowrap;overflow:hidden}
 
-/* Match report: the score between the two sides, what happened minute by minute, the two sides' figures face to face. */
-.match-banner{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;flex:none;height:72px;padding:0 var(--s4)}
-.match-banner>:last-child{justify-self:end}
-.scoreboard{display:flex;align-items:center;gap:var(--s6)}
-.scoreboard a{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-title)/1 var(--display);color:var(--strong)}
-.big-score{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong)}
-.match-sides{display:flex;align-items:center;justify-content:space-between;flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--panel-2);border-bottom:1px solid var(--line);font-weight:600;color:var(--strong)}
+/* Match report: under its header, what happened minute by minute and the two sides' figures face to face. Nothing names
+   a side again: the one at home is on the left, as in the band. */
 .highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;height:40px;padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
 .highlight{display:flex;align-items:center;gap:var(--s2)}
 .highlight.away{flex-direction:row-reverse;text-align:right}
 .highlight>div{display:flex;flex-direction:column;line-height:16px}
 .highlight.away>div{align-items:flex-end}
+.highlight-row:last-child{border-bottom:0}
 .minute{font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--accent-text)}
 /* Two sides compared: the figures at the ends, the label over one bar shared between them. Each part is its side's share
    of the two figures, with a gap of the surface between the parts; nothing on either side leaves the bar empty (.none).
