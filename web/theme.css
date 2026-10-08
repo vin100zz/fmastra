@@ -1135,6 +1135,12 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-lines.morale li{grid-template-columns:minmax(0,170px) minmax(0,1fr) auto}
 .news-lines.morale li>:nth-child(2){text-align:left}
 .news-lines.expiry li{grid-template-columns:minmax(0,1fr) 130px 150px}
+.news-lines.recap li{grid-template-columns:minmax(0,5fr) minmax(0,9fr) 64px;min-height:var(--h-row)}
+.news-lines.recap li>:nth-child(2){display:flex;align-items:center;gap:var(--s2);white-space:nowrap}
+.news-lines.recap .club-link{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.news-lines.draw li{grid-template-columns:minmax(0,1fr) 96px 104px;min-height:var(--h-row)}
+.news-lines.draw li>:nth-child(2){text-align:left}
+.news-body .section-title{margin:0 0 var(--s1)}
 .news-lines .market-actions{width:auto}
 .news-lines button,.news-actions button{padding:5px 12px;font-size:13px;white-space:nowrap}
 .news-state{font-size:13px;font-weight:600;color:var(--muted)}

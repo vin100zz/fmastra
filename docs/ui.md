@@ -148,7 +148,7 @@ moins large les widgets passent sur une colonne, puis sous le message.
 
 **Le fil**, à gauche, défile dans sa colonne : un message par ligne, du plus récent au plus ancien, avec le badge
 coloré de sa catégorie (Transfert, Prêt, Contrat, Moral, Blessure, Suspension, Sélection, Formation, Mercato, Saison,
-Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
+Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
 lu dès qu'il est ouvert. Un point rouge marque un message qui attend une réponse, une coche celui qui l'a reçue. « Tout
 lire », au-dessus du fil, marque tout comme lu.
 
@@ -169,6 +169,8 @@ convoqués, les fins de contrat, les jeunes promus. Un joueur seul tient dans le
 | Contrats qui expirent (à 6 mois, à 1 mois) | Par joueur : son salaire, et « Proposer un contrat », qui ouvre le contrat qu'il signerait ; grisé avec la raison en infobulle s'il ne veut pas prolonger |
 | Mercato ouvert | Date de fermeture, budget de transferts, marge sous le plafond salarial, lien vers Joueurs |
 | Mercato qui ferme demain | Vos offres en cours, les joueurs dont une offre attend, budget de transferts, lien vers Joueurs |
+| Bilan du mercato (le lendemain de sa fermeture) | Les principaux transferts de la fenêtre, dans la division du club (un joueur arrivé dans un de ses clubs ou parti de l'un d'eux) puis dans le monde : les 5 plus grosses indemnités, puis les 3 joueurs libres du plus haut niveau. Par ligne : le joueur, le club quitté → le club rejoint, l'indemnité ; un joueur libre vient de « Libre » et porte sa pastille de niveau à la place du montant |
+| Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
 | Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
 | Les autres (transfert, prêt, offre refusée, promotion, trophée…) | Une phrase, ses noms en liens |
 
@@ -1056,7 +1058,7 @@ GET  /api/matches/{id}                    compte rendu complet
 
 GET  /api/ma-partie/actualites?page=&message=&taille=   le fil, du plus récent au plus ancien : la page demandée, sinon celle du message ;
                                           chaque ligne : {id, date, kind, title, segments: [{text, ref?}], read, pending}
-GET  /api/ma-partie/actualites/{id}       un message : sa ligne, et selon son genre offers, renewal, talks, players, expiry, market ou review
+GET  /api/ma-partie/actualites/{id}       un message : sa ligne, et selon son genre offers, renewal, talks, players, expiry, market, recap, draw ou review
 POST /api/partie/actualites-lues          {ids: [id] | null} ; null marque tout le fil -> {unread, news}
 POST /api/partie/reponse-offre            {commande_id, offre_id, decision: "accepter" | "refuser" | "contre", indemnite?} ; "contre" donne le prix du club
                                           (indemnite, au-dessus de l'offre) -> {vendu} : conclu à ce prix, ou pris comme un refus

@@ -17,6 +17,12 @@ A message of one of these kinds has no sentence of its own: the pages write it f
 - `contract_expiry` (its `text` the months left): one line per player, `amount` his weekly wage, `until` the end.
 - `market_open`, `market_close` (their `text` the window): `text` "budget" and "wages" with their `amount`, "end"
   with the last day in `until`, then "talks" and "offers" naming the players still being negotiated.
+- `market_recap` (its `text` the window): one line per transfer, `text` where it counts among the main ones: "league",
+  with the division of the human club in `competition_id`, or "world". `club_id` is the club the player joined and
+  `key` the one he left, `amount` the fee; a free player (`state` "free") left none, and `amount` is his level out of 200.
+- `cup_draw`: one line per match a cup (`competition_id`) drew for the human club, in one message: the match of a
+  round, the two legs of a European tie, or every match of a European league phase. `match_id` is the match,
+  `club_id` its opponent, `amount` the round, `until` the day and `text` where it plays: "home", "away" or "neutral".
 - `season_review`: one line per competition the club played (`amount` its rank and `text` its points in a league,
   `match_id` its last match and `state` "won" in a cup, `club_id` the winner), `text` "europe" with the cup it
   reaches, `text` "scorer" and "rating" with the player and the goals or a hundred times the average rating.
@@ -29,7 +35,7 @@ from core.domain.clubs import Club
 from core.domain.date import Date
 from core.domain.offers import TransferOffer, WAGE_TALKS
 from core.domain.players import Contract, Player
-from core.domain.world import NewsItem, NewsLine, World
+from core.domain.world import NewsItem, NewsLine, World, history_level
 from .calendar import standings
 from .europe import association, league_places, resolve_european_quotas
 from .human import is_human_club, record, report
@@ -39,6 +45,9 @@ PENDING = "pending"
 EXPIRY_NOTICES = (6, 1)
 # The day the season is reviewed: every competition has ended, the summer window is about to open.
 REVIEW_DAY = (6, 1)
+# The transfers the recap of a window names, in the division of the human club as in the world: those of the highest
+# fees, then the free players of the highest levels.
+RECAP_FEES, RECAP_FREE = 5, 3
 
 
 def offer_received(world: World, offer: TransferOffer) -> None:
@@ -139,9 +148,29 @@ def expiry_notices(world: World, club: Club) -> None:
                        club.id, text=str(months))
 
 
+def market_recap(world: World, club: Club, name: str, start: Date, end: Date) -> None:
+    """The main transfers of the window `name`, from `start` to `end`: in the division of the human club (a player
+    who joined or left one of its clubs), then in the whole world."""
+    moves = [move for move in world.transfers if move.kind == "transfer" and start <= move.date <= end and move.player_id in world.players]
+    level = lambda move: history_level(world.players[move.player_id].rating)
+    paid = sorted((move for move in moves if move.fee), key=lambda move: (-move.fee, move.date, move.player_id))
+    free = sorted((move for move in moves if move.source_id is None), key=lambda move: (-level(move), move.date, move.player_id))
+    league = club.competition_id
+    plays = lambda club_id: club_id in world.clubs and world.clubs[club_id].competition_id == league
+    lines = []
+    for scope in ("league", "world") if league is not None else ("world",):
+        for ranked, count in ((paid, RECAP_FEES), (free, RECAP_FREE)):
+            told = [move for move in ranked if scope == "world" or plays(move.source_id) or plays(move.target_id)]
+            lines.extend(NewsLine(text=scope, competition_id=league if scope == "league" else None, player_id=move.player_id,
+                                  club_id=move.target_id, key="" if move.source_id is None else str(move.source_id),
+                                  amount=move.fee or level(move), state="" if move.fee else "free") for move in told[:count])
+    if lines: record(world, "market_recap", name, club.id, lines=tuple(lines))
+
+
 def market_notices(world: World, club: Club) -> None:
-    """The day a transfer window opens, and the eve of its last day: what the club can spend, and what is still open."""
-    today, tomorrow = (world.date.month, world.date.day), world.date.add_days(1)
+    """The day a transfer window opens, and the eve of its last day: what the club can spend, and what is still open.
+    The day after its last day: its main transfers."""
+    today, tomorrow, yesterday = (world.date.month, world.date.day), world.date.add_days(1), world.date.add_days(-1)
     reserved = sum(offer.ceiling for offer in world.offers.values() if offer.target_id == club.id)
     budget = NewsLine(text="budget", amount=max(0, club.transfer_budget - reserved))
     for name in ("summer", "winter"):
@@ -155,6 +184,25 @@ def market_notices(world: World, club: Club) -> None:
             sold = dict.fromkeys(offer.player_id for offer in world.offers.values() if offer.source_id == club.id and offer.awaiting_review)
             record(world, "market_close", name, club.id, lines=(budget, *(NewsLine(text="talks", player_id=pid) for pid in bought),
                                                                *(NewsLine(text="offers", player_id=pid) for pid in sold)))
+        if (yesterday.month, yesterday.day) == (window.end_month, window.end_day):
+            market_recap(world, club, name, Date(yesterday.year, window.start_month, window.start_day), yesterday)
+
+
+def draw_notices(world: World, first_id: int = 0) -> None:
+    """The opponents the cups drew for the human club, cup by cup: the matches it has yet to play among those created
+    since the id `first_id`. A round just played draws the next one; the season that opens draws the first round of
+    the national cup and the league phase of the European cups; a club just chosen is told all that awaits it."""
+    club = world.clubs.get(world.controlled_club_id)
+    if club is None or world.next_id == first_id: return
+    for cup in world.competitions.values():
+        if cup.kind not in ("cup", "europe"): continue
+        drawn = sorted((match for mid in cup.match_ids if mid >= first_id and (match := world.matches[mid]).result is None
+                        and club.id in (match.home_id, match.away_id)), key=lambda match: (match.date, match.id))
+        if not drawn: continue
+        record(world, "cup_draw", "", club.id, lines=tuple(
+            NewsLine(competition_id=cup.id, club_id=match.away_id if match.home_id == club.id else match.home_id, match_id=match.id,
+                     amount=match.round_number, until=match.date,
+                     text="neutral" if match.neutral else "home" if match.home_id == club.id else "away") for match in drawn))
 
 
 def season_review(world: World, club: Club) -> None:

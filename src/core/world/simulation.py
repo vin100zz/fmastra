@@ -18,7 +18,7 @@ from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
 from .finances import structural_income, annual_funding_factor
 from .budgets import carried_shift
 from .human import is_human_club, pending_lineup_match
-from .news import daily_notices, morale_alerts, morale_levels
+from .news import daily_notices, draw_notices, morale_alerts, morale_levels
 from .player_states import daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .talks import progress_talks
@@ -98,8 +98,10 @@ def annual_review(world: World) -> None:
         shift = carried_shift(club.wage_shift, cap, budget, minimum_wages, rules.weeks_per_year)
         apply(world, BudgetRenewed(club.id, income, max(minimum_wages, cap + shift), budget - shift * rules.weeks_per_year, rank,
                                    funding_factor, shift))
+    drawn = world.next_id
     matches = season_fixtures(world, world.date.year)
     apply(world, SeasonOpened(world.date.year, matches, champions))
+    draw_notices(world, drawn)
     complete_squads(world, list(incoming))
     for event in cohort_events(world): apply(world, event)
     ensure_minimums(world)
@@ -161,8 +163,10 @@ def close_day(world: World) -> None:
     cfg = world.config
     review = cfg.world.key_dates.population_review
     from .international import play_international_day
+    drawn = world.next_id
     progress_cups(world)
     progress_europe(world)
+    draw_notices(world, drawn)
     play_international_day(world)
     start = Date(world.season, review.month, review.day)
     days = start.add_years(1).ordinal() - start.ordinal()

@@ -345,6 +345,13 @@ moyennes, buts attendus.
 - Tout montant s'écrit en €, k€ ou M€ : € sous 1 000, k€ sous 1 000 000, M€
   au-delà (850 €, 95 k€, 1.2 M€).
 
+### Transferts
+
+Dans une liste, un transfert s'écrit du club quitté au club rejoint, une flèche
+atténuée entre les deux (Monaco → Paris SG), puis son indemnité. Un joueur sans
+club vient de « Libre », atténué ; il n'a pas d'indemnité : sa pastille de
+niveau en tient lieu.
+
 ### Classement
 
 Les colonnes sont toujours dans cet ordre : PTS, J, V, N, D, BP, BC, DIFF. ; la

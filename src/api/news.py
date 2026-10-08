@@ -79,6 +79,13 @@ def named(world: World, player_id: int) -> tuple[str, dict] | str:
     return ref["name"] if ref["gone"] else (ref["name"], {"player": player_id})
 
 
+def round_name(world: World, competition_id: int, number: int) -> str:
+    """A round of a cup as its page names it, without the leg of a European tie."""
+    from core.world.europe import round_label
+    european = world.competitions[competition_id].kind == "europe"
+    return (round_label(world, number) if european else v.ROUND_NAMES[number - 1]).split(" · ")[0]
+
+
 def title(world: World, item: NewsItem) -> list[dict]:
     """The title of a message, in segments."""
     kind, lines, count = item.kind, item.lines, len(item.lines)
@@ -117,6 +124,15 @@ def title(world: World, item: NewsItem) -> list[dict]:
     if kind in ("market_open", "market_close"):
         return sentence("Le ", (f"mercato {WINDOWS.get(item.text, '')}".strip(), {"page": "transfers"}),
                         " est ouvert" if kind == "market_open" else " ferme demain")
+    if kind == "market_recap":
+        return sentence("Bilan du ", (f"mercato {WINDOWS.get(item.text, '')}".strip(), {"page": "transfers"}))
+    if kind == "cup_draw" and lines:
+        cup, rival = competition_ref(world, lines[0].competition_id), v.club_ref(world, lines[0].club_id)
+        stage = round_name(world, cup["id"], lines[0].amount)
+        stage = f"{stage[0].lower()}{stage[1:]}"
+        # A league phase gives several opponents: the message lists them.
+        if len({line.club_id for line in lines}) > 1: return sentence((cup["name"], {"competition": cup}), f" : tirage de la {stage}")
+        return sentence((cup["name"], {"competition": cup}), " : ", (rival["name"], {"club": rival["id"]}), f" en {stage}")
     if kind == "season_review":
         season = item.date.year - 1
         return sentence(f"Bilan de la saison {season} / {season + 1}")
@@ -226,8 +242,27 @@ def market_body(world: World, item: NewsItem) -> dict:
             "talks": players("talks"), "offers": players("offers")}
 
 
+def recap_body(world: World, item: NewsItem) -> dict:
+    """The main transfers of a window: those of the division the human club played in, then those of the world (no
+    competition). A free player has no fee: his level stands in its place."""
+    scopes = {}
+    for line in item.lines:
+        free = line.state == "free"
+        scope = scopes.setdefault(line.text, {"competition": competition_ref(world, line.competition_id) if line.competition_id in world.competitions else None,
+                                              "transfers": []})
+        scope["transfers"].append({"player": player_ref(world, line.player_id), "source": v.club_ref(world, int(line.key)) if line.key else None,
+                                   "target": v.club_ref(world, line.club_id), "fee": None if free else line.amount,
+                                   "rating": line.amount / 2 if free else None})
+    return {"window": item.text, "scopes": list(scopes.values())}
+
+
+def draw_body(world: World, item: NewsItem) -> dict:
+    """The matches a cup drew for the human club, in the order it plays them: the opponent, the day and where."""
+    return {"matches": [{"id": line.match_id, "opponent": v.club_ref(world, line.club_id), "date": line.until.iso(), "venue": line.text}
+                        for line in item.lines]}
+
+
 def review_body(world: World, item: NewsItem) -> dict:
-    from core.world.europe import round_label
     competitions, body = [], {"season": item.date.year - 1, "europe": None, "scorer": None, "rating": None}
     for line in item.lines:
         if line.text == "europe": body["europe"] = competition_ref(world, line.competition_id)
@@ -239,9 +274,7 @@ def review_body(world: World, item: NewsItem) -> dict:
                      "rank": None, "points": None, "round": None, "won": line.state == "won"}
             match = world.matches.get(line.match_id) if line.match_id is not None else None
             if competition.kind == "league": entry.update(rank=line.amount, points=int(line.text or 0))
-            elif match is not None:
-                entry["round"] = (round_label(world, match.round_number) if competition.kind == "europe"
-                                  else v.ROUND_NAMES[match.round_number - 1]).split(" · ")[0]
+            elif match is not None: entry["round"] = round_name(world, competition.id, match.round_number)
             competitions.append(entry)
     return {**body, "competitions": competitions}
 
@@ -256,6 +289,8 @@ def message(world: World, index: int) -> dict:
     elif kind == "talks_open": data["talks"] = talks_body(world, item)
     elif kind == "contract_expiry" and lines: data["expiry"] = expiry_body(world, item)
     elif kind in ("market_open", "market_close"): data["market"] = market_body(world, item)
+    elif kind == "market_recap": data["recap"] = recap_body(world, item)
+    elif kind == "cup_draw" and lines: data["draw"] = draw_body(world, item)
     elif kind == "season_review": data["review"] = review_body(world, item)
     elif kind in AGGREGATED and lines:
         rival = opponent(world, item)

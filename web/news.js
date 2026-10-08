@@ -1,7 +1,7 @@
 import {monthlySalary} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,moraleReading,standingsTable,roundTitle} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -9,8 +9,8 @@ const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert',
  renewal_proposed:['Contrat','contract'],renewal_signed:['Contrat','contract'],renewal_refused:['Contrat','contract'],contract_expiry:['Contrat','contract'],
  release:['Contrat','contract'],retirement:['Retraite','contract'],morale:['Moral','morale'],injury:['Blessure','injury'],injury_end:['Blessure','injury'],
  suspension:['Suspension','ban'],suspension_end:['Suspension','ban'],call_up:['Sélection','call-up'],academy:['Formation','call-up'],
- market_open:['Mercato','market'],market_close:['Mercato','market'],season:['Saison','season'],season_review:['Saison','season'],promotion:['Saison','season'],
- relegation:['Saison','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
+ market_open:['Mercato','market'],market_close:['Mercato','market'],market_recap:['Mercato','market'],season:['Saison','season'],season_review:['Saison','season'],
+ promotion:['Saison','season'],relegation:['Saison','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
 const tag=kind=>{const [label,family]=TAGS[kind]||['Actualité','season'];return `<span class="news-tag ${family}">${label}</span>`;};
 // The kinds that ask for an answer: once it is given, their row says so.
 const ANSWERED=new Set(['offer_received','renewal_proposed','talks_open']);
@@ -112,6 +112,24 @@ function marketBody(data,club){
  return `<div class="news-facts">${facts}</div><a class="news-more" href="#/players">Joueurs →</a>`;
 }
 
+// The main transfers of a window, in the club's division then in the world: who, from which club to which, and the fee. A
+// free player has his level where the fee would be.
+function recapBody(data){
+ const row=move=>[`<span>${named(move.player)}</span>`,`<span>${clubLink(move.source)}<small>→</small>${clubLink(move.target)}</span>`,
+  move.fee==null?`<span>${levelBadge(move.rating)}</span>`:`<b>${price(move.fee)}</b>`];
+ const title=scope=>scope.competition?`<a href="${competitionHref(scope.competition)}">${e(scope.competition.name)}</a>`:'Monde';
+ return data.scopes.map(scope=>`<section><h3 class="section-title">${title(scope)}</h3>${lines(scope.transfers.map(row),'recap')}</section>`).join('');
+}
+
+// The matches a cup drew for the club: where it plays each, and when. A European tie has a line for each leg; the opponents
+// of a league phase, which the title cannot name, each have theirs.
+const VENUES={home:'Domicile',away:'Extérieur',neutral:'Terrain neutre'};
+function drawBody(data){
+ if(new Set(data.matches.map(match=>match.opponent?.id)).size>1)
+  return lines(data.matches.map(match=>[`<span>${clubLink(match.opponent)}</span>`,`<span>${VENUES[match.venue]}</span>`,`<span>${date(match.date)}</span>`]),'draw');
+ return `<div class="news-facts">${data.matches.map(match=>fact(VENUES[match.venue],date(match.date))).join('')}</div>`;
+}
+
 function reviewBody(data,club){
  const result=row=>row.rank?`${row.rank}${row.rank===1?'er':'e'} · ${row.points} pts`:row.won?'Vainqueur':e(row.round||'—');
  const rows=data.competitions.map(row=>`<span><a href="${competitionHref(row.competition)}">${e(row.competition.name)}</a></span><span>${result(row)}</span><span>${row.winner?clubLink(row.winner):'—'}</span>`).join('');
@@ -130,7 +148,8 @@ function messagePane(message,club){
  const status=message.pending?'<span class="news-status todo"><i class="news-todo" aria-hidden="true"></i>À traiter</span>':answered?`<span class="news-status">${answered}</span>`:'';
  const value=offers?.value!=null?`<div class="tile fee-value"><span>Valeur</span><strong>${price(offers.value)}</strong></div>`:'';
  const body=offers?offersBody(offers):renewal?renewalBody(renewal):talks?talksBody(talks):message.expiry?expiryBody(message.expiry)
-  :message.market?marketBody(message.market,club):message.review?reviewBody(message.review,club):message.players?playersBody(message):'';
+  :message.market?marketBody(message.market,club):message.recap?recapBody(message.recap):message.draw?drawBody(message.draw)
+  :message.review?reviewBody(message.review,club):message.players?playersBody(message):'';
  return `<header class="news-message-head"><div class="news-message-meta">${tag(message.kind)}<small>${date(message.date,true)}</small>${status}</div><div class="news-title"><h2>${linked(message.segments)}</h2>${value}</div></header>${body?`<div class="news-body">${body}</div>`:''}`;
 }
 

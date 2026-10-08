@@ -2,10 +2,12 @@ from dataclasses import replace
 
 import pytest
 
+from core.domain.clubs import Competition
 from core.domain.date import Date
+from core.domain.matches import Match, MatchResult
 from core.domain.offers import RenewalProposal, TransferOffer, SIGNING, WAGE_TALKS
 from core.domain.players import Contract
-from core.domain.world import NewsLine, SeasonRecord
+from core.domain.world import NewsLine, SeasonRecord, TransferRecord
 from core.world import news, renewals, sales
 from core.world.application import apply
 from core.world.events import RenewalProposed
@@ -184,6 +186,99 @@ def test_a_transfer_window_is_told_when_it_opens_and_on_the_eve_of_its_last_day(
     assert (closing.kind, closing.text, len(world.news)) == ("market_close", "winter", 2)
     assert [(line.text, line.player_id, line.amount) for line in closing.lines] == [
         ("budget", None, club.transfer_budget - 100_000), ("talks", bought, None), ("offers", sold, None)]
+
+
+def test_the_day_after_a_window_closes_its_main_transfers_are_told_in_the_division_and_in_the_world(config, monkeypatch):
+    world, club = human_world(config)
+    winter = config.world.market.winter
+    start, end = Date(2026, winter.start_month, winter.start_day), Date(2026, winter.end_month, winter.end_day)
+    # Clubs 1 and 2 share a division; two others play elsewhere.
+    for cid in (3, 4): world.clubs[cid] = replace(world.clubs[2], id=cid, name=f"Club {cid}", competition_id=None, player_ids=[])
+    far, sold, bought, best, free, lent, early = club.player_ids[:7]
+    world.players[best].rating, world.players[free].rating = 75.2, 60
+    def move(day, player_id, source, target, fee=0, kind="transfer"):
+        world.transfers.append(TransferRecord(day, player_id, source, target, fee, kind, world.season))
+    move(start, far, 3, 4, 9_000_000)
+    move(start.add_days(3), sold, 2, 3, 5_000_000)
+    move(end, bought, 4, 1, 2_000_000)  # on the last day
+    move(start.add_days(5), best, None, 4)
+    move(start.add_days(6), free, None, 2)
+    move(start.add_days(7), lent, 2, 1, kind="loan")
+    move(start.add_days(-1), early, 3, 1, 50_000_000)  # before the window
+    world.date = end
+    news.market_notices(world, club)
+    assert not world.news
+    world.date = end.add_days(1)
+    news.market_notices(world, club)
+    recap = world.news[-1]
+    assert (recap.kind, recap.text, len(world.news)) == ("market_recap", "winter", 1)
+    told = lambda scope: [(line.player_id, line.key, line.club_id, line.amount, line.state) for line in recap.lines if line.text == scope]
+    # The highest fees, then the free players by level: he left no club, and his level out of 200 stands for a fee.
+    assert told("league") == [(sold, "2", 3, 5_000_000, ""), (bought, "4", 1, 2_000_000, ""), (free, "", 2, 120, "free")]
+    assert told("world") == [(far, "3", 4, 9_000_000, ""), (sold, "2", 3, 5_000_000, ""), (bought, "4", 1, 2_000_000, ""),
+                             (best, "", 4, 150, "free"), (free, "", 2, 120, "free")]
+    assert {(line.text, line.competition_id) for line in recap.lines} == {("league", club.competition_id), ("world", None)}
+    # Only the main ones are named.
+    monkeypatch.setattr(news, "RECAP_FEES", 1)
+    monkeypatch.setattr(news, "RECAP_FREE", 1)
+    news.market_notices(world, club)
+    assert [(line.text, line.player_id) for line in world.news[-1].lines] == [("league", sold), ("league", free), ("world", far), ("world", best)]
+
+
+def cups(world):
+    """A national cup and a European one, and what draws a match of theirs."""
+    cup = world.competitions[-1] = Competition(-1, "Coupe de France", "FRA", 0, [1, 2], kind="cup")
+    europe = world.competitions[-101] = Competition(-101, "Ligue des champions", "EUR", 0, [1, 2], kind="europe", code="C1")
+    def drawn(competition, number, day, home, away, **fields):
+        match = Match(world.next_id, competition.id, world.season, number, day, home, away, **fields)
+        world.matches[match.id] = match
+        competition.match_ids.append(match.id)
+        world.next_id += 1
+        return match
+    return cup, europe, drawn
+
+
+def draws(world):
+    return [(item.kind, [(line.competition_id, line.club_id, line.match_id, line.amount, line.until, line.text) for line in item.lines]) for item in world.news]
+
+
+def test_a_cup_draw_tells_the_human_club_its_next_opponent(config):
+    world, club = human_world(config)
+    cup, europe, drawn = cups(world)
+    drawn(cup, 1, world.date, 1, 2)
+    first, day = world.next_id, world.date.add_days(30)
+    news.draw_notices(world, first)
+    assert not world.news  # nothing was drawn since
+    away = drawn(cup, 2, day, 2, 1)
+    drawn(cup, 2, day, 3, 4)  # a match of other clubs
+    # A European tie is two matches: both are told in one message, in the order they are played.
+    first_leg = drawn(europe, 9, day.add_days(7), 2, 1)
+    second_leg = drawn(europe, 10, day.add_days(14), 1, 2, first_leg_id=first_leg.id)
+    news.draw_notices(world, first)
+    assert draws(world) == [("cup_draw", [(-1, 2, away.id, 2, day, "away")]),
+                            ("cup_draw", [(-101, 2, first_leg.id, 9, day.add_days(7), "away"), (-101, 2, second_leg.id, 10, day.add_days(14), "home")])]
+    final = drawn(cup, 6, day.add_days(60), 1, 2, neutral=True)
+    news.draw_notices(world, final.id)
+    assert len(world.news) == 3 and world.news[-1].lines[0].text == "neutral"
+    # Nothing is told without a human club.
+    world.controlled_club_id = None
+    news.draw_notices(world, first)
+    assert len(world.news) == 3
+
+
+def test_a_club_just_chosen_is_told_every_match_the_cups_drew_that_it_has_yet_to_play(config):
+    world, club = human_world(config)
+    cup, europe, drawn = cups(world)
+    day = world.date.add_days(30)
+    drawn(cup, 1, world.date, 1, 2).result = MatchResult(1, 0, "test", winner_id=1)
+    following = drawn(cup, 2, day, 1, 3)
+    # A league phase draws all its matches at once: one message names every opponent, in the order they are played.
+    league = [drawn(europe, number, day.add_days(7 * number), *clubs) for number, clubs in ((1, (1, 2)), (2, (3, 1)), (3, (1, 4)))]
+    drawn(europe, 1, day.add_days(7), 3, 4)  # a match of other clubs
+    news.draw_notices(world)
+    assert draws(world) == [("cup_draw", [(-1, 3, following.id, 2, day, "home")]),
+                            ("cup_draw", [(-101, rival, match.id, match.round_number, match.date, venue)
+                                          for match, rival, venue in zip(league, (2, 3, 4), ("home", "away", "home"))])]
 
 
 def test_a_morale_falling_under_the_alert_is_told_once(config):

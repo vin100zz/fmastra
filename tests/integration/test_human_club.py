@@ -22,6 +22,12 @@ def client(config, tmp_path_factory):
         yield client
 
 
+def choose(client, club_id):
+    """Picks the club, and empties its feed of the cup draws it is told at once: these tests count their own messages."""
+    assert client.post("/api/partie/choisir-club", json={"club_id": club_id}).status_code == 200
+    client.app.state.game.world.news.clear()
+
+
 def test_choose_club_sets_controlled_club_id_once(client):
     world = client.app.state.game.world
     club_id = next(iter(world.active_clubs())).id
@@ -227,7 +233,7 @@ def test_an_offer_is_answered_with_the_clubs_own_price_and_a_refusal_brings_a_hi
     club = world.active_clubs()[0]
     room = lambda item: item.id != club.id and item.squad_size < world.config.management.guardrails.max_squad
     buyer = max((item for item in world.active_clubs() if room(item)), key=lambda item: item.transfer_budget)
-    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    choose(client, club.id)
     own_player = min((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)
     player = world.players[own_player]
     offer = TransferOffer("unasked", world.date, own_player, club.id, buyer.id, player.contract, 1_000_000, 1_000_000, 1,
@@ -265,7 +271,7 @@ def test_news_stay_unread_until_opened(client):
     from core.world.human import record
     world = client.app.state.game.world
     club_id = next(iter(world.active_clubs())).id
-    client.post("/api/partie/choisir-club", json={"club_id": club_id})
+    choose(client, club_id)
     for text in ("Première", "Deuxième", "Troisième"):
         record(world, "season", text, club_id)
 
@@ -316,7 +322,7 @@ def test_messages_tell_their_kind_and_those_awaiting_an_answer_are_answered_from
     from core.world.human import report
     world = client.app.state.game.world
     club, buyer = world.active_clubs()[:2]
-    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    choose(client, club.id)
     sold, asking, hurt, other = sorted((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)[:4]
     player = world.players[sold]
 
@@ -385,12 +391,80 @@ def test_messages_tell_their_kind_and_those_awaiting_an_answer_are_answered_from
     assert league["competition"]["id"] == club.competition_id and league["rank"] >= 1 and league["winner"]["id"] in world.competitions[club.competition_id].club_ids
 
 
+def test_the_cups_tell_their_draws_and_a_window_closed_its_main_transfers(client):
+    from core.domain.date import Date
+    from core.domain.matches import MatchResult
+    from core.domain.world import TransferRecord
+    from core.world import news as feed
+    from core.world.simulation import close_day
+    world = client.app.state.game.world
+    europe = next(c for c in world.competitions.values() if c.kind == "europe")
+    club = next(world.clubs[cid] for cid in europe.club_ids if world.clubs[cid].competition_id is not None)
+    cup = next(c for c in world.competitions.values() if c.kind == "cup" and club.id in c.club_ids)
+    rival = lambda match: world.clubs[match.away_id if match.home_id == club.id else match.home_id]
+    venue = lambda match: "home" if match.home_id == club.id else "away"
+    line = lambda match: {"id": match.id, "opponent": {"id": rival(match).id, "name": rival(match).name, "major_color": rival(match).home_kit_major_color,
+                                                       "minor_color": rival(match).home_kit_minor_color},
+                          "date": match.date.iso(), "venue": venue(match)}
+    told = lambda competition: [message for index in range(len(world.news)) if (message := client.get(f"/api/ma-partie/actualites/{index}").json())
+                                ["segments"][0]["ref"] == {"competition": {"id": competition.id, "name": competition.name, "kind": competition.kind, "code": competition.code}}]
+    own = lambda competition: sorted((match for mid in competition.match_ids if club.id in ((match := world.matches[mid]).home_id, match.away_id)),
+                                     key=lambda match: (match.date, match.id))
+
+    # The draws were made with the calendar: a club just chosen is told its first round of the national cup, and every
+    # opponent of its European league phase in one message.
+    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    assert [item.kind for item in world.news] == ["cup_draw", "cup_draw"]
+    first, = own(cup)
+    opening, = told(cup)
+    assert opening["title"] == f"{cup.name} : {rival(first).name} en 32es de finale" and not opening["pending"]
+    assert opening["segments"][2] == {"text": rival(first).name, "ref": {"club": rival(first).id}}
+    assert opening["draw"] == {"matches": [line(first)]}
+    league, = told(europe)
+    assert league["title"] == f"{europe.name} : tirage de la phase de ligue" and len(league["segments"]) == 2
+    assert league["draw"] == {"matches": [line(match) for match in own(europe)]}
+    assert len({match["opponent"]["id"] for match in league["draw"]["matches"]}) == world.config.world.europe.league_rounds
+
+    # The first round over, the day draws the second: the club is told who it plays, where and when.
+    for mid in cup.match_ids:
+        match = world.matches[mid]
+        visitors = match.away_id == club.id
+        match.result = MatchResult(0, 0, "test", penalties=(4, 5) if visitors else (5, 4), winner_id=match.away_id if visitors else match.home_id)
+    close_day(world)
+    following = own(cup)[-1]
+    assert following.round_number == 2 and [item.kind for item in world.news] == ["cup_draw"] * 3
+    message = told(cup)[-1]
+    assert message["id"] == 2 and message["title"] == f"{cup.name} : {rival(following).name} en 16es de finale"
+    assert message["draw"] == {"matches": [line(following)]}
+
+    # The day after a window closes: its main transfers, in the division of the club then in the world.
+    summer = world.config.world.market.summer
+    end = Date(world.date.year, summer.end_month, summer.end_day)
+    sold, free = (world.players[pid] for pid in club.player_ids[:2])
+    buyer = next(other for other in world.active_clubs() if other.competition_id != club.competition_id)
+    world.transfers.append(TransferRecord(end, sold.id, club.id, buyer.id, 12_000_000, "transfer", world.season))
+    world.transfers.append(TransferRecord(end, free.id, None, buyer.id, 0, "transfer", world.season))
+    world.date = end.add_days(1)
+    feed.market_notices(world, club)
+    message = client.get("/api/ma-partie/actualites/3").json()
+    assert message["kind"] == "market_recap" and message["title"] == "Bilan du mercato d’été"
+    division, everywhere = message["recap"]["scopes"]
+    assert division["competition"]["id"] == club.competition_id and everywhere["competition"] is None
+    assert [(row["player"]["id"], row["source"]["id"], row["target"]["id"], row["fee"], row["rating"]) for row in division["transfers"]] == [
+        (sold.id, club.id, buyer.id, 12_000_000, None)]
+    assert [row["player"]["id"] for row in everywhere["transfers"]] == [sold.id, free.id]
+    assert everywhere["transfers"][1] == {"player": {"id": free.id, "name": free.name, "gone": False}, "source": None,
+                                          "target": {"id": buyer.id, "name": buyer.name, "major_color": buyer.home_kit_major_color,
+                                                     "minor_color": buyer.home_kit_minor_color},
+                                          "fee": None, "rating": int(free.rating * 2 + .5) / 2}
+
+
 def test_talks_are_given_up_from_their_message(client):
     from core.domain.offers import WAGE_TALKS
     from core.world.talks import open_wage_talks
     world = client.app.state.game.world
     club, seller = world.active_clubs()[:2]
-    client.post("/api/partie/choisir-club", json={"club_id": club.id})
+    choose(client, club.id)
     target = world.players[seller.player_ids[0]]
     key = f"talks:{club.id}:{target.id}"
     world.offers[key] = open_wage_talks(world, TransferOffer(key, world.date, target.id, seller.id, club.id, target.contract, 1_000_000, 1_000_000, 0.0), target)

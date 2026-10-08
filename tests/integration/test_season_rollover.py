@@ -35,6 +35,31 @@ def finish_season(world):
     world.date = Date(world.season + 1, 6, 30)
 
 
+def test_the_season_that_opens_tells_the_human_club_its_first_cup_draws(config):
+    world = import_world(ROOT / 'data', config, 123)
+    # Controlled scores give every match to the lowest id: the lowest of a first division is its champion, and plays
+    # the next Champions League.
+    league = next(c for c in world.competitions.values() if c.kind == 'league' and c.level == 1)
+    club_id = world.controlled_club_id = min(league.club_ids)
+    finish_season(world)
+    start = len(world.news)
+    advance_day(world, auto=True)
+    told = world.news[start:]
+    draws = {world.competitions[item.lines[0].competition_id].kind: item for item in told if item.kind == 'cup_draw'}
+    assert [item.kind for item in told].count('cup_draw') == 2 and set(draws) == {'cup', 'europe'}
+    # They follow the opening of the season: the first round of the national cup, then every match of the league phase.
+    kinds = [item.kind for item in told]
+    assert kinds.index('season') < kinds.index('cup_draw')
+    assert [line.amount for line in draws['cup'].lines] == [1]
+    assert world.competitions[draws['europe'].lines[0].competition_id].code == 'C1'
+    assert [line.amount for line in draws['europe'].lines] == list(range(1, config.world.europe.league_rounds + 1))
+    for item in draws.values():
+        for line in item.lines:
+            match = world.matches[line.match_id]
+            assert match.season == world.season and match.result is None and {match.home_id, match.away_id} == {club_id, line.club_id}
+            assert (line.until, line.text) == (match.date, 'home' if match.home_id == club_id else 'away')
+
+
 def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
     world = import_world(ROOT / 'data', config, 123)
     first = world.season

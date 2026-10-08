@@ -173,6 +173,46 @@ test('a transfer window is told when it opens and on the eve of its last day',as
  assert.doesNotMatch(eve,/Fermeture|Marge salariale/);
 });
 
+test('the recap of a window lists its main transfers, in the club’s division then in the world',async()=>{
+ const move=(id,name,source,target,fee,rating=null)=>({player:{id,name,gone:false},source,target,fee,rating});
+ const recap={window:'summer',scopes:[{competition:{id:3,name:'Ligue 1',kind:'league',code:null},transfers:[move(1,'Ada Un',ref(9,'Nice'),ref(7,'Lens'),34500000),move(2,'Bob Deux',null,ref(8,'Metz'),null,75)]},
+  {competition:null,transfers:[move(5,'Eve Cinq',ref(20,'Porto'),ref(21,'Milan'),8e7)]}]};
+ const message={...row(10,'market_recap','Bilan du mercato d’été'),segments:[{text:'Bilan du '},{text:'mercato d’été',ref:{page:'transfers'}}],recap};
+ const html=await screen([message],message,'msg=10');
+ assert.match(html,/<span class="news-tag market">Mercato<\/span>/);
+ assert.match(html,/<h2>Bilan du <a href="#\/transfers">mercato d’été<\/a><\/h2>/);
+ assert.match(html,/<section><h3 class="section-title"><a href="#\/league\/3">Ligue 1<\/a><\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/1">Ada Un<\/a><\/span><span><a href="#\/club\/9" class="club-link">[^→]*Nice<\/a><small>→<\/small><a href="#\/club\/7" class="club-link">[^→]*Lens<\/a><\/span><b>34\.5\sM€<\/b><\/li>/);
+ // A free player comes from no club, and has his level where the fee would be.
+ assert.match(html,/<a href="#\/player\/2">Bob Deux<\/a><\/span><span><span class="muted">Libre<\/span><small>→<\/small><a href="#\/club\/8" class="club-link">[^→]*Metz<\/a><\/span><span><span class="rating graded" style="--hue:120">150<\/span><\/span><\/li><\/ul><\/section>/);
+ assert.match(html,/<section><h3 class="section-title">Monde<\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/5">Eve Cinq<\/a><\/span>.*<b>80\sM€<\/b><\/li><\/ul><\/section>/);
+});
+
+test('a cup draw names the opponent in its title, then tells where and when each match is played',async()=>{
+ const nice=ref(9,'Nice');
+ const drawn=(competition,stage,matches)=>({...row(11,'cup_draw',`${competition.name} : Nice en ${stage}`),draw:{matches:matches.map(match=>({opponent:nice,...match}))},
+  segments:[{text:competition.name,ref:{competition}},{text:' : '},{text:'Nice',ref:{club:9}},{text:` en ${stage}`}]});
+ const single=drawn({id:-3,name:'Coupe de France',kind:'cup',code:null},'8es de finale',[{id:900,date:'2030-02-06',venue:'away'}]);
+ const html=await screen([single],single,'msg=11');
+ assert.match(html,/<span class="news-tag season">Tirage<\/span>/);
+ assert.match(html,/<h2><a href="#\/league\/-3">Coupe de France<\/a> : <a href="#\/club\/9">Nice<\/a> en 8es de finale<\/h2>/);
+ assert.match(html,/<div class="news-body"><div class="news-facts"><div class="fact"><span>Extérieur<\/span><strong>6 févr\. 2030<\/strong><\/div><\/div><\/div>/);
+ // A European tie has a line for each leg; a final is played on neutral ground.
+ const tie=drawn({id:-101,name:'Ligue des champions',kind:'europe',code:'C1'},'quarts de finale',[{id:901,date:'2030-04-10',venue:'home'},{id:902,date:'2030-04-17',venue:'away'}]);
+ const legs=await screen([tie],tie,'msg=11');
+ assert.match(legs,/<h2><a href="#\/europe\/C1">Ligue des champions<\/a> : /);
+ assert.match(legs,/<span>Domicile<\/span><strong>10 avr\. 2030<\/strong><\/div><div class="fact"><span>Extérieur<\/span><strong>17 avr\. 2030<\/strong>/);
+ const final=drawn(tie.segments[0].ref.competition,'finale',[{id:903,date:'2030-05-30',venue:'neutral'}]);
+ assert.match(await screen([final],final,'msg=11'),/<span>Terrain neutre<\/span><strong>30 mai 2030<\/strong>/);
+ // A league phase draws several opponents, which the title cannot name: each has its line.
+ const europe=tie.segments[0].ref.competition;
+ const phase={...row(11,'cup_draw','Ligue des champions : tirage de la phase de ligue'),segments:[{text:europe.name,ref:{competition:europe}},{text:' : tirage de la phase de ligue'}],
+  draw:{matches:[{id:910,opponent:nice,date:'2029-09-19',venue:'home'},{id:911,opponent:ref(8,'Metz'),date:'2029-10-03',venue:'away'}]}};
+ const league=await screen([phase],phase,'msg=11');
+ assert.match(league,/<h2><a href="#\/europe\/C1">Ligue des champions<\/a> : tirage de la phase de ligue<\/h2>/);
+ assert.match(league,/<ul class="news-lines draw"><li><span><a href="#\/club\/9" class="club-link">[^→]*Nice<\/a><\/span><span>Domicile<\/span><span>19 sept\. 2029<\/span><\/li><li><span><a href="#\/club\/8" class="club-link">[^→]*Metz<\/a><\/span><span>Extérieur<\/span><span>3 oct\. 2029<\/span><\/li><\/ul>/);
+ assert.doesNotMatch(league,/news-facts/);
+});
+
 test('the review of the season tells each competition with its winner, and the best players',async()=>{
  const review={season:2029,europe:{id:-101,name:'Ligue des champions',kind:'europe',code:'C1'},scorer:{player:{id:1,name:'Ada Un',gone:false},goals:21},rating:{player:{id:2,name:'Bob Deux',gone:false},average:7.38},
   competitions:[{competition:{id:3,name:'Ligue 1',kind:'league',code:null},winner:ref(9,'Nice'),rank:2,points:74,round:null,won:false},

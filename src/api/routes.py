@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from core.domain.matches import SubmittedLineup
 from core.domain.players import ATTRIBUTE_INDEX, ATTRIBUTE_NAMES
 from core.world.human import listed_price, pending_lineup_match
+from core.world.news import draw_notices
 from core.world.transfer_rules import recent_arrival_ids
 from core.world.simulation import target_date, market_window
 from .service import GameService
@@ -317,6 +318,8 @@ def router(service: GameService) -> APIRouter:
             if club is None or club.competition_id is None:
                 raise HTTPException(400, "Club invalide ou non actif.")
             world.controlled_club_id = club.id
+            # The draws were made before it had a manager: he is told the cup matches that await it.
+            draw_notices(world)
         return {"club_id": command.club_id}
 
     @api.post("/partie/composition")
