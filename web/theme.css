@@ -595,15 +595,11 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  .manual-menu a{padding:4px 10px;font-size:13px}
 }
 
-/* Player page: a rail saying who he is, how he is and what his contract holds, with what the user can do about it at its
-   foot; beside it his attributes and his positions, then his level over time and his career. */
+/* Player page, under the header of his club: a rail saying how he is and what his contract holds; beside it his attributes
+   and his positions, then his level over time and his career. */
 .player-page{display:grid;grid-template-columns:280px minmax(0,1fr);gap:10px}
 .player-rail{margin:0;display:flex;flex-direction:column;overflow:visible}
-.rail-head{display:flex;align-items:center;gap:10px;padding:12px 14px 0}
-.rail-head h1{min-width:0;font-size:26px;line-height:1.1;overflow-wrap:anywhere}
-/* The flag of his main nation, between the squad stepper and his name. */
-.rail-head>a,.rail-head>.nation{flex:none;display:flex}
-.rail-head .flag{width:24px;height:18px}
+/* Beside a list, the preview of a player: his age, his level and his potential as tiles, then his value and the fee asked. */
 .rail-tiles{display:flex;gap:6px;padding:12px 14px}
 .tile{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 6px 6px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--muted)}
 .tile span{font-size:10px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase}
@@ -618,18 +614,9 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .tile.fee-ask.na{background:var(--panel-2);border-color:var(--line);color:var(--muted);cursor:help}
 .tile.fee-ask.na strong{color:var(--muted)}
 :root[data-theme="light"] .tile.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
-/* The club with his caps on its right (under it when both do not fit on a line), then his other nationalities on a line
-   of their own, flags alone. */
-.rail-identity{padding:4px 14px;border-top:1px solid var(--line)}
-.rail-club{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 10px;min-height:27px;padding:3px 0;font-weight:600;color:var(--strong)}
-.rail-club b{font-weight:600;white-space:nowrap}
-.rail-club+.fact{border-top:1px solid var(--row-line)}
-.rail-nations{display:flex;align-items:center;gap:6px}
-.rail-nations .flag{width:20px;height:15px}
-.rail-section{padding:10px 14px 6px;border-top:1px solid var(--line)}
-.rail-section h2{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-.rail-section .fact,.rail-identity .fact{min-height:27px;padding:0;font-size:13px}
-.rail-section .fact strong,.rail-identity .fact strong{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--strong);white-space:nowrap}
+/* The facts of the rail: a label, then its value with what draws it (a bar, a flag) ahead of it. */
+.rail-section .fact{padding:0;font-size:13px}
+.rail-section .fact strong{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--strong);white-space:nowrap}
 .rail-section .fact b{min-width:44px;font-weight:600;text-align:right}
 .rail-section .fact .danger{color:var(--bad)}
 .rail-section .fact .available{color:var(--good)}
@@ -641,7 +628,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .gauge.signed>i{position:absolute;top:0}
 .gauge.signed>.down{background:var(--bad)}
 .gauge.signed:after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:10px;background:var(--muted)}
-.rail-actions{margin-top:auto;padding:12px 14px;border-top:1px solid var(--line)}
 .player-actions button{white-space:nowrap;padding:6px 12px}
 .player-actions .pill{text-align:center;border-radius:var(--radius);white-space:normal}
 .player-main{min-width:0;display:flex;flex-direction:column;gap:10px}
@@ -683,7 +669,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 /* Wide screen: two columns of two cards instead of stretched ones. Attributes over the career, each no wider than it reads
    well at; beside them the aptitudes, whose notes leave the pitch for a list of the positions, over the chart. */
 @media(min-width:1728px){
- .player-main{display:grid;grid-template-columns:minmax(650px,1fr) minmax(520px,1fr);align-content:start}
+ .player-main{display:grid;grid-template-columns:minmax(0,1fr) 608px;align-content:start}
  .player-main>.player-row{display:contents}
  .player-main .attributes-card{grid-area:1/1}
  .player-main .positions-card{grid-area:1/2}

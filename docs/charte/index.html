@@ -262,6 +262,33 @@
 </section>
 
 <section class="spec" style="grid-column: span 12">
+<h2>En-tête d’un joueur</h2>
+<section class="card">
+<div class="hero" style="background: #004170; color: #ffffff">
+<i class="hero-sash" style="background: #da291c"></i><i class="hero-sash thin" style="background: #da291c"></i>
+<div class="entity-nav"><a href="#" aria-label="Joueur précédent">▲</a><a href="#" aria-label="Tout l’effectif">☰</a><a href="#" aria-label="Joueur suivant">▼</a></div>
+<span class="crest large" style="background: linear-gradient(155deg, #004170 55%, #da291c 55%); color: #fff">PSG</span>
+<div class="hero-name"><h1>Désiré Doué</h1><a class="hero-club" href="#">Paris SG</a></div>
+<div class="tiles"><div class="tile"><span class="label">Âge</span><strong>23</strong></div><div class="tile split"><a href="#"><span class="label"><img class="flag" src="../../web/flags/fr.svg" alt=""></span><strong>FRA</strong></a><div><span class="label">Sél.</span><strong>29</strong></div><div><span class="label">Buts</span><strong>8</strong></div></div><div class="tile graded h120"><span class="label">Niveau</span><strong>183</strong></div><div class="tile graded h120"><span class="label">Potentiel</span><strong>190</strong></div><div class="tile"><span class="label">Valeur</span><strong>110 M€</strong></div><div class="tile"><span class="label">Prix demandé</span><strong>132 M€</strong></div></div>
+</div>
+<div class="hero-bar"><div class="hero-pills"><span class="pill">Prolongation en attente</span></div><div class="command-group"><button type="button" class="button">Envoyer en réserve</button><button type="button" class="button" disabled>Prêter</button></div><div class="command-group"><button type="button" class="button">Offres reçues · 2</button><button type="button" class="button hover">Mettre sur la liste</button><button type="button" class="button">Proposer aux clubs</button><button type="button" class="button">Déclarer intransférable</button></div><div class="command-group"><button type="button" class="button primary">Proposer un contrat</button></div></div>
+</section>
+<div class="pair" style="align-items: center; gap: 40px">
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Bandeau</span> <span class="value">celui de son club : ses couleurs, son écusson sur le disque ; neutre et sans disque pour un joueur libre</span></span>
+<span><span class="token">Nom</span> <span class="value">40, seul sur sa ligne ; son club à sa suite, en 20, « Libre » sans club</span></span>
+<span><span class="token">Tuiles</span> <span class="value">âge, sélection, niveau et potentiel gradués comme leurs pastilles, valeur, prix demandé (N/A s’il n’est pas à vendre)</span></span>
+<span><span class="token">Barre</span> <span class="value">36, à la place des onglets : où il en est à gauche (.pill), puis les commandes par groupes, celles de son menu, l’action principale au bout</span></span>
+</div>
+<div class="spec-group">
+<span class="label">Sélection · .tile.split</span>
+<div class="spec-line gap"><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/fr.svg" alt=""></span><strong>FRA</strong></a><div><span class="label">Sél.</span><strong>112</strong></div><div><span class="label">Buts</span><strong>68</strong></div></div><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/ba.svg" alt=""></span><strong>BIH</strong></a><div><span class="label">Sél.</span><strong>12</strong></div></div><div class="tile split" style="flex: none"><div><span class="label"><img class="flag" src="../../web/flags/ci.svg" alt=""></span><strong>CIV</strong></div><div><span class="label">Sél.</span><strong>0</strong></div></div><div class="tile graded h60" style="flex: none"><span class="label">Niveau</span><strong>112</strong></div></div>
+<span class="value">le drapeau au-dessus du code de trois lettres, les sélections, puis les buts dès le premier ; lien vers la sélection qui l’a appelé</span>
+</div>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 12">
 <h2>Recherche globale</h2>
 <div class="pair">
 <div class="spec-group"><span class="label">Dans la barre du haut · .button.square · Ctrl K</span>
@@ -679,11 +706,16 @@
 <div class="over"><i class="gauge"><i style="width: 82%"></i></i><span class="value">.gauge</span></div>
 <div class="over"><i class="gauge warn"><i style="width: 55%"></i></i><span class="value">.warn</span></div>
 <div class="over"><i class="gauge bad"><i style="width: 97%"></i></i><span class="value">.bad</span></div>
+<div class="over"><i class="gauge graded h30"><i style="width: 44%"></i></i><span class="value">.graded</span></div>
+<div class="over"><i class="gauge signed"><i class="up" style="left: 50%; width: 15%"></i></i><span class="value">.signed +9 %</span></div>
+<div class="over"><i class="gauge signed"><i class="down" style="right: 50%; width: 20%"></i></i><span class="value">.signed −12 %</span></div>
 <div class="over"><span class="ring"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"></circle><circle class="value" cx="32" cy="32" r="26" style="stroke-dasharray: 127.4 163.4"></circle></svg><b>78 %</b></span><span class="value">.ring</span></div>
 <div class="over"><span class="ring full"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"></circle><circle class="value" cx="32" cy="32" r="26" style="stroke-dasharray: 158.5 163.4"></circle></svg><b>97 %</b></span><span class="value">.ring.full</span></div>
 </div>
 <div class="spec-group" style="gap: 4px">
 <span><span class="token">Jauge</span> <span class="value">40 × 4, à côté d’un chiffre : condition, fatigue, part d’un plafond</span></span>
+<span><span class="token">Graduée</span> <span class="value">dans la couleur de la note qu’elle dessine : le moral</span></span>
+<span><span class="token">Signée</span> <span class="value">depuis son milieu, marqué d’un trait : verte vers la droite, rouge vers la gauche (la forme)</span></span>
 <span><span class="token">Anneau</span> <span class="value">56, part d’un plafond écrite en son centre ; rouge à partir de 95 %</span></span>
 </div>
 </section>
@@ -777,6 +809,28 @@
 <span><span class="token">Poignée</span> <span class="value">un bouton carré de 22, à la rencontre des deux parts libres ; elle s’arrête sur ce qui est engagé</span></span>
 <span><span class="token">Tenue</span> <span class="value">le trait de l’accent sous la poignée, et à côté de chaque chiffre ce qu’il gagne ou cède ; lâchée, la part est fixée</span></span>
 <span><span class="token">Rouge</span> <span class="value">la part engagée d’un plafond, à partir de 95 %</span></span>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 7">
+<h2>Niveau au fil des mois · .level-chart</h2>
+<section class="card" style="width: 696px; height: 272px">
+<div class="card-head"><h2>Évolution du niveau</h2></div>
+<div class="level-chart" role="img" aria-label="Évolution mensuelle du niveau, sur 200"><div class="plot">
+<svg class="plot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line class="grid-line" x1="0" x2="100" y1="100" y2="100" vector-effect="non-scaling-stroke"></line><line class="grid-line" x1="0" x2="100" y1="75" y2="75" vector-effect="non-scaling-stroke"></line><line class="grid-line" x1="0" x2="100" y1="50" y2="50" vector-effect="non-scaling-stroke"></line><line class="grid-line" x1="0" x2="100" y1="25" y2="25" vector-effect="non-scaling-stroke"></line><line class="grid-line" x1="0" x2="100" y1="0" y2="0" vector-effect="non-scaling-stroke"></line><polyline class="curve" points="0,95 5,95 10,90 15,85 20,80 25,75 30,65 35,65 40,60 45,55 50,50 55,45 60,35 65,35 70,30 75,25 80,25 85,20 90,10 95,15 100,10" vector-effect="non-scaling-stroke"></polyline></svg>
+<span class="y-tick" style="top: 100%">165</span><span class="y-tick" style="top: 75%">170</span><span class="y-tick" style="top: 50%">175</span><span class="y-tick" style="top: 25%">180</span><span class="y-tick" style="top: 0%">185</span>
+<span class="x-tick" style="left: 15%">2026</span><span class="x-tick" style="left: 45%">2027</span><span class="x-tick" style="left: 75%">2028</span>
+<span class="chart-point" style="left: 0%; top: 95%"><i class="kit-dot" style="background: linear-gradient(135deg, #e30613 50%, #111111 50%)"></i></span><span class="point-value first" style="left: 0%; top: 95%">166</span>
+<span class="chart-point" style="left: 30%; top: 65%"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 50%, #da291c 50%)"></i></span>
+<span class="chart-point" style="left: 60%; top: 35%"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 50%, #da291c 50%)"></i></span>
+<span class="chart-point" style="left: 90%; top: 10%"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 50%, #da291c 50%)"></i></span>
+<span class="chart-point" style="left: 100%; top: 10%"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 50%, #da291c 50%)"></i></span><span class="point-value last" style="left: 100%; top: 10%">183</span>
+</div></div>
+</section>
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Trait</span> <span class="value">2, --series-1, un point par mois ; l’abscisse est le temps</span></span>
+<span><span class="token">Point</span> <span class="value">12, aux couleurs du club de ce mois-là, cerné du fond : à l’ouverture de chaque saison et au dernier mois</span></span>
+<span><span class="token">Niveau</span> <span class="value">écrit au premier et au dernier point, en 16 --display ; l’ordonnée et les dates en --muted</span></span>
 </div>
 </section>
 

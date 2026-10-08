@@ -169,7 +169,10 @@ def test_allegiance_is_fixed_only_on_appearance_and_club_stats_separate(world):
     # His rating counts in the edition's record, not in his club season.
     record = world.international.records[f"{edition.year}:{player.id}"]
     assert (record.matches, record.goals, record.rating_sum, record.rating_count) == (1, 1, 7.5, 1)
-    assert international_records(world, player.id)[0]["average"] == 7.5 and player.rating_count == 0
+    shown = international_records(world, player.id)[0]
+    assert shown["average"] == 7.5 and player.rating_count == 0
+    # The page names the edition by its badge.
+    assert (shown["competition"], shown["code"]) == (edition.name, {"euro": "EU", "world": "CM"}[edition.kind])
     assert player.fitness == .65 and player.injury is not None
     assert player.monthly_minutes == 90
     assert player.season_minutes == player.appearances == player.season_goals == 0

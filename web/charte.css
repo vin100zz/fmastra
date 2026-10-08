@@ -83,7 +83,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .club-hero,.club-overview,.stat-grid,.match-banner,.match-replay-card,.finance-figures,.finance-row,.history-row,.movement-summary,.seasons-card,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
 .history-archives .season-archive{margin-bottom:var(--s2)}
-.section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.entity-menu-scope,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+.section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.entity-menu-scope,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 
 /* Tables: 26 px headings and rows, 13 px cells, capitals at 11 px over them. */
 table{font-size:var(--fs-body)}
@@ -213,6 +213,44 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 /* A selection's header is a club's: its flag fills the disc where a crest stands. */
 .club-hero-crest .crest-flag{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
 .club-hero .crest.club-hero-crest:has(.crest-flag){color:transparent}
+/* A player's header is his club's: his name, then his club after it, smaller, on the same line. A tile grades its ground as
+   the badge of its note does (level, potential); what he did for his selection is one tile of three columns: its flag over
+   its code, his caps, his goals. Under the band, where a club has its tabs: what stands on the left, then what the user
+   can do with him in the groups of his menu, the main action last. */
+.club-hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0}
+.club-hero-name h1{min-width:0}
+.club-hero-club{flex:none;font:700 var(--fs-title)/24px var(--display);font-stretch:semi-condensed;white-space:nowrap;opacity:.85}
+.club-hero-tile.graded{background:hsl(var(--hue) 40% 16%)}
+.club-hero-tile.graded :is(span,strong){color:hsl(var(--hue) 75% 68%)}
+:root[data-theme="light"] .club-hero-tile.graded{background:hsl(var(--hue) 62% 91%)}
+:root[data-theme="light"] .club-hero-tile.graded :is(span,strong){color:hsl(var(--hue) 65% 26%)}
+.club-hero-tile.split{flex-direction:row;align-items:stretch;gap:var(--s3)}
+.club-hero-tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px;color:inherit}
+.club-hero-tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
+.club-hero-tile.split>*>span{display:flex;align-items:center;height:14px}
+.club-hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
+.hero-pills{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-right:auto}
+.hero-commands{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
+
+/* A player's page: under his header, a card of facts saying how he is, then what his contract holds; beside it his
+   attributes and his positions, then his career and his level over time. Rows and strips of 26, as a table's. */
+.player-rail{margin-bottom:0}
+.player-rail>h3{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.rail-section{padding:0 var(--s3)}
+.rail-section .fact{min-height:var(--h-row)}
+.gauge{width:40px}
+.attributes-card .attribute-group h3,.attributes-card .attribute{height:var(--h-row)}
+.attributes-card .attributes-grid{padding:0 var(--s3);column-gap:var(--s6)}
+.attributes-card .attribute-group+.attribute-group h3{margin-top:-1px}
+.career-card .competition{gap:var(--s1)}
+/* His level month after month: the line of a series, a dot in the club's colours where a season opens and on the latest
+   month, the level written at both ends as a figure. */
+.plot{left:calc(2*var(--s6));right:var(--s6);top:var(--s6);bottom:calc(var(--s6) + var(--s1))}
+.x-tick{top:calc(100% + var(--s2))}
+.grid-line{stroke:var(--row-line)}
+.curve{stroke:var(--series-1);stroke-width:2}
+.chart-point .kit-dot{width:12px;height:12px}
+.point-value{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-figure);font-weight:700;color:var(--strong)}
 
 /* Menus and what a pointer shows. */
 .entity-menu-panel,.filter-panel,dialog,#toast{border-radius:var(--radius)}
@@ -267,6 +305,12 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .lineup-pitch{margin:0}
 .match-lineup .pitch{margin:var(--s3)}
 .positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,300px);min-width:0;margin:var(--s2) auto}
+/* Beside the list of its positions, on a wide screen, the pitch of a player's aptitudes is smaller: its notes are in the list. */
+@media(min-width:1728px){
+ .positions>.pitch:not(:only-child){width:252px;margin:var(--s3)}
+ .positions-card .positions-list{margin:0}
+ .positions-card .position-row.head{border-top:0}
+}
 
 /* A player on a pitch: the shirt of his club (body in its first colour, sleeves in its second, an outline around the whole)
    with his position written on it, his name under it, his note on its right; his affinity on its top-left corner, his form

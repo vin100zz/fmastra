@@ -187,6 +187,8 @@ def test_career_names_league_then_european_code_and_falls_back_to_the_clubs_leag
                      "cup": SeasonRecord(world.season, player.id, 868, cup.id, matches=2)}
     row = career(world, player.id)["items"][0]
     assert (row["competition"], row["competition_nation"]) == ("Ligue 1 · C1", "FRA")  # The flag is the league's, not the European cup's.
+    # The same as what the page draws its badges from: the league, then the cup with its code.
+    assert [(badge["id"], badge["kind"], badge["code"] if badge["kind"] == "europe" else None) for badge in row["competition_badges"]] == [(16, "league", None), (-101, "europe", "C1")]
     world.records = {"cup": SeasonRecord(world.season, player.id, 868, cup.id, matches=2)}
     row = career(world, player.id)["items"][0]
     assert row["competition"] == "Ligue 1" and row["competition_nation"] == "FRA" and row["matches"] == 2

@@ -160,6 +160,15 @@
 .tile{display:flex;flex-direction:column;justify-content:center;gap:2px;flex:1;min-width:96px;padding:6px var(--s3);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
 .tile strong{display:flex;align-items:baseline;gap:6px;font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
 .tile em{font:600 var(--fs-small)/1 var(--text);font-style:normal}
+/* A tile grades its ground as the badge of its note does (a player's level, his potential). One tile holds several figures
+   in columns, a line between two, each under its label: what a player did for his selection, its flag over its code, then
+   his caps and his goals. */
+.tile.graded{background:hsl(var(--hue) 62% 91%);border-color:hsl(var(--hue) 45% 80%)}
+.tile.graded :is(.label,strong){color:hsl(var(--hue) 65% 26%)}
+.tile.split{flex-direction:row;align-items:stretch;justify-content:flex-start;gap:var(--s3)}
+.tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
+.tile.split .label{display:flex;align-items:center;height:14px}
 
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
    graded ground with its border, a competition an outline (a solid black for a European cup). */
@@ -188,6 +197,8 @@
 .tag.info{background:var(--info-soft);color:var(--info)}
 .tag.open{background:var(--good-soft);color:var(--good)}
 .tag.alert{background:var(--bad-soft);border-color:var(--bad-line);color:var(--bad);font-size:var(--fs-small);font-weight:600;letter-spacing:0;text-transform:none}
+/* Where a player stands, in a sentence: on the transfer list at its fee, on loan until a day, a counter-offer. */
+.pill{display:inline-flex;align-items:center;flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius);background:var(--good-soft);color:var(--good);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
 .form{display:inline-flex;gap:2px}
 .form i{display:grid;place-items:center;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-micro)/1 var(--text)}
 .form i.V{background:var(--good-soft);color:var(--good)}
@@ -223,6 +234,13 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .gauge{display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 .gauge>i{display:block;height:100%;background:var(--good)}
 .gauge.warn>i{background:var(--accent)}.gauge.bad>i{background:var(--bad)}
+/* A bar in the colour of the note it draws (a morale); a value that goes either way (a form) fills its bar from the middle,
+   marked by a tick: to the right in green, to the left in red. */
+.gauge.graded>i{background:hsl(var(--hue) 65% 50%)}
+.gauge.signed{position:relative;overflow:visible}
+.gauge.signed>i{position:absolute;top:0;border-radius:2px}
+.gauge.signed>.down{background:var(--bad)}
+.gauge.signed::after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:10px;background:var(--muted)}
 .ring{position:relative;display:grid;place-items:center;flex:none;width:56px;height:56px}
 .ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke:var(--line);stroke-width:6}
@@ -274,6 +292,14 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
 .entity-nav{display:flex;flex-direction:column;gap:1px}
 .entity-nav>*{display:grid;place-items:center;width:20px;height:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font-size:var(--fs-micro);line-height:1}
+/* A player's header is his club's: his name, then his club after it, smaller, on the same line. Under the band, where a
+   club has its tabs: where he stands on the left, then what can be done with him in the groups of his menu, the main
+   action last. */
+.hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0;white-space:nowrap}
+.hero-club{font:700 semi-condensed var(--fs-title)/24px var(--display);opacity:.85}
+.hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);flex:none;min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
+.hero-pills{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-right:auto}
+.command-group{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
 
 /* The pitch: one grass, one set of lines, upright (attacking upwards) or lying (attacking to the right). */
 .pitch{position:relative;flex:none;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
@@ -362,6 +388,22 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .rank-zone.promotion{fill:var(--good-soft)}
 .rank-zone.relegation{fill:var(--bad-soft)}
 .rank-zone-label{font-size:var(--fs-small);font-weight:600;fill:var(--muted)}
+/* A level month after month, drawn to the size of its card: the line of a series, 2 px; a dot in the club's colours where
+   a season opens and on the latest month; the level written at both ends as a figure; the ordinate and the dates in the
+   muted ink, as HTML text over the stretched drawing. */
+.level-chart{position:relative;flex:1;min-height:200px}
+.plot{position:absolute;inset:var(--s6) var(--s6) calc(var(--s6) + var(--s1)) calc(2*var(--s6))}
+.plot-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.grid-line{stroke:var(--row-line);stroke-width:1}
+.curve{fill:none;stroke:var(--series-1);stroke-width:2;stroke-linejoin:round}
+.y-tick,.x-tick{position:absolute;line-height:1;color:var(--muted);white-space:nowrap}
+.y-tick{right:calc(100% + var(--s2));transform:translateY(-50%)}
+.x-tick{top:calc(100% + var(--s2));transform:translateX(-50%)}
+.chart-point{position:absolute;line-height:0;transform:translate(-50%,-50%)}
+.chart-point .kit-dot{width:12px;height:12px;box-shadow:inset 0 0 0 1px #0000003d,0 0 0 2px var(--panel)}
+.point-value{position:absolute;font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong);transform:translate(-50%,calc(-100% - var(--s3)))}
+.point-value.first{transform:translate(calc(-1*var(--s1)),calc(-100% - var(--s3)))}
+.point-value.last{transform:translate(calc(-100% + var(--s1)),calc(-100% - var(--s3)))}
 
 /* The search of the whole game: a dialog over the veiled page (in a mockup, .veil lays the veil and holds the dialog).
    Its head is a bar: a glass, the field, the kinds on its right. Its list holds every kind together, the best match

@@ -17,6 +17,9 @@ async function render(player=detail,navigation=squad){
  globalThis.fetch=async url=>{urls.push(url);return {ok:true,json:async()=>url.endsWith('/navigation')?navigation:url.endsWith('/historique')?history:player};};
  try{return {html:await playerScreen(1),urls};}finally{globalThis.fetch=previous;}
 }
+// The header of the page, and the card of facts beside what follows it.
+const header=html=>html.slice(0,html.indexOf('</header>'));
+const rail=html=>html.slice(html.indexOf('<aside'),html.indexOf('</aside>'));
 
 test('attribute and position scores share one red-yellow-green scale out of 20',()=>{
  assert.deepEqual([1,4,7,10,13,16,20].map(scoreHue),[0,0,25,50,85,120,120]);
@@ -151,16 +154,32 @@ test('the Jeu section sits in the attributes card, ahead of the attributes',asyn
  assert.match(html,/class="position-note"/);
 });
 
-test('player page is one screen without tabs or stat cards: a rail, the profile, then the history',async()=>{
+test('player page is one screen without tabs or stat cards: the header of his club, a rail, the profile, then the history',async()=>{
  const {html,urls}=await render();
  assert.deepEqual(urls.sort(),['/api/joueurs/1','/api/joueurs/1/historique','/api/joueurs/1/navigation','/api/monde/etat']);
- assert.doesNotMatch(html,/class="tabs"|stat-card|class="avatar"|pitch-legend|Niveau sur 200|Note moyenne/);
+ assert.doesNotMatch(html,/class="tabs"|club-hero-tabs|stat-card|class="avatar"|pitch-legend|Niveau sur 200|Note moyenne/);
  for(const label of ['>État<','>Contrat<','>Attributs<','>Aptitudes par poste<','>Évolution du niveau<','>Carrière<'])assert.ok(html.includes(label),label);
- assert.match(html,/^<div class="player-page"><aside class="card player-rail">/);
- const rail=html.slice(0,html.indexOf('</aside>')),main=html.slice(html.indexOf('class="player-main"'));
- assert.ok(rail.indexOf('>État<')<rail.indexOf('>Contrat<'));
- assert.ok(!main.includes('>État<')&&!rail.includes('>Attributs<'));
+ // A club without colours leaves the band plain; nobody manages a club here, so nothing stands under the band.
+ assert.match(html,/^<header class="club-hero plain">/);assert.doesNotMatch(html,/club-hero-bar|<dialog/);
+ assert.match(html,/<\/header><div class="player-page"><aside class="card player-rail"><div class="card-head"><h2>État<\/h2><\/div><div class="rail-section">/);
+ const side=rail(html),main=html.slice(html.indexOf('class="player-main"'));
+ assert.ok(side.indexOf('>État<')<side.indexOf('<h3>Contrat</h3>'));
+ assert.ok(!main.includes('>État<')&&!side.includes('>Attributs<'));
  assert.match(html,/Serie A · C1/);
+});
+
+test('the header takes the colours of his club, its crest on the disc, and writes the club after his name',async()=>{
+ const club={id:7,name:'Lens',major_color:'#F8D000',minor_color:'#E00000'};
+ const head=header((await render({...detail,club})).html);
+ assert.match(head,/^<header class="club-hero" style="--hero-field:#F8D000;--hero-ink:#111418;--hero-sash:#E00000;/);
+ assert.match(head,/<div class="crest club-hero-crest">L<img class="crest-logo" src="\/crests\/TCM1_7\.png" alt="" loading="lazy" onerror="this\.remove\(\)"><\/div>/);
+ assert.match(head,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Test Joueur<\/h1><a class="club-hero-club" href="#\/club\/7">Lens<\/a><\/div><\/div>/);
+ // No line over the name: his position is read on the pitch, his club after his name.
+ assert.doesNotMatch(head,/club-hero-league/);
+ // Without a club: a plain band, no disc, « Libre » where the club stands.
+ const free=header((await render({...detail,club:null})).html);
+ assert.match(free,/^<header class="club-hero plain">/);assert.doesNotMatch(free,/club-hero-crest/);
+ assert.match(free,/<h1>Test Joueur<\/h1><span class="club-hero-club">Libre<\/span>/);
 });
 
 test('player page puts attributes beside the pitch, then the level chart beside the career',async()=>{
@@ -180,15 +199,15 @@ test('player page puts attributes beside the pitch, then the level chart beside 
  }
 });
 
-test('player page steps through the squad at the left of the name, and shows nothing without a club',async()=>{
+test('player page steps through the squad at the left of the disc, and shows nothing without a club',async()=>{
  const {html}=await render();
- assert.match(html,/<div class="rail-head"><div class="entity-nav"[^]*?<\/div><span class="nation" title="FRA">FRA<\/span><h1>Test Joueur<\/h1><\/div>/);
+ assert.match(html,/<div class="club-hero-main"><div class="entity-nav"[^]*?<\/div><div class="crest club-hero-crest">C<img[^>]*><\/div><div class="club-hero-identity"><div class="club-hero-name"><h1>Test Joueur<\/h1>/);
  assert.match(html,/href="#\/player\/5" rel="prev"/);assert.match(html,/href="#\/player\/6" rel="next"/);
  assert.match(html,/<a href="#\/player\/1" aria-current="true"><span class="position def">DD<\/span><span>Test Joueur<\/span><\/a>/);
  assert.equal(html.match(/<h1>(.*?)<\/h1>/)[1],'Test Joueur');
  for(const navigation of [null,{...squad,total:1,items:[squad.items[1]],previous:null,next:null}]){
   const alone=(await render(detail,navigation)).html;
-  assert.doesNotMatch(alone,/entity-nav/);assert.match(alone,/<div class="rail-head"><span class="nation" title="FRA">FRA<\/span><h1>Test Joueur<\/h1>/);
+  assert.doesNotMatch(alone,/entity-nav/);assert.match(alone,/<div class="club-hero-main"><div class="crest club-hero-crest">/);
  }
  const retired=(await render({id:1,name:'Ancien',retired:true},null)).html;
  assert.doesNotMatch(retired,/entity-nav/);assert.match(retired,/CARRIÈRE ARCHIVÉE/);
@@ -221,42 +240,86 @@ test('career competition column shows the flag of the league country, and none f
  }finally{history.career.items=previous;setNations({});}
 });
 
-const rail=html=>html.slice(0,html.indexOf('</aside>'));
-
-test('the rail shows age, level and potential as tiles, the birth date in the tooltip of the age',async()=>{
- const side=rail((await render()).html);
- assert.match(side,/<div class="tile" title="Né le 1 janv\. 2005"><span>Âge<\/span><strong>19<\/strong>/);
- assert.match(side,/<div class="tile graded" style="--hue:\d+" title="Niveau actuel sur 200"><span>Niveau<\/span><strong>140<\/strong>/);
- assert.match(side,/<div class="tile graded" style="--hue:120" title="Potentiel sur 200"><span>Potentiel<\/span><strong>183<\/strong>/);
+test('the header shows age, level and potential as tiles, the birth date in the tooltip of the age',async()=>{
+ const head=header((await render()).html);
+ assert.match(head,/<div class="club-hero-tile" title="Né le 1 janv\. 2005"><span>Âge<\/span><strong>19<\/strong>/);
+ assert.match(head,/<div class="club-hero-tile graded" style="--hue:\d+" title="Niveau actuel sur 200"><span>Niveau<\/span><strong>140<\/strong>/);
+ assert.match(head,/<div class="club-hero-tile graded" style="--hue:120" title="Potentiel sur 200"><span>Potentiel<\/span><strong>183<\/strong>/);
  // The positions are read on the pitch, not under the name.
- assert.doesNotMatch(side.slice(side.indexOf('</h1>')),/class="position|secondary-positions/);
+ assert.doesNotMatch(head.slice(head.indexOf('</h1>')),/class="position|secondary-positions/);
 });
 
-test('the flag of his main nation flies beside the name; the club carries his caps, the other nationalities a line of their own',async()=>{
+test('his selection has one tile between his age and his level: its flag over its code, his caps, his goals; his other nationalities close the state',async()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},SEN:{name:'Sénégal',display_code:'SEN',flag:'sn'},MLI:{name:'Mali',display_code:'MLI',flag:'ml'}});
  try{
-  const head=html=>html.match(/<div class="rail-head">(.*?)<h1>/)[1].replace(/^<div class="entity-nav"[^]*<\/div>/,'');
-  const line=html=>html.match(/<div class="rail-identity">(.*?)<\/div><section/)[1];
+  const flag=(name,file)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
+  const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile graded"/)[1];
+  const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><h3>Contrat/)?.slice(1);
   const base={...detail,nationalities:['FRA','SEN'],national_team:'SEN',national_team_id:-12,international_caps:12,international_goals:3};
   const capped=(await render(base)).html;
   // The nation he plays for, whatever its place among his nationalities, with a link to it.
-  assert.equal(head(capped),'<a href="#/international/nation/-12"><span class="nation" title="Sénégal"><img class="flag" src="/flags/sn.svg" alt="" width="16" height="12" loading="lazy"></span></a>');
-  assert.equal(line(capped),'<div class="rail-club"><a href="#/club/1" class="club-link">Club</a><b>12 sél - 3 buts</b></div>'
-   +'<div class="fact"><span>Autre nationalité</span><strong><span class="rail-nations"><span class="nation" title="France"><img class="flag" src="/flags/fr.svg" alt="" width="16" height="12" loading="lazy"></span></span></strong></div>');
-  assert.doesNotMatch(line(capped),/>France<|>Sénégal</);
-  assert.match(line((await render({...base,international_goals:1})).html),/<b>12 sél - 1 but<\/b>/);
-  assert.match(line((await render({...base,international_goals:0})).html),/<b>12 sél<\/b>/);
-  // Never capped: the first of his nationalities beside the name, without a link, and no cap to count.
+  assert.equal(tile(capped),`<a href="#/international/nation/-12"><span>${flag('Sénégal','sn')}</span></span><strong>SEN</strong></a>`
+   +'<div><span>Sél.</span><strong>12</strong></div><div><span>Buts</span><strong>3</strong></div>');
+  // The others after the cards and the suspensions, each a flag then its code, never its name.
+  assert.deepEqual(others(capped),['Autre nationalité',`${flag('France','fr')}FRA</span>`]);
+  assert.doesNotMatch(header(capped)+rail(capped),/>France<|>Sénégal</);
+  // The goals have their column only once he has scored.
+  assert.match(tile((await render({...base,international_goals:0})).html),/<strong>SEN<\/strong><\/a><div><span>Sél\.<\/span><strong>12<\/strong><\/div>$/);
+  // Never capped: the first of his nationalities, without a link, and no cap to count.
   const uncapped=(await render({...base,national_team:null,national_team_id:null,international_caps:0,international_goals:0})).html;
-  assert.equal(head(uncapped),'<span class="nation" title="France"><img class="flag" src="/flags/fr.svg" alt="" width="16" height="12" loading="lazy"></span>');
-  assert.match(line(uncapped),/<b>0 sél<\/b><\/div><div class="fact"><span>Autre nationalité<\/span>[^]*title="Sénégal"/);
+  assert.equal(tile(uncapped),`<div><span>${flag('France','fr')}</span></span><strong>FRA</strong></div><div><span>Sél.</span><strong>0</strong></div>`);
+  assert.match(others(uncapped)[1],/title="Sénégal"[^]*SEN<\/span>$/);
   // One nationality: no line for the others; several others: all on the line, in the order of the source.
-  assert.equal(line((await render({...base,nationalities:['SEN']})).html),'<div class="rail-club"><a href="#/club/1" class="club-link">Club</a><b>12 sél - 3 buts</b></div>');
-  const three=line((await render({...base,nationalities:['FRA','SEN','MLI']})).html);
-  assert.match(three,/<span>Autres nationalités<\/span>/);
-  assert.deepEqual([...three.matchAll(/class="nation" title="([^"]+)"/g)].map(match=>match[1]),['France','Mali']);
-  assert.match(line((await render({...base,club:null})).html),/^<div class="rail-club"><span class="muted">Libre<\/span>/);
+  assert.equal(others((await render({...base,nationalities:['SEN']})).html),undefined);
+  const three=others((await render({...base,nationalities:['FRA','SEN','MLI']})).html);
+  assert.equal(three[0],'Autres nationalités');
+  assert.deepEqual([...three[1].matchAll(/class="nation" title="([^"]+)"/g)].map(match=>match[1]),['France','Mali']);
+  // An older server tells no cap, and a player without any nationality has no tile.
+  assert.equal(tile((await render(detail)).html),`<div><span>${flag('France','fr')}</span></span><strong>FRA</strong></div>`);
+  assert.doesNotMatch((await render({...detail,nationalities:[]})).html,/club-hero-tile split/);
  }finally{setNations({});}
+});
+
+// What the game answers about a player, by the end of the address asked; the rest is the player himself.
+async function renderFor(player,answers){
+ const previous=globalThis.fetch,urls=[];
+ globalThis.fetch=async url=>{urls.push(url);const key=Object.keys(answers).find(part=>url.includes(part));
+  return {ok:true,json:async()=>key?answers[key]:url.endsWith('/navigation')?squad:url.endsWith('/historique')?history:player};};
+ try{return {html:await playerScreen(1),urls};}finally{globalThis.fetch=previous;}
+}
+const bar=html=>html.match(/<div class="club-hero-bar">(.*)<\/div><\/header>/)[1];
+const buttons=html=>[...html.matchAll(/<button( class="primary")? type="button"( disabled)?[^>]*>([^<]*)<\/button>/g)].map(match=>`${match[3]}${match[1]?' *':''}${match[2]?' ×':''}`);
+
+test('under the band, what the user can do with one of his players: his squad, his sale, then his contract as the main action',async()=>{
+ const answers={'/monde/etat':{controlled_club_id:1},
+  '/contrat/':{obstacle:null,demande:true,salaire_actuel:12000,salaire_propose:18000,fin_contrat_actuelle:'2028-06-30',fin_contrat_proposee:'2030-06-30'},
+  '/vente/':{prix_liste:null,intransferable:false,obstacle_proposition:null,offres:[{offre_id:'a',acheteur:{id:2,name:'Autre'},salaire_propose:15000,indemnite:2e6}]},
+  '/effectif/':{pret:null,en_reserve:false,obstacle_reserve:null,sens:'sortant',clubs:[],durees:[],obstacle_pret:'Aucun club ne souhaite l’accueillir.'}};
+ const {html,urls}=await renderFor(detail,answers);
+ assert.deepEqual(urls.slice(4),['/api/ma-partie/contrat/1','/api/ma-partie/vente/1','/api/ma-partie/effectif/1']);
+ // What stands on the left; then a group for each kind of action, in the order of his menu.
+ assert.match(bar(html),/^<div class="hero-pills"><span class="pill">Prolongation en attente<\/span><\/div><div class="hero-commands">/);
+ assert.deepEqual(bar(html).split('<div class="hero-commands">').slice(1).map(buttons),
+  [['Envoyer en réserve','Prêter ×'],['Offres reçues · 1','Mettre sur la liste','Proposer aux clubs','Déclarer intransférable'],['Proposer un contrat *']]);
+ // The dialogs of these actions follow the header.
+ assert.match(html,/<\/header><dialog id="listing-dialog"/);assert.match(html,/<dialog id="contract-dialog"/);
+ // A player on loan has nothing to decide: his state alone.
+ const lent=bar((await renderFor({...detail,loan:{parent:{id:1,name:'Club'},club:{id:9,name:'Lorient'},end:'2026-06-30'}},answers)).html);
+ assert.equal(lent,'<div class="hero-pills"><span class="pill">Prêté à Lorient · retour le 30 juin 2026</span></div>');
+});
+
+test('under the band of another club’s player: the loan, then the offer as the main action, and what stands in his talks',async()=>{
+ const talks={etape:null,obstacle:null,contre_offre:3e6,tours_restants:2,budget:5e6};
+ const squadOf={pret:null,en_reserve:false,obstacle_reserve:null,sens:'entrant',clubs:[],durees:[],obstacle_pret:'Club ne souhaite pas prêter Test Joueur.'};
+ const answers={'/monde/etat':{controlled_club_id:7,market:'summer'},'/negociation/':talks,'/effectif/':squadOf};
+ const {html,urls}=await renderFor(detail,answers);
+ assert.deepEqual(urls.slice(4),['/api/ma-partie/negociation/1','/api/ma-partie/effectif/1']);
+ assert.match(bar(html),/^<div class="hero-pills"><span class="pill">Contre-offre · 3\sM€<\/span><\/div>/);
+ assert.deepEqual(bar(html).split('<div class="hero-commands">').slice(1).map(buttons),[['Emprunter ×'],['Faire une offre *']]);
+ assert.match(html,/<\/header><dialog id="talks-dialog"/);
+ // Talks already agreed leave nothing to do but wait.
+ const agreed=bar((await renderFor(detail,{...answers,'/negociation/':{etape:'signature',date_prevue:'2026-07-01',salaire:20000}})).html);
+ assert.match(agreed,/^<div class="hero-pills"><span class="pill">Arrivée le 1 juil\. 2026 · [^<]*<\/span><\/div><div class="hero-commands"><button type="button" disabled/);
 });
 
 test('the rail draws condition, form and morale as bars, and names what weighs on the morale',async()=>{
@@ -287,14 +350,15 @@ test('the rail counts yellow cards over all competitions and names a suspension 
  assert.doesNotMatch(rail((await render()).html),/Suspension/);
 });
 
-test('the rail carries salary and contract end; the market value and the asking price stand in tiles',async()=>{
- const side=rail((await render({...detail,asking_price:2500000})).html);
+test('the rail carries salary and contract end; the market value and the asking price are tiles of the header',async()=>{
+ const {html}=await render({...detail,asking_price:2500000}),side=rail(html),head=header(html);
  const contract=side.slice(side.indexOf('>Contrat<'));
  for(const label of ['Salaire','Fin du contrat'])assert.ok(contract.includes(`<div class="fact"><span>${label}</span>`),label);
- assert.match(side,/<span>Valeur<\/span><strong>/);assert.match(side,/<span>Prix demandé<\/span><strong>2\.5\sM€<\/strong>/);
- assert.match(rail((await render({...detail,transferable:false})).html),/<span>Prix demandé<\/span><strong>N\/A<\/strong>/);
- const free=rail((await render({...detail,club:null,wage:0,contract_end:null})).html);
- assert.match(free,/Salaire<\/span><strong>—<\/strong>/);
+ assert.match(head,/<div class="club-hero-tile" title="Valeur de marché"><span>Valeur<\/span><strong>/);assert.match(head,/<span>Prix demandé<\/span><strong>2\.5\sM€<\/strong>/);
+ assert.doesNotMatch(side,/Valeur|Prix demandé|class="tile/);
+ assert.match(header((await render({...detail,transferable:false})).html),/title="Intransférable : son club refuse de le vendre"><span>Prix demandé<\/span><strong>N\/A<\/strong>/);
+ const free=(await render({...detail,club:null,wage:0,contract_end:null})).html;
+ assert.match(rail(free),/Salaire<\/span><strong>—<\/strong>/);assert.match(header(free),/title="Sans club : aucun prix demandé"><span>Prix demandé<\/span><strong>N\/A<\/strong>/);
 });
 
 test('attributes are graded badges without bars, and greed closes Général in a plain badge',async()=>{
@@ -329,7 +393,26 @@ test('the career card is one table: the clubs, then the national team under its 
   assert.match(unrated,/<td colspan="4"><a href="#\/international\/2028">2028<\/a><\/td><td>1<\/td><td>0<\/td><td>0<\/td><td>—<\/td>/);
   assert.match(unrated,/<td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>0<\/td><td>—<\/td>/);
   assert.doesNotMatch((await render({...capped,international_caps:0})).html,/nation-head|career-gap/);
+  // An edition the server names carries its badge ahead of its year.
+  const named=(await render({...capped,international_records:[{...records[1],competition:'Euro 2028',code:'EU'}]})).html;
+  assert.match(named,/<td colspan="4"><span class="competition"><span class="competition-code international" title="Euro 2028">EU<\/span><a href="#\/international\/2028">2028<\/a><\/span><\/td>/);
  }finally{setNations({});}
+});
+
+test('a season of his career shows what his club played as badges: its league, after the flag of a country other than France, then its European cup',async()=>{
+ setNations({ITA:{name:'Italie',display_code:'ITA',flag:'it'},FRA:{name:'France',display_code:'FRA',flag:'fr'}});
+ const previous=history.career.items,base=previous[0];
+ const league=(name,nation,level,id)=>({id,name,kind:'league',code:null,nation,level}),c1={id:30,name:'Ligue des champions',kind:'europe',code:'C1',nation:'',level:0};
+ history.career.items=[{...base,season:2027,competition:'Serie A · C1',competition_nation:'ITA',competition_badges:[league('Serie A','ITA',1,16),c1]},
+  {...base,season:2026,competition:'Ligue 2',competition_nation:'FRA',competition_badges:[league('Ligue 2','FRA',2,17)]},
+  {...base,season:2025,competition:'D3',competition_nation:'ITA',competition_badges:[league('D3','ITA',3)]},
+  {...base,season:2024,competition:null,competition_nation:null,competition_badges:[]}];
+ try{
+  const cells=[...(await render()).html.matchAll(/<td><span class="competition">(.*?)<\/span>(?=<\/td>)/g)].map(match=>match[1]);
+  const italy='<span class="nation" title="Italie"><img class="flag" src="/flags/it.svg" alt="" width="16" height="12" loading="lazy"></span>';
+  assert.deepEqual(cells,[`${italy}<span class="competition-code league" title="Serie A">D1</span><span class="competition-code europe" title="Ligue des champions">C1</span>`,
+   '<span class="competition-code league" title="Ligue 2">L2</span>',`${italy}<span class="competition-code league" title="D3">D3</span>`,'Marché extérieur']);
+ }finally{history.career.items=previous;setNations({});}
 });
 
 test('retired players keep only their level history and career',async()=>{

@@ -1,6 +1,7 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
-import {api,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,position,empty,card,fact,appearances,positionNote,marketTags,kitShirt,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {playerHero} from './club-hero.js';
+import {api,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,position,empty,card,fact,appearances,positionNote,marketTags,kitShirt,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -151,15 +152,18 @@ function talksPart(player, talks, scope='') {
  return {rows:[{label,open:`${scope}talks-dialog`,note:counter?`Contre-offre · ${amount(counter)}`:''}],dialogs:dialog};
 }
 // On a page: a pill for what waits or for the counter-offer, then the button.
-export function talksAction(player, state, talks) {
- const actions=body=>`<div class="player-actions">${body}</div>`,pill=text=>`<span class="pill">${text}</span>`;
- const part=talksPart(player,talks);
- if(part.state)return actions(pill(part.state));
+function talksOffer(player, state, talks) {
+ const pill=text=>`<span class="pill">${text}</span>`,part=talksPart(player,talks);
+ if(part.state)return {pill:pill(part.state),button:'',dialogs:''};
  const [row]=part.rows;
  // The pill names the obstacle; the reason that follows its colon waits in the tooltip.
  const [barrier,reason]=(talks.obstacle||'').split(' : ');
  const told=talks.obstacle?(state.market?`<span class="pill"${reason?` title="${e(talks.obstacle)}"`:''}>${e(barrier)}</span>`:''):row.note?pill(row.note):'';
- return actions(`${told}${actionButton(row,true)}`)+part.dialogs;
+ return {pill:told,button:actionButton(row,true),dialogs:part.dialogs};
+}
+export function talksAction(player, state, talks) {
+ const {pill,button,dialogs}=talksOffer(player,state,talks);
+ return `<div class="player-actions">${pill}${button}</div>${dialogs}`;
 }
 
 // Contracts are extended on the player's terms (`terms`, from /ma-partie/contrat): the ones he asked for, which the club
@@ -236,6 +240,22 @@ async function playerActions(player, state) {
  return talksAction(player,state,talks)+(loan?actions(loan.buttons+loan.dialogs):'');
 }
 
+// Under the band of his header, where a club has its tabs: what stands on the left, then what the user can do with him in
+// the groups of his menu, the main action last. Nothing without a club to manage, nor for a retired player.
+async function playerBar(player, state) {
+ const clubId=state.controlled_club_id;
+ if(clubId==null||player.retired)return {bar:'',dialogs:''};
+ const bar=(pills,groups=[])=>`<div class="club-hero-bar"><div class="hero-pills">${pills}</div>${groups.filter(Boolean).map(group=>`<div class="hero-commands">${group}</div>`).join('')}</div>`;
+ if(player.loan)return {bar:bar(`<span class="pill">${loanState(player,clubId)}</span>`),dialogs:''};
+ if(player.club?.id===clubId){
+  const [contract,sale,squad]=await ownTerms(player);
+  const parts=[squadAction(player,squad),saleAction(player,sale),contractAction(player,contract)];
+  return {bar:bar(parts.map(part=>part.pills).join(''),parts.map(part=>part.buttons)),dialogs:parts.map(part=>part.dialogs).join('')};
+ }
+ const [talks,squad]=await otherTerms(player),deal=talksOffer(player,state,talks),loan=squad?borrowAction(player,squad):null;
+ return {bar:bar(deal.pill,[loan?.buttons,deal.button]),dialogs:deal.dialogs+(loan?loan.dialogs:'')};
+}
+
 // The menu of a player (player-menu.js) holds the actions of his page, in groups: the squad, his contract and his sale for
 // one of the user's; the talks and the loan for another club's. Where nothing can be decided, his `state` says why:
 // retired, on loan, or waiting for the next step of talks already agreed.
@@ -282,13 +302,15 @@ function disciplineFacts(player) {
  return told('Cartons',cards.reduce((sum,item)=>sum+item.yellows,0),cards.map(item=>`${item.competition} ${item.yellows}`).join(' · '))+bans.join('');
 }
 
-// His main nation — the one he plays for, else the first of his nationalities — flies beside his name; the others get a line
-// of their own under the club. Flags alone, named in their tooltip.
+// His nations: the one he plays for, else the first of his nationalities, then the others in the order of the source.
+const nationCodes=player=>[...new Set([player.national_team,...(player.nationalities||[])].filter(Boolean))];
+
+// Beside a list, the flag of his main nation flies by his name, alone, named in its tooltip.
 function nationFlags(player) {
- const [main,...others]=[...new Set([player.national_team,...(player.nationalities||[])].filter(Boolean))];
+ const [main]=nationCodes(player);
  const flag=code=>nationFlag(code)||nationBadge(code);
  const capped=main===player.national_team&&player.national_team_id!=null;
- return {main:!main?'':capped?`<a href="#/international/nation/${player.national_team_id}">${flag(main)}</a>`:flag(main),others:others.map(flag)};
+ return {main:!main?'':capped?`<a href="#/international/nation/${player.national_team_id}">${flag(main)}</a>`:flag(main)};
 }
 
 // "12 sél - 3 buts": the goals only once he has scored.
@@ -305,20 +327,17 @@ function feeTiles(player) {
 // Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
 const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.parent)],['Fin du prêt',date(player.loan.end)]]:[]),...(player.reserve?[['Équipe','Réserve']]:[])];
 
-// Beside the page: who he is, how he is and what his contract is, with what the user can do about it at the foot.
-// `lead` (the block stepping through the squad) sits at the left of the name.
-function rail(player, lead, actions) {
- const tile=(label,value,title,hue)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
- const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),title,levelHue(level(value)));
- const tiles=`<div class="rail-tiles">${tile('Âge',player.age,`Né le ${date(player.born)}`)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}</div>${feeTiles(player)}`;
- const flags=nationFlags(player);
- const identity=`<div class="rail-identity"><div class="rail-club">${clubLink(player.club)}${caps(player)}</div>${flags.others.length?fact(flags.others.length>1?'Autres nationalités':'Autre nationalité',`<span class="rail-nations">${flags.others.join('')}</span>`):''}</div>`;
+// Beside the page, a card of facts: how he is, with his other nationalities (the flag, then the code), then what his
+// contract holds. Who he is and what he is worth stand in the header.
+function rail(player) {
+ const others=nationCodes(player).slice(1);
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
- const state=`<section class="rail-section"><h2>État</h2>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}</section>`;
+ const state=`${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}`
+  +(others.length?fact(others.length>1?'Autres nationalités':'Autre nationalité',others.map(code=>nationBadge(code)).join('')):'');
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),...loanTerms(player)];
- const contract=`<section class="rail-section"><h2>Contrat</h2>${terms.map(([label,value])=>fact(label,value)).join('')}</section>`;
- return `<aside class="card player-rail"><div class="rail-head">${lead}${flags.main}<h1>${e(player.name)}</h1></div>${tiles}${identity}${state}${contract}${actions?`<div class="rail-actions">${actions}</div>`:''}</aside>`;
+ return `<aside class="card player-rail"><div class="card-head"><h2>État</h2></div><div class="rail-section">${state}</div>`
+  +`<h3>Contrat</h3><div class="rail-section">${terms.map(([label,value])=>fact(label,value)).join('')}</div></aside>`;
 }
 
 // Attributes beside the aptitudes (the pitch and the list of its positions); without any position to show, the attributes
@@ -340,7 +359,10 @@ function internationalCareer(player) {
  if(!player.international_caps)return '';
  const records=[...(player.international_records||[])].sort((a,b)=>b.edition-a.edition),wide={lead:4};
  const nation=player.national_team?nationBadges([player.national_team],{full:true}):'Sélection';
- const rows=records.map(row=>careerRow([`<a href="#/international/${row.edition}">${row.edition}</a>`,n(row.matches),row.goals,row.assists,row.average?averageNote(row.average):'—'],wide));
+ // An edition is named by its year, after the badge that tells the Euro from the World Cup.
+ const edition=row=>{const link=`<a href="#/international/${row.edition}">${row.edition}</a>`;
+  return row.code?`<span class="competition">${competitionBadge({name:row.competition,kind:'international',code:row.code})}${link}</span>`:link;};
+ const rows=records.map(row=>careerRow([edition(row),n(row.matches),row.goals,row.assists,row.average?averageNote(row.average):'—'],wide));
  if(player.historical_caps||player.historical_goals)rows.push(careerRow(['Historique importé',n(player.historical_caps),n(player.historical_goals),'—','—'],wide));
  const rated=records.reduce((sum,row)=>sum+(row.rating_count||0),0);
  const total=['Total',n(player.international_caps),n(player.international_goals),n(records.reduce((sum,row)=>sum+row.assists,0)),rated?averageNote(records.reduce((sum,row)=>sum+row.rating_sum,0)/rated):'—'];
@@ -348,11 +370,19 @@ function internationalCareer(player) {
  return `<tbody>${careerRow(head,{tag:'th',lead:4,name:'nation-head'})}</tbody><tbody>${rows.join('')}${careerRow(total,{lead:4,name:'total'})}</tbody>`;
 }
 
+// What a club played in a season of his career: the badge of its league, after the flag of its country when it is not a
+// French one, then those of its European cups. An older server names them in one text, written after the flag.
+function careerCompetitions(row) {
+ const badges=row.competition_badges;
+ if(!badges?.length)return `${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}`;
+ return `${row.competition_nation==='FRA'?'':nationFlag(row.competition_nation)}${badges.map(competitionBadge).join('')}`;
+}
+
 // One card and one table for the whole career: a row per season and club, newest first, then the national team, a gap
 // setting the two apart.
 function careerCard(player, career) {
  const totals=career.totals,nation=internationalCareer(player);
- const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.loan?'Prêt':row.fee?money(row.fee):'—',`<span class="competition">${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?averageNote(row.average):'—']));
+ const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.loan?'Prêt':row.fee?money(row.fee):'—',`<span class="competition">${careerCompetitions(row)}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?averageNote(row.average):'—']));
  const total=careerRow(['Total','',totals.fee?money(totals.fee):'—','',n(totals.matches),n(totals.goals),n(totals.assists),totals.average?averageNote(totals.average):'—'],{name:'total'});
  const clubs=rows.length?`<tbody>${rows.join('')}${total}</tbody>`:'';
  const head=careerRow(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],{tag:'th'});
@@ -395,8 +425,8 @@ export async function playerScreen(id) {
  const story=`<div class="player-row history">${chart}${careerCard(player,history.career)}</div>`;
  // A retired player keeps his name and his history.
  if(player.retired)return `<div class="page-heading"><div class="identity"><div><span class="eyebrow">CARRIÈRE ARCHIVÉE</span><h1>${e(player.name)}</h1><p>Retraité</p></div></div></div>${story}`;
- const actions=await playerActions(player,state);
- return `<div class="player-page">${rail(player,playerNavigation(neighbours),actions)}<div class="player-main">${profile(player)}${story}</div></div>`;
+ const {bar,dialogs}=await playerBar(player,state);
+ return `${playerHero(player,{lead:playerNavigation(neighbours),foot:bar})}${dialogs}<div class="player-page">${rail(player)}<div class="player-main">${profile(player)}${story}</div></div>`;
 }
 
 // A position picked on the pitch of aptitudes or in their list: the Jeu section marks what that position asks for, and both

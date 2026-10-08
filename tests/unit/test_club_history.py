@@ -513,6 +513,11 @@ def test_career_has_a_row_for_each_season_at_a_club_and_names_the_league_of_that
         (S + 4, 1, 'Ligue 1', 'FRA', 0, None), (S + 3, 1, 'Ligue 1', 'FRA', 0, None), (S + 2, 1, 'D4', 'FRA', 0, None),
         (S + 1, 1, 'Ligue 2', 'FRA', 0, None), (S, 1, 'Ligue 1', 'FRA', 3, 6.0)]
     assert all(row['fee'] is None and not row['loan'] for row in data['items'])
+    # What the page draws the badge of each row from: the league itself, or the nation and the level of a division outside them.
+    badges = [row['competition_badges'] for row in data['items']]
+    assert [[badge.get('id') for badge in row] for row in badges] == [[16], [16], [None], [17], [16]]
+    assert badges[2] == [{'name': 'D4', 'kind': 'league', 'code': None, 'nation': 'FRA', 'level': 4}]
+    assert badges[3] == [{'id': 17, 'name': 'Ligue 2', 'kind': 'league', 'code': None, 'nation': 'FRA', 'level': 2}]
     assert data['totals'] == {'fee': 0, 'matches': 3, 'goals': 0, 'assists': 0, 'average': 6.0}
     # A player whose level history does not tell when he entered the game keeps the rows of what he did.
     world.trajectories = {}

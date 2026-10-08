@@ -234,8 +234,14 @@ def sale_view(world: World, player: Player) -> dict:
 
 
 def international_records(world: World, player_id: int) -> list[dict]:
-    """A player's international editions, each with the average of the ratings he was given in it (None before any)."""
-    return [{**asdict(row), "average": round(row.rating_sum / row.rating_count, 2) if row.rating_count else None}
+    """A player's international editions, each with the average of the ratings he was given in it (None before any) and
+    name of the edition and the two characters of its badge (None for an edition the game no longer holds)."""
+    from .international import EDITION_CODES
+    editions = world.international.editions
+    def badge(year: int) -> dict:
+        edition = editions.get(year)
+        return {"competition": edition.name if edition else None, "code": EDITION_CODES[edition.kind] if edition else None}
+    return [{**asdict(row), "average": round(row.rating_sum / row.rating_count, 2) if row.rating_count else None, **badge(row.edition)}
             for row in world.international.records.values() if row.player_id == player_id]
 
 
@@ -522,18 +528,24 @@ def played_leagues(world: World, keys: set[tuple[int, int]]) -> dict[tuple[int, 
     return found
 
 
-def career_league(world: World, club_id: int | None, levels: dict, season: int, played: dict) -> tuple[str | None, str | None]:
-    """What a club's league reads as in the career row of a season, with its nation: the name of the simulated league it
-    played that season (`played`, see `played_leagues`; the one it is in for the season under way); outside them "D" and
-    the level of the club's division (`levels`, see `division_levels`). A club that has entered the simulated leagues
-    since came from the reserve pool of their nation. The source gives no level to the other divisions: such a club plays
-    one level under the deepest known one of its nation, hence in the top flight of a nation without any simulated
-    league."""
+def competition_badge(competition: Competition) -> dict:
+    """What the page draws the badge of a competition from."""
+    return {"id": competition.id, "name": competition.name, "kind": competition.kind, "code": competition.code,
+            "nation": competition.nation, "level": competition.level}
+
+
+def career_league(world: World, club_id: int | None, levels: dict, season: int, played: dict) -> tuple[str | None, str | None, dict | None]:
+    """What a club's league reads as in the career row of a season, with its nation and what its badge is drawn from: the
+    name of the simulated league it played that season (`played`, see `played_leagues`; the one it is in for the season
+    under way); outside them "D" and the level of the club's division (`levels`, see `division_levels`). A club that has
+    entered the simulated leagues since came from the reserve pool of their nation. The source gives no level to the
+    other divisions: such a club plays one level under the deepest known one of its nation, hence in the top flight of a
+    nation without any simulated league."""
     club = world.clubs.get(club_id)
-    if club is None: return None, None
+    if club is None: return None, None, None
     today = club_league(world, club_id)
     league = played.get((season, club_id)) or (today if season == world.season else None)
-    if league: return league.name, league.nation
+    if league: return league.name, league.nation, competition_badge(league)
     if today:
         nation = today.nation
         level = max(known for country, known in levels.values() if country == nation)
@@ -542,7 +554,7 @@ def career_league(world: World, club_id: int | None, levels: dict, season: int, 
     else:
         nation = club.cup_nation or club.nation
         level = max((known for country, known in levels.values() if country == nation), default=0) + 1
-    return f"D{level}", nation
+    return f"D{level}", nation, {"name": f"D{level}", "kind": "league", "code": None, "nation": nation, "level": level}
 
 
 def held_seasons(world: World, player_id: int, moves: list) -> list[tuple[int, int]]:
@@ -578,7 +590,7 @@ def career(world: World, player_id: int) -> dict:
         competition = world.competitions[record.competition_id]
         # A row names the league division and the European cup code; national cups stay in the totals only.
         label = competition.name if competition.kind == "league" else competition.code if competition.kind == "europe" else None
-        if label: row["competitions"][label] = competition.kind == "europe"
+        if label: row["competitions"][label] = competition
         if competition.kind == "league": row["nation"] = competition.nation
         for field in ("matches", "substitutes", "goals", "assists", "rating_sum", "rating_count"):
             row[field] += getattr(record, field)
@@ -602,9 +614,13 @@ def career(world: World, player_id: int) -> dict:
         labels = row.pop("competitions")
         # The league comes first, the one he played in or else his club's that season (a club outside the simulated leagues,
         # a season of cup matches only or without a match), then the European cup.
-        league, nation = career_league(world, club_id, levels, season, played)
-        named = [label for label, european in labels.items() if not european] or ([league] if league else [])
-        row["competition"] = " · ".join([*named, *(label for label, european in labels.items() if european)]) or None
+        league, nation, badge = career_league(world, club_id, levels, season, played)
+        leagues = {label: competition for label, competition in labels.items() if competition.kind == "league"}
+        european = {label: competition for label, competition in labels.items() if competition.kind == "europe"}
+        row["competition"] = " · ".join([*(leagues or ([league] if league else [])), *european]) or None
+        # The same, as the badges the page draws: the league, then the European cups.
+        row["competition_badges"] = [*([competition_badge(item) for item in leagues.values()] or ([badge] if badge else [])),
+                                     *(competition_badge(item) for item in european.values())]
         row["competition_nation"] = row.pop("nation", None) or nation
         count = row.pop("rating_count")
         total = row.pop("rating_sum")

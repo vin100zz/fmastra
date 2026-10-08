@@ -77,7 +77,7 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 |---|---|---|---|
 | `--fs-hero` | 40 / 40 | 700 | Nom d'un club dans son bandeau, score |
 | `--fs-page` | 26 / 32 | 700 | Titre de page |
-| `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour |
+| `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, club d'un joueur dans son bandeau |
 | `--fs-figure` | 16 / 20 | 700 | Action principale, délai |
 | `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
 | `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`) |
@@ -109,13 +109,15 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Clubs et pays » |
+| En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-club`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « En-tête d'un joueur » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
-| Fait, tuile | `.fact`, `.tile` | Libellé atténué, valeur forte |
-| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count` | 18 de haut ; un poste, 32 de large |
+| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
+| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill` | 18 de haut ; un poste, 32 de large ; `.pill` dit en une phrase où en est un joueur |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
+| Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
@@ -175,6 +177,34 @@ et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
 | Club | La pastille à ses couleurs | Le drapeau de son pays, puis la pastille de sa division |
 | Compétition | Sa pastille | Son pays, après son drapeau ; rien pour une coupe d'Europe |
 | Sélection | Son drapeau | Rien |
+
+### En-tête d'un joueur
+
+La fiche d'un joueur s'ouvre sur le bandeau de son club (`.hero`) : ses
+couleurs, son écusson sur le disque. Un joueur sans club a un bandeau neutre,
+sans disque.
+
+- **Nom** : en 40, seul sur sa ligne, sans ligne au-dessus ; son club à sa
+  suite, en 20 (`.hero-club`), lien vers sa fiche ; « Libre » sans club. Son
+  poste n'y est pas : il se lit sur le terrain des aptitudes.
+- **Tuiles**, dans cet ordre : âge, sélection, niveau, potentiel, valeur, prix
+  demandé (« N/A » quand personne ne peut le demander, la raison en infobulle).
+  Niveau et potentiel sont gradués (`.tile.graded`) : le fond et l'encre de
+  leur pastille.
+- **Sélection** (`.tile.split`) : une tuile de trois colonnes, un trait entre
+  deux. Le drapeau au-dessus du code de trois lettres (jamais le nom du pays :
+  la tuile garde sa largeur), « Sél. » et « Buts », la colonne des buts dès le
+  premier. C'est la sélection qui l'a appelé, lien vers elle ; à défaut la
+  première de ses nationalités, sans lien. Ses autres nationalités sont un fait
+  de la carte État, drapeau puis code.
+- **Barre** (`.hero-bar`) : 36, à la place des onglets d'un club, la page
+  n'en ayant pas. À gauche, où il en est (`.pill` : « Sur la liste · 45 M€ »,
+  « Prolongation en attente », « Prêté à Lorient · retour le 30 juin 2026 ») ;
+  à droite, les commandes de 28, par groupes (`.command-group`, 4 entre deux
+  boutons, 16 entre deux groupes), ceux de son menu : effectif, vente, puis
+  l'action principale au bout (« Proposer un contrat », « Faire une offre »).
+  Une commande impossible reste à sa place, grisée, sa raison en infobulle.
+  Sans club dirigé, pas de barre.
 
 ### Menu d'un joueur
 
@@ -292,10 +322,26 @@ la largeur de sa carte.
 - Une saison hors des championnats simulés garde sa place sur l'axe et
   interrompt le trait.
 
+### Niveau au fil des mois
+
+`.level-chart` : le niveau d'un joueur, sur 200, mois après mois, dessiné à la
+taille de sa carte.
+
+- Un trait de 2 en `--series-1`, un point par mois ; l'abscisse est le temps.
+- Un point de 12 aux couleurs du club où il jouait ce mois-là (`.kit-dot`, gris
+  sans club), cerné du fond, à l'ouverture de chaque saison et au dernier mois.
+- Le niveau s'écrit au premier et au dernier point, en 16 `--display`.
+- L'ordonnée, une ligne `--row-line` par graduation, et les dates sont en
+  `--muted`, en 13 : du texte, pas du dessin étiré.
+
 ### Jauge, anneau
 
 - **Jauge** (`.gauge`) : 40 × 4, à côté d'un chiffre (condition, fatigue, part
-  d'un plafond) ; verte, jaune (`.warn`) ou rouge (`.bad`).
+  d'un plafond) ; verte, jaune (`.warn`) ou rouge (`.bad`), ou dans la couleur
+  de la note qu'elle dessine (`.graded` : le moral).
+- **Jauge signée** (`.gauge.signed`) : une valeur qui va dans les deux sens (la
+  forme) part du milieu de sa barre, marqué d'un trait : verte vers la droite,
+  rouge vers la gauche, vide quand elle ne change rien.
 - **Anneau** (`.ring`) : 56, la part d'un plafond écrite en son centre ; rouge à
   partir de 95 % (`.ring.full`).
 
@@ -432,6 +478,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 | Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
+| Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
 
 Ce qui reste :
 
@@ -450,4 +497,5 @@ référence à la charte : canevas Design
 sienne (proposition B) : <https://claude.ai/artifact/JMuUqZ4JkvAsYQMh6uJoNU>,
 le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>,
 comme la répartition des budgets : <https://claude.ai/artifact/Ga78jdTYs5RHHZweXDyjYd>
-et la fiche d'une sélection (proposition A) : <https://claude.ai/artifact/THiSHcUqdwdres8yWJc5NR>.
+et la fiche d'une sélection (proposition A) : <https://claude.ai/artifact/THiSHcUqdwdres8yWJc5NR>,
+et celle d'un joueur (proposition D, bloc sélection 3) : <https://claude.ai/artifact/1dXpFEK4mUHwaxcZmX8q7s>.

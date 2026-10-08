@@ -138,6 +138,8 @@ export const duration = until => {
 };
 export const setNations = data => nations=data||{};
 export const nationName = code => nations[code]?.name || code || '—';
+// The three letters a nation is written with after its flag.
+export const nationCode = code => nations[code]?.display_code || code || '—';
 const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:'';
 export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return `<span class="nation" title="${escape(info?.name||code||'')}">${flagImage(info)}${escape(label)}</span>`;};
 // The flag alone, named in its tooltip, for compact cells; empty when the nation or its flag is unknown.

@@ -97,7 +97,9 @@ test('an own player is sent to the reserve and lent to a club that would take hi
 test('another club’s player is borrowed from his page when his club lends him, and a loan under way leaves nothing to decide',async()=>{
  const other={...detail,id:20,name:'Cible',club:ref(9,'Nice'),loan_listed:true,interested:false,loan_interested:true};
  const open=await withApi(routes(other,{pret:null,en_reserve:false,obstacle_reserve:null,sens:'entrant',obstacle_pret:null,durees,clubs:[]}),()=>playerScreen(20));
- assert.match(open,/<button type="button" data-open-dialog="borrow-dialog">Emprunter<\/button><dialog id="borrow-dialog" class="action-dialog"><form data-loan="emprunter">/);
+ // The loan has its group under the band, ahead of the offer; its dialog follows the header.
+ assert.match(open,/<div class="hero-commands"><button type="button" data-open-dialog="borrow-dialog">Emprunter<\/button><\/div><div class="hero-commands"><button class="primary"/);
+ assert.match(open,/<\/header>.*<dialog id="borrow-dialog" class="action-dialog"><form data-loan="emprunter">/);
  const refused=await withApi(routes(other,{pret:null,en_reserve:false,obstacle_reserve:null,sens:'entrant',obstacle_pret:'Nice ne souhaite pas prêter Cible.',durees,clubs:[]}),()=>playerScreen(20));
  assert.match(refused,/<button type="button" disabled title="Nice ne souhaite pas prêter Cible.">Emprunter<\/button>/);
  const away=await withApi(routes({...detail,club:ref(9,'Nice'),loan},null),()=>playerScreen(12));

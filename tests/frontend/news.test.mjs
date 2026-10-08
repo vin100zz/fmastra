@@ -262,7 +262,8 @@ test('another club’s player can receive an offer from his page, only while the
 
 test('an obstacle to an offer is named in a pill, the reason after its colon left to the tooltip',async()=>{
  const fresh=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,obstacle:'Intransférable jusqu’au 21 septembre : il vient d’arriver.'}),()=>playerScreen(20));
- assert.match(fresh,/<span class="pill" title="Intransférable jusqu’au 21 septembre : il vient d’arriver.">Intransférable jusqu’au 21 septembre<\/span><button class="primary" type="button" disabled/);
+ assert.match(fresh,/<div class="hero-pills"><span class="pill" title="Intransférable jusqu’au 21 septembre : il vient d’arriver.">Intransférable jusqu’au 21 septembre<\/span><\/div>/);
+ assert.match(fresh,/<div class="hero-commands"><button class="primary" type="button" disabled title="Intransférable jusqu’au 21 septembre : il vient d’arriver.">Faire une offre<\/button><\/div><\/div><\/header>/);
  const kept=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,obstacle:'Nice ne peut pas s’en séparer.'}),()=>playerScreen(20));
  assert.match(kept,/<span class="pill">Nice ne peut pas s’en séparer.<\/span>/);
 });
