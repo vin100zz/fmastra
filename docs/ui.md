@@ -830,6 +830,7 @@ Les trois écrans de liste partagent la même mise en page (`web/listing.js`).
   quelques valeurs toutes prêtes ; posée, le bouton lit la fourchette (« Âge ≤ 23 ») et
   une croix la retire. Un seul menu ouvert à la fois ; il se ferme sur un clic ailleurs,
   sur un choix ou sur Échap, et reste ouvert pendant qu'on tape dans ses champs.
+  La liste se redessine sans réécrire le champ où l'on tape : le curseur n'y bouge pas.
   Pastilles et sélecteurs sont des liens : ils gardent les autres filtres, le tri et la
   vue, et reviennent à la première page.
 - **Une liste à la hauteur de la fenêtre.** L'écran demande au serveur autant de lignes
