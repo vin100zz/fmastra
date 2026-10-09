@@ -13,7 +13,9 @@ def navigation(world: World, season: int | None) -> dict:
     selected = world.season if season is None else season
     if not first <= selected <= world.season: raise ValueError("Saison hors de l'historique de la partie.")
     return {"season": selected, "previous_season": selected - 1 if selected > first else None,
-            "next_season": selected + 1 if selected < world.season else None}
+            "next_season": selected + 1 if selected < world.season else None,
+            # Every season of the game, the latest first, and the one under way among them.
+            "seasons": list(range(world.season, first - 1, -1)), "current_season": world.season}
 
 
 def movements(world: World, club_id: int, season: int | None, page: int) -> dict:

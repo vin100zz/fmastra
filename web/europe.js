@@ -1,4 +1,4 @@
-import {api,titlesCard,countTitles,nationBadge,escape as e,season,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
+import {api,titlesCard,countTitles,nationBadge,escape as e,season,seasonSteps,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
@@ -23,10 +23,10 @@ export async function europeScreen(code,section,params,competitions){
  section=SECTIONS.some(([key])=>key===section)?section:'table';
  const data=await api(`/competitions/${cup.id}/europe?${params}`);
  const year=`saison=${data.season}`;
- // One row of tabs a screen: the cup is chosen on the title's line, the tabs are the sections of the cup.
+ // One row of tabs a screen: the cup is chosen on the title's line, where its seasons are stepped through; the tabs are
+ // the sections of the cup.
  const nav=`<nav class="segmented europe-cups" aria-label="Coupe d’Europe">${cups.map(item=>`<a class="${cup.id===item.id?'active':''}" href="#/europe/${item.code}/${section}?${year}">${e(item.code)} · ${e(item.name)}</a>`).join('')}</nav>`;
  const menu=`<nav class="tabs" aria-label="Rubrique">${SECTIONS.map(([key,label])=>`<a class="${section===key?'active':''}" href="#/europe/${cup.code}/${key}?${year}">${label}</a>`).join('')}</nav>`;
- const selector=`<form class="filters" data-filter><label>Saison <select name="saison">${data.seasons.map(value=>`<option value="${value}" ${value===data.season?'selected':''}>${season(value)}</option>`).join('')}</select></label><button>Afficher</button></form>`;
  let content='';
  if(section==='table'){
   // 36 clubs fit a screen as two tables of 18, the second one carrying on from the first.
@@ -52,6 +52,6 @@ export async function europeScreen(code,section,params,competitions){
   const final=data.standings.length?card(`Classement de la phase de ligue · ${season(data.season)}`,standingsTable({items:data.standings},'figures')):'';
   content=`<div class="history-layout three"><div class="history-main">${winners}${byNation}</div><div class="history-leaders">${leadersCards(history.leaders)}</div><div class="history-archives">${final}</div></div>`;
  }
- return heading('Coupes d’Europe',`<div>${nav}${selector}</div>`)+menu+
+ return heading('Coupes d’Europe',`<div class="tools">${nav}${seasonSteps(data)}</div>`)+menu+
   (data.winner?`<div class="notice cup-winner">🏆 ${e(cup.name)} : ${clubLink(data.winner)}</div>`:'')+content;
 }

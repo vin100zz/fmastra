@@ -166,7 +166,6 @@ tfoot td{background:var(--panel-2);border-color:var(--line)}
 .journal-row p{color:var(--ink-3)}
 .journal-row small{color:var(--muted)}
 .card-note{border-color:var(--line)}
-.season-archive[open] summary{border-color:var(--line)}
 .market-card .moves li>a{color:var(--accent-text)}
 
 /* Pitches: dark mown grass, white lines. */
@@ -278,7 +277,7 @@ h1{font-size:26px;margin:0}
 .identity p{margin:0;font-size:13px}
 .identity>div:last-child>p:before,.identity>div:last-child>.eyebrow:before{content:"|";color:var(--line);margin-right:12px}
 .club-facilities{gap:0 12px}
-.page-heading>div:not(.identity):not(.heading-with-lead){display:flex;align-items:center;gap:10px}
+.page-heading>div:not(.identity):not(.heading-with-lead){display:flex;align-items:center;gap:var(--s2)}
 .page-heading .pill{padding:3px 10px}
 .entity-nav{gap:1px}
 .entity-step,.entity-menu>summary{width:20px;height:15px}
@@ -304,7 +303,6 @@ h1{font-size:26px;margin:0}
 .pager button{padding:3px 8px}
 .empty{padding:16px 12px}
 .section-title{margin:12px 0 8px}
-.season-navigation{margin:8px 0}
 
 /* Tables: 26 px rows, 26 px headers, 18 px chips. */
 th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
@@ -692,9 +690,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .toolbar .tabs{margin:0!important;border:0;overflow:visible}
 .toolbar .tabs a{padding:5px 12px!important}
 .tabs .count{margin-left:3px;font-weight:400;color:var(--muted)}
-.toolbar .season-navigation{margin:0 0 0 auto;gap:8px}
-.toolbar .season-navigation strong{font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:600;color:var(--strong);white-space:nowrap}
-.toolbar .season-navigation button{width:30px;height:30px;padding:0;font-size:16px;line-height:1}
 /* A filter that is set: its control takes the colour of a picked row. */
 .toolbar select.on,.filter-menu.on>summary,.chip.on{background:var(--own-row);border-color:var(--accent-text);color:var(--strong)}
 .chips{display:flex;gap:8px}
@@ -1038,7 +1033,6 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .history-layout.three{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 440px}
 .history-layout.three .history-main{grid-column:1}.history-layout.three .history-leaders{grid-column:3;grid-row:1}.history-layout.three .history-archives{grid-column:2;grid-row:1}
 .history-layout .transfer-columns{grid-template-columns:minmax(0,1fr)}
-.history-archives .season-archive{margin-bottom:10px}
 .europe-halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .europe-halves>div+div{border-left:1px solid var(--line)}
 @media(max-width:1329px){.league-layout,.calendar-layout,.history-layout,.history-layout.three{grid-template-columns:minmax(0,1fr)}.history-layout.three>*{grid-column:auto!important;grid-row:auto!important}.fixture-grid{grid-template-columns:minmax(0,1fr)}.stats-boards{grid-template-columns:minmax(0,1fr)}.stats-boards>.card,.stats-boards>.card:nth-child(n+4){grid-column:auto}.europe-halves{grid-template-columns:minmax(0,1fr)}.europe-halves>div+div{border-left:0;border-top:1px solid var(--line)}}

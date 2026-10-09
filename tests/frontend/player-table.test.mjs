@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,playerViewSwitch,minutes,seasonArchives,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
+import {playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -68,10 +68,44 @@ test('level and potential badges share one red-yellow-green scale out of 200',()
  assert.equal((html.match(/class="rating graded"/g)||[]).length,2);
 });
 
-test('season archives include full standings and open the latest season',()=>{
- const html=seasonArchives({items:[{season:2025,standings:[{rank:1,club:{id:1,name:'Champion'},played:34,won:20,drawn:10,lost:4,goals_for:60,goals_against:20,difference:40,points:70,form:'VVNVV'}]}]});
- assert.match(html,/open/);assert.match(html,/Classement complet/);assert.match(html,/Champion/);
+test('the seasons are stepped through with one control: an arrow to each side of the one shown, which opens the list of them all',()=>{
+ const html=seasonSteps({season:2025,previous_season:2024,next_season:null,seasons:[2025,2024,2023],current_season:2025});
+ assert.match(html,/^<div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" data-param="saison" data-param-value="2024"><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2025 \/ 2026<svg[^>]*><path[^>]*\/><\/svg><\/summary>/);
+ // The list: every season, the latest first; the one shown is checked, the one under way is told.
+ assert.match(html,/<div class="menu" role="menu" aria-label="Saisons"><button type="button" role="menuitemradio" aria-checked="true" data-param="saison" data-param-value="2025">2025 \/ 2026<span>en cours<\/span><\/button><button type="button" role="menuitemradio" aria-checked="false" data-param="saison" data-param-value="2024">2024 \/ 2025<\/button><button type="button" role="menuitemradio" aria-checked="false" data-param="saison" data-param-value="2023">2023 \/ 2024<\/button><\/div><\/details>/);
+ // An arrow with nothing beyond it stays, greyed, and leads nowhere.
+ assert.match(html,/<\/details><button type="button" aria-label="Saison suivante" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div>$/);
+ // Without the list, the neighbours of the season shown stand for it.
+ const first=seasonSteps({season:2025,previous_season:null,next_season:2026});
+ assert.match(first,/aria-label="Saison précédente" disabled>/);assert.match(first,/aria-label="Saison suivante" data-param="saison" data-param-value="2026">/);
+ assert.equal((first.match(/role="menuitemradio"/g)||[]).length,2);assert.doesNotMatch(first,/en cours/);
+ // Neither a list of the browser nor a field to type in, no frame of options, and the word « Saison » is not written.
+ assert.doesNotMatch(html,/<select|<input|segmented|Saison 2025/);
+});
+test('another series steps the same way: its own name and place in the address, links when the address keeps it in its path, one width for all its labels',()=>{
+ const editions=[{value:2032,label:'Euro 2032'},{value:2030,label:'Coupe du monde 2030'},{value:2028,label:'Euro 2028'}];
+ const picked=steps(editions,2030,{param:'edition',name:'Édition'});
+ assert.match(picked,/^<div class="season" role="group" aria-label="Édition"><button type="button" aria-label="Édition précédente" data-param="edition" data-param-value="2028">/);
+ assert.match(picked,/<summary style="--chars:19">Coupe du monde 2030</);
+ assert.match(picked,/aria-label="Éditions"><button type="button" role="menuitemradio" aria-checked="false" data-param="edition" data-param-value="2032">Euro 2032<\/button>/);
+ assert.match(picked,/aria-label="Édition suivante" data-param="edition" data-param-value="2032">/);
+ const linked=steps(editions,2032,{name:'Édition',href:year=>`#/international/${year}/finals`});
+ assert.match(linked,/<a aria-label="Édition précédente" href="#\/international\/2030\/finals"><svg[^>]*><path[^>]*\/><\/svg><\/a>/);assert.match(linked,/<a aria-label="Édition suivante" aria-disabled="true"><svg[^>]*><path[^>]*\/><\/svg><\/a><\/div>$/);
+ assert.match(linked,/<a role="menuitemradio" aria-checked="true" href="#\/international\/2032\/finals">Euro 2032<\/a>/);
+ assert.doesNotMatch(linked,/<button|data-param/);
+ // Labels of one length need no width; a value that is not of the series draws nothing.
+ assert.doesNotMatch(steps([{value:2,label:'Euro 2032'},{value:1,label:'Euro 2028'}],2),/--chars/);
+ assert.equal(steps(editions,2026),'');
+});
+test('the archive of a league is the full table of one finished season, its head stepping through the others',()=>{
+ const html=seasonArchive({season:2025,previous_season:2024,next_season:null,seasons:[2025,2024],current_season:null,standings:[{rank:1,club:{id:1,name:'Champion'},played:34,won:20,drawn:10,lost:4,goals_for:60,goals_against:20,difference:40,points:70,form:'VVNVV'}]});
+ assert.match(html,/^<section class="card"><div class="card-head"><h2>Classement<\/h2><div class="season" role="group" aria-label="Saison">/);
+ assert.match(html,/data-param-value="2024"><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2025 \/ 2026</);assert.match(html,/Champion/);
+ // No season of a league's archive is under way; no folded block per season either.
+ assert.doesNotMatch(html,/en cours|Classement complet|season-archive/);
  for(const label of ['BP','BC','PTS','FORME'])assert.ok(html.includes(`<button class="sort-toggle" data-table-sort>${label}</button>`));
+ // Before the first season ends there is nothing to archive.
+ assert.equal(seasonArchive(null),'');
 });
 test('squad table includes season statistics but no minutes column, and minutes have no decimals',()=>{
  const html=playerTable({items:[player],total:1,page_size:30});

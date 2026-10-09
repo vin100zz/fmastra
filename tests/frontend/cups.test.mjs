@@ -6,7 +6,7 @@ import {matchScreen} from '../../web/match.js';
 
 const cup={id:-3,name:'Coupe de France',kind:'cup',nation:'FRA',clubs:64,level:0};
 const match={id:1,home:{id:1,name:'Home'},away:{id:2,name:'Away'},date:'2025-12-10',round:1,round_label:'32es de finale',score:[1,1],penalties:[4,5],winner_id:2};
-const data={season:2025,seasons:[2025],latest_round:1,winner:null,rounds:[{number:1,label:'32es de finale',date:'2025-12-10',items:Array.from({length:32},(_,i)=>({...match,id:i+1}))},...['16es de finale','8es de finale','Quarts de finale','Demi-finales','Finale'].map((label,i)=>({number:i+2,label,date:'2026-01-07',items:[]}))]};
+const data={season:2025,previous_season:2024,next_season:null,seasons:[2025,2024],current_season:2025,latest_round:1,winner:null,rounds:[{number:1,label:'32es de finale',date:'2025-12-10',items:Array.from({length:32},(_,i)=>({...match,id:i+1}))},...['16es de finale','8es de finale','Quarts de finale','Demi-finales','Finale'].map((label,i)=>({number:i+2,label,date:'2026-01-07',items:[]}))]};
 
 test('a cup match names its round and tells a shoot-out apart from the score',()=>{
  const html=fixtures({items:[match]},true);
@@ -34,6 +34,10 @@ test('the bracket is the cup’s only view of its rounds',async()=>{
   const led=await cupScreen(cup,'bracket',new URLSearchParams(),'<div class="entity-nav"></div>');
   assert.match(led,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"><\/div><div><h1>Coupe de France<\/h1>/);
   assert.doesNotMatch(screen,/heading-with-lead/);
+  // its seasons are stepped through at the end of the title line, as everywhere: no list to pick from
+  assert.match(screen,/^<div class="page-heading"><div><h1>Coupe de France<\/h1><\/div><div class="tools"><div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" data-param="saison" data-param-value="2024"><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2025 \/ 2026</);
+  assert.match(screen,/<\/details><button type="button" aria-label="Saison suivante" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div><nav class="tabs"/);
+  assert.doesNotMatch(screen,/<select|Afficher/);
  }finally{globalThis.fetch=previous;}
 });
 

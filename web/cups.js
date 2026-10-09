@@ -1,4 +1,4 @@
-import {api,titlesCard,countTitles,season,clubLink,playerLink,number as n,card,heading,tabs,table,pager,leadersCards} from './ui.js';
+import {api,titlesCard,countTitles,season,seasonSteps,clubLink,playerLink,number as n,card,heading,tabs,table,pager,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
@@ -16,8 +16,8 @@ export async function cupScreen(cup,section,params,lead=''){
   content=card('Meilleurs buteurs · Saison en cours',table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]))+pager(stats));
  }else{
   const data=await api(`/competitions/${cup.id}/coupe?${params}`);
-  // The season is chosen on the title line; the winner, when there is one, comes under the tabs.
-  extra=`<form class="filters" data-filter><select name="saison" aria-label="Saison">${data.seasons.map(year=>`<option value="${year}" ${year===data.season?'selected':''}>${season(year)}</option>`).join('')}</select><button>Afficher</button></form>`;
+  // The season is stepped through from the title line; the winner, when there is one, comes under the tabs.
+  extra=`<div class="tools">${seasonSteps(data)}</div>`;
   content=data.winner?`<div class="notice cup-winner">🏆 Vainqueur : ${clubLink(data.winner)}</div>`:'';
   content+=bracket(data.rounds.map(round=>({label:round.label,date:round.date,matches:round.items})),{sides:true});
  }

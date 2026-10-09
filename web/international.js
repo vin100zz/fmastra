@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,averageNote,date,card,heading,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,tabs,leadersCards,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,card,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,tabs,leadersCards,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
 import {nationNavigation} from './navigation.js';
 import {nationHero} from './club-hero.js';
 import {calendarBlock,lineupBlock} from './club-overview.js';
@@ -28,10 +28,11 @@ export function editionStages(edition){
  const current=stages.findIndex(stage=>!stage.done);
  return stages.map((stage,index)=>({...stage,state:stage.done?'done':index===current?'current':'todo'}));
 }
-function editionHeading(edition,editions,section){
- const switcher=`<nav class="edition-switch" aria-label="Éditions">${editions.map(item=>`<a href="#/international/${item.year}/${section||'finals'}" class="${item.year===edition.year?'active':''}">${e(item.name)}${item.winner?`<small>✦ ${e(item.winner.name)}</small>`:''}</a>`).join('')}</nav>`;
- return `<div class="page-heading edition-head"><div><h1>${e(edition.name)}</h1></div>${switcher}</div>`;
-}
+// The steps through the editions, the latest first, as a club's seasons: `year` is the one shown, `options` what `steps`
+// takes to build each step.
+const editionSteps=(editions,year,options)=>steps([...editions].sort((a,b)=>b.year-a.year).map(item=>({value:item.year,label:item.name})),year,{name:'Édition',...options});
+// An edition's page keeps the title of the selections; its editions are stepped through on that line, the open tab kept.
+const editionHeading=(edition,editions,section)=>heading('Sélections nationales',`<div class="tools">${editionSteps(editions,edition.year,{href:year=>`#/international/${year}/${section||'finals'}`})}</div>`);
 
 // Four lists of the edition on one screen, each one scrolling on its own.
 const MIN_RATED_MATCHES=3;
@@ -134,14 +135,12 @@ function recordCard(rows){
 }
 // The Calendrier tab, a club's: one line per match of an edition, the day (with its year: an edition runs over two), the
 // edition's badge, the round, a plane away, the other side, the score from the selection's side and the scorers of either
-// side. The edition is picked in the head of the card (`edition` in the address; the one under way by default). Beside
-// the matches, the group of that edition in full and the record in each edition played.
+// side. The edition is stepped through from the row of tabs (`edition` in the address; the one under way by default).
+// Beside the matches, the group of that edition in full and the record in each edition played.
 function calendarContent(nation,data){
  if(!data.items.length)return `<section class="card">${empty('Aucun match programmé pour cette sélection.','Calendrier vide')}</section>`;
  const competitions=new Map(data.competitions.map(row=>[row.id,row]));
- const choice=item=>`<button type="button" data-param="edition" data-param-value="${item.year}" aria-pressed="${item.year===data.edition}" class="${item.year===data.edition?'active':''}">${e(item.name)}</button>`;
- const editions=data.editions.length>1?`<div class="segmented" role="group" aria-label="Édition">${data.editions.map(choice).join('')}</div>`:'';
- return `<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2>${editions}</div>`
+ return `<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2></div>`
   +`${calendarRows(data.items,nation,competitions,{written:date,round:editionRound})}</section><aside class="calendar-side">${groupCard(data.group,nation.id)}${recordCard(data.competitions)}</aside></div>`;
 }
 function historyContent(data){
@@ -157,7 +156,8 @@ async function nationScreen(id,tab,params=new URLSearchParams()){
  const [data,nav,calendar]=await Promise.all([api(`/international/nations/${id}${sort?`?${sort}`:''}`),api(`/international/nations/${id}/navigation`),
   tab==='calendar'?api(`/international/nations/${id}/calendrier${edition}`):null]);
  const content=tab==='calendar'?calendarContent(data,calendar):tab==='history'?historyContent(data):squadContent(data,params);
- return nationHero(data,{lead:nationNavigation(nav,tab),menu:NATION_TABS,section:tab})+content;
+ const tools=calendar?.items.length?editionSteps(calendar.editions,calendar.edition,{param:'edition'}):'';
+ return nationHero(data,{lead:nationNavigation(nav,tab),menu:NATION_TABS,section:tab,tools})+content;
 }
 
 // The edition not won yet: the one under way, or the next to come.

@@ -614,6 +614,11 @@ def test_club_calendar_lists_the_whole_season_with_scorers_outcomes_and_a_record
     rank = next(row["rank"] for row in v.table(world, league["id"]) if row["club_id"] == club.id)
     assert league["place"] == f"{rank}{'er' if rank == 1 else 'e'}"
     assert all(row["place"] for row in data["competitions"])
+    # The season under way is the one shown; in a first season there is none to step to.
+    assert (data["season"], data["previous_season"], data["next_season"]) == (world.season, None, None)
+    assert (data["seasons"], data["current_season"]) == ([world.season], world.season)
+    assert played.get(f"/api/clubs/{club.id}/calendrier?saison={world.season}").json() == data
+    assert played.get(f"/api/clubs/{club.id}/calendrier?saison={world.season - 1}").status_code == 422
     assert played.get("/api/clubs/999999999/calendrier").status_code == 404
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 

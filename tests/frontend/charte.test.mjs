@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,readdir} from 'node:fs/promises';
 
 const read=path=>readFile(new URL(`../../${path}`,import.meta.url),'utf8');
 // The custom properties a block declares, by name, written the same way (lower case, no space, six-digit colours).
@@ -47,4 +47,27 @@ test('the reference sheet and the application’s say the same of a link and of 
  assert.match(link[1],/text-decoration:underline/);
  const row=reference.find(([selector])=>selector.includes('.tr:not(')&&selector.includes(':hover'));
  assert.match(row[1],/background:var\(--panel-3\)/);
+});
+
+test('the seasons are stepped through with one control, the charter’s: no screen draws its own, no sheet styles another',async()=>{
+ const folder=new URL('../../web/',import.meta.url);
+ const screens=(await readdir(folder)).filter(name=>name.endsWith('.js'));
+ assert.ok(screens.length>30);
+ // What the screens once chose a season with: a list and its button, arrows of their own, a frame of options, a folded
+ // block per season.
+ const older=/name="saison"|data-season|season-steps|season-navigation|season-archive|segmented steps/;
+ for(const name of [...screens,...OLDER,'charte.css'])assert.doesNotMatch(await read(`web/${name}`),older,name);
+ // Both sheets draw it the same: no border, arrows in the colour of the club's page or in the ink, the season as a key
+ // figure, its ground and the mark of what is open while its list is.
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  assert.match(body('.season>:is(button,a)'),/border:0;.*background:none;color:var\(--club,var\(--ink\)\)/,sheet);
+  assert.match(body('.season-pick>summary'),/min-width:calc\(var\(--chars,0\)\*1ch \+ var\(--s6\) \+ var\(--s2\)\)/,sheet);
+  assert.match(body('.season-pick>summary'),/var\(--fs-figure\).*var\(--display\)|var\(--display\).*var\(--fs-figure\)/,sheet);
+  assert.match(body('.season-pick[open]>summary'),/background:var\(--panel-2\);box-shadow:inset 0 calc\(-1\*var\(--mark-control\)\) 0 var\(--club,var\(--accent\)\)/,sheet);
+  assert.match(body('.menu>:is(button,a)[aria-checked="true"]'),/background:var\(--own-row\)/,sheet);
+  assert.ok(!said.some(([selector,rule])=>/^\.season\b/.test(selector)&&/border:1px/.test(rule)),sheet);
+ }
+ // On a club's or a selection's page, that colour is the one under its open tab.
+ assert.match(rules(await read('web/charte.css')).find(([selector])=>selector==='.club-hero .season')[1],/--club:var\(--hero-accent\)/);
 });

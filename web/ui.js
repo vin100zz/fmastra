@@ -117,6 +117,10 @@ function fromOklch([L,C,h]){
  return '#'+[4.0767416621*l-3.3077115913*m+.2309699292*s,-1.2684380046*l+2.6097574011*m-.3413193965*s,-.0041960863*l-.7034186147*m+1.707614701*s].map(value=>toSrgb(value).toString(16).padStart(2,'0')).join('');
 }
 const chartTone = colour => {const [L,C,h]=oklch(colour);return fromOklch([Math.min(.64,Math.max(.48,L)),Math.max(.11,C),h]);};
+// A club's colour drawn as a line or an arrow on a ground (the mark under its open tab, the arrows of its seasons): kept as
+// it is where it reads (a contrast of 3 at least), else brought to its tone in a chart; a colour that is none there (white,
+// grey, black) gives nothing, and the accent stands in.
+export const legibleOn = (colour, surface) => contrastRatio(colour,surface)>=3?colour:oklch(colour)[1]>=.04?chartTone(colour):null;
 const chartCandidates = club => [club?.major_color,club?.minor_color].map(safeColor).filter(colour=>colour&&oklch(colour)[1]>=.04).map(chartTone);
 const colourDistance = (first, second) => {const [L1,C1,h1]=oklch(first),[L2,C2,h2]=oklch(second);return 100*Math.hypot(L1-L2,C1*Math.cos(h1)-C2*Math.cos(h2),C1*Math.sin(h1)-C2*Math.sin(h2));};
 // The two sides of a comparison: home keeps its first colour, away takes the first of its own that stands 15 apart from it
@@ -380,8 +384,42 @@ export const api = async (path, body) => {const response = await fetch(`/api${pa
 export function toast(message,error=false){const element=document.querySelector('#toast');element.textContent=message;element.classList.toggle('error',error);element.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>element.hidden=true,error?9000:4500);}
 export const query = values => {const result=new URLSearchParams();Object.entries(values).forEach(([key,value])=>{if(value!==''&&value!==null&&value!==undefined)result.set(key,value);});return result.toString();};
 
-export function seasonArchives(data){
- return data.items.map((row,index)=>`<details class="card season-archive" ${index===0?'open':''}><summary>Saison ${season(row.season)} · Classement complet</summary>${standingsTable({items:row.standings||[]},false,true)}</details>`).join('');
+// The steps of a series read one at a time, a season or an edition: an arrow to the one before, the one shown, which opens
+// the list of them all, an arrow to the one after (docs/charte-graphique.md, « Pas de saison »). `items` is the series from
+// the latest to the oldest, each {value, label, note}; `shown` the value of the one on screen. A step puts its value in the
+// address under `param`; `href` builds a link instead, for a series the address keeps in its path. An arrow with nothing
+// beyond it stays in place, greyed; labels of different lengths share the width of the longest, so that the arrows keep
+// theirs. Every screen steps through its seasons with it.
+const CHEVRONS={previous:'M14.5 6.5 9 12l5.5 5.5',next:'M9.5 6.5 15 12l-5.5 5.5',open:'M7 10l5 5 5-5'};
+const chevron=way=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${CHEVRONS[way]}"/></svg>`;
+export function steps(items,shown,{param='saison',name='Saison',href=null}={}){
+ const index=items.findIndex(item=>item.value===shown);
+ if(index<0)return '';
+ const go=item=>href?`href="${escape(href(item.value))}"`:`data-param="${param}" data-param-value="${item.value}"`;
+ const arrow=(item,way,told)=>{
+  const said=`aria-label="${name} ${told}"`;
+  if(href)return `<a ${said} ${item?go(item):'aria-disabled="true"'}>${chevron(way)}</a>`;
+  return `<button type="button" ${said} ${item?go(item):'disabled'}>${chevron(way)}</button>`;
+ };
+ const line=item=>{
+  const state=`role="menuitemradio" aria-checked="${item.value===shown}" ${go(item)}`,text=`${escape(item.label)}${item.note?`<span>${escape(item.note)}</span>`:''}`;
+  return href?`<a ${state}>${text}</a>`:`<button type="button" ${state}>${text}</button>`;
+ };
+ const lengths=items.map(item=>item.label.length),widest=Math.max(...lengths);
+ return `<div class="season" role="group" aria-label="${name}">${arrow(items[index+1],'previous','précédente')}`
+  +`<details class="season-pick"><summary${lengths.some(length=>length!==widest)?` style="--chars:${widest}"`:''}>${escape(items[index].label)}${chevron('open')}</summary>`
+  +`<div class="menu" role="menu" aria-label="${name}s">${items.map(line).join('')}</div></details>${arrow(items[index-1],'next','suivante')}</div>`;
+}
+// The steps of the seasons, from what the API tells: the one shown (`season`), the list of those to step through, the
+// latest first (`seasons`; its neighbours alone when the list is not given), and the one under way (`current_season`).
+export function seasonSteps(data){
+ const years=[...new Set([...(data.seasons??[data.next_season,data.previous_season]),data.season])].filter(year=>year!=null).sort((a,b)=>b-a);
+ return steps(years.map(year=>({value:year,label:season(year),note:year===data.current_season?'en cours':''})),data.season);
+}
+
+// The full table of a finished season of a league, the latest by default; its head steps through the others.
+export function seasonArchive(archive){
+ return archive?card('Classement',standingsTable({items:archive.standings},false,true),seasonSteps(archive)):'';
 }
 
 // The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).

@@ -19,8 +19,8 @@ def european_view(world: World, competition_id: int, season: int | None) -> dict
                        "date": day.iso() if day else None, "items": [v.match_row(world, m) for m in fixtures],
                        "complete": bool(fixtures) and all(m.result is not None for m in fixtures)})
     winner = next((cid for y, cid in world.champions.get(cup.id, []) if y == year), None)
-    return {"id": cup.id, "code": cup.code, "name": cup.name, "season": year,
-            "seasons": sorted({m.season for m in world.matches.values() if m.competition_id == cup.id}, reverse=True),
+    seasons = {m.season for m in world.matches.values() if m.competition_id == cup.id}
+    return {"id": cup.id, "code": cup.code, "name": cup.name, **v.season_steps(seasons, year, world.season),
             "standings": v.table(world, cup.id, year), "rounds": rounds,
             "league_rounds": world.config.world.europe.league_rounds,
             "latest_round": max((m.round_number for m in matches if m.result), default=None),

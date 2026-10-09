@@ -1,9 +1,10 @@
-import {escape as e,number as n,safeColor,contrastRatio,initials,nationFlag,nationCode,flagUrl,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,legibleOn,initials,nationFlag,nationCode,flagUrl,level,levelHue,date,money,price} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
-// The club colour that reads best on a surface: the tabs underline it, on the panel of either theme.
-const readableOn=(surface,major,minor)=>contrastRatio(major,surface)>=contrastRatio(minor,surface)?major:minor;
+// The club colour that reads best on a surface, on the panel of either theme: the open tab is underlined with it and the
+// arrows of the seasons are drawn in it. A colour too pale or too dark to be read there is brought to its tone in a chart.
+const readableOn=(surface,major,minor)=>legibleOn(contrastRatio(major,surface)>=contrastRatio(minor,surface)?major:minor,surface);
 
 // The band of a club's header, in its colours: the home colour fills it and the second one crosses it as a sash. A home colour
 // close to white would melt into the page, so the second colour fills the band instead; two colours alike leave a faint sash
@@ -17,7 +18,7 @@ export function heroColors(majorColor,minorColor){
  let sash=pale&&minor!==major?major:minor,opacity=1;
  if(contrastRatio(field,sash)<1.25){sash=ink;opacity=.12;}
  return [`--hero-field:${field}`,`--hero-ink:${ink}`,`--hero-sash:${sash}`,`--hero-sash-opacity:${opacity}`,
-  `--hero-accent-light:${readableOn(LIGHT_INK,major,minor)}`,`--hero-accent-dark:${readableOn(DARK_PANEL,major,minor)}`,
+  ...[['light',LIGHT_INK],['dark',DARK_PANEL]].flatMap(([theme,surface])=>{const colour=readableOn(surface,major,minor);return colour?[`--hero-accent-${theme}:${colour}`]:[];}),
   `--crest-major:${major}`,`--crest-minor:${minor}`,`--crest-ink:${inkOn(major)}`].join(';');
 }
 
@@ -40,27 +41,33 @@ function hero({colors,lead,crest,facts='',name,after='',tiles,foot}){
   +`<div class="club-hero-tiles">${tiles}</div></div></div>${foot}</header>`;
 }
 
-// The tabs of a page under its band: `menu` lists them, [key, label], hung from the address `base`; `section` is the open one.
-const tabs=(base,menu,section)=>`<nav class="club-hero-tabs" aria-label="Sections">${menu.map(([key,label])=>`<a class="${key===section?'active':''}" href="${base}/${key}"${key===section?' aria-current="page"':''}>${e(label)}</a>`).join('')}</nav>`;
+// The tabs of a page under its band: `menu` lists them, [key, label] and what its address keeps (a query, for a tab that
+// reads the season of the open one), hung from the address `base`; `section` is the open one. `tools` close the row: the
+// steps through the seasons of the open tab, beside the tabs and not among them, so that their list opens over the page.
+function tabs(base,menu,section,tools=''){
+ const nav=`<nav class="club-hero-tabs" aria-label="Sections">${menu.map(([key,label,query])=>`<a class="${key===section?'active':''}" href="${base}/${key}${query?`?${e(query)}`:''}"${key===section?' aria-current="page"':''}>${e(label)}</a>`).join('')}</nav>`;
+ return tools?`<div class="club-hero-foot">${nav}<div class="tools">${tools}</div></div>`:nav;
+}
 
 // The header of a club page: its colours, its crest, its league and its ground, then its tactic, its training, its youth
 // recruitment and its reputation (with how far the last review moved it); the tabs of the page close it. `lead` steps between
-// the clubs of the division; `menu` is the tabs, [key, label], `section` the open one.
-export function clubHero(club,{lead='',menu,section}){
+// the clubs of the division; `menu` is the tabs, `section` the open one, `tools` what closes their row.
+export function clubHero(club,{lead='',menu,section,tools=''}){
  const change=club.reputation_change==null?'':`<em class="${club.reputation_change<0?'down':'up'}">${signed(club.reputation_change)}</em>`;
  // One line over the name: the flag, the competition (« Club dormant » outside a league), the ground's capacity.
  const facts=[club.competition||club.nation||null,club.competition?null:'Club dormant',club.capacity?`${n(club.capacity)} places`:null].filter(Boolean).join(' · ');
- return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section),
+ return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section,tools),
   crest:clubCrest(club),facts:`${nationFlag(club.nation_code)}${e(facts)}`,
   tiles:`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities))}`
    +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes')}${tile('Réputation',club.reputation==null?'—':n(club.reputation),change)}`});
 }
 
 // The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its confederation
-// and the edition it plays over its name, then its strength. `lead` steps between the selections of the confederation.
-export function nationHero(nation,{lead='',menu,section}){
+// and the edition it plays over its name, then its strength. `lead` steps between the selections of the confederation,
+// `tools` close the row of tabs.
+export function nationHero(nation,{lead='',menu,section,tools=''}){
  const facts=[nation.federation,nation.competition?.name,nation.competition?.stage].filter(Boolean).join(' · ');
- return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section),
+ return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section,tools),
   crest:nationCrest(nation),facts:e(facts),tiles:tile('Force',n(nation.strength))});
 }
 

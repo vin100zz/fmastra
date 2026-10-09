@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {calendarContent,competitionCode,competitionBadge} from '../../web/club-calendar.js';
+import {clubScreen} from '../../web/screens.js';
 import {setCompetitions,setNations} from '../../web/ui.js';
 
 test('a competition reads in two characters: its code in Europe, L or D and its level for a league, C and its country for a cup',()=>{
@@ -41,7 +42,8 @@ const data={competitions:[{id:16,name:'Ligue 1',kind:'league',code:null,place:'3
 
 test('one line per match: the day, the badge, the round, a plane away, the opponent, the score from the club side and the scorers',()=>{
  const html=calendarContent(club,data,new URLSearchParams());
- assert.match(html,/<h2>Saison 2030 \/ 2031<\/h2>/);
+ // The season is told by the steps of the row of tabs, not by the card.
+ assert.match(html,/<h2>Matches<\/h2>/);assert.doesNotMatch(html,/Saison 2030|class="segmented steps"/);
  const rows=html.split(/<div class="calendar-row(?=[ "])/).slice(1);
  assert.equal(rows.length,4);
  // Away at Nice, won 2–1: the club's goals first, its scorers first.
@@ -73,4 +75,30 @@ test('beside the list, the record of each competition: its place, its wins, draw
  // A competition not played yet tells only where the club comes in.
  assert.match(html,/<p><b>32es de finale<\/b><\/p><\/div><strong><\/strong>/);
  assert.match(calendarContent(club,{items:[],competitions:[]},new URLSearchParams()),/Aucun match programmé pour cette saison/);
+});
+
+test('on a club’s page, the tabs read by season step through the seasons from their row and keep the one picked',async()=>{
+ const previous=globalThis.fetch,asked=[];
+ const answers={'/clubs/7':{...club,nation_code:'FRA',active:true},'/clubs/7/navigation':null,'/monde/etat':{controlled_club_id:null,season:2031},
+  '/clubs/7/calendrier':{...data,season:2030,previous_season:2029,next_season:2031,seasons:[2031,2030,2029],current_season:2031},
+  '/clubs/7/effectif':{items:[],total:0,page:1,page_size:100},'/clubs/7/apercu':{calendar:{last:[],next:[]},finances:{},lineup:null}};
+ globalThis.fetch=async url=>{asked.push(url);return {ok:true,json:async()=>answers[url.replace(/^\/api/,'').split('?')[0]]};};
+ try{
+  const html=await clubScreen(7,'calendar',new URLSearchParams('saison=2030&competition=16'));
+  // The season of the address goes to the server, alone.
+  assert.ok(asked.includes('/api/clubs/7/calendrier?saison=2030'));
+  // The steps close the row of tabs; the three tabs read by season keep the season, the others do not.
+  assert.match(html,/<a class="" href="#\/club\/7\/squad">Effectif<\/a><a class="active" href="#\/club\/7\/calendar\?saison=2030" aria-current="page">Calendrier<\/a><a class="" href="#\/club\/7\/finances\?saison=2030">Finances<\/a><a class="" href="#\/club\/7\/transfers\?saison=2030">Transferts<\/a><a class="" href="#\/club\/7\/history">Historique<\/a>/);
+  assert.match(html,/<\/nav><div class="tools"><div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" data-param="saison" data-param-value="2029"><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2030 \/ 2031</);
+  assert.match(html,/data-param-value="2031">2031 \/ 2032<span>en cours<\/span><\/button><button type="button" role="menuitemradio" aria-checked="true" data-param="saison" data-param-value="2030">2030 \/ 2031<\/button>/);
+  assert.match(html,/<\/details><button type="button" aria-label="Saison suivante" data-param="saison" data-param-value="2031"><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div><\/header>/);
+  assert.equal((html.match(/class="season"/g)||[]).length,1);
+  // Without a season in the address, the one under way is asked for and no tab carries any.
+  asked.length=0;
+  const current=await clubScreen(7,'calendar',new URLSearchParams());
+  assert.ok(asked.includes('/api/clubs/7/calendrier?'));assert.match(current,/href="#\/club\/7\/finances">Finances/);
+  // A tab that does not read by season has no steps, and leaves the season behind.
+  const squad=await clubScreen(7,'squad',new URLSearchParams('saison=2030'));
+  assert.doesNotMatch(squad,/class="season"|class="tools"|saison=2030/);
+ }finally{globalThis.fetch=previous;}
 });

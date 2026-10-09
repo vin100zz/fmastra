@@ -746,9 +746,9 @@ def router(service: GameService) -> APIRouter:
                                "complete": bool(fixtures) and all(m.result for m in fixtures)})
             latest = max((m.round_number for m in matches if m.result), default=None)
             winner = next((cid for season, cid in world.champions.get(cup.id, []) if season == year), None)
-            return {"id": cup.id, "name": cup.name, "season": year, "rounds": rounds,
-                    "latest_round": latest, "winner": v.club_ref(world, winner),
-                    "seasons": sorted({m.season for m in world.matches.values() if m.competition_id == cup.id}, reverse=True)}
+            seasons = {m.season for m in world.matches.values() if m.competition_id == cup.id}
+            return {"id": cup.id, "name": cup.name, **v.season_steps(seasons, year, world.season), "rounds": rounds,
+                    "latest_round": latest, "winner": v.club_ref(world, winner)}
 
     @api.get("/nations")
     def nations() -> dict[str, dict]:
@@ -799,9 +799,9 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return overview(world, club_id)
 
     @api.get("/clubs/{club_id}/calendrier")
-    def club_calendar(club_id: int) -> dict:
+    def club_calendar(club_id: int, saison: int | None = None) -> dict:
         from .club_overview import season_calendar
-        with service.reading() as world: return season_calendar(world, club_id)
+        with service.reading() as world: return season_calendar(world, club_id, saison)
 
     @api.get("/clubs/{club_id}/finances")
     def finances(club_id: int, saison: int | None = None) -> dict:
@@ -851,14 +851,19 @@ def router(service: GameService) -> APIRouter:
         with service.reading() as world: return v.paginate(leaders(world, competition_id, type, saison), page)
 
     @api.get("/competitions/{competition_id}/historique")
-    def history(competition_id: int, page: int = Query(1, ge=1)) -> dict:
+    def history(competition_id: int, page: int = Query(1, ge=1), saison: int | None = None) -> dict:
         from .statistics import leaders, competition_leaders
         with service.reading() as world:
-            world.competitions[competition_id]
-            seasons = v.paginate([{"season": year, "champion": v.club_ref(world, winner), "nation": world.clubs[winner].nation if winner in world.clubs else None, "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None),
-                                   "standings": v.table(world, competition_id, year)}
-                                  for year, winner in reversed(world.champions.get(competition_id, []))], page)
-            return {**seasons, "leaders": competition_leaders(world, competition_id)}
+            competition, champions = world.competitions[competition_id], world.champions.get(competition_id, [])
+            seasons = v.paginate([{"season": year, "champion": v.club_ref(world, winner), "nation": world.clubs[winner].nation if winner in world.clubs else None, "scorer": next(iter(leaders(world, competition_id, "buteurs", year)), None)}
+                                  for year, winner in reversed(champions)], page)
+            # The full table of one finished season of a league, the latest unless another is asked for, and the ones to step to.
+            finished = [year for year, _ in champions]
+            archive = None
+            if finished and competition.kind == "league":
+                steps = v.season_steps(finished, saison if saison in finished else finished[-1])
+                archive = {**steps, "standings": v.table(world, competition_id, steps["season"])}
+            return {**seasons, "archive": archive, "leaders": competition_leaders(world, competition_id)}
 
     @api.get("/joueurs")
     def players(recherche: str = "", poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),

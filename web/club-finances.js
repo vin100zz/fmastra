@@ -1,6 +1,5 @@
 import {escape as e,money,price,date,card,empty,sortableTable,playerLink} from './ui.js';
 import {monthlySalary,monthlyAmount,yearlyAmount,weeklyFromMonthly} from './salaries.js';
-import {seasonNavigation} from './club-history.js';
 
 const euros=price;
 const signedMoney=value=>value>0?`+${money(value)}`:value<0?`−${money(-value)}`:money(0);
@@ -135,8 +134,8 @@ const SHARE_FIELDS=['transfer_budget','reserved_transfer_budget','wage_bill','wa
 const shareBlock=data=>`<section class="finance-figure balance" aria-label="Répartition des budgets"${data.wage_cap_range?` data-share="${e(JSON.stringify(Object.fromEntries(SHARE_FIELDS.map(name=>[name,data[name]]))))}"`:''}>${shareContent(data)}</section>`;
 
 // The Finances tab: the share of the budgets and two key figures, the cash month by month, the best-paid players, the money in
-// and out each month and where it came from and went to; the journal of every entry stays folded under them. The season arrows
-// change all but the key figures.
+// and out each month and where it came from and went to; the journal of every entry stays folded under them. The season
+// stepped to from the row of tabs changes all but the key figures.
 export function financesContent(club,data,squad){
  const history=data.history,balance=data.season_sales-data.season_spent;
  // The cash gained since the season opened reads against the accounts of the season under way only.
@@ -146,13 +145,12 @@ export function financesContent(club,data,squad){
   +figure('Trésorerie',money(data.balance),opening!=null?`<small><b class="${data.balance>=opening?'good':'bad'}">${signedMoney(data.balance-opening)}</b> depuis l’ouverture de la saison</small>`:'')
   +figure('Balance des transferts',signedMoney(balance),`<small>Achats <b>${money(data.season_spent)}</b> · Ventes <b>${money(data.season_sales)}</b></small>`,balance>0?'good':balance<0?'bad':'')
   +`</div>`;
- const nav=seasonNavigation(history,true);
  const note=history.partial?`<div class="notice">Historique partiel : seuls les flux enregistrés depuis le ${date(history.since)} sont inclus.</div>`:'';
- if(!history.available)return figures+card('Trésorerie',empty(`Les comptes détaillés sont enregistrés depuis le ${date(history.since)}. Aucune écriture disponible pour cette saison.`,'Historique indisponible'),nav);
+ if(!history.available)return figures+card('Trésorerie',empty(`Les comptes détaillés sont enregistrés depuis le ${date(history.since)}. Aucune écriture disponible pour cette saison.`,'Historique indisponible'));
  const legend='<div class="cc-legend"><span><i class="revenue"></i>Revenus</span><span><i class="expense"></i>Dépenses</span></div>';
  const journal=sortableTable(['PÉRIODE / DATE','OPÉRATION','REVENUS','DÉPENSES'],history.entries.map(row=>[row.monthly?e(monthLong(row.date)):date(row.date),e(row.label)+(row.player_id?` · ${playerLink(row.player_id,row.player)}`:''),row.revenue?euros(row.revenue):'—',row.expense?euros(row.expense):'—']),history.entries.map(row=>[row.date,row.label,row.revenue,row.expense]));
  return figures+note
-  +`<div class="finance-row">${card('Trésorerie',`<div class="cc-body">${cashChart(history)}</div>`,nav,'cc-card')}${salariesCard(squad)}</div>`
+  +`<div class="finance-row">${card('Trésorerie',`<div class="cc-body">${cashChart(history)}</div>`,'','cc-card')}${salariesCard(squad)}</div>`
   +`<div class="finance-row">${card('Revenus et dépenses',`<div class="cc-body">${flowsChart(history)}</div>`,legend,'cc-card')}${card('Répartition',`<div class="card-body">${splitBars(history)}</div>`,'','split-card')}</div>`
   +`<details class="card finance-journal"><summary><span>Journal financier</span><small>${history.entries.length} opération${history.entries.length>1?'s':''} · solde d’ouverture ${euros(history.opening_balance)}</small></summary>${journal}</details>`;
 }

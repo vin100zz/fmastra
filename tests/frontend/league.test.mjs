@@ -66,8 +66,8 @@ test('the European league phase is two tables of eighteen, and its history is ca
  assert.ok(halves.indexOf('Club 18')<halves.indexOf('Club 19'));
  assert.match(html,/1–8 : huitièmes directs/);
  assert.match(html,/>Historique<\/a>/);assert.doesNotMatch(html,/Palmarès/);
- // the cup, then the season, are chosen on the title line; the sections are the only row of tabs
- assert.ok(html.indexOf('<nav class="segmented europe-cups"')<html.indexOf('name="saison"')&&html.indexOf('name="saison"')<html.indexOf('<nav class="tabs"'));assert.equal((html.match(/<nav class="tabs"/g)||[]).length,1);
+ // the cup is chosen on the title line, then its seasons stepped through; the sections are the only row of tabs
+ assert.ok(html.indexOf('<nav class="segmented europe-cups"')<html.indexOf('class="season"')&&html.indexOf('class="season"')<html.indexOf('<nav class="tabs"'));assert.equal((html.match(/<nav class="tabs"/g)||[]).length,1);
 });
 
 test('the European history is three columns: winners and titles by country, the league phase of the chosen season, the leaders',async()=>{

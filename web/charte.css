@@ -33,8 +33,8 @@ select,input:not([type=checkbox]):not([type=radio]):not([type=range]){height:var
 .chip{min-width:var(--h-control);font-size:var(--fs-micro)}
 .chip.nation-chip,.chip.toggle{font-size:var(--fs-body);font-weight:400}
 .chip.on.nation-chip,.chip.on.toggle{font-weight:600}
-.card-head button,.card-head a.button,.head-pager button,.pager button,td button,.market-actions button,.news-lines button,.news-actions button,.news-heading button,.season-steps button,.live-tactics-actions button{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
-.head-pager button,.season-steps button{width:var(--h-control-small);padding:0}
+.card-head button,.card-head a.button,.head-pager button,.pager button,td button,.market-actions button,.news-lines button,.news-actions button,.news-heading button,.live-tactics-actions button{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
+.head-pager button{width:var(--h-control-small);padding:0}
 th button,button.pitch-player,.position-row,.entity-menu>summary,.advance-todo,.replay-marker,.replay-start{height:auto;font-weight:inherit;line-height:inherit}
 th button{padding:0;font-size:inherit;white-space:inherit}
 .position-row{height:var(--h-row);padding:0 var(--s3);font-size:var(--fs-body);font-weight:400}
@@ -61,6 +61,36 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .segmented>*:last-child,.tactics button:last-child,.edition-switch a:last-child{border-right:0}
 .segmented>.active,.tactics button.active,.tactics button[aria-pressed="true"],.edition-switch a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
 .card-head .segmented>*,.segmented.small>*{height:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
+/* A choice made of links measures what one made of buttons does: 28 px with its border, 22 px in a card's head. */
+.segmented:not(.country-rounds)>a{height:calc(var(--h-control) - 2px)}
+.card-head .segmented>a,.segmented.small>a{height:calc(var(--h-control-small) - 2px)}
+/* The steps through the seasons, or the editions of the selections: an arrow to each side of the one shown, which opens
+   the list of them all. No border: a ground shows under the pointer only, and under the season while its list is open.
+   The arrows take the colour of the club or the selection on its page (`--club`: the one under its open tab), the ink
+   elsewhere; one with nothing beyond it stays in place, greyed. `--chars` is the length of the longest name of a series
+   whose names differ: the arrows keep their place from one step to the next. */
+.season{display:inline-flex;align-items:center;flex:none}
+.season svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.season>:is(button,a){display:flex;align-items:center;justify-content:center;width:var(--h-control);height:var(--h-control);padding:0;border:0;border-radius:var(--radius);background:none;color:var(--club,var(--ink))}
+.season>:is(button,a) svg{stroke-width:2.4}
+.season>:is(button,a):not(:disabled,[aria-disabled="true"]):hover{background:var(--panel-3);color:var(--club,var(--ink))}
+.season>:is(:disabled,[aria-disabled="true"]){color:var(--muted);cursor:default}
+.season>:is(:disabled,[aria-disabled="true"]) svg{opacity:.6}
+.season-pick{position:relative}
+.season-pick>summary{display:flex;align-items:center;justify-content:center;gap:var(--s1);min-width:calc(var(--chars,0)*1ch + var(--s6) + var(--s2));height:var(--h-control);padding:0 var(--s1) 0 var(--s2);border-radius:var(--radius);font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-figure);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--strong);white-space:nowrap;list-style:none;cursor:pointer}
+.season-pick>summary::-webkit-details-marker{display:none}
+.season-pick>summary svg{color:var(--muted)}
+.season-pick[open]>summary{background:var(--panel-2);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--club,var(--accent))}
+.season-pick>.menu{position:absolute;top:calc(100% + var(--s1));right:0;z-index:5;max-height:calc(12*var(--h-row) + 2*var(--s1));overflow-y:auto}
+.card-head .season>:is(button,a){width:var(--h-control-small);height:var(--h-control-small)}
+.card-head .season-pick>summary{height:var(--h-control-small);font-size:var(--fs-body)}
+.club-hero .season{--club:var(--hero-accent)}
+/* The commands on the right of a title's line; on a club's or a selection's page, the season steps close the row of tabs,
+   under the last tile of the band. */
+.tools{display:flex;align-items:center;gap:var(--s2);margin-left:auto}
+.club-hero-foot{display:flex;align-items:center}
+.club-hero-foot>.club-hero-tabs{flex:1;min-width:0}
+.club-hero-foot>.tools{padding-right:var(--s4)}
 .edition-switch a{flex-direction:row;gap:var(--s2);border-left:0}
 .edition-switch small{font-size:var(--fs-small);font-weight:400}
 .round-stepper{gap:0;margin-bottom:var(--s2)}
@@ -82,7 +112,6 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.history-row,.movement-summary,.history-side,.history-leaders,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.league-tiles,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
 .club-hero,.club-overview,.stat-grid,.match-replay-card,.finance-figures,.finance-row,.history-row,.movement-summary,.seasons-card,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
-.history-archives .season-archive{margin-bottom:var(--s2)}
 .section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.entity-menu-scope,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 
 /* Tables: 26 px headings and rows, 13 px cells, capitals at 11 px over them. */
@@ -278,9 +307,11 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
    holds the dialogs of its actions, takes no room in the page and stands over it. */
 #player-menu{position:fixed;left:0;top:0;z-index:20}
 .menu{position:fixed;display:flex;flex-direction:column;min-width:216px;padding:var(--s1) 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 4px 12px #0a141e33;font-size:var(--fs-body);line-height:18px;white-space:nowrap;color:var(--ink)}
-.menu>button{display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;border-radius:0;background:none;font-weight:400;text-align:left;color:inherit;outline-offset:-2px}
-.menu>button>span,.menu>p{color:var(--muted)}
-.menu>button:focus-visible{background:var(--panel-3);color:var(--strong)}
+.menu>:is(button,a){display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;border-radius:0;background:none;font-weight:400;text-align:left;color:inherit;outline-offset:-2px}
+.menu>:is(button,a)>span,.menu>p{color:var(--muted)}
+.menu>:is(button,a):focus-visible,.menu>a:hover{background:var(--panel-3);color:var(--strong)}
+/* The line of what is shown, in a list to pick one from: the wash of a picked row, kept under the pointer. */
+.menu>:is(button,a)[aria-checked="true"]{background:var(--own-row);font-weight:600;color:var(--strong)}
 .menu>button:is(:disabled,[aria-disabled="true"]),.menu>button[aria-disabled="true"]:hover{background:none;color:var(--muted);opacity:.6;cursor:default}
 .menu>hr{width:100%;margin:var(--s1) 0;border:0;border-top:1px solid var(--row-line)}
 .menu>p{display:flex;align-items:center;flex:none;height:var(--h-row);margin:0;padding:0 var(--s3)}
@@ -422,7 +453,7 @@ a{text-decoration-thickness:1px;text-underline-offset:2px}
 a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:underline}
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
-:is(nav,.sidebar,.segmented,.chips,.presets,.entity-menu-panel,.filter-menu) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
+:is(nav,.sidebar,.segmented,.chips,.presets,.entity-menu-panel,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
 :is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) small{text-decoration:underline 1px;text-underline-offset:2px}
 /* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
    line on the ground. */
@@ -438,7 +469,7 @@ tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted)
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */
 button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,a.entity-step:hover,#manual-link:where(:not(.active)):hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
-:is(.chips,.presets,.round-pills,.entity-menu-panel,.manual-menu,.segmented,.edition-switch,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current])):hover,
+:is(.chips,.presets,.round-pills,.entity-menu-panel,.manual-menu,.segmented,.edition-switch,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
 :is(.tactics,.segmented,.calendar-filters,.movement-filters) button:where(:not(.active,[aria-pressed="true"],:disabled)):hover{background:var(--panel-3);color:var(--strong)}
 :is(button,a.button).primary:where(:not(:disabled)):hover,.cta:hover{background:var(--accent-hover);color:var(--accent-ink)}
 button.danger:where(:not(:disabled)):hover{background:var(--bad-soft)}
@@ -490,7 +521,6 @@ small{font-size:var(--fs-small)}
 @media(max-width:1329px){.selection-calendar{grid-template-columns:minmax(0,1fr)}}
 .card-head h2 .nation{margin-right:6px;vertical-align:-1px}
 .preview .position-row{height:var(--h-row)}
-.toolbar .season-navigation button{width:var(--h-control);height:var(--h-control)}
 .honours-matrix .competition-code{margin-right:6px}
 .honours-table .count-column,.honours-table .sum-column{width:40px}
 .honours-table .total-column{width:84px}

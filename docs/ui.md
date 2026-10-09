@@ -32,8 +32,8 @@ requêtes pour reconstituer une page.
 au navigateur. Toute liste est paginée, y compris la recherche de joueurs qui
 porte sur l'ensemble des clubs, actifs et dormants ; les écrans de liste demandent
 la taille de page que la fenêtre peut montrer. Seules les courtes listes
-renvoyées en entier (les transferts ou le journal financier d'une saison, les
-classements archivés, les saisons d'un club sur la page affichée) se trient dans
+renvoyées en entier (les transferts ou le journal financier d'une saison, le
+classement archivé d'une saison, les saisons d'un club sur la page affichée) se trient dans
 le navigateur ; le choix survit aux
 rafraîchissements de l'écran.
 
@@ -59,6 +59,14 @@ teinte dans toutes les listes : une pastille pleine, hors de l'échelle rouge-ja
 des notes. Sur un terrain, quel qu'il soit (composition, dernier onze, compte rendu,
 aptitudes, direct), les maillots prennent les couleurs du club et le poste s'y lit
 sur le maillot.
+
+**Une seule façon de changer de saison.** Ce qui se lit par saison (par édition,
+pour les sélections) se parcourt partout avec le pas de saison de la charte : une
+flèche de chaque côté de la saison montrée, qui ouvre la liste de toutes. Il est
+en haut à droite de ce qu'il change : au bout de la ligne du titre, au bout de la
+rangée d'onglets d'un club ou d'une sélection (ses flèches à leur couleur), dans
+l'en-tête de la carte. La saison choisie est dans l'adresse (`saison`,
+`edition`) ; celle en cours s'ouvre par défaut.
 
 **Trois chiffres par ligne de joueur.** Âge, salaire, fin de contrat. Une
 échéance à moins de 12 mois passe en rouge. C'est la liste de tâches implicite,
@@ -277,10 +285,15 @@ ou `negociation`) : le menu dit toujours l'état du jour.
 |---|---|
 | Effectif | la liste triable à gauche (poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200), les widgets du club à droite |
 | Composition | le terrain du club dirigé, la liste de l'effectif et l'adversaire (voir « Composition ») |
-| Calendrier | une ligne par match de la saison, buteurs compris, et le bilan de chaque compétition |
+| Calendrier | une ligne par match d'une saison, buteurs compris, et le bilan de chaque compétition |
 | Finances | la répartition des budgets et deux chiffres clés, la trésorerie et les flux du mois en graphiques, les salaires, la répartition, le journal replié |
 | Transferts | le mercato en cours (club dirigé), le bilan de la saison, ses arrivées et ses départs |
 | Historique | le classement et la réputation de chaque saison en graphiques, le palmarès, une ligne par saison terminée, les leaders et les plus gros transferts |
+
+Calendrier, Finances et Transferts se lisent par saison : le pas de saison ferme la rangée d'onglets,
+au même endroit sur les trois, de la première saison de la partie à celle en cours. La saison choisie
+(`saison` dans l'adresse) est gardée de l'un à l'autre ; les autres onglets n'ont pas de pas et
+reviennent à la saison en cours.
 
 **En-tête.** Un bandeau aux couleurs du club (`club-hero.js`) : la couleur principale le remplit,
 la seconde le traverse en bande diagonale. Une couleur principale proche du blanc laisserait le
@@ -324,7 +337,8 @@ du club avec leurs minutes, puis ceux de l'adversaire en gris. Le prochain match
 boutons au-dessus de la liste gardent une compétition (`competition` dans l'adresse). À droite, le
 bilan de chaque compétition : la place (rang en championnat ou en phase de ligue, sinon le tour à
 jouer, le tour de l'élimination ou « Vainqueur »), les matches, victoires, nuls et défaites en barre,
-les buts marqués et encaissés ; une compétition pas encore jouée ne donne que sa place.
+les buts marqués et encaissés ; une compétition pas encore jouée ne donne que sa place. Une saison
+terminée donne la place finale du club ; ses matches gardent leur score, pas leurs buteurs.
 
 **Finances.** En tête, sur une ligne : la répartition des budgets, sur la moitié de la largeur, puis
 deux chiffres : la trésorerie et ce qu'elle a gagné depuis l'ouverture de la saison en cours, la
@@ -343,8 +357,7 @@ saison, la plus grosse vente et le plus gros achat nommés sur leur mois ; les d
 mensuels de l'effectif (hors joueurs prêtés), les autres additionnés ; les revenus et les dépenses
 de chaque mois côte à côte ; la répartition des revenus (structurels, ventes) et des dépenses
 (salaires, achats, fonctionnement), les régularisations d'arrondi masquées sous 1 % ; enfin le
-journal financier, replié. Les flèches de saison, dans la carte de la trésorerie, changent tout sauf
-la ligne de tête.
+journal financier, replié. Le pas de saison change tout sauf la ligne de tête.
 
 **Transferts.** Pour le club dirigé, le mercato en cours sur quatre colonnes : les offres reçues
 regroupées par joueur (avec sa valeur), chacune avec « Accepter » / « Refuser » ; ses offres et où en
@@ -454,9 +467,9 @@ tour (J3 en qualifications, puis « Groupes · J1 », « Quarts de finale »… 
 à l'extérieur (jamais sur terrain neutre), l'adversaire après son drapeau, le score du côté de la
 sélection (ses buts d'abord, coloré V/N/D, la séance de tirs au but à côté de l'adversaire), ses
 buteurs avec leurs minutes, puis ceux de l'adversaire en gris. Le prochain match est surligné.
-L'édition se choisit dans l'en-tête de la carte (`edition` dans l'adresse), la plus récente d'abord :
-par défaut celle en cours si la sélection y joue, sinon la dernière qu'elle a jouée ; le choix
-disparaît quand elle n'en a joué qu'une. À droite, sur 560 px (dessous sous 1330 px) :
+Les éditions se parcourent comme les saisons d'un club, au bout de la rangée d'onglets (`edition`
+dans l'adresse) : par défaut celle en cours si la sélection y joue, sinon la dernière qu'elle a
+jouée. À droite, sur 560 px (dessous sous 1330 px) :
 
 - **Groupe** : le groupe de la sélection dans l'édition choisie, en entier et avec toutes les
   colonnes du classement, « Voir → » vers la page de l'édition.
@@ -474,10 +487,13 @@ disparaît quand elle n'en a joué qu'une. À droite, sur 560 px (dessous sous 1
 | Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement et des 10 meilleurs buteurs |
 | Prochains matches | la prochaine journée ou le prochain tour, à côté du classement et des 10 meilleurs buteurs |
 | Statistiques | les cinq classements (meilleurs buteurs, passeurs, meilleures notes moyennes, cartons, clean sheets) côte à côte, 10 lignes chacun ; « Voir tout » ouvre la liste complète et paginée du classement, avec un menu pour passer de l'un à l'autre ou revenir aux cinq |
-| Historique | trois colonnes : les champions par saison avec leur meilleur buteur, puis les titres par club ; les classements archivés ; les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat |
+| Historique | trois colonnes : les champions par saison avec leur meilleur buteur, puis les titres par club ; le classement d'une saison terminée, la dernière par défaut, les autres au pas de saison dans l'en-tête de sa carte (`saison` dans l'adresse) ; les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat |
 
-Sur Coupes d'Europe, la coupe (C1, C3, C4) et la saison se choisissent sur la ligne du titre ; la seule
-rangée d'onglets est celle des rubriques de la coupe.
+Sur Coupes d'Europe, la coupe (C1, C3, C4) se choisit sur la ligne du titre, que ferme le pas de
+saison ; la seule rangée d'onglets est celle des rubriques de la coupe. Une coupe nationale a son pas
+de saison au même endroit, sur son tableau. La page d'une édition de l'Euro ou de la Coupe du monde
+garde le titre « Sélections nationales » : ses éditions se parcourent au bout de cette ligne, l'onglet
+ouvert gardé.
 
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro et de
 la Coupe du monde) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
@@ -900,8 +916,8 @@ ses huit meilleurs joueurs. Au pied, un bouton par onglet de sa fiche.
 ### Mercato mondial
 
 La ligne du titre porte les onglets Transferts, Retraites et Promotions des centres,
-chacun avec le nombre de mouvements de la saison, et à droite la saison avec ses deux
-flèches. Chaque onglet a ses filtres, ses colonnes et, à droite sur un écran large, son
+chacun avec le nombre de mouvements de la saison, et à droite le pas de saison. Chaque
+onglet a ses filtres, ses colonnes et, à droite sur un écran large, son
 résumé de la saison, qui ne suit pas les filtres : quatre tuiles, un graphique en barres,
 puis deux tableaux triés dans le navigateur, dont le premier prend la hauteur restante
 et défile dans sa carte. « Mon club » ne paraît que quand l'utilisateur en dirige un.
@@ -1028,8 +1044,10 @@ GET  /api/clubs/{id}/apercu               widgets de l'effectif : calendrier, fi
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
 GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, un attribut (passe, reflexes…) ou un composite (tir, occasion_attaque…)
                                           chaque joueur : reserve, loan ({parent, club, end} | null), away (prêté par ce club) ; 100 lignes par page
-GET  /api/clubs/{id}/calendrier           tous les matches de la saison, chacun avec scorers et outcome (V/N/D du côté du club, null à venir) ;
-                                          competitions : {id, name, kind, code, place, played, won, drawn, lost, goals_for, goals_against}
+GET  /api/clubs/{id}/calendrier?saison=   tous les matches d'une saison (celle en cours par défaut), chacun avec scorers et outcome (V/N/D du côté du
+                                          club, null à venir) ; competitions : {id, name, kind, code, place, played, won, drawn, lost, goals_for,
+                                          goals_against} ; et, comme finances, transferts et le mercato mondial, de quoi parcourir les saisons :
+                                          season, previous_season, next_season, seasons (toutes, la plus récente d'abord), current_season
 GET  /api/clubs/{id}/finances?saison=     résumé + history (journal de la saison ; months : {date, revenue, expenses, balance} en fin de mois)
                                           résumé : balance, income, transfer_budget, reserved_transfer_budget, wage_bill, wage_cap, reserved_wages,
                                           wage_shift (salaires passés du budget au plafond), season_spent, season_sales, et pour le club de
@@ -1054,7 +1072,11 @@ GET  /api/international/nations/{id}/calendrier?edition=   les matches d'une éd
                                           goals_for, goals_against} pour chaque édition jouée
 GET  /api/international/nations/{id}/navigation   sélections de la confédération : précédent, suivant, liste
 GET  /api/competitions/{id}/statistiques?type=buteurs|passeurs|notes
-GET  /api/competitions/{id}/historique    champions par saison paginés (avec classement archivé) + leaders {matches, goals} de tous les temps
+GET  /api/competitions/{id}/historique?page=&saison=   champions par saison paginés + archive {season, previous_season, next_season, seasons,
+                                          current_season: null, standings} : le classement d'une saison terminée d'un championnat, la dernière
+                                          par défaut (null pour une coupe, ou tant qu'aucune saison n'est terminée) + leaders {matches, goals}
+GET  /api/competitions/{id}/coupe?saison=, /europe?saison=   le tableau d'une coupe, la saison d'une coupe d'Europe ; season, previous_season,
+                                          next_season, seasons (celles qui ont des matches, et celle montrée), current_season
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&valeur_min=&valeur_max=&prix_max=&salaire_min=&salaire_max=

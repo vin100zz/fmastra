@@ -1,9 +1,10 @@
-"""Landing view of a club and its season's calendar; read-only projections."""
+"""Landing view of a club and the calendar of one of its seasons; read-only projections."""
 from core.domain.matches import Match
 from core.domain.world import World
 from core.world.cups import ROUND_NAMES
 from . import views as v
 from .club_archive import cup_run, european_run
+from .club_history import navigation
 from .rounds import scorers
 
 LAST_MATCHES, NEXT_MATCHES = 5, 3
@@ -20,7 +21,7 @@ def outcome(club_id: int, match: Match) -> str:
 
 
 def calendar(world: World, club_id: int, played: list[Match], upcoming: list[Match]) -> dict:
-    """Current season only, like the calendar tab."""
+    """The season under way only, the one the calendar tab opens on."""
     played = [match for match in played if match.season == world.season]
     upcoming = [match for match in upcoming if match.season == world.season]
     return {"last": [{**v.match_row(world, match), "outcome": outcome(club_id, match)} for match in reversed(played[-LAST_MATCHES:])],
@@ -59,11 +60,12 @@ def record(club_id: int, matches: list[Match]) -> dict:
     return totals
 
 
-def place(world: World, club_id: int, competition_id: int, matches: list[Match]) -> str:
-    """Where the club stands in a competition of the season: its rank in a league or a league phase, otherwise the round
-    it is to play next, the round it went out in, or the title."""
+def place(world: World, club_id: int, competition_id: int, matches: list[Match], season: int) -> str:
+    """Where the club stands, or stood, in a competition of a season: its rank in a league or a league phase, otherwise
+    the round it is to play next, the round it went out in, or the title."""
     competition = world.competitions[competition_id]
-    rank = lambda: next((row["rank"] for row in v.table(world, competition_id) if row["club_id"] == club_id), None)
+    archived = None if season == world.season else season
+    rank = lambda: next((row["rank"] for row in v.table(world, competition_id, archived) if row["club_id"] == club_id), None)
     if competition.kind == "league":
         found = rank()
         return f"{found}{'er' if found == 1 else 'e'}" if found else "—"
@@ -82,11 +84,14 @@ def place(world: World, club_id: int, competition_id: int, matches: list[Match])
     return f"Éliminé · {label}" if out else label
 
 
-def season_calendar(world: World, club_id: int) -> dict:
-    """Every match of the club's season, each played one with its scorers and its outcome, and for each competition its record
-    and where the club stands."""
+def season_calendar(world: World, club_id: int, season: int | None = None) -> dict:
+    """Every match of a season of the club, the one under way by default, each played one with its scorers and its outcome,
+    and for each competition its record and where the club stands; the seasons to step to, as its finances and its
+    transfers give them."""
     world.clubs[club_id]
-    matches = sorted((match for match in world.matches.values() if match.season == world.season and club_id in (match.home_id, match.away_id)),
+    steps = navigation(world, season)
+    year = steps["season"]
+    matches = sorted((match for match in world.matches.values() if match.season == year and club_id in (match.home_id, match.away_id)),
                      key=lambda match: (match.date, match.id))
     rows = [{**v.match_row(world, match), "scorers": scorers(world, match), "outcome": outcome(club_id, match) if match.result else None}
             for match in matches]
@@ -96,7 +101,7 @@ def season_calendar(world: World, club_id: int) -> dict:
     for competition_id, games in by_competition.items():
         competition = world.competitions[competition_id]
         competitions.append({"id": competition_id, "name": competition.name, "kind": competition.kind, "code": competition.code,
-                             "place": place(world, club_id, competition_id, games), **record(club_id, games)})
+                             "place": place(world, club_id, competition_id, games, year), **record(club_id, games)})
     # The league first, then the national cup, then Europe.
     competitions.sort(key=lambda row: ({"league": 0, "cup": 1, "europe": 2}.get(row["kind"], 3), row["id"]))
-    return {"items": rows, "total": len(rows), "page": 1, "page_size": max(1, len(rows)), "competitions": competitions}
+    return {"items": rows, "total": len(rows), "page": 1, "page_size": max(1, len(rows)), "competitions": competitions, **steps}

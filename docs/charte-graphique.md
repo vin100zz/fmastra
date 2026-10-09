@@ -78,7 +78,7 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 | `--fs-hero` | 40 / 40 | 700 | Nom d'un club dans son bandeau, score |
 | `--fs-page` | 26 / 32 | 700 | Titre de page |
 | `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, club d'un joueur dans son bandeau |
-| `--fs-figure` | 16 / 20 | 700 | Action principale, délai |
+| `--fs-figure` | 16 / 20 | 700 | Action principale, délai, saison montrée par son pas |
 | `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
 | `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`) |
 | `--fs-body` | 13 / 18 | 400, 600 | Texte, cellule, onglet, bouton |
@@ -101,9 +101,10 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 
 | Composant | Classes | Règle |
 |---|---|---|
-| Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club ou de la sélection sur sa fiche |
+| Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club ou de la sélection sur sa fiche (voir « Pas de saison ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : coupe d'Europe, derniers ou prochains matches, tactique, colonnes |
-| Pas d'une série | `.segmented.steps` | Journées, saisons |
+| Pas d'une série | `.segmented.steps` | Journées : une flèche à chaque bout, toutes écrites entre elles |
+| Pas de saison | `.season`, `.season-pick` | Saisons, éditions des sélections : une flèche de chaque côté de celle montrée, qui ouvre la liste de toutes. Voir « Pas de saison » |
 | Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Carré, 28 ; 22 dans une carte ou une ligne |
 | Action principale | `.cta` | Une seule par écran |
 | Champ | `.field` | Recherche, liste déroulante |
@@ -126,6 +127,51 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
 
+### Pas de saison
+
+Ce qui se lit saison par saison se parcourt avec un seul contrôle, le même sur
+tous les écrans (`.season`) : une flèche vers la saison d'avant, la saison
+montrée, une flèche vers la suivante. La saison montrée ouvre la liste de
+toutes. Les éditions des sélections (Euro, Coupe du monde) se parcourent de
+même. Jamais une liste déroulante du navigateur, une rangée d'options ni des
+blocs repliés.
+
+- **Sans bordure** : ni cadre, ni trait entre ses parties. Un fond (`--panel-3`)
+  ne paraît que sous le pointeur ; la saison dont la liste est ouverte prend
+  `--panel-2` et la marque de ce qui est ouvert (2).
+- **Flèches** : des chevrons dessinés, de 16, d'un trait de 2.4. Sur la fiche
+  d'un club ou d'une sélection, elles sont à sa couleur, celle qui souligne
+  l'onglet ouvert ; ailleurs, à l'encre. Sous le pointeur elles gardent leur
+  couleur. Celle qui n'a plus rien au-delà reste à sa place, grisée.
+- **Saison** : en chiffre clé (`--display`, 16 en 700 ; 13 dans l'en-tête d'une
+  carte), suivie d'un chevron atténué. La saison seule (« 2031 / 2032 ») ou le
+  nom de l'édition (« Euro 2032 ») : le mot « Saison » n'est pas écrit, et ce
+  que le pas montre n'est pas répété dans le titre voisin.
+- **Liste** : le menu de la charte (`.menu`), sous le contrôle, aligné sur son
+  bord droit : toutes les saisons, la plus récente d'abord, douze lignes au
+  plus avant de défiler. La saison montrée a le fond `--own-row` ; celle en
+  cours est dite « en cours », à droite, atténué. Elle se ferme sur un choix,
+  un clic ailleurs ou Échap.
+- **Largeur** : celle du plus long libellé de la série (`--chars`) : les flèches
+  ne bougent pas d'un pas à l'autre.
+- **Place** : en haut à droite de ce qu'il change.
+
+| Ce qu'il change | Place | Hauteur |
+|---|---|---|
+| Une page sous son titre : Mercato mondial, une coupe, Coupes d'Europe, Sélections nationales | Au bout de la ligne du titre, après ses autres commandes | 28 |
+| Un onglet de la fiche d'un club ou d'une sélection : Calendrier, Finances, Transferts | Au bout de la rangée d'onglets, sous la dernière tuile du bandeau ; absent des onglets qui ne se lisent pas par saison | 28 |
+| Une seule carte : le classement archivé d'un championnat | Dans son en-tête, à droite | 22 |
+
+D'un onglet à l'autre de la fiche d'un club, la saison choisie est gardée.
+
+**La couleur d'un club sous ses onglets.** L'onglet ouvert d'une fiche et les
+flèches de ses saisons prennent, des deux couleurs du club ou de la sélection,
+celle qui se lit le mieux sur le fond. Une couleur qui s'y lirait mal (un
+contraste sous 3 : un jaune, un bleu ciel sur le blanc) est ramenée à son ton
+dans un graphique (voir « La couleur d'un club dans un graphique ») ; sans
+couleur lisible (blanc et blanc), l'accent en texte (`--accent-text`) en tient
+lieu.
+
 ### Sous le pointeur
 
 Ce qui se trouve sous le pointeur prend un seul fond, `--panel-3`. Ce qui est
@@ -138,7 +184,8 @@ lien, ni bordure, ni ombre.
 | Lien dans une phrase : le manuel, le titre et le texte d'une actualité (`.prose`) | `--accent-text`, non souligné | Souligné, même couleur |
 | Ligne d'un tableau ou d'une liste, fait | Son fond | `--panel-3` ; la ligne teintée (club dirigé, ligne choisie, état) garde sa teinte |
 | Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
-| Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne du menu d'un joueur | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne d'un menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Flèche d'un pas de saison, saison qui ouvre sa liste | Aucun fond | `--panel-3` ; la flèche garde la couleur du club |
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
 | Joueur sur un terrain | Son nom | Son nom souligné |
 
@@ -398,6 +445,13 @@ part (le budget de transferts et le plafond salarial d'un club).
 Le séparateur décimal est le point, pour tous les nombres : notes, montants,
 moyennes, buts attendus.
 
+### Saisons
+
+Une saison s'écrit de ses deux années entières, une barre entre deux espaces :
+2031 / 2032. Sous l'axe d'un graphique qui en aligne plus de quatre, en deux
+années courtes : 31-32. Une édition des sélections porte son nom et l'année de sa
+phase finale : Euro 2032.
+
 ### Notes
 
 | Donnée | Écriture | Exemple |
@@ -501,6 +555,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 | Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
+| Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club et sur Calendrier d'une sélection (`tools` de `clubHero` et `nationHero`), au bout de la ligne du titre sur Mercato mondial, une coupe, Coupes d'Europe et une édition des sélections, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
 | Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`) |
 | Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
 
@@ -523,5 +578,6 @@ le menu d'un joueur aussi : <https://claude.ai/artifact/KYSJcrD8ikiX5uoJfikeH3>,
 comme la répartition des budgets : <https://claude.ai/artifact/Ga78jdTYs5RHHZweXDyjYd>
 et la fiche d'une sélection (proposition A) : <https://claude.ai/artifact/THiSHcUqdwdres8yWJc5NR>,
 et celle d'un joueur (proposition D, bloc sélection 3) : <https://claude.ai/artifact/1dXpFEK4mUHwaxcZmX8q7s>.
+Le pas de saison a la sienne (proposition C1, page « Tour 2 ») : <https://claude.ai/artifact/JWEMGket7W9htqxx7FoCps>.
 Le compte rendu d'un match a été redessiné depuis (proposition A) :
 <https://claude.ai/artifact/X8NKTayKm5YXFuCJQTBWKo> ; sa planche du canevas montre l'ancienne bannière.

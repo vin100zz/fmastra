@@ -70,6 +70,15 @@ def paginate(items: list, page: int, size: int = 30) -> dict:
     return {"items": items[(page - 1) * size:page * size], "total": len(items), "page": page, "page_size": size}
 
 
+def season_steps(seasons, selected: int, current: int | None = None) -> dict:
+    """The season shown, the ones to step to on either side of it and the list of them all, the latest first, among those
+    that have something to show; `current` is the season under way, when the list may hold it."""
+    listed = sorted({*seasons, selected}, reverse=True)
+    return {"season": selected, "previous_season": max((year for year in listed if year < selected), default=None),
+            "next_season": min((year for year in listed if year > selected), default=None),
+            "seasons": listed, "current_season": current}
+
+
 def club_ref(world: World, club_id: int | None) -> dict | None:
     club = world.clubs.get(club_id)
     return {"id": club.id, "name": club.name, "major_color": club.home_kit_major_color,

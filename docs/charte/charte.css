@@ -108,8 +108,32 @@
 .segmented>*:last-child{border-right:0}
 .segmented>.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
 .segmented.small>*{height:calc(var(--h-control-small) - 2px);min-width:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
+/* The steps of a series shown whole, the rounds of a league: an arrow at each end. */
 .segmented.steps>*{padding:0}
+.segmented.steps>:is(:first-child,:last-child){font-size:var(--fs-figure)}
+.segmented>:is(:disabled,[aria-disabled="true"]){color:var(--muted);opacity:.6}
+/* The steps through the seasons, or the editions of the selections: an arrow to each side of the one shown, which opens
+   the list of them all. No border: a ground shows under the pointer only, and under the season while its list is open.
+   The arrows take the colour of the club or the selection on its page (`--club`: the one under its open tab), the ink
+   elsewhere; one with nothing beyond it stays in place, greyed. `--chars` is the length of the longest name of a series
+   whose names differ: the arrows keep their place from one step to the next. */
+.season{display:inline-flex;align-items:center;flex:none}
+.season svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.season>:is(button,a){display:flex;align-items:center;justify-content:center;width:var(--h-control);height:var(--h-control);padding:0;border:0;border-radius:var(--radius);background:none;color:var(--club,var(--ink))}
+.season>:is(button,a) svg{stroke-width:2.4}
+.season>:is(:disabled,[aria-disabled="true"]){color:var(--muted)}
+.season>:is(:disabled,[aria-disabled="true"]) svg{opacity:.6}
+.season-pick{position:relative}
+.season-pick>summary{display:flex;align-items:center;justify-content:center;gap:var(--s1);min-width:calc(var(--chars,0)*1ch + var(--s6) + var(--s2));height:var(--h-control);padding:0 var(--s1) 0 var(--s2);border-radius:var(--radius);font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong);white-space:nowrap;list-style:none;cursor:pointer}
+.season-pick>summary::-webkit-details-marker{display:none}
+.season-pick>summary svg{color:var(--muted)}
+.season-pick[open]>summary{background:var(--panel-2);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--club,var(--accent))}
+.season-pick>.menu{position:absolute;top:calc(100% + var(--s1));right:0;z-index:2;max-height:calc(12*var(--h-row) + 2*var(--s1));overflow-y:auto}
+.season.small>:is(button,a){width:var(--h-control-small);height:var(--h-control-small)}
+.season.small>.season-pick>summary{height:var(--h-control-small);font-size:var(--fs-body)}
 .segmented.fill{display:flex}.segmented.fill>*{flex:1 1 0}
+/* On a club's or a selection's page, the season steps close the row of tabs, under the last tile of the band. */
+.tabs>.tools{padding-right:var(--s2)}
 
 /* Cards. */
 .card{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
@@ -221,8 +245,10 @@
    where nothing can be decided, the player's state alone. An action that cannot be taken stays in its place, dimmed, its
    reason in a tooltip. */
 .menu{display:inline-flex;flex-direction:column;min-width:216px;padding:var(--s1) 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 4px 12px #0a141e33;font:400 var(--fs-body)/18px var(--text);white-space:nowrap;color:var(--ink)}
-.menu>button{display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;background:none;text-align:left}
-.menu>button>span,.menu>p{color:var(--muted)}
+.menu>:is(button,a){display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;background:none;text-align:left}
+.menu>:is(button,a)>span,.menu>p{color:var(--muted)}
+/* The line of what is shown, in a list to pick one from: the wash of a picked row. */
+.menu>:is(button,a)[aria-checked="true"]{background:var(--own-row);font-weight:600;color:var(--strong)}
 .menu>button:is(:disabled,[aria-disabled="true"]){color:var(--muted);opacity:.6}
 .menu>hr{width:100%;margin:var(--s1) 0;border:0;border-top:1px solid var(--row-line)}
 .menu>p{display:flex;align-items:center;flex:none;height:var(--h-row);padding:0 var(--s3)}
@@ -450,8 +476,10 @@ a:is(.tr,.match-row,.result){cursor:pointer}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
 .app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,.entity-nav>a,.pitch-player):is(:hover,.hover){text-decoration:none}
-:is(.nav a,.segmented>a,.segmented>button,.button,.entity-nav>*):not(.active,.primary,.danger,:disabled):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
-.menu>button:not(:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+:is(.nav a,.segmented>a,.segmented>button,.button,.entity-nav>*):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+.menu>:is(button,a):not(:disabled,[aria-disabled="true"],[aria-checked="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+:is(.season>:is(button,a):not(:disabled,[aria-disabled="true"]),.season-pick:not([open])>summary):is(:hover,.hover){background:var(--panel-3)}
+.app :is(.season a,.menu>a):is(:hover,.hover){text-decoration:none}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
 :is(.button.primary,.cta):is(:hover,.hover){background:var(--accent-hover)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}

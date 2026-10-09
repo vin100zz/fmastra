@@ -111,8 +111,10 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
   const html=await internationalScreen('nation','-1001','calendar');
   assert.deepEqual(asked,['/api/international/nations/-1001','/api/international/nations/-1001/navigation','/api/international/nations/-1001/calendrier']);
   assert.match(html,/<a class="active" href="#\/international\/nation\/-1001\/calendar" aria-current="page">Calendrier<\/a>/);
-  // The edition is picked in the head of the card, the latest first.
-  assert.match(html,/<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches<\/h2><div class="segmented" role="group" aria-label="Édition"><button type="button" data-param="edition" data-param-value="2030" aria-pressed="true" class="active">Coupe du monde 2030<\/button><button type="button" data-param="edition" data-param-value="2028" aria-pressed="false" class="">Euro 2028<\/button><\/div><\/div>/);
+  // The editions are stepped through as a club's seasons are, at the end of the row of tabs; the card names none.
+  assert.match(html,/aria-current="page">Calendrier<\/a><a class="" href="#\/international\/nation\/-1001\/history">Historique<\/a><\/nav><div class="tools"><div class="season" role="group" aria-label="Édition"><button type="button" aria-label="Édition précédente" data-param="edition" data-param-value="2028"><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary style="--chars:19">Coupe du monde 2030</);
+  assert.match(html,/aria-label="Éditions"><button type="button" role="menuitemradio" aria-checked="true" data-param="edition" data-param-value="2030">Coupe du monde 2030<\/button><button type="button" role="menuitemradio" aria-checked="false" data-param="edition" data-param-value="2028">Euro 2028<\/button><\/div><\/details><button type="button" aria-label="Édition suivante" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div><\/header>/);
+  assert.match(html,/<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches<\/h2><\/div>/);
   const rows=html.split(/<div class="calendar-row(?=[ "])/).slice(1);
   assert.equal(rows.length,4);
   // The day with its year, the edition's badge, a qualifying round by its number; the selection's goals and scorers first.
@@ -143,7 +145,7 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
  }finally{globalThis.fetch=previous;setNations({});}
 });
 
-test('a calendar of the finals writes its rounds in full and flies nowhere on neutral ground; one edition needs no choice; none says so',async()=>{
+test('a calendar of the finals writes its rounds in full and flies nowhere on neutral ground; one edition has nowhere to step to; none says so',async()=>{
  const previous=globalThis.fetch;
  const finals=seasons({edition:2028,editions:[{year:2028,name:'Euro 2028'}],group:null,
   items:[fixture(21,spain,nation,{date:'2028-06-24',round_label:'Quarts de finale',neutral:true,score:[1,1],penalties:[3,4],outcome:'V',scorers:[[],[]]})],
@@ -151,12 +153,30 @@ test('a calendar of the finals writes its rounds in full and flies nowhere on ne
  try{
   globalThis.fetch=serving(page(),finals);
   const html=await internationalScreen('nation','-1001','calendar');
-  assert.match(html,/<h2>Matches<\/h2><\/div>/);assert.doesNotMatch(html,/class="segmented"|standings-card/);
+  assert.match(html,/<h2>Matches<\/h2><\/div>/);assert.doesNotMatch(html,/standings-card/);
+  assert.match(html,/aria-label="Édition précédente" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>Euro 2028</);assert.match(html,/aria-label="Édition suivante" disabled>/);
   assert.match(html,/<span class="calendar-round" title="Quarts de finale">Quarts de finale<\/span><span class="calendar-venue"><\/span>/);
   assert.match(html,/<small>t\.a\.b\. 4–3<\/small>/);assert.match(html,/title="Victoire · Euro 2028 · Quarts de finale · Terrain neutre">1–1<\/a>/);
   assert.match(html,/<td[^>]*>Demi-finales<\/td>/);
   globalThis.fetch=serving(page(),{edition:null,editions:[],items:[],group:null,competitions:[]});
-  assert.match(await internationalScreen('nation','-1001','calendar'),/Calendrier vide/);
+  const empty=await internationalScreen('nation','-1001','calendar');
+  assert.match(empty,/Calendrier vide/);assert.doesNotMatch(empty,/class="season"/);
+  // The other tabs read no edition: nothing closes their row.
+  globalThis.fetch=serving(page());
+  assert.doesNotMatch(await internationalScreen('nation','-1001'),/class="tools"/);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('an edition’s page keeps the title of the selections and steps through the editions on its line, the open tab kept',async()=>{
+ const previous=globalThis.fetch;
+ const listed=[{year:2028,name:'Euro 2028',winner:nation},{year:2030,name:'Coupe du monde 2030',winner:null},{year:2032,name:'Euro 2032',winner:null}];
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/editions/')?{...edition,year:2030,name:'Coupe du monde 2030'}:{enabled:true,nations:[nation],editions:listed}});
+ try{
+  const html=await internationalScreen('2030','statistics');
+  assert.match(html,/^<div class="page-heading"><div><h1>Sélections nationales<\/h1><\/div><div class="tools"><div class="season" role="group" aria-label="Édition"><a aria-label="Édition précédente" href="#\/international\/2028\/statistics"><svg[^>]*><path[^>]*\/><\/svg><\/a><details class="season-pick"><summary style="--chars:19">Coupe du monde 2030</);
+  assert.match(html,/<a role="menuitemradio" aria-checked="false" href="#\/international\/2032\/statistics">Euro 2032<\/a><a role="menuitemradio" aria-checked="true" href="#\/international\/2030\/statistics">Coupe du monde 2030<\/a>/);
+  assert.match(html,/<\/details><a aria-label="Édition suivante" href="#\/international\/2032\/statistics"><svg[^>]*><path[^>]*\/><\/svg><\/a><\/div><\/div><\/div><nav class="tabs"/);
+  assert.doesNotMatch(html,/edition-switch/);
  }finally{globalThis.fetch=previous;}
 });
 

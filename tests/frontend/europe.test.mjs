@@ -10,7 +10,7 @@ const cups=[{id:-101,code:'C1',name:'Ligue des champions',kind:'europe'},
  {id:-104,code:'C4',name:'Conference League',kind:'europe'}];
 const match={id:42,date:'2026-02-25',round:10,round_label:'Barrages · retour',competition:'Ligue des champions',
  home:{id:1,name:'Home'},away:{id:2,name:'Away'},score:[1,0],aggregate:[2,2],penalties:[4,5],winner_id:2,first_leg_id:41};
-const data={season:2025,seasons:[2026,2025],league_rounds:8,next_round:null,latest_round:17,winner:match.away,
+const data={season:2025,previous_season:null,next_season:2026,seasons:[2026,2025],league_rounds:8,next_round:null,latest_round:17,winner:match.away,
  standings:Array.from({length:36},(_,i)=>({club_id:i+1,club:{id:i+1,name:`Club ${i+1}`},rank:i+1,played:8,won:0,drawn:8,lost:0,
  goals_for:8,goals_against:8,difference:0,points:8,form:'NNNNN',movement:i<8?'direct':i<24?'playoff':'eliminated'})),
  rounds:Array.from({length:17},(_,i)=>({number:i+1,label:i<8?`Phase de ligue · Journée ${i+1}`:i===16?'Finale':i===9?'Barrages · retour':'Phase finale',date:'2026-02-25',complete:i<10,items:i===9?[match]:[]}))};
@@ -26,7 +26,10 @@ test('Europe navigation and full 36-club table with qualifying zones',async()=>{
   assert.equal((html.match(/class="europe-playoff"/g)||[]).length,16);
   assert.match(html,/Club 36/);
   assert.match(html,/#\/europe\/C3\/knockout\?saison=2025/);
-  assert.match(html,/value="2025" selected/);
+  // The seasons are stepped through at the end of the title line, after the choice of the cup.
+  assert.match(html,/<\/nav><div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2025 \/ 2026</);
+  assert.match(html,/<\/details><button type="button" aria-label="Saison suivante" data-param="saison" data-param-value="2026"><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div><nav class="tabs"/);
+  assert.doesNotMatch(html,/<select|Afficher/);
   assert.match(await readFile(new URL('../../web/index.html',import.meta.url),'utf8'),/href="#\/europe" data-nav="europe"/);
  }finally{globalThis.fetch=previous;}
 });

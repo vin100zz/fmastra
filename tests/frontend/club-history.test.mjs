@@ -1,15 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {movementsHistory,seasonNavigation,seasonsHistory} from '../../web/club-history.js';
-
-test('season arrows have bounded destinations without the old numeric filter, in full or in the head of a card',()=>{
- const html=seasonNavigation({season:2025,previous_season:null,next_season:2026});
- assert.match(html,/data-season="" disabled/);
- assert.match(html,/data-season="2026"/);
- assert.doesNotMatch(html,/<input/);
- const compact=seasonNavigation({season:2025,previous_season:2024,next_season:null},true);
- assert.match(compact,/<nav class="season-steps"[^>]*><button type="button" data-season="2024"  aria-label="Saison précédente">‹<\/button><strong>2025 \/ 2026<\/strong><button type="button" data-season="" disabled aria-label="Saison suivante">›<\/button><\/nav>/);
-});
+import {movementsHistory,seasonsHistory} from '../../web/club-history.js';
 
 const ref=(id,name)=>({id,name,major_color:'#aa0000',minor_color:'#ffcc00'});
 const lens=ref(7,'Lens');
@@ -43,7 +34,9 @@ test('the season reads in figures: spending, takings, the balance, the biggest s
  assert.match(html,/<span>Balance<\/span><strong class="good">\+23\sM€<\/strong>/);
  assert.match(html,/<span>Plus grosse vente<\/span><p><a href="#\/player\/3">Vendu<\/a> <small>→ Newcastle<\/small><\/p><\/div><strong>32\sM€<\/strong>/);
  assert.match(html,/<span>Plus grosse recrue<\/span><p><a href="#\/player\/1">Recrue<\/a> <small>← Toulouse<\/small>/);
- assert.match(html,/class="season-steps"/);
+ // The season is stepped through from the row of tabs: the tab draws no control of its own.
+ assert.doesNotMatch(html,/class="segmented steps"|data-param="saison"/);
+ assert.match(html,/<div class="card movement-balance"><div><span>Dépenses<\/span>/);
  // Without a paid transfer there is no record to show.
  const quiet=movementsHistory({season:2026,previous_season:2025,next_season:null,history_since:'2025-07-01',arrival_total:0,departure_total:0,sections:sections({arrivals:[],departures:[]})});
  assert.doesNotMatch(quiet,/Plus grosse/);assert.match(quiet,/<span>Balance<\/span><strong class="">0\s€<\/strong>/);

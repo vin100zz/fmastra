@@ -121,9 +121,6 @@
 .cc-legend span{display:inline-flex;align-items:center;gap:6px}
 .cc-legend i{width:10px;height:10px;border-radius:var(--radius)}
 .card-hint{font-size:13px;color:var(--muted)}
-.season-steps{display:flex;align-items:center;gap:6px}
-.season-steps button{width:28px;height:26px;padding:0;border-radius:var(--radius)}
-.season-steps strong{padding:0 4px;font-size:13px;color:var(--strong);white-space:nowrap}
 
 /* Finances: key figures, then charts in rows. */
 .finance-figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
@@ -186,7 +183,6 @@
 .movement-balance span,.movement-record span{font-size:13px;font-weight:600;color:var(--muted)}
 .movement-balance strong{display:block;font-family:var(--display);font-stretch:semi-condensed;font-size:26px;line-height:1.1;color:var(--strong)}
 .movement-balance strong.good{color:var(--good)}.movement-balance strong.bad{color:var(--bad)}
-.movement-balance .season-steps strong{font-size:20px}
 .movement-record{display:flex!important;flex-direction:row!important;align-items:center;gap:14px;padding:12px 16px}
 .movement-record span{font-size:11px;letter-spacing:var(--caps);text-transform:uppercase}
 .movement-record p{margin:2px 0 0;font-weight:700;white-space:nowrap}

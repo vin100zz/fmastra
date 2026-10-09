@@ -141,8 +141,37 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         assert set(body) == {'items', 'total', 'page', 'page_size', 'leaders', 'transfers', 'honours', 'leagues'}
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
-        assert response.json()['items'][0]['standings'] == previous[18]
+        # The table of a finished season is archived apart from the champions, with the seasons to step to.
+        assert all('standings' not in row for row in response.json()['items'])
+        assert response.json()['archive'] == {'season': first, 'previous_season': None, 'next_season': None, 'seasons': [first],
+                                              'current_season': None, 'standings': previous[18]}
+        # A season that is not finished falls back on the latest one that is; a cup has no table to archive.
+        assert client.get(f'/api/competitions/18/historique?saison={world.season}').json()['archive']['season'] == first
+        cup_id = next(c.id for c in world.competitions.values() if c.kind == 'cup')
+        assert client.get(f'/api/competitions/{cup_id}/historique').json()['archive'] is None
         assert response.json()['leaders'] == {'matches': [], 'goals': []}  # Controlled scores leave no player record.
+        # A club's calendar steps back to the finished season: its matches alone, and where the club ended in its league then.
+        calendar = client.get(f'/api/clubs/{promoted}/calendrier?saison={first}').json()
+        assert (calendar['season'], calendar['previous_season'], calendar['next_season']) == (first, None, world.season)
+        # Every season of the game to pick from, the latest first, and the one under way among them.
+        assert (calendar['seasons'], calendar['current_season']) == ([world.season, first], world.season)
+        assert calendar['items'] and all(row['season'] == first and row['score'] for row in calendar['items'])
+        assert calendar['total'] == sum(m.season == first and promoted in (m.home_id, m.away_id) for m in world.matches.values())
+        played = next(row for row in calendar['competitions'] if row['kind'] == 'league')
+        assert (played['id'], played['place']) == (17, '1er')
+        current = client.get(f'/api/clubs/{promoted}/calendrier').json()
+        assert (current['season'], current['previous_season'], current['next_season']) == (world.season, first, None)
+        assert all(row['season'] == world.season for row in current['items'])
+        assert next(row for row in current['competitions'] if row['kind'] == 'league')['id'] == 16
+        for year in (first - 1, world.season + 1):
+            assert client.get(f'/api/clubs/{promoted}/calendrier?saison={year}').status_code == 422
+        # A cup and a European cup step through the seasons they were played in.
+        for competition_id, view in ((cup_id, 'coupe'), (next(c.id for c in world.competitions.values() if c.kind == 'europe'), 'europe')):
+            shown = client.get(f'/api/competitions/{competition_id}/{view}').json()
+            assert (shown['season'], shown['previous_season'], shown['next_season']) == (world.season, first, None)
+            assert (shown['seasons'], shown['current_season']) == ([world.season, first], world.season)
+            past = client.get(f'/api/competitions/{competition_id}/{view}?saison={first}').json()
+            assert (past['season'], past['previous_season'], past['next_season']) == (first, None, world.season)
         # An archived knockout match still shows its score and winner, with no detail to list.
         cup_match = next(m for m in world.matches.values() if m.season == first and world.competitions[m.competition_id].kind == 'cup')
         response = client.get(f'/api/matches/{cup_match.id}')

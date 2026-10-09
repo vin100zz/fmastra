@@ -39,7 +39,8 @@ async function render(query,items,state){
 test('the title line carries the tabs with their counts and the season; the filters stand on the next one',async()=>{
  const {html,asked}=await render('saison=2027&fenetre=hiver&nature=payant&competition=16&poste=BU&age_max=23&montant_min=50&club=866&mesure=volume',[transfer],{controlled_club_id:866});
  assert.match(html,/^<div class="toolbar"><h1>Mercato mondial<\/h1><nav class="tabs"[^>]*><a class="active" href="#\/transfers\/transfer\?saison=2027">Transferts <span class="count">1\s263<\/span><\/a><a class="" href="#\/transfers\/retirement\?saison=2027">Retraites <span class="count">0<\/span>/);
- assert.match(html,/<button type="button" data-season="2026" aria-label="Saison précédente" >‹<\/button><strong>Saison 2027 \/ 2028<\/strong><button type="button" data-season="" aria-label="Saison suivante" disabled>›<\/button>/);
+ assert.match(html,/<\/nav><div class="tools"><div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" data-param="saison" data-param-value="2026"><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2027 \/ 2028</);
+ assert.match(html,/<\/details><button type="button" aria-label="Saison suivante" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div>/);
  assert.match(html,/<a class="active" href="[^"]*" aria-current="true">Hiver<\/a>/);assert.match(html,/<a class="active" href="[^"]*" aria-current="true">Payants<\/a>/);
  assert.match(html,/<select name="competition" aria-label="Championnat" class="on"><option value="">Championnat<\/option><option value="16" selected>Ligue 1<\/option><\/select>/);
  assert.match(html,/<option value="BU" selected>BU<\/option>/);

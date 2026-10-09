@@ -5,6 +5,16 @@ import {setNations} from '../../web/ui.js';
 
 const vars=style=>Object.fromEntries(style.split(';').filter(Boolean).map(item=>item.split(':')));
 
+test('the colour under the open tab is the one that reads on the panel; a colour too pale for it takes its tone in a chart',()=>{
+ const accent=(major,minor)=>vars(heroColors(major,minor))['--hero-accent-light'];
+ // A colour that reads on white is kept as it is: Marseille's blue, Nantes' green rather than its yellow.
+ assert.equal(accent('#F8F8F8','#2098C8'),'#2098C8');assert.equal(accent('#FCD405','#00A650'),'#00A650');
+ // Yellow and white, sky and white: the colour is darkened until a line or an arrow drawn with it can be seen.
+ assert.equal(accent('#FFFFFF','#FCD405'),'#af8800');assert.equal(accent('#FFFFFF','#75B2DD'),'#4594c8');
+ // White alone is no colour: nothing is given, and the sheet falls back on the accent.
+ assert.equal(accent('#FFFFFF','#FFFFFF'),undefined);
+});
+
 test('the band takes the home colour crossed by the second one, with an ink that reads on it',()=>{
  const lens=vars(heroColors('#F8D000','#E00000'));
  assert.equal(lens['--hero-field'],'#F8D000');assert.equal(lens['--hero-sash'],'#E00000');assert.equal(lens['--hero-sash-opacity'],'1');
@@ -45,6 +55,11 @@ test('the header names the club and its ground, then its tactic, its training, i
 test('the tabs close the header, the open one marked',()=>{
  const html=clubHero(club,{menu,section:'calendar'});
  assert.match(html,/<nav class="club-hero-tabs" aria-label="Sections"><a class="" href="#\/club\/7\/squad">Effectif<\/a><a class="active" href="#\/club\/7\/calendar" aria-current="page">Calendrier<\/a>/);
+ // Nothing closes the row unless the open tab has tools; a tab keeps in its address what the menu gives it.
+ assert.match(html,/<a class="" href="#\/club\/7\/history">Historique<\/a><\/nav><\/header>$/);assert.doesNotMatch(html,/club-hero-foot/);
+ // The tools stand beside the tabs, not among them: their list opens over the page.
+ const stepped=clubHero(club,{menu:[['squad','Effectif'],['calendar','Calendrier','saison=2029&x=<y>']],section:'calendar',tools:'<div class="season"></div>'});
+ assert.match(stepped,/<div class="club-hero-foot"><nav class="club-hero-tabs" aria-label="Sections"><a class="" href="#\/club\/7\/squad">Effectif<\/a><a class="active" href="#\/club\/7\/calendar\?saison=2029&amp;x=&lt;y&gt;" aria-current="page">Calendrier<\/a><\/nav><div class="tools"><div class="season"><\/div><\/div><\/div><\/header>$/);
  // A dormant club without colours keeps a plain band and says it plays no league.
  const dormant=clubHero({...club,competition:null,nation:'France',major_color:null},{menu,section:'squad'});
  assert.match(dormant,/<header class="club-hero plain">/);assert.match(dormant,/France · Club dormant · 38 223 places<\/span><h1>/);
@@ -62,6 +77,8 @@ test('a selection wears the same header: its kit on the band, its flag on the di
  assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Force<\/span><strong>83\.1<\/strong><\/div><\/div>/);
  assert.match(html,/<a class="active" href="#\/international\/nation\/-1007\/squad" aria-current="page">Effectif<\/a><a class="" href="#\/international\/nation\/-1007\/calendar">Calendrier<\/a>/);
  // Without colours, without a flag, out of any edition: a plain band, its initial on the disc, its confederation alone.
+ // What steps through its editions closes its row of tabs, as a club's seasons do.
+ assert.match(nationHero(england,{menu,section:'calendar',tools:'<b>pas</b>'}),/<\/nav><div class="tools"><b>pas<\/b><\/div><\/div><\/header>$/);
  const bare=nationHero({...england,major_color:null,minor_color:null,competition:null},{menu,section:'history'});
  assert.match(bare,/^<header class="club-hero plain">/);assert.match(bare,/<div class="crest club-hero-crest">A<\/div>/);
  assert.match(bare,/<span class="club-hero-league">Europe<\/span>/);

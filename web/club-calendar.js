@@ -1,4 +1,4 @@
-import {escape as e,surname,empty,clubLink,season,competitionBadge} from './ui.js';
+import {escape as e,surname,empty,clubLink,competitionBadge} from './ui.js';
 import {awayIcon,outcomeLabels} from './club-overview.js';
 
 // The badge of a competition and its two characters are the same on every screen (ui.js).
@@ -45,9 +45,10 @@ function recordCard(rows){
  return `<section class="card calendar-records"><div class="card-head"><h2>Bilan</h2></div><div class="card-body">${body}</div></section>`;
 }
 
-// The season of a club on one line per match, from the first to the last: the day, the competition's badge, the round, a plane
+// A season of a club on one line per match, from the first to the last: the day, the competition's badge, the round, a plane
 // for an away game, the opponent, the score from the club's side and the scorers of either side; the next match stands out.
 // Buttons above keep the matches of one competition (`competition` in the address). Its record in each competition stands beside.
+// The season is the one under way, or the one stepped to from the row of tabs.
 export function calendarContent(club,data,params){
  if(!data.items.length)return `<section class="card">${empty('Aucun match programmé pour cette saison.','Calendrier vide')}</section>`;
  const competitions=new Map(data.competitions.map(row=>[row.id,row]));
@@ -56,6 +57,6 @@ export function calendarContent(club,data,params){
  const rows=data.items.filter(match=>shown==null||match.competition_id===shown);
  const chip=(value,label,count)=>`<button type="button" data-param="competition" data-param-value="${value??''}" aria-pressed="${(value??null)===shown}" class="${(value??null)===shown?'active':''}">${label} <span class="count">${count}</span></button>`;
  const chips=[chip(null,'Toutes',data.items.length),...data.competitions.map(row=>chip(row.id,`${competitionBadge(row)}${e(row.name)}`,data.items.filter(match=>match.competition_id===row.id).length))].join('');
- return `<div class="calendar-layout club-calendar"><section class="card calendar-card"><div class="card-head"><h2>Saison ${season(data.items[0].season)}</h2><div class="calendar-filters" role="group" aria-label="Compétitions">${chips}</div></div>`
+ return `<div class="calendar-layout club-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2><div class="calendar-filters" role="group" aria-label="Compétitions">${chips}</div></div>`
   +`<div class="calendar-rows">${rows.map(match=>calendarRow(match,club,competitions,match.id===nextId)).join('')}</div></section>${recordCard(data.competitions)}</div>`;
 }

@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,averageNote,date,season,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query} from './ui.js';
 import {monthlySalary} from './salaries.js';
 import {resetButton} from './filters.js';
 import {wideScreen,fittedRows,sidePanel,searchField,positionChips,choiceLinks,toggleLink,rangeMenu,choiceSelect} from './listing.js';
@@ -11,12 +11,6 @@ const signed=value=>`${value>0?'+':value<0?'−':''}${money(Math.abs(value))}`;
 const external='<span class="muted">Marché extérieur</span>';
 // The age on the day of the movement, with the ranges each tab offers in one click.
 const ageMenu=(base,params,presets)=>rangeMenu(base,params,'Âge',[['age_min','min','min="0" max="100"'],['age_max','max','min="0" max="100"']],{presets});
-
-// The season steps from the title line, on the buttons every season navigation uses.
-function seasonStepper(data){
- const step=(value,label,sign)=>`<button type="button" data-season="${value??''}" aria-label="${label}" ${value==null?'disabled':''}>${sign}</button>`;
- return `<nav class="season-navigation" aria-label="Navigation entre les saisons">${step(data.previous_season,'Saison précédente','‹')}<strong>Saison ${season(data.season)}</strong>${step(data.next_season,'Saison suivante','›')}</nav>`;
-}
 
 // A round figure to grade an axis with: 1, 2, 2.5 or 5 times a power of ten.
 function roundStep(value){
@@ -186,7 +180,7 @@ export async function worldHistoryScreen(section,params,leagues=[],state={}){
  const [data,summary]=await Promise.all([api(`/monde/transferts?${request}`),wide?api(`/monde/transferts/resume?${query({saison:params.get('saison'),type:type==='transfer'?null:type})}`):null]);
  const counts=data.counts||{};
  const nav=`<nav class="tabs" aria-label="Types de mouvements">${Object.entries(LABELS).map(([key,label])=>`<a class="${key===type?'active':''}" href="#/transfers/${key}?saison=${data.season}">${label}${counts[key]==null?'':` <span class="count">${n(counts[key])}</span>`}</a>`).join('')}</nav>`;
- const heading=`<div class="toolbar"><h1>Mercato mondial</h1>${nav}${seasonStepper(data)}</div>`;
+ const heading=`<div class="toolbar"><h1>Mercato mondial</h1>${nav}<div class="tools">${seasonSteps(data)}</div></div>`;
  const divisions=choiceSelect(params,'competition','Championnat',leagues.filter(item=>item.kind==='league').sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation)||a.level-b.level).map(item=>[item.id,e(item.name)]));
  const mine=recruiting?toggleLink(base,params,'club',state.controlled_club_id,'Mon club'):'';
  const grade=(label,key,steps)=>rangeMenu(base,params,label,[[`${key}_min`,'min','min="1" max="200"'],[`${key}_max`,'max','min="1" max="200"']],{presets:steps.map(step=>[`≥ ${step}`,{[`${key}_min`]:step}])});

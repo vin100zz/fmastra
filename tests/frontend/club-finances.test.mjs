@@ -108,7 +108,9 @@ test('the best-paid players by month, the rest summed; the season split by sourc
  assert.doesNotMatch(html,/Régularisations/);
  assert.match(html,/<details class="card finance-journal"><summary><span>Journal financier<\/span><small>3 opérations · solde d’ouverture 15\sM€<\/small><\/summary>/);
  assert.match(html,/<details[^]*Vente de joueur · <a href="#\/player\/4">Ganiou<\/a>/);
- assert.match(html,/class="season-steps"/);
+ // The season is stepped through from the row of tabs, not from the head of a card.
+ assert.doesNotMatch(html,/class="segmented steps"|data-param="saison"/);
+ assert.match(html,/<div class="card-head"><h2>Trésorerie<\/h2><\/div>/);
 });
 
 test('without accounts for the season, the charts give way to an explanation',()=>{

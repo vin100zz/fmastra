@@ -1,13 +1,6 @@
 import {escape as e,date,season,playerLink,clubLink,card,sortableTable,pager,empty,money,number,position,initials,safeColor,contrastText} from './ui.js';
 import {competitionBadge} from './club-calendar.js';
 
-// The season shown and the arrows to the ones before and after it; `compact` fits the head of a card.
-export function seasonNavigation(data,compact=false){
- const button=(value,label,name)=>`<button type="button" data-season="${value??''}" ${value===null?'disabled':''}${name?` aria-label="${name}"`:''}>${label}</button>`;
- if(compact)return `<nav class="season-steps" aria-label="Navigation entre les saisons">${button(data.previous_season,'‹','Saison précédente')}<strong>${season(data.season)}</strong>${button(data.next_season,'›','Saison suivante')}</nav>`;
- return `<nav class="season-navigation" aria-label="Navigation entre les saisons">${button(data.previous_season,'← Précédent')}<strong>Saison ${season(data.season)}</strong>${button(data.next_season,'Suivant →')}</nav>`;
-}
-
 const signedMoney=value=>value>0?`+${money(value)}`:value<0?`−${money(-value)}`:money(0);
 const shortDay=value=>new Intl.DateTimeFormat('fr-FR',{day:'2-digit',month:'2-digit'}).format(new Date(`${value}T12:00:00`));
 // A season in two short years: 2027 reads 27-28.
@@ -51,13 +44,13 @@ function recordTile(title,row,incoming){
 }
 
 // The Transferts tab: the season's spending and takings, its biggest sale and signing, then its arrivals and its departures,
-// every kind together and dated, each side able to keep one kind.
+// every kind together and dated, each side able to keep one kind. The season is stepped through from the row of tabs.
 export function movementsHistory(data,params=new URLSearchParams()){
  const groups=data.sections;
  const partial=data.history_since>`${data.season}-07-01`?`<div class="notice">Les archives de fins de contrat, retraites et promotions antérieures au ${date(data.history_since)} peuvent être incomplètes dans cette ancienne partie.</div>`:'';
  const spent=data.arrival_total??groups.arrivals.reduce((sum,row)=>sum+(row.fee||0),0),earned=data.departure_total??groups.departures.reduce((sum,row)=>sum+(row.fee||0),0);
  const top=rows=>rows.filter(row=>row.fee>0).sort((a,b)=>b.fee-a.fee)[0];
- const summary=`<div class="movement-summary"><div class="card movement-balance">${seasonNavigation(data,true)}<div><span>Dépenses</span><strong>${money(spent)}</strong></div><div><span>Recettes</span><strong>${money(earned)}</strong></div>`
+ const summary=`<div class="movement-summary"><div class="card movement-balance"><div><span>Dépenses</span><strong>${money(spent)}</strong></div><div><span>Recettes</span><strong>${money(earned)}</strong></div>`
   +`<div><span>Balance</span><strong class="${earned-spent>0?'good':earned-spent<0?'bad':''}">${signedMoney(earned-spent)}</strong></div></div>${recordTile('Plus grosse vente',top(groups.departures),false)}${recordTile('Plus grosse recrue',top(groups.arrivals),true)}</div>`;
  const arrivals=[...groups.arrivals,...(groups.loans_in||[]),...groups.academy];
  const departures=[...groups.departures,...(groups.loans_out||[]),...groups.release,...groups.retirement,...groups.departure_unknown];
