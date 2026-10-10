@@ -284,7 +284,7 @@ ou `negociation`) : le menu dit toujours l'état du jour.
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | la liste triable à gauche (poste, nom, nationalités, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200), les widgets du club à droite |
+| Effectif | la liste triable à gauche (poste, nom, nationalité, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200), les widgets du club à droite |
 | Composition | le terrain du club dirigé, la liste de l'effectif et l'adversaire (voir « Composition ») |
 | Calendrier | une ligne par match d'une saison, buteurs compris, et le bilan de chaque compétition |
 | Finances | la répartition des budgets et deux chiffres clés, la trésorerie et les flux du mois en graphiques, les salaires, la répartition, le journal replié |
@@ -317,8 +317,9 @@ ligne est teintée : en bleu pour un joueur emprunté, en bleu estompé pour un 
 d'un autre club n'apparaît que si elle n'est pas vide ; celle du club de l'utilisateur garde son titre
 même vide. Aucune ligne ne porte de bouton : dans son club, un joueur passe d'une liste à l'autre
 par son menu (clic droit) ou par sa fiche. La colonne NAT donne le drapeau et le code de la
-nationalité principale. Les colonnes sont larges comme leur en-tête ou leur plus longue valeur :
-sur un écran de 1920, la liste tient à côté des widgets sans défiler de côté.
+nation principale : celle de sa sélection, à défaut la première de ses nationalités. Les colonnes
+sont larges comme leur en-tête ou leur plus longue valeur : sur un écran de 1920, la liste tient à
+côté des widgets sans défiler de côté.
 
 À droite des listes (dessous sous 1250 px), une colonne de widgets, chacun avec « Voir → » vers ce
 qu'il résume :
@@ -394,7 +395,7 @@ plus gros transferts payants du club (arrivées, puis départs), avec leur saiso
 indemnité décroissante, les plus récents en premier à montant égal ; les départs libres sont exclus.
 
 Toutes les colonnes de la liste se trient, sur ce qu'elles affichent : le nom sans
-tenir compte des accents ou des majuscules, les nationalités par leur code affiché,
+tenir compte des accents ou des majuscules, la nationalité par son code affiché,
 l'état du plus indisponible (blessé, puis suspendu) au plus frais. Il n'y a pas de
 colonne de minutes jouées. Tous les autres tableaux se trient aussi : celui qui ne
 donne pas de valeur de tri se trie sur ce que ses cellules affichent (un chiffre, un
@@ -842,8 +843,9 @@ Les trois écrans de liste partagent la même mise en page (`web/listing.js`).
   à droite du titre de la carte ; rien quand tout tient sur une page.
 - **Les chiffres à droite** de leur colonne, sous un en-tête aligné de même ; une barre
   fine accompagne ceux qui se comparent (réputation, masse salariale, indemnité, condition).
-- **La nationalité** tient en un drapeau et son code ; les autres sont comptées (« +1 »)
-  et nommées en infobulle. Cela vaut pour toutes les listes de joueurs.
+- **La nationalité** tient en un drapeau et son code : celle de sa sélection, à défaut la
+  première de ses nationalités. Les autres ne sont pas comptées : la fiche du joueur les
+  donne. Cela vaut pour toutes les listes de joueurs.
 - **Un volet à droite à partir de 1880 px de large**, la largeur où la liste garde toutes
   ses colonnes à côté de lui. Sur Joueurs et Clubs, c'est
   l'aperçu de la ligne sélectionnée, la première par défaut : un clic sur une ligne le
@@ -1029,8 +1031,8 @@ GET  /api/monde/transferts?saison=&type=transfer|retirement|academy&page=&taille
                   &fenetre=ete|hiver&nature=payant|libre|pret&montant_min=   transferts (les prêts, kind "loan", sont listés mais hors du résumé)
                   &selectionnes=oui   retraites
                   &pays=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&interesse=oui|non   promotions
-                                          un transfert donne aussi position, nationalities, rating et value du joueur aujourd'hui (null une fois retraité)
-                                          une retraite : position, nationalities, rating (le jour du départ), peak, league, matches, goals, assists, average, caps, caps_goals
+                                          un transfert donne aussi position, nationalities, national_team, rating et value du joueur aujourd'hui (null une fois retraité)
+                                          une retraite : position, nationalities, national_team, rating (le jour du départ), peak, league, matches, goals, assists, average, caps, caps_goals
                                           une promotion : details (le jour de la promotion) et details.current (le joueur aujourd'hui, avec interested et wage_demand ; null s'il a quitté le monde) ; nations : pays des clubs formateurs
                                           tri d'une promotion : level, progress, worth, wage_demand, interested, attributs et composites lisent le joueur aujourd'hui
 GET  /api/monde/transferts/resume?saison=&type=   transfer : {total, paid, volume, median, record, weeks: [{week, summer, count, volume}], clubs, leagues}

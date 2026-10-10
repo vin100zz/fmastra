@@ -259,11 +259,10 @@ export function headPager(data) {
 export const figure = value => `<span class="num">${value}</span>`;
 // A thin bar beside a figure of a list: `share` of its width filled.
 export const miniBar = (share, modifier='') => `<i class="mini-bar${modifier?` ${modifier}`:''}" aria-hidden="true"><i style="width:${Math.round(Math.max(0,Math.min(1,share))*100)}%"></i></i>`;
-// The main nationality with its flag; the others are counted beside it and named in the count's tooltip.
-export const mainNation = codes => {
- const [main,...others]=codes&&codes.length?codes:['—'];
- return `${nationBadge(main)}${others.length?` <span class="muted" title="${escape(others.map(nationName).join(', '))}">+${others.length}</span>`:''}`;
-};
+// A player's main nation: the one he plays for, else the first of his nationalities.
+export const mainNationCode = player => player.national_team||player.nationalities?.[0];
+// A list shows his main nation alone, its flag then its code.
+export const mainNation = player => {const code=mainNationCode(player);return code?nationBadge(code):'—';};
 // A loan beside a player's name; its tooltip names the two clubs and the day he goes back.
 export const loanTag = player => player.loan ? `<span class="tag loan" title="${escape(`Prêté par ${player.loan.parent?.name} à ${player.loan.club?.name} jusqu’au ${date(player.loan.end)}`)}">Prêt</span>` : '';
 // What a club would let a player go for, or what he would come for: a transfer, a loan, both, or `none`. `short` keeps
@@ -318,7 +317,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
  const rows=data.items.map(player=>{
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>${loanTag(player)}`,
-   nation:mainNation(player.nationalities||[player.nation]),
+   nation:mainNation(player),
    age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
    caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
    value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),

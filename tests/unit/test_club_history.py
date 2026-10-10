@@ -87,6 +87,8 @@ def test_world_transfers_tell_who_the_player_is_today_and_sort_on_it_with_a_page
     assert (active['position'], active['rating'], active['nationalities']) == (player.position, round(player.rating, 1), list(player.nationalities))
     assert active['value'] > 0
     assert (gone['position'], gone['rating'], gone['value'], gone['nationalities'], gone['age']) == (None, None, None, [], 34)
+    # The nation he plays for, which his list's column shows before his first nationality.
+    assert (active['national_team'], gone['national_team']) == (player.national_team, None)
     for key in ('position', 'nation', 'rating', 'value'):
         for order in ('asc', 'desc'):
             listed = world_movements(world, S, 'transfer', 1, key, order)['items']
@@ -176,6 +178,7 @@ def test_a_retirement_keeps_who_the_player_was_and_tells_his_career(config):
     # Archived before the day's snapshot was kept: no position, no level, and of his nationalities the nation he played for.
     old = rows[102]
     assert (old['position'], old['rating'], old['peak'], old['nationalities'], old['caps']) == (None, None, None, ['ESP'], 3)
+    assert (first['national_team'], rows[201]['national_team'], old['national_team']) == ('FRA', None, 'ESP')
     assert data['items'][-1]['player_id'] == 102
 
 

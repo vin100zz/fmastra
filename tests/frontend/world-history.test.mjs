@@ -61,7 +61,7 @@ test('a transfer tells who the player is, from where to where, and its fee again
  const rows=[...html.matchAll(/<tr class="">(.*?)<\/tr>/g)].map(row=>[...row[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]));
  const [paid,free,released]=rows;
  assert.equal(paid.length,11);
- assert.match(paid[1],/<span class="position att">BU<\/span>/);assert.match(paid[3],/flags\/ma\.svg.*title="Pays-Bas">\+1</);
+ assert.match(paid[1],/<span class="position att">BU<\/span>/);assert.match(paid[3],/flags\/ma\.svg[^>]*>MAR<\/span>$/);assert.doesNotMatch(paid[3],/Pays-Bas|\+1/);
  assert.equal(paid[4],'<span class="num">22</span>');assert.match(paid[5],/title="Niveau actuel sur 200">163</);
  assert.match(paid[6],/Como/);assert.match(paid[7],/→/);assert.match(paid[8],/Man City/);
  assert.match(paid[9],/<i style="width:100%"><\/i><\/i><b>350\sM€<\/b>/);assert.match(paid[10],/160\sM€/);
