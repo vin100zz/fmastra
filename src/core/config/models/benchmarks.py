@@ -246,6 +246,16 @@ class BenchmarksConfigEconomy:
     max_reputation_change: float = Field(default=3.0, alias="variation_reputation_annuelle_max")
     max_reputation_jump: float = Field(default=20.0, alias="variation_reputation_saut_max")
     min_top_ten_persistence: float = Field(default=0.6, alias="persistance_top10_reputation_min")
+    # The money held, the wage share, fees and two realism guardrails; the defaults are what a save made before receives.
+    max_cash_growth: float = Field(default=0.05, alias="croissance_tresorerie_annuelle_max")
+    min_wage_share: float = Field(default=0.45, alias="part_salaires_revenus_min")
+    max_wage_share: float = Field(default=0.62, alias="part_salaires_revenus_max")
+    max_cash_months: float = Field(default=12.0, alias="tresorerie_mediane_mois_revenu_max")
+    fee_drift: float = Field(default=0.5, alias="derive_indemnites_sur_horizon_max")
+    small_club_reputation: float = Field(default=40.0, alias="reputation_petit_club")
+    small_club_star_level: float = Field(default=65.0, alias="niveau_vedette_petit_club")
+    max_small_club_stars: int = Field(default=30, alias="vedettes_petits_clubs_max")
+    max_small_club_wage: int = Field(default=80000, alias="salaire_mensuel_petits_clubs_max")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

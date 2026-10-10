@@ -90,9 +90,15 @@ def apply(world: World, event: WorldEvent) -> bool:
         player = event.player
         if player.id in world.players or player.id in world.retired: raise ValueError("Reused player ID")
         if player.club_id is not None:
+            from core.ai.market import short_of_players, wage_room
             club = world.clubs[player.club_id]
-            if club.squad_size >= world.config.management.guardrails.max_squad or club.wage_bill + player.contract.weekly_wage > club.wage_cap:
-                return False
+            if club.squad_size >= world.config.management.guardrails.max_squad: return False
+            missing = player.contract.weekly_wage - wage_room(club, world.config, 1)
+            if missing > 0:
+                # A club that plays fields its minimum squad whatever its wages: its cap gives way to the academy wage.
+                if club.competition_id is None or not short_of_players([world.players[pid] for pid in club.player_ids], world.config):
+                    return False
+                club.wage_cap += missing
             club.player_ids.append(player.id)
             club.wage_bill += player.contract.weekly_wage
         world.players[player.id] = player
@@ -117,13 +123,14 @@ def apply(world: World, event: WorldEvent) -> bool:
         _end_loan(world, event)
     elif isinstance(event, FinancePosted):
         club = world.clubs[event.club_id]
-        book_daily_cash(world, club, event.change)
+        book_daily_cash(world, club, event.change, event.investment, event.unseen_wages)
         club.balance += event.change
         club.accounting_remainder = event.remainder
     elif isinstance(event, BudgetRenewed):
         club = world.clubs[event.club_id]
         club.income, club.wage_cap, club.transfer_budget = event.income, event.wage_cap, event.transfer_budget
         club.wage_shift = event.wage_shift
+        club.prize_income = dict(event.prizes or {})
         if event.funding_factor is not None: club.funding_factor = event.funding_factor
         club.previous_rank = event.rank
         club.season_spent = club.season_sales = 0
@@ -177,7 +184,13 @@ def apply(world: World, event: WorldEvent) -> bool:
                 match.result = _archived(match.result)
         for club in world.clubs.values():
             world.reputation_history.setdefault(club.id, []).append((event.year, club.reputation))
+        # What the season made of each player's value outlives it, until the next one says enough.
+        from core.ai.market import season_performance
+        busiest = {club.id: max((world.players[pid].season_minutes for pid in club.player_ids), default=0)
+                   for club in world.clubs.values() if club.competition_id is not None}
         for player in world.players.values():
+            played = busiest.get(player.club_id, 0)
+            player.past_performance = season_performance(player, played, world.config) if played else 1.0
             player.season_minutes = player.season_goals = player.season_assists = player.appearances = player.substitutes = 0
             player.rating_sum = player.rating_count = 0
             for discipline in player.discipline.values():
@@ -200,8 +213,10 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     if player.loan is not None: return False
     club = world.clubs[event.target_id]
     guard = world.config.management.guardrails
+    from core.ai.market import wage_room
     old_wage = player.contract.weekly_wage if event.renewal and player.contract else 0
-    if club.wage_bill - old_wage + event.contract.weekly_wage > club.wage_cap: return False
+    # What he earns already is committed: a dormant club over what its unseen squad leaves can still extend him at no more.
+    if event.contract.weekly_wage - old_wage > max(0, wage_room(club, world.config, 0 if event.renewal else 1)): return False
     if event.renewal:
         if event.source_id != event.target_id: return False
         club.wage_bill += event.contract.weekly_wage - old_wage
@@ -215,7 +230,7 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     reserved_money = sum(offer.ceiling for offer in reservations)
     if event.fee + reserved_money > club.transfer_budget or club.balance - event.fee - reserved_money < guard.min_balance: return False
     if club.squad_size + len(reservations) >= guard.max_squad: return False
-    if club.wage_bill + event.contract.weekly_wage + sum(offer.contract.weekly_wage for offer in reservations) > club.wage_cap: return False
+    if event.contract.weekly_wage + sum(offer.contract.weekly_wage for offer in reservations) > wage_room(club, world.config, 1 + len(reservations)): return False
     if event.source_id is not None:
         seller = world.clubs[event.source_id]
         if seller.competition_id is not None:

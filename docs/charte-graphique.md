@@ -55,7 +55,7 @@ la structure HTML des spécimens.
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
-| `--series-1`, `--series-2` et leur `-soft` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre |
+| `--series-1`, `--series-2`, leur `-soft` et leur `-deep` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre ; en foncé, une troisième part de la même série |
 
 Trois familles de pastilles ne se ressemblent jamais :
 

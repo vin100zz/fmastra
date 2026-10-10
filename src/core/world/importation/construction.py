@@ -16,7 +16,7 @@ from core.world.transfer_rules import greed_trait
 from .records import SourceClub, SourcePlayer
 from .selection import select_squad
 from .source_positions import parse_positions
-from .synthesis import club_strength, expected_wage, intrinsic_value
+from .synthesis import club_strength, level_wage
 
 
 def source_trait(note: float, low: float, reference: float, high: float,
@@ -57,7 +57,7 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
             corrections["expired_contracts"] += 1
         wage = row.wage
         if wage <= 0:
-            wage = expected_wage(intrinsic_value(rating, age, positions[0], cfg), cfg)
+            wage = level_wage(rating, positions[0], cfg)
             corrections["missing_wages"] += 1
         contract = Contract(wage, end, date)
     injuries, contracts, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
@@ -150,7 +150,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         competitions[league.division_id] = Competition(league.division_id, league.name, league.nation, league.level, ids)
     for club in clubs.values():
         squad = [players[player_id] for player_id in club.player_ids]
-        initial_finances(club, squad, cfg, leagues[club.competition_id].club_count if club.competition_id else None)
+        league = leagues[club.competition_id] if club.competition_id else None
+        initial_finances(club, squad, cfg, (league.nation, league.level) if league else None)
         if club.wage_bill > club.wage_cap:
             raise ValueError(f"{club.name}: starting wages exceed funding")
     season = date.year if date.month >= cfg.world.key_dates.population_review.month else date.year - 1

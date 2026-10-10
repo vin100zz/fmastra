@@ -119,6 +119,8 @@ class Player:
     # `reserve_days` counts the days of the month spent there in stretches already over.
     reserve_since: Date | None = None
     reserve_days: int = 0
+    # What his last season made of his transfer value (see `core.ai.market.performance_factor`); 1.0 is neutral.
+    past_performance: float = 1.0
 
     @property
     def nation(self) -> str:

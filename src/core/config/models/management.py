@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from core.config.types import FrozenMap, MODEL_CONFIG
+from core.config.types import FrozenDict, FrozenMap, MODEL_CONFIG
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigValuationAgeCurveItem:
@@ -25,6 +25,34 @@ class ManagementConfigValuationLevelCurveItem:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigValuationOpinion:
+    """How far a club's opinion of a player moves the part of his value his potential makes; the defaults are what a save made before receives."""
+    young_factor: float = Field(default=1.5, alias="facteur_max_jeune")
+    mature_factor: float = Field(default=1.1, alias="facteur_max_mur")
+    stable_share: float = Field(default=0.6, alias="part_stable")
+    max_deviations: float = Field(default=2.0, alias="ecarts_types_max")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigValuationExposure:
+    """What a player above his club loses of his transfer value; the defaults are what a save made before receives."""
+    level_margin: float = Field(default=3.0, alias="marge_niveau")
+    discount_per_point: float = Field(default=0.12, alias="decote_par_point")
+    floor: float = Field(default=0.05, alias="plancher")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigValuationPerformance:
+    """What a player's season adds to or takes off his transfer value; the defaults are what a save made before receives."""
+    playing_time_weight: float = Field(default=0.10, alias="poids_temps_de_jeu")
+    rating_weight: float = Field(default=0.20, alias="poids_note")
+    reference_rating: float = Field(default=6.5, alias="note_reference")
+    full_rating_gap: float = Field(default=0.5, alias="ecart_note_plein")
+    min_factor: float = Field(default=0.75, alias="facteur_min")
+    max_factor: float = Field(default=1.30, alias="facteur_max")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigValuation:
     potential_weight: float = Field(alias="poids_potentiel_sur_niveau")
     age_curve: tuple[ManagementConfigValuationAgeCurveItem, ...] = Field(alias="courbe_age")
@@ -35,6 +63,9 @@ class ManagementConfigValuation:
     base_euros: int = Field(default=1_000_000, alias="base_euros")
     exponent: float = Field(default=0.115, alias="exposant")
     reference_level: int = Field(default=55, alias="niveau_reference")
+    opinion: ManagementConfigValuationOpinion = Field(default_factory=ManagementConfigValuationOpinion, alias="opinion")
+    exposure: ManagementConfigValuationExposure = Field(default_factory=ManagementConfigValuationExposure, alias="exposition")
+    performance: ManagementConfigValuationPerformance = Field(default_factory=ManagementConfigValuationPerformance, alias="performance")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -65,8 +96,19 @@ class ManagementConfigBudgetsInitialFunding:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigBudgetsWageModel:
+    """The yearly wage a level commands at a club of given means; the defaults are what a save made before receives."""
+    reference_wage: int = Field(default=285000, alias="salaire_reference")
+    reference_level: float = Field(default=60.0, alias="niveau_reference")
+    level_slope: float = Field(default=0.15, alias="pente_niveau")
+    reference_income: int = Field(default=40000000, alias="revenu_reference")
+    income_exponent: float = Field(default=0.5, alias="exposant_revenu")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigBudgetsWages:
-    annual_value_share: float = Field(alias="part_annuelle_valeur_intrinseque")
+    # Share of his value a player earned in a year, in configurations saved before `modele_salaire`; no longer read.
+    annual_value_share: float = Field(default=0.06, alias="part_annuelle_valeur_intrinseque")
     weekly_minimum: int = Field(alias="minimum_hebdomadaire")
     max_offer_ratio: float = Field(alias="ratio_offre_max_pour_score")
 
@@ -80,11 +122,67 @@ class ManagementConfigBudgetsAccounting:
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigBudgetsIncome:
-    per_reputation_point: int = Field(alias="base_par_point_reputation")
-    first_place_bonus: int = Field(alias="bonus_classement_premier")
-    rank_decay: float = Field(alias="decroissance_par_place")
-    nation_multipliers: FrozenMap[float] = Field(alias="multiplicateur_pays")
-    other_nations_multiplier: float = Field(alias="multiplicateur_autres_pays")
+    """Income by reputation point of configurations saved before `revenus_club`; no longer read."""
+    per_reputation_point: int = Field(default=850000, alias="base_par_point_reputation")
+    first_place_bonus: int = Field(default=45000000, alias="bonus_classement_premier")
+    rank_decay: float = Field(default=0.88, alias="decroissance_par_place")
+    nation_multipliers: FrozenMap[float] = Field(
+        default_factory=lambda: FrozenDict({"ENG": 1.55, "ESP": 1.10, "GER": 1.05, "ITA": 1.00, "FRA": 0.75}), alias="multiplicateur_pays")
+    other_nations_multiplier: float = Field(default=0.60, alias="multiplicateur_autres_pays")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigBudgetsClubIncome:
+    """A club's own income by its reputation and stadium, and its championship's money; the defaults are what a save made before receives."""
+    reference_income: int = Field(default=6000000, alias="revenu_propre_reference")
+    reference_reputation: float = Field(default=60.0, alias="reputation_reference")
+    reputation_slope: float = Field(default=0.10, alias="pente_reputation")
+    minimum_income: int = Field(default=1850000, alias="revenu_minimum")
+    ticket_share: float = Field(default=0.15, alias="part_billetterie")
+    reference_capacity: int = Field(default=30000, alias="capacite_reference")
+    default_capacity: int = Field(default=5000, alias="capacite_par_defaut")
+    league_rights: FrozenMap[tuple[int, ...]] = Field(default_factory=lambda: FrozenDict({
+        "ENG": (154000000, 30000000), "ITA": (60000000, 8400000), "GER": (51000000, 8800000),
+        "ESP": (44000000, 14000000), "FRA": (21500000, 1700000, 900000)}), alias="droits_championnat")
+    other_rights_ratio: float = Field(default=1.5, alias="ratio_droits_autres_championnats")
+    first_to_last_ratio: float = Field(default=3.0, alias="rapport_premier_dernier")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigBudgetsPrizesEuropeItem:
+    participation: int = Field(alias="participation")
+    win: int = Field(alias="victoire")
+    draw: int = Field(alias="nul")
+    rounds: tuple[int, ...] = Field(alias="tours")
+    winner: int = Field(alias="vainqueur")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigBudgetsPrizesNationalCup:
+    round_shares: tuple[float, ...] = Field(default=(0.001, 0.002, 0.004, 0.008, 0.015, 0.02), alias="parts_par_tour")
+    winner_share: float = Field(default=0.02, alias="part_vainqueur")
+
+
+def _europe_prizes() -> FrozenDict:
+    item = ManagementConfigBudgetsPrizesEuropeItem
+    return FrozenDict({
+        "C1": item(participation=8000000, win=1000000, draw=330000, rounds=(500000, 5000000, 5500000, 7000000, 8000000), winner=3000000),
+        "C3": item(participation=2000000, win=200000, draw=70000, rounds=(150000, 800000, 1100000, 1900000, 3200000), winner=2700000),
+        "C4": item(participation=1400000, win=180000, draw=60000, rounds=(100000, 360000, 600000, 1100000, 1800000), winner=1350000)})
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigBudgetsPrizes:
+    """What the European cups and the national cup pay; the defaults are what a save made before receives."""
+    europe: FrozenMap[ManagementConfigBudgetsPrizesEuropeItem] = Field(default_factory=_europe_prizes, alias="europe")
+    national_cup: ManagementConfigBudgetsPrizesNationalCup = Field(default_factory=ManagementConfigBudgetsPrizesNationalCup, alias="coupe_nationale")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigBudgetsInvestments:
+    """The cash a club keeps before it spends the rest on itself; the defaults are what a save made before receives."""
+    reserve_months: float = Field(default=6, alias="mois_reserve")
+    annual_share: float = Field(default=0.25, alias="part_annuelle")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -96,7 +194,11 @@ class ManagementConfigBudgets:
     initial_funding: ManagementConfigBudgetsInitialFunding = Field(alias="financement_initial")
     wages: ManagementConfigBudgetsWages = Field(alias="salaires")
     accounting: ManagementConfigBudgetsAccounting = Field(alias="comptabilite")
-    income: ManagementConfigBudgetsIncome = Field(alias="revenus")
+    income: ManagementConfigBudgetsIncome = Field(default_factory=ManagementConfigBudgetsIncome, alias="revenus")
+    club_income: ManagementConfigBudgetsClubIncome = Field(default_factory=ManagementConfigBudgetsClubIncome, alias="revenus_club")
+    prizes: ManagementConfigBudgetsPrizes = Field(default_factory=ManagementConfigBudgetsPrizes, alias="primes")
+    investments: ManagementConfigBudgetsInvestments = Field(default_factory=ManagementConfigBudgetsInvestments, alias="investissements")
+    wage_model: ManagementConfigBudgetsWageModel = Field(default_factory=ManagementConfigBudgetsWageModel, alias="modele_salaire")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -114,6 +216,15 @@ class ManagementConfigMarketDormantClubs:
     asking_multiplier: float = Field(alias="multiplicateur_prix_demande")
     approach_probability: float = Field(alias="probabilite_demarchage_par_fenetre")
     target_incoming_share: float = Field(alias="part_cible_transferts_entrants")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketScouting:
+    """The players every club sees beside its sample, and its search for prospects; the defaults are what a save made before receives."""
+    visible_leavers: int = Field(default=10, alias="partants_visibles")
+    visible_prospects: int = Field(default=10, alias="espoirs_visibles")
+    prospect_max_age: int = Field(default=21, alias="age_max_espoir")
+    prospect_search_probability: float = Field(default=0.5, alias="probabilite_recherche_espoir")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -186,6 +297,8 @@ class ManagementConfigMarket:
     buyer_price_multiplier: float = Field(default=1.35, alias="multiplicateur_prix_max_acheteur")
     offer_cooldown_days: int = Field(default=14, alias="jours_relance_proposition")
     max_offers_per_proposal: int = Field(default=5, alias="offres_max_proposition")
+    known_player_weight: float = Field(default=3.0, alias="poids_joueur_connu_club_dormant")
+    scouting: ManagementConfigMarketScouting = Field(default_factory=ManagementConfigMarketScouting, alias="reperage")
     loans: ManagementConfigMarketLoans = Field(default_factory=ManagementConfigMarketLoans, alias="prets")
     offers: ManagementConfigMarketOffers = Field(default_factory=ManagementConfigMarketOffers, alias="offres")
 
@@ -219,6 +332,10 @@ class ManagementConfigContracts:
     max_raise: float = Field(default=0.3, alias="hausse_salaire_max")
     cut_per_point: float = Field(default=0.01, alias="baisse_par_point_reputation")
     max_cut: float = Field(default=0.15, alias="baisse_salaire_max")
+    # What a player moving club keeps of his wage above the one his value commands; the default is what an older save receives.
+    overpay_kept_share: float = Field(default=0.5, alias="part_surpaye_conservee")
+    # A club of the AI whose wages pass this multiple of what its income allows lets its contracts run out.
+    renewal_stop_ratio: float = Field(default=1.2, alias="depassement_revenus_sans_prolongation")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

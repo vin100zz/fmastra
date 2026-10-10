@@ -43,7 +43,7 @@ sa nouvelle division. Un petit club promu ne gagne que le gain de division et so
 
 `annual_review` : classements, places européennes, mouvements de divisions, **révision de
 la réputation** (`core/world/reputation.py`, événement `ReputationRevised`), puis budgets :
-les revenus (`base_par_point_reputation × réputation × multiplicateur pays`) suivent donc
+les revenus (revenu propre exponentiel en réputation, `docs/ia-gestion.md`) suivent donc
 la réputation révisée. Les tirages de promotion et de qualification étrangère, faits avant,
 utilisent la valeur de la saison écoulée ; les chapeaux européens et la génération des
 jeunes utilisent la nouvelle.

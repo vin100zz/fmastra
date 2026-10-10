@@ -8,6 +8,10 @@
     "exposant_minutes": 0.5,
     "plancher_entrainement": {"note_1": 0.20, "note_20": 0.50},
     "reserve": {"facteur": 0.70, "age_max": 21, "marge_niveau": 6.0, "plage_extinction": 10.0},
+    "dormants": {
+      "_note": "Dans un club non simule, facteur_jeu_dormants_et_libres ne vaut que pour un joueur a la portee du club : au-dela du niveau vise par le club + marge_niveau, il baisse lineairement jusqu'a facteur_plancher, atteint plage_extinction points plus haut. Un joueur sans club garde le facteur entier.",
+      "marge_niveau": 6.0, "plage_extinction": 10.0, "facteur_plancher": 0.20
+    },
     "amplitude": 2.2,
     "bruit_ecart_type": 0.25,
     "courbe_age": [
@@ -39,7 +43,7 @@
     "declin_plafonne": false
   },
   "estimation_potentiel": {
-    "bruit_max": 22.0,
+    "bruit_max": 10.0,
     "bruit_min": 3.0,
     "age_debut_convergence": 15,
     "age_convergence": 23,
@@ -66,7 +70,7 @@
     "probabilite_club_national": 0.9,
     "part_hors_tri": 0.10,
     "intensite_tri_centres": 10.0,
-    "poids_reputation_tri": 0.0
+    "poids_reputation_tri": 1.0
   },
   "cible_postes": {
     "GB": 0.10, "DC": 0.18, "DG": 0.07, "DD": 0.07,

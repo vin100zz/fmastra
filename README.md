@@ -74,8 +74,9 @@ conservent leur précision ; le journal financier présente les sommes réelleme
 versées sur chaque période.
 
 Sur la fiche d'un club, **Finances** présente les revenus et dépenses par
-saison : revenus structurels, salaires, fonctionnement, indemnités de transfert
-et arrondis comptables, avec les soldes d'ouverture et de clôture. Les flux
+saison : revenus structurels, primes de compétition, salaires, fonctionnement,
+investissements, indemnités de transfert et arrondis comptables, avec les soldes
+d'ouverture et de clôture. Les flux
 réguliers sont regroupés par mois. En tête de l'onglet, une barre met côte à côte
 le budget de transferts et le plafond salarial ; dans le club dirigé, sa poignée
 déplace de l'argent de l'un à l'autre (12 € de budget pour 1 € de plafond
@@ -229,8 +230,8 @@ subsistent.
 La page pays place la coupe entre la D1 et la D2 et affiche les résultats du dernier
 tour (les affiches à venir avant décembre). « Voir la coupe » ouvre les six tours,
 les buteurs et le palmarès. Les matchs figurent aussi dans le calendrier des clubs.
-Les suspensions sont propres à chaque compétition ; aucune prime de coupe n’est
-ajoutée. Les sélections et tirages sont reproductibles après sauvegarde et reprise.
+Les suspensions sont propres à chaque compétition ; chaque tour joué rapporte une
+prime, versée avec le revenu de la saison suivante. Les sélections et tirages sont reproductibles après sauvegarde et reprise.
 
 **Coupes d’Europe**, dans le menu de gauche, donne accès aux classements complets,
 aux huit journées de ligue, aux tours éliminatoires, aux buteurs et au palmarès

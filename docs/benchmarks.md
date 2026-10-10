@@ -155,6 +155,16 @@ transferts entre régimes pour vérifier l'identité comptable des populations.
   dénominateur est nul, rapporter « non applicable », pas zéro réussi.
 - Salaires : dérive **cumulative** des moyennes de masse salariale réelle par
   club entre fenêtres, inflation neutralisée. Ne pas accepter 12 % par an.
+- Masse d'argent : croissance annuelle moyenne de la trésorerie totale des clubs
+  actifs entre fenêtres, en valeur absolue (≤ 5 %) ; trésorerie médiane en mois de
+  revenu ; part des salaires dans les revenus (45 à 62 %). L'ancien modèle, sans
+  dépense liée à la trésorerie, multipliait la trésorerie par huit en six saisons.
+- Indemnités : dérive du 9e décile des indemnités payées par les clubs actifs entre
+  fenêtres (≤ 50 %).
+- Garde-fous de réalisme, au pire des saisons observées : joueurs de niveau
+  `niveau_vedette_petit_club` ou plus, et plus haut salaire mensuel, dans les clubs
+  de réputation inférieure à `reputation_petit_club`. Mesures de `economy_row`
+  (`benchmarks/world_suites.py`).
 - Solde négatif permanent : nombre de clubs présentant un solde négatif à la
   clôture du nombre configuré de saisons consécutives. Rapporter aussi les creux.
 - Transferts : arrivées définitives par club et fenêtre ; part depuis dormants

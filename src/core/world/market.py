@@ -12,12 +12,12 @@ from core.domain.clubs import Club
 from core.domain.players import Contract
 from core.domain.world import NewsLine, World
 from core.domain.offers import TransferOffer, RESERVING_STAGES
-from core.ai.market import propose_transfers, player_offer_score, can_sell, asking_price, opening_share
+from core.ai.market import propose_transfers, player_offer_score, can_sell, asking_price, opening_share, short_of_players, wage_room
 from .events import OffersUpdated, PlayerSigned
 from .application import apply
 from .human import is_human_club, listed_price, record
 from .news import answer_offer, offer_received
-from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on
+from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on, wants_to_leave
 
 
 def quoted_minimum(amount: int) -> int:
@@ -75,7 +75,7 @@ def offer_limit(world: World, club: Club, contract: Contract, fee: int, reserved
     if club.squad_size + len(reserved) >= cfg.management.guardrails.max_squad: return "squad"
     if sum(offer.ceiling for offer in reserved) + fee > club.transfer_budget: return "budget"
     if club.balance - sum(offer.ceiling for offer in reserved) - fee < cfg.management.guardrails.min_balance: return "balance"
-    if sum(offer.contract.weekly_wage for offer in reserved) + contract.weekly_wage + club.wage_bill > club.wage_cap: return "wages"
+    if sum(offer.contract.weekly_wage for offer in reserved) + contract.weekly_wage > wage_room(club, cfg, len(reserved) + 1): return "wages"
     return None
 
 
@@ -200,7 +200,7 @@ def settle_offers(world: World, open_market: bool) -> dict[int, set[int]]:
             continue
         sells = seller is None or can_sell(player, seller, world)
         # An unsimulated club turns down even its asking price, by chance.
-        if sells and seller is not None and seller.competition_id is None:
+        if sells and seller is not None and seller.competition_id is None and not wants_to_leave(player, world):
             sells = rng.random() < cfg.management.market.dormant_clubs.acceptance_probability
         asked = asking_price(player, seller, world) if seller is not None else 0
         able = [offer for offer in bids if sells and reach(world, offer) >= asked]
@@ -268,3 +268,7 @@ def ensure_minimums(world: World) -> None:
             if event.source_id is None: apply(world, event)
         remaining = deficit()
         if remaining == 0 or remaining >= before: break
+    # No free agent it can pay: its academy fills the squad, at the academy wage.
+    if remaining:
+        from .squads import complete_squads
+        complete_squads(world, [club.id for club in world.active_clubs() if short_of_players([world.players[pid] for pid in club.player_ids], cfg)])

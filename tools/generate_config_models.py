@@ -324,6 +324,11 @@ reserve_tresorerie_mois=cash_reserve_months
 facteur_financement_min=min_funding_factor
 salaires=wages
 part_annuelle_valeur_intrinseque=annual_value_share
+modele_salaire=wage_model
+salaire_reference=reference_wage
+pente_niveau=level_slope
+revenu_reference=reference_income
+exposant_revenu=income_exponent
 minimum_hebdomadaire=weekly_minimum
 ratio_offre_max_pour_score=max_offer_ratio
 comptabilite=accounting
@@ -351,6 +356,7 @@ probabilite_acceptation_offre_au_prix=acceptance_probability
 multiplicateur_prix_demande=asking_multiplier
 probabilite_demarchage_par_fenetre=approach_probability
 part_cible_transferts_entrants=target_incoming_share
+poids_joueur_connu_club_dormant=known_player_weight
 contrats=contracts
 seuil_satisfaction_negociation=satisfaction_threshold
 mois_avant_fin_declenchant=renewal_months
@@ -552,6 +558,27 @@ NEGOTIATION_DEFAULTS = {
     "ia_gestion.contrats": {"prime_appat_gain": 0.15, "appat_gain_note_basse": 7.5, "appat_gain_note_reference": 11.5,
                             "appat_gain_note_haute": 15.5, "hausse_par_point_reputation": 0.01, "hausse_salaire_max": 0.30,
                             "baisse_par_point_reputation": 0.01, "baisse_salaire_max": 0.15}}
+# The economy of schema 29: income by reputation and championship, prizes, idle cash, opinions, exposure and form in a
+# player's value, scouting, wages by level and club means, dormant clubs. Their models carry the defaults by hand.
+WORDS.update({"opinion": "opinion", "facteur_max_jeune": "young_factor", "facteur_max_mur": "mature_factor", "part_stable": "stable_share",
+              "ecarts_types_max": "max_deviations", "exposition": "exposure", "decote_par_point": "discount_per_point",
+              "performance": "performance", "poids_note": "rating_weight", "note_reference": "reference_rating",
+              "ecart_note_plein": "full_rating_gap", "facteur_min": "min_factor", "facteur_max": "max_factor",
+              "revenus_club": "club_income", "revenu_propre_reference": "reference_income", "reputation_reference": "reference_reputation",
+              "pente_reputation": "reputation_slope", "revenu_minimum": "minimum_income", "part_billetterie": "ticket_share",
+              "capacite_reference": "reference_capacity", "capacite_par_defaut": "default_capacity", "droits_championnat": "league_rights",
+              "ratio_droits_autres_championnats": "other_rights_ratio", "rapport_premier_dernier": "first_to_last_ratio",
+              "primes": "prizes", "victoire": "win", "nul": "draw", "tours": "rounds", "vainqueur": "winner",
+              "parts_par_tour": "round_shares", "part_vainqueur": "winner_share", "investissements": "investments",
+              "mois_reserve": "reserve_months", "part_annuelle": "annual_share", "reperage": "scouting",
+              "partants_visibles": "visible_leavers", "espoirs_visibles": "visible_prospects", "age_max_espoir": "prospect_max_age",
+              "probabilite_recherche_espoir": "prospect_search_probability", "part_surpaye_conservee": "overpay_kept_share",
+              "depassement_revenus_sans_prolongation": "renewal_stop_ratio", "dormants": "dormant", "facteur_plancher": "floor",
+              "croissance_tresorerie_annuelle_max": "max_cash_growth", "part_salaires_revenus_min": "min_wage_share",
+              "part_salaires_revenus_max": "max_wage_share", "tresorerie_mediane_mois_revenu_max": "max_cash_months",
+              "derive_indemnites_sur_horizon_max": "fee_drift", "reputation_petit_club": "small_club_reputation",
+              "niveau_vedette_petit_club": "small_club_star_level", "vedettes_petits_clubs_max": "max_small_club_stars",
+              "salaire_mensuel_petits_clubs_max": "max_small_club_wage"})
 # Explicit compatibility defaults for configurations embedded in older saves.
 DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "benchmarks.economie.derive_reputation_dispersion_max": 0.25,
@@ -571,6 +598,7 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "ia_gestion.mercato.moral_depart_force": 0.5,
             "ia_gestion.mercato.talents_visibles": 10,
             "ia_gestion.mercato.jours_encheres": 2,
+            "ia_gestion.mercato.poids_joueur_connu_club_dormant": 3.0,
             "etats.remplacements.gain_minimum_rotation": 10.0,
             "etats.remplacements.poids_deficit_temps_jeu": 8.0,
             "etats.remplacements.poids_developpement_jeunes": 10.0,
@@ -610,7 +638,7 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "moteur_match.cartons.agressivite_note_reference": 10.5,
             "moteur_match.cartons.agressivite_note_haute": 17.0,
             "demographie.cohorte.probabilite_club_national": 0.9, "demographie.cohorte.part_hors_tri": 0.10,
-            "demographie.cohorte.intensite_tri_centres": 10.0, "demographie.cohorte.poids_reputation_tri": 0.0,
+            "demographie.cohorte.intensite_tri_centres": 10.0, "demographie.cohorte.poids_reputation_tri": 1.0,
             "demographie.generation.poids_age": (0.45, 0.35, 0.15, 0.05), "demographie.generation.seuil_potentiel_elite": 85.0,
             "demographie.generation.exposant_nations_elite": 0.5, "demographie.generation.part_plancher_nation": 0.0002,
             "demographie.generation.noms_minimum_par_nation": 20,

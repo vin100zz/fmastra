@@ -6,7 +6,7 @@ La réputation, de {{monde.reputation.bornes.min}} à {{monde.reputation.bornes.
 
 La réputation est le levier le plus puissant du jeu, parce qu'elle entre partout :
 
-- **le revenu** : chaque point rapporte {{eur(ia_gestion.budgets.revenus.base_par_point_reputation)}} par an avant coefficient du pays, donc relève le plafond salarial et le budget de transferts (voir [Finances](#/aide/finances)) ;
+- **le revenu** : chaque point ajoute {{pct(exp(ia_gestion.budgets.revenus_club.pente_reputation) - 1, 0)}} au revenu propre du club, donc relève le plafond salarial et le budget de transferts (voir [Finances](#/aide/finances)) ;
 - **le niveau visé** par le club, {{ia_gestion.profil_cible.niveau_base * 2}} + {{ia_gestion.profil_cible.poids_reputation * 2}} × réputation, qui fixe ce qu'il cherche sur le marché ;
 - **les joueurs qui acceptent de venir**, et ceux qui s'impatientent de rester (voir [Ce qu'un joueur accepte](#/aide/mercato/ce-qu-un-joueur-accepte)) ;
 - **les salaires demandés** : venir d'un club plus réputé se paie, y monter aussi ;

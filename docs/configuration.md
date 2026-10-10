@@ -149,6 +149,30 @@ sont ordonnées, la tolérance du vendeur et le malus restent dans [0, 1].
 de son prix maximum à laquelle un acheteur ouvre face à l'utilisateur, et le multiple
 de la valeur qu'il paie au plus sans besoin.
 
+Les configurations antérieures à la version 29 des sauvegardes reçoivent les valeurs
+par défaut de la nouvelle économie : `ia_gestion.budgets.revenus_club`, `primes`,
+`investissements` et `courbe_salaire` ; `ia_gestion.valorisation.opinion`,
+`exposition` et `performance` ; `ia_gestion.mercato.reperage` et
+`poids_joueur_connu_club_dormant` (3, strictement positif) ;
+`ia_gestion.contrats.part_surpaye_conservee` et
+`depassement_revenus_sans_prolongation` ; `demographie.progression.dormants` ; les
+cibles de trésorerie, de part salariale, d'indemnités et les garde-fous de réalisme
+de `benchmarks.economie`. Les clés `ia_gestion.budgets.revenus` et
+`salaires.part_annuelle_valeur_intrinseque` restent acceptées et ne sont plus lues.
+
+Quatre règles recalibrées par la même version sont remplacées dans une sauvegarde
+plus ancienne quand elle porte encore leur valeur d'origine, et gardées sinon :
+`comptabilite.part_revenus_autres_charges` (0,15 devient 0,30),
+`garde_fous.solde_minimal_autorise` (−5 M€ devient 0 : avec des revenus resserrés, ce
+découvert valait plus d'une année de revenu pour un petit club),
+`estimation_potentiel.bruit_max` (22 devient 10) et `cohorte.poids_reputation_tri`
+(0 devient 1). Au même chargement, chaque club reçoit le revenu des nouvelles règles
+(`_upgrade_economy`, `infrastructure/persistence/store.py`) : les salaires signés en
+cours de partie sont ramenés, dans la même proportion, à ce que le nouveau revenu
+paie ; ceux de l'import et ceux du club dirigé par l'utilisateur ne changent pas ; ce
+que la masse salariale exige encore au-delà du revenu est soutenu comme à la création
+d'une partie, soutien qui se retire à mesure que ces contrats s'achèvent.
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

@@ -10,36 +10,61 @@ La valeur intrinsèque suit la courbe de niveau `courbe_niveau` de `valorisation
 (valeur en euros d'un joueur de 27-29 ans à un poste neutre), modulée par l'âge et
 la rareté du poste. La courbe est interpolée géométriquement entre ses points, donc
 convexe ; au-delà de ses extrémités, la pente du segment voisin se prolonge. Le
-niveau utilise les attributs de base, sans forme, fatigue ou moral. Pour la prime de
-potentiel, employer le centre de l'estimation propre à l'observateur, jamais le
-potentiel réel. Les facteurs segmentés d'âge sont interpolés entre les centres des
-segments ; prolonger les valeurs extrêmes hors domaine.
+niveau utilise les attributs de base, sans forme, fatigue ou moral. Les facteurs
+segmentés d'âge sont interpolés entre les centres des segments ; prolonger les
+valeurs extrêmes hors domaine.
+
+`market_value` (`core.ai.market`) sépare deux parts. La **valeur du niveau actuel**
+ne dépend de personne. La **prime de potentiel** est l'écart entre la valeur du
+niveau `poids_potentiel_sur_niveau` × potentiel et celle du niveau actuel ; elle est
+multipliée par le facteur d'opinion de l'observateur (`opinion_factor`,
+`core.world.estimates`), borné : de `opinion.facteur_max_jeune` (ou son inverse) à
+`age_debut_convergence` à `opinion.facteur_max_mur` à `age_convergence`. Le bruit
+d'estimation ne traverse donc plus la courbe de valeur, qui multiplie par cinq tous
+les dix points de niveau. Sans observateur, l'opinion est celle de tous : c'est la
+valeur affichée.
+
+L'opinion (`opinion`) est un tirage normal borné à `opinion.ecarts_types_max`, par
+couple observateur et joueur : une part `opinion.part_stable` de sa variance est
+gardée pour de bon, le reste est retiré chaque année, et l'opinion glisse de mois en
+mois du tirage de l'an passé vers celui de l'année. Elle ne saute donc jamais d'un
+jour à l'autre. La même opinion, multipliée par l'erreur type de l'âge
+(`estimation_potentiel`), donne le potentiel estimé (`estimate_potential`) dont se
+servent le temps de jeu, la réserve, les prêts, le statut d'espoir et la recherche
+d'espoirs : ces décisions n'emploient jamais le potentiel réel.
+
+La **valeur de transfert** (`discounted`, celle des écrans, du prix demandé et du
+prix maximum) ajoute trois facteurs. La forme de la saison (`performance_factor`)
+ne pèse que sur la valeur du niveau actuel : temps de jeu rapporté au joueur le plus
+utilisé du club, note moyenne rapportée à `performance.note_reference`, entre
+`facteur_min` et `facteur_max`, pleine après `matchs_confiance_minutes` matchs ;
+avant, la forme de la saison passée (`Player.past_performance`, gardée à
+l'ouverture de la saison) la complète ; neutre dans un club dormant. L'exposition
+(`exposure_factor`) retire `exposition.decote_par_point` par point de niveau
+au-delà du niveau visé par le club + `marge_niveau`, jusqu'à `plancher`. La décote
+de durée contractuelle s'applique enfin. Un agent libre coûte zéro indemnité.
 
 Calibrage : la courbe de niveau et les facteurs d'âge sont ajustés sur la colonne
 `Value` du CSV source (hors les valeurs sentinelles à 348 M€), à l'import, pour les
 joueurs des clubs actifs. À niveau égal, un joueur de 27-29 ans vaut environ 0,5 M€
 à 60, 3 M€ à 65, 18 M€ à 70, 46 M€ à 75, 85 M€ à 80 et 140 M€ à 85 ; les meilleurs
-joueurs du monde dépassent 200 M€. Un ancien joueur perd sa valeur bien plus vite
-qu'avant (0,34 à 32-33 ans, 0,12 à 34-35 ans). Le poids du potentiel (0,75) reste
-adapté aux jeunes avec cette courbe. Le rapport valeur source / valeur du jeu
-vaut environ 1,0 en médiane sur l'ensemble des joueurs. Les postes (`rarete_poste`)
-n'ont pas été recalés : l'écart de niveau entre postes de la source est mêlé à des
-différences d'échelle de note.
+joueurs du monde dépassent 200 M€. Les postes (`rarete_poste`) n'ont pas été
+recalés : l'écart de niveau entre postes de la source est mêlé à des différences
+d'échelle de note.
 
-Les valeurs d'indemnité suivent : le prix demandé vaut la valeur décotée multipliée
-par le seuil vendeur, donc les grands transferts atteignent plusieurs dizaines de
-millions pour un joueur de haut niveau. Les salaires attendus (fraction annuelle de
-la valeur) restent inférieurs aux salaires source à tous les niveaux : un joueur
-transféré garde de toute façon son salaire actuel au minimum.
+Le **salaire attendu** (`market_wage`) ne dérive plus de la valeur : il suit
+`budgets.courbe_salaire`, salaire annuel par niveau actuel à un poste neutre,
+interpolé comme la courbe de valeur, multiplié par la rareté du poste, avec le
+minimum hebdomadaire. Ni l'âge, ni le potentiel, ni l'opinion d'un club n'y entrent.
+La courbe est calée sur les salaires de l'import par niveau (joueurs de 22 à 31 ans
+des clubs actifs) : la fraction de la valeur employée auparavant
+(`part_annuelle_valeur_intrinseque`, qui n'est plus lue) donnait trois fois moins
+que les salaires source, et onze fois moins après 33 ans, si bien que les masses
+salariales fondaient d'elles-mêmes. Arrondir les montants à l'euro.
 
-Séparer valeur intrinsèque et indemnité de transfert. Cette dernière applique
-la décote de durée contractuelle. Un agent libre coûte zéro indemnité, mais
-conserve une valeur intrinsèque et des exigences salariales.
-
-Le salaire hebdomadaire attendu vaut la fraction annuelle configurée de la
-valeur intrinsèque, divisée par le nombre configuré de semaines, avec un minimum.
-Arrondir les montants à l'euro ; la valorisation et les salaires n'utilisent pas
-la valeur CSV comme variable cachée après la synthèse initiale.
+Ce qu'un joueur demande pour signer (`wage_demand`) part du salaire attendu et de
+`contrats.part_surpaye_conservee` de ce qu'il gagne au-dessus ; un joueur qui veut
+quitter un club trop petit pour lui part du seul salaire attendu.
 
 Le ratio de salaire du score d'offre est borné à la limite configurée ; les
 autres composantes sont normalisées dans [0, 1]. Cela évite qu'une surenchère
@@ -103,14 +128,41 @@ des profils nominaux, avec une phase initiale de stabilisation.
 
 ## Revenus et financement initial
 
-Revenus structurels : réputation, classement précédent et coefficient du pays.
+Revenu annuel d'un club (`core.world.finances`, `core.world.prizes`) : revenu
+propre + droits du championnat + primes de coupes de la saison passée, jamais sous
+`revenus_club.revenu_minimum`.
+
+- **Revenu propre** (`own_income`) : `revenu_propre_reference × exp(pente_reputation
+  × (réputation − reputation_reference))`, dont `part_billetterie` suit la capacité
+  du stade rapportée à `capacite_reference`. Convexe, comme la valeur des joueurs
+  que le club peut tenir : un revenu linéaire en réputation donnait à un club de
+  troisième division trente fois sa masse salariale.
+- **Droits du championnat** (`league_rights`) : `droits_championnat[pays][niveau]`
+  × part du classement (`rank_share`), linéaire du premier au dernier dans le
+  rapport `rapport_premier_dernier`, de moyenne 1. `league_place` donne la place :
+  le rang de la saison passée, la dernière pour un promu, la première pour un
+  relégué. Hors de ces championnats, `ratio_droits_autres_championnats` × revenu
+  propre hors stade.
+- **Primes** : coupes d'Europe (participation, victoires et nuls de la phase de
+  ligue, tours atteints, titre) et coupe nationale (parts des droits de la première
+  division par tour joué), lues dans les matchs de la saison avant que les places
+  européennes suivantes ne remplacent les clubs.
+
+`Club.prize_income` garde la part des droits et des primes dans le revenu ; les
+comptes l'inscrivent à part (`MonthlyFinance.prizes`). Calibrage : sur les masses
+salariales de l'import, en visant des salaires à 55 % du revenu ; le revenu propre
+est commun à tous les pays, les droits sont la médiane du reste par championnat.
+
+Un club qui descend d'une division (`came_down`) retrouve, cette année-là, le soutien
+que sa masse salariale exige (`annual_funding_factor`) : les droits de sa nouvelle
+division ne paient pas des contrats signés pour l'autre. Ce soutien se retire ensuite
+comme le soutien initial.
+
 La réputation évolue chaque 1er juillet (`docs/reputation.md`), avant le renouvellement des
 budgets : les revenus, le niveau visé, la profondeur d'effectif et l'attrait du club pour les
 joueurs suivent donc ses résultats, avec de l'inertie ; un club relégué perd ainsi des revenus
 et des joueurs devenus trop grands pour lui (`outgrown_by`).
-Avant la première saison, utiliser le milieu du classement théorique pour les
-clubs actifs ; pas de prime de classement pour les dormants. Le coefficient
-`multiplicateur_autres_pays` couvre les nations hors des cinq ligues.
+Avant la première saison, utiliser le milieu du classement pour les clubs actifs.
 
 Après sélection des joueurs importés :
 
@@ -133,7 +185,12 @@ source sans provoquer des ventes contraintes avant le premier match. Il pourra
 ## Comptabilité
 
 Les revenus annuels, salaires et autres charges sont répartis quotidiennement
-au prorata de la longueur de l'année de jeu. Conserver les restes d'arrondi
+au prorata de la longueur de l'année de jeu (`daily_accounts`). Un club dormant
+paie aussi les salaires de ses joueurs absents du jeu (`unseen_wages`). Au-delà de
+`investissements.mois_reserve` mois de revenu en caisse, tout club dépense chaque
+année `investissements.part_annuelle` de l'excédent (`MonthlyFinance.investments`) :
+c'est ce qui borne la masse d'argent, quel que soit l'écart résiduel entre revenus
+et dépenses. Conserver les restes d'arrondi
 pour obtenir le montant annuel entier exact. Les salaires hebdomadaires sont
 annualisés avec `semaines_par_an`. Les revenus et plafonds sont recalculés au
 bilan annuel ; les flux de trésorerie suivent les engagements effectivement
@@ -202,7 +259,16 @@ recherche d'une alternative, comme un refus du vendeur.
 Un joueur convoité doit avoir de la concurrence. Chaque club connaît, pour
 chaque poste, les `talents_visibles` (10) meilleurs joueurs vendables en plus de
 son échantillon aléatoire de `max_candidates_scanned` candidats, sinon un
-joueur fort à un poste peu fourni n'atteint un acheteur que par hasard. Les
+joueur fort à un poste peu fourni n'atteint un acheteur que par hasard. Il connaît
+aussi les `reperage.partants_visibles` meilleurs joueurs vendables du poste qui
+veulent quitter leur club (`wants_to_leave`). Un jour par fenêtre, tiré une fois
+(`approach_day`, motif `prospect_search`), un club cherche un espoir avec une
+probabilité de 2 × `reperage.probabilite_recherche_espoir` × sa préférence pour
+les jeunes : parmi les `espoirs_visibles` joueurs d'au plus `age_max_espoir` ans au
+plus haut potentiel estimé par tous à chaque poste, il fait une offre au meilleur
+dont sa propre estimation dépasse son niveau visé et le niveau du joueur de
+`marge_potentiel_espoir`, s'il peut le payer sous son prix maximum (sa préférence
+pour les jeunes tenant lieu de besoin). Les
 offres d'un même joueur sont décidées ensemble lorsque la plus ancienne est
 ouverte depuis `jours_encheres` jours (2). Un acheteur seul paie le prix demandé.
 Des rivaux surenchérissent (`outbid`, `core/world/market.py`) : chacun suit jusqu'à
@@ -362,6 +428,23 @@ les mêmes contraintes de budget, de salaire et de places que les autres clubs,
 avec une réponse et une shortlist simplifiées. Ils n'ont pas de minimum dur
 d'effectif, puisqu'une grande partie est incomplète dans la source.
 
+Un club dormant emploie un effectif complet, dont le jeu ne connaît souvent que
+quelques joueurs. Son plafond salarial se partage entre les places de l'effectif
+nominal, et les places sans joueur connu retiennent leur part (`unseen_wages`,
+`core.ai.market`). Les joueurs connus sont ses mieux payés : chacun pèse
+`mercato.poids_joueur_connu_club_dormant` (3) joueurs absents, soit une retenue de
+plafond × absents ÷ (absents + poids × connus). Le poids est calé sur les clubs
+actifs, où les 1, 2, 3 et 5 joueurs les mieux payés tiennent en médiane 13, 22, 29 et
+40 % du plafond (12, 21, 30 et 44 % avec un poids de 3). La marge d'un club
+(`wage_room`) est son plafond, moins sa masse salariale, moins cette retenue.
+Signatures, offres, prolongations et regens passent par cette marge ; un joueur qui
+arrive prend la place d'un joueur absent. Une
+prolongation que la marge ne permet pas se fait au salaire actuel augmenté de ce
+qu'elle laisse, et un contrat déjà signé au-dessus reste prolongeable sans hausse.
+La retenue n'est pas affichée, mais elle est payée : les comptes du club portent les
+salaires de tout son effectif. Un club dormant ne refuse jamais, au prix demandé, la
+vente d'un joueur qui veut partir.
+
 La probabilité de démarchage s'applique par club dormant et par fenêtre, une
 fois, pas chaque jour. Échantillonner seulement les clubs disposant de moyens
 et de places. La part de transferts depuis les dormants est une cible mesurée,
@@ -388,7 +471,11 @@ pas. Un renouvellement doit apporter une hausse de salaire, ou une fin plus
 tardive si l'échéance est à moins de `mois_avant_fin_declenchant` mois ; sa fin
 n'est jamais antérieure à celle du contrat en cours. Valoriser
 la conservation du joueur avec le score de départ, pas avec un ajout en double.
-Le plafond salarial s'applique aussi aux renouvellements. À échéance inclusive,
+Le plafond salarial s'applique aussi aux renouvellements. Un club de l'IA dont la
+masse salariale dépasse `contrats.depassement_revenus_sans_prolongation` fois ce
+que son revenu autorise ne prolonge plus personne : ses joueurs partent à la fin de
+leur contrat. Un club actif sous l'effectif minimal reçoit toujours les jeunes qui
+lui manquent, son plafond s'élevant de leur salaire (`PlayerGenerated`). À échéance inclusive,
 le joueur est libéré le lendemain si aucun nouveau contrat n'est signé.
 Les attentes et la satisfaction alimentent aussi le moral et les demandes de
 transfert. Un joueur ne disparaît pas à cause d'un refus de renouvellement.

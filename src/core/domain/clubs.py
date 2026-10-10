@@ -59,6 +59,8 @@ class Club:
     # Weekly wages the club moved from its transfer budget to its wage cap (negative: from the cap to the budget); the
     # annual review carries it over (see `core.world.budgets`).
     wage_shift: int = 0
+    # The part of `income` its competitions pay this season, by "league", "europe" and "cup": what last season earned.
+    prize_income: dict[str, int] = field(default_factory=dict)
 
     @property
     def squad_size(self) -> int:

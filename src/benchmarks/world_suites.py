@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
-from statistics import mean, pstdev
+from statistics import mean, median, pstdev
 from time import perf_counter
 import json
 
@@ -36,6 +36,27 @@ def snapshot(world: World, elapsed: float) -> dict:
             "min_goalkeepers": min(sum(world.players[pid].position == "GB" for pid in club.player_ids) for club in clubs),
             "top3_elite_share": sum(player.club_id in top_ids for player in elite) / max(1, len(elite)),
             "elapsed_seconds": elapsed}
+
+
+def economy_row(world: World) -> dict:
+    """The money of the clubs playing as a season closes: what they hold, earn and pay, the fees of the season's paid
+    arrivals, and two signs of a world out of joint: strong players and high wages at clubs of little reputation."""
+    cfg = world.config
+    rules, weeks = cfg.benchmarks.economy, cfg.management.budgets.weeks_per_year
+    clubs = world.active_clubs()
+    ids = {club.id for club in clubs}
+    income = sum(club.income for club in clubs)
+    fees = sorted(move.fee for move in world.transfers if move.kind == "transfer" and move.season == world.season - 1
+                  and move.fee > 0 and move.target_id in ids)
+    small = [player for player in world.players.values() if player.club_id is not None and player.contract is not None
+             and world.clubs[player.club_id].reputation < rules.small_club_reputation]
+    return {"cash": sum(club.balance for club in clubs), "income": income,
+            "wage_share": sum(club.wage_bill for club in clubs) * weeks / max(1, income),
+            "cash_months": median(12 * club.balance / max(1, club.income) for club in clubs),
+            "fee_median": fees[len(fees) // 2] if fees else 0, "fee_p90": fees[9 * len(fees) // 10] if fees else 0,
+            "fee_max": fees[-1] if fees else 0,
+            "small_club_stars": sum(player.rating >= rules.small_club_star_level for player in small),
+            "small_club_top_wage": max((player.contract.weekly_wage for player in small), default=0) * weeks / 12}
 
 
 def reputation_row(world: World, held: dict[int, float]) -> dict:
@@ -77,6 +98,7 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
                 validate_world(world)
         row = snapshot(world, perf_counter() - started)
         row.update(reputation_row(world, held))
+        row.update(economy_row(world))
         row["warmup"] = index < warmup
         rows.append(row)
         for club in world.active_clubs():
@@ -130,6 +152,17 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
                          Measurement("minimum_squad", min(row["min_squad"] for row in observed), cfg.management.guardrails.min_squad, cfg.management.guardrails.max_squad, seasons),
                          Measurement("minimum_goalkeepers", min(row["min_goalkeepers"] for row in observed), cfg.management.guardrails.min_goalkeepers, cfg.management.guardrails.max_squad, seasons),
                          Measurement("top3_elite_share", mean(row["top3_elite_share"] for row in observed), 0, cfg.benchmarks.economy.top_three_talent_share, seasons)])
+        years = max(1, len(observed) - window)
+        growth = (max(1, mean(row["cash"] for row in last)) / max(1, mean(row["cash"] for row in first))) ** (1 / years) - 1
+        paid = [row for row in observed if row["fee_p90"]]
+        fee_first, fee_last = (mean(row["fee_p90"] for row in rows_[:window]) if rows_ else 0 for rows_ in (paid, paid[-window:]))
+        measures.extend([
+            Measurement("cash_annual_growth", growth, -economy.max_cash_growth, economy.max_cash_growth, seasons),
+            Measurement("wage_income_share", mean(row["wage_share"] for row in observed), economy.min_wage_share, economy.max_wage_share, seasons),
+            Measurement("median_cash_months", mean(row["cash_months"] for row in observed), 0, economy.max_cash_months, seasons),
+            Measurement("fee_p90_window_drift", abs(fee_last - fee_first) / max(1, fee_first), 0, economy.fee_drift, seasons),
+            Measurement("small_club_stars", max(row["small_club_stars"] for row in observed), 0, economy.max_small_club_stars, seasons),
+            Measurement("small_club_top_monthly_wage", max(row["small_club_top_wage"] for row in observed), 0, economy.max_small_club_wage, seasons)])
         for cid, winners in world.champions.items():
             measures.append(Measurement(f"different_champions/{cid}", len({winner for _, winner in winners[-seasons:]}), cfg.benchmarks.economy.different_champions.min, seasons + cfg.benchmarks.economy.different_champions.min, seasons))
         first_year = rows[warmup]["season"] - 1

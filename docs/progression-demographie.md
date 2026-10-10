@@ -42,7 +42,10 @@ Appliquer le bruit mensuel puis les bornes ; plafonner tout gain net à la marge
 réelle au potentiel. Les blessures peuvent ajouter une pénalité permanente.
 
 Pour les joueurs dormants et libres, utiliser le facteur de jeu simplifié
-configuré, sans inventer des minutes ou des statistiques de matches. Les
+configuré, sans inventer des minutes ou des statistiques de matches. Dans un club
+dormant, ce facteur ne vaut que pour un joueur à la portée du club : au-delà du
+niveau visé par le club + `dormants.marge_niveau`, il baisse en ligne droite jusqu'à
+`dormants.facteur_plancher`, atteint `dormants.plage_extinction` points plus haut. Les
 retraites et changements de régime ne doivent pas appliquer deux progressions
 au même joueur sur un même mois.
 
@@ -204,7 +207,7 @@ Le club vient après la nation. Les meilleurs regens choisissent en premier.
   épuisées ou concentrées font déborder.
 - **Centres** : le poids d'un club vaut `exp(intensite_tri_centres * rang * qualité)`, où le
   rang va de 1 (meilleur regen) à 0 et la qualité, de 0 à 1, vient de YouthRecruitment
-  (et de la réputation avec `poids_reputation_tri`, nul par défaut). Le meilleur regen est
+  (et de la réputation, qui y pèse `poids_reputation_tri` pour 1). Le meilleur regen est
   attiré fortement par les meilleurs centres, le plus faible tire au hasard. Une part
   `part_hors_tri` des regens ignore les centres : un futur Ballon d'Or peut naître dans
   un petit club. L'effet du tri se lit dans un même pays, la nationalité limitant les

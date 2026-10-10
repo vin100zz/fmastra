@@ -31,7 +31,29 @@
       {"mois_max": 18, "facteur": 0.75}
     ],
     "rarete_poste": {"GB": 1.00, "DC": 1.00, "DG": 1.05, "DD": 1.05, "MDC": 1.00,
-                     "MC": 1.00, "MOC": 1.10, "AILG": 1.10, "AILD": 1.10, "BU": 1.20}
+                     "MC": 1.00, "MOC": 1.10, "AILG": 1.10, "AILD": 1.10, "BU": 1.20},
+    "opinion": {
+      "_note": "Valeur = valeur du niveau actuel + prime de potentiel x facteur d'opinion. La prime est l'ecart entre la valeur au niveau retenu (potentiel exact) et la valeur au niveau actuel. L'opinion d'un club sur un joueur, en ecarts types bornes a ecarts_types_max, deplace la prime d'au plus facteur_max_jeune (multiplie ou divise) a age_debut_convergence, et facteur_max_mur a partir de age_convergence (demographie.estimation_potentiel). Elle garde part_stable de sa variance d'une annee sur l'autre et glisse de mois en mois vers le tirage de l'annee.",
+      "facteur_max_jeune": 1.5,
+      "facteur_max_mur": 1.1,
+      "part_stable": 0.6,
+      "ecarts_types_max": 2.0
+    },
+    "exposition": {
+      "_note": "Valeur de transfert d'un joueur au-dessus de son club : x exp(-decote_par_point x points au-dela du niveau vise par son club + marge_niveau), jamais sous plancher. Le niveau vise suit la reputation du club (profil_cible). Ne s'applique pas au salaire attendu.",
+      "marge_niveau": 3.0,
+      "decote_par_point": 0.12,
+      "plancher": 0.05
+    },
+    "performance": {
+      "_note": "Valeur de transfert selon la saison du joueur : la part de sa valeur due a son niveau actuel x (1 + poids_temps_de_jeu x (2 x part des minutes du joueur le plus utilise du club - 1) + poids_note x (note moyenne - note_reference) / ecart_note_plein, borne a +-1), entre facteur_min et facteur_max. Compte pleinement apres mercato.matchs_confiance_minutes matchs ; avant, le bilan de la saison precedente le complete. Neutre dans un club non simule. Ne s'applique pas au salaire attendu.",
+      "poids_temps_de_jeu": 0.10,
+      "poids_note": 0.20,
+      "note_reference": 6.5,
+      "ecart_note_plein": 0.5,
+      "facteur_min": 0.75,
+      "facteur_max": 1.30
+    }
   },
   "utilite": {
     "poids_titulaire": 1.0,
@@ -58,25 +80,58 @@
     "financement_initial": {
       "_note": "Apres selection des joueurs : revenus de reference au moins egaux aux salaires annuels / part_revenus_salaires. Stocker le facteur de financement obtenu une fois, sans le recalculer apres de nouvelles signatures.",
       "marge_plafond_salarial": 1.10,
-      "reserve_tresorerie_mois": 3,
+      "reserve_tresorerie_mois": 6,
       "facteur_financement_min": 1.0
     },
+    "modele_salaire": {
+      "_note": "Salaire annuel attendu = salaire_reference x exp(pente_niveau x (niveau actuel - niveau_reference)) x (revenu annuel du club / revenu_reference) ^ exposant_revenu x rarete du poste, jamais sous salaires.minimum_hebdomadaire. Le club est celui ou le joueur joue, ou celui qu'il rejoindrait ; sans club, le revenu de reference. Ni l'age ni le potentiel n'y entrent. Regression sur les salaires de l'import (clubs actifs, 20 a 32 ans) : a niveau egal, un club quatre fois plus riche paie deux fois plus.",
+      "salaire_reference": 285000,
+      "niveau_reference": 60.0,
+      "pente_niveau": 0.15,
+      "revenu_reference": 40000000,
+      "exposant_revenu": 0.5
+    },
     "salaires": {
-      "part_annuelle_valeur_intrinseque": 0.06,
       "minimum_hebdomadaire": 900,
       "ratio_offre_max_pour_score": 2.0
     },
     "comptabilite": {
       "periodicite": "quotidienne_prorata_annee_de_jeu",
-      "part_revenus_autres_charges": 0.15,
+      "part_revenus_autres_charges": 0.30,
       "inflation_annuelle": 0.0
     },
-    "revenus": {
-      "base_par_point_reputation": 850000,
-      "bonus_classement_premier": 45000000,
-      "decroissance_par_place": 0.88,
-      "multiplicateur_pays": {"ENG": 1.55, "ESP": 1.10, "GER": 1.05, "ITA": 1.00, "FRA": 0.75},
-      "multiplicateur_autres_pays": 0.60
+    "revenus_club": {
+      "_note": "Revenu annuel = revenu propre + droits du championnat + primes de coupe d'Europe et de coupe nationale de la saison passee, jamais sous revenu_minimum (de quoi payer un effectif complet au salaire minimum). Revenu propre = revenu_propre_reference x exp(pente_reputation x (reputation - reputation_reference)) x (1 - part_billetterie + part_billetterie x capacite du stade / capacite_reference). Droits : droits_championnat[pays][niveau - 1] x part du classement, lineaire du premier au dernier dans le rapport rapport_premier_dernier, de moyenne 1 ; un promu touche la part du dernier, un relegue celle du premier, un club sans classement la moyenne. Hors de ces championnats : ratio_droits_autres_championnats x revenu propre hors billetterie. Cale sur les masses salariales de l'import (salaires = 55 % du revenu) : revenu propre commun a tous les pays, droits = mediane du reste par championnat.",
+      "revenu_propre_reference": 6000000,
+      "reputation_reference": 60.0,
+      "pente_reputation": 0.10,
+      "revenu_minimum": 1850000,
+      "part_billetterie": 0.15,
+      "capacite_reference": 30000,
+      "capacite_par_defaut": 5000,
+      "droits_championnat": {
+        "ENG": [154000000, 30000000],
+        "ITA": [60000000, 8400000],
+        "GER": [51000000, 8800000],
+        "ESP": [44000000, 14000000],
+        "FRA": [21500000, 1700000, 900000]
+      },
+      "ratio_droits_autres_championnats": 1.5,
+      "rapport_premier_dernier": 3.0
+    },
+    "primes": {
+      "_note": "Primes de la saison passee, versees avec le revenu de la saison qui s'ouvre. Coupe d'Europe : participation + victoire et nul de la phase de ligue + tours[i] pour chaque tour a elimination directe atteint (barrages, huitiemes, quarts, demies, finale ; un qualifie direct touche aussi les barrages) + vainqueur. Coupe nationale : part des droits de la premiere division du pays pour chaque tour joue, plus part_vainqueur.",
+      "europe": {
+        "C1": {"participation": 8000000, "victoire": 1000000, "nul": 330000, "tours": [500000, 5000000, 5500000, 7000000, 8000000], "vainqueur": 3000000},
+        "C3": {"participation": 2000000, "victoire": 200000, "nul": 70000, "tours": [150000, 800000, 1100000, 1900000, 3200000], "vainqueur": 2700000},
+        "C4": {"participation": 1400000, "victoire": 180000, "nul": 60000, "tours": [100000, 360000, 600000, 1100000, 1800000], "vainqueur": 1350000}
+      },
+      "coupe_nationale": {"parts_par_tour": [0.001, 0.002, 0.004, 0.008, 0.015, 0.02], "part_vainqueur": 0.02}
+    },
+    "investissements": {
+      "_note": "Tresorerie au-dela de mois_reserve mois de revenu : part_annuelle en est depensee chaque annee, jour apres jour (equipements, dividendes). Aucune depense sous la reserve.",
+      "mois_reserve": 6,
+      "part_annuelle": 0.25
     }
   },
   "mercato": {
@@ -105,6 +160,14 @@
     "delai_reponse_max_jours": 3,
     "tolerance_baisse_joueur_a_vendre": 15.0,
     "multiplicateur_prix_max_acheteur": 1.35,
+    "poids_joueur_connu_club_dormant": 3.0,
+    "reperage": {
+      "_note": "En plus de son echantillon et des talents_visibles, chaque club voit a chaque poste les partants_visibles meilleurs joueurs qui veulent quitter leur club. A chaque fenetre, un club a probabilite_recherche_espoir x 2 x sa preference pour les jeunes de chances de chercher un espoir, un seul jour : parmi les espoirs_visibles joueurs d'au plus age_max_espoir ans au plus haut potentiel estime de chaque poste, il fait une offre pour le meilleur qu'il peut s'offrir et dont il estime le potentiel au-dessus de son niveau vise d'au moins marge_potentiel_espoir.",
+      "partants_visibles": 10,
+      "espoirs_visibles": 10,
+      "age_max_espoir": 21,
+      "probabilite_recherche_espoir": 0.5
+    },
     "jours_relance_proposition": 14,
     "offres_max_proposition": 5,
     "prets": {
@@ -150,7 +213,7 @@
       "bruit_ecart_type": 0.05
     },
     "clubs_dormants": {
-      "_note": "Les clubs non simules forment le marche exterieur. Leur nombre est determine par les donnees, pas code en dur.",
+      "_note": "Les clubs non simules forment le marche exterieur. Leur nombre est determine par les donnees, pas code en dur. Leur plafond salarial se partage entre les places de l'effectif nominal : un joueur connu du jeu y pese poids_joueur_connu_club_dormant joueurs absents (cale sur la part du plafond que tiennent les 1 a 5 mieux payes d'un club simule).",
       "probabilite_acceptation_offre_au_prix": 0.80,
       "multiplicateur_prix_demande": 1.15,
       "probabilite_demarchage_par_fenetre": 0.12,
@@ -175,6 +238,8 @@
     "hausse_salaire_max": 0.30,
     "baisse_par_point_reputation": 0.01,
     "baisse_salaire_max": 0.15,
+    "part_surpaye_conservee": 0.5,
+    "depassement_revenus_sans_prolongation": 1.2,
     "duree_proposee_par_age": [
       {"age_max": 23, "annees": 5},
       {"age_max": 28, "annees": 4},
@@ -190,7 +255,7 @@
     "gardiens_min": 2,
     "gardiens_recommandes": 3,
     "plafond_salarial_strict": true,
-    "solde_minimal_autorise": -5000000
+    "solde_minimal_autorise": 0
   },
   "personnalite_club": {
     "_note": "Tiree une fois a la creation du monde, stable. Cree la diversite sans code par club.",

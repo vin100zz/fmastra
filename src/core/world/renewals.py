@@ -8,7 +8,7 @@ not extend.
 """
 from __future__ import annotations
 
-from core.ai.market import expected_wage, market_value
+from core.ai.market import market_wage
 from core.domain.players import Contract, Player
 from core.domain.world import World
 from .application import apply
@@ -43,7 +43,7 @@ def asked_terms(world: World, player: Player) -> Contract:
     proposal = world.pending_renewals.get(player.id)
     if proposal is not None: return proposal.contract
     club = world.clubs[player.club_id]
-    expected = expected_wage(market_value(player, world, club, False), world.config)
+    expected = market_wage(player, club, world.config)
     return extension(world, player, asked_wage(player, expected, world.config))
 
 

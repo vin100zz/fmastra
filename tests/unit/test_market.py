@@ -498,18 +498,27 @@ def test_simultaneous_sales_recheck_squad_minimums(config):
 
 
 def test_wage_demand_rises_for_a_bigger_club_and_may_drop_for_a_smaller_one(config):
-    from core.ai.market import wage_demand, propose_transfers
+    from core.ai.market import market_wage, wage_demand, propose_transfers
     world = recruitment_world(config)
     player, buyer, seller = world.players[201], world.clubs[1], world.clubs[2]
-    player.contract.weekly_wage = 2000000  # well above his market wage: the move starts from it
+    player.contract.weekly_wage = 2000000  # well above his market wage
     player.greed = 0.0
     seller.reputation, buyer.reputation = 70, 70
-    assert wage_demand(player, buyer, world) == 2000000
+    # The move starts from his market wage and the share he keeps of what he earns above it.
+    market = market_wage(player, buyer, config)
+    start = round(market + config.management.contracts.overpay_kept_share * (2000000 - market))
+    assert market < wage_demand(player, buyer, world) == start < 2000000
     buyer.reputation = 80
-    assert wage_demand(player, buyer, world) > 2000000
+    assert wage_demand(player, buyer, world) > start
     buyer.reputation = 60
     lower = wage_demand(player, buyer, world)
-    assert 2000000 * (1 - 1.5 * config.management.contracts.max_cut) <= lower < 2000000
+    assert start * (1 - 1.5 * config.management.contracts.max_cut) - 1 <= lower < start
+    # A player who wants to leave a club beneath him asks no more than his market wage.
+    seller.reputation, player.rating = 20, 90
+    buyer.reputation = 99
+    restless = market_wage(player, buyer, config)
+    assert wage_demand(player, buyer, world) <= round(restless * (1 + 1.5 * config.management.contracts.max_raise))
+    seller.reputation, player.rating, buyer.reputation = 70, 70, 60
     # A greedy player concedes less and asks a premium on top.
     player.greed = 1.0
     assert wage_demand(player, buyer, world) > lower
@@ -899,10 +908,10 @@ def test_restless_star_accepts_only_a_clearly_bigger_club(config):
 
 
 def renewal_setup(config, reputation):
-    from core.ai.market import expected_wage, market_value
+    from core.ai.market import market_wage
     world, player, club = restless_setup(config, reputation=reputation, ego=0.2)
     club.wage_cap = 10 ** 9
-    wage = expected_wage(market_value(player, world, club, False), world.config)
+    wage = market_wage(player, club, world.config)
     player.contract = Contract(wage, world.date.add_days(180), Date(2024, 7, 1))
     club.wage_bill += wage
     player.morale = 0.9
@@ -1137,3 +1146,104 @@ def test_offers_still_open_when_the_window_closes_lapse_and_the_buyer_is_told(co
     assert not world.offers
     # The offer the human club made is told as expired; the one it left unanswered simply no longer awaits an answer.
     assert [(entry.kind, entry.player_id) for entry in world.news] == [("offer_expired", player.id)]
+
+
+def dormant_club(world, keep=1, weight=1.0):
+    """Club 2 as a dormant club the game holds only `keep` players of, each weighing `weight` unseen ones in its wage cap."""
+    market = replace(world.config.management.market, known_player_weight=weight)
+    world.config = replace(world.config, management=replace(world.config.management, market=market))
+    club = world.clubs[2]
+    club.competition_id, club.status = None, ClubStatus.DORMANT
+    for pid in club.player_ids[keep:]: del world.players[pid]
+    club.player_ids = club.player_ids[:keep]
+    club.wage_bill = sum(world.players[pid].contract.weekly_wage for pid in club.player_ids)
+    return club
+
+
+def test_a_dormant_club_keeps_a_share_of_its_wage_cap_for_each_player_the_game_does_not_hold(config):
+    from core.ai.market import nominal_size, unseen_wages, wage_room
+    world = mini_world(config)
+    size, share = nominal_size(config), 3000
+    active, club = world.clubs[1], dormant_club(world)
+    club.wage_cap = share * size
+    # A club that plays has its whole cap, less what it pays.
+    assert unseen_wages(active, world.config) == 0 and wage_room(active, world.config) == active.wage_cap - active.wage_bill
+    # The game holds one of its players: the others take their share, and he is left with his.
+    assert unseen_wages(club, world.config) == share * (size - 1)
+    assert wage_room(club, world.config) == share - club.wage_bill
+    # A player who joins takes the place of an unseen one.
+    assert wage_room(club, world.config, 1) == 2 * share - club.wage_bill
+    # A full squad leaves nobody unseen.
+    club.player_ids = list(range(size))
+    assert unseen_wages(club, world.config) == 0
+
+
+def test_a_known_player_of_a_dormant_club_weighs_several_unseen_ones(config):
+    from core.ai.market import nominal_size, unseen_wages
+    world = mini_world(config)
+    size, club = nominal_size(config), dormant_club(world, weight=3.0)
+    club.wage_cap = 1000 * (size + 2)
+    # Its one known player is among its best paid: he counts for three of the places the cap is shared between.
+    assert club.wage_cap - unseen_wages(club, world.config) == 3000
+    # The more of its players the game holds, the less each of them adds: the cap is never theirs alone before the squad is full.
+    held = [club.wage_cap - unseen_wages(club, world.config, arrivals) for arrivals in range(size)]
+    assert held == sorted(held) and held[-1] == club.wage_cap
+    assert all(later - earlier <= 3000 for earlier, later in zip(held, held[1:]))
+    # The configured weight is the one the simulated clubs' own best paid players hold.
+    assert config.management.market.known_player_weight == 3.0
+
+
+def test_a_dormant_club_cannot_pay_its_known_players_the_wages_of_its_whole_squad(config):
+    from core.ai.market import nominal_size
+    from core.world.market import offer_limit
+    world = mini_world(config)
+    club, share = dormant_club(world), 3000
+    club.wage_cap = share * nominal_size(config)
+    player, newcomer = world.players[club.player_ids[0]], world.players[101]
+    # His share of the cap, no more, though the club pays nobody else the game knows of.
+    assert not apply(world, PlayerSigned(player.id, club.id, club.id, replace(player.contract, weekly_wage=share + 1), 0, True))
+    assert apply(world, PlayerSigned(player.id, club.id, club.id, replace(player.contract, weekly_wage=share), 0, True))
+    assert club.wage_bill == share
+    # A newcomer takes the place of an unseen player, and his share with it.
+    assert offer_limit(world, club, replace(newcomer.contract, weekly_wage=share + 1), 0, []) == "wages"
+    assert offer_limit(world, club, replace(newcomer.contract, weekly_wage=share), 0, []) is None
+    assert not apply(world, PlayerSigned(newcomer.id, 1, club.id, replace(newcomer.contract, weekly_wage=share + 1), 0))
+    assert apply(world, PlayerSigned(newcomer.id, 1, club.id, replace(newcomer.contract, weekly_wage=share), 0))
+    # Over what is left to it, by contracts signed before, it still extends a player who asks no more.
+    club.wage_cap //= 2
+    assert apply(world, PlayerSigned(player.id, club.id, club.id, replace(player.contract, end=player.contract.end.add_years(1)), 0, True))
+    assert not apply(world, PlayerSigned(player.id, club.id, club.id, replace(player.contract, weekly_wage=share + 1), 0, True))
+
+
+def test_a_dormant_club_extends_its_star_with_what_its_unseen_squad_leaves(config):
+    from core.ai.market import market_wage, nominal_size
+    from core.world.contracts import renewal_events
+    world = mini_world(config)
+    club = dormant_club(world)
+    player = world.players[club.player_ids[0]]
+    expected = market_wage(player, club, world.config)
+    # Paid half the wage his value commands, at a club whose cap would hold that wage many times over.
+    wage, share = expected // 2, expected * 3 // 4
+    player.contract = Contract(wage, world.date.add_days(180), world.date)
+    club.wage_bill, club.wage_cap = wage, share * nominal_size(config)
+    signed = [event for event in renewal_events(world) if isinstance(event, PlayerSigned) and event.player_id == player.id]
+    # He is offered his share of the cap, not the wage he would ask of a club that plays.
+    assert [event.contract.weekly_wage for event in signed] == [share]
+    assert apply(world, signed[0]) and club.wage_bill == share
+
+
+def test_regens_take_the_places_a_dormant_club_keeps_for_unseen_players(config):
+    from core.ai.market import nominal_size
+    from core.world.demography import intake_room
+    world = mini_world(config)
+    wage, limit = config.demography.academies.base_weekly_wage, config.management.guardrails.max_squad
+    active, club = world.clubs[1], dormant_club(world)
+    assert intake_room(active, world.config) == min(limit - active.squad_size, (active.wage_cap - active.wage_bill) // wage)
+    # Its known player holds exactly his share: each regen comes with the share of the unseen player he replaces.
+    club.wage_cap = 2 * wage * nominal_size(config)
+    world.players[club.player_ids[0]].contract = Contract(2 * wage, world.date.add_days(400), world.date)
+    club.wage_bill = 2 * wage
+    assert intake_room(club, world.config) == limit - 1
+    # Its known player holds the wages of the whole squad: nothing is left for a regen.
+    club.wage_bill = club.wage_cap
+    assert intake_room(club, world.config) == 0

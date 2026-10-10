@@ -7,7 +7,7 @@ from core.domain.players import Contract, Player
 from core.domain.world import World
 from core.math import clamp
 from collections import Counter
-from core.ai.market import market_value, expected_wage, contract_for, nominal_size, squad_quality
+from core.ai.market import market_wage, contract_for, nominal_size, squad_quality, wage_room
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
 from .human import is_human_club, listed_price
 from .reserves import accepts_reserve, in_reserve
@@ -59,7 +59,7 @@ def contentment(world: World, player: Player, club: Club, rank: int, games: int,
     season's, or since he came for a player who joined on the way (see `season_arrivals`)."""
     cfg = world.config
     rules = cfg.management.contracts
-    expected = expected_wage(market_value(player, world, club, False), cfg)
+    expected = market_wage(player, club, cfg)
     salary_satisfaction = min(1, player.contract.weekly_wage / expected)
     expected_share = 1 / (rank + 1)
     expected_minutes = (games if club.competition_id else 0) * cfg.engine.timing.match_seconds / 60 * expected_share
@@ -140,10 +140,14 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
             departure_cost = squad_quality(squad, club, cfg) - squad_quality([item for item in squad if item.id != player.id], club, cfg)
             useful = departure_cost > 0
         if not useful: continue
+        # Wages that have outgrown the club's income are not signed again: its players leave as their contracts end.
+        means = club.income * cfg.management.budgets.wage_income_share / cfg.management.budgets.weeks_per_year
+        if club.income and club.wage_bill > rules.renewal_stop_ratio * means and not is_human_club(world, club.id): continue
         proposed = asked_wage(player, expected, cfg)
-        if club.wage_bill - player.contract.weekly_wage + proposed > club.wage_cap:
-            # A financially constrained club can still offer the existing wage.
-            proposed = player.contract.weekly_wage
+        room = wage_room(club, cfg)
+        if proposed - player.contract.weekly_wage > room:
+            # A financially constrained club can still offer the existing wage; a dormant one adds what its unseen squad leaves.
+            proposed = player.contract.weekly_wage + (max(0, room) if club.competition_id is None else 0)
         if proposed < expected and satisfaction < rules.satisfaction_threshold: continue
         # A new contract has to bring him something: a raise, or more years once the end is in sight.
         contract = extension(world, player, proposed)

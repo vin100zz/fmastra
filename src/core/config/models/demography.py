@@ -42,6 +42,14 @@ class DemographyConfigProgressionReserve:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class DemographyConfigProgressionDormant:
+    """Where a dormant club stops bringing a player on: above its own level; the defaults are what a save made before receives."""
+    level_margin: float = Field(default=6.0, alias="marge_niveau")
+    fade_span: float = Field(default=10.0, alias="plage_extinction")
+    floor: float = Field(default=0.20, alias="facteur_plancher")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class DemographyConfigProgression:
     evaluation: str = Field(alias="evaluation")
     monthly_reference_minutes: int = Field(alias="minutes_reference_par_mois")
@@ -59,6 +67,7 @@ class DemographyConfigProgression:
     training_floor: DemographyConfigProgressionTrainingFloor = Field(
         default_factory=DemographyConfigProgressionTrainingFloor, alias="plancher_entrainement")
     reserve: DemographyConfigProgressionReserve = Field(default_factory=DemographyConfigProgressionReserve, alias="reserve")
+    dormant: DemographyConfigProgressionDormant = Field(default_factory=DemographyConfigProgressionDormant, alias="dormants")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -92,7 +101,7 @@ class DemographyConfigCohort:
     home_club_probability: float = Field(default=0.9, alias="probabilite_club_national")
     unsorted_share: float = Field(default=0.1, alias="part_hors_tri")
     sorting_intensity: float = Field(default=10.0, alias="intensite_tri_centres")
-    sorting_reputation_weight: float = Field(default=0.0, alias="poids_reputation_tri")
+    sorting_reputation_weight: float = Field(default=1.0, alias="poids_reputation_tri")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

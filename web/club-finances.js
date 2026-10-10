@@ -57,8 +57,8 @@ export function flowsChart(history){
 // The season's revenue and expenses split by their sources, each as one bar of its parts.
 function splitBars(history){
  const t=history.totals;
- const groups=[['Revenus',history.revenue,[['Revenus structurels',t.income,'revenue'],['Ventes de joueurs',t.transfer_income,'revenue-soft'],['Régularisations',t.rounding_income,'neutral']]],
-  ['Dépenses',history.expenses,[['Salaires',t.wages,'expense'],['Achats de joueurs',t.transfer_expenses,'expense-deep'],['Fonctionnement',t.operating_costs,'expense-soft'],['Régularisations',t.rounding_expenses,'neutral']]]];
+ const groups=[['Revenus',history.revenue,[['Revenus structurels',t.income,'revenue'],['Primes de compétition',t.prizes,'revenue-deep'],['Ventes de joueurs',t.transfer_income,'revenue-soft'],['Régularisations',t.rounding_income,'neutral']]],
+  ['Dépenses',history.expenses,[['Salaires',t.wages,'expense'],['Achats de joueurs',t.transfer_expenses,'expense-deep'],['Fonctionnement',t.operating_costs,'expense-soft'],['Investissements',t.investments,'neutral'],['Régularisations',t.rounding_expenses,'neutral']]]];
  return groups.map(([title,total,parts])=>{
   // Rounding adjustments too small to see on the bar are left out.
   const kept=parts.filter(([label,value])=>value>0&&(label!=='Régularisations'||value>=total/100));

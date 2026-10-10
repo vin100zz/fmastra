@@ -382,7 +382,9 @@ def test_the_transfer_list_survives_a_save_and_an_older_save_has_none(config, tm
     payload["schema_version"] = 27
     for name in ("not_for_sale", "turned_away"): del payload["world"][name]
     del payload["world"]["offers"][offer.key]["limit"]
-    del payload["world"]["config"]["ia_gestion"]["mercato"]["offres"]
+    for introduced, config_path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 27:
+            for key in defaults: del payload["world"]["config"][config_path[0]][config_path[1]][key]
     payload["config_hash"] = hashlib.sha256(json.dumps(payload["world"]["config"], sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     (tmp_path / "before.json.gz").write_bytes(gzip.compress(json.dumps(payload).encode()))
     before = store.load("before")

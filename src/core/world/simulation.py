@@ -4,7 +4,7 @@ from __future__ import annotations
 from random import Random
 
 from core.ai.selection import LineupContext, select_lineup, to_lineup
-from core.ai.market import propose_transfers
+from core.ai.market import propose_transfers, unseen_wages
 from core.domain.date import Date
 from core.domain.matches import Lineup, Match, MatchResult
 from core.domain.world import World
@@ -15,7 +15,8 @@ from .calendar import standings
 from .contracts import expiry_events, renewal_events
 from .demography import retirement_events, cohort_events
 from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
-from .finances import structural_income, annual_funding_factor
+from .finances import structural_income, annual_funding_factor, daily_accounts
+from .prizes import came_down, cup_prizes, europe_prizes, league_place
 from .budgets import carried_shift
 from .human import is_human_club, pending_lineup_match
 from .news import daily_notices, draw_notices, morale_alerts, morale_levels
@@ -72,6 +73,9 @@ def annual_review(world: World) -> None:
         tables[competition.id] = rows
         champions[competition.id] = rows[0].club_id
         rankings.update({row.club_id: index + 1 for index, row in enumerate(rows)})
+    # What the season's cups paid, read before the next season's European places replace their clubs.
+    europe, cups = europe_prizes(world), cup_prizes(world)
+    played = {row.club_id: (competition_id, index, len(rows)) for competition_id, rows in tables.items() for index, row in enumerate(rows)}
     qualify_europe(world, world.date.year, tables)
     movements = promotion_event(world, tables)
     incoming = {move.club_id for move in movements.movements if move.source_id is None}
@@ -81,8 +85,11 @@ def annual_review(world: World) -> None:
     for event in retirement_events(world): apply(world, event)
     for club in world.clubs.values():
         rank = rankings.get(club.id)
-        base_income = structural_income(club, cfg, rank)
-        funding_factor = annual_funding_factor(club, cfg, base_income)
+        league = world.competitions.get(club.competition_id) if club.competition_id is not None else None
+        structural, rights = structural_income(club, cfg, (league.nation, league.level) if league else None, league_place(world, club, played))
+        prizes = {name: amount for name, amount in (("league", rights), ("europe", europe.get(club.id, 0)), ("cup", cups.get(club.id, 0))) if amount}
+        base_income = structural + europe.get(club.id, 0) + cups.get(club.id, 0)
+        funding_factor = annual_funding_factor(club, cfg, base_income, came_down(world, club, played))
         income = round(base_income * funding_factor)
         rules = cfg.management.budgets
         # Honor existing wages and reserve the minimum intake for newly active clubs.
@@ -97,7 +104,7 @@ def annual_review(world: World) -> None:
         # The share the club chose between its two budgets is paid again, as far as the new ones allow.
         shift = carried_shift(club.wage_shift, cap, budget, minimum_wages, rules.weeks_per_year)
         apply(world, BudgetRenewed(club.id, income, max(minimum_wages, cap + shift), budget - shift * rules.weeks_per_year, rank,
-                                   funding_factor, shift))
+                                   funding_factor, shift, prizes))
     drawn = world.next_id
     matches = season_fixtures(world, world.date.year)
     apply(world, SeasonOpened(world.date.year, matches, champions))
@@ -170,11 +177,10 @@ def close_day(world: World) -> None:
     play_international_day(world)
     start = Date(world.season, review.month, review.day)
     days = start.add_years(1).ordinal() - start.ordinal()
-    costs = cfg.management.budgets.accounting.other_cost_share
     for club in world.clubs.values():
-        annual_net = round(club.income * (1 - costs)) - club.wage_bill * cfg.management.budgets.weeks_per_year
-        payment, remainder = divmod(annual_net + club.accounting_remainder, days)
-        apply(world, FinancePosted(club.id, payment, remainder))
+        # A dormant club pays its whole squad, the players the game does not hold included.
+        unseen = unseen_wages(club, cfg)
+        apply(world, FinancePosted(club.id, *daily_accounts(club, cfg, days, unseen), unseen))
     world.pending_match_day = None
     world.submitted_lineups.clear()
 

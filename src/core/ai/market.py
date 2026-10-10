@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from math import exp
 from random import Random
 from functools import lru_cache
 
@@ -15,11 +16,11 @@ from core.domain.world import World
 from core.engine.abilities import overall
 from core.math import clamp, interpolate
 from core.randomness import stream
-from core.world.estimates import estimate_potential
+from core.world.estimates import estimate_potential, opinion_factor
 from core.world.events import PlayerSigned
 from core.world.human import is_human_club, listed_price, untouchable
-from core.world.transfer_rules import recent_arrival_ids, accepts_move
-from core.world.importation.synthesis import intrinsic_value, expected_wage
+from core.world.transfer_rules import recent_arrival_ids, accepts_move, target_level, wants_to_leave
+from core.world.importation.synthesis import intrinsic_value, level_wage
 from .assignment import maximize_assignment
 
 
@@ -37,6 +38,25 @@ class Bid(PlayerSigned):
 
 def nominal_size(cfg: Config) -> int:
     return cfg.world.match_rules.players_on_pitch + cfg.management.target_profile.rotation_places + cfg.management.target_profile.backup_places
+
+
+def unseen_wages(club: Club, cfg: Config, arrivals: int = 0) -> int:
+    """Weekly wages a dormant club keeps for the players the game does not hold.
+
+    It employs a full squad whatever the game knows of it: its wage cap is shared between the places of the nominal
+    squad, so its few known players cannot split the whole cap between them. They are its best paid: each weighs
+    `known_player_weight` unseen ones. `arrivals` are the players about to join, each taking the place of an unseen
+    one. Nothing for a club that plays.
+    """
+    if club.competition_id is not None: return 0
+    known = club.squad_size + arrivals
+    unseen = max(0, nominal_size(cfg) - known)
+    return int(club.wage_cap * unseen / (unseen + cfg.management.market.known_player_weight * known)) if unseen else 0
+
+
+def wage_room(club: Club, cfg: Config, arrivals: int = 0) -> int:
+    """Weekly wages a club can still commit under its cap, with `arrivals` more players in its squad (see `unseen_wages`)."""
+    return club.wage_cap - club.wage_bill - unseen_wages(club, cfg, arrivals)
 
 
 def squad_roles(club: Club, cfg: Config) -> tuple[list[Position], list[float]]:
@@ -127,19 +147,69 @@ def needs_for(club: Club, players: list[Player], cfg: Config) -> list[Need]:
     return sorted((Need(position, gap) for position, gap in gaps.items()), key=lambda item: (-item.gap, item.position.value))
 
 
-def market_value(player: Player, world: World, observer: Club | None = None, discounted: bool = True) -> int:
+def exposure_factor(level: float, club: Club | None, cfg: Config) -> float:
+    """What a player keeps of his transfer value at a club beneath him: nobody has seen him against his equals.
+
+    `level` is the level his value is counted at; each point beyond the level his club aims at, past a margin, takes
+    the same share off, down to a floor."""
+    if club is None: return 1.0
+    rules = cfg.management.valuation.exposure
+    beyond = level - target_level(club, cfg) - rules.level_margin
+    return max(rules.floor, exp(-rules.discount_per_point * beyond)) if beyond > 0 else 1.0
+
+
+def season_performance(player: Player, busiest: float, cfg: Config) -> float:
+    """What a season makes of a player's proven value, around 1: his minutes against those of his club's busiest
+    player, and his average rating against the reference, which counts fully once he has enough matches rated."""
+    rules = cfg.management.valuation.performance
+    played = min(1.0, player.season_minutes / busiest) if busiest else 0.0
+    rated = min(1.0, player.rating_count / cfg.management.market.minutes_confidence_matches)
+    note = clamp((player.rating_sum / player.rating_count - rules.reference_rating) / rules.full_rating_gap, -1, 1) if player.rating_count else 0.0
+    return clamp(1 + rules.playing_time_weight * (2 * played - 1) + rules.rating_weight * rated * note, rules.min_factor, rules.max_factor)
+
+
+def performance_factor(player: Player, club: Club | None, world: World) -> float:
+    """What his form on the pitch makes of the proven part of a player's transfer value.
+
+    This season's (see `season_performance`) once his club has played enough matches; before, what his last season
+    made of it fills in. Neutral where no match is played: in a dormant club, or without a club."""
+    if club is None or club.competition_id is None: return 1.0
     cfg = world.config
-    estimate = estimate_potential(player, world.date, world.seed, cfg, observer.id if observer else None,
+    busiest = max(world.players[pid].season_minutes for pid in club.player_ids)
+    confidence = min(1.0, busiest / (cfg.management.market.minutes_confidence_matches * cfg.engine.timing.match_seconds / 60))
+    return confidence * season_performance(player, busiest, cfg) + (1 - confidence) * player.past_performance
+
+
+def market_value(player: Player, world: World, observer: Club | None = None, discounted: bool = True) -> int:
+    """What a player is worth, as `observer` sees him, or as everyone does without one.
+
+    His level today has its value, which nobody disputes; what his potential adds to it is a matter of opinion (see
+    `opinion_factor`). That is the value his wage follows. `discounted`, it is the value of a transfer: his season
+    weighs on the first part, a club beneath him on the whole, and so does a contract near its end; nothing is owed
+    for a free agent.
+    """
+    cfg = world.config
+    age = player.born.age_on(world.date)
+    proven = intrinsic_value(player.rating, age, player.position, cfg)
+    level = max(player.rating, player.potential * cfg.management.valuation.potential_weight)
+    promise = intrinsic_value(level, age, player.position, cfg) - proven
+    if promise > 0:
+        promise *= opinion_factor(player, world.date, world.seed, cfg, observer.id if observer else None,
                                   observer.reputation if observer else None)
-    level = max(player.rating, estimate.center * cfg.management.valuation.potential_weight)
-    value = intrinsic_value(level, player.born.age_on(world.date), player.position, cfg)
-    if discounted:
-        if player.contract is None: return 0
-        months = world.date.months_until(player.contract.end)
-        for row in cfg.management.valuation.contract_discount:
-            if months < row.max_months:
-                return round(value * row.factor)
-    return value
+    if not discounted: return round(proven + promise)
+    if player.contract is None: return 0
+    club = world.clubs.get(player.club_id) if player.club_id is not None else None
+    value = (proven * performance_factor(player, club, world) + promise) * exposure_factor(level, club, cfg)
+    months = world.date.months_until(player.contract.end)
+    for row in cfg.management.valuation.contract_discount:
+        if months < row.max_months:
+            return round(value * row.factor)
+    return round(value)
+
+
+def market_wage(player: Player, club: Club | None, cfg: Config) -> int:
+    """The weekly wage a player's level commands at his position, at `club`: the richer the club, the more he expects of it."""
+    return level_wage(player.rating, player.position, cfg, club.income if club is not None else None)
 
 
 def contract_for(player: Player, world: World, wage: int) -> Contract:
@@ -214,13 +284,15 @@ def can_spare(player: Player, seller: Club, world: World) -> bool:
 
 def seller_accepts(player: Player, seller: Club, fee: int, world: World, rng: Random) -> bool:
     if not can_sell(player, seller, world) or fee < asking_price(player, seller, world): return False
-    return seller.competition_id is not None or rng.random() < world.config.management.market.dormant_clubs.acceptance_probability
+    # A dormant club turns down even its asking price, by chance; never for a player who wants to leave it.
+    return (seller.competition_id is not None or wants_to_leave(player, world)
+            or rng.random() < world.config.management.market.dormant_clubs.acceptance_probability)
 
 
 def player_offer_score(player: Player, target: Club, wage: int, world: World) -> float:
     cfg = world.config
     weights = cfg.management.market.player_score
-    expected = expected_wage(market_value(player, world, target, False), cfg)
+    expected = market_wage(player, target, cfg)
     salary = min(wage / expected, cfg.management.budgets.wages.max_offer_ratio) / cfg.management.budgets.wages.max_offer_ratio
     others = [world.players[pid] for pid in target.player_ids if world.players[pid].position == player.position and pid != player.id]
     minutes = 1 / (1 + sum(other.rating > player.rating for other in others))
@@ -232,14 +304,16 @@ def player_offer_score(player: Player, target: Club, wage: int, world: World) ->
 def wage_demand(player: Player, club: Club, world: World) -> int:
     """The lowest weekly wage a player accepts to join a club.
 
-    From the higher of his wage and his market wage: a raise to join a more reputed club,
-    a limited cut for a less reputed one. The greedier he is, the bigger the raise and
+    From the wage his level commands at that club, and a share of what he earns above it: a raise to join a more reputed
+    club, a limited cut for a less reputed one. The greedier he is, the bigger the raise and
     the smaller the cut he concedes, and the higher the premium on top (see `greed_trait`).
+    A player who wants to leave a club beneath him asks his market wage, whatever he earns there.
     """
     cfg = world.config
     rules = cfg.management.contracts
-    expected = expected_wage(market_value(player, world, club, False), cfg)
-    base = max(expected, player.contract.weekly_wage if player.contract else 0)
+    expected = market_wage(player, club, cfg)
+    overpaid = max(0, (player.contract.weekly_wage if player.contract else 0) - expected)
+    base = expected + (0 if wants_to_leave(player, world) else rules.overpay_kept_share) * overpaid
     source = world.clubs.get(player.club_id) if player.club_id is not None else None
     step = club.reputation - source.reputation if source is not None and source.id != club.id else 0.0
     if step >= 0: move = min(rules.max_raise, rules.raise_per_point * step) * (0.5 + player.greed)
@@ -394,7 +468,7 @@ def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> 
             if not accepts_move(player, club, world): continue
             wage = wage_demand(player, club, world)
             limit = price_limit(player, club, world, outside_need(player, club, world))
-            if fee > club.transfer_budget or club.balance - fee < guard.min_balance or club.wage_bill + wage > club.wage_cap or fee > limit: continue
+            if fee > club.transfer_budget or club.balance - fee < guard.min_balance or wage > wage_room(club, cfg, 1) or fee > limit: continue
             bids.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
             continue
         pending = [offer for offer in world.offers.values() if offer.target_id == club.id]
@@ -462,11 +536,55 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             talents[position] = [player for player in best if available(player)][:cfg.management.market.visible_talents]
         return talents[position]
 
+    scouting = cfg.management.market.scouting
+    leavers: dict[Position, list[Player]] = {}
+    def known_leavers(position: Position) -> list[Player]:
+        """Best sellable players of a position who want to leave their club: they make it known to every club."""
+        if position not in leavers:
+            if position not in ranked:
+                ranked[position] = sorted((player for player in candidates if player.position == position),
+                                          key=lambda player: (-player.rating, player.id))
+            restless = (player for player in ranked[position] if wants_to_leave(player, world) and available(player))
+            leavers[position] = [player for _, player in zip(range(scouting.visible_leavers), restless)]
+        return leavers[position]
+
     def price(player: Player) -> int:
         if player.id not in quotes:
             seller = world.clubs.get(player.club_id)
             quotes[player.id] = listed[player.id] if player.id in listed else asking_price(player, seller, world) if seller else 0
         return quotes[player.id]
+
+    prospects: list[Player] = []
+    def known_prospects() -> list[Player]:
+        """The young players the world rates highest at each position, by the potential everyone estimates them."""
+        if not prospects:
+            seen = defaultdict(list)
+            for player in candidates:
+                if player.club_id is not None and player.born.age_on(world.date) <= scouting.prospect_max_age:
+                    seen[player.position].append((-estimate_potential(player, world.date, world.seed, cfg).center, player.id, player))
+            for rows in seen.values():
+                promising = (player for _, _, player in sorted(rows) if available(player))
+                prospects.extend(player for _, player in zip(range(scouting.visible_prospects), promising))
+        return prospects
+
+    def prospect_bid(club: Club, plan: Plan) -> Bid | None:
+        """The best prospect a club can afford, as it reads them: a player for later, whatever its needs today."""
+        aim = target_level(club, cfg) + cfg.management.market.prospect_margin
+        read = sorted(((estimate_potential(player, world.date, world.seed, cfg, club.id, club.reputation).center, player)
+                       for player in known_prospects() if player.club_id != club.id and player.id not in rejected.get(club.id, ())),
+                      key=lambda row: (-row[0], row[1].id))
+        for center, player in read:
+            if center < aim or center - player.rating < cfg.management.market.prospect_margin: break
+            if turned_away(club, player) or not accepts_move(player, club, world): continue
+            wage, fee = wage_demand(player, club, world), price(player)
+            if wage > plan.wages or fee > plan.money: continue
+            limit = price_limit(player, club, world, club.personality.youth_preference)
+            if fee > limit: continue
+            return Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit)
+        return None
+
+    from .external_market import open_window, approach_day
+    window = open_window(world)
 
     for club in world.active_clubs():
         if is_human_club(world, club.id): continue  # the human club's outgoing offers come from its own command, not this scan
@@ -479,9 +597,14 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         # Opening-day planning covers several positions. Later batch reviews
         # preserve the configured rate of opportunities instead of tripling it.
         review_probability = cfg.management.market.daily_proposal_probability / max(1, slots)
-        if not urgent and not opening_day and club.id not in rejected and rng.random() >= review_probability: continue
+        reviewing = urgent or opening_day or club.id in rejected or rng.random() < review_probability
+        # One day of each window, a club that cares for the young looks for a prospect, whatever its needs.
+        searching = (not emergency and not urgent and window is not None and approach_day(
+            world.seed, club.id, *window, min(1.0, 2 * scouting.prospect_search_probability * club.personality.youth_preference),
+            "prospect_search") == world.date)
+        if not reviewing and not searching: continue
         plan = recruitment_plan(world, club, pending, slots, completed_positions[club.id])
-        needs = controller.evaluate_needs(club, plan.projected)
+        needs = controller.evaluate_needs(club, plan.projected) if reviewing else []
         if plan.missing_keeper:
             needs.sort(key=lambda need: need.position != Position.GOALKEEPER)
         for need in needs:
@@ -494,7 +617,8 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             pool = rng.sample(pool, min(len(pool), cfg.management.market.max_candidates_scanned))
             if not emergency:
                 scanned = {player.id for player in pool}
-                pool += [player for player in known_talents(need.position)
+                known = {player.id: player for player in known_talents(need.position) + known_leavers(need.position)}
+                pool += [player for player in known.values()
                          if player.id not in scanned and player.club_id != club.id and player.id not in rejected.get(club.id, ())]
                 scanned.update(player.id for player in pool)
                 pool += [world.players[pid] for pid in listed if world.players[pid].position == need.position
@@ -518,6 +642,10 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
                 proposals.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
                 plan.take(player, fee, wage, quality)
                 break
+        if searching and plan.slots > 0:
+            bid = prospect_bid(club, plan)
+            if bid is not None and all(other.player_id != bid.player_id for other in proposals if other.target_id == club.id):
+                proposals.append(bid)
     # Each external club has one scheduled opportunity per transfer window.
     if not emergency:
         from .external_market import approaching_clubs
@@ -537,7 +665,7 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
                 wage = wage_demand(player, club, world)
                 limit = price_limit(player, club, world, outside_need(player, club, world))
                 if fee > limit: continue
-                if fee <= club.transfer_budget and club.balance - fee >= cfg.management.guardrails.min_balance and club.wage_bill + wage <= club.wage_cap:
+                if fee <= club.transfer_budget and club.balance - fee >= cfg.management.guardrails.min_balance and wage <= wage_room(club, cfg, 1):
                     proposals.append(Bid(player.id, player.club_id, club.id, contract_for(player, world, wage), fee, limit=limit))
                     break
     return proposals

@@ -12,6 +12,7 @@ from core.math import clamp, weighted_choice
 from core.randomness import stream
 from .events import PlayerChanged, MatchPlayed
 from .reserves import playing_floor, reserve_days, reserve_factor
+from .transfer_rules import target_level
 
 
 def draw_injury(date: Date, cfg: Config, rng: Random) -> Injury:
@@ -49,11 +50,15 @@ def playing_factor(world: World, player: Player, start: Date) -> float:
 
     In a club that plays: a floor set by its training, raised towards 1 by the minutes he played, each one counting
     less than the one before; a month in the reserve is worth at least the reserve's own factor, in proportion to the
-    days he spent there. Anywhere else, a flat factor."""
+    days he spent there. Without a club, a flat factor; in a dormant club, the same factor as long as the club is up to
+    him, fading to a floor as his level leaves the one it aims at behind: it has nothing left to teach him."""
     cfg = world.config
     rules = cfg.demography.progression
     club = world.clubs.get(player.club_id) if player.club_id is not None else None
-    if club is None or club.competition_id is None: return rules.external_playing_factor
+    if club is None: return rules.external_playing_factor
+    if club.competition_id is None:
+        beyond = clamp((player.rating - target_level(club, cfg) - rules.dormant.level_margin) / rules.dormant.fade_span, 0, 1)
+        return rules.external_playing_factor - max(0, rules.external_playing_factor - rules.dormant.floor) * beyond
     floor = playing_floor(club, cfg)
     played = floor + (1 - floor) * min(player.monthly_minutes / rules.monthly_reference_minutes, 1) ** rules.minutes_exponent
     days = reserve_days(player, start, world.date)

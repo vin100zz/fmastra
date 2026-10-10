@@ -26,10 +26,46 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 28
+SCHEMA_VERSION = 29
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Income by reputation and championship, cup prizes, idle cash spent, bounded opinions, exposure and form in a player's
+    # value, scouting of leavers and prospects, dormant clubs sharing their wage cap with the players the game does not hold
+    # and bringing nobody on beyond their level: an older save plays on with these rules (see `_upgrade_economy`).
+    (29, ("ia_gestion", "valorisation"), {
+         "opinion": {"facteur_max_jeune": 1.5, "facteur_max_mur": 1.1, "part_stable": 0.6, "ecarts_types_max": 2.0},
+         "exposition": {"marge_niveau": 3.0, "decote_par_point": 0.12, "plancher": 0.05},
+         "performance": {"poids_temps_de_jeu": 0.1, "poids_note": 0.2, "note_reference": 6.5, "ecart_note_plein": 0.5,
+                         "facteur_min": 0.75, "facteur_max": 1.3}}),
+    (29, ("ia_gestion", "budgets"), {
+         "revenus_club": {
+             "revenu_propre_reference": 6000000, "reputation_reference": 60.0, "pente_reputation": 0.1, "revenu_minimum": 1850000,
+             "part_billetterie": 0.15, "capacite_reference": 30000, "capacite_par_defaut": 5000,
+             "droits_championnat": {"ENG": [154000000, 30000000], "ITA": [60000000, 8400000], "GER": [51000000, 8800000],
+                                    "ESP": [44000000, 14000000], "FRA": [21500000, 1700000, 900000]},
+             "ratio_droits_autres_championnats": 1.5, "rapport_premier_dernier": 3.0},
+         "primes": {
+             "europe": {
+                 "C1": {"participation": 8000000, "victoire": 1000000, "nul": 330000,
+                        "tours": [500000, 5000000, 5500000, 7000000, 8000000], "vainqueur": 3000000},
+                 "C3": {"participation": 2000000, "victoire": 200000, "nul": 70000,
+                        "tours": [150000, 800000, 1100000, 1900000, 3200000], "vainqueur": 2700000},
+                 "C4": {"participation": 1400000, "victoire": 180000, "nul": 60000,
+                        "tours": [100000, 360000, 600000, 1100000, 1800000], "vainqueur": 1350000}},
+             "coupe_nationale": {"parts_par_tour": [0.001, 0.002, 0.004, 0.008, 0.015, 0.02], "part_vainqueur": 0.02}},
+         "investissements": {"mois_reserve": 6.0, "part_annuelle": 0.25},
+         "modele_salaire": {"salaire_reference": 285000, "niveau_reference": 60.0, "pente_niveau": 0.15,
+                            "revenu_reference": 40000000, "exposant_revenu": 0.5}}),
+    (29, ("ia_gestion", "mercato"), {
+         "poids_joueur_connu_club_dormant": 3.0,
+         "reperage": {"partants_visibles": 10, "espoirs_visibles": 10, "age_max_espoir": 21, "probabilite_recherche_espoir": 0.5}}),
+    (29, ("ia_gestion", "contrats"), {"part_surpaye_conservee": 0.5, "depassement_revenus_sans_prolongation": 1.2}),
+    (29, ("demographie", "progression"), {"dormants": {"marge_niveau": 6.0, "plage_extinction": 10.0, "facteur_plancher": 0.2}}),
+    (29, ("benchmarks", "economie"), {
+         "croissance_tresorerie_annuelle_max": 0.05, "part_salaires_revenus_min": 0.45, "part_salaires_revenus_max": 0.62,
+         "tresorerie_mediane_mois_revenu_max": 12.0, "derive_indemnites_sur_horizon_max": 0.5, "reputation_petit_club": 40.0,
+         "niveau_vedette_petit_club": 65.0, "vedettes_petits_clubs_max": 30, "salaire_mensuel_petits_clubs_max": 80000}),
     # Buyers' own price limits, raised offers and outbidding: an older save trades with these rules.
     (28, ("ia_gestion", "mercato"), {"offres": {
          "prime_besoin": 1.5, "gain_besoin_plein": 10.0, "poids_appetit_risque": 0.3, "bruit_ecart_type": 0.06,
@@ -85,7 +121,7 @@ MIGRATION_DEFAULTS = (
     (16, ("moteur_match", "transitions"), {"ecart_note_max": 20.0, "avance_confortable": 2, "relachement_par_but": 0.4}),
     # Regens placed by academy and country: an older save is given the rules its next cohort is drawn with.
     (14, ("demographie", "cohorte"), {
-         "probabilite_club_national": 0.9, "part_hors_tri": 0.10, "intensite_tri_centres": 10.0, "poids_reputation_tri": 0.0}),
+         "probabilite_club_national": 0.9, "part_hors_tri": 0.10, "intensite_tri_centres": 10.0, "poids_reputation_tri": 1.0}),
     (14, ("demographie", "generation"), {
          "poids_age": [0.45, 0.35, 0.15, 0.05], "seuil_potentiel_elite": 85.0, "exposant_nations_elite": 0.5,
          "part_plancher_nation": 0.0002, "noms_minimum_par_nation": 20}),
@@ -208,6 +244,7 @@ class SaveStore:
             if version < 24: _rate_positions(world)
             if version < 26: _upgrade_news(world)
             if version < 27: _recall_refusals(world)
+            if version < 29: _upgrade_economy(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -353,6 +390,65 @@ def _upgrade_configured_positions(world: World) -> None:
     if formations.get("4-4-2 offensif") == _rename_positions(list(ADDED_FORMATIONS["4-4-2 offensif"])):
         formations["4-4-2 offensif"] = list(ATTACKING_442)
     world.config = decode_config(payload)
+
+
+# Rules recalibrated by schema 29, as (domain, section, inner section if any, key, value shipped before, value shipped since).
+RECALIBRATED_RULES = (("management", "budgets", "accounting", "other_cost_share", 0.15, 0.30),
+                      ("management", "guardrails", None, "min_balance", -5000000, 0),
+                      ("demography", "potential_estimate", None, "max_noise", 22.0, 10.0),
+                      ("demography", "cohort", None, "sorting_reputation_weight", 0.0, 1.0))
+
+
+def _upgrade_economy(world: World) -> None:
+    """Schema 29: an older save takes the recalibrated rules, and its clubs the income those rules give them.
+
+    A rule the save still holds as it shipped takes its new value; any other was chosen, and is kept. Each club then
+    earns what the new rules give it. The wages it agreed to during the game, under the former income, are first
+    brought back, all in the same proportion, to what the new one pays, within what its unseen squad leaves its known
+    players for a dormant club; the contracts of the import, and those of the club the user runs, stay as they are.
+    What its wages still require beyond its income is supported as at the creation of a game, a support that retires
+    as those contracts end. No wage cap falls under the wages a club pays or has reserved.
+    """
+    from core.ai.market import unseen_wages
+    from core.world.finances import structural_income
+    cfg = world.config
+    for domain, section, inner, key, before, since in RECALIBRATED_RULES:
+        rules = getattr(getattr(cfg, domain), section)
+        holder = getattr(rules, inner) if inner else rules
+        if getattr(holder, key) != before: continue
+        holder = replace(holder, **{key: since})
+        rules = replace(rules, **{inner: holder}) if inner else holder
+        cfg = replace(cfg, **{domain: replace(getattr(cfg, domain), **{section: rules})})
+    world.config = cfg
+    budgets = cfg.management.budgets
+    floor = budgets.wages.weekly_minimum
+    for club in world.clubs.values():
+        league = world.competitions.get(club.competition_id) if club.competition_id is not None else None
+        ranked = league is not None and club.previous_rank is not None and len(league.club_ids) > 1
+        place = min(1.0, (club.previous_rank - 1) / (len(league.club_ids) - 1)) if ranked else None
+        base, rights = structural_income(club, cfg, (league.nation, league.level) if league else None, place)
+        club.wage_cap = round(base * budgets.wage_income_share / budgets.weeks_per_year)
+        if club.id != world.controlled_club_id:
+            # Signed during the game by a player it pays: one it lent is still paid by it, one it borrowed by his owner.
+            signed = [player for pid in [*club.player_ids, *club.loaned_ids]
+                      if pid not in club.borrowed_ids and not (player := world.players[pid]).contract.synthetic]
+            paid = sum(player.contract.weekly_wage for player in signed)
+            # A club that plays keeps the headroom a new game gives it; a dormant one, what its unseen squad leaves.
+            limit = round(club.wage_cap / budgets.initial_funding.wage_headroom) if league is not None else club.wage_cap
+            over = club.wage_bill + unseen_wages(club, cfg) - limit
+            if over > 0 and paid > 0:
+                kept = max(0, paid - over) / paid
+                for player in signed:
+                    wage = max(floor, round(player.contract.weekly_wage * kept))
+                    if wage < player.contract.weekly_wage:
+                        club.wage_bill -= player.contract.weekly_wage - wage
+                        player.contract = replace(player.contract, weekly_wage=wage)
+        needed = club.wage_bill * budgets.weeks_per_year * budgets.initial_funding.wage_headroom / budgets.wage_income_share
+        club.funding_factor = max(budgets.initial_funding.min_funding_factor, needed / base)
+        club.income = round(base * club.funding_factor)
+        club.prize_income = {"league": rights} if rights else {}
+        reserved = sum(offer.contract.weekly_wage for offer in world.offers.values() if offer.target_id == club.id)
+        club.wage_cap = max(club.wage_bill + reserved, round(club.income * budgets.wage_income_share / budgets.weeks_per_year) + club.wage_shift)
 
 
 def _config_matches(world: World, fingerprint: str, version: int) -> bool:

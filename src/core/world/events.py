@@ -72,9 +72,13 @@ class LoanEnded:
 
 @dataclass(frozen=True, slots=True)
 class FinancePosted:
+    """A club's day of accounts: `change` is its cash once `investment` is spent; `unseen_wages` are the weekly wages a
+    dormant club pays the players the game does not hold."""
     club_id: int
     change: int
     remainder: int
+    investment: int = 0
+    unseen_wages: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +91,8 @@ class BudgetRenewed:
     funding_factor: float | None = None
     # What the club keeps of the share it chose between its two budgets, already counted in `wage_cap` and `transfer_budget`.
     wage_shift: int = 0
+    # The part of `income` its competitions pay, by "league", "europe" and "cup".
+    prizes: dict[str, int] | None = None
 
 
 @dataclass(frozen=True, slots=True)

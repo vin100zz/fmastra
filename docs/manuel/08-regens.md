@@ -8,7 +8,7 @@ Le jeu ne fixe pas de quota par club. Il vise un effectif nominal de {{monde.reg
 
 Les places sont ensuite réparties entre les clubs :
 
-- un club ne reçoit un regen que s'il lui reste une place dans son effectif ({{ia_gestion.garde_fous.effectif_max}} joueurs au plus) et de la marge sous son plafond salarial ;
+- un club ne reçoit un regen que s'il lui reste une place dans son effectif ({{ia_gestion.garde_fous.effectif_max}} joueurs au plus) et de la marge sous son plafond salarial ; un club simulé sous l'effectif minimal reçoit toujours ceux qui lui manquent ;
 - un club reçoit au plus {{demographie.centres_formation.allocation_max_par_club}} regens par an ;
 - les clubs sous le minimum ({{ia_gestion.garde_fous.effectif_min}} joueurs, {{ia_gestion.garde_fous.gardiens_min}} gardiens) sont servis en premier, et un club à court de gardiens reçoit un gardien ;
 - ensuite, plus un effectif est mince, plus il a de chances de recevoir une place.
@@ -67,10 +67,10 @@ Une note inférieure à {{demographie.generation.aptitudes_postes.note_min}} ne 
 Tous les regens de l'année sont d'abord créés sans club. Ils sont ensuite classés du plus fort potentiel au plus faible, et **les meilleurs choisissent leur club en premier**, parmi ceux qui ont encore une place.
 
 - Dans {{pct(demographie.cohorte.probabilite_club_national, 0)}} des cas, un regen choisit parmi les clubs de son pays, s'il y en a un avec une place.
-- Chaque club pèse dans le tirage selon sa note RECRUTEMENT JEUNES, et ce poids compte d'autant plus que le regen est bien classé. Pour le meilleur regen de l'année, un club noté 20 a {{n(exp(demographie.cohorte.intensite_tri_centres * 0.5), 0)}} fois plus de chances d'être choisi qu'un club noté 10 ; pour un regen du milieu du classement, {{n(exp(demographie.cohorte.intensite_tri_centres * 0.25), 0)}} fois ; le dernier prend n'importe quel club.
+- Chaque club pèse dans le tirage selon son attrait : sa note RECRUTEMENT JEUNES, ramenée sur 100, et sa réputation, avec un poids de {{n(demographie.cohorte.poids_reputation_tri, 1)}} pour 1. Ce poids compte d'autant plus que le regen est bien classé. Pour le meilleur regen de l'année, à réputation égale, un club noté 20 a {{n(exp(demographie.cohorte.intensite_tri_centres * 0.5 / (1 + demographie.cohorte.poids_reputation_tri)), 0)}} fois plus de chances d'être choisi qu'un club noté 10 ; à note égale, un club de réputation 80 en a {{n(exp(demographie.cohorte.intensite_tri_centres * 0.3 * demographie.cohorte.poids_reputation_tri / (1 + demographie.cohorte.poids_reputation_tri)), 0)}} fois plus qu'un club de réputation 50. Pour un regen du milieu du classement, ces écarts sont bien moindres ; le dernier prend n'importe quel club.
 - {{pct(demographie.cohorte.part_hors_tri, 0)}} des regens ignorent ces notes et tombent au hasard : même un petit centre voit passer un talent de temps en temps.
 
-La note RECRUTEMENT JEUNES ne crée donc pas de talents : elle décide de **qui les récupère**. Elle ne donne pas non plus davantage de regens ; ce nombre dépend des places libres. Un club dont la note n'est pas renseignée est traité comme un club noté 10.
+La note RECRUTEMENT JEUNES et la réputation ne créent donc pas de talents : elles décident de **qui les récupère**. Elles ne donnent pas non plus davantage de regens ; ce nombre dépend des places libres. Un club dont la note n'est pas renseignée est traité comme un club noté 10.
 
 ## ENTRAÎNEMENT
 
@@ -82,9 +82,10 @@ Vous voyez le potentiel exact de chaque joueur. Les clubs de l'IA décident à p
 
 - à {{demographie.estimation_potentiel.age_debut_convergence}} ans, l'erreur type est de {{demographie.estimation_potentiel.bruit_max * 2}} points ; elle se réduit régulièrement jusqu'à {{demographie.estimation_potentiel.age_convergence}} ans, où elle n'est plus que de {{demographie.estimation_potentiel.bruit_min * 2}} points ;
 - un club réputé voit plus juste : l'erreur est multipliée par {{demographie.estimation_potentiel.facteur_observateur_base}} − {{demographie.estimation_potentiel.facteur_reputation_observateur}} × réputation ÷ 100 ;
-- chaque club a sa propre erreur sur chaque joueur, et elle est retirée chaque année.
+- chaque club a sa propre opinion de chaque joueur, qui ne saute jamais : {{pct(ia_gestion.valorisation.opinion.part_stable, 0)}} de ce qu'il pense d'un joueur lui reste d'une année à l'autre, le reste est retiré chaque année, et l'opinion glisse de mois en mois vers le tirage de l'année ;
+- aucune opinion ne s'écarte de plus de {{n(ia_gestion.valorisation.opinion.ecarts_types_max, 0)}} erreurs types.
 
-C'est cette estimation qui entre dans la valeur que l'IA attribue à un jeune, dans le prix qu'elle en demande et dans sa décision de le faire jouer. L'IA surpaie donc parfois un jeune ordinaire et laisse passer un futur grand joueur ; votre vue exacte du potentiel est un avantage réel sur le marché des jeunes.
+C'est cette estimation qui décide si l'IA fait jouer un jeune, le place en réserve, le prête ou le recrute comme espoir. Dans la valeur qu'un club donne à un joueur, la même opinion ne déplace que la prime de potentiel, dans des bornes étroites (voir [La valeur marchande](#/aide/contrats/la-valeur-marchande)). L'IA surpaie donc parfois un jeune ordinaire et laisse passer un futur grand joueur ; votre vue exacte du potentiel est un avantage réel sur le marché des jeunes.
 
 ## Les joueurs de complément
 

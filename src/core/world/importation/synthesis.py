@@ -12,28 +12,36 @@ def age_value_factor(age: int, cfg: Config) -> float:
     return interpolate(points, age)
 
 
-def level_value(level: float, cfg: Config) -> float:
-    """Value in euros of a level for a prime-age player at a neutral position.
+def _geometric(points: list[tuple[float, float]], level: float) -> float:
+    """A curve of amounts by level, interpolated geometrically: it stays convex between two points, and past its ends
+    the slope of the nearest segment continues."""
+    index = next((i for i in range(1, len(points)) if level <= points[i][0]), len(points) - 1)
+    (x0, y0), (x1, y1) = points[index - 1], points[index]
+    return exp(log(y0) + (log(y1) - log(y0)) * (level - x0) / (x1 - x0))
 
-    The configured curve is interpolated geometrically, so value stays convex
-    between points; past its ends, the slope of the nearest segment continues.
-    """
+
+def level_value(level: float, cfg: Config) -> float:
+    """Value in euros of a level for a prime-age player at a neutral position (see `_geometric`)."""
     value = cfg.management.valuation
     if not value.level_curve:
         return value.base_euros * exp(value.exponent * (level - value.reference_level))
-    points = [(row.level, log(row.value)) for row in value.level_curve]
-    index = next((i for i in range(1, len(points)) if level <= points[i][0]), len(points) - 1)
-    (x0, y0), (x1, y1) = points[index - 1], points[index]
-    return exp(y0 + (y1 - y0) * (level - x0) / (x1 - x0))
+    return _geometric([(row.level, row.value) for row in value.level_curve], level)
+
+
+def level_wage(level: float, position: Position, cfg: Config, income: int | None = None) -> int:
+    """Weekly wage a level commands at a position, at a club of yearly `income`: the reference income without one.
+
+    Whatever the player's age or promise. Twice the level slope doubles it; so does a club four times as rich, at the
+    configured exponent. Never under the minimum wage."""
+    budget = cfg.management.budgets
+    rules = budget.wage_model
+    means = (income / rules.reference_income) ** rules.income_exponent if income else 1.0
+    yearly = rules.reference_wage * exp(rules.level_slope * (level - rules.reference_level)) * means * cfg.management.valuation.position_scarcity[position]
+    return max(budget.wages.weekly_minimum, round(yearly / budget.weeks_per_year))
 
 
 def intrinsic_value(level: float, age: int, position: Position, cfg: Config) -> int:
     return round(level_value(level, cfg) * age_value_factor(age, cfg) * cfg.management.valuation.position_scarcity[position])
-
-
-def expected_wage(value: int, cfg: Config) -> int:
-    budget = cfg.management.budgets
-    return max(budget.wages.weekly_minimum, round(value * budget.wages.annual_value_share / budget.weeks_per_year))
 
 
 def club_strength(capacity: int, cfg: Config, rng: Random) -> tuple[float, float]:

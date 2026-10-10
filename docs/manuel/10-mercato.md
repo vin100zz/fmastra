@@ -20,11 +20,24 @@ Pour le poste recherché, il examine :
 
 - {{ia_gestion.mercato.max_candidates_scanned}} joueurs de ce poste tirés au hasard dans le monde entier ;
 - les {{ia_gestion.mercato.talents_visibles}} meilleurs joueurs vendables de ce poste, que tous les clubs connaissent ;
+- les {{ia_gestion.mercato.reperage.partants_visibles}} meilleurs joueurs vendables de ce poste qui veulent quitter leur club (voir [Ce qu'un joueur accepte](#/aide/mercato/ce-qu-un-joueur-accepte)) : ils le font savoir à tous ;
 - les joueurs de ce poste que vous avez placés sur votre liste des transferts, examinés en premier.
 
 Il les passe en revue du meilleur au moins bon et écarte ceux qui sont invendables, qui refuseraient de venir, dont le salaire demandé dépasse sa marge salariale ou dont le prix dépasse ses moyens. Parmi les {{ia_gestion.mercato.taille_shortlist}} premiers qui restent, il fait une offre au premier qui **améliore vraiment son effectif** : le gain doit valoir au moins {{ia_gestion.mercato.gain_qualite_min_recrutement * 2}} points de niveau sur une place de titulaire, davantage sur une place de rotation ou de doublure, qui pèsent moins. Il faut encore que le prix demandé tienne sous son [prix maximum](#/aide/mercato/le-prix-maximum-d-un-acheteur) pour ce joueur : sinon il le laisse à un club qui en a davantage besoin et passe au suivant.
 
 Ses moyens sont son budget de transferts et sa trésorerie (voir [Finances](#/aide/finances)), diminués de ce que ses offres en cours ont déjà réservé.
+
+## La recherche d'espoirs
+
+En plus de ses besoins du moment, un club peut recruter pour l'avenir. À chaque mercato, il cherche un espoir avec une probabilité de {{n(2 * ia_gestion.mercato.reperage.probabilite_recherche_espoir, 1)}} fois sa préférence pour les jeunes, un seul jour de la fenêtre. Cette préférence est un trait du club, tiré à la création de la partie entre {{ia_gestion.personnalite_club.preference_jeunes.min}} et {{ia_gestion.personnalite_club.preference_jeunes.max}}.
+
+Ce jour-là, il regarde, à chaque poste, les {{ia_gestion.mercato.reperage.espoirs_visibles}} joueurs vendables d'au plus {{ia_gestion.mercato.reperage.age_max_espoir}} ans dont l'opinion commune estime le potentiel le plus haut. Il les relit avec sa propre estimation et fait une offre au meilleur :
+
+- dont il estime le potentiel au moins {{ia_gestion.mercato.marge_potentiel_espoir * 2}} points au-dessus du niveau qu'il vise pour un titulaire, et autant au-dessus du niveau actuel du joueur ;
+- qui accepte de venir, dont le salaire tient sous son plafond et le prix dans ses moyens ;
+- dont le prix demandé tient sous son [prix maximum](#/aide/mercato/le-prix-maximum-d-un-acheteur), sa préférence pour les jeunes tenant lieu de besoin.
+
+Il lui faut une place libre dans l'effectif, et il ne cherche pas d'espoir tant qu'il est sous l'effectif minimal.
 
 ## Le prix demandé
 
@@ -36,7 +49,7 @@ prix demandé = valeur × ({{ia_gestion.mercato.seuil_vendeur_multiplicateur}} o
              × coefficient de statut
 ```
 
-La valeur est celle du chapitre [Valeur, salaires et contrats](#/aide/contrats), décote de fin de contrat comprise. La patience est un trait du club, tiré à la création de la partie entre {{ia_gestion.personnalite_club.patience_negociation.min}} et {{ia_gestion.personnalite_club.patience_negociation.max}} : certains clubs sont durablement plus durs en affaires que d'autres. Un effectif est en surnombre au-delà de {{monde.regles_match.joueurs_sur_terrain + ia_gestion.profil_cible.rotations_cibles + ia_gestion.profil_cible.doublures_cibles}} joueurs.
+La valeur est la [valeur de transfert](#/aide/contrats/la-valeur-de-transfert) du joueur, telle que son club la voit : forme de la saison, exposition et décote de fin de contrat comprises. Un petit club ne peut donc pas demander le prix d'un grand pour un joueur qui le dépasse. La patience est un trait du club, tiré à la création de la partie entre {{ia_gestion.personnalite_club.patience_negociation.min}} et {{ia_gestion.personnalite_club.patience_negociation.max}} : certains clubs sont durablement plus durs en affaires que d'autres. Un effectif est en surnombre au-delà de {{monde.regles_match.joueurs_sur_terrain + ia_gestion.profil_cible.rotations_cibles + ia_gestion.profil_cible.doublures_cibles}} joueurs.
 
 **Le statut** est ce qui compte le plus :
 
@@ -113,9 +126,9 @@ Une petite part de hasard s'y ajoute. À salaire égal, un joueur préfère donc
 
 Les clubs non simulés participent des deux côtés, avec des règles plus simples.
 
-- **Comme vendeurs** : ils demandent {{ia_gestion.mercato.clubs_dormants.multiplicateur_prix_demande}} fois la valeur du joueur, quel que soit son statut, et n'ont pas d'effectif minimal à protéger. Même au prix, ils ne vendent que {{pct(ia_gestion.mercato.clubs_dormants.probabilite_acceptation_offre_au_prix, 0)}} du temps : sinon toutes les offres pour le joueur sont refusées.
-- **Comme acheteurs** : chacun a, à chaque fenêtre, {{pct(ia_gestion.mercato.clubs_dormants.probabilite_demarchage_par_fenetre, 0)}} de chances de se manifester, un seul jour de la fenêtre. Il regarde alors quelques joueurs parmi les joueurs en surnombre des clubs simulés, ceux de votre liste des transferts et les joueurs libres, et prend le meilleur qu'il peut s'offrir sous son prix maximum. Faute d'effectif simulé, son besoin est tiré au hasard pour le mercato.
+- **Comme vendeurs** : ils demandent {{ia_gestion.mercato.clubs_dormants.multiplicateur_prix_demande}} fois la valeur du joueur, quel que soit son statut, et n'ont pas d'effectif minimal à protéger. Même au prix, ils ne vendent que {{pct(ia_gestion.mercato.clubs_dormants.probabilite_acceptation_offre_au_prix, 0)}} du temps : sinon toutes les offres pour le joueur sont refusées. Ils ne retiennent jamais un joueur qui veut partir : au prix demandé, il part.
+- **Comme acheteurs** : chacun a, à chaque fenêtre, {{pct(ia_gestion.mercato.clubs_dormants.probabilite_demarchage_par_fenetre, 0)}} de chances de se manifester, un seul jour de la fenêtre. Il regarde alors quelques joueurs parmi les joueurs en surnombre des clubs simulés, ceux de votre liste des transferts et les joueurs libres, et prend le meilleur qu'il peut s'offrir sous son prix maximum. Le salaire du joueur doit tenir dans [la part de plafond](#/aide/finances/le-plafond-salarial) que le club ne retient pas pour ses joueurs absents du jeu. Faute d'effectif simulé, son besoin est tiré au hasard pour le mercato.
 
 ## Les recrutements d'urgence
 
-Un club ne peut pas descendre sous {{ia_gestion.garde_fous.effectif_min}} joueurs ni {{ia_gestion.garde_fous.gardiens_min}} gardiens par une vente. S'il y tombe autrement (retraites, fins de contrat), il signe immédiatement des joueurs libres, même hors mercato.
+Un club ne peut pas descendre sous {{ia_gestion.garde_fous.effectif_min}} joueurs ni {{ia_gestion.garde_fous.gardiens_min}} gardiens par une vente. S'il y tombe autrement (retraites, fins de contrat), il signe immédiatement des joueurs libres, même hors mercato. S'il n'en trouve aucun qu'il puisse payer, son centre de formation complète l'effectif, au salaire du centre.

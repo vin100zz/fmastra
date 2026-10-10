@@ -227,15 +227,20 @@ def test_own_player_on_the_transfer_list_and_offered_to_the_clubs(client):
 
 
 def test_an_offer_is_answered_with_the_clubs_own_price_and_a_refusal_brings_a_higher_one(client):
+    from dataclasses import replace
     from core.world import news as feed
     from core.world.market import settle_offers
     world = client.app.state.game.world
     club = world.active_clubs()[0]
-    room = lambda item: item.id != club.id and item.squad_size < world.config.management.guardrails.max_squad
-    buyer = max((item for item in world.active_clubs() if room(item)), key=lambda item: item.transfer_budget)
-    choose(client, club.id)
     own_player = min((pid for pid in club.player_ids if world.players[pid].position != "GB"), key=lambda pid: world.players[pid].rating)
     player = world.players[own_player]
+    # A buyer with a place and the wages for him.
+    room = lambda item: (item.id != club.id and item.squad_size < world.config.management.guardrails.max_squad
+                         and item.wage_cap - item.wage_bill >= player.contract.weekly_wage)
+    buyer = max((item for item in world.active_clubs() if room(item)), key=lambda item: item.transfer_budget)
+    # A patient buyer: it raises its offer step by step instead of going straight to the most it pays.
+    buyer.personality = replace(buyer.personality, negotiation_patience=1.0)
+    choose(client, club.id)
     offer = TransferOffer("unasked", world.date, own_player, club.id, buyer.id, player.contract, 1_000_000, 1_000_000, 1,
                           awaiting_review=True, limit=2_000_000)
     world.offers[offer.key] = offer

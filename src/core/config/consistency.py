@@ -189,6 +189,7 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.management.budgets.wages.weekly_minimum > 0 and cfg.demography.academies.base_weekly_wage > 0, "Wage minima must be positive")
     require(cfg.management.market.max_negotiations > 0 and cfg.management.market.shortlist_size > 0, "Invalid negotiation capacity")
     require(0 < cfg.management.market.counteroffer_ratio <= 1, "Counteroffer ratio must be in (0,1]")
+    require(cfg.management.market.known_player_weight > 0, "A dormant club's known player must weigh something in its wage cap")
     require(cfg.states.substitutions.evaluation_interval > 0 and cfg.engine.rating_refresh.fitness_interval > 0, "Refresh intervals must be positive")
     substitutions = cfg.states.substitutions
     require(substitutions.rotation_min_gain > 0 and substitutions.potential_margin_reference > 0,

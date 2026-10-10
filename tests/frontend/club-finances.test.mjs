@@ -120,3 +120,13 @@ test('without accounts for the season, the charts give way to an explanation',()
  assert.match(html,/<span>Budget transferts<\/span>/);
  assert.match(financesContent(club,data({history:history({partial:true})}),squad),/Historique partiel/);
 });
+
+test('the split of a season names what the competitions paid and what the club spent of its idle cash',()=>{
+ const totals={income:20e6,prizes:8e6,wages:13.8e6,operating_costs:4.8e6,investments:2e6,transfer_income:0,transfer_expenses:0,rounding_income:0,rounding_expenses:0};
+ const html=financesContent(club,data({history:history({revenue:28e6,expenses:20.6e6,totals})}),squad);
+ assert.match(html,/<i class="revenue" style="flex:20000000 1 0" title="Revenus structurels : 20\sM€"><\/i><i class="revenue-deep" style="flex:8000000 1 0" title="Primes de compétition : 8\sM€"><\/i>/);
+ assert.match(html,/<li><i class="revenue-deep"><\/i><span>Primes de compétition<\/span><b>8\sM€<\/b><small>29 %<\/small><\/li>/);
+ assert.match(html,/<li><i class="neutral"><\/i><span>Investissements<\/span><b>2\sM€<\/b><small>10 %<\/small><\/li>/);
+ // Accounts kept before them hold neither: no empty part.
+ assert.doesNotMatch(financesContent(club,data(),squad),/Primes de compétition|Investissements/);
+});

@@ -13,7 +13,7 @@ from core.domain.world import World
 from core.engine.abilities import generate_attributes, overall
 from core.math import clamp, interpolate, weighted_choice
 from core.randomness import stream
-from core.ai.market import nominal_size
+from core.ai.market import nominal_size, wage_room
 from .events import PlayerReleased, PlayerGenerated
 from .transfer_rules import greed_trait
 
@@ -283,6 +283,17 @@ def place_outside(prospects: Sequence[Prospect], clubs: Sequence[Club], room: di
     return [placed[index] for index in range(len(prospects))]
 
 
+def intake_room(club: Club, cfg: Config) -> int:
+    """Regens a club can take one after the other at the academy wage, within its squad limit and its wage cap."""
+    guard = cfg.management.guardrails
+    wage, places = cfg.demography.academies.base_weekly_wage, guard.max_squad - club.squad_size
+    count = 0
+    # Each one frees the share of the cap a dormant club kept for an unseen player (see `unseen_wages`).
+    while count < places and (count + 1) * wage <= wage_room(club, cfg, count + 1): count += 1
+    # A club that plays always takes the players its minimum squad lacks, whatever its wages.
+    return count if club.competition_id is None else max(count, min(places, guard.min_squad - len(club.player_ids)))
+
+
 def cohort_events(world: World) -> list[PlayerGenerated]:
     cfg, rng = world.config, world.rngs["demography"]
     guard = cfg.management.guardrails
@@ -305,8 +316,7 @@ def cohort_events(world: World) -> list[PlayerGenerated]:
     allocations = Counter()
     keeper_allocations = Counter()
     keeper_counts = {club.id: sum(world.players[pid].position == Position.GOALKEEPER for pid in club.player_ids) for club in active_clubs}
-    capacity = {club.id: max(0, min(guard.max_squad - club.squad_size,
-                                     (club.wage_cap - club.wage_bill) // cfg.demography.academies.base_weekly_wage)) for club in world.clubs.values()}
+    capacity = {club.id: intake_room(club, cfg) for club in world.clubs.values()}
     candidates = [club for club in active_clubs if capacity[club.id] > 0]
     external = [club for club in world.clubs.values() if club.competition_id is None and capacity[club.id] > 0]
     slots = []

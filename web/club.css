@@ -1,7 +1,7 @@
 /* Club pages: the header in the club's colours, the squad beside its widgets, and the figures and charts of the other tabs.
    Loaded after theme.css; every colour comes from the theme's variables, so both themes follow. */
-:root{--series-1:#3987e5;--series-1-soft:#1c5cab;--series-2:#d95926;--series-2-deep:#f2a07a;--series-2-soft:#8a3a18;--chart-grid:#2a323d;--pitch-a:#24603b;--pitch-b:#286a41}
-:root[data-theme="light"]{--series-1:#2a78d6;--series-1-soft:#9ec5f4;--series-2:#eb6834;--series-2-deep:#b8481c;--series-2-soft:#f6ae8f;--chart-grid:#e6eaef;--pitch-a:#3c9358;--pitch-b:#429c5f}
+:root{--series-1:#3987e5;--series-1-deep:#8bbaf1;--series-1-soft:#1c5cab;--series-2:#d95926;--series-2-deep:#f2a07a;--series-2-soft:#8a3a18;--chart-grid:#2a323d;--pitch-a:#24603b;--pitch-b:#286a41}
+:root[data-theme="light"]{--series-1:#2a78d6;--series-1-deep:#1b5299;--series-1-soft:#9ec5f4;--series-2:#eb6834;--series-2-deep:#b8481c;--series-2-soft:#f6ae8f;--chart-grid:#e6eaef;--pitch-a:#3c9358;--pitch-b:#429c5f}
 
 /* Header: the band in the club's colours, the tabs under it. */
 .club-hero{--hero-accent:var(--hero-accent-dark,var(--accent-text));margin:0 0 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
@@ -113,6 +113,7 @@
 .cc-dot{fill:var(--series-1);stroke:var(--panel);stroke-width:2}
 .series-revenue,.cc-legend .revenue,.split-bar .revenue,.finance-split li .revenue{fill:var(--series-1);background:var(--series-1)}
 .series-expense,.cc-legend .expense,.split-bar .expense,.finance-split li .expense{fill:var(--series-2);background:var(--series-2)}
+.split-bar .revenue-deep,.finance-split li .revenue-deep{background:var(--series-1-deep)}
 .split-bar .revenue-soft,.finance-split li .revenue-soft{background:var(--series-1-soft)}
 .split-bar .expense-deep,.finance-split li .expense-deep{background:var(--series-2-deep)}
 .split-bar .expense-soft,.finance-split li .expense-soft{background:var(--series-2-soft)}

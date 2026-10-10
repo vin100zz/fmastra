@@ -381,13 +381,15 @@ def finances(world: World, club_id: int, season: int | None) -> dict:
     since = world.finance_history_since or world.date
     review = world.config.world.key_dates.population_review
     start = Date(nav["season"], review.month, review.day)
-    totals = {key: 0 for key in ("income", "wages", "operating_costs", "transfer_income", "transfer_expenses", "rounding_income", "rounding_expenses")}
+    totals = {key: 0 for key in ("income", "prizes", "wages", "operating_costs", "investments", "transfer_income", "transfer_expenses",
+                                 "rounding_income", "rounding_expenses")}
     entries = []
     if record:
         for month, amounts in record.months.items():
             period = Date(nav["season"] + (month < review.month), month, 1).iso()
-            for key, label, expense in (("income", "Revenus structurels", False), ("wages", "Salaires", True),
-                                        ("operating_costs", "Frais de fonctionnement", True)):
+            for key, label, expense in (("income", "Revenus structurels", False), ("prizes", "Primes de compétition", False),
+                                        ("wages", "Salaires", True), ("operating_costs", "Frais de fonctionnement", True),
+                                        ("investments", "Investissements", True)):
                 amount = getattr(amounts, key)
                 totals[key] += amount
                 if amount: entries.append({"date": period, "monthly": True, "label": label, "revenue": 0 if expense else amount, "expense": amount if expense else 0})
@@ -403,15 +405,15 @@ def finances(world: World, club_id: int, season: int | None) -> dict:
             entries.append({"date": item.date.iso(), "monthly": False, "label": "Vente de joueur" if sale else "Achat de joueur",
                             "player_id": item.player_id, "player": v.player_name(world, item.player_id),
                             "revenue": item.fee if sale else 0, "expense": 0 if sale else item.fee})
-    revenue = totals["income"] + totals["transfer_income"] + totals["rounding_income"]
-    expenses = totals["wages"] + totals["operating_costs"] + totals["transfer_expenses"] + totals["rounding_expenses"]
+    revenue = totals["income"] + totals["prizes"] + totals["transfer_income"] + totals["rounding_income"]
+    expenses = totals["wages"] + totals["operating_costs"] + totals["investments"] + totals["transfer_expenses"] + totals["rounding_expenses"]
     opening = record.opening_balance if record else None
     # Month by month, in date order: what came in, what went out, and the cash left at the end of the month.
     months, balance = [], opening
     if record:
         for month, amounts in sorted(record.months.items(), key=lambda item: (item[0] < review.month, item[0])):
-            came = amounts.income + amounts.transfer_income + max(0, amounts.rounding)
-            went = amounts.wages + amounts.operating_costs + amounts.transfer_expenses + max(0, -amounts.rounding)
+            came = amounts.income + amounts.prizes + amounts.transfer_income + max(0, amounts.rounding)
+            went = amounts.wages + amounts.operating_costs + amounts.investments + amounts.transfer_expenses + max(0, -amounts.rounding)
             balance += came - went
             months.append({"date": Date(nav["season"] + (month < review.month), month, 1).iso(), "revenue": came, "expenses": went, "balance": balance})
     return {**nav, "since": since.iso(), "partial": since > start, "available": record is not None,
