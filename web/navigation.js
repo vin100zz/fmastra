@@ -1,20 +1,24 @@
 import {escape as e,position as positionBadge,competitionBadge} from './ui.js';
 
-const triangle=up=>`<svg viewBox="0 0 10 10" aria-hidden="true"><path d="${up?'M5 2 9.5 8h-9z':'M5 8 .5 2h9z'}"/></svg>`;
-const burger='<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 2h8M1 5h8M1 8h8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+// The chevrons of a season's steps, turned: up to the one before, down to the one after; three lines open the list.
+const chevron=up=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${up?'M6.5 14.5 12 9l5.5 5.5':'M6.5 9.5 12 15l5.5-5.5'}"/></svg>`;
+const lines='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14M5 12h14M5 16.5h14"/></svg>';
 
-// A small block for the left of a page header: a triangle up to the previous member of the group, a menu listing every member, a triangle down
-// to the next one. `href` builds the link of a member, `label` names it in text and `row` in the list. The ends of the group have no link on
-// their side; the greyed triangle keeps the block steady. A group of one has nothing to step through.
+// The steps of a band, at its left (docs/charte-graphique.md, « Navigation d'un bandeau »): a chevron up to the previous
+// member of the group, three lines that open the list of them all, a chevron down to the next one. `href` builds the link
+// of a member, `label` names it in text and `row` in the list. The ends of the group have no link on their side; the faded
+// chevron keeps the column steady. A group of one has nothing to step through.
 function neighbours(nav,{href,scope,listLabel,label=item=>item.name,row=item=>e(label(item))}){
  if(!nav||nav.total<2)return '';
  const step=(item,direction,name)=>item
-  ?`<a class="entity-step ${direction}" href="${e(href(item))}" rel="${direction}" aria-label="${name} : ${e(label(item))}" title="${name} : ${e(label(item))}">${triangle(direction==='prev')}</a>`
-  :`<span class="entity-step ${direction}" aria-hidden="true">${triangle(direction==='prev')}</span>`;
+  ?`<a class="entity-step ${direction}" href="${e(href(item))}" rel="${direction}" aria-label="${name} : ${e(label(item))}" title="${name} : ${e(label(item))}">${chevron(direction==='prev')}</a>`
+  :`<span class="entity-step ${direction}" aria-hidden="true">${chevron(direction==='prev')}</span>`;
  const caption=`${scope} · ${nav.index+1} / ${nav.total}`;
- const rows=nav.items.map((item,index)=>`<li><a href="${e(href(item))}"${index===nav.index?' aria-current="true"':''}>${row(item)}</a></li>`).join('');
- return `<div class="entity-nav" role="group" aria-label="${e(listLabel)}">${step(nav.previous,'prev','Précédent')}<details class="entity-menu"><summary aria-label="${e(listLabel)}" title="${e(caption)}">${burger}</summary><div class="entity-menu-panel"><p class="entity-menu-scope">${e(caption)}</p><ul>${rows}</ul></div></details>${step(nav.next,'next','Suivant')}</div>`;
+ const rows=nav.items.map((item,index)=>`<a href="${e(href(item))}" role="menuitemradio" aria-checked="${index===nav.index}">${row(item)}</a>`).join('');
+ return `<div class="entity-nav" role="group" aria-label="${e(listLabel)}">${step(nav.previous,'prev','Précédent')}<details class="entity-menu"><summary aria-label="${e(listLabel)}" title="${e(caption)}">${lines}</summary><div class="menu" role="menu" aria-label="${e(listLabel)}">${rows}</div></details>${step(nav.next,'next','Suivant')}</div>`;
 }
+// In the list, a name after its badge.
+const badged=(badge,name)=>`<div class="cell">${badge}${e(name)}</div>`;
 
 // Clubs of a division, alphabetically; a club outside any division steps through the clubs of its country. Moving keeps the open tab
 // and `query` (the columns of the squad list). Homonymous clubs (the source lists a club and its empty duplicate) carry their squad size,
@@ -37,11 +41,11 @@ export function nationNavigation(nav,tab) {
 // The squad of the player's club, goalkeepers first, each with the colour of its position.
 export function playerNavigation(nav){
  return nav?neighbours(nav,{href:player=>`#/player/${player.id}`,scope:`Effectif · ${nav.scope.name}`,listLabel:`Choisir un joueur de ${nav.scope.name}`,
-  row:player=>`${positionBadge(player.position)}<span>${e(player.name)}</span>`}):'';
+  row:player=>badged(positionBadge(player.position),player.name)}):'';
 }
 
 // A competition in a list: its badge, then its name.
-const competitionRow=competition=>`${competitionBadge(competition)}<span>${e(competition.name)}</span>`;
+const competitionRow=competition=>badged(competitionBadge(competition),competition.name);
 
 // The divisions of a country from the top down, then its cup. A competition page has no tab in common with the next one, so it opens on its default.
 export function competitionNavigation(nav){

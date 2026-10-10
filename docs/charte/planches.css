@@ -42,5 +42,7 @@ body{margin:0;background:var(--bg)}
 .column{display:flex;flex-direction:column;gap:32px;min-width:0}
 /* A menu stands where its specimen is; the tooltip of one of its rows, over that row. The list of the seasons keeps its
    place under the season that opens it. */
-.spec :not(.season-pick)>.menu{position:relative;align-self:flex-start}
+.spec :not(.season-pick,.entity-menu)>.menu{position:relative;align-self:flex-start}
+/* The list of a band's steps opens over what follows the band, which a board would cut. */
+:is(.card,.hero):has(.entity-menu[open]){overflow:visible}
 .menu-tip{position:absolute;z-index:1;left:50%;transform:translateX(-50%);width:max-content}

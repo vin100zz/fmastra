@@ -89,7 +89,7 @@ const busyButtons=()=>{
  showSearch();
 };
 // Each new date of the auto mode redraws the screen: the list of peers the user is browsing stays open where it was.
-function reopenMenu(scroll){const menu=main.querySelector('.entity-menu');if(!menu)return;menu.open=true;menu.querySelector('.entity-menu-panel').scrollTop=scroll;}
+function reopenMenu(scroll){const menu=main.querySelector('.entity-menu');if(!menu)return;menu.open=true;menu.querySelector('.menu').scrollTop=scroll;}
 function routeParts(){const [path,search='']=location.hash.slice(1).split('?');return {parts:(path||'/').split('/').filter(Boolean),params:new URLSearchParams(search)};}
 function changeParams(values){const path=location.hash.split('?')[0]||'#/';location.hash=`${path}?${new URLSearchParams(values)}`;}
 // The controlled club's next three matches, left of Continuer: days to go, opponent (plane if away), competition (cups in blue).
@@ -223,7 +223,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra,params);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'actualites':html=await newsScreen(await openMessage(params));break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .entity-menu-panel'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu,details.season-pick')].map(details=>details.open):[];renderedPath=path;
+ if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .menu'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu,details.season-pick')].map(details=>details.open):[];renderedPath=path;
  // The field of a filter in use: the same screen is drawn again around its form, and typing goes on. Its text is kept
  // while it runs ahead of the address this screen was drawn from; otherwise it follows the address, as after a step back.
  const active=document.activeElement,field=main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active:null;
@@ -407,7 +407,7 @@ main.addEventListener('click',async event=>{
 });
 // The list of peers in a page header closes on a click elsewhere, on a choice and on Escape; opening it centres the current entry.
 // So does the menu of a filter, which also closes when another one opens.
-document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open],.filter-menu[open],.season-pick[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu-panel a,.filter-menu a,.season-pick .menu>*'))menu.removeAttribute('open');}));
+document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open],.filter-menu[open],.season-pick[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu .menu>*,.filter-menu a,.season-pick .menu>*'))menu.removeAttribute('open');}));
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open],.filter-menu[open],.season-pick[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.filter-menu')||!menu.open)return;main.querySelectorAll('.filter-menu[open]').forEach(other=>{if(other!==menu)other.removeAttribute('open');});if(!menu.contains(document.activeElement))menu.querySelector('input')?.focus();},true);
 // A row picked in a list refreshes the preview beside it, without drawing the list again; the address keeps the row for the
@@ -444,7 +444,7 @@ main.addEventListener('click',event=>{
 // A new window size changes the rows that fit and whether the side panel has room.
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit]'))render();},250);});
-main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.entity-menu-panel'),current=panel.querySelector('[aria-current]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
+main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.menu'),current=panel.querySelector('[aria-checked="true"]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
 // A new page opens at the top; a new sort, filter or page of the same list keeps the scroll where it was.
 window.addEventListener('hashchange',event=>{const path=url=>new URL(url).hash.split('?')[0];render();if(path(event.oldURL)!==path(event.newURL))window.scrollTo({top:0});});
 document.addEventListener('lineup-change',updateAdvanceButton);

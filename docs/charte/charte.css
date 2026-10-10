@@ -335,8 +335,21 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
    won it or who holds its title, after the dot of its colours or its flag. */
 .hero-emblem{display:block;flex:none;width:72px;height:72px;object-fit:contain}
 .hero .tile strong :is(.kit-dot,.flag){align-self:center}
-.entity-nav{display:flex;flex-direction:column;gap:1px}
-.entity-nav>*{display:grid;place-items:center;width:20px;height:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font-size:var(--fs-micro);line-height:1}
+/* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
+   of 16 with a line of 2.4 to the previous and to the next of the group, and between them three lines, of an icon's line,
+   that open the list of them all. They are drawn in the band's second colour, its sash's, where it reads on the band (a
+   contrast of 3 at least), else in its ink (`--hero-step`); under the pointer they stand on a veil of that ink, at 12 %
+   (`--hero-veil`). A chevron with nothing beyond it stays in place, faded. The list is the menu, under the column: twelve
+   lines before it scrolls, the one shown on the wash of a picked row, a name after its badge. */
+.entity-nav{--step:var(--hero-step,currentColor);position:relative;display:flex;flex-direction:column;flex:none}
+.entity-step,.entity-menu>summary{display:flex;align-items:center;justify-content:center;width:var(--h-control);height:var(--h-control-small);border-radius:var(--radius);color:var(--step)}
+:is(.entity-step,.entity-menu>summary) svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.entity-menu>summary svg{stroke-width:1.7}
+span.entity-step svg{opacity:.3}
+.entity-menu>summary{list-style:none;cursor:pointer}
+.entity-menu>summary::-webkit-details-marker{display:none}
+.entity-menu[open]>summary{background:var(--hero-veil,var(--panel-2));box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--step)}
+.entity-menu>.menu{position:absolute;top:calc(100% + var(--s1));left:0;z-index:2;max-height:calc(12*var(--h-row) + 2*var(--s1));overflow-y:auto}
 /* A player's header is his club's. Under the band, where a club has its tabs: where he stands on the left, then what can
    be done with him in the groups of his menu, the main action last. */
 .hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);flex:none;min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
@@ -491,8 +504,11 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 a:is(.tr,.match-row,.result){cursor:pointer}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
-.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,.entity-nav>a,.pitch-player):is(:hover,.hover){text-decoration:none}
-:is(.nav a,.segmented>a,.segmented>button,.button,.entity-nav>*):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
+:is(.nav a,.segmented>a,.segmented>button,.button):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+/* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
+   their colour. */
+:is(a.entity-step,.entity-menu:not([open])>summary):is(:hover,.hover){background:var(--hero-veil,var(--panel-3))}
 .menu>:is(button,a):not(:disabled,[aria-disabled="true"],[aria-checked="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 :is(.season>:is(button,a):not(:disabled,[aria-disabled="true"]),.season-pick:not([open])>summary):is(:hover,.hover){background:var(--panel-3)}
 .app :is(.season a,.menu>a):is(:hover,.hover){text-decoration:none}

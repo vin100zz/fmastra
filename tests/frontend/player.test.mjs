@@ -201,7 +201,7 @@ test('player page steps through the squad at the left of the disc, and shows not
  const {html}=await render();
  assert.match(html,/<div class="club-hero-main"><div class="entity-nav"[^]*?<\/div><div class="crest club-hero-crest">C<img[^>]*><\/div><div class="club-hero-identity"><div class="club-hero-name"><h1>Test Joueur<\/h1>/);
  assert.match(html,/href="#\/player\/5" rel="prev"/);assert.match(html,/href="#\/player\/6" rel="next"/);
- assert.match(html,/<a href="#\/player\/1" aria-current="true"><span class="position def">DD<\/span><span>Test Joueur<\/span><\/a>/);
+ assert.match(html,/<a href="#\/player\/1" role="menuitemradio" aria-checked="true"><div class="cell"><span class="position def">DD<\/span>Test Joueur<\/div><\/a>/);
  assert.equal(html.match(/<h1>(.*?)<\/h1>/)[1],'Test Joueur');
  for(const navigation of [null,{...squad,total:1,items:[squad.items[1]],previous:null,next:null}]){
   const alone=(await render(detail,navigation)).html;

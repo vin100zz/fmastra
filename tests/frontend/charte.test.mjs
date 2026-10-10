@@ -71,3 +71,23 @@ test('the seasons are stepped through with one control, the charter’s: no scre
  // On a club's or a selection's page, that colour is the one under its open tab.
  assert.match(rules(await read('web/charte.css')).find(([selector])=>selector==='.club-hero .season')[1],/--club:var\(--hero-accent\)/);
 });
+
+test('a band steps between peers with one control, the charter’s: a season’s steps in a column, in the band’s colours',async()=>{
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  // Neither border nor ground; the colour the band gives its steps, its ink without one.
+  assert.match(body('.entity-nav'),/--step:var\(--hero-step,currentColor\);.*flex-direction:column/,sheet);
+  assert.match(body('.entity-step,.entity-menu>summary'),/width:var\(--h-control\);height:var\(--h-control-small\);.*color:var\(--step\)/,sheet);
+  assert.doesNotMatch(body('.entity-step,.entity-menu>summary'),/border:|background/,sheet);
+  // The chevrons of a season's steps; three lighter lines open the list.
+  assert.match(body(':is(.entity-step,.entity-menu>summary) svg'),/width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2\.4/,sheet);
+  assert.match(body('.entity-menu>summary svg'),/stroke-width:1\.7/,sheet);
+  // Open, the veil of the band's ink and the mark of what is open; the list is the menu, under the column.
+  assert.match(body('.entity-menu[open]>summary'),/background:var\(--hero-veil,var\(--panel-2\)\);box-shadow:inset 0 calc\(-1\*var\(--mark-control\)\) 0 var\(--step\)/,sheet);
+  assert.match(body('.entity-menu>.menu'),/top:calc\(100% \+ var\(--s1\)\);left:0;.*max-height:calc\(12\*var\(--h-row\) \+ 2\*var\(--s1\)\)/,sheet);
+  // Under the pointer, that veil and not the ground of the page.
+  assert.ok(said.some(([selector,rule])=>/a\.entity-step.*:hover/.test(selector)&&/background:var\(--hero-veil,var\(--panel-3\)\)/.test(rule)),sheet);
+ }
+ // The older sheets say nothing of it any more.
+ for(const name of OLDER)assert.doesNotMatch(await read(`web/${name}`),/entity-/,name);
+});

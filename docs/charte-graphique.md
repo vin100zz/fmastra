@@ -133,6 +133,7 @@ où le fond est déjà jaune.
 | En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent. Voir « En-tête d'un match » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
+| Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
@@ -175,8 +176,8 @@ Ce qui se lit saison par saison se parcourt avec un seul contrôle, le même sur
 tous les écrans (`.season`) : une flèche vers la saison d'avant, la saison
 montrée, une flèche vers la suivante. La saison montrée ouvre la liste de
 toutes. Sur le calendrier d'une sélection, les éditions (Euro, Coupe du monde)
-se parcourent de même ; la page d'une édition, elle, passe aux autres par le
-bloc de son bandeau (voir « En-tête d'une compétition »). Jamais une liste
+se parcourent de même ; la page d'une édition, elle, passe aux autres par la
+navigation de son bandeau (voir « Navigation d'un bandeau »). Jamais une liste
 déroulante du navigateur, une rangée d'options ni des blocs repliés.
 
 - **Sans bordure** : ni cadre, ni trait entre ses parties. Un fond (`--panel-3`)
@@ -219,7 +220,8 @@ lieu.
 
 Ce qui se trouve sous le pointeur prend un seul fond, `--panel-3`. Ce qui est
 ouvert, choisi ou teinté garde le sien. Rien d'autre ne bouge : ni couleur d'un
-lien, ni bordure, ni ombre.
+lien, ni bordure, ni ombre. Sur un bandeau, qui a ses couleurs, ce fond est un
+voile de son encre.
 
 | Élément | Au repos | Sous le pointeur |
 |---|---|---|
@@ -229,6 +231,7 @@ lien, ni bordure, ni ombre.
 | Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
 | Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne d'un menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
 | Flèche d'un pas de saison, saison qui ouvre sa liste | Aucun fond | `--panel-3` ; la flèche garde la couleur du club |
+| Flèche de la navigation d'un bandeau, traits qui ouvrent sa liste | Aucun fond | Un voile de l'encre du bandeau, à 12 % ; ils gardent leur couleur |
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
 | Joueur sur un terrain | Son nom | Son nom souligné |
 
@@ -300,6 +303,42 @@ son drapeau, sans lien.
 Le bandeau d'un match n'a rien à la suite de ses noms : sa barre dit le reste
 (voir « En-tête d'un match »).
 
+### Navigation d'un bandeau
+
+La fiche d'un club, d'une sélection, d'un joueur ou d'une compétition passe à
+ses pairs par un seul contrôle, à gauche de son bandeau (`.entity-nav`) : le pas
+de saison, en colonne. Une flèche vers le pair d'avant, trois traits qui ouvrent
+la liste de tous, une flèche vers le suivant. Un groupe d'un seul n'en a pas.
+
+- **Sans bordure ni fond** : une colonne de trois cases de 28 sur 22, devant le
+  disque ou l'emblème.
+- **Flèches** : les chevrons du pas de saison (16, trait de 2.4), vers le haut et
+  vers le bas, dans le sens de la liste. Celle qui n'a plus rien au-delà reste à
+  sa place, estompée (30 %).
+- **Traits** : trois, au trait d'une icône (1.7), dans la couleur des flèches.
+  Leur liste ouverte, leur case prend le voile et la marque de ce qui est ouvert
+  (2), dans cette couleur.
+- **Couleur** : la seconde couleur du bandeau, celle de son écharpe, quand son
+  contraste sur le bandeau atteint 3 ; sinon l'encre du bandeau. Un bandeau sans
+  couleurs les a à l'encre.
+- **Sous le pointeur** : un voile de l'encre du bandeau, à 12 % ; la flèche garde
+  sa couleur.
+- **Liste** : le menu de la charte (`.menu`), sous la colonne, aligné sur son
+  bord gauche : tous les pairs, douze lignes au plus avant de défiler, ouverte
+  sur celui montré, qui a le fond `--own-row`. Un joueur y suit son poste, une
+  compétition sa pastille. Ni titre, ni compte : « Ligue 1 · 7 / 18 » est
+  l'infobulle des trois traits. Elle se ferme sur un choix, un clic ailleurs ou
+  Échap.
+
+| Bandeau | Seconde couleur | Contraste | Flèches |
+|---|---|---|---|
+| Ligue Europa | `#f26522` sur `#0a0b5c` | 5.48 | `#f26522` |
+| Euro | `#ffcc00` sur `#003399` | 7.18 | `#ffcc00` |
+| Nice | `#d2122e` sur `#1a1a1a` | 3.20 | `#d2122e` |
+| Paris SG | `#da291c` sur `#004170` | 2.17 | L'encre, `#ffffff` |
+| Ligue des champions | `#2447e6` sur `#0a0b5c` | 2.57 | L'encre, `#ffffff` |
+| Marseille | `#ffffff` sur `#2faee0` | 2.54 | L'encre, `#111418` |
+
 ### En-tête d'un joueur
 
 La fiche d'un joueur s'ouvre sur le bandeau de son club (`.hero`) : ses
@@ -368,8 +407,8 @@ La page d'un championnat, d'une coupe nationale, d'une coupe d'Europe, d'une
   Pas de tuile avant un premier titre. Ni journée, ni tour : le bandeau ne dit
   pas où en est la compétition, et aucune ligne sous les onglets ne nomme le
   vainqueur.
-- **Bloc de navigation** : à gauche du bandeau, celui d'un club ou d'un joueur
-  (précédent, liste, suivant). Il passe d'une coupe d'Europe à l'autre en
+- **Navigation** : à gauche du bandeau, celle d'un club ou d'un joueur (voir
+  « Navigation d'un bandeau »). Elle passe d'une coupe d'Europe à l'autre en
   gardant l'onglet ouvert et la saison, d'une édition des sélections à l'autre
   (de la première à la dernière, Euro et Coupe du monde mêlés) en gardant
   l'onglet, d'une compétition d'un pays à l'autre (ses championnats du premier
@@ -377,7 +416,7 @@ La page d'un championnat, d'une coupe nationale, d'une coupe d'Europe, d'une
   pastille.
 - **Saison** : le pas de saison ferme la rangée d'onglets d'une coupe d'Europe
   et du tableau d'une coupe nationale. Un championnat n'en a pas ; une édition
-  non plus, le bloc du bandeau en tient lieu.
+  non plus, la navigation du bandeau en tient lieu.
 
 Les couleurs sont celles d'un club : la première remplit le bandeau, la seconde
 le traverse en écharpe, et l'onglet ouvert prend celle qui se lit sur le fond
@@ -684,6 +723,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
 | Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
 | En-tête d'une compétition | Le bandeau d'un club (`competitionHero`, `web/club-hero.js`) sur un championnat, une coupe nationale, une coupe d'Europe et une édition des sélections, à la place de la ligne du titre : l'emblème seul sur le bandeau (`web/emblems/`) ou le drapeau du pays sur le disque, une tuile pour le vainqueur ou le tenant du titre (`winner`, `holder` de l'API) à la place de la ligne « Vainqueur » sous les onglets ; ses couleurs et son fond (`COMPETITION_COLORS`, `api/nations.py`). Le bloc de navigation du bandeau remplace le choix C1, C3, C4 de Coupes d'Europe et le pas d'édition des sélections (`europeNavigation`, `editionNavigation`, `web/navigation.js`) ; dans sa liste, une compétition suit sa pastille |
+| Navigation d'un bandeau | `.entity-nav` à gauche du bandeau d'un club, d'une sélection, d'un joueur et d'une compétition (`neighbours`, `web/navigation.js`) : le pas de saison en colonne, à la place du bloc de trois boutons bordés. Ses flèches et ses traits à la seconde couleur du bandeau quand elle s'y lit, sinon à son encre, et le voile sous le pointeur (`--hero-step`, `--hero-veil`, `heroColors`, `web/club-hero.js`). Sa liste est le menu de la charte, sans titre ; le compte du groupe est l'infobulle des trois traits |
 
 Ce qui reste :
 
@@ -712,3 +752,6 @@ proposition J) : <https://claude.ai/artifact/5vwPBqcKJkDe99jEWJZZwv>.
 L'en-tête d'une compétition aussi (proposition B, le drapeau sur le disque pour
 un championnat ou une coupe nationale, une seule tuile) : <https://claude.ai/artifact/G4otUdvsW2uTSohRKR7AUk> ;
 sur son écran `/europe`, il remplace celui du premier canevas.
+La navigation d'un bandeau a la sienne (proposition A, « Colonne », l'encre sous
+un contraste de 3) : <https://claude.ai/artifact/8489MjUnN55vhza5VESzc3> ; les
+bandeaux des canevas antérieurs montrent l'ancien bloc.

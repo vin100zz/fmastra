@@ -50,7 +50,8 @@ export function closePlayerMenu(refocus=false){
 export async function openPlayerMenu(event,main,state){
  const target=event.target;
  if(!target.closest||target.closest('dialog,input,textarea,select'))return false;
- if(target.closest('.menu')){event.preventDefault();return false;}
+ // Its own rows and the lines of a list of seasons have no menu; a player in the list of a band's steps has his.
+ if(target.closest('.menu')&&!target.closest('.entity-menu')){event.preventDefault();return false;}
  const found=state.exists&&!state.recovery_required&&state.controlled_club_id!=null&&!state.live_match_id?playerAt(target):null;
  if(!found)return false;
  event.preventDefault();

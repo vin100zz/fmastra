@@ -51,6 +51,21 @@ test('a competition that stands on a ground of its own has it fill the band; its
  assert.equal(vars(heroColors('#f26522',null,'url(x)'))['--hero-field'],'#f26522');
 });
 
+test('the steps of a band take its second colour where it reads on the band, else its ink; their veil is of that ink',()=>{
+ const step=(...colours)=>vars(heroColors(...colours))['--hero-step'];
+ // A second colour that stands out is kept: Lens' red on its yellow, the Europa League's orange and the Euro's yellow on
+ // their blues, Marseille's white on the blue that fills its band.
+ assert.equal(step('#F8D000','#E00000'),'#E00000');assert.equal(step('#f26522',null,'#0a0b5c'),'#f26522');assert.equal(step('#003399','#ffcc00'),'#ffcc00');
+ assert.equal(step('#F8F8F8','#2098C8'),'#F8F8F8');
+ // Under a contrast of 3, the ink of the band: Paris' red on its navy, the Champions League's blue on the night blue,
+ // Nantes' green on its yellow.
+ assert.equal(step('#004070','#D82818'),'#ffffff');assert.equal(step('#2447e6',null,'#0a0b5c'),'#ffffff');assert.equal(step('#F8C800','#009858'),'#111418');
+ // Two colours alike leave no second colour: the ink too.
+ assert.equal(step('#283040','#283040'),'#ffffff');
+ // Under the pointer, the ink at 12 %.
+ assert.equal(vars(heroColors('#F8D000','#E00000'))['--hero-veil'],'#1114181f');assert.equal(vars(heroColors('#004070','#D82818'))['--hero-veil'],'#ffffff1f');
+});
+
 const club={id:7,name:'Lens <RC>',nation_code:'FRA',nation_id:-1001,competition_id:16,competition:'Ligue 1',capacity:38223,formation:'4-3-3',training_facilities:16,youth_recruitment:13,
  reputation:73.1,reputation_change:1.2,major_color:'#F8D000',minor_color:'#E00000'};
 const menu=[['squad','Effectif'],['calendar','Calendrier'],['history','Historique']];

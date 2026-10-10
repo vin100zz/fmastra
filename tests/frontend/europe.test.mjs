@@ -27,7 +27,8 @@ test('Europe navigation and full 36-club table with qualifying zones',async()=>{
   // The other cups are stepped to from the band, as a club's neighbours: the open tab and the season are kept.
   assert.match(html,/<div class="club-hero-main"><div class="entity-nav" role="group" aria-label="Choisir une coupe d’Europe"><a class="entity-step prev" href="#\/europe\/C1\/table\?saison=2025" rel="prev" aria-label="Précédent : Ligue des champions"/);
   assert.match(html,/<a class="entity-step next" href="#\/europe\/C4\/table\?saison=2025" rel="next" aria-label="Suivant : Conference League"/);
-  assert.match(html,/<p class="entity-menu-scope">Coupes d’Europe · 2 \/ 3<\/p><ul><li><a href="#\/europe\/C1\/table\?saison=2025"><span class="competition-code europe" title="Ligue des champions">C1<\/span><span>Ligue des champions<\/span><\/a><\/li><li><a href="#\/europe\/C3\/table\?saison=2025" aria-current="true">/);
+  assert.match(html,/<summary aria-label="Choisir une coupe d’Europe" title="Coupes d’Europe · 2 \/ 3">/);
+  assert.match(html,/<div class="menu" role="menu" aria-label="Choisir une coupe d’Europe"><a href="#\/europe\/C1\/table\?saison=2025" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code europe" title="Ligue des champions">C1<\/span>Ligue des champions<\/div><\/a><a href="#\/europe\/C3\/table\?saison=2025" role="menuitemradio" aria-checked="true">/);
   assert.equal((html.match(/class="europe-direct"/g)||[]).length,8);
   assert.equal((html.match(/class="europe-playoff"/g)||[]).length,16);
   assert.match(html,/Club 36/);

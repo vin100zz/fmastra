@@ -184,7 +184,8 @@ test('an edition’s page opens on a competition’s header and steps through th
   assert.doesNotMatch(html,/page-heading|Sélections nationales|class="season"|edition-switch|class="tabs"/);
   assert.match(html,/<div class="club-hero-main"><div class="entity-nav" role="group" aria-label="Choisir une édition"><a class="entity-step prev" href="#\/international\/2028\/statistics" rel="prev" aria-label="Précédent : Euro 2028"/);
   assert.match(html,/<a class="entity-step next" href="#\/international\/2032\/statistics" rel="next" aria-label="Suivant : Euro 2032"/);
-  assert.match(html,/<p class="entity-menu-scope">Éditions · 2 \/ 3<\/p><ul><li><a href="#\/international\/2028\/statistics"><span class="competition-code international" title="Euro 2028">EU<\/span><span>Euro 2028<\/span><\/a><\/li><li><a href="#\/international\/2030\/statistics" aria-current="true"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
+  assert.match(html,/<summary aria-label="Choisir une édition" title="Éditions · 2 \/ 3">/);
+  assert.match(html,/<div class="menu" role="menu" aria-label="Choisir une édition"><a href="#\/international\/2028\/statistics" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code international" title="Euro 2028">EU<\/span>Euro 2028<\/div><\/a><a href="#\/international\/2030\/statistics" role="menuitemradio" aria-checked="true"><div class="cell"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
   assert.match(html,/<a class="active" href="#\/international\/2030\/statistics" aria-current="page">Statistiques<\/a><\/nav><\/header>/);
   // Nobody holds the title before its second edition: no tile. Then the holder, and the winner once the edition is over.
   assert.match(html,/<div class="club-hero-tiles"><\/div>/);

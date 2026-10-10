@@ -10,7 +10,10 @@ const readableOn=(surface,major,minor)=>legibleOn(contrastRatio(major,surface)>=
 // close to white would melt into the page, so the second colour fills the band instead; two colours alike leave a faint sash
 // of the ink. Without colours the band keeps the panel's. A competition that stands on a ground of its own (`groundColor`:
 // the night blue the European cups share, the black under the World Cup's gold) has it fill the band, and its colour
-// cross it as the sash. Returns CSS custom properties for the header's style attribute.
+// cross it as the sash. The steps between peers, on the band, are drawn in that second colour where it reads on the band
+// (a contrast of 3 at least), else in the ink; under the pointer they stand on a veil of the ink. Returns CSS custom
+// properties for the header's style attribute.
+const STEP_CONTRAST=3,VEIL='1f';
 export function heroColors(majorColor,minorColor,groundColor){
  const major=safeColor(majorColor);
  if(!major)return '';
@@ -18,8 +21,9 @@ export function heroColors(majorColor,minorColor,groundColor){
  const pale=!ground&&minor!==major&&contrastRatio(major,LIGHT_INK)<1.3;
  const field=ground||(pale?minor:major),ink=inkOn(field);
  let sash=ground||pale?major:minor,opacity=1;
+ const step=contrastRatio(field,sash)>=STEP_CONTRAST?sash:ink;
  if(contrastRatio(field,sash)<1.25){sash=ink;opacity=.12;}
- return [`--hero-field:${field}`,`--hero-ink:${ink}`,`--hero-sash:${sash}`,`--hero-sash-opacity:${opacity}`,
+ return [`--hero-field:${field}`,`--hero-ink:${ink}`,`--hero-sash:${sash}`,`--hero-sash-opacity:${opacity}`,`--hero-step:${step}`,`--hero-veil:${ink}${VEIL}`,
   ...[['light',LIGHT_INK],['dark',DARK_PANEL]].flatMap(([theme,surface])=>{const colour=readableOn(surface,major,minor);return colour?[`--hero-accent-${theme}:${colour}`]:[];}),
   `--crest-major:${major}`,`--crest-minor:${minor}`,`--crest-ink:${inkOn(major)}`].join(';');
 }

@@ -49,7 +49,7 @@ select,input:not([type=checkbox]):not([type=radio]):not([type=range]){height:var
 .chip.on.nation-chip,.chip.on.toggle{font-weight:600}
 .card-head button,.card-head a.button,.head-pager button,.pager button,td button,.market-actions button,.news-lines button,.news-actions button,.news-heading button,.live-tactics-actions button{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
 .head-pager button{width:var(--h-control-small);padding:0}
-th button,button.pitch-player,.position-row,.entity-menu>summary,.advance-todo,.replay-marker,.replay-start{height:auto;font-weight:inherit;line-height:inherit}
+th button,button.pitch-player,.position-row,.advance-todo,.replay-marker,.replay-start{height:auto;font-weight:inherit;line-height:inherit}
 th button{padding:0;font-size:inherit;white-space:inherit}
 .position-row{height:var(--h-row);padding:0 var(--s3);font-size:var(--fs-body);font-weight:400}
 .position-row.head,.position-row.head:hover{height:var(--h-row);font-size:var(--fs-small)}
@@ -127,7 +127,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.history-row,.movement-summary,.history-side,.history-leaders,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.league-tiles,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
 .club-hero,.club-overview,.stat-grid,.match-replay-card,.finance-figures,.finance-row,.history-row,.movement-summary,.seasons-card,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
-.section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.entity-menu-scope,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+.section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 
 /* Tables: 26 px headings and rows, 13 px cells, capitals at 11 px over them. */
 table{font-size:var(--fs-body)}
@@ -265,6 +265,21 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-hero-emblem{flex:none;width:72px;height:72px;object-fit:contain}
 /* Its one tile names who won it or who holds its title: a name written as the tile's figure, after its dot or its flag. */
 .club-hero-tile strong .nation{font:inherit;letter-spacing:0;text-transform:none;color:inherit}
+/* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
+   of 16 with a line of 2.4 to the previous and to the next of the group, and between them three lines, of an icon's line,
+   that open the list of them all. They are drawn in the band's second colour where it reads on the band, else in its ink
+   (`--hero-step`, web/club-hero.js); a chevron with nothing beyond it stays in place, faded. The list is the charter's
+   menu, under the column: twelve lines before it scrolls, a name after its badge. */
+.entity-nav{--step:var(--hero-step,currentColor);position:relative;display:flex;flex-direction:column;flex:none}
+.entity-step,.entity-menu>summary{display:flex;align-items:center;justify-content:center;width:var(--h-control);height:var(--h-control-small);border-radius:var(--radius);color:var(--step)}
+:is(.entity-step,.entity-menu>summary) svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.entity-menu>summary svg{stroke-width:1.7}
+span.entity-step svg{opacity:.3}
+.entity-menu>summary{list-style:none;cursor:pointer}
+.entity-menu>summary::-webkit-details-marker{display:none}
+.entity-menu[open]>summary{background:var(--hero-veil,var(--panel-2));box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--step)}
+.entity-menu>.menu{position:absolute;top:calc(100% + var(--s1));left:0;z-index:5;max-height:calc(12*var(--h-row) + 2*var(--s1));overflow-y:auto}
+.menu .cell{display:flex;align-items:center;gap:6px}
 /* A player's header is his club's. A tile grades its ground as the badge of its note does (level, potential); what he did
    for his selection is one tile of three columns: its flag over its code, his caps, his goals. Under the band, where a
    club has its tabs: what stands on the left, then what the user can do with him in the groups of his menu, the main
@@ -318,7 +333,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .point-value{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-figure);font-weight:700;color:var(--strong)}
 
 /* Menus and what a pointer shows. */
-.entity-menu-panel,.filter-panel,dialog,#toast{border-radius:var(--radius)}
+.filter-panel,dialog,#toast{border-radius:var(--radius)}
 :root[data-theme="light"] #tooltip{padding:var(--s1) var(--s2);border:0;background:var(--strong);color:#fff;font-size:var(--fs-body);line-height:18px;box-shadow:0 4px 12px #0a141e33}
 :root[data-theme="light"] #tooltip::after{border:0;background:var(--strong)}
 /* A player's menu, at the pointer on a right click: what can be done with him, in the words of his page. Rows of 26: an
@@ -473,7 +488,7 @@ a{text-decoration-thickness:1px;text-underline-offset:2px}
 a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:underline}
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
-:is(nav,.sidebar,.segmented,.chips,.presets,.entity-menu-panel,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
+:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
 :is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) small{text-decoration:underline 1px;text-underline-offset:2px}
 /* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
    line on the ground. */
@@ -488,9 +503,13 @@ tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted)
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */
-button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,a.entity-step:hover,#manual-link:where(:not(.active)):hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
-:is(.chips,.presets,.round-pills,.entity-menu-panel,.manual-menu,.segmented,.edition-switch,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
+button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,#manual-link:where(:not(.active)):hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
+:is(.chips,.presets,.round-pills,.manual-menu,.segmented,.edition-switch,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
 :is(.tactics,.segmented,.calendar-filters,.movement-filters) button:where(:not(.active,[aria-pressed="true"],:disabled)):hover{background:var(--panel-3);color:var(--strong)}
+/* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
+   their colour. */
+a.entity-step:hover,.entity-menu>summary:hover{color:var(--step)}
+a.entity-step:hover,.entity-menu:not([open])>summary:hover{background:var(--hero-veil,var(--panel-3))}
 :is(button,a.button).primary:where(:not(:disabled)):hover,.cta:hover{background:var(--accent-hover);color:var(--accent-ink)}
 button.danger:where(:not(:disabled)):hover{background:var(--bad-soft)}
 /* A position's filter is written in the position's colour: at rest, under the pointer, and set (the wash of what is picked). */

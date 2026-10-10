@@ -198,12 +198,13 @@ Transferts de sa fiche, carte « Mercato en cours ».
 ### Navigation entre pairs
 
 Les fiches club, sélection, joueur, championnat et coupe nationale portent, dans l'en-tête et à
-gauche du nom, un petit bloc vertical qui n'ajoute aucune ligne : un triangle haut
-(pair précédent), un menu ☰ (tous les pairs) et un triangle bas (pair suivant). Le
-menu est une liste flottante de liens, ouverte sur l'élément courant, avec « n / total » en
-tête ; elle se ferme sur un clic ailleurs, sur un choix ou sur Échap, et reste ouverte
-quand le mode Auto redessine l'écran. Le premier et le dernier n'ont pas de lien de leur
-côté : leur triangle est grisé. Un groupe d'un seul élément n'affiche pas le bloc.
+gauche du nom, une colonne qui n'ajoute aucune ligne : un chevron haut (pair précédent),
+trois traits (tous les pairs) et un chevron bas (pair suivant), sans cadre, à la seconde
+couleur du bandeau ou à son encre (charte, « Navigation d'un bandeau »). Les trois traits
+ouvrent le menu de la charte, une liste de liens ouverte sur l'élément courant ; « n / total »
+est leur infobulle. Elle se ferme sur un clic ailleurs, sur un choix ou sur Échap, et reste
+ouverte quand le mode Auto redessine l'écran. Le premier et le dernier n'ont pas de lien de
+leur côté : leur chevron est estompé. Un groupe d'un seul élément n'affiche pas la colonne.
 
 | Fiche | Groupe parcouru | Ordre |
 |---|---|---|

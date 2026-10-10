@@ -7,28 +7,31 @@ const group=(items,index,scope)=>({scope,index,total:items.length,items,previous
 const division=(index)=>group([{id:3,name:'Ajax'},{id:2,name:'Élan'},{id:1,name:'Zebra'}],index,{kind:'division',id:16,name:'Ligue 1'});
 const count=(html,pattern)=>(html.match(pattern)||[]).length;
 
-test('a club steps to its neighbours with two triangles and lists its division in a menu',()=>{
+test('a club steps to its neighbours with two chevrons and lists its division in the charter’s menu',()=>{
  const html=clubNavigation(division(1),'squad');
- assert.match(html,/<a class="entity-step prev" href="#\/club\/3\/squad" rel="prev" aria-label="Précédent : Ajax" title="Précédent : Ajax"><svg/);
- assert.match(html,/<a class="entity-step next" href="#\/club\/1\/squad" rel="next" aria-label="Suivant : Zebra" title="Suivant : Zebra"><svg/);
- // previous above the menu, next below: the block reads top to bottom like the list
+ // The chevrons of a season's steps, turned: up to the one before, down to the one after; neither is a filled triangle.
+ assert.match(html,/<a class="entity-step prev" href="#\/club\/3\/squad" rel="prev" aria-label="Précédent : Ajax" title="Précédent : Ajax"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6\.5 14\.5 12 9l5\.5 5\.5"\/><\/svg><\/a>/);
+ assert.match(html,/<a class="entity-step next" href="#\/club\/1\/squad" rel="next" aria-label="Suivant : Zebra" title="Suivant : Zebra"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6\.5 9\.5 12 15l5\.5-5\.5"\/><\/svg><\/a>/);
+ // previous above the menu, next below: the column reads top to bottom like the list
  assert.ok(html.indexOf('entity-step prev')<html.indexOf('<details class="entity-menu">')&&html.indexOf('<details class="entity-menu">')<html.indexOf('entity-step next'));
- assert.match(html,/<summary aria-label="Choisir un club de Ligue 1" title="Ligue 1 · 2 \/ 3">/);
- assert.match(html,/<p class="entity-menu-scope">Ligue 1 · 2 \/ 3<\/p>/);
- assert.equal(count(html,/<li>/g),3);
- assert.match(html,/<li><a href="#\/club\/2\/squad" aria-current="true">Élan<\/a><\/li>/);assert.equal(count(html,/aria-current/g),1);
- assert.match(html,/<li><a href="#\/club\/3\/squad">Ajax<\/a><\/li>/);
+ // Three lines open the list; the count of the group is their tooltip, and the list has no heading.
+ assert.match(html,/<summary aria-label="Choisir un club de Ligue 1" title="Ligue 1 · 2 \/ 3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7\.5h14M5 12h14M5 16\.5h14"\/><\/svg><\/summary>/);
+ assert.match(html,/<\/summary><div class="menu" role="menu" aria-label="Choisir un club de Ligue 1"><a /);
+ assert.doesNotMatch(html,/entity-menu-scope|entity-menu-panel|<ul|<li/);
+ assert.equal(count(html,/role="menuitemradio"/g),3);
+ assert.match(html,/<a href="#\/club\/2\/squad" role="menuitemradio" aria-checked="true">Élan<\/a>/);assert.equal(count(html,/aria-checked="true"/g),1);
+ assert.match(html,/<a href="#\/club\/3\/squad" role="menuitemradio" aria-checked="false">Ajax<\/a>/);
  assert.doesNotMatch(html,/<select|<option/);
 });
 
 test('moving to another club keeps the open tab',()=>{
  const html=clubNavigation(division(1),'finances');
- assert.equal(count(html,/href="#\/club\/\d+\/finances"/g),5);  // two triangles and the three entries of the menu
+ assert.equal(count(html,/href="#\/club\/\d+\/finances"/g),5);  // two chevrons and the three entries of the menu
  // and the columns of the squad list
  assert.equal(count(clubNavigation(division(1),'squad','vue=attributs'),/href="#\/club\/\d+\/squad\?vue=attributs"/g),5);
 });
 
-test('the ends of the group have a greyed triangle instead of a link, so the block keeps its shape',()=>{
+test('the ends of the group have a faded chevron instead of a link, so the column keeps its shape',()=>{
  const first=clubNavigation(division(0),'squad');
  assert.doesNotMatch(first,/rel="prev"/);assert.match(first,/<span class="entity-step prev" aria-hidden="true"><svg/);assert.match(first,/rel="next"/);
  const last=clubNavigation(division(2),'squad');
@@ -51,18 +54,19 @@ test('homonymous clubs carry their squad size, other clubs do not',()=>{
  const nav=group([{id:1,name:'Borussia',squad:28},{id:2,name:'Borussia',squad:0},{id:3,name:'Hertha',squad:25},{id:4,name:'Union',squad:1},{id:5,name:'Union',squad:22}],0,{kind:'country',code:'GER',name:'Allemagne'});
  const html=clubNavigation(nav,'squad');
  assert.match(html,/rel="next" aria-label="Suivant : Borussia \(0 joueur\)"/);
- assert.match(html,/<li><a href="#\/club\/1\/squad" aria-current="true">Borussia \(28 joueurs\)<\/a><\/li>/);
- assert.match(html,/<li><a href="#\/club\/4\/squad">Union \(1 joueur\)<\/a><\/li>/);
- assert.match(html,/<li><a href="#\/club\/3\/squad">Hertha<\/a><\/li>/);
+ assert.match(html,/<a href="#\/club\/1\/squad" role="menuitemradio" aria-checked="true">Borussia \(28 joueurs\)<\/a>/);
+ assert.match(html,/<a href="#\/club\/4\/squad" role="menuitemradio" aria-checked="false">Union \(1 joueur\)<\/a>/);
+ assert.match(html,/<a href="#\/club\/3\/squad" role="menuitemradio" aria-checked="false">Hertha<\/a>/);
 });
 
 test('players step through their squad, each listed with the colour of its position',()=>{
  const nav=group([{id:10,name:'Gardien',position:'GB'},{id:11,name:'Défenseur',position:'DC'},{id:12,name:'Buteur',position:'BU'}],1,{kind:'club',id:7,name:'Lens'});
  const html=playerNavigation(nav);
  assert.match(html,/href="#\/player\/10" rel="prev" aria-label="Précédent : Gardien"/);assert.match(html,/href="#\/player\/12" rel="next" aria-label="Suivant : Buteur"/);
- assert.match(html,/<li><a href="#\/player\/10"><span class="position gk">GB<\/span><span>Gardien<\/span><\/a><\/li>/);
- assert.match(html,/<li><a href="#\/player\/12"><span class="position att">BU<\/span><span>Buteur<\/span><\/a><\/li>/);
- assert.match(html,/<a href="#\/player\/11" aria-current="true"><span class="position def">DC<\/span>/);
+ // each after the badge of his position, in one cell: the name stays beside it, in the ink of the list
+ assert.match(html,/<a href="#\/player\/10" role="menuitemradio" aria-checked="false"><div class="cell"><span class="position gk">GB<\/span>Gardien<\/div><\/a>/);
+ assert.match(html,/<a href="#\/player\/12" role="menuitemradio" aria-checked="false"><div class="cell"><span class="position att">BU<\/span>Buteur<\/div><\/a>/);
+ assert.match(html,/<a href="#\/player\/11" role="menuitemradio" aria-checked="true"><div class="cell"><span class="position def">DC<\/span>/);
  assert.match(html,/Effectif · Lens · 2 \/ 3/);
 });
 
@@ -71,8 +75,8 @@ test('competitions of a country link to each competition page, cup included',()=
  const html=competitionNavigation(nav);
  assert.match(html,/href="#\/league\/16" rel="prev" aria-label="Précédent : Ligue 1"/);assert.match(html,/href="#\/league\/-1" rel="next" aria-label="Suivant : Coupe de France"/);
  // each listed after its badge, as a player after his position
- assert.match(html,/<li><a href="#\/league\/16"><span class="competition-code league" title="Ligue 1">L1<\/span><span>Ligue 1<\/span><\/a><\/li>/);
- assert.match(html,/<li><a href="#\/league\/-1"><span class="competition-code cup" title="Coupe de France">CdF<\/span><span>Coupe de France<\/span><\/a><\/li>/);
+ assert.match(html,/<a href="#\/league\/16" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code league" title="Ligue 1">L1<\/span>Ligue 1<\/div><\/a>/);
+ assert.match(html,/<a href="#\/league\/-1" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code cup" title="Coupe de France">CdF<\/span>Coupe de France<\/div><\/a>/);
  assert.match(html,/Compétitions · France · 2 \/ 3/);
 });
 
@@ -82,7 +86,7 @@ test('the European cups step to one another, the open tab and the season kept',(
  assert.match(html,/<span class="entity-step prev" aria-hidden="true">/);
  assert.match(html,/href="#\/europe\/C3\/knockout\?saison=2031" rel="next" aria-label="Suivant : Ligue Europa"/);
  assert.match(html,/<summary aria-label="Choisir une coupe d’Europe" title="Coupes d’Europe · 1 \/ 3">/);
- assert.match(html,/<li><a href="#\/europe\/C4\/knockout\?saison=2031"><span class="competition-code europe" title="Conference League">C4<\/span><span>Conference League<\/span><\/a><\/li>/);
+ assert.match(html,/<a href="#\/europe\/C4\/knockout\?saison=2031" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code europe" title="Conference League">C4<\/span>Conference League<\/div><\/a>/);
  assert.equal(count(europeNavigation(cups,cups[2],'table'),/href="#\/europe\/C\d\/table"/g),4);
  // a single cup has nothing to step to
  assert.equal(europeNavigation(cups.slice(0,1),cups[0],'table'),'');
@@ -93,8 +97,9 @@ test('the editions of the selections step from the first to the latest, whatever
  const html=editionNavigation(editions,2030,'qualifications');
  assert.match(html,/href="#\/international\/2028\/qualifications" rel="prev" aria-label="Précédent : Euro &lt;2028&gt;"/);
  assert.match(html,/href="#\/international\/2032\/qualifications" rel="next" aria-label="Suivant : Euro 2032"/);
- assert.match(html,/<p class="entity-menu-scope">Éditions · 2 \/ 3<\/p><ul><li><a href="#\/international\/2028\/qualifications"><span class="competition-code international" title="Euro &lt;2028&gt;">EU<\/span><span>Euro &lt;2028&gt;<\/span><\/a><\/li>/);
- assert.match(html,/<li><a href="#\/international\/2030\/qualifications" aria-current="true"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
+ assert.match(html,/<summary aria-label="Choisir une édition" title="Éditions · 2 \/ 3">/);
+ assert.match(html,/<div class="menu" role="menu" aria-label="Choisir une édition"><a href="#\/international\/2028\/qualifications" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code international" title="Euro &lt;2028&gt;">EU<\/span>Euro &lt;2028&gt;<\/div><\/a>/);
+ assert.match(html,/<a href="#\/international\/2030\/qualifications" role="menuitemradio" aria-checked="true"><div class="cell"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
  assert.doesNotMatch(editionNavigation(editions,2032,'finals'),/rel="next"/);
 });
 
