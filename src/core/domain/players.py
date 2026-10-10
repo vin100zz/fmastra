@@ -127,6 +127,11 @@ class Player:
         return self.nationalities[0]
 
     @property
+    def main_nation(self) -> str:
+        """The nation a list shows for him: the one he plays for, else the first of his nationalities."""
+        return self.national_team or self.nation
+
+    @property
     def owner_id(self) -> int | None:
         """The club he is under contract with: the lender of a player on loan."""
         return self.loan.parent_id if self.loan is not None else self.club_id

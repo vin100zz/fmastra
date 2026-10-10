@@ -127,6 +127,7 @@ def retirement_details(world: World, row, played: dict) -> dict:
     # Without the day's snapshot, an international still has the nation he played for.
     nationalities = list(snapshot.nationalities) if snapshot else [career.national_team] if career and career.national_team else []
     return {'position': snapshot.position if snapshot else None, 'nationalities': nationalities,
+            'national_team': career.national_team if career else None,
             'rating': None if rating is None else round(rating, 1), 'peak': None if rating is None else round(max([rating, *levels]), 1),
             'league': league_ref(world, row.source_id),
             'matches': played['matches'], 'goals': played['goals'], 'assists': played['assists'],
@@ -193,7 +194,7 @@ def world_movements(world: World, season: int | None, kind: str, page: int, sort
         player = world.players.get(row.player_id)
         if player is None: return None
         if field == 'position': return v.position_rank(player.position)
-        if field == 'nation': return player.nation
+        if field == 'nation': return player.main_nation
         return player.rating if field == 'rating' else v.market_value(player, world)
     def promoted_today(row, details):
         """What a promoted player is today, for the sorts on it; None once he has left the world."""
@@ -218,13 +219,13 @@ def world_movements(world: World, season: int | None, kind: str, page: int, sort
             return today(row, sort)
         if kind == 'retirement':
             if sort == 'position': return v.position_rank(details['position']) if details['position'] else None
-            if sort == 'nation': return details['nationalities'][0] if details['nationalities'] else None
+            if sort == 'nation': return v.main_nation(details)
             if sort == 'age': return row.born.age_on(row.date) if row.born else None
             if sort == 'league': return v.normalized(details['league']['name']) if details['league'] else None
             return details[sort]
         if sort in ('level', 'progress', 'worth', 'wage_demand', 'interested') or sort in ATTRIBUTE_NAMES or sort in v.COMPOSITES:
             return promoted_today(row, details)
-        if sort == 'nation': return v.normalized(' / '.join(details.get('nationality_names', []))) or None
+        if sort == 'nation': return v.main_nation(details)
         if sort == 'club': return v.normalized(details['club']['name']) if details.get('club') else ('libre' if details.get('data_at') != 'unknown' else None)
         if sort == 'data_at': return {'promotion': 'a la promotion', 'current': 'actuelles', 'unknown': 'non archivees'}[details['data_at']]
         value = details.get(sort)

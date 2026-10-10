@@ -82,10 +82,9 @@ test('the pages of a list step from the head of its card, and a single page show
  assert.equal(headPager({page:1,page_size:35,total:35}),'');
 });
 
-test('a list names the main nationality and counts the others',()=>{
+test('a list names the main nation alone: his selection, else his first nationality',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'},MAR:{name:'Maroc',display_code:'MAR',flag:'ma'}});
- const html=mainNation(['FRA','ESP','MAR']);
- assert.match(html,/flags\/fr\.svg/);assert.doesNotMatch(html,/flags\/es\.svg/);
- assert.match(html,/<span class="muted" title="Espagne, Maroc">\+2<\/span>/);
- assert.doesNotMatch(mainNation(['FRA']),/\+/);
+ assert.match(mainNation({nationalities:['FRA','ESP','MAR']}),/^<span class="nation" title="France"><img class="flag" src="\/flags\/fr\.svg"[^>]*>FRA<\/span>$/);
+ assert.match(mainNation({nationalities:['FRA','ESP','MAR'],national_team:'MAR'}),/^<span class="nation" title="Maroc"><img class="flag" src="\/flags\/ma\.svg"[^>]*>MAR<\/span>$/);
+ assert.equal(mainNation({nationalities:[]}),'—');
 });

@@ -20,15 +20,19 @@ test('standings give European qualification places a blue background, matching p
 });
 
 const player={id:1,name:'Test',position:'BU',age:20,nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};
-test('player list shows the main nationality, counts the others, and the value with selected sorting',()=>{
+test('player list shows the main nation alone, and the value with selected sorting',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'},POR:{name:'Portugal',display_code:'POR',flag:'pt'},XOP:{name:'Angola',display_code:'Angola',flag:'ao'}});
+ const nation=html=>html.match(/<td[^>]*>(<span class="nation"[^]*?)<\/td>/)?.[1];
  const html=playerTable({items:[player],total:1,page_size:30},true,'value');
- // The main nationality with its flag; the others are counted and named in a tooltip.
- assert.match(html,/title="France"/);assert.match(html,/<span class="muted" title="Espagne">\+1<\/span>/);
- assert.match(html,/flags\/fr.svg/);assert.doesNotMatch(html,/flags\/es.svg/);
+ // Never capped: the first of his nationalities, its flag then its code; the others are not counted.
+ assert.match(nation(html),/^<span class="nation" title="France"><img class="flag" src="\/flags\/fr\.svg"[^>]*>FRA<\/span>$/);
+ assert.doesNotMatch(html,/Espagne|flags\/es\.svg|\+1/);
  assert.match(html,/data-order="desc" data-sort="value">VALEUR</);assert.match(html,/1\.3/);
+ // Capped: the nation he plays for, whatever its place among his nationalities.
+ const capped=playerTable({items:[{...player,national_team:'ESP'}],total:1,page_size:30},true);
+ assert.match(nation(capped),/^<span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"[^>]*>ESP<\/span>$/);assert.doesNotMatch(capped,/France|\+1/);
  const imported=playerTable({items:[{...player,nationalities:['POR','XOP'],nationality_names:['Portugal','Angola']}],total:1,page_size:30},true);
- assert.match(imported,/POR/);assert.match(imported,/title="Angola">\+1</);assert.doesNotMatch(imported,/XOP/);
+ assert.match(imported,/POR/);assert.doesNotMatch(imported,/Angola|XOP/);
 });
 
 test('potential follows current level and academy columns preserve unknown data',()=>{

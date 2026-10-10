@@ -140,8 +140,10 @@ def squad_sort_key(world, column: str):
         # The cell reads "Blessé", then "N matchs" of suspension, then a percentage.
         return lambda row: (0 if row["injured_until"] else 1 if row["suspension"] else 2, row["fitness"])
     if column == "nation":
+        # The code of the one nation the column shows.
         codes = build_nation_table(world.nation_names)
-        return lambda row: [codes.get(code, {}).get("display_code", code) for code in row["nationalities"]]
+        display = lambda code: codes.get(code, {}).get("display_code", code)
+        return lambda row: display(v.main_nation(row))
     return lambda row: row[column]
 
 
@@ -922,8 +924,10 @@ def router(service: GameService) -> APIRouter:
                     or (liste == "transfert" and not flags.transfer_listed(player)) or (liste == "pret" and not flags.loan_listed(player))
                     or (recruiting and pretentions_max is not None and (demand(player) is None or demand(player) > pretentions_max))): continue
                 selected.append(player)
+            codes = build_nation_table(world.nation_names) if tri == 'nation' else {}
             def sort_key(player) -> tuple:
                 if tri == 'value': return v.market_value(player, world), player.id
+                if tri == 'nation': return codes.get(player.main_nation, {}).get("display_code", player.main_nation), player.id
                 if tri == 'asking_price': return fee(player) or 0, player.id
                 if tri == 'wage_demand': return demand(player) or 0, player.id
                 if tri == 'interested': return bool(v.interested(world, player)) + bool(flags.loan_interested(player)), player.id
@@ -933,7 +937,7 @@ def router(service: GameService) -> APIRouter:
                 value ={"rating": player.rating, "potential": player.potential, "age": player.born.age_on(world.date), "name": v.normalized(player.name),
                          "position": position_rank(player.position), "wage": player.contract.weekly_wage if player.contract else 0,
                          "contract_end": player.contract.end.iso() if player.contract else "", "fitness": player.fitness,
-                         "nation": player.nation, "club": world.clubs[player.club_id].name if player.club_id else "",
+                         "club": world.clubs[player.club_id].name if player.club_id else "",
                          "appearances": player.appearances, "goals": player.season_goals, "assists": player.season_assists,
                          "average": player.rating_sum / player.rating_count if player.rating_count else 0}[tri]
                 return value, player.id

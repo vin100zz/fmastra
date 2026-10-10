@@ -575,7 +575,9 @@ pays ajouté suit la règle : CP pour le Portugal.
   coupée en diagonale, première puis seconde couleur) ; son écusson la remplace
   dans un en-tête.
 - Le nom d'un pays suit toujours son drapeau (16 × 12). Une nationalité en
-  colonne : le drapeau, puis le code de trois lettres.
+  colonne : le drapeau, puis le code de trois lettres. Un joueur n'y a qu'une
+  nation, celle de sa sélection, à défaut la première de ses nationalités ; les
+  autres ne sont ni comptées ni nommées : elles se lisent sur sa fiche.
 - Une sélection a deux couleurs, celles de son maillot, comme un club : elles
   font son bandeau et ses maillots sur un terrain. Son en-tête est celui d'un
   club ; son drapeau remplit le disque où un club a son écusson. Dans une liste,

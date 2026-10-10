@@ -1,4 +1,4 @@
-import {escape as e,number as n,safeColor,contrastRatio,legibleOn,initials,nationFlag,nationCode,flagUrl,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,legibleOn,initials,nationFlag,nationCode,mainNationCode,flagUrl,level,levelHue,date,money,price} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -93,7 +93,7 @@ export function matchHero(match,foot=''){
 // What a player did for his selection, on one tile of three columns: its flag over its code (the nation he plays for, else
 // the first of his nationalities; a link to the selection once it has called him), his caps, and his goals once he has scored.
 function selectionTile(player){
- const main=player.national_team||(player.nationalities||[])[0];
+ const main=mainNationCode(player);
  if(!main)return '';
  const nation=`<span>${nationFlag(main)}</span><strong>${e(nationCode(main))}</strong>`;
  const column=(label,value)=>`<div><span>${label}</span><strong>${n(value)}</strong></div>`;

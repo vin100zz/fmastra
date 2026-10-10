@@ -106,7 +106,6 @@ export function academySummary(summary){
 const SUMMARIES={transfer:marketSummary,retirement:retirementSummary,academy:academySummary};
 
 const playerCell=row=>`<span class="strong">${playerLink(row.player_id,row.player)}</span>`;
-const nationCell=codes=>codes?.length?mainNation(codes):'—';
 // Headers of a list sorted by the server: [key, label, tooltip, heading over the column], names first running from A.
 const TEXT_SORTS=['position','name','nation','source','target','league','academy_club','club'];
 const sortHeaders=(columns,data,sorted=data.sort)=>columns.map(([key,label,title])=>label?sortButton(key,title?`<span title="${title}">${label}</span>`:label,sorted,data.order,TEXT_SORTS.includes(key)?'asc':'desc'):'');
@@ -118,7 +117,7 @@ function transfersTable(data, summary){
  const columns=[['date','DATE'],['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['source','PROVENANCE'],['arrow',''],['target','DESTINATION'],['fee','MONTANT'],['value','VALEUR']];
  const record=Math.max(1,summary?.record?.fee||0,...data.items.map(row=>row.fee||0));
  const fee=row=>row.kind==='loan'?'<span class="num muted">Prêt</span>':row.kind==='release'?'<span class="num muted">Fin de contrat</span>':row.kind==='departure_unknown'?'<span class="num muted">Motif non archivé</span>':row.fee?`<span class="bar-figure">${miniBar(row.fee/record)}<b>${money(row.fee)}</b></span>`:'<span class="num muted">Libre</span>';
- return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),nationCell(row.nationalities),figure(row.age??'—'),levelBadge(row.rating,'Niveau actuel sur 200'),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':money(row.value))]));
+ return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),levelBadge(row.rating,'Niveau actuel sur 200'),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':money(row.value))]));
 }
 
 // A retirement tells who left: his level on the day and the best of his history, his career in the game and his caps. The
@@ -129,7 +128,7 @@ function retirementsTable(data){
   ['matches','MJ','','Carrière'],['goals','BUTS','','Carrière'],['assists','PD','','Carrière'],['average','NOTE','','Carrière'],
   ['caps','SÉL.','Sélections','Sélection'],['caps_goals','BUTS','Buts en sélection','Sélection']];
  const count=value=>figure(n(value??0));
- return movementsTable(columns,data,data.items.map(row=>[row.position?position(row.position):'—',playerCell(row),nationCell(row.nationalities),figure(row.age??'—'),clubLink(row.source),
+ return movementsTable(columns,data,data.items.map(row=>[row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),clubLink(row.source),
   row.league?e(row.league.name):row.source?external:'—',levelBadge(row.rating,'Niveau à la retraite sur 200'),levelBadge(row.peak,'Meilleur niveau sur 200'),
   count(row.matches),count(row.goals),count(row.assists),figure(row.average?averageNote(row.average):'—'),figure(row.caps?n(row.caps):'—'),figure(row.caps?n(row.caps_goals):'—')]));
 }
@@ -148,7 +147,7 @@ function promotionsTable(data, recruiting){
  };
  const clubs=(row,now)=>`${clubLink(row.target)}${now&&now.club?.id!==row.target?.id?` <span class="muted">→</span> ${clubLink(now.club)}`:''}`;
  return movementsTable(columns,data,data.items.map(row=>{const then=row.details||{},now=then.current;
-  return [then.position?position(then.position):'—',playerCell(row),nationCell(then.nationalities),figure(then.age??'—'),clubs(row,now),
+  return [then.position?position(then.position):'—',playerCell(row),mainNation(then),figure(then.age??'—'),clubs(row,now),
    levelBadge(then.rating,'Niveau à la promotion sur 200'),levelBadge(now?.rating,'Niveau actuel sur 200'),progress(then,now),levelBadge(then.potential,'Potentiel sur 200'),figure(now?money(now.value):'—'),
    ...(recruiting?[figure(now?.wage_demand==null?'—':monthlySalary(now.wage_demand)),now?.interested==null?'—':now.interested?'Oui':'<span class="muted">Non</span>']:[])];}));
 }
