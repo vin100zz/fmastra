@@ -225,16 +225,18 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .balance .balance-note b{font-weight:600;color:var(--strong)}
 .tile{border-radius:var(--radius)}
 
-/* A club's header: an 88 px band in its colours, its tabs under it. */
+/* A club's header: an 88 px band in its colours, its tabs under it. Nothing stands over the name: what places it follows
+   it on its line, smaller (a club's league after its flag, a player's club; nothing after a selection's). */
 .club-hero{border-radius:var(--radius)}
 .club-hero-band{min-height:88px;border-radius:var(--radius) var(--radius) 0 0}
 .club-hero-main{gap:var(--s2) var(--s4);padding:0 var(--s4) 0 var(--s3)}
 .club-hero .crest.club-hero-crest{width:64px;height:64px;border-width:3px;font-size:var(--fs-title)}
 .club-hero-crest .crest-logo{inset:7px;width:calc(100% - 14px);height:calc(100% - 14px)}
 .club-hero-identity{gap:var(--s1)}
-.club-hero-league{font-size:var(--fs-body);font-weight:600}
-.club-hero-league .flag{width:16px;height:12px}
 .club-hero-identity h1{font-size:var(--fs-hero);line-height:1}
+.club-hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0}
+.club-hero-name h1{min-width:0}
+.club-hero-context{display:flex;align-items:baseline;gap:var(--s2);flex:none;font:700 var(--fs-title)/24px var(--display);font-stretch:semi-condensed;white-space:nowrap;opacity:.85}
 .club-hero-identity p{font-size:var(--fs-body);font-weight:400}
 .club-hero-tiles{gap:var(--s2)}
 .club-hero-tile{min-width:96px;gap:2px;padding:6px var(--s3);border-radius:var(--radius)}
@@ -242,13 +244,10 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 /* A selection's header is a club's: its flag fills the disc where a crest stands. */
 .club-hero-crest .crest-flag{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
 .club-hero .crest.club-hero-crest:has(.crest-flag){color:transparent}
-/* A player's header is his club's: his name, then his club after it, smaller, on the same line. A tile grades its ground as
-   the badge of its note does (level, potential); what he did for his selection is one tile of three columns: its flag over
-   its code, his caps, his goals. Under the band, where a club has its tabs: what stands on the left, then what the user
-   can do with him in the groups of his menu, the main action last. */
-.club-hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0}
-.club-hero-name h1{min-width:0}
-.club-hero-club{flex:none;font:700 var(--fs-title)/24px var(--display);font-stretch:semi-condensed;white-space:nowrap;opacity:.85}
+/* A player's header is his club's. A tile grades its ground as the badge of its note does (level, potential); what he did
+   for his selection is one tile of three columns: its flag over its code, his caps, his goals. Under the band, where a
+   club has its tabs: what stands on the left, then what the user can do with him in the groups of his menu, the main
+   action last. */
 .club-hero-tile.graded{background:hsl(var(--hue) 40% 16%)}
 .club-hero-tile.graded :is(span,strong){color:hsl(var(--hue) 75% 68%)}
 :root[data-theme="light"] .club-hero-tile.graded{background:hsl(var(--hue) 62% 91%)}

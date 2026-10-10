@@ -173,13 +173,11 @@ test('the header takes the colours of his club, its crest on the disc, and write
  const head=header((await render({...detail,club})).html);
  assert.match(head,/^<header class="club-hero" style="--hero-field:#F8D000;--hero-ink:#111418;--hero-sash:#E00000;/);
  assert.match(head,/<div class="crest club-hero-crest">L<img class="crest-logo" src="\/crests\/TCM1_7\.png" alt="" loading="lazy" onerror="this\.remove\(\)"><\/div>/);
- assert.match(head,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Test Joueur<\/h1><a class="club-hero-club" href="#\/club\/7">Lens<\/a><\/div><\/div>/);
- // No line over the name: his position is read on the pitch, his club after his name.
- assert.doesNotMatch(head,/club-hero-league/);
+ assert.match(head,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Test Joueur<\/h1><a class="club-hero-context" href="#\/club\/7">Lens<\/a><\/div><\/div>/);
  // Without a club: a plain band, no disc, « Libre » where the club stands.
  const free=header((await render({...detail,club:null})).html);
  assert.match(free,/^<header class="club-hero plain">/);assert.doesNotMatch(free,/club-hero-crest/);
- assert.match(free,/<h1>Test Joueur<\/h1><span class="club-hero-club">Libre<\/span>/);
+ assert.match(free,/<h1>Test Joueur<\/h1><span class="club-hero-context">Libre<\/span>/);
 });
 
 test('player page puts attributes beside the pitch, then the level chart beside the career',async()=>{

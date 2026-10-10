@@ -81,7 +81,8 @@ Barre persistante en tête d'application :
   de « Continuer » : pour chacun, le délai en gros (J-6, « Auj. »), puis
   l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
   en bleu pour une coupe. Le prochain match a son délai et un soulignement en
-  couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px
+  couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px.
+  Chacun ouvre la fiche de l'adversaire
 - Un bouton à la loupe, à gauche de ces matchs : la recherche globale (voir « Recherche globale »)
 - Bouton « Continuer », avec en pastille rouge le nombre de messages d'Actualités qui attendent une réponse ; la
   pastille ouvre le premier d'entre eux
@@ -300,8 +301,9 @@ la seconde le traverse en bande diagonale. Une couleur principale proche du blan
 bandeau se fondre dans la page : la seconde le remplit alors, et la bande prend la principale ; deux
 couleurs trop proches ne laissent qu'une bande pâle de l'encre. Le texte du bandeau prend l'encre
 (claire ou foncée) qui se lit sur son fond. À gauche, le bloc de navigation entre pairs, l'écusson
-sur un disque blanc, puis sur une ligne le drapeau, la compétition et la capacité du stade (« Club
-dormant » hors championnat), et le nom dessous. À droite, quatre cases : Tactique, Entraînement, Recrutement (des
+sur un disque blanc, puis le nom et, à sa suite sur la même ligne, deux liens : le drapeau, vers la
+sélection de son pays (`nation_id`), et le championnat, vers sa fiche (hors championnat, le drapeau
+et le pays en un seul lien, vers la sélection ; charte, « Bandeau »). À droite, quatre cases : Tactique, Entraînement, Recrutement (des
 jeunes, en infobulle) — ces deux-là sur 20 sans le dire — et Réputation, avec l'écart de la dernière
 révision annuelle en vert ou en rouge (`reputation_change`, absent la première saison). Ni classement
 ni forme : les widgets de l'Effectif les donnent. Les onglets ferment l'en-tête ; l'onglet ouvert est
@@ -435,10 +437,8 @@ club : le même en-tête, les mêmes onglets dessous, la même mise en page de l
 **En-tête.** Le bandeau d'un club (`nationHero`, `club-hero.js`), aux deux couleurs du maillot de la
 sélection (`KIT_COLORS`, `api/nations.py` : une donnée d'affichage, par nom de nation ; une nation
 qui n'y figure pas garde un bandeau neutre). À gauche, le bloc de navigation entre les sélections
-de la confédération, le drapeau sur le disque, puis sur une ligne la confédération, l'édition que
-la sélection dispute et sa phase (« Europe · Euro 2028 · Qualifications », « Phase finale » une
-fois dans un groupe de la phase finale ; la confédération seule pour une nation que l'édition ne
-concerne pas), et le nom dessous. À droite, une seule case : Force, sur 100 sans le dire. Ni
+de la confédération, le drapeau sur le disque, puis le nom, seul : ni confédération, ni édition
+disputée, ni phase (charte, « Bandeau »). À droite, une seule case : Force, sur 100 sans le dire. Ni
 titres ni dernier parcours : l'Historique les donne.
 
 **Effectif.** Une seule liste, celle du rassemblement en cours, à défaut du dernier : « Rassemblement
@@ -1040,7 +1040,7 @@ GET  /api/manuel[/{chapitre}]             manuel : {pages: [{slug, title}], page
 
 GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&taille=&tri=&ordre=   tri : toute colonne (classement, forme, age, valeur, budget, masse_salariale ; niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
                                           chaque club : standing, average_age, squad_value, available_budget, wage_bill et wage_cap (hebdomadaires)
-GET  /api/clubs/{id}                      en-tête + résumé ; reputation_change : écart de la dernière révision annuelle (null la première saison)
+GET  /api/clubs/{id}                      en-tête + résumé ; reputation_change : écart de la dernière révision annuelle (null la première saison) ; nation_id : la sélection de son pays (null si le jeu n'en a pas)
 GET  /api/clubs/{id}/apercu               widgets de l'effectif : calendrier, finances, dernier onze
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
 GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, un attribut (passe, reflexes…) ou un composite (tir, occasion_attaque…)

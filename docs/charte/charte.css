@@ -306,23 +306,21 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .mark.injury{width:10px;height:10px;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
 .mark.on{color:var(--good)}.mark.off{color:var(--bad)}
 
-/* A club's header: the band in its colours, its tabs under it. */
+/* A club's header: the band in its colours, its tabs under it. Nothing stands over the name: what places it follows it
+   on its line, smaller (a club's league after its flag, a player's club; nothing after a selection's). */
 .hero{position:relative;display:flex;align-items:center;gap:var(--s4);flex:none;height:88px;padding:0 var(--s4) 0 var(--s3);overflow:hidden}
 .hero-sash{position:absolute;inset:0;clip-path:polygon(54% 0,61% 0,53% 100%,46% 100%)}
 .hero-sash.thin{clip-path:polygon(62.5% 0,64% 0,56% 100%,54.5% 100%)}
 .hero>:not(.hero-sash){position:relative}
 .hero h1{font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
-.hero-identity{display:flex;flex-direction:column;gap:var(--s1)}
-.hero-identity span{font-weight:600}
+.hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0;white-space:nowrap}
+.hero-context{display:flex;align-items:baseline;gap:var(--s2);font:700 semi-condensed var(--fs-title)/24px var(--display);opacity:.85}
 .hero .tiles{margin-left:auto}
 .hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
 .entity-nav{display:flex;flex-direction:column;gap:1px}
 .entity-nav>*{display:grid;place-items:center;width:20px;height:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font-size:var(--fs-micro);line-height:1}
-/* A player's header is his club's: his name, then his club after it, smaller, on the same line. Under the band, where a
-   club has its tabs: where he stands on the left, then what can be done with him in the groups of his menu, the main
-   action last. */
-.hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0;white-space:nowrap}
-.hero-club{font:700 semi-condensed var(--fs-title)/24px var(--display);opacity:.85}
+/* A player's header is his club's. Under the band, where a club has its tabs: where he stands on the left, then what can
+   be done with him in the groups of his menu, the main action last. */
 .hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);flex:none;min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
 .hero-pills{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-right:auto}
 .command-group{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}

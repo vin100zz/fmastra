@@ -391,6 +391,8 @@ def club_detail(world: World, club_id: int, standings: dict | None = None, reser
     if reserved is None: reserved = reserved_budgets(world)
     held = dict(world.reputation_history.get(club.id, []))
     return {"id": club.id, "name": club.name, "nation_code": club.nation, "nation": world.nation_names.get(club.nation, club.nation),
+            # The selection of its country, where its flag leads; None when the game has none.
+            "nation_id": next((team.id for team in world.international.nations.values() if team.code == club.nation), None),
             "competition_id": club.competition_id, "competition": world.competitions[club.competition_id].name if club.competition_id else None,
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
             # How far the review that opened the season moved it; None before a second season.

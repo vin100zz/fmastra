@@ -31,15 +31,16 @@ const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crest
 const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`;};
 
 // The band and what closes it, a club's, a selection's or a player's: `colors` is what heroColors gives, `lead` steps
-// between peers, `crest` fills the disc, `facts` is the line over the `name`, `after` what follows the name on its line,
-// `tiles` the figures on the right, `foot` what stands under the band.
-function hero({colors,lead,crest,facts='',name,after='',tiles,foot}){
- const title=`<h1>${e(name)}</h1>`;
+// between peers, `crest` fills the disc, `after` is what follows the `name` on its line, smaller (nothing stands over the
+// name), `tiles` the figures on the right, `foot` what stands under the band.
+function hero({colors,lead,crest,name,after='',tiles,foot}){
  return `<header class="club-hero${colors?'':' plain'}"${colors?` style="${colors}"`:''}><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div>`
   +`<div class="club-hero-main">${lead}${crest?`<div class="crest club-hero-crest">${crest}</div>`:''}`
-  +`<div class="club-hero-identity">${facts?`<span class="club-hero-league">${facts}</span>`:''}${after?`<div class="club-hero-name">${title}${after}</div>`:title}</div>`
+  +`<div class="club-hero-identity"><div class="club-hero-name"><h1>${e(name)}</h1>${after}</div></div>`
   +`<div class="club-hero-tiles">${tiles}</div></div></div>${foot}</header>`;
 }
+// What follows a name on its line: where it plays, a link to that page when it has one.
+const context=(content,href='')=>href?`<a class="club-hero-context" href="${href}">${content}</a>`:`<span class="club-hero-context">${content}</span>`;
 
 // The tabs of a page under its band: `menu` lists them, [key, label] and what its address keeps (a query, for a tab that
 // reads the season of the open one), hung from the address `base`; `section` is the open one. `tools` close the row: the
@@ -49,26 +50,27 @@ function tabs(base,menu,section,tools=''){
  return tools?`<div class="club-hero-foot">${nav}<div class="tools">${tools}</div></div>`:nav;
 }
 
-// The header of a club page: its colours, its crest, its league and its ground, then its tactic, its training, its youth
-// recruitment and its reputation (with how far the last review moved it); the tabs of the page close it. `lead` steps between
-// the clubs of the division; `menu` is the tabs, `section` the open one, `tools` what closes their row.
+// The header of a club page: its colours, its crest, its name and its league after it, then its tactic, its training, its
+// youth recruitment and its reputation (with how far the last review moved it); the tabs of the page close it. `lead` steps
+// between the clubs of the division; `menu` is the tabs, `section` the open one, `tools` what closes their row.
 export function clubHero(club,{lead='',menu,section,tools=''}){
  const change=club.reputation_change==null?'':`<em class="${club.reputation_change<0?'down':'up'}">${signed(club.reputation_change)}</em>`;
- // One line over the name: the flag, the competition (« Club dormant » outside a league), the ground's capacity.
- const facts=[club.competition||club.nation||null,club.competition?null:'Club dormant',club.capacity?`${n(club.capacity)} places`:null].filter(Boolean).join(' · ');
+ // After the name, two links: the flag of its country to its selection, then its league to its page. Outside a league,
+ // one link: its country after the flag, the whole to the selection. A country without a selection is no link.
+ const flag=nationFlag(club.nation_code),selection=club.nation_id==null?'':`#/international/nation/${club.nation_id}`;
+ const after=club.competition_id==null?context(`${flag}${e(club.nation||'')}`,selection)
+  :context(`${flag&&selection?`<a href="${selection}">${flag}</a>`:flag}<a href="#/league/${club.competition_id}">${e(club.competition)}</a>`);
  return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section,tools),
-  crest:clubCrest(club),facts:`${nationFlag(club.nation_code)}${e(facts)}`,
+  crest:clubCrest(club),after,
   tiles:`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities))}`
    +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes')}${tile('Réputation',club.reputation==null?'—':n(club.reputation),change)}`});
 }
 
-// The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its confederation
-// and the edition it plays over its name, then its strength. `lead` steps between the selections of the confederation,
-// `tools` close the row of tabs.
+// The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its name alone,
+// then its strength. `lead` steps between the selections of the confederation, `tools` close the row of tabs.
 export function nationHero(nation,{lead='',menu,section,tools=''}){
- const facts=[nation.federation,nation.competition?.name,nation.competition?.stage].filter(Boolean).join(' · ');
  return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section,tools),
-  crest:nationCrest(nation),facts:e(facts),tiles:tile('Force',n(nation.strength))});
+  crest:nationCrest(nation),tiles:tile('Force',n(nation.strength))});
 }
 
 // A side of a match without colours keeps the panel's, whatever the other side wears.
@@ -108,7 +110,7 @@ export function playerHero(player,{lead='',foot=''}){
  const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),'',title,levelHue(level(value)));
  const unasked=player.transferable===false?'Intransférable : son club refuse de le vendre':club?'':'Sans club : aucun prix demandé';
  return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',
-  after:club?`<a class="club-hero-club" href="#/club/${club.id}">${e(club.name)}</a>`:'<span class="club-hero-club">Libre</span>',
+  after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
   tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}`
    +`${tile('Valeur',money(player.value),'','Valeur de marché')}${unasked?tile('Prix demandé','N/A','',unasked):tile('Prix demandé',price(player.asking_price))}`});
 }

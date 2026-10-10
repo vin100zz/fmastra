@@ -349,6 +349,8 @@ def test_views_pagination_and_no_rng_leak(client):
     assert all({'training_facilities', 'youth_recruitment'} <= row.keys() for row in club_rows)
     psg = client.get('/api/clubs/868').json()
     assert (psg['training_facilities'], psg['youth_recruitment']) == (20, 19)
+    # The selection of its country, where the flag of its header leads.
+    assert world.international.nations[psg['nation_id']].code == psg['nation_code'] == 'FRA'
     mbappe = client.get('/api/joueurs/85139014').json()
     assert mbappe['attributes_imported'] and mbappe['position_ratings']['BU'] == 18
     assert mbappe['attributes']['finition'] == 90

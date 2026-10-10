@@ -56,15 +56,16 @@ test('a selection’s page wears a club’s header: its colours, its flag on the
   assert.match(html,/^<header class="club-hero" style="--hero-field:#1f3f94;--hero-ink:#ffffff;--hero-sash:#ffffff;/);
   assert.match(html,/<div class="club-hero-main"><div class="entity-nav"/);assert.match(html,/entity-step next/);
   assert.match(html,/<div class="crest club-hero-crest">F&lt;<img class="crest-flag" src="\/flags\/fr\.svg" alt=""><\/div>/);
-  assert.match(html,/<span class="club-hero-league">Europe · Euro 2028 · Qualifications<\/span><h1>France &lt;test&gt;<\/h1>/);
+  // Its name alone: neither its confederation nor the edition it plays follows it.
+  assert.match(html,/<div class="club-hero-name"><h1>France &lt;test&gt;<\/h1><\/div>/);assert.doesNotMatch(html,/club-hero-context/);
   // One figure only: no title count, no last edition, no rank in the group.
   assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Force<\/span><strong>80<\/strong><\/div><\/div>/);
   assert.match(html,/<nav class="club-hero-tabs" aria-label="Sections"><a class="active" href="#\/international\/nation\/-1001\/squad" aria-current="page">Effectif<\/a><a class="" href="#\/international\/nation\/-1001\/calendar">Calendrier<\/a><a class="" href="#\/international\/nation\/-1001\/history">Historique<\/a><\/nav>/);
   assert.doesNotMatch(html,/class="page-heading"|class="eyebrow"|\/ 100|Joueurs éligibles/);
-  // A nation without colours keeps a plain band; one out of any edition names its confederation alone.
+  // A nation without colours keeps a plain band.
   globalThis.fetch=serving(page({major_color:null,minor_color:null,competition:null,group:null}));
   const plain=await internationalScreen('nation','-1001');
-  assert.match(plain,/^<header class="club-hero plain">/);assert.match(plain,/<span class="club-hero-league">Europe<\/span>/);
+  assert.match(plain,/^<header class="club-hero plain">/);
   assert.doesNotMatch(plain,/standings-extract/);
   const history=await internationalScreen('nation','-1001','history');
   assert.match(history,/<a class="active" href="#\/international\/nation\/-1001\/history" aria-current="page">Historique<\/a>/);

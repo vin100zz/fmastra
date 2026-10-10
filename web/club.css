@@ -16,8 +16,6 @@
 .club-hero .crest.club-hero-crest:has(.crest-logo){background:#fff;color:transparent}
 .club-hero-crest .crest-logo{inset:10px;width:calc(100% - 20px);height:calc(100% - 20px)}
 .club-hero-identity{display:flex;flex-direction:column;gap:6px;min-width:0;color:var(--hero-ink,var(--ink))}
-.club-hero-league{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:600}
-.club-hero-league .flag{width:21px;height:14px;margin:0}
 .club-hero-identity h1{margin:0;font-family:var(--display);font-stretch:semi-condensed;font-size:40px;font-weight:700;line-height:.95;letter-spacing:0;text-transform:uppercase;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .club-hero-identity p{margin:0;font-size:13px;font-weight:400;color:inherit;opacity:.85}
 .club-hero-tiles{display:flex;gap:8px;margin-left:auto}

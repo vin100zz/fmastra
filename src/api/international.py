@@ -281,7 +281,7 @@ def international_router(service):
             played, coming = [m for m in matches if m.result], [m for m in matches if not m.result]
             group = nation_group(world, nation_id)
             return {**nation_ref(world, nation_id), **kit_colors(team.name), "reference_strength": team.reference_strength,
-                    # The edition the nation plays and how far it stands in it, for the header of its page.
+                    # The edition the nation plays and how far it stands in it.
                     "competition": {"year": group["year"], "name": group["edition"],
                                     "stage": "Phase finale" if group["finals"] else "Qualifications"} if group else None,
                     "camp": {"start": camp.start.iso(), "end": camp.end.iso(), "finals": camp.finals, "upcoming": upcoming} if camp else None,

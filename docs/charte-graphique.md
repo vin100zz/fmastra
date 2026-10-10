@@ -77,7 +77,7 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 |---|---|---|---|
 | `--fs-hero` | 40 / 40 | 700 | Nom d'un club dans son bandeau, score |
 | `--fs-page` | 26 / 32 | 700 | Titre de page |
-| `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, club d'un joueur dans son bandeau |
+| `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, ce qui suit un nom dans son bandeau |
 | `--fs-figure` | 16 / 20 | 700 | Action principale, délai, saison montrée par son pas |
 | `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
 | `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`) |
@@ -109,8 +109,8 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Action principale | `.cta` | Une seule par écran |
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
-| En-tête de club, de sélection | `.hero` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Clubs et pays » |
-| En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-club`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « En-tête d'un joueur » |
+| En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
+| En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent. Voir « En-tête d'un match » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
@@ -226,14 +226,42 @@ et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
 | Compétition | Sa pastille | Son pays, après son drapeau ; rien pour une coupe d'Europe |
 | Sélection | Son drapeau | Rien |
 
+### Bandeau
+
+La fiche d'un club, d'une sélection, d'un joueur s'ouvre sur le même bandeau
+(`.hero`) : 88 de haut, aux couleurs du club ou de la sélection, le disque à
+gauche, les tuiles à droite. Tout nouvel en-tête le reprend.
+
+- **Nom** (`.hero-name`) : en 40, sur une seule ligne. Rien n'est écrit
+  au-dessus de lui, ni dessous.
+- **À sa suite** (`.hero-context`) : là où il joue, sur la même ligne et la
+  même ligne de base, en 20, à 12 du nom. Un lien vers sa fiche quand il en a
+  une.
+- **Tuiles** : ce que le bandeau chiffre va sur une tuile, jamais dans une ligne
+  de texte. La capacité du stade n'y est pas : elle se lit dans la barre d'un
+  match.
+
+| Bandeau | À la suite du nom |
+|---|---|
+| Club | Le drapeau de son pays, puis son championnat : deux liens, le drapeau vers la sélection du pays, le championnat vers sa fiche. Hors championnat, son pays après son drapeau : un seul lien, l'ensemble vers la sélection |
+| Sélection | Rien : son nom seul |
+| Joueur | Son club, lien vers sa fiche ; « Libre » sans club |
+
+Un drapeau y mène toujours à la sélection de son pays : avec le nom du pays, ils
+forment un seul lien ; devant autre chose (un championnat), le drapeau est un
+lien à part, ce qui le suit a le sien. Un pays sans sélection dans le jeu garde
+son drapeau, sans lien.
+
+Le bandeau d'un match n'a rien à la suite de ses noms : sa barre dit le reste
+(voir « En-tête d'un match »).
+
 ### En-tête d'un joueur
 
 La fiche d'un joueur s'ouvre sur le bandeau de son club (`.hero`) : ses
 couleurs, son écusson sur le disque. Un joueur sans club a un bandeau neutre,
 sans disque.
 
-- **Nom** : en 40, seul sur sa ligne, sans ligne au-dessus ; son club à sa
-  suite, en 20 (`.hero-club`), lien vers sa fiche ; « Libre » sans club. Son
+- **Nom** : celui du bandeau, son club à sa suite (voir « Bandeau »). Son
   poste n'y est pas : il se lit sur le terrain des aptitudes.
 - **Tuiles**, dans cet ordre : âge, sélection, niveau, potentiel, valeur, prix
   demandé (« N/A » quand personne ne peut le demander, la raison en infobulle).
@@ -545,7 +573,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `amount`), y compris dans le manuel |
 | Classements | Trait à gauche du rang, ordre des colonnes unique |
-| En-tête de club | Bandeau de 88, nom en 40 |
+| En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`) |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU et CM ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
