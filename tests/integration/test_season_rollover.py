@@ -134,11 +134,16 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
         for kind, code in (('cup', None), ('europe', 'C1')):
             competition = next(c for c in world.competitions.values() if c.kind == kind and c.code == code)
             winner = world.champions[competition.id][0][1]
-            row = client.get(f'/api/clubs/{winner}/historique').json()['items'][0]
+            body = client.get(f'/api/clubs/{winner}/historique').json()
+            row = body['items'][0]
             assert row['season'] == first and row['cup' if kind == 'cup' else 'europe']['winner'] is True
             assert row['cup' if kind == 'cup' else 'europe']['level'] == 7
+            # The honours count the title.
+            if kind == 'cup': assert body['honours']['cup'] >= 1
+            else: assert {'code': 'C1', 'competition': competition.name, 'count': 1} in body['honours']['europe']
         body = client.get(f'/api/clubs/{promoted}/historique').json()
         assert set(body) == {'items', 'total', 'page', 'page_size', 'leaders', 'transfers', 'honours', 'leagues'}
+        assert body['honours']['best_rank'] == {'rank': body['items'][0]['rank'], 'season': first, 'competition': body['items'][0]['competition']}
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
         # The table of a finished season is archived apart from the champions, with the seasons to step to.
