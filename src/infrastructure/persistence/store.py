@@ -14,7 +14,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from core.domain.world import NewsItem, World, history_level, history_month
-from core.world.news import brings_something
+from core.world.contracts import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
 from core.world.transfer_rules import greed_trait
@@ -26,10 +26,12 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 29
+SCHEMA_VERSION = 30
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A player asks a new contract for a raise worth asking for, or for more years (see `_forget_small_demands`).
+    (30, ("ia_gestion", "contrats"), {"hausse_min_prolongation": 0.1}),
     # Income by reputation and championship, cup prizes, idle cash spent, bounded opinions, exposure and form in a player's
     # value, scouting of leavers and prospects, dormant clubs sharing their wage cap with the players the game does not hold
     # and bringing nobody on beyond their level: an older save plays on with these rules (see `_upgrade_economy`).
@@ -245,6 +247,7 @@ class SaveStore:
             if version < 26: _upgrade_news(world)
             if version < 27: _recall_refusals(world)
             if version < 29: _upgrade_economy(world)
+            if version < 30: _forget_small_demands(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -347,9 +350,14 @@ def _upgrade_news(world: World) -> None:
     world.news = [item if isinstance(item, NewsItem) else
                   NewsItem(item.date, item.kind, item.text, item.club_id, item.player_id, item.match_id, item.read)
                   for item in world.news if item.kind != "result"]
-    # A demand left behind by a contract signed since has nothing left to ask: it no longer awaits an answer.
+
+
+def _forget_small_demands(world: World) -> None:
+    """Schema 30: a demand for a raise too small to ask for, without more years, is no longer made; one still awaiting an
+    answer lapses, and the player asks again when he has something to ask for. So does a demand left behind by a
+    contract signed since, which an older save may hold."""
     world.pending_renewals = {pid: proposal for pid, proposal in world.pending_renewals.items()
-                              if pid in world.players and brings_something(proposal.contract, world.players[pid].contract)}
+                              if pid in world.players and brings_something(proposal.contract, world.players[pid].contract, world.config)}
 
 
 def _recall_refusals(world: World) -> None:

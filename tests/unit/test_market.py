@@ -1021,6 +1021,38 @@ def test_refusals_survive_a_save_and_an_older_save_recalls_those_its_feed_tells(
     assert store.load("refusal").refused_renewals == {kept.id: refused}
 
 
+def test_an_older_save_lets_a_demand_for_a_raise_too_small_to_ask_for_lapse(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from core.domain.clubs import Competition
+    from core.domain.offers import RenewalProposal
+    from core.world import news
+    from core.world.events import RenewalProposed
+    from infrastructure.persistence.store import SaveStore
+    world = mini_world(config)
+    world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
+    for club in world.clubs.values(): club.competition_id = -16
+    world.rngs = {key: Random(1) for key in ("market", "matches", "states", "progression", "demography")}
+    world.controlled_club_id = 1
+    small, fair = (world.players[pid] for pid in world.clubs[1].player_ids[:2])
+    for player, factor in ((small, 1.01), (fair, 1.2)):
+        asked = replace(player.contract, weekly_wage=round(player.contract.weekly_wage * factor))
+        apply(world, RenewalProposed(RenewalProposal(player.id, 1, asked, world.date)))
+    store = SaveStore(tmp_path)
+    path = store.save(world, "demands")
+    # A save of the version before did not have the rule: the demand it breaks lapses, the other still awaits its answer.
+    payload = json.loads(gzip.decompress(path.read_bytes()))
+    payload["schema_version"] = 29
+    rules = payload["world"]["config"]
+    del rules["ia_gestion"]["contrats"]["hausse_min_prolongation"]
+    payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+    path.write_bytes(gzip.compress(json.dumps(payload).encode()))
+    restored = store.load("demands")
+    assert restored.config == config and set(restored.pending_renewals) == {fair.id}
+    assert [news.awaits_answer(restored, item) for item in restored.news if item.kind == "renewal_proposed"] == [False, True]
+
+
 def test_a_newcomer_settles_before_asking_for_a_renewal(config):
     from core.world.contracts import renewal_events
     from core.world.events import RenewalProposed
@@ -1037,6 +1069,7 @@ def test_a_newcomer_settles_before_asking_for_a_renewal(config):
 
 def test_an_unhappy_player_on_a_long_contract_asks_for_a_raise_or_nothing(config, monkeypatch):
     from collections import Counter
+    from core.ai.market import market_wage
     from core.world import contracts
     from core.world.events import RenewalProposed
     world, player = renewal_setup(config, reputation=100)
@@ -1048,10 +1081,14 @@ def test_an_unhappy_player_on_a_long_contract_asks_for_a_raise_or_nothing(config
     player.greed, player.contract.end = 0.0, Date(world.date.year + 6, 6, 30)
     proposals = lambda: [e.proposal for e in contracts.renewal_events(world) if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
     assert not proposals()
+    # Paid a twentieth under what his value commands: a raise too small to ask a new contract for.
+    player.contract.weekly_wage = round(market_wage(player, club, config) / 1.05)
+    assert not proposals()
     # Underpaid, he asks for a raise, on a contract that does not end sooner.
     player.contract.weekly_wage //= 2
     proposal, = proposals()
-    assert proposal.contract.weekly_wage > player.contract.weekly_wage and proposal.contract.end == player.contract.end
+    assert proposal.contract.weekly_wage >= player.contract.weekly_wage * (1 + config.management.contracts.min_raise)
+    assert proposal.contract.end == player.contract.end
 
 
 def test_a_player_who_joined_during_the_season_answers_only_for_the_matches_since(config):

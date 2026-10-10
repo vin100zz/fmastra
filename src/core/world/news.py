@@ -37,6 +37,7 @@ from core.domain.offers import TransferOffer, WAGE_TALKS
 from core.domain.players import Contract, Player
 from core.domain.world import NewsItem, NewsLine, World, history_level
 from .calendar import standings
+from .contracts import brings_something
 from .europe import association, league_places, resolve_european_quotas
 from .human import is_human_club, record, report
 
@@ -94,17 +95,12 @@ def awaits_answer(world: World, item: NewsItem) -> bool:
     if item.kind == "renewal_proposed":
         proposal, player = world.pending_renewals.get(item.player_id), world.players.get(item.player_id)
         if proposal is None or proposal.created != item.date or not is_human_club(world, proposal.club_id): return False
-        if player is None or not brings_something(proposal.contract, player.contract): return False
+        if player is None or not brings_something(proposal.contract, player.contract, world.config): return False
         return not item.lines or item.lines[-1].state == PENDING
     if item.kind == "talks_open":
         talks = world.offers.get(f"talks:{world.controlled_club_id}:{item.player_id}")
         return talks is not None and talks.stage == WAGE_TALKS and talks.created <= item.date
     return False
-
-
-def brings_something(asked: Contract, current: Contract | None) -> bool:
-    """Whether a contract a player asked for still gives him a raise or more years than the one he has."""
-    return current is not None and (asked.weekly_wage > current.weekly_wage or asked.end > current.end)
 
 
 def own_players(world: World, club: Club) -> list[Player]:

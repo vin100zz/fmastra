@@ -81,7 +81,7 @@ def validate_consistency(cfg: Config) -> None:
     require(wages.greed_source_low < wages.greed_source_reference < wages.greed_source_high,
             "Appetite for money source notes must be increasing")
     require(wages.greed_premium >= 0 and wages.raise_per_point >= 0 and wages.max_raise >= 0 and wages.cut_per_point >= 0
-            and 0 <= 1.5 * wages.max_cut < 1, "Wage demand steps must be nonnegative and a cut must leave a wage")
+            and wages.min_raise >= 0 and 0 <= 1.5 * wages.max_cut < 1, "Wage demand steps must be nonnegative and a cut must leave a wage")
     europe = cfg.world.europe
     require((europe.club_count, europe.league_rounds, europe.pot_count,
              europe.direct_places, europe.playoff_places) == (36, 8, 4, 8, 16), "Unsupported European format")

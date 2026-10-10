@@ -173,6 +173,12 @@ paie ; ceux de l'import et ceux du club dirigé par l'utilisateur ne changent pa
 que la masse salariale exige encore au-delà du revenu est soutenu comme à la création
 d'une partie, soutien qui se retire à mesure que ces contrats s'achèvent.
 
+Les configurations antérieures à la version 30 reçoivent
+`ia_gestion.contrats.hausse_min_prolongation` (0,10, positif ou nul) : la hausse la
+plus faible pour laquelle un joueur demande un nouveau contrat qui ne lui apporte pas
+d'année de plus. Au chargement, une demande en attente qui n'apporte ni cette hausse
+ni d'année de plus reste sans suite (`_forget_small_demands`).
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

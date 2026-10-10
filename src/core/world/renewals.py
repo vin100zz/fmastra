@@ -12,7 +12,7 @@ from core.ai.market import market_wage
 from core.domain.players import Contract, Player
 from core.domain.world import World
 from .application import apply
-from .contracts import asked_wage, extension
+from .contracts import asked_wage, brings_something, extension
 from .events import PlayerSigned
 from .human import is_human_club
 from .news import answer_renewal
@@ -33,7 +33,7 @@ def renewal_obstacle(world: World, player: Player) -> str | None:
     if wants_to_leave(player, world): return f"{player.name} ne veut pas prolonger : il vise un club plus prestigieux."
     if player.id in recent_arrival_ids(world): return f"{player.name} vient d'arriver : il ne renégocie pas son contrat."
     terms = asked_terms(world, player)
-    if terms.weekly_wage <= player.contract.weekly_wage and terms.end <= player.contract.end:
+    if not brings_something(terms, player.contract, world.config):
         return f"{player.name} n'a rien à gagner à un nouveau contrat pour l'instant."
     return None
 

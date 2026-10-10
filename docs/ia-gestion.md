@@ -467,9 +467,11 @@ l'appât du gain (`facteur_ego` n'est plus lu).
 
 Ouvrir une négociation en cas d'insatisfaction ou d'échéance proche. Un joueur
 arrivé depuis moins de `mercato.stabilite_apres_arrivee_jours` jours ne renégocie
-pas. Un renouvellement doit apporter une hausse de salaire, ou une fin plus
-tardive si l'échéance est à moins de `mois_avant_fin_declenchant` mois ; sa fin
-n'est jamais antérieure à celle du contrat en cours. Valoriser
+pas. Un renouvellement doit apporter une hausse d'au moins `hausse_min_prolongation`
+(10 %) du salaire, ou une fin plus tardive si l'échéance est à moins de
+`mois_avant_fin_declenchant` mois ; sa fin n'est jamais antérieure à celle du
+contrat en cours. En deçà de 10 %, les pages, qui arrondissent les salaires
+mensuels à deux chiffres, pourraient montrer le même salaire avant et après. Valoriser
 la conservation du joueur avec le score de départ, pas avec un ajout en double.
 Le plafond salarial s'applique aussi aux renouvellements. Un club de l'IA dont la
 masse salariale dépasse `contrats.depassement_revenus_sans_prolongation` fois ce
