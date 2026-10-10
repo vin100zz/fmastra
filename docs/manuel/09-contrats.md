@@ -128,7 +128,7 @@ Les trois termes sont ceux du [moral](#/aide/etats/le-moral). La prolongation n'
 - **le club tient à lui** : son départ affaiblirait le meilleur effectif que le club peut aligner, ou c'est l'un de ses {{ia_gestion.garde_fous.gardiens_min}} premiers gardiens, ou l'effectif est au minimum ;
 - **le club en a les moyens** : un club de l'IA dont la masse salariale dépasse {{n(ia_gestion.contrats.depassement_revenus_sans_prolongation, 1)}} fois ce que son revenu autorise ne prolonge plus personne. Ses joueurs partent à la fin de leur contrat, jusqu'à ce que ses salaires redescendent à sa mesure ;
 - **le salaire convient** : le club propose le salaire attendu, majoré de la prime d'appât du gain, et jamais moins que le salaire actuel. Si le plafond salarial ne le permet pas, il propose le salaire actuel, augmenté pour un club non simulé de ce que [sa part du plafond](#/aide/finances/le-plafond-salarial) laisse encore ; un joueur insatisfait refuse alors ;
-- **le nouveau contrat apporte quelque chose** : une hausse de salaire, ou des années en plus quand le contrat se termine dans moins de {{ia_gestion.contrats.mois_avant_fin_declenchant}} mois. Un joueur insatisfait dont le contrat court encore longtemps ne demande donc qu'une hausse. Le nouveau contrat ne se termine jamais avant l'actuel.
+- **le nouveau contrat apporte quelque chose** : une hausse d'au moins {{pct(ia_gestion.contrats.hausse_min_prolongation, 0)}} du salaire actuel, ou des années en plus quand le contrat se termine dans moins de {{ia_gestion.contrats.mois_avant_fin_declenchant}} mois. Un joueur insatisfait dont le contrat court encore longtemps ne demande donc qu'une hausse, et rien s'il gagne déjà presque ce qu'il demanderait. Le nouveau contrat ne se termine jamais avant l'actuel.
 
 Un club de l'IA signe aussitôt. Pour votre club, la demande arrive dans vos actualités et attend votre réponse : tant que vous ne l'avez pas donnée, « Continuer » vous y ramène avant d'avancer.
 
@@ -140,7 +140,7 @@ Un club de l'IA signe aussitôt. Pour votre club, la demande arrive dans vos act
 
 - s'il veut partir, frustré par un club trop petit pour lui ;
 - pendant les {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours qui suivent son arrivée ;
-- si le nouveau contrat ne lui apporte ni hausse de salaire ni année de plus ;
+- si le nouveau contrat ne lui apporte ni hausse d'au moins {{pct(ia_gestion.contrats.hausse_min_prolongation, 0)}} de son salaire ni année de plus ;
 - tant qu'il est prêté : il faut attendre son retour.
 
 Le contrat est refusé s'il fait dépasser votre plafond salarial.

@@ -143,6 +143,18 @@ def test_the_club_asks_a_player_for_his_terms_and_signs_them(config):
     assert renewals.renewal_obstacle(world, world.players[201]) == "Ce joueur n'est pas dans votre effectif."
 
 
+def test_a_player_asked_for_his_terms_wants_more_than_a_raise_too_small_to_ask_for(config):
+    world, club = human_world(config)
+    player = world.players[club.player_ids[1]]
+    player.contract = replace(player.contract, weekly_wage=1000)
+    terms = renewals.asked_terms(world, player)
+    # Paid a twentieth under his terms, on a contract that runs as long as a new one would: he has nothing to gain.
+    player.contract = replace(player.contract, weekly_wage=round(terms.weekly_wage / 1.05), end=terms.end)
+    assert renewals.renewal_obstacle(world, player) == f"{player.name} n'a rien à gagner à un nouveau contrat pour l'instant."
+    player.contract = replace(player.contract, weekly_wage=round(terms.weekly_wage / 1.2))
+    assert renewals.renewal_obstacle(world, player) is None and renewals.asked_terms(world, player) == terms
+
+
 def test_contracts_running_out_are_told_six_months_then_one_month_ahead(config):
     world, club = human_world(config)
     first, second = (world.players[pid] for pid in club.player_ids[:2])

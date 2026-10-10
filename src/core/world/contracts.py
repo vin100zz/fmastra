@@ -101,6 +101,17 @@ def asked_wage(player: Player, expected: float, cfg) -> int:
     return max(player.contract.weekly_wage, round(expected * (1 + cfg.management.contracts.greed_premium * player.greed)))
 
 
+def worth_asking(wage: int, current: int, cfg) -> bool:
+    """Whether a wage is a raise a player asks a new contract for: by `hausse_min_prolongation` of his own at least, and
+    so by more than the pages, rounding monthly wages to two figures, could show as the same wage."""
+    return wage > current and wage >= current * (1 + cfg.management.contracts.min_raise)
+
+
+def brings_something(asked: Contract, current: Contract | None, cfg) -> bool:
+    """Whether a contract gives a player something the one he has does not: more years, or a raise worth asking for."""
+    return current is not None and (asked.end > current.end or worth_asking(asked.weekly_wage, current.weekly_wage, cfg))
+
+
 def extension(world: World, player: Player, wage: int) -> Contract:
     """The contract a player signs to stay at this wage: as long as his age allows, never ending before the one he has."""
     contract = contract_for(player, world, wage)
@@ -149,10 +160,10 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
             # A financially constrained club can still offer the existing wage; a dormant one adds what its unseen squad leaves.
             proposed = player.contract.weekly_wage + (max(0, room) if club.competition_id is None else 0)
         if proposed < expected and satisfaction < rules.satisfaction_threshold: continue
-        # A new contract has to bring him something: a raise, or more years once the end is in sight.
+        # A new contract has to bring him something: a raise worth asking for, or more years once the end is in sight.
         contract = extension(world, player, proposed)
         longer = remaining < rules.renewal_months and contract.end > player.contract.end
-        if proposed <= player.contract.weekly_wage and not longer: continue
+        if not longer and not worth_asking(proposed, player.contract.weekly_wage, cfg): continue
         if is_human_club(world, club.id):
             # Turned down, he does not ask again while this contract runs, save once when its end comes in sight.
             refused = world.refused_renewals.get(player.id)

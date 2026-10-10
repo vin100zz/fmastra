@@ -336,6 +336,8 @@ class ManagementConfigContracts:
     overpay_kept_share: float = Field(default=0.5, alias="part_surpaye_conservee")
     # A club of the AI whose wages pass this multiple of what its income allows lets its contracts run out.
     renewal_stop_ratio: float = Field(default=1.2, alias="depassement_revenus_sans_prolongation")
+    # The least raise, as a share of his wage, a player asks a new contract for when it brings him no more years.
+    min_raise: float = Field(default=0.1, alias="hausse_min_prolongation")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
