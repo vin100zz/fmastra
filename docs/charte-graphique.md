@@ -96,6 +96,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Hauteurs | Barre du haut 56, ce qui s'y tient 40 (`--h-bar-control`) · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · ligne et en-tête de tableau 26 · pastille 18 |
 | Formes | Rayon de 3 (`--radius`), ou rond (points, écussons) |
 | Traits | Bordure de 1 ; ce qui est ouvert porte l'accent : 3 sur une barre, le menu, les onglets (`--mark`), 2 sur un contrôle (`--mark-control`) |
+| Défilement | La page garde à droite la place de sa barre de défilement sur tous les écrans, qu'elle défile ou non : rien ne se décale d'un écran court à un écran long |
 
 ### Marque
 

@@ -10,7 +10,9 @@ h1{font:700 var(--fs-page)/32px var(--display);font-stretch:semi-condensed;lette
 
 /* Frame: the rail and the bar. The brand's corner is on the accent, its mark reversed, and the rail's border takes the
    accent beside it. The bar opens on a club's sash, the slanted edge of that corner then a thin stripe, and what stands
-   in it is 40 px high. */
+   in it is 40 px high. The page keeps the room of its scrollbar on every screen: nothing moves sideways from a short
+   screen to a long one. */
+html{scrollbar-gutter:stable}
 .brand{flex:none;gap:var(--s3);background:var(--accent);color:var(--accent-ink)}
 .logo{flex:none;width:32px;height:32px;fill:none;stroke:var(--accent);stroke-width:2.5}
 .logo rect{fill:currentColor;stroke:none}
