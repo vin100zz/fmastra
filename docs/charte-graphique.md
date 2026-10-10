@@ -1,6 +1,6 @@
 # Charte graphique
 
-Référence unique de l'apparence de Touchline. `docs/ui.md` dit ce que chaque écran
+Référence unique de l'apparence de Football Manager. `docs/ui.md` dit ce que chaque écran
 montre ; ce document dit à quoi cela ressemble et comment cela s'écrit. Toute
 maquette et tout écran s'y conforment.
 
@@ -93,20 +93,39 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | | Valeurs |
 |---|---|
 | Espacements | 4, 8, 12, 16, 24 (`--s1` à `--s6`) : 8 entre deux cartes, 8 et 12 dans une carte, marges de page 8, 16, 12 |
-| Hauteurs | Barre du haut 48 · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · ligne et en-tête de tableau 26 · pastille 18 |
+| Hauteurs | Barre du haut 56, ce qui s'y tient 40 (`--h-bar-control`) · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · ligne et en-tête de tableau 26 · pastille 18 |
 | Formes | Rayon de 3 (`--radius`), ou rond (points, écussons) |
 | Traits | Bordure de 1 ; ce qui est ouvert porte l'accent : 3 sur une barre, le menu, les onglets (`--mark`), 2 sur un contrôle (`--mark-control`) |
+
+### Marque
+
+Le jeu s'appelle Football Manager. Sa marque est un terrain vu de haut : la
+ligne médiane, le rond central et son point, les deux surfaces, sur un carré au
+rayon de la charte. Elle a deux formes : tracée à l'encre (`--accent-ink`) sur
+un carré jaune (`--accent`), ou inversée, en jaune sur un carré à l'encre, là
+où le fond est déjà jaune.
+
+- **Favicon** : la marque sur son carré jaune (`web/favicon.svg`), lisible
+  jusqu'en 16.
+- **En tête du menu** (`.brand`) : un coin jaune de la hauteur de la barre du
+  haut, qu'il ouvre. La marque inversée en 32 (`.logo`), puis, à 12, le nom sur
+  deux lignes de 16 en capitales (`.wordmark`), à l'encre : FOOTBALL en 700,
+  MANAGER en 400. Elle ouvre la Vue d'ensemble.
+- **Titre de l'onglet** : celui de la page, puis le nom (« Rennes · Football
+  Manager ») ; le nom seul sur une page sans titre.
 
 ## Composants
 
 | Composant | Classes | Règle |
 |---|---|---|
+| Marque | `.brand`, `.logo`, `.wordmark` | Le coin jaune en tête du menu. Voir « Marque » |
+| Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
 | Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club ou de la sélection sur sa fiche (voir « Pas de saison ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : coupe d'Europe, derniers ou prochains matches, tactique, colonnes |
 | Pas d'une série | `.segmented.steps` | Journées : une flèche à chaque bout, toutes écrites entre elles |
 | Pas de saison | `.season`, `.season-pick` | Saisons, éditions des sélections : une flèche de chaque côté de celle montrée, qui ouvre la liste de toutes. Voir « Pas de saison » |
 | Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Carré, 28 ; 22 dans une carte ou une ligne |
-| Action principale | `.cta` | Une seule par écran |
+| Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut |
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
@@ -126,6 +145,27 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
+
+### Barre du haut
+
+Une barre blanche de 56, soulignée de l'accent (3), que le coin jaune de la
+marque ouvre à gauche.
+
+- **Écharpe** : le coin de la marque se termine dans la barre comme le bandeau
+  d'un club, sur 64 : un bord incliné, puis une fine bande parallèle. Le trait
+  qui borde le menu est jaune à sa hauteur.
+- **Date** : à 16 de l'écharpe, la saison en libellé (11 / 14), le jour dessous
+  en 20 / 22.
+- **À droite**, dans cet ordre : la pastille du mercato, la loupe, les trois
+  prochains matchs, l'action principale. Ce qui s'y tient a 40 de haut
+  (`--h-bar-control`) ; la pastille garde ses 18.
+- **Prochains matchs** (`.next-matches`) : un bandeau de trois blocs ; pour
+  chacun le délai en chiffre clé, l'adversaire après sa pastille (un avion à
+  l'extérieur), la compétition dessous, en bleu pour une coupe. Le prochain a
+  son délai et un soulignement à l'accent. Chacun ouvre la fiche de
+  l'adversaire.
+- **Avancement d'une simulation** : il se dessine dans le trait jaune de la
+  barre, sans décaler la page.
 
 ### Pas de saison
 
@@ -202,9 +242,9 @@ lien, ni bordure, ni ombre.
 
 Un bouton carré à la loupe, dans la barre du haut à gauche des prochains matchs,
 et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
-(`--backdrop`), à 96 du haut.
+(`--backdrop`), à 112 du haut, deux fois la barre.
 
-- **Tête** : une barre de 48, soulignée de l'accent : la loupe, la saisie en 16,
+- **Tête** : une barre de 56, soulignée de l'accent : la loupe, la saisie en 16,
   puis le choix du type (`.segmented.small` : Tout, Joueurs, Clubs,
   Compétitions, Sélections).
 - **Liste** : une seule, tous types mêlés, la meilleure correspondance d'abord ;
@@ -586,6 +626,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club et sur Calendrier d'une sélection (`tools` de `clubHero` et `nationHero`), au bout de la ligne du titre sur Mercato mondial, une coupe, Coupes d'Europe et une édition des sélections, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
 | Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`) |
 | Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
+| Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
 
 Ce qui reste :
 
@@ -609,3 +650,5 @@ et celle d'un joueur (proposition D, bloc sélection 3) : <https://claude.ai/art
 Le pas de saison a la sienne (proposition C1, page « Tour 2 ») : <https://claude.ai/artifact/JWEMGket7W9htqxx7FoCps>.
 Le compte rendu d'un match a été redessiné depuis (proposition A) :
 <https://claude.ai/artifact/X8NKTayKm5YXFuCJQTBWKo> ; sa planche du canevas montre l'ancienne bannière.
+La marque et la barre du haut ont la leur (logo 1, « Terrain » ; barre,
+proposition J) : <https://claude.ai/artifact/5vwPBqcKJkDe99jEWJZZwv>.

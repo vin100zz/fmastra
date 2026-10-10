@@ -1,4 +1,4 @@
-/* Touchline's charter, light theme: the reference every screen and every mockup is built from (docs/charte-graphique.md).
+/* Football Manager's charter, light theme: the reference every screen and every mockup is built from (docs/charte-graphique.md).
    Tokens first, then the application frame, then the components. Names follow web/theme.css, which this sheet is to
    replace screen by screen. Its boards, docs/charte/index.html, draw every token and component with it. */
 :root{
@@ -28,7 +28,7 @@
  /* Shape: one radius, or a full round; the mark of what is open is 3 px on a bar, 2 px on a control. */
  --radius:3px;--mark:3px;--mark-control:2px;
  /* Heights. */
- --h-bar:48px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
+ --h-bar:56px;--h-bar-control:40px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
 }
 *{box-sizing:border-box}
 
@@ -52,9 +52,15 @@
 
 /* Frame: the rail on the left, the bar on top, the page below it. */
 .shell{display:grid;grid-template-columns:216px minmax(0,1fr);height:100vh;overflow:hidden}
-.sidebar{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
-.brand{display:flex;align-items:center;gap:10px;flex:none;height:var(--h-bar);padding:0 var(--s4);border-bottom:var(--mark) solid var(--accent);font:700 semi-condensed var(--fs-figure)/1 var(--display);letter-spacing:var(--caps);color:var(--strong)}
-.brand-mark{display:grid;place-items:center;width:28px;height:28px;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-title)/1 var(--display);letter-spacing:0}
+.sidebar{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);border-image:linear-gradient(var(--accent) var(--h-bar),var(--line) 0) 1;background:var(--panel)}
+/* The brand, a corner on the accent: the game's mark reversed (a square of the ink, its drawing in the accent), then its
+   name on two lines. The rail's border takes the accent beside it. */
+.brand{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-bar);padding:0 var(--s4);border-bottom:var(--mark) solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+.logo{flex:none;width:32px;height:32px;fill:none;stroke:var(--accent);stroke-width:2.5}
+.logo rect{fill:currentColor;stroke:none}
+.logo circle:last-child{fill:var(--accent);stroke:none}
+.wordmark{display:flex;flex-direction:column;font:700 semi-condensed var(--fs-figure)/16px var(--display);letter-spacing:var(--caps)}
+.wordmark>span{font-weight:400}
 .nav{display:flex;flex-direction:column}
 .nav .label{margin:var(--s3) 20px var(--s1)}
 .nav a{display:flex;align-items:center;gap:var(--s3);height:32px;margin:0 var(--s2);padding:0 var(--s3);border-radius:var(--radius);font-weight:600;color:var(--ink-2)}
@@ -69,11 +75,17 @@
 .sidebar-tools{display:flex;gap:var(--s1);margin:var(--s1) var(--s2) 0}
 .sidebar-tools .button:first-child{flex:1}
 .workspace{display:flex;flex-direction:column;min-width:0;min-height:0}
-.topbar{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-bar);padding:0 var(--s3) 0 var(--s4);border-bottom:var(--mark) solid var(--accent)}
+/* The bar opens on a club's sash, 64 px wide: the slanted edge of the brand's corner, then a thin stripe. What stands in
+   it is 40 px high. */
+.topbar{position:relative;display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-bar);padding:0 var(--s3) 0 calc(var(--s4) + 64px);border-bottom:var(--mark) solid var(--accent)}
+.topbar::before,.topbar::after{content:"";position:absolute;inset:0 auto 0 0;width:64px;background:var(--accent);clip-path:polygon(0 0,40px 0,16px 100%,0 100%)}
+.topbar::after{clip-path:polygon(50px 0,56px 0,32px 100%,26px 100%)}
+.topbar .button.square{width:var(--h-bar-control);height:var(--h-bar-control)}
+.topbar .cta{height:var(--h-bar-control)}
 .date-block{display:flex;flex-direction:column;margin-right:auto}
 .date-block strong{font:700 semi-condensed var(--fs-title)/22px var(--display);color:var(--strong)}
 .next-matches{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-.next-match{display:flex;align-items:center;gap:var(--s2);height:34px;padding:0 var(--s3) 0 var(--s2)}
+.next-match{display:flex;align-items:center;gap:var(--s2);height:calc(var(--h-bar-control) - 2px);padding:0 var(--s3) 0 var(--s2)}
 .next-match+.next-match{border-left:1px solid var(--line)}
 .next-match:first-child{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
 .next-match>b{min-width:30px;font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--muted)}

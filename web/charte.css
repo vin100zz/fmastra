@@ -8,10 +8,22 @@ h1{font:700 var(--fs-page)/32px var(--display);font-stretch:semi-condensed;lette
 .eyebrow,.nav-label{font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 .strong{font-weight:600}
 
-/* Frame: the rail and the bar. */
-.brand{font-size:var(--fs-figure)!important;letter-spacing:var(--caps)}
-.brand small{font-size:var(--fs-micro)!important;font-weight:400;letter-spacing:0}
-.brand-mark{font-size:var(--fs-title)!important;font-weight:700}
+/* Frame: the rail and the bar. The brand's corner is on the accent, its mark reversed, and the rail's border takes the
+   accent beside it. The bar opens on a club's sash, the slanted edge of that corner then a thin stripe, and what stands
+   in it is 40 px high. */
+.brand{flex:none;gap:var(--s3);background:var(--accent);color:var(--accent-ink)}
+.logo{flex:none;width:32px;height:32px;fill:none;stroke:var(--accent);stroke-width:2.5}
+.logo rect{fill:currentColor;stroke:none}
+.logo circle:last-child{fill:var(--accent);stroke:none}
+.wordmark{display:flex;flex-direction:column;font:700 semi-condensed var(--fs-figure)/16px var(--display);letter-spacing:var(--caps)}
+.wordmark>span{font-weight:400}
+.sidebar{border-image:linear-gradient(var(--accent) var(--h-bar),var(--line) 0) 1}
+.topbar{padding-left:calc(var(--s4) + 64px)!important}
+.topbar::before,.topbar::after{content:"";position:absolute;inset:0 auto 0 0;width:64px;background:var(--accent);clip-path:polygon(0 0,40px 0,16px 100%,0 100%)}
+.topbar::after{clip-path:polygon(50px 0,56px 0,32px 100%,26px 100%)}
+.date-block .eyebrow{font-size:var(--fs-small);line-height:14px}
+.date-block strong{line-height:22px;margin-top:0!important}
+.next-match{height:calc(var(--h-bar-control) - 2px)}
 .sidebar nav a,.sidebar-bottom>a{min-height:32px;font-size:var(--fs-body);font-weight:600}
 .sidebar nav a.active,.sidebar-bottom>a.active{box-shadow:inset var(--mark) 0 0 var(--accent)}
 .sidebar nav a .flag{flex:none;width:16px;height:12px;margin:0 1px}
@@ -24,7 +36,7 @@ h1{font:700 var(--fs-page)/32px var(--display);font-stretch:semi-condensed;lette
 main{padding:var(--s2) var(--s4) var(--s3)}
 .page-heading,.toolbar{margin-bottom:var(--s2)}
 
-/* Controls: 28 px, 22 px in a card's head or a table's row; the main action and what stands in the bar, 36 px. */
+/* Controls: 28 px, 22 px in a card's head or a table's row; the main action, 36 px, 40 px in the bar like what stands there. */
 button,a.button{height:var(--h-control);padding:0 var(--s3);border-radius:var(--radius);font-size:var(--fs-body);font-weight:600;line-height:1;white-space:nowrap}
 select,input:not([type=checkbox]):not([type=radio]):not([type=range]){height:var(--h-control);padding:0 var(--s2);border-radius:var(--radius);font-size:var(--fs-body)}
 .toolbar{min-height:var(--h-control)}
@@ -40,6 +52,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .position-row{height:var(--h-row);padding:0 var(--s3);font-size:var(--fs-body);font-weight:400}
 .position-row.head,.position-row.head:hover{height:var(--h-row);font-size:var(--fs-small)}
 #advance,#simulate,.cta{height:36px;font-size:var(--fs-figure);font-weight:700;letter-spacing:var(--caps)}
+#advance,#simulate{height:var(--h-bar-control)}
 .replay-toggle{height:var(--h-control)}
 .replay-controls button,.replay-controls select{height:var(--h-control)}
 /* A filter that is set, in a toolbar or over a list: the wash of a picked row. */
@@ -319,7 +332,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
    is a bar: a glass, the field, the kinds on its right. Its list holds every kind together, the best match first. A line
    found opens its page as a whole: the badge that tells its kind in a column as wide as a position, its name with the
    letters typed in the strong ink, then what tells it from its namesakes. The line Enter opens is the chosen one. */
-#search-open{display:grid;place-items:center;flex:none;width:var(--h-control);padding:0}
+#search-open{display:grid;place-items:center;flex:none;width:var(--h-bar-control);height:var(--h-bar-control);padding:0}
 #search-open[hidden]{display:none}
 #search-open svg,.palette-head>svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var(--h-bar)) auto auto;padding:0;overflow:hidden}
@@ -485,7 +498,7 @@ th button:hover{background:none}
 /* Small things the scales leave no room for. */
 b,strong{font-weight:700}
 small{font-size:var(--fs-small)}
-.brand-mark,.position,.rating,.nav-count,.market-count,.news-ring b,.competition-code{letter-spacing:0}
+.position,.rating,.nav-count,.market-count,.news-ring b,.competition-code{letter-spacing:0}
 /* A player list at 13 px: its columns as wide as what they show. */
 .player-table .position-column{width:44px}
 .player-table .nation-column,.split .player-table .nation-column{width:84px}

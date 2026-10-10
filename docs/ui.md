@@ -45,7 +45,7 @@ du jeu »), pas à l'écran. Un élément secondaire se replie derrière un bout
 d'occuper une barre vide, et un bouton reprend le style des autres (carré, même
 hauteur) plutôt qu'une forme propre.
 
-**Le plus d'informations visibles sans défiler.** Barre du haut de 48 px, marges
+**Le plus d'informations visibles sans défiler.** Barre du haut de 56 px, marges
 de 8 à 12 px, titres de carte de 32 px, lignes de tableau de 26 px et pastilles
 de 18 px. L'en-tête d'un club ou d'une sélection est un bandeau de 88 px à ses
 couleurs ; celui d'un joueur est le bandeau de son club. Une carte ne répète

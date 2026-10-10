@@ -233,7 +233,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  if(parts[0]==='actualites')main.querySelector('.news-row.selected')?.scrollIntoView({block:'nearest'});
  // A chapter of the manual opened on one of its sections; a redraw of the same address leaves the scroll where it is.
  if(moved&&parts[0]==='aide'&&parts[2])document.getElementById(`manual-${parts[2]}`)?.scrollIntoView();
- document.title=`${main.querySelector('h1')?.textContent||'Touchline'} · Football Manager Light`;
+ document.title=[main.querySelector('h1')?.textContent,'Football Manager'].filter(Boolean).join(' · ');
  // A form that was replaced gives the focus back to the field of the same name.
  if(field&&!field.isConnected){const next=main.querySelector(`[data-filter] [name="${field.name}"]`);if(next){next.focus();if(selection)next.setSelectionRange(...selection);}}
  // A list fitted to the window: when the rows that fit are not those it asked for, it is drawn once more with the right count.

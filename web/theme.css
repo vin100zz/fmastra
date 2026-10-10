@@ -1,4 +1,4 @@
-/* Touchline themes (dark by default, light with html[data-theme=light]), in the spirit of Football Manager: a dark slate ground, dense panels, one accent colour.
+/* Football Manager's themes (dark by default, light with html[data-theme=light]): a dark slate ground, dense panels, one accent colour.
    Loaded after style.css and compact.css, it only restyles: every class and layout rule of those sheets still applies.
    Offline by design: Bahnschrift (shipped with Windows) for titles and figures, the system sans for body text.
    The tokens are the charter's (docs/charte-graphique.md): its light theme below, and what does not depend on the theme here.
@@ -9,7 +9,7 @@
  --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--caps:.06em;
  /* Space: 4, 8, 12, 16, 24. Shape: one radius, or a full round; the mark of what is open is 3 px on a bar, 2 px on a control. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;--mark:3px;--mark-control:2px;
- --h-bar:48px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
+ --h-bar:56px;--h-bar-control:40px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in both themes. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  --pitch-line:#ffffffb3;--pitch-label:#0a141ecc;
@@ -48,9 +48,6 @@ input::placeholder{color:var(--placeholder)}
 .sidebar{background:var(--rail);color:var(--ink-2);border-right:1px solid var(--line);padding:0 0 12px!important}
 .sidebar:before{display:none}
 .brand{height:60px;padding:0 16px;gap:10px;border-bottom:3px solid var(--accent);font-size:20px!important;letter-spacing:var(--caps);color:var(--strong);font-weight:700;margin-bottom:4px}
-.brand small{color:var(--muted);font-family:"Segoe UI",sans-serif;font-stretch:normal;font-size:10px!important;letter-spacing:var(--caps);margin-top:3px}
-.brand-mark{background:var(--accent);color:var(--accent-ink);border-radius:var(--radius);width:32px!important;height:32px!important;font-size:20px!important;font-weight:700}
-.brand-mark span{right:4px;bottom:1px;font-size:13px}
 .nav-label{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:var(--caps);margin:16px 20px 4px!important}
 .sidebar nav a,.sidebar-bottom>a{margin:0 8px;padding:0 12px!important;min-height:40px;border-radius:var(--radius);font-size:13px;font-weight:400;color:var(--ink-2);gap:12px}
 .sidebar nav a>span{width:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
@@ -249,11 +246,10 @@ dialog::backdrop{background:var(--backdrop)}
  .advance-group #advance{flex:1}
 }
 
-/* Density: as much as possible visible without scrolling. 48 px bar, 8-12 px gaps, 26 px table rows, one-line page headers. */
-.topbar{height:48px!important;padding:0 12px 0 16px!important}
-.brand{height:48px;margin-bottom:0}
-.brand-mark{width:28px!important;height:28px!important;font-size:20px!important}
-.job-bar{top:48px!important;padding:6px 16px}
+/* Density: as much as possible visible without scrolling. The bar of the charter (--h-bar), 8-12 px gaps, 26 px table rows, one-line page headers. */
+.topbar{height:var(--h-bar)!important;padding:0 12px 0 16px!important}
+.brand{height:var(--h-bar);margin-bottom:0}
+.job-bar{top:var(--h-bar)!important;padding:6px 16px}
 .date-block .eyebrow{font-size:10px}
 .date-block strong{font-size:20px!important}
 .time-controls{gap:8px}
@@ -369,8 +365,8 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .fatigue-cell.danger .fatigue-bar i{background:var(--bad)}
 @media(min-width:901px){
  .lineup-layout{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:10px}
- .lineup-field{width:clamp(300px,calc((100vh - 350px) * .7727),400px)}
- .lineup-squad .table-scroll{max-height:calc(100vh - 236px)}
+ .lineup-field{width:clamp(300px,calc((100vh - var(--h-bar) - 302px) * .7727),400px)}
+ .lineup-squad .table-scroll{max-height:calc(100vh - var(--h-bar) - 188px)}
 }
 
 /* Light theme: same layout and accent, on white panels; pitches stay green. */
@@ -404,7 +400,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  #theme-toggle,#manual-link{width:32px;height:32px}
 }
 /* On a narrow phone the tools reach the brand: its tagline gives way. */
-@media(max-width:420px){.brand small{display:none}}
 #theme-toggle svg,#manual-link svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #theme-toggle .to-dark,:root[data-theme="light"] #theme-toggle .to-light{display:none}
 :root[data-theme="light"] #theme-toggle .to-dark{display:block}
@@ -555,7 +550,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 
 /* Manual: the chapters on the left with the sections of the open one, that chapter beside them in a reading column. */
 .manual{display:grid;grid-template-columns:250px minmax(0,1fr);gap:10px;align-items:start}
-.manual-menu{position:sticky;top:56px;max-height:calc(100vh - 64px);overflow:auto;padding:6px;margin:0}
+.manual-menu{position:sticky;top:calc(var(--h-bar) + var(--s2));max-height:calc(100vh - var(--h-bar) - var(--s4));overflow:auto;padding:6px;margin:0}
 .manual-menu ul{list-style:none;margin:0;padding:0}
 .manual-menu a{display:block;padding:6px 10px;border-radius:var(--radius);color:var(--ink-2);font-size:13px;font-weight:400}
 
@@ -563,7 +558,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .manual-menu ul ul{margin:2px 0 6px}
 .manual-menu ul ul a{padding:3px 10px 3px 22px;font-size:13px;font-weight:400;color:var(--muted)}
 .manual-body{max-width:900px;font-size:13px;line-height:1.6}
-.manual-body h3{font-family:var(--display);font-stretch:semi-condensed;font-size:20px;font-weight:600;color:var(--strong);margin:26px 0 8px;scroll-margin-top:58px}
+.manual-body h3{font-family:var(--display);font-stretch:semi-condensed;font-size:20px;font-weight:600;color:var(--strong);margin:26px 0 8px;scroll-margin-top:calc(var(--h-bar) + 10px)}
 .manual-body h3:first-child{margin-top:2px}
 .manual-body h4{font-size:13px;font-weight:700;color:var(--strong);margin:18px 0 4px}
 .manual-body p{color:var(--ink);margin:0 0 10px}
@@ -891,7 +886,7 @@ a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px s
 .honours-table .bar-figure .mini-bar{width:36px}.honours-table .bar-figure b{min-width:16px}
 .honours-where{color:var(--muted)}
 @media(min-width:1500px){
- .honours{grid-template-columns:minmax(0,1fr) 400px;min-height:calc(100vh - 106px)}
+ .honours{grid-template-columns:minmax(0,1fr) 400px;min-height:calc(100vh - var(--h-bar) - 58px)}
  .honours-lists{flex:1 1 0;min-height:214px;grid-template-rows:minmax(0,1fr);grid-auto-rows:minmax(0,1fr)}
  .honours-lists>.card,.honours-board>.card{display:flex;flex-direction:column;min-height:0}
  .honours-lists .table-scroll,.honours-board .table-scroll{flex:1 1 0;min-height:0}
@@ -977,7 +972,7 @@ a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px s
 .round-groups.stacked .round-table{border-left:0;border-top:1px solid var(--line)}
 .stats-panels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
 .stats-panel{display:flex;flex-direction:column;margin-bottom:0;min-width:0}
-.stats-scroll{overflow:auto;max-height:calc(100vh - 300px);min-height:260px}
+.stats-scroll{overflow:auto;max-height:calc(100vh - var(--h-bar) - 252px);min-height:260px}
 .stats-scroll th{position:sticky;top:0;z-index:1;background:var(--panel-2)}
 .stats-scroll td:nth-child(3){max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nations-split{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);gap:10px;align-items:start}
@@ -1069,7 +1064,7 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-heading button{padding:5px 11px;font-size:13px;white-space:nowrap}
 .news{display:grid;grid-template-columns:380px minmax(0,1fr) 708px;gap:10px;align-items:start}
 .news>.card{margin:0}
-.news-list{position:sticky;top:56px;display:flex;flex-direction:column;max-height:calc(100vh - 112px)}
+.news-list{position:sticky;top:calc(var(--h-bar) + var(--s2));display:flex;flex-direction:column;max-height:calc(100vh - var(--h-bar) - 64px)}
 .news-rows{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
 .news-row{position:relative;display:flex;flex-direction:column;gap:3px;padding:6px 12px 7px 20px;border-bottom:1px solid var(--row-line);color:var(--ink-2)}
 
@@ -1091,7 +1086,7 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-todo{flex:none;width:9px;height:9px;margin-right:3px;border-radius:50%;background:var(--todo);box-shadow:0 0 0 3px color-mix(in srgb,var(--todo) 22%,transparent)}
 .news-done{flex:none;color:var(--good);font-size:13px;font-style:normal;font-weight:700}
 
-.news-message{min-height:calc(100vh - 112px);padding:14px 18px 18px}
+.news-message{min-height:calc(100vh - var(--h-bar) - 64px);padding:14px 18px 18px}
 .news-message-head{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .news-message-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 .news-message-meta small{font-size:13px;color:var(--muted)}

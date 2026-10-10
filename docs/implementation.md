@@ -1,6 +1,6 @@
 # État de l'implémentation — 12 septembre 2026
 
-Touchline est une première version jouable en mode observateur. Lancer
+Football Manager est une première version jouable en mode observateur. Lancer
 `./run.ps1` depuis le dépôt puis ouvrir http://127.0.0.1:8011. La création
 d'un univers importe les CSV locaux ; la reprise charge un slot de `saves/`.
 Les commandes d'installation et de benchmark figurent dans le README.

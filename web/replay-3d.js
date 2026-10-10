@@ -119,8 +119,8 @@ function crowdCanvas(kit,seat,pose,seed){
 // The LED boards around the pitch: both clubs and the game's own name, one after the other.
 function boardCanvas(teams,accent){
  const [node,g]=canvas(2048,64);
- const panels=[[teams.home.major,readable(teams.home.major,teams.home.minor),teams.home.name],['#0d1117',accent,'TOUCHLINE'],
-               [teams.away.major,readable(teams.away.major,teams.away.minor),teams.away.name],[accent,readable(accent,'#0d1117'),'TOUCHLINE']];
+ const panels=[[teams.home.major,readable(teams.home.major,teams.home.minor),teams.home.name],['#0d1117',accent,'FOOTBALL MANAGER'],
+               [teams.away.major,readable(teams.away.major,teams.away.minor),teams.away.name],[accent,readable(accent,'#0d1117'),'FOOTBALL MANAGER']];
  panels.forEach(([back,ink,text],index)=>{
   const x=index*512,label=text.toUpperCase();
   g.fillStyle=back;g.fillRect(x,0,512,64);

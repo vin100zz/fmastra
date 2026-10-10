@@ -2,13 +2,13 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Touchline · Charte graphique</title>
+<title>Football Manager · Charte graphique</title>
 <link rel="stylesheet" href="charte.css">
 <link rel="stylesheet" href="planches.css">
 </head>
 <body>
 <div class="app sheet" id="fondations">
-<header class="sheet-head"><h1>Fondations</h1><span class="label">Touchline · thème clair</span></header>
+<header class="sheet-head"><h1>Fondations</h1><span class="label">Football Manager · thème clair</span></header>
 <div class="sheet-grid">
 
 <section class="spec" style="grid-column: span 12">
@@ -103,7 +103,8 @@
 <div class="measure"><span class="token">Marges de page</span><span class="value">8 · 16 · 12</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Hauteurs</span><div class="heights">
-<div class="measure"><i style="height: 48px"></i><span class="token">--h-bar</span><span class="value">48 · barre</span></div>
+<div class="measure"><i style="height: 56px"></i><span class="token">--h-bar</span><span class="value">56 · barre</span></div>
+<div class="measure"><i style="height: 40px"></i><span class="token">--h-bar-control</span><span class="value">40 · dans la barre</span></div>
 <div class="measure"><i style="height: 36px"></i><span class="token">--h-tabs</span><span class="value">36 · onglets</span></div>
 <div class="measure"><i style="height: 32px"></i><span class="token">--h-head</span><span class="value">32 · titre</span></div>
 <div class="measure"><i style="height: 28px"></i><span class="token">--h-control</span><span class="value">28 · contrôle</span></div>
@@ -118,14 +119,40 @@
 <div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 2px solid var(--accent)"></i><span class="token">--mark-control</span><span class="value">2 · choix ouvert</span></div>
 <div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 3px solid var(--accent)"></i><span class="token">--mark</span><span class="value">3 · barre, menu, onglet</span></div>
 </div></div>
+<div class="spec-group"><span class="label">Marque · .brand · .logo · .wordmark · inversée sur le coin jaune du menu ; sur son carré jaune en favicon</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
+<a class="brand" href="#" style="width: 216px"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg><span class="wordmark">FOOTBALL<span>MANAGER</span></span></a>
+<div class="measure"><img src="../../web/favicon.svg" alt="" style="width: 64px; height: 64px"><span class="token">Favicon</span><span class="value">64</span></div>
+<div class="measure"><img src="../../web/favicon.svg" alt="" style="width: 32px; height: 32px"><span class="token">Favicon</span><span class="value">32</span></div>
+<div class="measure"><img src="../../web/favicon.svg" alt="" style="width: 16px; height: 16px"><span class="token">Favicon</span><span class="value">16 · onglet</span></div>
+</div></div>
 </section>
 
 </div>
 </div>
 
 <div class="app sheet" id="composants">
-<header class="sheet-head"><h1>Composants</h1><span class="label">Touchline · thème clair</span></header>
+<header class="sheet-head"><h1>Composants</h1><span class="label">Football Manager · thème clair</span></header>
 <div class="sheet-grid">
+
+<section class="spec" style="grid-column: span 12">
+<h2>Barre du haut</h2>
+<div class="spec-group"><span class="label">.brand · .topbar · 56 · blanche, ouverte par l’écharpe de la marque · ce qui s’y tient a 40</span>
+<div style="display: flex">
+<a class="brand" href="#" style="width: 216px"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg><span class="wordmark">FOOTBALL<span>MANAGER</span></span></a>
+<header class="topbar" style="flex: 1">
+<div class="date-block"><span class="label">Saison 2032 / 2033</span><strong>mardi 20 juillet 2032</strong></div>
+<span class="pill">Mercato ouvert</span>
+<button type="button" class="button square" aria-label="Rechercher"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"></circle><path d="M15 15l5 5"></path></svg></button>
+<div class="next-matches">
+<a class="next-match" href="#"><b>J-26</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e13327 50%, #1a1a1a 50%)"></i>Rennes</strong><small>Ligue 1</small></span></a>
+<a class="next-match" href="#"><b>J-33</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 50%, #ffd100 50%)"></i>Rodez</strong><small class="cup">Coupe de France</small></span></a>
+<a class="next-match" href="#"><b>J-54</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #1a1a1a 50%, #ffffff 50%)"></i>Angers<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></strong><small>Ligue 1</small></span></a>
+</div>
+<button type="button" class="cta">Continuer <span>→</span></button>
+</header>
+</div>
+</div>
+</section>
 
 <section class="spec" style="grid-column: span 7">
 <h2>Ce qui est ouvert, ce qui se survole</h2>
@@ -186,7 +213,7 @@
 <button type="button" class="button small hover">Voir tout</button>
 </div>
 </div>
-<div class="spec-group"><span class="label">.cta · 36 · un seul par écran</span>
+<div class="spec-group"><span class="label">.cta · 36, 40 dans la barre du haut · un seul par écran</span>
 <div class="spec-line gap"><button type="button" class="count" aria-label="2 messages à traiter" style="border: 0">2</button><button type="button" class="cta">Continuer <span>→</span></button></div>
 </div>
 <div class="spec-group"><span class="label">.field</span>
@@ -327,7 +354,7 @@
 <div class="spec-group"><span class="label">Dans la barre du haut · .button.square · Ctrl K</span>
 <div class="spec-line gap"><button type="button" class="button square" aria-label="Rechercher"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"></circle><path d="M15 15l5 5"></path></svg></button></div>
 </div>
-<div class="spec-group"><span class="label">.palette · 720 · sur la page voilée (--backdrop), à 96 du haut</span>
+<div class="spec-group"><span class="label">.palette · 720 · sur la page voilée (--backdrop), à 112 du haut</span>
 <div class="palette">
 <div class="palette-head"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"></circle><path d="M15 15l5 5"></path></svg><input type="search" value="fra" aria-label="Rechercher un joueur, un club, une compétition ou une sélection"><div class="segmented small" role="group" aria-label="Type"><button type="button" class="active">Tout</button><button type="button">Joueurs</button><button type="button">Clubs</button><button type="button">Compétitions</button><button type="button">Sélections</button></div></div>
 <div class="results">
@@ -342,7 +369,7 @@
 </div>
 </div>
 <div class="spec-group" style="flex: 1">
-<div class="spec-line"><span class="token">Tête</span><span class="value">une barre de 48 : la loupe, la saisie en 16, le choix du type à droite</span></div>
+<div class="spec-line"><span class="token">Tête</span><span class="value">une barre de 56 : la loupe, la saisie en 16, le choix du type à droite</span></div>
 <div class="spec-line"><span class="token">Ligne</span><span class="value">26 : la pastille de son genre dans une colonne de 32, son nom, puis ce qui le distingue de ses homonymes</span></div>
 <div class="spec-line"><span class="token">Genre</span><span class="value">jamais écrit : poste d’un joueur, couleurs d’un club, pastille d’une compétition, drapeau d’une sélection</span></div>
 <div class="spec-line"><span class="token">Lettres tapées</span><span class="value">600, --strong ; le reste du nom en 400</span></div>
@@ -676,7 +703,7 @@
 </div>
 
 <div class="app sheet" id="graphiques">
-<header class="sheet-head"><h1>Graphiques</h1><span class="label">Touchline · thème clair</span></header>
+<header class="sheet-head"><h1>Graphiques</h1><span class="label">Football Manager · thème clair</span></header>
 <div class="sheet-grid">
 
 <section class="spec" style="grid-column: span 7">

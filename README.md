@@ -1,4 +1,4 @@
-# Football Manager Light — Touchline
+# Football Manager
 
 Simulateur de football de gestion, usage personnel, mono-utilisateur.
 Version allégée : on garde effectif, contrats, transferts, matches, sélection et

@@ -21,7 +21,7 @@ def create_app(root: Path | None = None, saves: Path | None = None) -> FastAPI:
         yield
         service.close()
 
-    app = FastAPI(title="Football Manager Light", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Football Manager", version="0.1.0", lifespan=lifespan)
     app.state.game = service
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver", "[::1]"])
 
