@@ -1,6 +1,6 @@
-import {api,escape as e,number as n,averageNote,date,card,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,tabs,leadersCards,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
-import {nationNavigation} from './navigation.js';
-import {nationHero} from './club-hero.js';
+import {api,escape as e,number as n,averageNote,date,card,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,leadersCards,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
+import {nationNavigation,editionNavigation} from './navigation.js';
+import {nationHero,competitionHero} from './club-hero.js';
 import {calendarBlock,lineupBlock} from './club-overview.js';
 import {calendarRows} from './club-calendar.js';
 import {bracket} from './bracket.js';
@@ -31,8 +31,11 @@ export function editionStages(edition){
 // The steps through the editions, the latest first, as a club's seasons: `year` is the one shown, `options` what `steps`
 // takes to build each step.
 const editionSteps=(editions,year,options)=>steps([...editions].sort((a,b)=>b.year-a.year).map(item=>({value:item.year,label:item.name})),year,{name:'Édition',...options});
-// An edition's page keeps the title of the selections; its editions are stepped through on that line, the open tab kept.
-const editionHeading=(edition,editions,section)=>heading('Sélections nationales',`<div class="tools">${editionSteps(editions,edition.year,{href:year=>`#/international/${year}/${section||'finals'}`})}</div>`);
+const EDITION_TABS=[['finals','Phase finale'],['qualifications','Qualifications'],...ROUND_TABS,['statistics','Statistiques']];
+// An edition's page opens on a competition's header, the Euro's or the World Cup's: the other editions are stepped to from
+// its band, the open tab kept; its tile names who won it, and until then who holds the title.
+const editionHero=(edition,editions,section)=>competitionHero({...edition,kind:'international'},{lead:editionNavigation(editions,edition.year,section),
+ base:`#/international/${edition.year}`,menu:EDITION_TABS,section});
 
 // Four lists of the edition on one screen, each one scrolling on its own.
 const MIN_RATED_MATCHES=3;
@@ -86,10 +89,9 @@ function qualificationsContent(data,day){
 }
 // `round` is the latest or next round of the edition, for the tabs that show it; `day` the qualifying round picked in the qualifications.
 export function editionContent(data,section='qualifications',round=null,day=null){
- const navigation=tabs(`#/international/${data.year}`,[['finals','Phase finale'],['qualifications','Qualifications'],...ROUND_TABS,['statistics','Statistiques']],section);
- if(round)return navigation+roundContent(round,section,{figures:true});
- if(section==='statistics')return navigation+statistics(data);
- return navigation+(section==='finals'?finalsContent(data):qualificationsContent(data,day));
+ if(round)return roundContent(round,section,{figures:true});
+ if(section==='statistics')return statistics(data);
+ return section==='finals'?finalsContent(data):qualificationsContent(data,day);
 }
 const NATION_TABS=[['squad','Effectif'],['calendar','Calendrier'],['history','Historique']];
 // A run in a competition, in the same style as a club's cup and European runs: the label alone, or starred when it was won.
@@ -192,7 +194,8 @@ export async function internationalScreen(id,section,tab,params=new URLSearchPar
  if(!data.enabled)return heading('Sélections nationales')+card('Nouvelle partie nécessaire',empty('Cette sauvegarde conserve son calendrier de clubs. Créez une nouvelle partie pour activer les sélections nationales.'));
  if(id){
   const [edition,round]=await Promise.all([api(`/international/editions/${id}`),isRoundTab(section)?api(`/international/editions/${id}/${roundPath(section)}`):null]);
-  return editionHeading(edition,data.editions,section)+editionContent(edition,section,round,tab);
+  section=EDITION_TABS.some(([key])=>key===section)?section:'finals';
+  return editionHero(edition,data.editions,section)+editionContent(edition,section,round,tab);
  }
  const switcher=`<nav class="edition-switch" aria-label="Éditions">${data.editions.map(item=>`<a href="#/international/${item.year}/finals">${e(item.name)}${item.winner?`<small>✦ ${e(item.winner.name)}</small>`:''}</a>`).join('')}</nav>`;
  const palmares=data.editions.some(item=>item.winner)?table(['ÉDITION','VAINQUEUR'],data.editions.filter(item=>item.winner).map(item=>[`<a href="#/international/${item.year}/finals">${e(item.name)}</a>`,clubLink(item.winner)])):empty('Les vainqueurs apparaîtront après les premières finales.');

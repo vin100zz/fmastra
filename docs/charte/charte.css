@@ -329,6 +329,12 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .hero-context{display:flex;align-items:baseline;gap:var(--s2);font:700 semi-condensed var(--fs-title)/24px var(--display);opacity:.85}
 .hero .tiles{margin-left:auto}
 .hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
+/* A competition's header is a club's too. The emblem of a European cup, of the Euro or of the World Cup stands alone on
+   the band, at its height, in a box as wide whatever the emblem: the name keeps its place from one competition to the
+   next. A league or a national cup has the flag of its country on the disc, as its selection has. Its one tile names who
+   won it or who holds its title, after the dot of its colours or its flag. */
+.hero-emblem{display:block;flex:none;width:72px;height:72px;object-fit:contain}
+.hero .tile strong :is(.kit-dot,.flag){align-self:center}
 .entity-nav{display:flex;flex-direction:column;gap:1px}
 .entity-nav>*{display:grid;place-items:center;width:20px;height:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font-size:var(--fs-micro);line-height:1}
 /* A player's header is his club's. Under the band, where a club has its tabs: where he stands on the left, then what can

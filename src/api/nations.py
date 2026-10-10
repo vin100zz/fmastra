@@ -150,6 +150,24 @@ def kit_colors(name: str) -> dict[str, str | None]:
     return {"major_color": major, "minor_color": minor}
 
 
+# The header of a competition that has no country, by the two characters of its badge: its colour, its second one, and the
+# ground it stands on when its band is not filled with its own colour (the night blue the three European cups share, the
+# black under the World Cup's gold). A display choice, as a kit is.
+COMPETITION_COLORS: dict[str, tuple[str, str | None, str | None]] = {
+    "C1": ("#2447e6", None, "#0a0b5c"), "C3": ("#f26522", None, "#0a0b5c"), "C4": ("#16be28", None, "#0a0b5c"),
+    "EU": ("#003399", "#ffcc00", None), "CM": ("#d4a72c", None, "#111418"),
+}
+
+
+def competition_colors(code: str | None, nation: str | None = None) -> dict[str, str | None]:
+    """The colours of a competition's header, under the keys a club's carry, and the ground it stands on: its own by its
+    badge; for a league or a national cup, the kit of the selection of its country, named `nation`."""
+    major, minor, ground = COMPETITION_COLORS.get(code or "", (None, None, None))
+    if major is None and nation:
+        return {**kit_colors(nation), "ground_color": None}
+    return {"major_color": major, "minor_color": minor, "ground_color": ground}
+
+
 def _letters(name: str) -> str:
     stripped = unicodedata.normalize("NFKD", name)
     return "".join(character for character in stripped.upper() if character.isalpha())

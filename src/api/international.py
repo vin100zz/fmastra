@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from core.world.international import group_table, best_seconds, edition_matches
 from . import navigation as nav
 from . import views as v
-from .nations import kit_colors
+from .nations import competition_colors, kit_colors
 from .statistics import LISTED_PLAYERS
 
 # The two characters on an edition's badge (docs/charte-graphique.md, « Compétitions »).
@@ -52,6 +52,13 @@ def standing_row(world, row):
     return {**asdict(row), "difference": row.difference, "nation": nation_ref(world, row.club_id)}
 
 
+def edition_holder(world, edition):
+    """The nation that won the latest earlier edition of the same competition; none before its second edition."""
+    earlier = [item for item in world.international.editions.values()
+               if item.kind == edition.kind and item.year < edition.year and item.winner_id is not None]
+    return nation_ref(world, max(earlier, key=lambda item: item.year).winner_id) if earlier else None
+
+
 def edition_view(world, year):
     edition = world.international.editions[year]
     def row_view(row):
@@ -60,6 +67,8 @@ def edition_view(world, year):
         return [{"name": chr(65 + index), "rows": [row_view(row) for row in group_table(world, edition, group, finals)]}
                 for index, group in enumerate(groups)]
     return {"year": edition.year, "name": edition.name, "kind": edition.kind,
+            # What its header shows: its badge, its colours, and who holds the title until it is won.
+            "code": EDITION_CODES[edition.kind], **competition_colors(EDITION_CODES[edition.kind]), "holder": edition_holder(world, edition),
             "qualification_groups": groups_view(edition.qualification_groups, False),
             "final_groups": groups_view(edition.final_groups, True),
             "knockout_rounds": [{"number": number, "label": label} for number, label in FINALS_LABELS[edition.kind].items()],
@@ -253,7 +262,7 @@ def international_router(service):
     def overview():
         with service.reading() as world:
             return {"enabled": bool(world.international.nations),
-                    "editions": [{"year": e.year, "name": e.name, "kind": e.kind,
+                    "editions": [{"year": e.year, "name": e.name, "kind": e.kind, "code": EDITION_CODES[e.kind],
                                   "winner": nation_ref(world, e.winner_id) if e.winner_id is not None else None}
                                  for e in sorted(world.international.editions.values(), key=lambda e: -e.year)],
                     "nations": [{**nation_ref(world, n.id), **nation_summary(world, n.id)} for n in sorted(world.international.nations.values(), key=lambda n: (-n.strength, n.name))]}

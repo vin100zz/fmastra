@@ -64,9 +64,10 @@ sur le maillot.
 pour les sélections) se parcourt partout avec le pas de saison de la charte : une
 flèche de chaque côté de la saison montrée, qui ouvre la liste de toutes. Il est
 en haut à droite de ce qu'il change : au bout de la ligne du titre, au bout de la
-rangée d'onglets d'un club ou d'une sélection (ses flèches à leur couleur), dans
-l'en-tête de la carte. La saison choisie est dans l'adresse (`saison`,
-`edition`) ; celle en cours s'ouvre par défaut.
+rangée d'onglets d'un club, d'une sélection ou d'une coupe (ses flèches à leur
+couleur), dans l'en-tête de la carte. La saison choisie est dans l'adresse
+(`saison`, `edition`) ; celle en cours s'ouvre par défaut. Seule la page d'une
+édition des sélections passe aux autres par le bloc de navigation de son bandeau.
 
 **Trois chiffres par ligne de joueur.** Âge, salaire, fin de contrat. Une
 échéance à moins de 12 mois passe en rouge. C'est la liste de tâches implicite,
@@ -141,12 +142,13 @@ d'observation.
 
 Une page n'affiche que son titre, sans ligne au-dessus ni au-dessous. Ce titre est
 celui de son entrée dans le menu de gauche : Actualités, Vue d'ensemble, Clubs, Joueurs, Mercato
-mondial, Palmarès, Coupes d'Europe, Ma partie, ou le nom du pays pour la page d'un
+mondial, Palmarès, Sélections nationales, Ma partie, ou le nom du pays pour la page d'un
 pays. Les commandes de la page (recherche, filtres, choix des matches d'un pays)
 se rangent sur la même ligne, à sa droite. Le Journal, onglet de Vue d'ensemble, porte ce même titre et allume la même
-entrée du menu. Les pages championnat et coupe nationale portent le nom de la
-compétition. Les fiches club, sélection et joueur gardent leur en-tête d'identité (nom,
-club, sélection, âge, stade), qui présente des données et non un titre.
+entrée du menu. Les fiches club, sélection et joueur gardent leur en-tête d'identité (nom,
+club, sélection, âge, stade), qui présente des données et non un titre ; la page d'une
+compétition (championnat, coupe nationale, coupe d'Europe, édition des sélections) s'ouvre de
+même sur son bandeau, sans ligne de titre (voir « Compétition »).
 
 ### Actualités
 
@@ -489,11 +491,29 @@ jouée. À droite, sur 560 px (dessous sous 1330 px) :
 | Statistiques | les cinq classements (meilleurs buteurs, passeurs, meilleures notes moyennes, cartons, clean sheets) côte à côte, 10 lignes chacun ; « Voir tout » ouvre la liste complète et paginée du classement, avec un menu pour passer de l'un à l'autre ou revenir aux cinq |
 | Historique | trois colonnes : les champions par saison avec leur meilleur buteur, puis les titres par club ; le classement d'une saison terminée, la dernière par défaut, les autres au pas de saison dans l'en-tête de sa carte (`saison` dans l'adresse) ; les 15 joueurs les plus utilisés et les 15 meilleurs buteurs de tous les temps du championnat |
 
-Sur Coupes d'Europe, la coupe (C1, C3, C4) se choisit sur la ligne du titre, que ferme le pas de
-saison ; la seule rangée d'onglets est celle des rubriques de la coupe. Une coupe nationale a son pas
-de saison au même endroit, sur son tableau. La page d'une édition de l'Euro ou de la Coupe du monde
-garde le titre « Sélections nationales » : ses éditions se parcourent au bout de cette ligne, l'onglet
-ouvert gardé.
+**En-tête.** La page d'une compétition s'ouvre sur le bandeau d'un club (`competitionHero`,
+`club-hero.js` ; charte, « En-tête d'une compétition »), ses onglets dessous : elle n'a pas de ligne
+de titre.
+
+- **Couleurs** : un championnat et une coupe nationale portent les deux couleurs du maillot de la
+  sélection de leur pays ; les trois coupes d'Europe partagent un fond bleu nuit que traverse la
+  couleur de la coupe (bleu, orange, vert) ; la Coupe du monde est sur un fond noir traversé d'or,
+  l'Euro bleu traversé de jaune (`COMPETITION_COLORS`, `api/nations.py` : une donnée d'affichage).
+- **Emblème** : celui de la coupe d'Europe, de l'Euro ou de la Coupe du monde, seul sur le bandeau
+  (`web/emblems/`) ; pour un championnat ou une coupe nationale, le drapeau du pays sur le disque,
+  lien vers sa sélection. Puis le nom, seul.
+- **Tuile** : une seule. « Vainqueur » (« Champion » pour un championnat) une fois le titre de la
+  saison ou de l'édition montrée décerné, « Tenant du titre » jusque-là (`winner`, `holder`) ; rien
+  avant un premier titre. Aucune ligne sous les onglets ne nomme le vainqueur.
+- **Bloc de navigation**, à gauche du bandeau, celui d'un club : les compétitions du pays (ses
+  championnats, puis sa coupe), les trois coupes d'Europe (l'onglet ouvert et la saison gardés), les
+  éditions des sélections de la première à la dernière (l'onglet ouvert gardé). Dans sa liste, chaque
+  compétition suit sa pastille.
+- **Pas de saison** : au bout de la rangée d'onglets d'une coupe d'Europe et du tableau d'une coupe
+  nationale. Un championnat n'en a pas ; une édition non plus.
+
+L'entrée « Coupes d'Europe » du menu ouvre la Ligue des champions ; la seule rangée d'onglets est
+celle des rubriques de la coupe. Une édition ouverte sans onglet montre sa phase finale.
 
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro et de
 la Coupe du monde) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
@@ -1058,7 +1078,9 @@ GET  /api/clubs/{id}/transferts?saison=
 GET  /api/clubs/{id}/historique           saisons terminées paginées (rang, division et son niveau, réputation, coupe, Europe) + honours {league : titres par division [{competition, level, count}], cup, europe, best_rank, best_europe} + leagues : les divisions de ces saisons et celle d'aujourd'hui {id, name, level, clubs, europe, promotion, relegation}
                                           + league {clubs, europe, relegation, level} (championnat actuel) + leaders {matches, goals} + transfers {arrivals, departures} (avec season)
 
-GET  /api/competitions                    chacune : clubs, et rounds (journées de son calendrier, tours d'une coupe)
+GET  /api/competitions                    chacune : clubs, rounds (journées de son calendrier, tours d'une coupe), et ce que montre son
+                                          en-tête : major_color, minor_color, ground_color (son fond, pour une coupe d'Europe), nation_id (la
+                                          sélection de son pays | null), winner et holder de la saison en cours (voir /coupe)
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (avec scorers, comme journee/derniere), numéros des journées
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison, avec le classement) | null}]}
@@ -1077,7 +1099,11 @@ GET  /api/competitions/{id}/historique?page=&saison=   champions par saison pagi
                                           current_season: null, standings} : le classement d'une saison terminée d'un championnat, la dernière
                                           par défaut (null pour une coupe, ou tant qu'aucune saison n'est terminée) + leaders {matches, goals}
 GET  /api/competitions/{id}/coupe?saison=, /europe?saison=   le tableau d'une coupe, la saison d'une coupe d'Europe ; season, previous_season,
-                                          next_season, seasons (celles qui ont des matches, et celle montrée), current_season
+                                          next_season, seasons (celles qui ont des matches, et celle montrée), current_season ; winner (le
+                                          vainqueur de la saison montrée | null) et holder (celui de la dernière saison gagnée avant elle | null)
+GET  /api/international, /api/international/editions/{année}   les éditions (year, name, kind, code EU ou CM, winner) et les nations ; une édition :
+                                          ses groupes, ses matches, ses records, et pour son en-tête code, major_color, minor_color, ground_color,
+                                          winner, holder (le vainqueur de la dernière édition de la même compétition | null)
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&valeur_min=&valeur_max=&prix_max=&salaire_min=&salaire_max=

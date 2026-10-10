@@ -302,6 +302,24 @@ def test_a_nations_group_follows_it_from_its_qualifiers_to_its_finals(world):
     assert nation_group(world, out)["finals"] is False
 
 
+def test_an_edition_names_who_holds_its_title_the_winner_of_the_latest_one_of_its_kind(world):
+    from api.international import edition_holder
+    from core.domain.international import InternationalEdition
+    editions = world.international.editions
+    first, second = list(world.international.nations)[:2]
+    for year, kind in ((2030, "world"), (2032, "euro"), (2036, "euro")):
+        editions[year] = InternationalEdition(year, kind)
+    # Before a first title nobody holds it, and the World Cup's winner does not hold the Euro.
+    editions[2030].winner_id = second
+    assert edition_holder(world, editions[2028]) is None and edition_holder(world, editions[2032]) is None
+    editions[2028].winner_id = first
+    assert edition_holder(world, editions[2032])["id"] == first and edition_holder(world, editions[2030]) is None
+    # An edition not won yet passes the title on from the one before it.
+    assert edition_holder(world, editions[2036])["id"] == first
+    editions[2032].winner_id = second
+    assert edition_holder(world, editions[2036])["id"] == second and edition_holder(world, editions[2032])["id"] == first
+
+
 def test_a_camps_list_carries_the_editions_figures_and_sorts_with_what_is_unknown_last(world):
     from api.international import camp_rows, sorted_rows
     from core.domain.international import InternationalRecord

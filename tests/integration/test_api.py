@@ -415,6 +415,37 @@ def test_competitions_count_the_rounds_of_their_season(client):
     assert rounds['Ligue 1'] == 34 and rounds['Championship'] == 46 and rounds['Coupe de France'] == 6
 
 
+def test_competitions_carry_what_their_header_shows(client, monkeypatch):
+    world = client.app.state.game.world
+    listed = lambda: {item['name']: item for item in client.get('/api/competitions').json()}
+    data = listed()
+    colours = lambda item: (item['major_color'], item['minor_color'], item['ground_color'])
+    # A league and a national cup wear the kit of their country's selection, whose page their flag opens.
+    france = next(team.id for team in world.international.nations.values() if team.code == 'FRA')
+    assert colours(data['Ligue 1']) == colours(data['Coupe de France']) == ('#1f3f94', '#ffffff', None)
+    assert colours(data['Premier League']) == ('#ffffff', '#0b1f4b', None) and colours(data['La Liga']) == ('#c60b1e', '#ffc400', None)
+    assert data['Ligue 1']['nation_id'] == data['National']['nation_id'] == france
+    # A European cup has its own colour, on the ground the three share, and no country.
+    assert colours(data['Ligue des champions']) == ('#2447e6', None, '#0a0b5c') and data['Ligue des champions']['nation_id'] is None
+    assert {colours(item)[2] for item in data.values() if item['kind'] == 'europe'} == {'#0a0b5c'}
+    # Before a first title, nobody won and nobody holds it.
+    assert all(item['winner'] is None and item['holder'] is None for item in data.values())
+    league, cup = (next(item for item in world.competitions.values() if item.name == name) for name in ('Ligue 1', 'Coupe de France'))
+    first, second, third = league.club_ids[:3]
+    ref = lambda club_id: {key: value for key, value in client.get(f'/api/clubs/{club_id}').json().items() if key in ('id', 'name', 'major_color', 'minor_color')}
+    # The holder is the winner of the latest season before the one shown; the winner, the one of that season once decided.
+    monkeypatch.setitem(world.champions, league.id, [(world.season - 2, first), (world.season - 1, second)])
+    monkeypatch.setitem(world.champions, cup.id, [(world.season - 1, first), (world.season, third)])
+    data = listed()
+    assert data['Ligue 1']['winner'] is None and data['Ligue 1']['holder'] == ref(second)
+    assert data['Coupe de France']['winner'] == ref(third) and data['Coupe de France']['holder'] == ref(first)
+    # A cup's own view tells the same of the season it shows.
+    shown = client.get(f'/api/competitions/{cup.id}/coupe').json()
+    assert (shown['winner'], shown['holder']) == (ref(third), ref(first))
+    earlier = client.get(f'/api/competitions/{cup.id}/coupe?saison={world.season - 1}').json()
+    assert (earlier['winner'], earlier['holder']) == (ref(first), None)
+
+
 def test_commands_are_serialized_and_idempotent(client, monkeypatch):
     service = client.app.state.game
     started, release = Event(), Event()

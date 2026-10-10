@@ -1,4 +1,4 @@
-import {escape as e,position as positionBadge} from './ui.js';
+import {escape as e,position as positionBadge,competitionBadge} from './ui.js';
 
 const triangle=up=>`<svg viewBox="0 0 10 10" aria-hidden="true"><path d="${up?'M5 2 9.5 8h-9z':'M5 8 .5 2h9z'}"/></svg>`;
 const burger='<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 2h8M1 5h8M1 8h8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
@@ -40,7 +40,26 @@ export function playerNavigation(nav){
   row:player=>`${positionBadge(player.position)}<span>${e(player.name)}</span>`}):'';
 }
 
+// A competition in a list: its badge, then its name.
+const competitionRow=competition=>`${competitionBadge(competition)}<span>${e(competition.name)}</span>`;
+
 // The divisions of a country from the top down, then its cup. A competition page has no tab in common with the next one, so it opens on its default.
 export function competitionNavigation(nav){
- return nav?neighbours(nav,{href:competition=>`#/league/${competition.id}`,scope:`Compétitions · ${nav.scope.name}`,listLabel:`Choisir une compétition · ${nav.scope.name}`}):'';
+ return nav?neighbours(nav,{href:competition=>`#/league/${competition.id}`,scope:`Compétitions · ${nav.scope.name}`,listLabel:`Choisir une compétition · ${nav.scope.name}`,row:competitionRow}):'';
+}
+
+// A group the screen already holds, laid out as the server lays one out: `items` in the order they are stepped through,
+// `index` the place of the one shown.
+const group=(items,index)=>({index,total:items.length,items,previous:items[index-1]??null,next:items[index+1]??null});
+
+// The European cups, the first one on top. Moving keeps the open tab and `query` (the season shown).
+export function europeNavigation(cups,cup,section,query=''){
+ return neighbours(group(cups,cups.indexOf(cup)),{href:item=>`#/europe/${item.code}/${section}${query?`?${query}`:''}`,scope:'Coupes d’Europe',listLabel:'Choisir une coupe d’Europe',row:competitionRow});
+}
+
+// The editions of the selections, the Euro and the World Cup in turn, from the first to the latest. Moving keeps the open tab.
+export function editionNavigation(editions,year,section){
+ const items=[...editions].sort((a,b)=>a.year-b.year);
+ return neighbours(group(items,items.findIndex(item=>item.year===year)),{href:item=>`#/international/${item.year}/${section}`,scope:'Éditions',listLabel:'Choisir une édition',
+  row:item=>competitionRow({...item,kind:'international'})});
 }

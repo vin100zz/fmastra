@@ -48,10 +48,13 @@ def test_national_api_and_player_history(imported, tmp_path):
     with TestClient(app) as client:
         data = client.get('/api/international').json()
         assert data['enabled'] and len(data['nations']) == 211
-        assert [e['year'] for e in data['editions']] == [2028]
+        assert [(e['year'], e['code']) for e in data['editions']] == [(2028, 'EU')]
         assert {'titles', 'last_edition'} <= set(data['nations'][0])
         edition = client.get('/api/international/editions/2028').json()
         assert len(edition['qualification_groups']) == 10 and len(edition['matches']) == 240
+        # What its header shows: its badge, the Euro's blue crossed by its yellow, and nobody to hold a first title.
+        assert (edition['code'], edition['major_color'], edition['minor_color'], edition['ground_color']) == ('EU', '#003399', '#ffcc00', None)
+        assert edition['winner'] is None and edition['holder'] is None
         france = next(n for n in data['nations'] if n['name'] == 'France')
         nation = client.get(f"/api/international/nations/{france['id']}").json()
         assert len(nation['squad']) == 23 and nation['camp']

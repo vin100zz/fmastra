@@ -1,5 +1,7 @@
 import {api,titlesCard,countTitles,nationBadge,escape as e,season,seasonSteps,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
+import {competitionHero} from './club-hero.js';
+import {europeNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
 
 const SECTIONS=[['table','Classement'],['calendar','Phase de ligue'],['knockout','Phase finale'],...ROUND_TABS,['stats','Statistiques'],['history','Historique']];
@@ -23,10 +25,6 @@ export async function europeScreen(code,section,params,competitions){
  section=SECTIONS.some(([key])=>key===section)?section:'table';
  const data=await api(`/competitions/${cup.id}/europe?${params}`);
  const year=`saison=${data.season}`;
- // One row of tabs a screen: the cup is chosen on the title's line, where its seasons are stepped through; the tabs are
- // the sections of the cup.
- const nav=`<nav class="segmented europe-cups" aria-label="Coupe d’Europe">${cups.map(item=>`<a class="${cup.id===item.id?'active':''}" href="#/europe/${item.code}/${section}?${year}">${e(item.code)} · ${e(item.name)}</a>`).join('')}</nav>`;
- const menu=`<nav class="tabs" aria-label="Rubrique">${SECTIONS.map(([key,label])=>`<a class="${section===key?'active':''}" href="#/europe/${cup.code}/${key}?${year}">${label}</a>`).join('')}</nav>`;
  let content='';
  if(section==='table'){
   // 36 clubs fit a screen as two tables of 18, the second one carrying on from the first.
@@ -52,6 +50,8 @@ export async function europeScreen(code,section,params,competitions){
   const final=data.standings.length?card(`Classement de la phase de ligue · ${season(data.season)}`,standingsTable({items:data.standings},'figures')):'';
   content=`<div class="history-layout three"><div class="history-main">${winners}${byNation}</div><div class="history-leaders">${leadersCards(history.leaders)}</div><div class="history-archives">${final}</div></div>`;
  }
- return heading('Coupes d’Europe',`<div class="tools">${nav}${seasonSteps(data)}</div>`)+menu+
-  (data.winner?`<div class="notice cup-winner">🏆 ${e(cup.name)} : ${clubLink(data.winner)}</div>`:'')+content;
+ // The cup's header: the other cups are stepped to from its band, the open tab and the season kept; its seasons from the
+ // end of its row of tabs; who won the season shown, or who holds the title until then, stands on its tile.
+ return competitionHero({...cup,winner:data.winner,holder:data.holder},{lead:europeNavigation(cups,cup,section,year),base:`#/europe/${cup.code}`,
+  menu:SECTIONS.map(([key,label])=>[key,label,year]),section,tools:seasonSteps(data)})+content;
 }

@@ -18,7 +18,7 @@ from .service import GameService
 from . import navigation as nav
 from . import news
 from . import views as v
-from .nations import build_nation_table
+from .nations import build_nation_table, competition_colors
 from .views import position_rank
 
 
@@ -715,7 +715,10 @@ def router(service: GameService) -> APIRouter:
             return [{"id": item.id, "name": item.name, "nation": item.nation, "level": item.level,
                      "kind": item.kind, "code": item.code, "clubs": len(item.club_ids),
                      # A league's rounds are those of its calendar; a cup's are dated before they are drawn.
-                     "rounds": max(len(item.round_dates), max((world.matches[mid].round_number for mid in item.match_ids if mid in world.matches), default=0))}
+                     "rounds": max(len(item.round_dates), max((world.matches[mid].round_number for mid in item.match_ids if mid in world.matches), default=0)),
+                     # What its header shows: its colours, the selection its flag leads to, its title this season.
+                     **competition_colors(item.code, world.nation_names.get(item.nation)),
+                     "nation_id": v.selection_id(world, item.nation), **v.title(world, item.id, world.season)}
                     for item in world.competitions.values()]
 
     @api.get("/competitions/{competition_id}/navigation")
@@ -745,10 +748,9 @@ def router(service: GameService) -> APIRouter:
                                "items": [v.match_row(world, m) for m in fixtures],
                                "complete": bool(fixtures) and all(m.result for m in fixtures)})
             latest = max((m.round_number for m in matches if m.result), default=None)
-            winner = next((cid for season, cid in world.champions.get(cup.id, []) if season == year), None)
             seasons = {m.season for m in world.matches.values() if m.competition_id == cup.id}
             return {"id": cup.id, "name": cup.name, **v.season_steps(seasons, year, world.season), "rounds": rounds,
-                    "latest_round": latest, "winner": v.club_ref(world, winner)}
+                    "latest_round": latest, **v.title(world, cup.id, year)}
 
     @api.get("/nations")
     def nations() -> dict[str, dict]:

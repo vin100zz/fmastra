@@ -259,6 +259,12 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 /* A selection's header is a club's: its flag fills the disc where a crest stands. */
 .club-hero-crest .crest-flag{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
 .club-hero .crest.club-hero-crest:has(.crest-flag){color:transparent}
+/* A competition's header is a club's too. The emblem of a European cup, of the Euro or of the World Cup stands alone on
+   the band, at its height, in a box as wide whatever the emblem: the name keeps its place from one competition to the
+   next. A league or a national cup has the flag of its country on the disc, as its selection has. */
+.club-hero-emblem{flex:none;width:72px;height:72px;object-fit:contain}
+/* Its one tile names who won it or who holds its title: a name written as the tile's figure, after its dot or its flag. */
+.club-hero-tile strong .nation{font:inherit;letter-spacing:0;text-transform:none;color:inherit}
 /* A player's header is his club's. A tile grades its ground as the badge of its note does (level, potential); what he did
    for his selection is one tile of three columns: its flag over its code, his caps, his goals. Under the band, where a
    club has its tabs: what stands on the left, then what the user can do with him in the groups of his menu, the main

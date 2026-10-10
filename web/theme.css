@@ -273,7 +273,7 @@ h1{font-size:26px;margin:0}
 .identity p{margin:0;font-size:13px}
 .identity>div:last-child>p:before,.identity>div:last-child>.eyebrow:before{content:"|";color:var(--line);margin-right:12px}
 .club-facilities{gap:0 12px}
-.page-heading>div:not(.identity):not(.heading-with-lead){display:flex;align-items:center;gap:var(--s2)}
+.page-heading>div:not(.identity){display:flex;align-items:center;gap:var(--s2)}
 .page-heading .pill{padding:3px 10px}
 .entity-nav{gap:1px}
 .entity-step,.entity-menu>summary{width:20px;height:15px}

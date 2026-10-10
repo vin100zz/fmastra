@@ -20,16 +20,27 @@ test('Europe navigation and full 36-club table with qualifying zones',async()=>{
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await europeScreen('C3','table',new URLSearchParams('saison=2025'),cups);
-  assert.match(html,/Coupes d’Europe/);
-  for(const cup of cups)assert.ok(html.includes(cup.name));
+  // The cup opens on a competition's header: its emblem alone on the band, its name, and who won the season shown.
+  assert.match(html,/^<header class="club-hero plain">/);assert.doesNotMatch(html,/page-heading|Coupes d’Europe<\/h1>|segmented|class="tabs"/);
+  assert.match(html,/<\/div><img class="club-hero-emblem" src="\/emblems\/c3\.png" alt=""><div class="club-hero-identity"><div class="club-hero-name"><h1>Ligue Europa<\/h1><\/div><\/div>/);
+  assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Vainqueur<\/span><strong><a href="#\/club\/2" class="club-link">Away<\/a><\/strong><\/div><\/div>/);assert.doesNotMatch(html,/cup-winner|🏆/);
+  // The other cups are stepped to from the band, as a club's neighbours: the open tab and the season are kept.
+  assert.match(html,/<div class="club-hero-main"><div class="entity-nav" role="group" aria-label="Choisir une coupe d’Europe"><a class="entity-step prev" href="#\/europe\/C1\/table\?saison=2025" rel="prev" aria-label="Précédent : Ligue des champions"/);
+  assert.match(html,/<a class="entity-step next" href="#\/europe\/C4\/table\?saison=2025" rel="next" aria-label="Suivant : Conference League"/);
+  assert.match(html,/<p class="entity-menu-scope">Coupes d’Europe · 2 \/ 3<\/p><ul><li><a href="#\/europe\/C1\/table\?saison=2025"><span class="competition-code europe" title="Ligue des champions">C1<\/span><span>Ligue des champions<\/span><\/a><\/li><li><a href="#\/europe\/C3\/table\?saison=2025" aria-current="true">/);
   assert.equal((html.match(/class="europe-direct"/g)||[]).length,8);
   assert.equal((html.match(/class="europe-playoff"/g)||[]).length,16);
   assert.match(html,/Club 36/);
-  assert.match(html,/#\/europe\/C3\/knockout\?saison=2025/);
-  // The seasons are stepped through at the end of the title line, after the choice of the cup.
-  assert.match(html,/<\/nav><div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2025 \/ 2026</);
-  assert.match(html,/<\/details><button type="button" aria-label="Saison suivante" data-param="saison" data-param-value="2026"><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div><nav class="tabs"/);
+  assert.match(html,/<a class="active" href="#\/europe\/C3\/table\?saison=2025" aria-current="page">Classement<\/a><a class="" href="#\/europe\/C3\/calendar\?saison=2025">Phase de ligue<\/a><a class="" href="#\/europe\/C3\/knockout\?saison=2025">Phase finale<\/a>/);
+  // The seasons are stepped through at the end of the row of tabs, as a club's.
+  assert.match(html,/Historique<\/a><\/nav><div class="tools"><div class="season" role="group" aria-label="Saison"><button type="button" aria-label="Saison précédente" disabled><svg[^>]*><path[^>]*\/><\/svg><\/button><details class="season-pick"><summary>2025 \/ 2026</);
+  assert.match(html,/<\/details><button type="button" aria-label="Saison suivante" data-param="saison" data-param-value="2026"><svg[^>]*><path[^>]*\/><\/svg><\/button><\/div><\/div><\/div><\/header>/);
   assert.doesNotMatch(html,/<select|Afficher/);
+  // Until the season shown is won, the tile names who holds the cup; the first cup has nothing before it, the last nothing after.
+  globalThis.fetch=async()=>({ok:true,json:async()=>({...data,winner:null,holder:match.home})});
+  const first=await europeScreen('C1','table',new URLSearchParams(),cups);
+  assert.match(first,/<span>Tenant du titre<\/span><strong><a href="#\/club\/1" class="club-link">Home<\/a><\/strong>/);
+  assert.match(first,/<span class="entity-step prev" aria-hidden="true">/);assert.match(first,/src="\/emblems\/c1\.png"/);
   assert.match(await readFile(new URL('../../web/index.html',import.meta.url),'utf8'),/href="#\/europe" data-nav="europe"/);
  }finally{globalThis.fetch=previous;}
 });

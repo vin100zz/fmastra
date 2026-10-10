@@ -138,7 +138,7 @@ def test_live_round_advance_and_resume(imported, tmp_path):
     with TestClient(app) as client:
         cup = cups[0]
         data = client.get(f"/api/competitions/{cup.id}/coupe").json()
-        assert data["latest_round"] == 6 and data["winner"]
+        assert data["latest_round"] == 6 and data["winner"] and data["holder"] is None
         assert len(data["rounds"][0]["items"]) == 32  # No pagination dropping two matches.
         assert client.get(f"/api/competitions/{cup.id}/historique").json()["items"][0]["champion"] == data["winner"]
         assert client.get(f"/api/competitions/{cup.id}/classement").json()["items"] == []

@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {leagueScreen} from '../../web/screens.js';
 import {europeScreen} from '../../web/europe.js';
+import {setNations} from '../../web/ui.js';
 
 const club=(id,name)=>({id,name});
 const league={id:16,name:'Ligue 1',nation:'FRA',kind:'league',level:1,clubs:18};
@@ -27,6 +28,26 @@ test('the league table keeps its points first and sits beside the four leaders i
  assert.match(html,/Meilleure défense[^]*Club 4[^]*26 buts encaissés/);
  assert.match(html,/Meilleur buteur[^]*Joueur 0/);
  assert.match(html,/Meilleur passeur/);
+});
+
+test('a league opens on a competition’s header: its country’s kit and flag, its name, who holds its title, its tabs',async()=>{
+ const france={...league,major_color:'#1f3f94',minor_color:'#ffffff',ground_color:null,nation_id:-1001,winner:null,holder:club(3,'Club 3')};
+ const nav={scope:{kind:'country',code:'FRA',name:'France'},index:0,total:2,items:[{id:16,name:'Ligue 1',kind:'league'},{id:17,name:'Ligue 2',kind:'league'}],previous:null,next:{id:17,name:'Ligue 2',kind:'league'}};
+ setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'}});
+ const {html}=await withApi(url=>url.endsWith('/navigation')?nav:api(url),()=>leagueScreen(16,'table',new URLSearchParams(),[france]));
+ const decided=await withApi(api,()=>leagueScreen(16,'table',new URLSearchParams(),[{...france,winner:club(4,'Club 4')}]));
+ setNations({});
+ assert.match(html,/^<header class="club-hero" style="--hero-field:#1f3f94;--hero-ink:#ffffff;--hero-sash:#ffffff;/);assert.doesNotMatch(html,/page-heading|class="tabs"/);
+ // The block stepping between the competitions of the country stands in the band, then the flag on the disc, a link to the selection.
+ assert.match(html,/<div class="club-hero-main"><div class="entity-nav" role="group" aria-label="Choisir une compétition · France">/);
+ assert.match(html,/<\/div><a class="crest club-hero-crest" href="#\/international\/nation\/-1001" aria-label="France" title="France">F<img class="crest-flag" src="\/flags\/fr\.svg" alt=""><\/a><div class="club-hero-identity"><div class="club-hero-name"><h1>Ligue 1<\/h1><\/div><\/div>/);
+ // One tile: who holds the title, then the champion once the season is decided. No round, no stage.
+ assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Tenant du titre<\/span><strong><a href="#\/club\/3" class="club-link">Club 3<\/a><\/strong><\/div><\/div>/);
+ assert.match(decided.html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Champion<\/span><strong><a href="#\/club\/4" class="club-link">Club 4<\/a><\/strong><\/div><\/div>/);
+ assert.doesNotMatch(html,/Journée|Tour/);
+ assert.match(html,/<nav class="club-hero-tabs" aria-label="Sections"><a class="active" href="#\/league\/16\/table" aria-current="page">Classement<\/a><a class="" href="#\/league\/16\/calendar">Calendrier<\/a>/);
+ // A league has no season to step through: nothing closes its row of tabs.
+ assert.match(html,/Historique<\/a><\/nav><\/header>/);
 });
 
 test('the calendar steps through the rounds, one card a match with its scorers, the table and the scorers beside',async()=>{
@@ -66,8 +87,10 @@ test('the European league phase is two tables of eighteen, and its history is ca
  assert.ok(halves.indexOf('Club 18')<halves.indexOf('Club 19'));
  assert.match(html,/1–8 : huitièmes directs/);
  assert.match(html,/>Historique<\/a>/);assert.doesNotMatch(html,/Palmarès/);
- // the cup is chosen on the title line, then its seasons stepped through; the sections are the only row of tabs
- assert.ok(html.indexOf('<nav class="segmented europe-cups"')<html.indexOf('class="season"')&&html.indexOf('class="season"')<html.indexOf('<nav class="tabs"'));assert.equal((html.match(/<nav class="tabs"/g)||[]).length,1);
+ // the sections are the only row of tabs, under the cup's band; its seasons are stepped through at the end of that row
+ assert.equal((html.match(/<nav class="(tabs|club-hero-tabs)"/g)||[]).length,1);assert.ok(html.indexOf('<nav class="club-hero-tabs"')<html.indexOf('class="season"'));
+ // a single cup has no other to step to
+ assert.doesNotMatch(html,/entity-nav|segmented/);
 });
 
 test('the European history is three columns: winners and titles by country, the league phase of the chosen season, the leaders',async()=>{

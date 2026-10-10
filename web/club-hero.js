@@ -1,4 +1,4 @@
-import {escape as e,number as n,safeColor,contrastRatio,legibleOn,initials,nationFlag,nationCode,flagUrl,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,legibleOn,initials,nationFlag,nationCode,nationName,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -8,14 +8,16 @@ const readableOn=(surface,major,minor)=>legibleOn(contrastRatio(major,surface)>=
 
 // The band of a club's header, in its colours: the home colour fills it and the second one crosses it as a sash. A home colour
 // close to white would melt into the page, so the second colour fills the band instead; two colours alike leave a faint sash
-// of the ink. Without colours the band keeps the panel's. Returns CSS custom properties for the header's style attribute.
-export function heroColors(majorColor,minorColor){
+// of the ink. Without colours the band keeps the panel's. A competition that stands on a ground of its own (`groundColor`:
+// the night blue the European cups share, the black under the World Cup's gold) has it fill the band, and its colour
+// cross it as the sash. Returns CSS custom properties for the header's style attribute.
+export function heroColors(majorColor,minorColor,groundColor){
  const major=safeColor(majorColor);
  if(!major)return '';
- const minor=safeColor(minorColor)||major;
- const pale=contrastRatio(major,LIGHT_INK)<1.3;
- const field=pale&&minor!==major?minor:major,ink=inkOn(field);
- let sash=pale&&minor!==major?major:minor,opacity=1;
+ const minor=safeColor(minorColor)||major,ground=safeColor(groundColor);
+ const pale=!ground&&minor!==major&&contrastRatio(major,LIGHT_INK)<1.3;
+ const field=ground||(pale?minor:major),ink=inkOn(field);
+ let sash=ground||pale?major:minor,opacity=1;
  if(contrastRatio(field,sash)<1.25){sash=ink;opacity=.12;}
  return [`--hero-field:${field}`,`--hero-ink:${ink}`,`--hero-sash:${sash}`,`--hero-sash-opacity:${opacity}`,
   ...[['light',LIGHT_INK],['dark',DARK_PANEL]].flatMap(([theme,surface])=>{const colour=readableOn(surface,major,minor);return colour?[`--hero-accent-${theme}:${colour}`]:[];}),
@@ -30,12 +32,13 @@ const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crest
 // What fills the disc of a selection: its initials, under its flag when it has one.
 const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`;};
 
-// The band and what closes it, a club's, a selection's or a player's: `colors` is what heroColors gives, `lead` steps
-// between peers, `crest` fills the disc, `after` is what follows the `name` on its line, smaller (nothing stands over the
-// name), `tiles` the figures on the right, `foot` what stands under the band.
-function hero({colors,lead,crest,name,after='',tiles,foot}){
+// The band and what closes it, a club's, a selection's, a player's or a competition's: `colors` is what heroColors gives,
+// `lead` steps between peers, `crest` fills the disc (`mark` is what stands in the disc's place when it is not one),
+// `after` is what follows the `name` on its line, smaller (nothing stands over the name), `tiles` the figures on the
+// right, `foot` what stands under the band.
+function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',name,after='',tiles,foot}){
  return `<header class="club-hero${colors?'':' plain'}"${colors?` style="${colors}"`:''}><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div>`
-  +`<div class="club-hero-main">${lead}${crest?`<div class="crest club-hero-crest">${crest}</div>`:''}`
+  +`<div class="club-hero-main">${lead}${mark}`
   +`<div class="club-hero-identity"><div class="club-hero-name"><h1>${e(name)}</h1>${after}</div></div>`
   +`<div class="club-hero-tiles">${tiles}</div></div></div>${foot}</header>`;
 }
@@ -71,6 +74,25 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
 export function nationHero(nation,{lead='',menu,section,tools=''}){
  return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section,tools),
   crest:nationCrest(nation),tiles:tile('Force',n(nation.strength))});
+}
+
+// The emblem of a competition that has one, by the two characters of its badge.
+const EMBLEMS={C1:'c1',C3:'c3',C4:'c4',EU:'euro',CM:'coupe-du-monde'};
+
+// The header of a competition's page is a club's: its colours on the band, its name alone, its tabs under it. A European
+// cup, the Euro and the World Cup have their emblem alone on the band, at its height; a league and a national cup have
+// the flag of their country on the disc, as its selection has, a link to it. On the right, one tile: who won the season or
+// the edition shown, and until it is won who holds the title. `base` is the address the tabs hang from, `lead` steps
+// between the competition's peers, `tools` close the row of tabs.
+export function competitionHero(competition,{lead='',base,menu,section,tools=''}){
+ const emblem=EMBLEMS[competition.code],country={name:nationName(competition.nation),nation:competition.nation};
+ const selection=competition.nation_id==null?'':`#/international/nation/${competition.nation_id}`;
+ const disc=!flagUrl(competition.nation)?'':selection?`<a class="crest club-hero-crest" href="${selection}" aria-label="${e(country.name)}" title="${e(country.name)}">${nationCrest(country)}</a>`
+  :`<div class="crest club-hero-crest">${nationCrest(country)}</div>`;
+ const won=competition.winner,named=won||competition.holder;
+ return hero({colors:heroColors(competition.major_color,competition.minor_color,competition.ground_color),lead,name:competition.name,foot:tabs(base,menu,section,tools),
+  mark:emblem?`<img class="club-hero-emblem" src="/emblems/${emblem}.png" alt="">`:disc,
+  tiles:named?tile(won?competition.kind==='league'?'Champion':'Vainqueur':'Tenant du titre',clubLink(named)):''});
 }
 
 // A side of a match without colours keeps the panel's, whatever the other side wears.

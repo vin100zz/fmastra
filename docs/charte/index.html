@@ -161,7 +161,7 @@
 </div>
 <div class="spec-group"><span class="label">Choix d’une vue · .segmented · sur la ligne du titre ou dans l’en-tête d’une carte</span>
 <div class="spec-line">
-<div class="segmented" role="group" aria-label="Coupe d’Europe"><a class="active" href="#">C1 · Ligue des champions</a><a class="hover" href="#">C3 · Ligue Europa</a><a href="#">C4 · Ligue Conférence</a></div>
+<div class="segmented" role="group" aria-label="Statut"><a class="active" href="#">Tous</a><a class="hover" href="#">Actifs</a><a href="#">Dormants</a></div>
 <div class="segmented" role="group" aria-label="Matches"><a class="active" href="#">Derniers matches</a><a href="#">Prochains matches</a></div>
 <div class="segmented" role="group" aria-label="Tactique"><button type="button" class="active">4-3-3</button><button type="button">4-4-2</button><button type="button">4-2-3-1</button><button type="button">Perso</button></div>
 <div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
@@ -249,7 +249,7 @@
 </div>
 </section>
 </div>
-<div class="spec-line"><span class="token">Sous le pointeur</span><span class="value">un seul fond, --panel-3 : ligne, fait, bouton, option, pas (Monaco, Plafond salarial, C3, 9)</span><span class="token" style="margin-left: 16px">Lien</span><span class="value">couleur du texte, non souligné ; souligné sous le pointeur, même couleur</span><span class="token" style="margin-left: 16px">Onglet</span><span class="value">--strong (Calendrier)</span></div>
+<div class="spec-line"><span class="token">Sous le pointeur</span><span class="value">un seul fond, --panel-3 : ligne, fait, bouton, option, pas (Monaco, Plafond salarial, Actifs, 9)</span><span class="token" style="margin-left: 16px">Lien</span><span class="value">couleur du texte, non souligné ; souligné sous le pointeur, même couleur</span><span class="token" style="margin-left: 16px">Onglet</span><span class="value">--strong (Calendrier)</span></div>
 <div class="spec-line"><span class="token">Tri</span><span class="value">toutes les colonnes de tous les tableaux</span><span class="token" style="margin-left: 16px">Largeur</span><span class="value">fixe par colonne : la flèche se loge dans la marge de l’en-tête, un tri ne déplace rien</span></div>
 </section>
 
@@ -345,6 +345,79 @@
 <span><span class="token">Score</span> <span class="value">40, sur une tuile là où les deux camps se rejoignent ; dessous, ce qui a départagé : le cumul, les tirs au but</span></span>
 <span><span class="token">Barre</span> <span class="value">36 : la pastille de la compétition, le tour, le jour et le stade à gauche, qui s’est qualifié ; les commandes à droite, le match aller puis le résumé</span></span>
 <span><span class="token">Noms</span> <span class="value">écrits une seule fois, ici : sur le reste de l’écran, ce qui est à gauche est au camp qui reçoit</span></span>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 12">
+<h2>En-tête d’une compétition</h2>
+<div class="stack" style="gap: 12px">
+<section class="card">
+<div class="hero" style="background: #0a0b5c; color: #ffffff">
+<i class="hero-sash" style="background: #2447e6"></i><i class="hero-sash thin" style="background: #2447e6"></i>
+<div class="entity-nav"><a href="#" aria-label="Coupe précédente">▲</a><a href="#" aria-label="Toutes les coupes d’Europe">☰</a><a href="#" aria-label="Coupe suivante">▼</a></div>
+<img class="hero-emblem" src="../../web/emblems/c1.png" alt="">
+<div class="hero-name"><h1>Ligue des champions</h1></div>
+<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #b03038 50%, #f8f8f8 50%)"></i><a href="#">FC Bayern</a></strong></div></div>
+</div>
+<nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #2447e6">Classement</a><a href="#">Phase de ligue</a><a href="#">Phase finale</a><a href="#">Statistiques</a><a href="#">Historique</a><div class="tools"><div class="season" role="group" aria-label="Saison" style="--club: #2447e6"><button type="button" aria-label="Saison précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick"><summary>2032 / 2033<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary></details><button type="button" aria-label="Saison suivante" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div></div></nav>
+</section>
+<section class="card">
+<div class="hero" style="background: #0a0b5c; color: #ffffff">
+<i class="hero-sash" style="background: #f26522"></i><i class="hero-sash thin" style="background: #f26522"></i>
+<div class="entity-nav"><a href="#" aria-label="Coupe précédente">▲</a><a href="#" aria-label="Toutes les coupes d’Europe">☰</a><a href="#" aria-label="Coupe suivante">▼</a></div>
+<img class="hero-emblem" src="../../web/emblems/c3.png" alt="">
+<div class="hero-name"><h1>Ligue Europa</h1></div>
+<div class="tiles"><div class="tile"><span class="label">Vainqueur</span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #283040 50%, #283040 50%)"></i><a href="#">Strasbourg</a></strong></div></div>
+</div>
+<nav class="tabs" aria-label="Sections"><a href="#">Classement</a><a href="#">Phase de ligue</a><a class="active" href="#" style="border-bottom-color: #f26522">Phase finale</a><a href="#">Statistiques</a><a href="#">Historique</a><div class="tools"><div class="season" role="group" aria-label="Saison" style="--club: #f26522"><button type="button" aria-label="Saison précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick"><summary>2031 / 2032<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary></details><button type="button" aria-label="Saison suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div></div></nav>
+</section>
+<section class="card">
+<div class="hero" style="background: #0a0b5c; color: #ffffff">
+<i class="hero-sash" style="background: #16be28"></i><i class="hero-sash thin" style="background: #16be28"></i>
+<div class="entity-nav"><a href="#" aria-label="Coupe précédente">▲</a><a href="#" aria-label="Toutes les coupes d’Europe">☰</a><a href="#" aria-label="Coupe suivante">▼</a></div>
+<img class="hero-emblem" src="../../web/emblems/c4.png" alt="">
+<div class="hero-name"><h1>Conference League</h1></div>
+<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #d81820 50%, #f8f8f8 50%)"></i><a href="#">Shelbourne</a></strong></div></div>
+</div>
+<nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #00ab00">Classement</a><a href="#">Phase de ligue</a><a href="#">Phase finale</a><a href="#">Statistiques</a><a href="#">Historique</a><div class="tools"><div class="season" role="group" aria-label="Saison" style="--club: #00ab00"><button type="button" aria-label="Saison précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick"><summary>2032 / 2033<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary></details><button type="button" aria-label="Saison suivante" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div></div></nav>
+</section>
+<section class="card">
+<div class="hero" style="background: #111418; color: #ffffff">
+<i class="hero-sash" style="background: #d4a72c"></i><i class="hero-sash thin" style="background: #d4a72c"></i>
+<div class="entity-nav"><a href="#" aria-label="Édition précédente">▲</a><a href="#" aria-label="Toutes les éditions">☰</a><a href="#" aria-label="Édition suivante">▼</a></div>
+<img class="hero-emblem" src="../../web/emblems/coupe-du-monde.png" alt="">
+<div class="hero-name"><h1>Coupe du monde 2030</h1></div>
+<div class="tiles"><div class="tile"><span class="label">Vainqueur</span><strong><img class="flag" src="../../web/flags/dk.svg" alt=""><a href="#">Danemark</a></strong></div></div>
+</div>
+<nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #b18500">Phase finale</a><a href="#">Qualifications</a><a href="#">Derniers matches</a><a href="#">Prochains matches</a><a href="#">Statistiques</a></nav>
+</section>
+<section class="card">
+<div class="hero" style="background: #003399; color: #ffffff">
+<i class="hero-sash" style="background: #ffcc00"></i><i class="hero-sash thin" style="background: #ffcc00"></i>
+<div class="entity-nav"><a href="#" aria-label="Édition précédente">▲</a><a href="#" aria-label="Toutes les éditions">☰</a><a href="#" aria-label="Édition suivante">▼</a></div>
+<img class="hero-emblem" src="../../web/emblems/euro.png" alt="">
+<div class="hero-name"><h1>Euro 2032</h1></div>
+<div class="tiles"><div class="tile"><span class="label">Vainqueur</span><strong><img class="flag" src="../../web/flags/nl.svg" alt=""><a href="#">Pays-Bas</a></strong></div></div>
+</div>
+<nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #003399">Phase finale</a><a href="#">Qualifications</a><a href="#">Derniers matches</a><a href="#">Prochains matches</a><a href="#">Statistiques</a></nav>
+</section>
+<section class="card">
+<div class="hero" style="background: #1f3f94; color: #ffffff">
+<i class="hero-sash" style="background: #ffffff"></i><i class="hero-sash thin" style="background: #ffffff"></i>
+<div class="entity-nav"><a href="#" aria-label="Compétition précédente">▲</a><a href="#" aria-label="Toutes les compétitions de France">☰</a><a href="#" aria-label="Compétition suivante">▼</a></div>
+<a class="crest large" href="#" aria-label="France"><img src="../../web/flags/fr.svg" alt=""></a>
+<div class="hero-name"><h1>Ligue 1</h1></div>
+<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #f8f8f8 50%, #2098c8 50%)"></i><a href="#">Marseille</a></strong></div></div>
+</div>
+<nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #1f3f94">Classement</a><a href="#">Calendrier</a><a href="#">Derniers matches</a><a href="#">Prochains matches</a><a href="#">Statistiques</a><a href="#">Historique</a></nav>
+</section>
+</div>
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Bandeau</span> <span class="value">celui d’un club : 88, le nom en 40, rien à sa suite ; à gauche, le bloc qui passe aux autres coupes d’Europe, aux autres éditions, aux autres compétitions du pays</span></span>
+<span><span class="token">Emblème</span> <span class="value">.hero-emblem · seul sur le bandeau, 72, sans disque, pour une coupe d’Europe, l’Euro, la Coupe du monde ; un championnat ou une coupe nationale a le drapeau de son pays sur le disque, lien vers sa sélection</span></span>
+<span><span class="token">Couleurs</span> <span class="value">les trois coupes d’Europe sur le même bleu nuit, l’écharpe à la couleur de la coupe (bleu, orange, vert) ; la Coupe du monde sur le noir, l’écharpe or ; l’Euro bleu, l’écharpe jaune ; un championnat, une coupe nationale : le maillot de la sélection</span></span>
+<span><span class="token">Tuile</span> <span class="value">une seule : « Vainqueur » (« Champion » pour un championnat) une fois le titre décerné, « Tenant du titre » jusque-là ; ni journée, ni tour</span></span>
+<span><span class="token">Saison</span> <span class="value">son pas au bout de la rangée d’onglets pour une coupe ; les éditions des sélections se parcourent par le bloc du bandeau</span></span>
 </div>
 </section>
 

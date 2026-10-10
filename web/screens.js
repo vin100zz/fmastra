@@ -3,7 +3,7 @@ import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {movementsHistory,seasonsHistory} from './club-history.js';
 import {clubPreview,marketBlock,squadWidgets} from './club-overview.js';
-import {clubHero} from './club-hero.js';
+import {clubHero,competitionHero} from './club-hero.js';
 import {calendarContent} from './club-calendar.js';
 import {financesContent} from './club-finances.js';
 import {playerPreview} from './player.js';
@@ -12,7 +12,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,tabs,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge} from './ui.js';
+import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -163,7 +163,7 @@ async function leagueContent(league,section,params,lead){
   }
  }
  else{const data=await api(`/competitions/${id}/historique?${params}`);content=`<div class="history-layout three"><div class="history-main">${card('Le palmarès',table(['SAISON','CHAMPION','MEILLEUR BUTEUR','BUTS'],data.items.map(row=>[season(row.season),clubLink(row.champion),row.scorer?playerLink(row.scorer.id,row.scorer.name):'—',row.scorer?.value??'—']))+pager(data))}${titlesCard('Titres par club',countTitles(data.items,row=>row.champion?.id,row=>clubLink(row.champion)))}</div><div class="history-leaders">${leadersCards(data.leaders)}</div><div class="history-archives">${seasonArchive(data.archive)}</div></div>`;}
- return heading(league.name,'',lead)+tabs(`#/league/${id}`,[['table','Classement'],['calendar','Calendrier'],...ROUND_TABS,['stats','Statistiques'],['history','Historique']],section)+content;
+ return competitionHero(league,{lead,base:`#/league/${id}`,menu:[['table','Classement'],['calendar','Calendrier'],...ROUND_TABS,['stats','Statistiques'],['history','Historique']],section})+content;
 }
 
 export async function playersScreen(params){

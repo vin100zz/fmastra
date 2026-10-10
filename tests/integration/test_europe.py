@@ -181,6 +181,8 @@ def test_complete_competition_seeding_resume_and_api(imported, tmp_path):
             assert response.status_code == 200, response.text
             data = response.json()
             assert len(data["standings"]) == 36 and data["winner"]
+            # Its first season: nobody held the cup before its winner.
+            assert data["holder"] is None
             assert len(data["rounds"]) == 17 and data["next_round"] is None
             assert data["rounds"][9]["items"][0]["aggregate"] is not None
             assert client.get(f"/api/competitions/{cid}/historique").json()["items"][0]["champion"] == data["winner"]

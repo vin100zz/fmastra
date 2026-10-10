@@ -168,17 +168,35 @@ test('a calendar of the finals writes its rounds in full and flies nowhere on ne
  }finally{globalThis.fetch=previous;}
 });
 
-test('an edition’s page keeps the title of the selections and steps through the editions on its line, the open tab kept',async()=>{
+test('an edition’s page opens on a competition’s header and steps through the editions from its band, the open tab kept',async()=>{
  const previous=globalThis.fetch;
- const listed=[{year:2028,name:'Euro 2028',winner:nation},{year:2030,name:'Coupe du monde 2030',winner:null},{year:2032,name:'Euro 2032',winner:null}];
- globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/editions/')?{...edition,year:2030,name:'Coupe du monde 2030'}:{enabled:true,nations:[nation],editions:listed}});
+ // The list comes the latest first; the editions are stepped through from the first to the latest.
+ const listed=[{year:2032,name:'Euro 2032',code:'EU',winner:null},{year:2030,name:'Coupe du monde 2030',code:'CM',winner:null},{year:2028,name:'Euro 2028',code:'EU',winner:nation}];
+ const world={...edition,year:2030,name:'Coupe du monde 2030',kind:'world',code:'CM',major_color:'#d4a72c',minor_color:null,ground_color:'#111418',winner:null,holder:null};
+ let shown=world;
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/editions/')?shown:{enabled:true,nations:[nation],editions:listed}});
+ setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'}});
  try{
   const html=await internationalScreen('2030','statistics');
-  assert.match(html,/^<div class="page-heading"><div><h1>Sélections nationales<\/h1><\/div><div class="tools"><div class="season" role="group" aria-label="Édition"><a aria-label="Édition précédente" href="#\/international\/2028\/statistics"><svg[^>]*><path[^>]*\/><\/svg><\/a><details class="season-pick"><summary style="--chars:19">Coupe du monde 2030</);
-  assert.match(html,/<a role="menuitemradio" aria-checked="false" href="#\/international\/2032\/statistics">Euro 2032<\/a><a role="menuitemradio" aria-checked="true" href="#\/international\/2030\/statistics">Coupe du monde 2030<\/a>/);
-  assert.match(html,/<\/details><a aria-label="Édition suivante" href="#\/international\/2032\/statistics"><svg[^>]*><path[^>]*\/><\/svg><\/a><\/div><\/div><\/div><nav class="tabs"/);
-  assert.doesNotMatch(html,/edition-switch/);
- }finally{globalThis.fetch=previous;}
+  // The World Cup stands on its black ground, its gold across it; its trophy alone on the band, then its name.
+  assert.match(html,/^<header class="club-hero" style="--hero-field:#111418;--hero-ink:#ffffff;--hero-sash:#d4a72c;/);
+  assert.match(html,/<\/div><img class="club-hero-emblem" src="\/emblems\/coupe-du-monde\.png" alt=""><div class="club-hero-identity"><div class="club-hero-name"><h1>Coupe du monde 2030<\/h1><\/div><\/div>/);
+  assert.doesNotMatch(html,/page-heading|Sélections nationales|class="season"|edition-switch|class="tabs"/);
+  assert.match(html,/<div class="club-hero-main"><div class="entity-nav" role="group" aria-label="Choisir une édition"><a class="entity-step prev" href="#\/international\/2028\/statistics" rel="prev" aria-label="Précédent : Euro 2028"/);
+  assert.match(html,/<a class="entity-step next" href="#\/international\/2032\/statistics" rel="next" aria-label="Suivant : Euro 2032"/);
+  assert.match(html,/<p class="entity-menu-scope">Éditions · 2 \/ 3<\/p><ul><li><a href="#\/international\/2028\/statistics"><span class="competition-code international" title="Euro 2028">EU<\/span><span>Euro 2028<\/span><\/a><\/li><li><a href="#\/international\/2030\/statistics" aria-current="true"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
+  assert.match(html,/<a class="active" href="#\/international\/2030\/statistics" aria-current="page">Statistiques<\/a><\/nav><\/header>/);
+  // Nobody holds the title before its second edition: no tile. Then the holder, and the winner once the edition is over.
+  assert.match(html,/<div class="club-hero-tiles"><\/div>/);
+  shown={...world,year:2032,name:'Euro 2032',kind:'euro',code:'EU',major_color:'#003399',minor_color:'#ffcc00',ground_color:null,holder:nation};
+  const euro=await internationalScreen('2032');
+  assert.match(euro,/^<header class="club-hero" style="--hero-field:#003399;--hero-ink:#ffffff;--hero-sash:#ffcc00;/);assert.match(euro,/src="\/emblems\/euro\.png"/);
+  assert.match(euro,/<span>Tenant du titre<\/span><strong><a href="#\/international\/nation\/-1001" class="club-link"><span class="nation"><span class="nation" title="France"><img class="flag"[^>]*><\/span>France &lt;test&gt;<\/span><\/a><\/strong>/);
+  // The latest edition has none after it; an edition opened without a tab shows its finals.
+  assert.match(euro,/<span class="entity-step next" aria-hidden="true">/);assert.match(euro,/<a class="active" href="#\/international\/2032\/finals" aria-current="page">Phase finale<\/a>/);
+  shown={...shown,winner:spain};
+  assert.match(await internationalScreen('2032','finals'),/<span>Vainqueur<\/span><strong><a href="#\/international\/nation\/-1002"/);
+ }finally{globalThis.fetch=previous;setNations({});}
 });
 
 test('beside the list, the calendar, the last eleven and the group stand as a club’s widgets do',async()=>{

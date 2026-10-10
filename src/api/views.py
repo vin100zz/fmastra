@@ -85,6 +85,19 @@ def club_ref(world: World, club_id: int | None) -> dict | None:
             "minor_color": club.home_kit_minor_color} if club else None
 
 
+def selection_id(world: World, nation: str | None) -> int | None:
+    """The selection of a country, where its flag leads; None when the game has none."""
+    return next((team.id for team in world.international.nations.values() if team.code == nation), None)
+
+
+def title(world: World, competition_id: int, season: int) -> dict:
+    """What a competition's header says of its title in `season`: who won it, once it is decided, and who held it until then."""
+    champions = world.champions.get(competition_id, [])
+    winner = next((club_id for year, club_id in champions if year == season), None)
+    holder = max(((year, club_id) for year, club_id in champions if year < season), default=(None, None))[1]
+    return {"winner": club_ref(world, winner), "holder": club_ref(world, holder)}
+
+
 def player_name(world: World, player_id: int | None) -> str | None:
     player = world.players.get(player_id)
     return player.name if player else world.retired.get(player_id)
@@ -391,8 +404,7 @@ def club_detail(world: World, club_id: int, standings: dict | None = None, reser
     if reserved is None: reserved = reserved_budgets(world)
     held = dict(world.reputation_history.get(club.id, []))
     return {"id": club.id, "name": club.name, "nation_code": club.nation, "nation": world.nation_names.get(club.nation, club.nation),
-            # The selection of its country, where its flag leads; None when the game has none.
-            "nation_id": next((team.id for team in world.international.nations.values() if team.code == club.nation), None),
+            "nation_id": selection_id(world, club.nation),
             "competition_id": club.competition_id, "competition": world.competitions[club.competition_id].name if club.competition_id else None,
             "active": club.competition_id is not None, "capacity": club.capacity, "reputation": round(club.reputation, 1),
             # How far the review that opened the season moved it; None before a second season.

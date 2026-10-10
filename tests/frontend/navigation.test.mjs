@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubNavigation,playerNavigation,competitionNavigation} from '../../web/navigation.js';
+import {clubNavigation,playerNavigation,competitionNavigation,europeNavigation,editionNavigation} from '../../web/navigation.js';
 import {heading} from '../../web/ui.js';
 
 const group=(items,index,scope)=>({scope,index,total:items.length,items,previous:items[index-1]??null,next:items[index+1]??null});
@@ -70,8 +70,32 @@ test('competitions of a country link to each competition page, cup included',()=
  const nav=group([{id:16,name:'Ligue 1',kind:'league'},{id:17,name:'Ligue 2',kind:'league'},{id:-1,name:'Coupe de France',kind:'cup'}],1,{kind:'country',code:'FRA',name:'France'});
  const html=competitionNavigation(nav);
  assert.match(html,/href="#\/league\/16" rel="prev" aria-label="Précédent : Ligue 1"/);assert.match(html,/href="#\/league\/-1" rel="next" aria-label="Suivant : Coupe de France"/);
- assert.match(html,/<li><a href="#\/league\/-1">Coupe de France<\/a><\/li>/);
+ // each listed after its badge, as a player after his position
+ assert.match(html,/<li><a href="#\/league\/16"><span class="competition-code league" title="Ligue 1">L1<\/span><span>Ligue 1<\/span><\/a><\/li>/);
+ assert.match(html,/<li><a href="#\/league\/-1"><span class="competition-code cup" title="Coupe de France">CdF<\/span><span>Coupe de France<\/span><\/a><\/li>/);
  assert.match(html,/Compétitions · France · 2 \/ 3/);
+});
+
+test('the European cups step to one another, the open tab and the season kept',()=>{
+ const cups=[{id:-101,code:'C1',name:'Ligue des champions',kind:'europe'},{id:-103,code:'C3',name:'Ligue Europa',kind:'europe'},{id:-104,code:'C4',name:'Conference League',kind:'europe'}];
+ const html=europeNavigation(cups,cups[0],'knockout','saison=2031');
+ assert.match(html,/<span class="entity-step prev" aria-hidden="true">/);
+ assert.match(html,/href="#\/europe\/C3\/knockout\?saison=2031" rel="next" aria-label="Suivant : Ligue Europa"/);
+ assert.match(html,/<summary aria-label="Choisir une coupe d’Europe" title="Coupes d’Europe · 1 \/ 3">/);
+ assert.match(html,/<li><a href="#\/europe\/C4\/knockout\?saison=2031"><span class="competition-code europe" title="Conference League">C4<\/span><span>Conference League<\/span><\/a><\/li>/);
+ assert.equal(count(europeNavigation(cups,cups[2],'table'),/href="#\/europe\/C\d\/table"/g),4);
+ // a single cup has nothing to step to
+ assert.equal(europeNavigation(cups.slice(0,1),cups[0],'table'),'');
+});
+
+test('the editions of the selections step from the first to the latest, whatever the order they come in',()=>{
+ const editions=[{year:2032,name:'Euro 2032',code:'EU'},{year:2030,name:'Coupe du monde 2030',code:'CM'},{year:2028,name:'Euro <2028>',code:'EU'}];
+ const html=editionNavigation(editions,2030,'qualifications');
+ assert.match(html,/href="#\/international\/2028\/qualifications" rel="prev" aria-label="Précédent : Euro &lt;2028&gt;"/);
+ assert.match(html,/href="#\/international\/2032\/qualifications" rel="next" aria-label="Suivant : Euro 2032"/);
+ assert.match(html,/<p class="entity-menu-scope">Éditions · 2 \/ 3<\/p><ul><li><a href="#\/international\/2028\/qualifications"><span class="competition-code international" title="Euro &lt;2028&gt;">EU<\/span><span>Euro &lt;2028&gt;<\/span><\/a><\/li>/);
+ assert.match(html,/<li><a href="#\/international\/2030\/qualifications" aria-current="true"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
+ assert.doesNotMatch(editionNavigation(editions,2032,'finals'),/rel="next"/);
 });
 
 test('names are escaped wherever they appear',()=>{
@@ -82,14 +106,7 @@ test('names are escaped wherever they appear',()=>{
  assert.doesNotMatch(players,/<img|<b>/);
 });
 
-test('a heading carries the block at the left of its title, and is unchanged without one',()=>{
- const plain=heading('Ligue 1');
- assert.equal(plain,'<div class="page-heading"><div><h1>Ligue 1</h1></div></div>');
- const lead=competitionNavigation(group([{id:16,name:'Ligue 1',kind:'league'},{id:17,name:'Ligue 2',kind:'league'}],0,{kind:'country',code:'FRA',name:'France'}));
- const html=heading('Ligue 1','<span class="pill">extra</span>',lead);
- assert.match(html,/^<div class="page-heading"><div class="heading-with-lead"><div class="entity-nav"/);
- assert.ok(html.indexOf('class="entity-nav"')<html.indexOf('<h1>'));
- assert.match(html,/<h1>Ligue 1<\/h1><\/div><\/div><span class="pill">extra<\/span><\/div>$/);
- // the page title is read from the h1: the block must stay outside it
- assert.equal(html.match(/<h1>(.*?)<\/h1>/)[1],'Ligue 1');
+test('a page’s heading is its title, then its commands; the block stepping between peers stands in a band, not there',()=>{
+ assert.equal(heading('Ligue 1'),'<div class="page-heading"><div><h1>Ligue 1</h1></div></div>');
+ assert.equal(heading('A<b>','<span class="pill">extra</span>'),'<div class="page-heading"><div><h1>A&lt;b&gt;</h1></div><span class="pill">extra</span></div>');
 });

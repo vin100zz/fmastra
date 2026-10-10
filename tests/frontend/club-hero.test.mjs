@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubHero,nationHero,heroColors} from '../../web/club-hero.js';
+import {clubHero,nationHero,competitionHero,heroColors} from '../../web/club-hero.js';
 import {setNations} from '../../web/ui.js';
 
 const vars=style=>Object.fromEntries(style.split(';').filter(Boolean).map(item=>item.split(':')));
@@ -32,6 +32,23 @@ test('a home colour close to white gives the band to the second colour; two colo
  assert.equal(strasbourg['--hero-field'],'#283040');assert.equal(strasbourg['--hero-sash'],'#ffffff');assert.equal(strasbourg['--hero-sash-opacity'],'0.12');
  // No colour or an unsafe one: the band keeps the panel's.
  assert.equal(heroColors(null,null),'');assert.equal(heroColors('red;background:url(x)','#ffffff'),'');
+});
+
+test('a competition that stands on a ground of its own has it fill the band; its colour crosses it and marks the open tab',()=>{
+ // The three European cups share the night blue: the cup's colour is the sash, and the one under its open tab.
+ const europa=vars(heroColors('#f26522',null,'#0a0b5c'));
+ assert.equal(europa['--hero-field'],'#0a0b5c');assert.equal(europa['--hero-ink'],'#ffffff');assert.equal(europa['--hero-sash'],'#f26522');assert.equal(europa['--hero-sash-opacity'],'1');
+ assert.equal(europa['--hero-accent-light'],'#f26522');
+ assert.equal(vars(heroColors('#2447e6',null,'#0a0b5c'))['--hero-accent-light'],'#2447e6');
+ // A colour too pale to read on the panel is brought to its tone in a chart, as a club's: the Conference League's green, the World Cup's gold.
+ const conference=vars(heroColors('#16be28',null,'#0a0b5c'))['--hero-accent-light'],world=vars(heroColors('#d4a72c',null,'#111418'));
+ assert.notEqual(conference,'#16be28');assert.match(conference,/^#[0-9a-f]{6}$/);
+ assert.equal(world['--hero-field'],'#111418');assert.equal(world['--hero-sash'],'#d4a72c');assert.notEqual(world['--hero-accent-light'],'#d4a72c');
+ // Without a ground, a competition's band is a club's: the Euro's blue crossed by its yellow, the blue under its open tab.
+ const euro=vars(heroColors('#003399','#ffcc00',null));
+ assert.equal(euro['--hero-field'],'#003399');assert.equal(euro['--hero-sash'],'#ffcc00');assert.equal(euro['--hero-accent-light'],'#003399');
+ // An unsafe ground is no ground.
+ assert.equal(vars(heroColors('#f26522',null,'url(x)'))['--hero-field'],'#f26522');
 });
 
 const club={id:7,name:'Lens <RC>',nation_code:'FRA',nation_id:-1001,competition_id:16,competition:'Ligue 1',capacity:38223,formation:'4-3-3',training_facilities:16,youth_recruitment:13,
@@ -97,4 +114,44 @@ test('a selection wears the same header: its kit on the band, its flag on the di
  // Without colours, without a flag: a plain band, its initial on the disc.
  const bare=nationHero({...england,major_color:null,minor_color:null,competition:null},{menu,section:'history'});
  assert.match(bare,/^<header class="club-hero plain">/);assert.match(bare,/<div class="crest club-hero-crest">A<\/div>/);
+});
+
+const sections=[['table','Classement'],['history','Historique']];
+
+test('a competition wears the same header: its emblem alone on the band, its name alone, one tile for its title',()=>{
+ const cup={id:-101,code:'C1',name:'Ligue <des> champions',kind:'europe',nation:'EUR',nation_id:null,major_color:'#2447e6',minor_color:null,ground_color:'#0a0b5c',
+  winner:null,holder:{id:915,name:'FC Bayern',major_color:'#B03038',minor_color:'#F8F8F8'}};
+ const html=competitionHero(cup,{lead:'<div class="entity-nav"></div>',base:'#/europe/C1',menu:sections.map(([key,label])=>[key,label,'saison=2032']),section:'table',tools:'<b>pas</b>'});
+ assert.match(html,/^<header class="club-hero" style="--hero-field:#0a0b5c;--hero-ink:#ffffff;--hero-sash:#2447e6;/);
+ // No disc: the emblem stands where a club has its crest, after the block that steps between the cups.
+ assert.match(html,/<div class="club-hero-main"><div class="entity-nav"><\/div><img class="club-hero-emblem" src="\/emblems\/c1\.png" alt=""><div class="club-hero-identity"><div class="club-hero-name"><h1>Ligue &lt;des&gt; champions<\/h1><\/div><\/div>/);
+ assert.doesNotMatch(html,/club-hero-crest|club-hero-context|<des>/);
+ // Until the season shown is won, who holds the title, after the dot of its colours, a link to its page.
+ assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Tenant du titre<\/span><strong><a href="#\/club\/915" class="club-link"><i class="kit-dot"[^>]*><\/i>FC Bayern<\/a><\/strong><\/div><\/div>/);
+ // Its tabs hang from its address and keep what the menu gives them; what steps through its seasons closes their row.
+ assert.match(html,/<div class="club-hero-foot"><nav class="club-hero-tabs" aria-label="Sections"><a class="active" href="#\/europe\/C1\/table\?saison=2032" aria-current="page">Classement<\/a><a class="" href="#\/europe\/C1\/history\?saison=2032">Historique<\/a><\/nav><div class="tools"><b>pas<\/b><\/div><\/div><\/header>$/);
+ // Once it is won: the winner, and nothing of the holder. A league has a champion.
+ const won=competitionHero({...cup,winner:{id:3,name:'Como'}},{base:'#/europe/C1',menu:sections,section:'table'});
+ assert.match(won,/<span>Vainqueur<\/span><strong><a href="#\/club\/3" class="club-link">Como<\/a><\/strong>/);assert.doesNotMatch(won,/Tenant du titre|FC Bayern/);
+ assert.match(competitionHero({id:16,name:'Ligue 1',kind:'league',winner:{id:3,name:'Como'}},{base:'#/league/16',menu:sections,section:'table'}),/<span>Champion<\/span>/);
+ // Before a first title, no tile.
+ assert.match(competitionHero({...cup,holder:null},{base:'#/europe/C1',menu:sections,section:'table'}),/<div class="club-hero-tiles"><\/div>/);
+ for(const [code,file] of [['C3','c3'],['C4','c4'],['EU','euro'],['CM','coupe-du-monde']])
+  assert.match(competitionHero({name:'X',code},{base:'#/x',menu:sections,section:'table'}),new RegExp(`<img class="club-hero-emblem" src="/emblems/${file}\\.png" alt="">`));
+});
+
+test('a league or a national cup wears its selection’s kit, the flag of its country on the disc, a link to the selection',()=>{
+ const league={id:11,name:'Premier League',kind:'league',nation:'ENG',level:1,nation_id:-1007,major_color:'#ffffff',minor_color:'#0b1f4b',ground_color:null,winner:null,holder:null};
+ setNations({ENG:{name:'Angleterre',display_code:'ENG',flag:'gb-eng'}});
+ const html=competitionHero(league,{base:'#/league/11',menu:sections,section:'table'}),unselected=competitionHero({...league,nation_id:null},{base:'#/league/11',menu:sections,section:'table'});
+ setNations({});
+ // A white shirt would melt into the page: the second colour fills the band, as on the selection's own page.
+ assert.match(html,/^<header class="club-hero" style="--hero-field:#0b1f4b;--hero-ink:#ffffff;--hero-sash:#ffffff;/);
+ assert.match(html,/<div class="club-hero-main"><a class="crest club-hero-crest" href="#\/international\/nation\/-1007" aria-label="Angleterre" title="Angleterre">A<img class="crest-flag" src="\/flags\/gb-eng\.svg" alt=""><\/a><div class="club-hero-identity"><div class="club-hero-name"><h1>Premier League<\/h1><\/div><\/div>/);
+ // Neither its badge nor its country is written: the flag says where it is played.
+ assert.doesNotMatch(html,/club-hero-emblem|club-hero-context|competition-code|>D1</);
+ // A country without a selection keeps its flag, which leads nowhere; a country without a flag has no disc.
+ assert.match(unselected,/<div class="club-hero-main"><div class="crest club-hero-crest">A<img class="crest-flag" src="\/flags\/gb-eng\.svg" alt=""><\/div>/);
+ assert.match(competitionHero(league,{base:'#/league/11',menu:sections,section:'table'}),/<div class="club-hero-main"><div class="club-hero-identity">/);
+ assert.match(html,/<a class="" href="#\/league\/11\/history">Historique<\/a><\/nav><\/header>$/);
 });

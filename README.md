@@ -39,7 +39,9 @@ compétition a des groupes.
 
 La loupe de la barre du haut, ou Ctrl K, ouvre la recherche globale : quelques lettres mènent à la fiche d'un joueur, d'un club, d'une compétition ou d'une sélection nationale, sans tenir compte de la casse, des accents ni de l'ordre des mots (« ribery fra » trouve Franck Ribéry, « bommel » trouve van der Bommel).
 
-Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, et les compétitions du même pays de la première division à la coupe. Le passage d'un club à l'autre garde l'onglet ouvert.
+Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, les compétitions du même pays de la première division à la coupe, les trois coupes d'Europe, et les éditions de l'Euro et de la Coupe du monde de la première à la dernière. Le passage d'un club, d'une coupe d'Europe ou d'une édition à l'autre garde l'onglet ouvert.
+
+La page d'une compétition s'ouvre, comme la fiche d'un club, sur un en-tête à ses couleurs : celles du maillot de la sélection du pays pour un championnat ou une coupe nationale, avec son drapeau ; son emblème pour une coupe d'Europe, l'Euro ou la Coupe du monde. Une case y nomme le vainqueur de la saison ou de l'édition montrée, ou le tenant du titre tant qu'elle n'est pas gagnée.
 
 La liste des joueurs affiche toutes leurs nationalités, leur valeur et leur potentiel exact à côté du niveau actuel, tous deux sous forme de badges sur 200 dont la couleur suit une même échelle (rouge jusqu'à 70, jaune à 110, vert à partir de 150),
 avec un tri initial par valeur décroissante. Les clubs sont triés par réputation

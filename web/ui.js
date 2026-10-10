@@ -188,8 +188,7 @@ export const stat = (label, value, hint='') => `<div class="stat-card"><span cla
 export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</span><strong>${value}</strong></div>`;
 // `lead` (the block stepping between peers) sits at the left of the title.
 // A page title on its own: the name of the left-menu entry it belongs to, with neither line above nor below.
-export const heading = (title,extra='',lead='') => {const text=`<div><h1>${escape(title)}</h1></div>`;return `<div class="page-heading">${lead?`<div class="heading-with-lead">${lead}${text}</div>`:text}${extra}</div>`;};
-export const tabs = (base, items, active) => `<nav class="tabs" aria-label="Sections">${items.map(([key,label])=>`<a class="${key===active?'active':''}" href="${base}/${key}">${escape(label)}</a>`).join('')}</nav>`;
+export const heading = (title,extra='') => `<div class="page-heading"><div><h1>${escape(title)}</h1></div>${extra}</div>`;
 // `headClasses` gives each column's header a class ('' for none). `groups` names the heading over each column (null for none): the columns
 // under one heading share it on a first header row and have their own headers on a second one, the others span both rows.
 // `rowAttributes` adds attributes to each body row ('' for none).
