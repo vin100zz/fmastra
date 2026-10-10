@@ -26,6 +26,9 @@ test('the bracket is the cup’s only view of its rounds',async()=>{
   assert.match(screen,/class="active" href="#\/league\/-3\/bracket" aria-current="page">Tableau/);
   assert.equal((screen.match(/class="bracket-tie"/g)||[]).length,32);
   assert.equal((screen.match(/bracket-tie empty/g)||[]).length,16+8+4+2+1);
+  // its eleven columns are headed by the name of the round alone: no date beside it
+  assert.equal((screen.match(/<div class="bracket-head"><strong>[^<]+<\/strong><\/div>/g)||[]).length,11);
+  assert.match(screen,/<div class="bracket-head"><strong>32es de finale<\/strong><\/div>/);assert.doesNotMatch(screen,/déc\. 2025|janv\. 2026/);
   // the box opens the match, the name opens the club, the shoot-out sits in brackets
   assert.match(screen,/<a class="bracket-match" href="#\/match\/1"/);
   assert.match(screen,/bracket-team winner"><span class="bracket-club"><a href="#\/club\/2"/);

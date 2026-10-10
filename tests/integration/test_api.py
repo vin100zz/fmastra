@@ -799,8 +799,13 @@ def test_squad_sorts_by_what_each_column_shows(played):
     accented.name, plain.name = "Élie Test", "Zack Test"
     names = [row["name"] for row in rows("name")]
     assert names == sorted(names, key=v.normalized) and names.index("Élie Test") < names.index("Zack Test")
+    # By the one code the column shows: his selection's, else his first nationality's.
+    capped = next(world.players[player_id] for player_id in club.player_ids if len(world.players[player_id].nationalities) == 1)
+    capped.nationalities, capped.national_team = ("FRA", "SEN"), "SEN"
     codes = build_nation_table(world.nation_names)
-    nations = [[codes[code]["display_code"] for code in row["nationalities"]] for row in rows("nation")]
+    shown = {row["id"]: row for row in rows("nation")}
+    assert (shown[capped.id]["national_team"], v.main_nation(shown[capped.id])) == ("SEN", "SEN")
+    nations = [codes[v.main_nation(row)]["display_code"] for row in rows("nation")]
     assert nations == sorted(nations)
     for sort in ("position", "age", "rating", "potential", "value", "wage", "contract_end", "appearances", "goals", "assists", "yellows", "reds", "average"):
         assert played.get(f"/api/clubs/{club.id}/effectif?tri={sort}&ordre=desc").status_code == 200

@@ -19,7 +19,8 @@ export async function cupScreen(cup,section,params,lead=''){
   const data=await api(`/competitions/${cup.id}/coupe?${params}`);
   // The season is stepped through from the end of the row of tabs; the header's tile names who won the one shown.
   tools=seasonSteps(data);shown={...cup,winner:data.winner,holder:data.holder};
-  content=bracket(data.rounds.map(round=>({label:round.label,date:round.date,matches:round.items})),{sides:true});
+  // Eleven columns side by side leave room for the name of a round, not for its date.
+  content=bracket(data.rounds.map(round=>({label:round.label,matches:round.items})),{sides:true});
  }
  return competitionHero(shown,{lead,base:`#/league/${cup.id}`,menu,section,tools})+content;
 }

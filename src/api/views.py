@@ -120,6 +120,7 @@ def player_row(world: World, player: Player) -> dict:
             "key_composites": list(COMPOSITES_BY_POSITION[player.position]),
             "nationalities": list(player.nationalities),
             "nationality_names": [world.nation_names.get(code, code) for code in player.nationalities],
+            "national_team": player.national_team,
             "value": market_value(player, world),
             "club": club_ref(world, player.club_id), "wage": contract.weekly_wage if contract else 0,
             "contract_end": contract.end.iso() if contract else None,
@@ -289,7 +290,6 @@ def player_detail(world: World, player: Player) -> dict:
     # The bounds form keeps, for the page to draw it between them.
     result["form_bounds"] = [world.config.states.form.min, world.config.states.form.max]
     result.update({"born": player.born.iso(),
-                   "national_team": player.national_team,
                    "national_team_id": next((team.id for team in world.international.nations.values() if team.code == player.national_team), None),
                    "international_caps": player.international_caps, "international_goals": player.international_goals,
                    "historical_caps": player.historical_caps, "historical_goals": player.historical_goals,
@@ -451,8 +451,14 @@ def transfer_row(world: World, row) -> dict:
             "age": born.age_on(row.date) if born else None,
             "position": player.position.value if player else None,
             "nationalities": list(player.nationalities) if player else [],
+            "national_team": player.national_team if player else None,
             "rating": round(player.rating, 1) if player else None,
             "value": market_value(player, world) if player else None}
+
+
+def main_nation(row: dict) -> str | None:
+    """The nation a list shows for a player's row: the one he plays for, else the first of his nationalities."""
+    return row.get("national_team") or next(iter(row.get("nationalities") or ()), None)
 
 
 def academy_player_row(world: World, row) -> dict:
