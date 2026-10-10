@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import create_app
+from api.views import position_rank
 from core.ai.selection import LineupContext, select_lineup, to_lineup, validate_lineup
 from core.domain.matches import SubmittedLineup
 from core.domain.offers import TransferOffer
@@ -503,6 +504,9 @@ def test_lineup_form_offers_every_tactic_and_starts_from_the_previous_eleven(cli
     assert set(data["suggestions"]) == set(data["formations"])
     for name, suggestion in data["suggestions"].items():
         assert [position for _, position in suggestion["titulaires"]] == data["formations"][name][:len(suggestion["titulaires"])]
+        # The substitutes come in the order of positions: GB, DG, DD, DC…
+        bench = [position_rank(world.players[pid].position) for pid in suggestion["banc"]]
+        assert bench == sorted(bench)
     assert {player["id"] for player in data["players"]} <= set(world.clubs[club_id].player_ids)
     assert all(player["unavailable"] in (None, "injured", "suspended") for player in data["players"])
 

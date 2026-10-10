@@ -366,7 +366,9 @@ def router(service: GameService) -> APIRouter:
         return match, competition_id, context
 
     def lineup_suggestion(lineup) -> dict:
-        return {"titulaires": [(slot.player.id, slot.position) for slot in lineup.slots], "banc": [player.id for player in lineup.bench]}
+        """The AI's lineup as the Composition screen loads it, the substitutes in the order of positions."""
+        bench = sorted(lineup.bench, key=lambda player: position_rank(player.position))
+        return {"titulaires": [(slot.player.id, slot.position) for slot in lineup.slots], "banc": [player.id for player in bench]}
 
     @api.get("/ma-partie/composition")
     def lineup_form(match_id: int | None = None) -> dict:

@@ -746,7 +746,7 @@ l'effectif, triable, avec au-dessus d'elle le premier problème de la compositio
 composition » et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
 ou le met sur la prochaine place libre, avant ses autres actions ; « Meilleure composition » reprend la suggestion de l'IA pour la
-tactique affichée. Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
+tactique affichée, ses remplaçants rangés par poste (GB, DG, DD, DC, MDC…). Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
 seconde) marqué de son poste ; une place vide garde le contour d'un maillot.
 
 L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
