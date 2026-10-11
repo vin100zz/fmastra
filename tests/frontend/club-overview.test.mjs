@@ -61,14 +61,15 @@ test('the last eleven lies on the charter\'s pitch attacking to the right, in th
  assert.match(html,/<div class="pitch lying" aria-label="Onze aligné par Lens">/);assert.equal((html.match(/class="pitch-player"/g)||[]).length,11);
  assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
  assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
- // The body in the primary colour, the sleeves in the secondary one; the position on the shirt, no note beside it.
+ // The body in the primary colour, the sleeves in the secondary one; the position on the shirt, under it the name alone.
  assert.equal((html.match(/<span class="kit-shirt" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff">/g)||[]).length,11);
- assert.equal((html.match(/<b>(GB|DG|DC|DD|MC|AILG|BU|AILD)<\/b>/g)||[]).length,11);assert.doesNotMatch(html,/6[.,]5|position-note/);
+ assert.equal((html.match(/<b>(GB|DG|DC|DD|MC|AILG|BU|AILD)<\/b><\/span><span class="player-block"><span class="block-name">Nom&lt;\d+&gt;<\/span><\/span>/g)||[]).length,11);
+ assert.doesNotMatch(html,/block-note|>6\.5</);
  // The keeper on the left, the forward on the right; the left-back above the right-back.
  const at=name=>{const found=html.match(new RegExp(`title="${name}" style="left:([\\d.]+)%;top:([\\d.]+)%"`));return [Number(found[1]),Number(found[2])];};
  assert.ok(at('Prénom Nom&lt;0&gt;')[0]<at('Prénom Nom&lt;9&gt;')[0]);
  assert.ok(at('Prénom Nom&lt;1&gt;')[1]<at('Prénom Nom&lt;4&gt;')[1]);
- assert.match(html,/<small>Nom&lt;1&gt;<\/small>/);assert.doesNotMatch(html,/<script>|Nom<1>/);
+ assert.match(html,/<span class="block-name">Nom&lt;1&gt;<\/span>/);assert.doesNotMatch(html,/<script>|Nom<1>/);
 });
 
 test('the market under way stands in four columns: offers by player with his value, own offers, the list and the loans',()=>{
@@ -133,11 +134,13 @@ test('the match pitch shirts each side in its kit, the position on the shirt and
  assert.deepEqual(shirts(pitch(line)),[' plain',' plain',' plain']);
  const html=pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}});
  assert.match(html,/^<div class="pitch" aria-label="x"><i class="pitch-box" aria-hidden="true"><\/i><i class="pitch-box far" aria-hidden="true"><\/i>/);
- // the position is written on the shirt; the note of the match stands beside it, one figure after the point
- assert.match(html,/<b>GB<\/b><\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note du match">7\.0<\/span><\/span><small>Ada Un<\/small>/);
- assert.match(html,/<b>MC<\/b><\/span><small>Cy Trois<\/small>/);
- // one drawing for every shirt: the whole shape in the sleeves' colour, the body over it, the outline alone
- assert.equal((html.match(/<path class="kit-sleeves"/g)||[]).length,3);assert.equal((html.match(/<path class="kit-outline"/g)||[]).length,3);
+ // the position is written on the shirt; under it his block: his name, then the note of the match in its colour, one
+ // figure after the point; without a note the second line keeps its place, empty
+ assert.match(html,/<b>GB<\/b><\/span><span class="player-block"><span class="block-name">Ada Un<\/span><span><b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><\/span><\/span>/);
+ assert.match(html,/<b>MC<\/b><\/span><span class="player-block"><span class="block-name">Cy Trois<\/span><span><\/span><\/span>/);
+ assert.doesNotMatch(html,/position-note|pitch-marks|<small>/);
+ // one drawing for every shirt: the whole shape in the sleeves' colour, the body and the collar over it, the outline alone
+ for(const part of ['kit-sleeves','kit-body','kit-collar','kit-outline'])assert.equal((html.match(new RegExp(`<path class="${part}"`,'g'))||[]).length,3);
  assert.ok(contrastRatio('#cc0000','#ffd700')>=3);
  // a missing secondary colour reuses the primary one; an unsafe colour is never written out
  assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/--kit-body:#204080;--kit-sleeves:#204080;/);
@@ -169,10 +172,10 @@ test('beside the list of clubs, the picked one is previewed: standing, matches, 
 test('on a compact pitch and in the last eleven, a player goes by his short name; his whole name is in the tooltip',()=>{
  const players=[{id:1,name:'Lucas Hernandez',short:'L. Hernandez',position:'DC'},{id:2,name:'Kylian Mbappé',position:'BU'}];
  const compact=pitch(players,'x',{compact:true});
- assert.match(compact,/title="Lucas Hernandez"[^>]*>[^]*?<small>L\. Hernandez<\/small>/);
+ assert.match(compact,/title="Lucas Hernandez"[^>]*>[^]*?<span class="block-name">L\. Hernandez<\/span>/);
  // Without a short name from the API, his surname; a full pitch writes the whole name.
- assert.match(compact,/title="Kylian Mbappé"[^>]*>[^]*?<small>Mbappé<\/small>/);
- assert.match(pitch(players),/<small>Lucas Hernandez<\/small>/);
+ assert.match(compact,/title="Kylian Mbappé"[^>]*>[^]*?<span class="block-name">Mbappé<\/span>/);
+ assert.match(pitch(players),/<span class="block-name">Lucas Hernandez<\/span>/);
  const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players:players.map(player=>({...player,temporary:false}))};
- assert.match(lineupBlock(club,lineup),/<small>L\. Hernandez<\/small>/);
+ assert.match(lineupBlock(club,lineup),/<span class="block-name">L\. Hernandez<\/span>/);
 });

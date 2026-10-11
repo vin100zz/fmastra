@@ -13,7 +13,7 @@
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in every list. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  /* Pitch. */
- --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141ecc;
+ --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141eb3;
  /* Series: the line of a curve, a second series beside it, and the pale form of each for what is free of a share. */
  --series-1:#2a78d6;--series-1-deep:#1b5299;--series-1-soft:#9ec5f4;--series-2:#eb6834;--series-2-deep:#b8481c;--series-2-soft:#f6ae8f;
  /* The veil over the page under a dialog. */
@@ -433,30 +433,51 @@ span.entity-step svg{opacity:.3}
 .pitch.lying .pitch-box{left:8px;bottom:auto;top:50%;width:13%;height:56%;transform:translateY(-50%);border:1.5px solid var(--pitch-line);border-left:0}
 .pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
 
-/* A player on a pitch: the shirt of his club (body in its first colour, sleeves in its second) with his position written on
-   it, his name under it, his note on its right; affinity on its top-left corner, form on its bottom-right one, what he did
-   in the match on its left. One size, 32 px, on every pitch. */
-.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;transform:translate(-50%,-50%);color:#fff}
-.pitch-player small{max-width:100%;padding:0 var(--s1);border-radius:var(--radius);background:var(--pitch-label);font:600 var(--fs-small)/14px var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* A player on a pitch: the shirt of his club, the block under it, nothing else around. One size, 32 px, on every pitch.
+   He is held by his shirt: whatever hangs under it, the shirts of a line stay level. */
+.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;transform:translate(-50%,calc(-1*var(--s4)));color:#fff}
+/* The shirt, square, its sleeves level: the body in the club's first colour, white included (the grass is not the page:
+   the dot's rule, which swaps a colour close to white, does not apply), the sleeves and the collar in its second
+   (`--kit-body`, `--kit-sleeves`). Each fill draws its own edge in its colour, with round joins; a light outline and a
+   shadow lift it from the grass. The position on it in the ink that reads on the body (`--kit-ink`). */
 .kit-shirt{position:relative;display:inline-grid;place-items:center;flex:none;width:32px;height:32px}
-.kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-/* Three paths: the whole shape in the sleeves' colour, the body over it, then the outline alone, so that no line runs
-   between the body and the sleeves. */
-.kit-shirt .kit-outline{fill:none;stroke:#00000073;stroke-width:1.4;stroke-linejoin:round}
-.kit-shirt b{position:relative;margin-top:5px;font:700 semi-condensed var(--fs-micro)/1 var(--display)}
+.kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 1px 1px #00000066)}
+.kit-shirt :is(.kit-sleeves,.kit-body){stroke-width:1.6;stroke-linejoin:round}
+.kit-shirt .kit-sleeves{fill:var(--kit-sleeves);stroke:var(--kit-sleeves)}
+.kit-shirt .kit-body{fill:var(--kit-body);stroke:var(--kit-body)}
+.kit-shirt .kit-collar{fill:var(--kit-sleeves)}
+.kit-shirt .kit-outline{fill:none;stroke:#00000033;stroke-width:1;stroke-linejoin:round}
+.kit-shirt b{position:relative;margin-top:7px;font:700 semi-condensed var(--fs-micro)/1 var(--display);color:var(--kit-ink)}
+.kit-shirt.plain{--kit-body:#8a9193;--kit-sleeves:#8a9193;--kit-ink:#fff}
+.kit-shirt.empty svg{filter:none}
+.kit-shirt.empty :is(.kit-sleeves,.kit-body){stroke:none}
 .kit-shirt.empty .kit-sleeves{fill:#ffffff26}
-.kit-shirt.empty .kit-body{fill:none}
+.kit-shirt.empty :is(.kit-body,.kit-collar){fill:none}
 .kit-shirt.empty .kit-outline{stroke:#ffffffcc;stroke-dasharray:3 2}
-.kit-shirt.plain .kit-sleeves,.kit-shirt.plain .kit-body{fill:#8a9193}
-.pitch-player.picked .kit-shirt::before,.pitch-player.invalid .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
+.kit-shirt.empty b{color:#fff}
+/* Ringed in the accent when picked, in red when he cannot play; a player's main position, on his aptitudes, in a white
+   veil. */
+.pitch-player:is(.picked,.invalid,.main) .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
+.pitch-player.main:not(.picked) .kit-shirt::before{box-shadow:0 0 0 2px #ffffff80}
 .pitch-player.invalid .kit-shirt::before{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--bad)}
-.pitch-player.picked small{background:var(--accent);color:var(--accent-ink)}
-.pitch-player.invalid small{background:var(--bad)}
-.position-note{position:absolute;left:calc(50% + 20px);top:7px;width:max-content;line-height:0}
-.position-note.left{left:auto;right:calc(50% + 20px)}
-.pitch-marks{position:absolute;right:calc(50% + 20px);top:8px;display:flex;align-items:center;gap:3px;width:max-content;height:16px;padding:0 var(--s1);border-radius:var(--radius);background:#fffffff0;color:var(--ink);white-space:nowrap}
-.affinity-tag{position:absolute;top:-6px;left:-8px;display:grid;place-items:center;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:hsl(var(--hue) 70% 36%);color:#fff;font:700 var(--fs-micro)/1 var(--text);font-style:normal;box-shadow:0 0 0 1.5px #fff}
-.form-arrow{position:absolute;right:-6px;bottom:-3px;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 1.5px #fff}
+/* The block under the shirt: lines of 16 on the dark of the label, as many for every player of a pitch, an empty one
+   keeping its height. His name, then his note in its colour, lightened to read on the dark, and 8 further what he did, 4
+   between two facts. Picked, the block takes the accent; unable to play, the red; an empty place has no ground. */
+.player-block{position:relative;display:grid;grid-auto-rows:16px;width:max-content;min-width:56px;border-radius:var(--radius);overflow:hidden;background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/16px var(--text);white-space:nowrap}
+.player-block>span{display:flex;align-items:center;justify-content:center;gap:var(--s1);min-width:0;padding:0 var(--s1)}
+.player-block>.block-name{display:block;max-width:76px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.block-note{font-weight:700;color:hsl(var(--hue) 80% 72%)}
+.block-note+*{margin-left:var(--s1)}
+.pitch-player.picked .player-block{background:var(--accent);color:var(--accent-ink)}
+.pitch-player.invalid .player-block{background:var(--bad)}
+.pitch-player:is(.picked,.invalid) .block-note{color:inherit}
+.pitch-player.empty .player-block{background:none}
+/* On the dark: a white ball, its dark patch in the middle; the way off all in white, so that no one reads it as a bad note. */
+.player-block .mark.goal{background:radial-gradient(circle,var(--strong) 0 1.5px,#fff 2px);box-shadow:none}
+.player-block .mark.off{color:#fff}
+/* The affinity below 20 and the form of at least 5 % either way, after the note at a position. */
+.affinity-tag{display:inline-grid;place-items:center;flex:none;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:hsl(var(--hue) 70% 36%);color:#fff;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
+.form-arrow{position:relative;display:inline-block;flex:none;width:14px;height:14px;border-radius:50%}
 .form-arrow::before{content:"";position:absolute;left:3px;top:4px;border-left:4px solid transparent;border-right:4px solid transparent}
 .form-arrow.up{background:var(--good)}.form-arrow.up::before{border-bottom:5px solid #fff}
 .form-arrow.down{background:var(--bad)}.form-arrow.down::before{top:5px;border-top:5px solid #fff}
@@ -571,7 +592,7 @@ a:is(.tr,.match-row,.result){cursor:pointer}
 :is(.button.primary,.cta):is(:hover,.hover){background:var(--accent-hover)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}
 /* On a pitch, a player's name is what underlines. */
-.pitch-player:is(:hover,.hover) small{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.pitch-player:is(:hover,.hover) .block-name{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

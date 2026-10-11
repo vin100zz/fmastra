@@ -25,10 +25,19 @@ const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--
 export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
 export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
 export const matchNoteBadge = (value, title='Note du match') => value==null ? '' : gradedBadge(matchNote(value),noteHue(value),title);
+// A note on a pitch, in the block under a shirt: written in its colour, lightened to read on the dark, without a badge.
+export const blockNote = (text, hue, title='') => `<b class="block-note" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</b>`;
+export const matchBlockNote = (value, title='Note du match') => value==null ? '' : blockNote(matchNote(value),noteHue(value),title);
 // A player's note at a position, out of 200 like the level: the mean of the composites `keys` that position asks for, times the
-// engine's factor for his affinity there (see /api). The pitches of the lineup and of the player page show it beside the shirt.
+// engine's factor for his affinity there (see /api). A badge in a list; in his block on the pitches of the lineup and of the
+// player page.
+const positionNoteTitle = (role, keys) => `Note au poste ${role} : ${keys.map(key=>COMPOSITES[key]).join(', ')}, affinité au poste comprise`;
 export const positionNote = (player, role, keys=[]) => player?.position_notes?.[role]==null ? ''
- : levelBadge(player.position_notes[role],`Note au poste ${role} : ${keys.map(key=>COMPOSITES[key]).join(', ')}, affinité au poste comprise`);
+ : levelBadge(player.position_notes[role],positionNoteTitle(role,keys));
+export const positionBlockNote = (player, role, keys=[]) => {
+ const value=player?.position_notes?.[role];
+ return value==null ? '' : blockNote(level(value),levelHue(level(value)),positionNoteTitle(role,keys));
+};
 // Form as its effect on all a player does in a match: 1.11 reads "+11 %"; within ±2 % it changes nothing (`neutral`).
 export const formReading = form => {
  const pct=Math.round((form-1)*100),neutral=Math.abs(pct)<=2,text=pct>0?`+${pct} %`:pct<0?`−${-pct} %`:'0 %';
@@ -40,7 +49,8 @@ export const formBadge = form => {
  const {pct,neutral,text,title}=formReading(form);
  return neutral?`<span class="rating form-badge neutral" title="${escape(title)}">${text}</span>`:gradedBadge(text,pct>0?120:0,title).replace('class="rating graded"','class="rating graded form-badge"');
 };
-// An arrow for a form worth at least 5 % either way in a match: on the lineup's pitch, and beside the note at a position.
+// An arrow for a form worth at least 5 % either way in a match, after the note at a position: in the lineup's list and in the
+// block of its pitch.
 export const formArrow = form => {
  const pct=form==null?0:Math.round((form-1)*100);
  return Math.abs(pct)<5?'':`<i class="form-arrow ${pct>0?'up':'down'}" title="Forme ${pct>0?'+':'−'}${Math.abs(pct)} %"></i>`;
@@ -65,7 +75,7 @@ export function moraleCell(player) {
  const trend=target==null||Math.abs(target-value)<3?'':target>value?'<span class="trend up">▲</span>':'<span class="trend down">▼</span>';
  return `<span class="morale-cell" title="${escape(title)}">${gradedBadge(`${value} %`,hue)}<span class="trend-slot">${trend}</span>${cause?`<span class="morale-cause">${cause[0]}</span>`:''}</span>`;
 }
-// The affinity to a position out of 20, only below 20: a tag on the corner of the shirt.
+// The affinity to a position out of 20, only below 20: a round tag after the note at that position.
 export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;
 export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
 // What an attribute is for decides its section; the attributes of a section always come in the same order.
@@ -86,17 +96,21 @@ export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
 const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.03928?value/12.92:((value+.055)/1.055)**2.4); return .2126*r+.7152*g+.0722*b;};
 export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
-// The one shirt of every pitch (docs/charte-graphique.md): the club's kit, the body in its first colour and the sleeves in its
-// second, an outline around the whole and no line between them; `label` (a position) is written on it in the ink that reads
-// on the body. Grey without colours, a dashed outline for an `empty` place; `inside` adds what stands on its corners.
-const SHIRT_SHAPE='M10 4 15 2.5Q20 7 25 2.5L30 4 39 10.5 35 17 33 13V38H7V13L5 17 1 10.5Z',SHIRT_BODY='M10 4 15 2.5Q20 7 25 2.5L30 4 33 13V38H7V13Z';
-export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
+// The one shirt of every pitch (docs/charte-graphique.md): square, its sleeves level, the club's kit, the body in its first
+// colour (white included) and the sleeves and the collar in its second, each fill drawing its own round edge, a light outline
+// around the whole; `label` (a position) is written on it in the ink that reads on the body. Grey without colours, a dashed
+// outline for an `empty` place. Nothing stands on it: what the player did goes in his block (`playerBlock`).
+const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_BODY='M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
+export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
 // The custom properties a kit drawing reads its colours from; empty without a primary colour.
 export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='', {inside='', empty=false}={}) => {
+export const kitShirt = (major, minor, label='', {empty=false}={}) => {
  const style=empty?'':kitStyle(major,minor);
- return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}${inside}</span>`;
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}</span>`;
 };
+// The block under a shirt: lines of 16 on the dark of the label, as many for every player of a pitch. His name first (`name`,
+// HTML), then his note and what he did (`facts`, HTML); a line given as '' keeps its height, one left out (null) is not drawn.
+export const playerBlock = (name, facts=null) => `<span class="player-block">${name==null?'':`<span class="block-name">${name}</span>`}${facts==null?'':`<span>${facts}</span>`}</span>`;
 // The lines of a pitch's two penalty areas; the rest is drawn by the style sheet.
 export const PITCH_BOXES = '<i class="pitch-box" aria-hidden="true"></i><i class="pitch-box far" aria-hidden="true"></i>';
 // The two colours of a club's band, its ground then what crosses it: its first colour and its second, or the other way round
@@ -408,8 +422,8 @@ export function fixtureRow(match,{own=ownClub,levels=null,wide=false}={}){
 export const hasStorey = matches => matches.some(match=>match.aggregate||match.penalties);
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide})}`;}).join('');}
 // The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
-// grey) with his position on it, his name under it (his short name when `compact`), his note of the match on its right (on its
-// left along the right touchline) and what he did (`marks(player)`) on its left.
+// grey) with his position on it and his block under it: his name (his short name when `compact`), then his note of the match
+// and what he did (`marks(player)`).
 export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null}={}){
  const bands={GB:90,DC:75,DG:69,DD:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
  // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
@@ -420,8 +434,8 @@ export function pitch(lineup,label='Composition initiale',{compact=false,kit=nul
  return `<div class="pitch" aria-label="${escape(label)}">${PITCH_BOXES}${lineup.map(player=>{
   const row=rows[line(player)],y=bands[player.position]??45;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
-  const tag=player.temporary?'span':'a',note=player.stats?.rating?`<span class="position-note${x>80?' left':''}">${matchNoteBadge(player.stats.rating)}</span>`:'';
-  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position)}${marks?marks(player):''}${note}<small>${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}</small></${tag}>`;
+  const tag=player.temporary?'span':'a',name=`${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}`;
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position)}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
  }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};

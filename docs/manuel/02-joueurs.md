@@ -61,7 +61,7 @@ Un joueur totalement étranger à un poste (1 sur 20) y garde donc {{pct(attribu
 
 L'affinité n'est pas le seul effet du poste. Le poste décide aussi **où** le joueur intervient sur le terrain et dans quelles phases (voir [Le moteur de match](#/aide/match/la-force-d-une-equipe-dans-une-zone)) : un excellent finisseur placé arrière central ne se retrouve presque jamais en position de frapper.
 
-La **note au poste**, affichée à côté des maillots sur le terrain de la composition et de la fiche, résume les deux : c'est la moyenne des composites que ce poste sollicite le plus, multipliée par le facteur d'affinité.
+La **note au poste**, affichée sous les maillots sur le terrain de la composition et de la fiche, résume les deux : c'est la moyenne des composites que ce poste sollicite le plus, multipliée par le facteur d'affinité.
 
 ## Le potentiel
 

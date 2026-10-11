@@ -151,6 +151,7 @@ où le fond est déjà jaune.
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
+| Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.player-block`, `.block-note` | Le maillot du club, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
@@ -559,24 +560,41 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   1.5 à 8 du bord. Debout (l'équipe attaque vers le haut) ou couché
   (`.pitch.lying`, vers la droite, latéral gauche en haut) : mêmes herbe, lignes
   et maillots.
-- **Maillot** (`.kit-shirt`) : 32, aux couleurs du club ou de la sélection (corps
-  dans la première, manches dans la seconde), un contour autour, aucun trait
-  entre le corps et les manches. Le poste est écrit dessus, dans l'encre lisible sur le corps. La
-  couleur de poste reste dans les listes, pas sur le terrain.
-- **Autour du maillot** : le nom dessous, sur une étiquette sombre ; la note à
-  droite (à gauche le long de la touche droite) ; l'affinité sous 20 sur le coin
-  haut gauche ; la forme d'au moins ±5 % sur le coin bas droit ; les faits du
-  match à gauche, sur une étiquette à leur largeur.
-- **États** : place vide en pointillé, joueur choisi cerclé de l'accent, joueur
-  indisponible cerclé de rouge, joueur sans couleurs en gris.
+- **Maillot** (`.kit-shirt`) : 32, carré, les manches à l'horizontale. Le corps
+  dans la première couleur du club ou de la sélection, blanc compris, les
+  manches et le col dans la seconde. Le gazon n'est pas la page : la règle de la
+  pastille, qui passe à la seconde couleur quand la première est proche du
+  blanc, ne s'y applique pas. Chaque couleur arrondit son bord ; un contour noir
+  à 20 % et une ombre le détachent du gazon. Le poste est écrit dessus, dans
+  l'encre lisible sur le corps. La couleur de poste reste dans les listes, pas
+  sur le terrain.
+- **Bloc** (`.player-block`) : sous le maillot, et rien d'autre autour. Des
+  lignes de 16 sur l'étiquette sombre (`--pitch-label`, noir à 70 %), autant
+  pour tous les joueurs d'un terrain : une ligne vide garde sa hauteur. D'abord
+  le nom, puis la note et ce que le joueur a fait. Le joueur se tient par son
+  maillot : les maillots d'une ligne restent à niveau, quoi qu'ils portent
+  dessous.
+- **Note** (`.block-note`) : écrite dans sa couleur, éclaircie pour se lire sur
+  le noir, sans pastille.
+- **Faits** : à 8 de la note, 4 entre deux. Un ballon par but, les cartons, la
+  blessure, la sortie (« ▼ 65′ ») toute en blanc : seule une note se lit en
+  rouge. Sur la composition, la flèche de la forme d'au moins ±5 %, puis
+  l'affinité sous 20.
+- **États** : place vide en pointillé, son bloc sans fond ; joueur choisi cerclé
+  de l'accent, son bloc sur l'accent ; joueur indisponible cerclé de rouge, son
+  bloc sur le rouge ; joueur sans couleurs en gris. Sur les aptitudes d'un
+  joueur, son poste principal est cerclé d'un blanc voilé.
 
-| Écran | Sens | À droite du maillot | Autour |
+| Écran | Sens | Première ligne | Seconde ligne |
 |---|---|---|---|
-| Composition | Debout | Note au poste, sur 200 | Affinité, forme |
-| Match | Debout | Note du match | Faits du match |
-| Direct · tactique | Debout | Note du match | Faits du match |
-| Joueur · aptitudes | Debout | Note au poste, sur 200 | Affinité |
-| Effectif, Actualités · dernier onze | Couché | — | — |
+| Composition | Debout | Nom | Note au poste sur 200, forme, affinité |
+| Match | Debout | Nom | Note du match, faits du match |
+| Direct · tactique | Debout | Nom | Note du match, faits du match |
+| Joueur · aptitudes | Debout | Note au poste sur 200, affinité | — |
+| Effectif, Actualités · dernier onze | Couché | Nom | — |
+
+Les aptitudes d'un joueur n'ont pas de liste à côté de leur terrain : le bloc de
+chaque poste en tient lieu, sur un terrain de 360 de large.
 
 ## Graphiques
 
@@ -713,6 +731,9 @@ phase finale : Euro 2032.
 | Attribut, affinité | Entier, sur 20 | 14 |
 | Forme | Effet signé, en pour cent | +6 % |
 
+Une note est une pastille partout, sauf sur un terrain : elle s'y écrit dans sa
+couleur, sur le noir du bloc (voir « Terrain et maillot »).
+
 ### Montants
 
 - Un salaire, une masse salariale, un plafond salarial sont toujours mensuels.
@@ -823,7 +844,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Échelles | Sept tailles, trois graisses, un rayon, dans toutes les feuilles |
 | Fond | Blanc en thème clair |
 | Onglets | `.tabs` partout, en-tête de club compris |
-| Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`) |
+| Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), un ballon par but, la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
@@ -891,3 +912,7 @@ La carte repliable et les temps forts d'un match ont la leur (chiffres :
 proposition E, « L'en-tête entier » ; temps forts : proposition G, l'initiale
 seulement entre homonymes d'un effectif) :
 <https://claude.ai/artifact/BY9WbaVsvTNye4bL8CQUan>.
+Le joueur sur un terrain a la sienne (le bloc : proposition B « Étiquette », puis
+B3 « Étage » et la note en chiffre coloré) : <https://claude.ai/artifact/Hsqs282akMFByN9QUVUufT>,
+comme le maillot (« Carré · Manches ») : <https://claude.ai/artifact/7JMrbN6uTc4DS6kgP5EtAR>
+et le terrain des aptitudes (proposition B) : <https://claude.ai/artifact/KfuMRqMWEQyzDN2cxaM9us>.

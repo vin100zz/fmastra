@@ -223,14 +223,14 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 
 /* Badges, 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale graded
    ground with its border, a competition an outline (a solid black for a European cup). */
-.position,.player-table .position,.rating,.player-table .rating,.pitch-player .position-note .rating,.competition-code,.competition-badge,.club-match-score,.calendar-score,.tag,.news-tag,.movement-kind,.rank-chip,.run-chip,.honours-live{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px!important;border-radius:var(--radius);line-height:1;white-space:nowrap;box-sizing:border-box}
+.position,.player-table .position,.rating,.player-table .rating,.competition-code,.competition-badge,.club-match-score,.calendar-score,.tag,.news-tag,.movement-kind,.rank-chip,.run-chip,.honours-live{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px!important;border-radius:var(--radius);line-height:1;white-space:nowrap;box-sizing:border-box}
 /* A position is as wide whatever its code, so what follows it lines up; a word in its place (REMP, SORTI) is as wide as it reads. */
 .position,.player-table .position{width:32px;padding:0!important;background:var(--def);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
 .position.gk{background:var(--gk);color:#fff}
 .position.mid{background:var(--mid);color:#fff}
 .position.att{background:var(--att);color:#fff}
 .position.bench{width:auto;min-width:32px;padding:0 5px!important;background:var(--panel-2);color:var(--muted)}
-.rating,.player-table .rating,.pitch-player .position-note .rating{min-width:30px;font:600 var(--fs-small)/1 var(--text)}
+.rating,.player-table .rating{min-width:30px;font:600 var(--fs-small)/1 var(--text)}
 .rating.form-badge,.player-table .rating.form-badge{min-width:42px}
 .competition-code,.competition-badge{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text);letter-spacing:0}
 .competition-code.cup,.competition-badge.cup{border-color:var(--info);background:var(--panel);color:var(--info)}
@@ -438,53 +438,61 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
 .lineup-pitch{margin:0}
 .match-lineup .pitch{margin:var(--s3)}
-.positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,300px);min-width:0;margin:var(--s2) auto}
-/* Beside the list of its positions, on a wide screen, the pitch of a player's aptitudes is smaller: its notes are in the list. */
-@media(min-width:1728px){
- .positions>.pitch:not(:only-child){width:252px;margin:var(--s3)}
- .positions-card .positions-list{margin:0}
- .positions-card .position-row.head{border-top:0}
-}
+.positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,360px);min-width:0;margin:var(--s2) auto}
 
-/* A player on a pitch: the shirt of his club (body in its first colour, sleeves in its second, an outline around the whole)
-   with his position written on it, his name under it, his note on its right; his affinity on its top-left corner, his form
-   on its bottom-right one, what he did in the match on its left. One size, 32 px, on every pitch. */
-.pitch-player,.lineup-slot,.pitch.ratings button.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;padding:0;border:0;border-radius:0;background:none;transform:translate(-50%,-50%);color:#fff;text-align:center;text-decoration:none}
-.pitch-player small,.lineup-slot small,.club-overview .pitch-player small,.pitch.ratings .pitch-player small{display:block;max-width:100%;padding:0 var(--s1);border-radius:var(--radius);background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/14px var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lineup-slot small{display:inline-flex;align-items:center;gap:var(--s1)}
+/* A player on a pitch: the shirt of his club, the block under it, nothing else around. One size, 32 px, on every pitch. He
+   is held by his shirt: whatever hangs under it, the shirts of a line stay level. On the lying pitch, where every block has
+   one line, the shirt and its block are centred together. */
+.pitch-player,.lineup-slot,.pitch.ratings button.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;padding:0;border:0;border-radius:0;background:none;transform:translate(-50%,calc(-1*var(--s4)));color:#fff;text-align:center;text-decoration:none}
+.pitch.lying .pitch-player{transform:translate(-50%,-50%)}
+/* The shirt, square, its sleeves level: the body in the club's first colour, white included, the sleeves and the collar in
+   its second. Each fill draws its own edge in its colour, with round joins; a light outline and a shadow lift it from the
+   grass. The position on it in the ink that reads on the body. */
 .kit-shirt{position:relative;display:inline-grid;place-items:center;flex:none;width:32px;height:32px;border-radius:0;background:none}
-.kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.kit-shirt path{stroke:none}
-.kit-shirt .kit-sleeves{fill:var(--kit-sleeves)}
-.kit-shirt .kit-body{fill:var(--kit-body)}
-.kit-shirt .kit-outline{fill:none;stroke:#00000073;stroke-width:1.4;stroke-linejoin:round}
-.kit-shirt b{position:relative;margin-top:5px;font:700 var(--fs-micro)/1 var(--display);font-stretch:semi-condensed;color:var(--kit-ink)}
-.kit-shirt.plain,.kit-shirt.temporary{border-radius:0;background:none}
-.kit-shirt.plain .kit-sleeves,.kit-shirt.plain .kit-body{fill:#8a9193}
-.kit-shirt.plain b,.kit-shirt.empty b{color:#fff}
+.kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 1px 1px #00000066)}
+.kit-shirt :is(.kit-sleeves,.kit-body){stroke-width:1.6;stroke-linejoin:round}
+.kit-shirt .kit-sleeves{fill:var(--kit-sleeves);stroke:var(--kit-sleeves)}
+.kit-shirt .kit-body{fill:var(--kit-body);stroke:var(--kit-body)}
+.kit-shirt .kit-collar{fill:var(--kit-sleeves);stroke:none}
+.kit-shirt .kit-outline{fill:none;stroke:#00000033;stroke-width:1;stroke-linejoin:round}
+.kit-shirt b{position:relative;margin-top:7px;font:700 var(--fs-micro)/1 var(--display);font-stretch:semi-condensed;color:var(--kit-ink)}
+.kit-shirt.plain{--kit-body:#8a9193;--kit-sleeves:#8a9193;--kit-ink:#fff}
+.kit-shirt.empty svg{filter:none}
+.kit-shirt.empty :is(.kit-sleeves,.kit-body){stroke:none}
 .kit-shirt.empty .kit-sleeves{fill:#ffffff26}
-.kit-shirt.empty .kit-body{fill:none}
+.kit-shirt.empty :is(.kit-body,.kit-collar){fill:none}
 .kit-shirt.empty .kit-outline{stroke:#ffffffcc;stroke-dasharray:3 2}
+.kit-shirt.empty b{color:#fff}
+/* Ringed in the accent when picked, in red when he cannot play; a player's main position, on his aptitudes, in a white veil. */
 .pitch-player.picked .kit-shirt::before,.pitch-player.invalid .kit-shirt::before,.pitch-player.main .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
 .pitch-player.main:not(.picked) .kit-shirt::before{box-shadow:0 0 0 2px #ffffff80}
 .pitch-player.invalid .kit-shirt::before{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--bad)}
-.pitch-player.picked small,.lineup-slot.picked small,.pitch.ratings .pitch-player.picked small{background:var(--accent);color:var(--accent-ink)}
-.pitch-player.invalid small,.lineup-slot.invalid small{background:var(--bad);color:#fff;font-weight:600}
-.lineup-slot.empty small{background:none;color:#fff}
-.pitch-player .position-note,.lineup-slot .position-note{position:absolute;left:calc(50% + 20px);right:auto;top:7px;width:max-content;line-height:0;transform:none}
-.pitch-player .position-note.left,.lineup-slot .position-note.left,.pitch.ratings .position-note.left{left:auto;right:calc(50% + 20px)}
-.lineup-slot .position-note.below{top:calc(100% + 1px);left:50%;right:auto;transform:translateX(-50%)}
-.pitch-marks{position:absolute;left:auto;right:calc(50% + 20px);top:8px;z-index:2;display:flex;align-items:center;gap:3px;width:max-content;height:16px;padding:0 var(--s1);border-radius:var(--radius);background:#fffffff0;color:#16202b;white-space:nowrap;pointer-events:none}
-.pitch-marks .match-mark.sub-on,.pitch-marks .match-mark.sub-off{padding:0;background:none;box-shadow:none}
-.affinity-tag,.lineup-slot .affinity-tag{position:absolute;top:-6px;left:-8px;display:grid;place-items:center;min-width:16px;height:16px;padding:0 3px;background:hsl(var(--hue) 70% 36%);color:#fff;font:700 var(--fs-micro)/1 var(--text);font-style:normal;box-shadow:0 0 0 1.5px #fff}
-.fit-cell .affinity-tag{position:static;box-shadow:none}
-.form-arrow{position:relative;display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;font-size:0;vertical-align:middle}
+/* The block under the shirt: lines of 16 on the dark of the label, as many for every player of a pitch, an empty one keeping
+   its height. His name, then his note in its colour, lightened to read on the dark, and 8 further what he did, 4 between two
+   facts. Picked, the block takes the accent; unable to play, the red; an empty place has no ground. */
+.player-block{position:relative;display:grid;grid-auto-rows:16px;width:max-content;min-width:56px;border-radius:var(--radius);overflow:hidden;background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/16px var(--text);white-space:nowrap}
+.player-block>span{display:flex;align-items:center;justify-content:center;gap:var(--s1);min-width:0;padding:0 var(--s1)}
+.player-block>.block-name{display:block;max-width:76px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.block-note{font-weight:700;color:hsl(var(--hue) 80% 72%)}
+.block-note+*{margin-left:var(--s1)}
+.pitch-player.picked .player-block{background:var(--accent);color:var(--accent-ink)}
+.pitch-player.invalid .player-block{background:var(--bad)}
+.pitch-player:is(.picked,.invalid) .block-note{color:inherit}
+.pitch-player.empty .player-block{background:none}
+/* On the dark: a white ball, its dark patch in the middle, the balls of one player 2 apart; the way off all in white, so
+   that no one reads it as a bad note. */
+.player-block .match-mark.goal::before{background:radial-gradient(circle,var(--strong) 0 1.5px,#fff 2px);box-shadow:none}
+.player-block .match-mark.goal+.match-mark.goal{margin-left:-2px}
+.player-block .match-mark.sub-off{color:#fff}
+.player-block .lineup-icon{margin-right:var(--s1)}
+/* The affinity below 20 and the form of at least 5 % either way, after the note at a position. */
+.affinity-tag{position:relative;inset:auto;display:inline-grid;place-items:center;flex:none;min-width:16px;height:16px;padding:0 3px;background:hsl(var(--hue) 70% 36%);color:#fff;font:700 var(--fs-micro)/1 var(--text);font-style:normal;box-shadow:none}
+.form-arrow{position:relative;inset:auto;display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;font-size:0;vertical-align:middle;box-shadow:none}
 .form-arrow::before{content:"";position:absolute;left:3px;top:4px;border-left:4px solid transparent;border-right:4px solid transparent}
 .form-arrow.up{background:var(--good)}
 .form-arrow.up::before{border-bottom:5px solid #fff}
 .form-arrow.down{background:var(--bad)}
 .form-arrow.down::before{top:5px;border-top:5px solid #fff}
-.kit-shirt .form-arrow,.lineup-slot .form-arrow{position:absolute;right:-6px;bottom:-3px;z-index:1;box-shadow:0 0 0 1.5px #fff}
 .lineup-cell span{width:32px;height:32px;border:1.5px dashed #ffffffcc;border-radius:var(--radius);font:700 var(--fs-micro)/1 var(--text);color:#fff}
 .drag-token{position:fixed}
 /* What happened to a player in a match. */
@@ -549,7 +557,7 @@ a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:un
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
 :is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
-:is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) small{text-decoration:underline 1px;text-underline-offset:2px}
+:is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) .block-name{text-decoration:underline 1px;text-underline-offset:2px}
 /* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
    line on the ground. */
 a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}

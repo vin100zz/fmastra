@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,PITCH_BOXES,clubLink,form,date,safeColor} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -7,7 +7,7 @@ let editor=null;
 let squadView='infos';
 
 const POSITION_ORDER=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
-const LINE_Y={gk:90,def:73,dm:60,cm:47,am:33,att:15};
+const LINE_Y={gk:90,def:74,dm:60,cm:46,am:31,att:14};
 const LATERAL={DG:0,AILG:0,DD:2,AILD:2};
 // Each position sits on a line of the pitch; wingers join the forwards, the attacking midfielder or the midfield,
 // depending on what the rest of the formation leaves in front of them. Without a central midfield to join, they stand
@@ -164,24 +164,20 @@ const fatigue=player=>Math.round((1-player.fitness)*100);
 // The position of the pitch picked to compare the squad on it, or null.
 const pickedRole=()=>editor.picked==null?null:roles()[editor.picked]??null;
 const wantedAt=role=>editor.data.composites_by_position?.[role]||[];
-// A player's note at a position with his form and his affinity to it, as the pitch shows them: on the pitch and in the
-// list for the picked position.
+// A player's note at a position with his form and his affinity to it: in the list for the picked position, and in his block
+// on the pitch, where the note is written in its colour.
 const fitAt=(player,role)=>`<span class="fit-cell">${positionNote(player,role,wantedAt(role))}${formArrow(player.form)}${affinityTag(player.position_affinities?.[role],role)}</span>`;
-// Where a note stands beside its shirt: on the right, unless a place of the next column on the same line (or the pitch's
-// edge) takes the room; then on the left, or under the name when both sides are taken.
-export function noteSide(cells,cell){
- const taken=column=>column<0||column>=COLUMN_X.length||cells.some(item=>item.line===cell.line&&item.column===column);
- return !taken(cell.column+1)?'':!taken(cell.column-1)?'left':'below';
-}
+const fitOnPitch=(player,role)=>positionBlockNote(player,role,wantedAt(role))+formArrow(player.form)+affinityTag(player.position_affinities?.[role],role);
+// The block under a place: the player's name, then how he fits there; an empty place keeps its two lines, without a ground.
+const slotBlock=(player,role)=>player?playerBlock(`${unavailableIcon(player)}${e(shortName(player.name,player.short))}`,fitOnPitch(player,role)):playerBlock('—','');
 
 function slotHtml(id,role,cell,index,byId){
  const player=byId.get(id);
  const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}${index===editor.picked?' picked':''}`;
  const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
- const note=player?positionNote(player,role,wantedAt(role)):'',side=noteSide(shape(),cell);
  // A starter wears the club's kit; an empty place keeps the outline of a shirt.
- const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player,inside:player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''});
- return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(shortName(player.name,player.short))}`:'—'}</small></div>`;
+ const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player});
+ return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${slotBlock(player,role)}</div>`;
 }
 // The free cells of the grid, shown while a place of the pitch is dragged.
 function cellsHtml(){
@@ -348,7 +344,7 @@ function install(){
   const role=pitch?roles()[dragged.slot]:spot?.kind==='slot'?roles()[spot.index]:player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}${player?player.unavailable?' invalid':'':' empty'}`;
-  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player})}<small>${player?`${unavailableIcon(player)}${e(shortName(player.name,player.short))}`:'—'}</small>`;
+  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player})}${slotBlock(player,role)}`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

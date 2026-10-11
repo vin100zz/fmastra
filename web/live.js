@@ -1,6 +1,6 @@
 // The human club's match played live: the 2D pitch fed one segment at a time, the stats, the other matches of
 // the day with the table as it stands, and the Tactique panel. The screen is modal until the final whistle.
-import {api,escape as e,number as n,matchNote,card,roundTitle,kitDot,kitShirt,matchNoteBadge,PITCH_BOXES,position,group,shortName,toast} from './ui.js';
+import {api,escape as e,number as n,matchNote,card,roundTitle,kitDot,kitShirt,playerBlock,matchNoteBadge,matchBlockNote,PITCH_BOXES,position,group,shortName,toast} from './ui.js';
 import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,highlightsCard} from './match.js';
 import {pitchLayout,changeFormation} from './composition.js';
@@ -60,7 +60,7 @@ function squadHtml(){
  const kit=replayTeams(view.state)[view.state.side];
  const item=player=>{
   const tired=Math.round((1-player.fitness)*100);
-  const marks=[player.goals?`<span class="match-mark goal">${player.goals>1?`×${player.goals}`:''}</span>`:'',
+  const marks=['<span class="match-mark goal"></span>'.repeat(player.goals),
    ...Array.from({length:player.red?Math.min(1,player.yellows):player.yellows},()=>'<span class="match-mark booking yellow"></span>'),
    player.red?'<span class="match-mark booking red"></span>':'',player.injured?'<span class="match-mark injury"></span>':''].join('');
   const title=`${player.name} · ${player.position}${player.rating!=null?` · note ${matchNote(player.rating)}`:''} · fatigue ${tired} %`;
@@ -133,13 +133,21 @@ export function tacticsProblems(draft,manager,halftime){
 
 const squad=()=>new Map([...view.manager.vacancies.map(player=>({...player,injured:true})),...view.manager.active,...view.manager.bench].map(player=>[player.id,player]));
 const hurt=player=>player.injured||view.decision?.player_id===player.id;
-const marks=player=>`${hurt(player)?'<span class="lineup-icon injury" aria-label="Blessé">✚</span>':''}${player.yellows?'<span class="match-mark booking yellow"></span>':''}`;
+// What a player of the pitch did, as far as the match has shown it: a ball for each goal, his cards, his injury.
+const shownSheet=id=>view.shown?.manager?.squad?.find(player=>player.id===id);
+const marks=player=>{
+ const sheet=shownSheet(player.id),yellows=sheet?.yellows??player.yellows??0;
+ return '<span class="match-mark goal"></span>'.repeat(sheet?.goals??0)+'<span class="match-mark booking yellow"></span>'.repeat(sheet?.red?Math.min(1,yellows):yellows)
+  +(sheet?.red?'<span class="match-mark booking red"></span>':'')+(hurt(player)?'<span class="match-mark injury" aria-label="Blessé"></span>':'');
+};
+// The block under a player of the pitch: his name, then his note and what he did.
+const tacticsBlock=player=>playerBlock(e(shortName(player.name,player.short)),matchBlockNote(shownSheet(player.id)?.rating)+marks(player));
 
 // The shirt of the user's side, with a position on it.
 const ownShirt=role=>{const kit=replayTeams(view.state)[view.state.side];return kitShirt(kit.major,kit.minor,role);};
 function tacticsSlotHtml(slot,place,index,byId){
  const player=byId.get(slot.id);
- return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(slot.role)}<small>${marks(player)}${e(shortName(player.name,player.short))}</small></div>`;
+ return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(slot.role)}${tacticsBlock(player)}</div>`;
 }
 // Those on the pitch in the order of positions, then the substitutes, then the players taken off in the draft.
 function tacticsListHtml(byId){
@@ -303,7 +311,7 @@ if(globalThis.document){
   const player=squad().get(dragged),role=view.draft.slots.find(slot=>slot.id===dragged)?.role??player.natural??player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}`;
-  token.innerHTML=`${ownShirt(role)}<small>${e(shortName(player.name,player.short))}</small>`;
+  token.innerHTML=`${ownShirt(role)}${tacticsBlock(player)}`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

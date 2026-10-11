@@ -32,7 +32,8 @@ function marksOf(player,{substitutions=true}={}){
  const yellows=player.red?.secondYellow?Math.min(1,player.yellows):player.yellows;
  return [
   substitutions&&player.on!=null?onIcon(player.on):'',
-  player.goals?icon('goal',player.goals>1?`×${player.goals}`:'',`${player.goals} but${player.goals>1?'s':''}`):'',
+  // A ball for each goal.
+  ...Array.from({length:player.goals},()=>icon('goal','',`${player.goals} but${player.goals>1?'s':''}`)),
   ...Array.from({length:yellows},()=>icon('booking yellow','','Carton jaune')),
   player.red?icon('booking red','',`${player.red.secondYellow?'Deuxième carton jaune':'Carton rouge'} (${player.red.minute}′)`):'',
   player.injury!=null?icon('injury','',`Blessé à la ${player.injury}e minute`):'',
@@ -43,7 +44,8 @@ function marksOf(player,{substitutions=true}={}){
 function lineupCard(match,side,marks){
  const result=match.result,kit=kitOf(match[side],side);
  const bench=result[`${side}_bench`].map(player=>{const events=marks[player.id];return [`<span class="bench-player${events?.on==null?' unused':''}">${playerLink(player.id,player.name)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—',matchNoteBadge(player.stats?.rating)||'—'];});
- const onPitch=player=>{const html=marksOf(marks[player.id]);return html?`<span class="pitch-marks">${html}</span>`:'';};
+ // On the pitch, what each player did follows his note in his block.
+ const onPitch=player=>marksOf(marks[player.id]);
  // No heading: the side at home is on the left of the page, as in the band.
  return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
 }

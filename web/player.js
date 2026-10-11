@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,position,empty,card,fact,appearances,positionNote,marketTags,kitShirt,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {api,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -62,27 +62,27 @@ function attributesBody(player) {
 }
 
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
-// The lines of the central column stand at least 16% apart, and the wingers between the striker and the playmaker, so that a
-// shirt, the ring of the main position and its label never touch the next ones on a 360px pitch.
-const PITCH={GB:[50,92],DC:[50,76],DG:[15,70],DD:[85,70],MDC:[50,59],MC:[50,42],MOC:[50,25],AILG:[15,17],AILD:[85,17],BU:[50,8]};
+// The lines of the central column stand at least 14% apart, and the wingers between the striker and the playmaker, so that a
+// shirt, the ring of the main position and its block never touch the next ones, down to a pitch of 280px.
+const PITCH={GB:[50,90],DC:[50,76],DG:[15,70],DD:[85,70],MDC:[50,59],MC:[50,42],MOC:[50,25],AILG:[15,17],AILD:[85,17],BU:[50,8]};
 
 // Only the roles the player can actually fill are drawn; without any, there is no pitch at all.
 const MIN_RATING=10;
 
-// Beside each shirt, the player's note at that position (`player`, from /api/joueurs): on its right, or on its left along the
-// right touchline so that it stays on the pitch. A click on a position reads the Jeu section of the attributes for it (`picked`).
+// Under each shirt, a block of one line: the player's note at that position (`player`, from /api/joueurs) in its colour, then
+// his affinity below 20. A click on a position reads the Jeu section of the attributes for it (`picked`): its shirt is ringed
+// and its block takes the accent.
 export function positionPitch(ratings, main, player=null, picked=main) {
  const roles=Object.entries(PITCH).filter(([role])=>ratings[role]>=MIN_RATING);
  if(!roles.length)return '';
- const note=(role,x)=>{const badge=positionNote(player,role,player?.composites_by_position?.[role]);return badge?`<span class="position-note${x>70?' left':''}">${badge}</span>`:'';};
- // Each position in the shirt of his club, his affinity below 20 on its corner; the main one is ringed.
- const shirt=role=>kitShirt(player?.club?.major_color,player?.club?.minor_color,role,{inside:affinityTag(ratings[role],role)});
- return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${PITCH_BOXES}${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%" title="${role} : ${ratings[role]} / 20">${shirt(role)}${note(role,x)}</button>`).join('')}</div>`;
+ // Each position in the shirt of his club; the main one is ringed.
+ const shirt=role=>kitShirt(player?.club?.major_color,player?.club?.minor_color,role);
+ const block=role=>{const line=positionBlockNote(player,role,player?.composites_by_position?.[role])+affinityTag(ratings[role],role);return line?playerBlock(null,line):'';};
+ return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${PITCH_BOXES}${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%" title="${role} : ${ratings[role]} / 20">${shirt(role)}${block(role)}</button>`).join('')}</div>`;
 }
 
-// The same positions as a list, best note first: position, affinity out of 20, note out of 200. A wide screen shows it beside
-// the pitch, whose shirts then stand without their notes; a row picks its position as a shirt does. Without notes (an older
-// server) there is no list.
+// The same positions as a list, best note first: position, affinity out of 20, note out of 200, in a player's preview, which
+// has no pitch; a row picks its position as a shirt does. Without notes (an older server) there is no list.
 export function positionList(ratings, player, picked=player.position) {
  const notes=player.position_notes||{};
  const roles=Object.keys(PITCH).filter(role=>ratings[role]>=MIN_RATING&&notes[role]!=null).sort((a,b)=>notes[b]-notes[a]||ratings[b]-ratings[a]);
@@ -340,12 +340,12 @@ function rail(player) {
   +`<h3>Contrat</h3><div class="rail-section">${terms.map(([label,value])=>fact(label,value)).join('')}</div></aside>`;
 }
 
-// Attributes beside the aptitudes (the pitch and the list of its positions); without any position to show, the attributes
-// take the whole row.
+// Attributes beside the aptitudes (the pitch of his positions, a block under each); without any position to show, the
+// attributes take the whole row.
 function profile(player) {
  shown=player;
  const ratings=player.position_ratings||{},pitch=positionPitch(ratings,player.position,player);
- const positions=pitch?card('Aptitudes par poste',`<div class="positions">${pitch}${positionList(ratings,player)}</div>`,'','positions-card'):'';
+ const positions=pitch?card('Aptitudes par poste',`<div class="positions">${pitch}</div>`,'','positions-card'):'';
  return `<div class="player-row${pitch?' profile':''}">${card('Attributs',attributesBody(player),'','attributes-card')}${positions}</div>`;
 }
 

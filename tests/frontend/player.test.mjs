@@ -87,8 +87,10 @@ test('position pitch places ratings of 10 or more on the field and outlines the 
  assert.equal((html.match(/class="kit-shirt/g)||[]).length,3);
  assert.match(html,/<button type="button" class="pitch-player main picked" data-composite-role="DD" aria-pressed="true" style="left:85%;top:70%" title="DD : 20 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DD<\/b><\/span>/);
  assert.equal((html.match(/pitch-player main/g)||[]).length,1);
- // The position is written on the shirt; an affinity below 20 stands on its corner.
- assert.match(html,/title="MC : 12 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MC<\/b><i class="affinity-tag" style="--hue:\d+" title="Affinité MC : 12 \/ 20">12<\/i><\/span>/);assert.match(html,/title="MDC : 10 \/ 20">/);
+ // The position is written on the shirt; an affinity below 20 stands in the block under it, nothing on the shirt.
+ assert.match(html,/title="MC : 12 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MC<\/b><\/span><span class="player-block"><span><i class="affinity-tag" style="--hue:\d+" title="Affinité MC : 12 \/ 20">12<\/i><\/span><\/span><\/button>/);assert.match(html,/title="MDC : 10 \/ 20">/);
+ // Without a note nor an affinity below 20 to tell, no block.
+ assert.match(html,/<b>DD<\/b><\/span><\/button>/);
  assert.doesNotMatch(html,/<b>(GB|DC|BU)</);assert.doesNotMatch(html,/<small>/);
  assert.equal(positionPitch({GB:1,DC:9},'DC'),'');
 });
@@ -98,20 +100,21 @@ const BY_POSITION={GB:['arret','sortie'],DD:['progression_defense','progression_
 const playing={...detail,composites:COMPOSITE_VALUES,composites_by_position:BY_POSITION,position_notes:{DD:48.5,MC:43.1,BU:62.7},
  composite_weights:{occasion_attaque:{vision:.5,technique:.3,passe:.2}}};
 
-test('each position of the pitch of aptitudes carries its note out of 200 beside the shirt, and the main one starts picked',()=>{
+test('under each shirt of the pitch of aptitudes, a block: the note out of 200 in its colour, then the affinity; the main one starts picked',()=>{
  const html=positionPitch({DD:20,MC:12,GB:1},'DD',playing);
- assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="kit-shirt[^]*?<b>DD<\/b><\/span><span class="position-note left"><span class="rating graded" style="--hue:\d+" title="Note au poste DD : Défense au milieu, Progression, Défense de surface, affinité au poste comprise">97</);
- assert.match(html,/data-composite-role="MC" aria-pressed="false"[^>]*>.*?<span class="position-note"><span[^>]*>86</);
+ assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="kit-shirt[^]*?<b>DD<\/b><\/span><span class="player-block"><span><b class="block-note" style="--hue:\d+" title="Note au poste DD : Défense au milieu, Progression, Défense de surface, affinité au poste comprise">97<\/b><\/span><\/span><\/button>/);
+ assert.match(html,/data-composite-role="MC" aria-pressed="false"[^>]*>.*?<span class="player-block"><span><b class="block-note"[^>]*>86<\/b><i class="affinity-tag"[^>]*>12<\/i><\/span><\/span>/);
+ assert.doesNotMatch(html,/position-note|block-name/);
  assert.equal(positionPitch({DD:20},'DD',playing,'MC').match(/aria-pressed="true"/g),null);
  // Without notes (an older server), the shirts stand alone.
- assert.doesNotMatch(positionPitch({DD:20},'DD'),/position-note/);
+ assert.doesNotMatch(positionPitch({DD:20},'DD'),/player-block|position-note/);
 });
 
-test('the central lines of the pitch stand at least 16 % apart, the wingers between striker and playmaker',()=>{
+test('the central lines of the pitch stand at least 14 % apart, the wingers between striker and playmaker',()=>{
  const html=positionPitch({GB:20,DC:20,MDC:20,MC:20,MOC:20,BU:20,AILG:20,AILD:20},'MC');
  const tops=Object.fromEntries([...html.matchAll(/data-composite-role="(\w+)"[^>]*style="left:(\d+)%;top:(\d+)%"/g)].map(match=>[match[1],[Number(match[2]),Number(match[3])]]));
  const centre=['BU','MOC','MC','MDC','DC','GB'].map(role=>tops[role][1]);
- assert.ok(centre.every((top,index)=>!index||top-centre[index-1]>=16),String(centre));
+ assert.ok(centre.every((top,index)=>!index||top-centre[index-1]>=14),String(centre));
  assert.ok(tops.AILG[1]>tops.BU[1]&&tops.AILG[1]<tops.MOC[1]&&tops.AILG[1]===tops.AILD[1]);
 });
 
@@ -126,9 +129,10 @@ test('the list of positions ranks them by note, with affinity and note, and pick
  assert.equal(positionList({DD:20,MC:12},detail),'');
 });
 
-test('the aptitudes card holds the pitch and the list of its positions',async()=>{
+test('the aptitudes card holds the pitch alone: its blocks tell the notes, no list beside it',async()=>{
  const {html}=await render(playing);
- assert.match(html,/<section class="card positions-card"><div class="card-head"><h2>Aptitudes par poste<\/h2><\/div><div class="positions"><div class="pitch ratings"[^]*?<\/div><div class="positions-list">/);
+ assert.match(html,/<section class="card positions-card"><div class="card-head"><h2>Aptitudes par poste<\/h2><\/div><div class="positions"><div class="pitch ratings"[^]*?<\/button><\/div><\/div><\/section>/);
+ assert.doesNotMatch(html.slice(html.indexOf('positions-card')),/positions-list/);
  assert.match((await render()).html,/<div class="positions"><div class="pitch ratings"[^]*?<\/button><\/div><\/div><\/section>/);
 });
 
@@ -152,7 +156,7 @@ test('the Jeu section sits in the attributes card, ahead of the attributes',asyn
  const {html}=await render(playing);
  const attributes=html.slice(html.indexOf('>Attributs<'),html.indexOf('Aptitudes par poste'));
  assert.ok(attributes.indexOf('data-composites')>=0&&attributes.indexOf('data-composites')<attributes.indexOf('<h3>Attaque</h3>'));
- assert.match(html,/class="position-note"/);
+ assert.match(html,/class="block-note"/);
 });
 
 test('player page is one screen without tabs or stat cards: the header of his club, a rail, the profile, then the history',async()=>{

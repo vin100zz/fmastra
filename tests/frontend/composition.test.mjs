@@ -108,7 +108,7 @@ test('the pitch names a player by surname, particles included',async()=>{
  assert.equal(surname('Edwin van der Sar'),'van der Sar');assert.equal(surname('Mason Greenwood'),'Greenwood');assert.equal(surname('Pedri'),'Pedri');
 });
 
-test('the pitch shows each starter\'s note at his position beside the shirt, and his affinity on it below 20/20',async()=>{
+test('under each starter\'s shirt, his block: his name, then his note at his position in its colour and his affinity below 20/20',async()=>{
  const player=(id,position,extra={})=>({id,name:`Joueur ${id}`,position,rating:65,potential:80,fitness:1,appearances:0,goals:0,assists:0,average:null,unavailable:null,...extra});
  const data={match_id:12,home:true,opponent:null,bench_size:1,formations:{'4-3-3':F433},composites_by_position:{GB:['arret','sortie'],MDC:['progression_defense','progression_attaque']},
   players:[player(1,'GB',{position_notes:{GB:70.5},position_affinities:{GB:20}}),player(2,'MOC',{position_notes:{MDC:36.6},position_affinities:{MDC:1}})],
@@ -117,8 +117,11 @@ test('the pitch shows each starter\'s note at his position beside the shirt, and
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>GB<\/b><\/span><span class="position-note"><span class="rating graded" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141</);
-  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MDC<\/b><i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><span class="position-note"><span[^>]*>73</);
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>GB<\/b><\/span><span class="player-block"><span class="block-name">[^<]+<\/span><span><b class="block-note" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141<\/b><\/span><\/span>/);
+  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MDC<\/b><\/span><span class="player-block"><span class="block-name">[^<]+<\/span><span><b class="block-note"[^>]*>73<\/b><i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><\/span>/);
+  // An empty place keeps the two lines of a block, without a ground; nothing stands beside a shirt.
+  assert.match(html,/data-slot="1"[^>]*><span class="kit-shirt empty">[^]*?<\/span><span class="player-block"><span class="block-name">—<\/span><span><\/span><\/span>/);
+  assert.doesNotMatch(html,/position-note|<small>/);
   // The list switches between its infos and the composites, beside the suggestion, over the list.
   assert.match(html,/<div class="lineup-list"><div class="lineup-toolbar"><button type="button" data-lineup-suggest>Meilleure composition<\/button><div class="segmented" role="group" aria-label="Colonnes"><button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><\/div><div class="lineup-squad"/);
  }finally{globalThis.fetch=previous;}
@@ -164,26 +167,16 @@ test('the editor offers the club\'s own tactic beside the others, on its cells, 
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
   assert.match(html,/data-tactic="4-3-3" aria-pressed="false" class="">4-3-3<\/button><button type="button" data-tactic="Perso" aria-pressed="true" class="active">Perso</);
-  assert.match(html,/data-slot="8" data-player="2" draggable="true" style="left:50%;top:33%"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MOC</);
+  assert.match(html,/data-slot="8" data-player="2" draggable="true" style="left:50%;top:31%"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MOC</);
   // Empty places move too; the keeper's cell and the taken ones are not offered.
-  assert.match(html,/class="pitch-player lineup-slot mid empty" data-slot="6" draggable="true" style="left:32%;top:47%"/);
+  assert.match(html,/class="pitch-player lineup-slot mid empty" data-slot="6" draggable="true" style="left:32%;top:46%"/);
   assert.equal((html.match(/data-cell=/g)||[]).length,25-10);
-  assert.match(html,/data-cell="att:2" style="left:50%;top:15%"><span>BU<\/span>/);
+  assert.match(html,/data-cell="att:2" style="left:50%;top:14%"><span>BU<\/span>/);
   assert.doesNotMatch(html,/data-cell="am:2"|data-cell="gk/);
  }finally{globalThis.fetch=previous;}
 });
 
-test('a note stands on the side of its shirt the next column leaves free, or under the name when both sides are taken',async()=>{
- const {noteSide}=await import('../../web/composition.js');
- const back=[0,1,3,4].map(column=>({role:'DC',line:'def',column}));
- assert.deepEqual(back.map(cell=>noteSide(back,cell)),['below','','left','below']);
- const three=[1,2,3].map(column=>({role:'DC',line:'def',column}));
- assert.deepEqual(three.map(cell=>noteSide(three,cell)),['left','below','']);
- // Another line does not count, and the keeper alone keeps his on the right.
- assert.equal(noteSide([...back,{role:'MDC',line:'dm',column:2}],{role:'MDC',line:'dm',column:2}),'');
-});
-
-test('the lineup shows form: an arrow on the shirt from ±5 %, the same beside the note of the picked position, and a FORME column',async()=>{
+test('the lineup shows form: an arrow after the note in the block from ±5 %, the same beside the note of the picked position, and a FORME column',async()=>{
  const player=(id,position,form,extra={})=>({id,name:`Joueur ${id}`,position,form,rating:65,potential:80,fitness:1,appearances:0,goals:0,assists:0,average:null,unavailable:null,
   position_notes:{[position]:60},position_affinities:{[position]:20},...extra});
  const data={match_id:13,home:true,opponent:null,bench_size:1,formations:{'4-4-2 plat':F442},composites_by_position:{DG:['progression_defense'],DC:['occasion_defense']},
@@ -193,9 +186,11 @@ test('the lineup shows form: an arrow on the shirt from ±5 %, the same beside t
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DG<\/b><i class="form-arrow up" title="Forme \+11 %"><\/i><\/span><span class="position-note below">/);
-  assert.match(html,/data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DC<\/b><i class="form-arrow down" title="Forme −5 %"><\/i><\/span><span class="position-note">/);
-  assert.match(html,/data-player="3"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DC<\/b><\/span><span class="position-note left">/);
+  // Whatever its neighbours, a note stays under its shirt, the arrow after it.
+  const block=id=>html.match(new RegExp(`data-player="${id}"[^>]*><span class="kit-shirt plain"><svg[^]*?</svg><b>D[GC]</b></span><span class="player-block"><span class="block-name">[^<]+</span><span>(.*?)</span></span>`))[1];
+  assert.match(block(1),/^<b class="block-note"[^>]*>120<\/b><i class="form-arrow up" title="Forme \+11 %"><\/i>$/);
+  assert.match(block(2),/^<b class="block-note"[^>]*>120<\/b><i class="form-arrow down" title="Forme −5 %"><\/i>$/);
+  assert.match(block(3),/^<b class="block-note"[^>]*>120<\/b>$/);
   assert.match(html,/data-lineup-sort="form">FORME</);
   assert.match(html,/<td><span class="rating graded form-badge" style="--hue:120"[^>]*>\+11 %</);
  }finally{globalThis.fetch=previous;}

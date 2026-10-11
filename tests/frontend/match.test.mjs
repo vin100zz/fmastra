@@ -74,6 +74,14 @@ test('each side is named once, in the band: the line-ups have no heading, nothin
  assert.match(html,/<h2>Le match en chiffres<\/h2><svg class="toggle-arrow"[^]*?<\/svg><\/div><div class="comparisons"><div class="comparison">/);
 });
 
+test('on a line-up, what a player did follows his note in the block under his shirt: a ball for each goal, the way off last',async()=>{
+ const scorer={kind:'goal',period:1,second:600,team_id:1,player_id:11,player:'Gardien Un',secondary_id:null,secondary:null,detail:''};
+ const html=await screen({...report,result:{...report.result,events:[scorer,{...scorer,second:3000},{kind:'substitution',period:2,second:4200,team_id:1,player_id:11,player:'Gardien Un',secondary_id:null,secondary:null,detail:''}]}});
+ const block=html.match(/aria-label="Composition de [^"]*">[^]*?<span class="player-block"><span class="block-name">[^<]+<\/span><span>(.*?)<\/span><\/span><\/a>/)[1];
+ assert.match(block,/^<b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><span class="match-mark goal" title="2 buts"><\/span><span class="match-mark goal" title="2 buts"><\/span><span class="match-mark sub-off"[^>]*>▼ 70′<\/span>$/);
+ assert.doesNotMatch(html,/pitch-marks|position-note|×2/);
+});
+
 test('a highlight takes one line: its marks, the player by his short name, a goal’s passer after him, whole names in tooltips',async()=>{
  const events=[{kind:'goal',period:1,second:840,team_id:1,player_id:11,player:'Lucas Hernandez',player_short:'L. Hernandez',secondary_id:12,secondary:'Benoit Cheyrou',secondary_short:'Be. Cheyrou',detail:''},
   {kind:'red',period:2,second:3840,team_id:2,player_id:21,player:'Honest Ahanor',player_short:'Ahanor',secondary_id:null,secondary:null,detail:'second_yellow'},
