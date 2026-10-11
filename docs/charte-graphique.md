@@ -67,6 +67,10 @@ Trois familles de pastilles ne se ressemblent jamais :
   l'autre.
 - **Compétition** : contour, ou noir plein pour une coupe d'Europe.
 
+Le rang d'une place marquée (voir « Classement ») prend le fond pâle d'un état,
+cerclé de sa couleur : il ne paraît que dans un classement, où aucune note ne
+se lit.
+
 ### Typographie
 
 Deux familles, celles du système (rien à télécharger) : `--display`
@@ -138,7 +142,8 @@ où le fond est déjà jaune.
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
-| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill` | 18 de haut ; un poste, 32 de large ; `.pill` dit en une phrase où en est un joueur |
+| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur |
+| Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
@@ -683,9 +688,14 @@ Les colonnes sont toujours dans cet ordre : PTS, J, V, N, D, BP, BC, DIFF. ; la
 forme vient après. Une version réduite retire des colonnes, jamais elle ne
 change l'ordre.
 
-Une place se marque d'un trait à gauche du rang (vert : titre, promotion,
-qualification directe ; bleu : Europe ; jaune : barrage ; rouge : relégation,
-élimination). Seule la ligne du club dirigé est colorée.
+Une place se marque par son rang, écrit dans une pastille (`.rank`) : 24 de
+large quel que soit le chiffre, le fond pâle de la place (`-soft`) cerclé de sa
+couleur (1), le chiffre en 11 / 700 à son encre (vert : titre, promotion,
+qualification directe ; bleu : Europe ; jaune, `--warn` : barrage ; rouge :
+relégation, élimination). Les autres rangs s'écrivent sans pastille, au même
+centre, en `--muted` ; l'en-tête « # » est centré sur eux. Rien ne court le
+long de la ligne : seule la ligne du club dirigé est colorée. La légende des
+places (`.legend`) montre la même pastille, en carré de 12.
 
 ### Compétitions
 
@@ -751,7 +761,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`) |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `amount`), y compris dans le manuel |
-| Classements | Trait à gauche du rang, ordre des colonnes unique |
+| Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`) |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU et CM ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) |
@@ -808,3 +818,6 @@ antérieurs montrent la pastille ronde. Le nom du vainqueur a été repris depui
 (proposition F : 700 à l'encre de l'accent, le battu à l'encre courante) :
 <https://claude.ai/artifact/J9aYxRuK5KGRCFmDpBs6xe> ; ce canevas-là le montre
 encore en 600, sans couleur.
+Le rang d'un classement a la sienne (proposition F, « Pâle cerclée ») :
+<https://claude.ai/artifact/XtXAQFjzDkHCpFNR7hn5R2> ; les canevas et planches
+antérieurs montrent le trait à gauche du rang.

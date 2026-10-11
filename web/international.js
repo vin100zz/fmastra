@@ -16,7 +16,7 @@ export function internationalStandings(rows,places=0,{extract=false,own=null}={}
  if(extract)return standings(['#','NATION','PTS','DIFF.'],rows.map((row,i)=>[
   `<span class="rank ${i?'':'first'}">${i+1}</span>`,`<span class="strong">${clubLink(row.nation)}</span>`,`<b>${row.points}</b>`,difference(row)]),rowClasses);
  return standings(['#','NATION','PTS','J','V','N','D','BP','BC','DIFF.'],rows.map((row,i)=>[
-  i+1,clubLink(row.nation),`<strong>${row.points}</strong>`,row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,difference(row)]),rowClasses);
+  `<span class="rank">${i+1}</span>`,clubLink(row.nation),`<strong>${row.points}</strong>`,row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,difference(row)]),rowClasses);
 }
 
 // The stages of an edition, from the qualifications to the final, each one done, current or still to come.

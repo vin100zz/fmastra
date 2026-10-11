@@ -295,7 +295,7 @@ th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
 td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 /* Standings: every column but the club's has a set width (padding on top), the club's takes the rest, so that the tables of a screen line up column for column. */
 .standings th{padding:0 5px!important;box-sizing:content-box}.standings td{padding:3px 5px!important}
-.standings .rank-column{width:14px}.standings .count-column{width:13px}.standings .total-column{width:21px}.standings .difference-column{width:28px}.standings .form-column{width:97px}
+.standings .rank-column{width:24px}.standings .count-column{width:13px}.standings .total-column{width:21px}.standings .difference-column{width:28px}.standings .form-column{width:97px}
 /* Player tables: every column has a set width (padding on top), wide enough for the longest value it shows, so that a sort or a new page never moves them; the spare width is shared out among them. */
 .player-table table{table-layout:fixed}.player-table th{box-sizing:content-box}.player-table td{overflow:hidden;text-overflow:ellipsis}
 .player-table .position-column{width:40px}.player-table .name-column{width:172px}.player-table .nation-column{width:152px}.player-table .age-column{width:30px}
@@ -899,10 +899,6 @@ a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px s
 .country .standings tbody tr:nth-child(even){background:var(--stripe)!important}
 .country .standings tbody tr:hover{background:var(--panel-3)!important}
 .country .standings tbody tr.own{background:var(--own-row)!important}
-.country .standings tr:is(.promoted,.europe-direct) td:first-child{box-shadow:inset 3px 0 0 var(--good)}
-.country .standings tr.qualified-europe td:first-child{box-shadow:inset 3px 0 0 var(--info)}
-.country .standings tr.europe-playoff td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
-.country .standings tr.relegated td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
 .country .movement-icon{display:none}
 .country>.card>.table-scroll table{table-layout:fixed}
 .country>.card>.table-scroll td{overflow:hidden;text-overflow:ellipsis}

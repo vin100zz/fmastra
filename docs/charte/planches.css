@@ -24,7 +24,7 @@ body{margin:0;background:var(--bg)}
 .measure>i{display:block;background:var(--panel-3);border:1px solid var(--line)}
 .heights{display:flex;align-items:flex-end;gap:12px}
 .heights .measure>i{width:84px;border-radius:var(--radius)}
-.t-standings .tr{grid-template-columns:20px minmax(0,1fr) 36px 24px 24px 24px 24px 28px 28px 44px 98px}
+.t-standings .tr{grid-template-columns:24px minmax(0,1fr) 36px 24px 24px 24px 24px 28px 28px 44px 98px}
 .spec-line.gap{gap:8px}
 .pair{display:flex;gap:16px;align-items:flex-start}
 .over{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -33,7 +33,7 @@ body{margin:0;background:var(--bg)}
 .anatomy{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
 .t-uses .tr{grid-template-columns:minmax(0,1.3fr) 64px minmax(0,1.2fr) minmax(0,1.2fr)}
 .t-rules .tr{grid-template-columns:minmax(0,1.15fr) 96px minmax(0,1.5fr)}
-.t-short .tr{grid-template-columns:20px minmax(0,1fr) 36px 24px 44px}
+.t-short .tr{grid-template-columns:24px minmax(0,1fr) 36px 24px 44px}
 .families{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 32px}
 .comp-row{display:flex;align-items:center;gap:8px;height:var(--h-row);border-bottom:1px solid var(--row-line)}
 .t-colours .tr{grid-template-columns:minmax(0,1fr) 84px 88px minmax(0,1.7fr)}

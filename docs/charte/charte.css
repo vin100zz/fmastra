@@ -177,10 +177,17 @@
 .tr.invalid{background:var(--bad-soft)}
 .halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .halves>.table+.table{border-left:1px solid var(--line)}
-.tr.zone-good{box-shadow:inset var(--mark) 0 0 var(--good)}
-.tr.zone-info{box-shadow:inset var(--mark) 0 0 var(--info)}
-.tr.zone-warn{box-shadow:inset var(--mark) 0 0 var(--accent)}
-.tr.zone-bad{box-shadow:inset var(--mark) 0 0 var(--bad)}
+/* A place in a table is told by its rank: a badge of 24, as wide whatever its figures, on the pale ground of its place,
+   ringed with its colour, its figure in its ink (green: title, promotion, direct qualification; blue: Europe; yellow:
+   play-off; red: relegation, elimination). A rank out of the marked places is a bare figure on the same centre. Nothing
+   runs along the row: the row of the user's club is the only one coloured. The legend of the places shows the same badge,
+   a square of 12. */
+.rank{display:inline-grid;place-items:center;flex:none;width:24px;height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-small)/1 var(--text);color:var(--muted)}
+.rank.good,.legend i.good{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+.rank.info,.legend i.info{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
+.rank.warn,.legend i.warn{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+.rank.bad,.legend i.bad{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+.tr.head>.center{text-align:center}
 .cell{display:flex;align-items:center;gap:6px}
 /* A match on one line: its day, the other side, its score. */
 .match-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
@@ -220,7 +227,8 @@
 .fixture.tie .fixture-scorers.home{grid-column:2}
 .fixture.tie .fixture-scorers.away{grid-column:4}
 .legend{display:flex;align-items:center;gap:var(--s3);font-size:var(--fs-small);color:var(--muted)}
-.legend i{display:inline-block;width:var(--mark);height:12px;margin-right:6px;vertical-align:-2px}
+.legend>span{white-space:nowrap}
+.legend i{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:var(--radius);vertical-align:-2px}
 
 /* Facts and tiles. */
 .fact{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);border-bottom:1px solid var(--row-line)}

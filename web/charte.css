@@ -143,22 +143,25 @@ th button.sort-toggle::after,th button[data-sort]::after{content:"";position:abs
 th[aria-sort] button::after,th button[data-order]::after{content:"";visibility:visible}
 th[aria-sort=ascending] button::after,th button[data-order=asc]::after{content:"";border-top:0;border-bottom:4px solid currentColor}
 th[aria-sort] button,th button[data-order]{color:var(--strong)}
-/* A place in a table: a line left of the rank, never a tinted row; the row of the user's club is the only one coloured. */
+/* A place in a table is told by its rank: a badge of 24 on the pale ground of its place, ringed with its colour; the other
+   ranks bare, on the same centre. A row is never tinted, nothing runs along it; the row of the user's club is the only one
+   coloured. The legend of the places shows the same badge, a square of 12. */
 tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff){background:none!important}
 tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff):nth-child(even){background:var(--stripe)!important}
 tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff):hover{background:var(--panel-3)!important}
-.standings tr:is(.promoted,.europe-direct) td:first-child{box-shadow:inset var(--mark) 0 0 var(--good)}
-.standings tr.qualified-europe td:first-child{box-shadow:inset var(--mark) 0 0 var(--info)}
-.standings tr.europe-playoff td:first-child{box-shadow:inset var(--mark) 0 0 var(--accent)}
-.standings tr.relegated td:first-child{box-shadow:inset var(--mark) 0 0 var(--bad)}
+.rank,.rank.first{display:inline-grid;place-items:center;width:24px;height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-small)/1 var(--text);color:var(--muted);vertical-align:middle}
+.standings tr:is(.promoted,.europe-direct) .rank{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+.standings tr.qualified-europe .rank{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
+.standings tr.europe-playoff .rank{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+.standings tr.relegated .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+.standings th.rank-column{text-align:center}
 .standings tbody tr.own,.standings tbody tr.own:hover,.standings-card tr:has(.own){background:var(--own-row)!important}
 .standings .movement-icon{display:none}
 .europe-legend{font-size:var(--fs-small);color:var(--muted)}
-.europe-legend>span{font-size:var(--fs-small);font-weight:400;color:var(--muted)}
-.europe-legend>span::before{content:"";display:inline-block;width:var(--mark);height:12px;margin-right:6px;vertical-align:-2px;background:var(--bad)}
-.europe-legend>.qualification-direct::before{background:var(--good)}
-.europe-legend>.qualification-playoff::before{background:var(--accent)}
-.rank,.rank.first{font-size:var(--fs-body);font-weight:400;color:var(--muted)}
+.europe-legend>span{font-size:var(--fs-small);font-weight:400;color:var(--muted);white-space:nowrap}
+.europe-legend>span::before{content:"";display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:var(--radius);vertical-align:-2px;background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)}
+.europe-legend>.qualification-direct::before{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good)}
+.europe-legend>.qualification-playoff::before{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
 
 /* Lines of a list: a match, a move, a fact. */
 .club-match,.moves li,.club-overview .fact,.fact,.fixture,.league-summary-grid .fixture,.lineup-match,.bench-slot,.timeline-row,.highlight-row,.journal-row p,.news-widgets .moves li,.calendar-row,.movement-row{font-size:var(--fs-body)}

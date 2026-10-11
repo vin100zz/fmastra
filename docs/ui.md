@@ -615,8 +615,8 @@ Une division donne, sous son nom et le nombre de journées jouées sur celles de
 vainqueur en gras, et sous un match joué les buteurs de chaque équipe, alignés sous
 elle comme dans l'onglet Derniers matches ; puis son classement complet (#, club, PTS, J, V, N, D, BP, BC, DIFF.,
 sans la forme) et ses cinq meilleurs buteurs. Sans journée à montrer (avant la première,
-après la dernière), le classement et les buteurs restent. Les places sont marquées par un
-trait à gauche du rang (vert pour le titre, la promotion ou la qualification directe, bleu
+après la dernière), le classement et les buteurs restent. Les places sont marquées par la
+pastille du rang (vert pour le titre, la promotion ou la qualification directe, bleu
 pour l'Europe, jaune pour un barrage, rouge pour la relégation), et seule la ligne du club
 dirigé est colorée, comme son match.
 
