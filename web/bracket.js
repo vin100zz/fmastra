@@ -1,4 +1,4 @@
-import {escape as e,date,clubLink} from './ui.js';
+import {escape as e,date,clubLink,isOwnClub} from './ui.js';
 
 // A tie is one match, or both legs of a two-legged round (the return leg points at the first through first_leg_id).
 function ties(matches){
@@ -20,7 +20,7 @@ function order(columns,stages,last){
 }
 
 // The whole box opens the match (the return leg once played, as it carries the aggregate); a club's name opens the club, and in a
-// two-legged tie each score opens its own leg.
+// two-legged tie each score opens its own leg. The side that went through is in bold; the tie of the user's club is washed.
 function tieBox(tie){
  if(!tie)return '<div class="bracket-tie empty"></div>';
  const legs=tie.legs,twoLegs=legs.length>1,shootout=legs.some(leg=>leg.penalties);
@@ -32,7 +32,7 @@ function tieBox(tie){
   const state=tie.winner==null?'':tie.winner===club?.id?' winner':' beaten';
   return `<div class="bracket-team${state}"><span class="bracket-club">${clubLink(club)}</span>${scores.join('')}</div>`;
  };
- return `<div class="bracket-tie"><a class="bracket-match" href="#/match/${main.id}" aria-label="Voir le match"></a>${tie.clubs.map(row).join('')}</div>`;
+ return `<div class="bracket-tie${tie.clubs.some(isOwnClub)?' own':''}"><a class="bracket-match" href="#/match/${main.id}" aria-label="Voir le match"></a>${tie.clubs.map(row).join('')}</div>`;
 }
 
 // `stages` run from the first knockout round to the final: {label, date, matches, single}; a stage given without its date

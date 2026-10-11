@@ -91,3 +91,33 @@ test('a band steps between peers with one control, the charter’s: a season’s
  // The older sheets say nothing of it any more.
  for(const name of OLDER)assert.doesNotMatch(await read(`web/${name}`),/entity-/,name);
 });
+
+test('a club’s dot and a match on a line of a list are drawn the same by the reference sheet and by the application’s',async()=>{
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  // The dot: a square of 14 at the charter's radius.
+  assert.match(body('.kit-dot'),/width:14px;height:14px;.*border-radius:var\(--radius\)/,sheet);
+  // The winner's name in 700, in the accent's ink; the other side's steps back to the running ink. The match of the
+  // user's club is washed, and nothing there tells its winner another way.
+  assert.match(body('.fixture-side.won'),/^font-weight:700;color:var\(--accent-text\)$/,sheet);
+  assert.match(body('.fixture-side.lost'),/^color:var\(--ink-2\)$/,sheet);
+  assert.match(body('.fixture.own'),/^background:var\(--own-row\)$/,sheet);
+  assert.ok(!said.some(([selector])=>/\.own\b.*\.fixture-side|\.fixture-side.*\.own\b/.test(selector)),sheet);
+  // The score, a key figure on a ground of 22; what settled, on a storey joined under it, with no figure told apart.
+  assert.match(body('.fixture-score'),/height:var\(--h-control-small\);.*background:var\(--panel-2\);.*var\(--fs-figure\).*var\(--display\)/,sheet);
+  assert.match(body('.fixture-floor'),/height:var\(--h-chip\);.*border:1px solid var\(--line\);border-top:0;/,sheet);
+  assert.ok(!said.some(([selector])=>/\.fixture-floor\s+b\b/.test(selector)),sheet);
+  // A list where a match has a storey keeps its room on every line.
+  assert.match(body('.fixture.wide'),/--score-column:88px/,sheet);
+ }
+ // In a bracket too, the wash is the user's club's, and the side that went through is told as a winner is in a list:
+ // its name in 700 in the accent's ink, its figures in the strong ink; the other side's name in the running ink, its
+ // figures muted. The charter's sheet alone says so.
+ const app=rules(await read('web/charte.css')),older=rules(await read('web/theme.css')),told=selector=>app.find(([found])=>found===selector)?.[1]??'';
+ assert.match(told('.bracket-tie.own'),/background:var\(--own-row\)/);
+ assert.equal(told('.bracket-team.winner'),'font-weight:700;color:var(--strong)');assert.equal(told('.bracket-team.winner .bracket-club'),'color:var(--accent-text)');
+ assert.equal(told('.bracket-team.beaten'),'color:var(--muted)');assert.equal(told('.bracket-team.beaten .bracket-club'),'color:var(--ink-2)');
+ assert.ok(!older.some(([selector])=>/\.bracket-team\.(winner|beaten)$/.test(selector)));
+ // The line a country's page once drew for itself is gone.
+ for(const name of [...OLDER,'charte.css'])assert.doesNotMatch(await read(`web/${name}`),/country-match/,name);
+});

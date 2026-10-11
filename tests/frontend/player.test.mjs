@@ -75,7 +75,8 @@ test('level chart points take the colours of the club played for, and stay neutr
  const html=levelChart(seasons([[2025,110,{id:9,name:'Olympique de Marseille',major_color:'#ffffff',minor_color:'#2faee0'}],[2026,120]]));
  const [first,second]=html.split('class="chart-point"').slice(1);
  assert.match(first,/title="juillet 2025 · Olympique de Marseille · niveau 110"/);
- assert.match(first,/class="kit-dot" style="background:linear-gradient\(135deg,#ffffff 50%,#2faee0 50%\)"/);
+ // the club's dot: the ground of its band (a kit close to white gives way to its second colour), the other colour in a corner
+ assert.match(first,/class="kit-dot" style="background:linear-gradient\(135deg,#2faee0 64%,#ffffff 64%\)"/);
  assert.match(second,/title="juillet 2026 · niveau 120"/);assert.match(second,/class="kit-dot neutral"/);
  const unsafe=levelChart(seasons([[2025,110,{name:'X',major_color:'red;background:url(x)',minor_color:'#000000'}],[2026,120]]));
  assert.doesNotMatch(unsafe,/url\(x\)/);assert.match(unsafe,/kit-dot neutral/);

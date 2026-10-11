@@ -197,6 +197,9 @@ def test_aggregate_winner_can_lose_return_and_shootout_after_non_draw(imported):
     second = next(world.matches[mid] for mid in cup.match_ids if world.matches[mid].first_leg_id)
     first = world.matches[second.first_leg_id]
     first.result = MatchResult(3, 0, "test")
+    # Either leg names the other; nobody is through before the return is played.
+    assert match_row(world, first)["return_leg_id"] == second.id and match_row(world, second)["return_leg_id"] is None
+    assert match_row(world, first)["qualified_id"] is None
     result = MatchResult(2, 0, "test")
     decide_european_winner(world, second, result, [])
     assert result.winner_id == second.away_id and not result.penalties
@@ -210,6 +213,8 @@ def test_aggregate_winner_can_lose_return_and_shootout_after_non_draw(imported):
     assert result.penalties and result.penalties[0] != result.penalties[1]
     assert (result.home_goals, result.away_goals) == (1, 0)
     assert match_row(world, second)["aggregate"] == (2, 2)
+    # Once it is, both legs name the club that went through.
+    assert match_row(world, first)["qualified_id"] == match_row(world, second)["qualified_id"] == result.winner_id
     from core.world.europe_validation import validate_european_result
     validate_european_result(world, second)
 

@@ -99,7 +99,11 @@ export const kitShirt = (major, minor, label='', {inside='', empty=false}={}) =>
 };
 // The lines of a pitch's two penalty areas; the rest is drawn by the style sheet.
 export const PITCH_BOXES = '<i class="pitch-box" aria-hidden="true"></i><i class="pitch-box far" aria-hidden="true"></i>';
-export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const minor=safeColor(club?.minor_color)||major; return `<i class="kit-dot" style="background:linear-gradient(135deg,${major} 50%,${minor} 50%)" aria-hidden="true"></i>`;};
+// The two colours of a club's band, its ground then what crosses it: its first colour and its second, or the other way round
+// when the first is close to white and would melt into the page.
+export const bandColours = (major, minor) => minor!==major&&contrastRatio(major,'#ffffff')<1.3?[minor,major]:[major,minor];
+// A club's dot (docs/charte-graphique.md, « Clubs et pays »): a square on the ground of its band, its second colour in a corner.
+export const kitDot = club => {const major=safeColor(club?.major_color); if(!major) return ''; const [ground,corner]=bandColours(major,safeColor(club?.minor_color)||major); return `<i class="kit-dot" style="background:linear-gradient(135deg,${ground} 64%,${corner} 64%)" aria-hidden="true"></i>`;};
 // A club's colour in a chart (docs/charte-graphique.md, « Graphiques »). A kit colour is not laid as it is on the ground: a
 // white one vanishes there, a midnight blue reads as black. Of the club's two colours, the first that is one (neither white,
 // grey nor black) is kept, its lightness brought between .48 and .64 and its chroma to .11 at least (OKLCH).
@@ -173,7 +177,13 @@ export function competitionCode(competition){
 // full name in the tooltip.
 export const competitionBadge = competition => {const {name,kind}=known(competition);return `<span class="competition-code${kind?` ${kind}`:''}" title="${escape(name)}">${escape(competitionCode(competition))}</span>`;};
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
-export const clubLink = club => club ? `<a href="#/${club.national?'international/nation':'club'}/${club.id}" class="club-link">${club.national?`<span class="nation">${nationFlag(club.nation)}${escape(club.name)}</span>`:`${kitDot(club)}${escape(club.name)}`}</a>` : '<span class="muted">Libre</span>';
+// A club's name after its dot, a selection's after its flag; `reversed` writes the name first, for the side at home of a
+// match face to face, whose mark stands against the score (the name in an element of its own, cut when too long).
+export const clubLink = (club, {reversed=false}={}) => {
+ if(!club)return '<span class="muted">Libre</span>';
+ const mark=club.national?nationFlag(club.nation):kitDot(club),name=escape(club.name),named=reversed?`${club.national?name:`<span>${name}</span>`}${mark}`:`${mark}${name}`;
+ return `<a href="#/${club.national?'international/nation':'club'}/${club.id}" class="club-link${reversed?' reversed':''}">${club.national?`<span class="nation">${named}</span>`:named}</a>`;
+};
 export const playerLink = (id, name) => id<0?`<span class="temporary-player" title="Joueur temporaire hors du marché des transferts">${escape(name || 'Joueur temporaire')} <small>(temp.)</small></span>`:`<a href="#/player/${id}">${escape(name || 'Joueur archivé')}</a>`;
 export const group = role => role === 'GB' ? 'gk' : ['DC','DG','DD'].includes(role) ? 'def' : ['BU','AILG','AILD'].includes(role) ? 'att' : 'mid';
 export const position = value => `<span class="position ${group(value)}">${escape(value)}</span>`;
@@ -343,8 +353,8 @@ export const standings = (headers, rows, rowClasses, sort) => `<div class="stand
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
 // 'figures' keeps every figure and leaves the form out, for a table in a narrow column; 'points' keeps the points and the goal
-// difference only, for an extract beside the squad. `own` is the user's club: its row is marked.
-export function standingsTable(data, compact=false, sortable=false, own=null) {
+// difference only, for an extract beside the squad. `own` is the club whose row is washed: the user's, unless told otherwise.
+export function standingsTable(data, compact=false, sortable=false, own=ownClub) {
  const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'';
  const rowClasses=data.items.map(row=>`${zone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
  // Direct, play-off and European places are told by the row background alone (see rowClasses); only the icons below mark a row.
@@ -357,10 +367,36 @@ export function standingsTable(data, compact=false, sortable=false, own=null) {
  const values=()=>data.items.map(row=>[row.rank,row.club?.name,row.points,row.played,...(compact?[]:[row.won,row.drawn,row.lost,row.goals_for,row.goals_against]),row.difference,...(compact?[]:[points(row)])]);
  return standings(headers,cells,rowClasses,sortable?{values:values(),ascending:[0]}:undefined);
 }
-// Under each side of a played match, its scorers by surname, each with the minutes of their goals: "Maupay (14, 75), Gouiri (26)".
-const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(surname(scorer.name))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(surname(scorer.name))}</a>`} (${scorer.minutes.join(', ')})`).join(', ');
-export const scorersRow = scorers => scorers&&scorers.some(side=>side.length)?`<div class="fixture-scorers home">${scorerList(scorers[0])}</div><span></span><div class="fixture-scorers">${scorerList(scorers[1])}</div>`:'';
-export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;const scorers=scorersRow(match.scorers);return `${label}<div class="fixture${scorers?' with-scorers':''}"><div class="home">${clubLink(match.home)}</div><a class="score ${match.score?'':'pending'}" href="#/match/${match.id}">${match.score?match.score.join(' – '):'À venir'}${match.aggregate?`<small class="aggregate-score">Cumul ${match.aggregate.join(' – ')}</small>`:''}${match.penalties?`<small class="shootout-score">${match.penalties.join(' – ')} t.a.b.</small>`:''}</a><div>${clubLink(match.away)}</div>${scorers}</div>`;}).join('');}
+// The club the user runs, whose match stands out in a list and in a bracket; none before one is picked.
+let ownClub=null;
+export const setOwnClub = id => ownClub=id??null;
+export const isOwnClub = club => ownClub!=null&&club?.id===ownClub;
+// Under each side of a played match, its scorers by surname, each with the minutes of his goals: "Maupay 14’ 75’ · Gouiri 26’".
+const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(surname(scorer.name))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(surname(scorer.name))}</a>`} ${scorer.minutes.map(minute=>`${escape(minute)}’`).join(' ')}`).join(' · ');
+const scorersRow = scorers => scorers&&scorers.some(side=>side.length)?`<div class="fixture-scorers home">${scorerList(scorers[0])}</div><div class="fixture-scorers away">${scorerList(scorers[1])}</div>`:'';
+// A match on a line of a list (docs/charte-graphique.md, « Match dans une liste »): the side at home, the score, the other
+// side, each mark against the score, and under each side its scorers. The name in bold, in the accent's ink, is the winner's
+// (`won`), and the other side's steps back (`lost`); in a two-legged tie the winner is the side that went through
+// (`qualified_id`, on either leg once the return is played), whatever the leg's score. What
+// settled stands on a storey under the score: the shoot-out, else the aggregate; the figures of the match then tell nothing
+// apart, nor do a leg's. The match of the user's club (`own`) is washed. `levels` names each club's division at the two
+// ends (a cup); `wide` keeps the room of a storey, for a list where a match has one.
+export function fixtureRow(match,{own=ownClub,levels=null,wide=false}={}){
+ const [home,away]=match.score||[],leg=match.first_leg_id!=null||match.return_leg_id!=null;
+ const settled=match.penalties?['T.a.b.',match.penalties]:match.aggregate?['Cumul',match.aggregate]:null;
+ const decided=Boolean(match.score)&&!leg&&!settled&&home!==away;
+ const winner=match.qualified_id??match.winner_id??(decided?(home>away?match.home:match.away)?.id:null);
+ const side=(club,name)=>`<div class="fixture-side ${name}${winner==null||!club?'':winner===club.id?' won':' lost'}">${clubLink(club,{reversed:name==='home'})}</div>`;
+ const level=club=>levels?`<small>${levels[club?.id]||''}</small>`:'';
+ const figures=!match.score?'À venir':!decided?`${home} – ${away}`:home>away?`<b>${home}</b> – ${away}`:`${home} – <b>${away}</b>`;
+ const score=settled?`<a class="fixture-stack" href="#/match/${match.id}"><span class="fixture-score settled">${figures}</span><span class="fixture-floor"><small>${settled[0]}</small>${settled[1].join(' – ')}</span></a>`
+  :`<a class="fixture-score${match.score?leg?' settled':'':' pending'}" href="#/match/${match.id}">${figures}</a>`;
+ const scorers=scorersRow(match.scorers),mine=own!=null&&[match.home?.id,match.away?.id].includes(own);
+ return `<div class="fixture${levels?' tie':''}${wide?' wide':''}${scorers?' with-scorers':''}${mine?' own':''}">${level(match.home)}${side(match.home,'home')}${score}${side(match.away,'away')}${level(match.away)}${scorers}</div>`;
+}
+// Whether a match of a list has a storey under its score: every line of that list then keeps its room.
+export const hasStorey = matches => matches.some(match=>match.aggregate||match.penalties);
+export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide})}`;}).join('');}
 // The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
 // grey) with his position on it, his name under it (his surname when `compact`), his note of the match on its right (on its
 // left along the right touchline) and what he did (`marks(player)`) on its left.

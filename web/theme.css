@@ -150,11 +150,11 @@ tfoot td{background:var(--panel-2);border-color:var(--line)}
 
 /* Fixtures, journal. */
 .fixture,.journal-row,.club-match,.moves li,.highlight-row,.timeline-row{border-color:var(--row-line)}
-.fixture .score,.club-match-score{background:var(--panel-2);color:var(--ink);border-radius:var(--radius)}
+.club-match-score{background:var(--panel-2);color:var(--ink);border-radius:var(--radius)}
 
 .club-match-score.V{background:var(--good-soft);color:var(--good)}
 .club-match-score.D{background:var(--bad-soft);color:var(--bad)}
-.fixture .pending,.club-match-score.pending{color:var(--muted)}
+.club-match-score.pending{color:var(--muted)}
 .fixture-date{background:var(--panel-2);color:var(--muted)}
 
 .club-matches+.club-matches{border-color:var(--line)}
@@ -324,7 +324,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .position,.player-table .position{padding:2px 5px!important;line-height:14px}
 .form i{width:17px;height:17px}
 .fixture{padding:5px 12px;gap:10px}
-.fixture .score{padding:3px 4px}
 .fixture-date{padding:6px 12px 3px}
 .journal-row{padding:6px 12px;gap:10px}
 .journal-icon{width:24px;height:24px}
@@ -414,7 +413,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-body{display:flex;flex-direction:column;min-width:0}
 .next-match-who{display:flex;align-items:center;gap:5px;min-width:0}
 .next-match-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--strong);font-size:13px;font-weight:600}
-.next-match-who .kit-dot{flex:none;width:10px;height:10px;margin:0}
+.next-match-who .kit-dot{flex:none;margin:0}
 .next-match-who .away{flex:none;width:10px;height:10px;fill:var(--bad);transform:rotate(45deg)}
 .next-match-comp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)}
 .next-match-comp.cup{color:var(--info)}
@@ -462,8 +461,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .bracket-team a{position:relative;z-index:1}
 .bracket-team{display:flex;align-items:center;gap:2px;height:23px;padding:0 0 0 7px;font-size:13px;box-shadow:inset 3px 0 0 transparent}
 .bracket-team+.bracket-team{border-top:1px solid var(--line)}
-.bracket-team.winner{font-weight:700;color:var(--strong);background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
-.bracket-team.beaten{color:var(--muted)}
 .bracket-club{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bracket-score,.bracket-pens{flex:0 0 22px;text-align:center;font-variant-numeric:tabular-nums}
 .bracket-round.legs .bracket-score{color:var(--muted);font-weight:400}
@@ -494,7 +491,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .round-knockout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .round-knockout .fixture:nth-child(odd){border-right:1px solid var(--row-line)}
 .round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:0}
-.fixture.with-scorers{row-gap:2px}
 .fixture-scorers{min-width:0;font-size:11px;line-height:15px;color:var(--muted)}
 .fixture-scorers a{color:inherit}
 
@@ -894,27 +890,15 @@ a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px s
 .country .card-head a{font-variant-numeric:tabular-nums}
 .country h3{display:flex;align-items:center;height:24px;margin:0;padding:0 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 .country .standings+h3{border-top:1px solid var(--line)}
-.country-match{display:grid;grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);align-items:center;height:26px;padding:0 10px;border-bottom:1px solid var(--row-line);font-size:13px}
-.country-match.tie{grid-template-columns:22px minmax(0,1fr) 46px minmax(0,1fr) 22px;padding:0 8px}
-.country-match.with-scorers{height:auto;min-height:26px;padding-top:3px;padding-bottom:4px;row-gap:1px}
-.country-match .fixture-scorers{white-space:normal}
-.country-match>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.country-match .home{text-align:right}
-.country-match .won{font-weight:700;color:var(--strong)}
-.country-match small{font-size:10px;font-weight:700;letter-spacing:var(--caps);color:var(--muted)}
-.country-match small:last-child{text-align:right}
-.country-match .score{justify-self:center;min-width:38px;border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font-weight:700;line-height:20px;text-align:center;font-variant-numeric:tabular-nums}
-
-.country-match .score.pending{background:none;color:var(--muted);font-weight:400}
-.country-match:has(+.standings){border-bottom:0}
-.country-match+.standings th{border-top:1px solid var(--line)}
+.country .fixture:has(+.standings){border-bottom:0}
+.country .fixture+.standings th{border-top:1px solid var(--line)}
 .country .standings table{table-layout:fixed}
 .country .standings td:nth-child(2){overflow:hidden;text-overflow:ellipsis}
 .country .standings th:first-child,.country .standings td:first-child{padding-left:10px!important}
 .country .standings tbody tr{background:none!important}
 .country .standings tbody tr:nth-child(even){background:var(--stripe)!important}
 .country .standings tbody tr:hover{background:var(--panel-3)!important}
-.country-match.own,.country .standings tbody tr.own{background:var(--own-row)!important}
+.country .standings tbody tr.own{background:var(--own-row)!important}
 .country .standings tr:is(.promoted,.europe-direct) td:first-child{box-shadow:inset 3px 0 0 var(--good)}
 .country .standings tr.qualified-europe td:first-child{box-shadow:inset 3px 0 0 var(--info)}
 .country .standings tr.europe-playoff td:first-child{box-shadow:inset 3px 0 0 var(--warn)}

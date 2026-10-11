@@ -153,6 +153,18 @@ def aggregate_score(world: World, match: Match, result: MatchResult | None = Non
     return result.home_goals + first.result.away_goals, result.away_goals + first.result.home_goals
 
 
+def return_leg(world: World, match: Match) -> Match | None:
+    """The return leg of a first leg: the two legs of a tie are drawn one after the other, so it is the next match."""
+    second = world.matches.get(match.id + 1)
+    return second if second is not None and second.first_leg_id == match.id else None
+
+
+def qualified_club(world: World, match: Match) -> int | None:
+    """The club a two-legged tie sent through, told on either leg once the return is played; None for any other match."""
+    decider = match if match.first_leg_id is not None else return_leg(world, match)
+    return decider.result.winner_id if decider is not None and decider.result else None
+
+
 def decide_european_winner(world: World, match: Match, result: MatchResult, lineups: list[Lineup]) -> None:
     cup = world.competitions[match.competition_id]
     if match.neutral:

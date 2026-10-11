@@ -528,10 +528,15 @@ ils n'apparaissent qu'une fois un but marqué.
 Une compétition à groupes (qualifications et phase de groupes des sélections) montre chaque groupe avec
 ses matches et son classement réduit (#, points, J, différence), deux groupes par ligne (un seul sous
 1330 px), les places qualificatives surlignées. Un tour à élimination directe, sans classement, étale
-ses matches sur deux colonnes. Sous chaque match joué, les buteurs de chaque équipe sont alignés sous
+ses matches sur deux colonnes. Chaque match s'écrit face à face (charte, « Match dans une liste ») :
+la pastille de chaque club contre le score, le nom du vainqueur en gras à l'encre de l'accent et celui
+du battu en retrait, le match du club dirigé sur fond jaune ; dans tout classement, la ligne du club dirigé a le même fond. Sous chaque match joué, les buteurs de chaque équipe sont alignés sous
 elle, par nom de famille (lien vers la fiche), dans l'ordre de leur premier but, avec les minutes de
-leurs buts regroupées : « Maupay (14, 75), Welbeck (56) ». Les minutes suivent la feuille de match
-(1 à 45, puis 45+1…, 46 à 90, puis 90+1…) ; la séance de tirs au but n'y figure pas.
+leurs buts regroupées : « Maupay 14’ 75’ · Welbeck 56’ ». Les minutes suivent la feuille de match
+(1 à 45, puis 45+1…, 46 à 90, puis 90+1…) ; la séance de tirs au but n'y figure pas. Ce qui a
+départagé un match s'écrit sur un étage sous son score : « T.a.b. 4 – 2 » après des tirs au but,
+sinon « Cumul 3 – 2 » au retour d'un aller-retour. Le nom en gras est alors celui du club qualifié,
+même battu au match retour ; un match aller n'a personne en gras tant que le retour n'est pas joué.
 
 L'onglet Tableau d'une coupe nationale (sa seule vue des tours, ouverte par défaut), la Phase
 finale d'une coupe d'Europe et la phase finale d'une édition internationale dessinent l'arbre à
@@ -542,7 +547,8 @@ les deux demi-finales rejoignent la finale au centre (la moitié de la hauteur d
 ses onze colonnes ne portent que le nom du tour, sans sa date, que les autres arbres écrivent à sa droite ;
 la Phase finale d'une coupe d'Europe, avec ses barrages, reste d'un seul sens. Une confrontation donne, par équipe, le score
 de chaque match (aller puis retour, sans cumul) et, s'il y en a eu, les tirs au but entre
-parenthèses. L'équipe qualifiée est surlignée. Un clic sur le bloc ouvre le match (le retour
+parenthèses. Le nom de l'équipe qualifiée est en gras à l'encre de l'accent, comme le vainqueur
+d'un match dans une liste ; la case du match du club dirigé a le fond jaune. Un clic sur le bloc ouvre le match (le retour
 une fois joué), un clic sur le nom d'une équipe ouvre sa fiche, et en aller-retour chaque score
 ouvre son propre match. Les tirages étant ouverts en coupe nationale et en coupe d'Europe,
 l'ordre des cases est reconstruit après coup à partir des vainqueurs, et un tour pas encore
@@ -617,8 +623,8 @@ dirigé est colorée, comme son match.
 La coupe montre un de ses tours : le dernier joué, ou le premier qui reste à jouer en
 « Prochains matches ». Une rangée de boutons, un par tour, en choisit un autre (`tour`) ;
 changer de choix de matches le libère. Chaque club porte la division où il joue (D1, D2…,
-rien pour un club des divisions non simulées) ; une séance de tirs au but se lit dans
-l'infobulle du score, son vainqueur en gras. Un tour pas encore tiré le dit.
+rien pour un club des divisions non simulées) ; une séance de tirs au but s'écrit sur un
+étage sous le score, son vainqueur en gras. Un tour pas encore tiré le dit.
 
 ### Manuel du jeu
 

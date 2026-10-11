@@ -11,7 +11,7 @@ function block(group,compact){
  const matches=fixtures({items:group.matches});
  if(!group.standings)return `<div class="round-knockout">${matches}</div>`;
  const scorers=group.top_scorers?.length?`<div class="round-top-scorers">${table(['#','JOUEUR','CLUB','BUTS'],group.top_scorers.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club),`<b>${row.goals}</b>`]))}</div>`:'';
- return `<div class="round-block${scorers?' with-top-scorers':''}"><div class="round-matches">${matches}</div><div class="round-table">${standingsTable({items:group.standings},compact,false,null,compact==='figures'?'P':'D')}</div>${scorers}</div>`;
+ return `<div class="round-block${scorers?' with-top-scorers':''}"><div class="round-matches">${matches}</div><div class="round-table">${standingsTable({items:group.standings},compact)}</div>${scorers}</div>`;
 }
 
 // `figures` gives a table of several groups its full record, matches above the table (an international edition).

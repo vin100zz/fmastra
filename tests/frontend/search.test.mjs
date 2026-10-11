@@ -36,7 +36,7 @@ test('a player’s line has his position, his name and his club after its colour
  const [badge,name,context]=cells(resultRow(player));
  assert.equal(badge,'<span class="position att">AILD</span>');
  assert.equal(name,'<b>Fra</b>ncisco Conceição');
- assert.match(context,/^<i class="kit-dot" style="background:linear-gradient\(135deg,#ffffff 50%,#111111 50%\)" aria-hidden="true"><\/i>Juventus$/);
+ assert.match(context,/^<i class="kit-dot" style="background:linear-gradient\(135deg,#111111 64%,#ffffff 64%\)" aria-hidden="true"><\/i>Juventus$/);
  assert.equal(cells(resultRow({...player,club:null}))[2],'Libre');
  const retired=cells(resultRow({...player,position:null,club:null,retired:true}));
  assert.deepEqual([retired[0],retired[2]],['','Retraité']);

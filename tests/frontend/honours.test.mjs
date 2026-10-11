@@ -92,7 +92,7 @@ test('three rankings stand under the table: the players by titles, by seasons en
  // the club a player is at now goes by its kit, named in its tooltip
  const kit={...club(1,'Paris'),major_color:'#004070',minor_color:'#d82818'};
  const dressed=part((await screen({...data,players:[{...data.players[0],club:kit},data.players[1]]})).html,'honours-lists','honours-board');
- assert.match(dressed,/<span class="position mid">MC<\/span><\/td><td[^>]*><span title="Paris"><i class="kit-dot" style="background:linear-gradient\(135deg,#004070 50%,#d82818 50%\)" aria-hidden="true"><\/i><\/span><span class="strong"><a href="#\/player\/11">Titré<\/a><\/span><\/td>/);
+ assert.match(dressed,/<span class="position mid">MC<\/span><\/td><td[^>]*><span title="Paris"><i class="kit-dot" style="background:linear-gradient\(135deg,#004070 64%,#d82818 64%\)" aria-hidden="true"><\/i><\/span><span class="strong"><a href="#\/player\/11">Titré<\/a><\/span><\/td>/);
  // a retired player has neither a position nor a club left
  assert.match(lists,/<td[^>]*><\/td><td[^>]*><span class="strong"><a href="#\/player\/12">Ancien<\/a><\/span><\/td>/);
  assert.match(lists,/<h2>Titres de meilleur buteur<\/h2>/);

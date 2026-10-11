@@ -57,7 +57,7 @@ test('the calendar steps through the rounds, one card a match with its scorers, 
  assert.match(html,/href="#\/league\/16\/calendar\?journee=11"[^>]*aria-label="Journée précédente"/);
  assert.match(html,/href="#\/league\/16\/calendar\?journee=13"[^>]*aria-label="Journée suivante"/);
  assert.equal((html.match(/class="fixture-card"/g)||[]).length,2);
- assert.match(html,/Maupay<\/a> \(14, 75\)/);
+ assert.match(html,/Maupay<\/a> 14’ 75’/);
  assert.match(html,/Journée 12 · [^<]*2026/);
  assert.match(html,/Classement[^]*Buteurs/);
  // no stepper arrow beyond the first and last rounds

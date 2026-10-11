@@ -161,17 +161,60 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .rank,.rank.first{font-size:var(--fs-body);font-weight:400;color:var(--muted)}
 
 /* Lines of a list: a match, a move, a fact. */
-.club-match,.moves li,.club-overview .fact,.fact,.fixture,.league-summary-grid .fixture,.country-match,.lineup-match,.bench-slot,.timeline-row,.highlight-row,.journal-row p,.news-widgets .moves li,.calendar-row,.movement-row{font-size:var(--fs-body)}
+.club-match,.moves li,.club-overview .fact,.fact,.fixture,.league-summary-grid .fixture,.lineup-match,.bench-slot,.timeline-row,.highlight-row,.journal-row p,.news-widgets .moves li,.calendar-row,.movement-row{font-size:var(--fs-body)}
 .club-match{min-height:var(--h-row);padding:0;grid-template-columns:48px minmax(0,1fr) auto;gap:var(--s2)}
 .club-match-date,.club-match-who small,.moves small,.lineup-match small,.fixture-scorers,.fixture-date,.journal-row small,.highlight small,.timeline-row small,.calendar-round,.calendar-opponent small,.status{font-size:var(--fs-small)}
 .status{font-size:var(--fs-body)}
 .fact{min-height:var(--h-row);padding:0}
-.fixture{min-height:var(--h-row);padding-top:var(--s1);padding-bottom:var(--s1)}
+/* A match on a line of a list: the side at home, the score, the other side, each mark against the score; under each side its
+   scorers. The winner's name is in bold, in the accent's ink, and the other side's steps back to the running ink, on the
+   match of the user's club as on any other; that match is washed. The score is a key
+   figure on a ground of 22; what settled a tie stands on a storey under it, joined to it, and a list where a match has one
+   keeps its room on every line (.wide). In a cup, each club's division stands at the two ends of the line (.tie). A line
+   alone has the height of a table's row; scorers or a storey give it a second one. */
+.fixture,.league-summary-grid .fixture{grid-template-columns:minmax(0,1fr) var(--score-column,56px) minmax(0,1fr);align-content:center;gap:0 var(--s2);min-height:var(--h-row);padding:0 var(--s3)}
+.fixture:is(.with-scorers,:has(.fixture-stack)){padding-top:var(--s1);padding-bottom:var(--s1)}
+.fixture.wide{--score-column:88px}
+.fixture.tie{grid-template-columns:22px minmax(0,1fr) var(--score-column,56px) minmax(0,1fr) 22px}
+.fixture>*{min-width:0}
+.fixture.own{background:var(--own-row)}
+.fixture-side{display:flex;align-items:center;height:var(--h-control-small);overflow:hidden;white-space:nowrap}
+.fixture-side.home{justify-content:flex-end}
+.fixture-side.won{font-weight:700;color:var(--accent-text)}
+.fixture-side.lost{color:var(--ink-2)}
+.fixture>small{font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);color:var(--muted)}
+.fixture>.away+small{text-align:right}
+/* A name too long for its side is cut, never its mark. */
+.fixture-side .club-link{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.club-link.reversed{display:flex;align-items:center}
+.club-link.reversed>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.club-link.reversed .kit-dot{flex:none;margin:0 0 0 6px}
+.fixture-score{display:block;justify-self:center;min-width:48px;height:var(--h-control-small);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);font:700 var(--fs-figure)/var(--h-control-small) var(--display);font-stretch:semi-condensed;text-align:center;color:var(--muted);white-space:nowrap}
+.fixture-score b{color:var(--strong)}
+.fixture-score.settled{color:var(--ink-2)}
+.fixture-score.pending{background:none;font:400 var(--fs-small)/var(--h-control-small) var(--text);font-stretch:normal}
+.fixture-stack{grid-row:span 2;align-self:start;justify-self:center;display:grid;min-width:80px}
+.fixture-stack>.fixture-score{justify-self:stretch;border-radius:var(--radius) var(--radius) 0 0}
+.fixture-floor{display:flex;align-items:center;justify-content:center;gap:var(--s1);height:var(--h-chip);padding:0 var(--s2);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);background:var(--panel);font:600 var(--fs-small)/1 var(--text);color:var(--muted);white-space:nowrap}
+.fixture-floor small{font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase}
+.fixture-scorers{grid-row:2;align-self:start;line-height:14px}
+.fixture-scorers.home{grid-column:1;text-align:right}
+.fixture-scorers.away{grid-column:3}
+.fixture.tie .fixture-scorers.home{grid-column:2}
+.fixture.tie .fixture-scorers.away{grid-column:4}
+/* In a bracket, the tie of the user's club is washed as its match is in a list, and the side that went through is told
+   the same way: its name in bold, in the accent's ink, its figures in the strong ink; the other side's name steps back,
+   its figures muted. */
+.bracket-tie.own{background:var(--own-row)}
+.bracket-team.winner{font-weight:700;color:var(--strong)}
+.bracket-team.winner .bracket-club{color:var(--accent-text)}
+.bracket-team.beaten{color:var(--muted)}
+.bracket-team.beaten .bracket-club{color:var(--ink-2)}
 .calendar-row,.movement-row{min-height:var(--h-row)}
 
 /* Badges, 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale graded
    ground with its border, a competition an outline (a solid black for a European cup). */
-.position,.player-table .position,.rating,.player-table .rating,.pitch-player .position-note .rating,.competition-code,.competition-badge,.club-match-score,.calendar-score,.country-match .score,.fixture .score,.tag,.news-tag,.movement-kind,.rank-chip,.run-chip,.honours-live{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px!important;border-radius:var(--radius);line-height:1;white-space:nowrap;box-sizing:border-box}
+.position,.player-table .position,.rating,.player-table .rating,.pitch-player .position-note .rating,.competition-code,.competition-badge,.club-match-score,.calendar-score,.tag,.news-tag,.movement-kind,.rank-chip,.run-chip,.honours-live{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px!important;border-radius:var(--radius);line-height:1;white-space:nowrap;box-sizing:border-box}
 /* A position is as wide whatever its code, so what follows it lines up; a word in its place (REMP, SORTI) is as wide as it reads. */
 .position,.player-table .position{width:32px;padding:0!important;background:var(--def);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
 .position.gk{background:var(--gk);color:#fff}
@@ -183,12 +226,11 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .competition-code,.competition-badge{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text);letter-spacing:0}
 .competition-code.cup,.competition-badge.cup{border-color:var(--info);background:var(--panel);color:var(--info)}
 .competition-code.europe,.competition-code.europe:is(.c1,.c3,.c4),.competition-code.international,.competition-badge.europe{border-color:var(--strong);background:var(--strong);color:var(--panel)}
-.club-match-score,.calendar-score,.country-match .score,.fixture .score{min-width:40px;background:var(--panel-2);color:var(--ink);font:700 var(--fs-small)/1 var(--text)}
+.club-match-score,.calendar-score{min-width:40px;background:var(--panel-2);color:var(--ink);font:700 var(--fs-small)/1 var(--text)}
 .club-match-score.V,.calendar-score.V{background:var(--good-soft);color:var(--good)}
 .club-match-score.N,.calendar-score.N{background:var(--warn-soft);color:var(--warn)}
 .club-match-score.D,.calendar-score.D{background:var(--bad-soft);color:var(--bad)}
-.club-match-score.pending,.fixture .pending,.country-match .score.pending{background:none;font-size:var(--fs-small);font-weight:400;color:var(--muted)}
-.fixture .score{height:auto;min-height:var(--h-chip);padding:2px 5px!important}
+.club-match-score.pending{background:none;font-size:var(--fs-small);font-weight:400;color:var(--muted)}
 .form i{width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-micro)/1 var(--text)}
 .tag,.movement-kind,.news-tag{margin-left:0;border:0;background:var(--good-soft);color:var(--good);font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;vertical-align:1px}
 .strong+.tag{margin-left:6px}
@@ -199,9 +241,10 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .pill{padding:2px var(--s2);border:0;border-radius:var(--radius);background:var(--good-soft);color:var(--good);font-size:var(--fs-small);font-weight:600}
 .nav-count,.market-count,.time-controls .advance-todo,.affinity-tag,.honours-live{border-radius:999px}
 .nav-count,.market-count{display:inline-grid;place-items:center;min-width:var(--h-chip);height:var(--h-chip);font:700 var(--fs-micro)/1 var(--text)}
-/* A club's name always follows the dot of its colours, a country's its flag. */
-.kit-dot{width:10px;height:10px;margin-right:6px;border-radius:50%;vertical-align:-1px}
-#own-club .kit-dot{width:16px;height:16px;border-radius:50%}
+/* A club's name always follows its dot, a country's its flag. The dot is a square at the charter's radius: the ground of
+   the club's band, its second colour in a corner. */
+.kit-dot{width:14px;height:14px;margin-right:6px;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #0000003d;vertical-align:-2px}
+#own-club .kit-dot{width:16px;height:16px}
 .nation .flag,.flag{border-radius:0}
 .morale-cause{width:var(--h-chip);height:var(--h-chip);font-size:var(--fs-micro)}
 .fitness,.meter,.mini-bar,.gauge,.fatigue-bar,.force-bar{height:4px;border-radius:2px}
@@ -499,7 +542,7 @@ a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}
 tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted){background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
 .player-table tbody tr:where(:not(.selected,.chosen)):is(:hover,.targeted) td:nth-child(2){background:var(--panel-3)}
-:where(.fixture,.country-match,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.biggest-transfers li,.honours-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.current-edition,.result):hover{background:var(--panel-3)}
+:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.biggest-transfers li,.honours-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.current-edition,.result):hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */

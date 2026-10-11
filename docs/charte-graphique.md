@@ -49,8 +49,8 @@ la structure HTML des spécimens.
 | `--strong`, `--ink`, `--ink-2`, `--muted` | Encres, de la plus forte au libellé atténué |
 | `--accent`, `--accent-ink` | Le jaune de l'application et l'encre écrite dessus : action principale, marque de ce qui est ouvert |
 | `--accent-hover` | L'action principale sous le pointeur |
-| `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase |
-| `--own-row` | Ligne du club dirigé, ligne choisie |
+| `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
+| `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
@@ -132,6 +132,7 @@ où le fond est déjà jaune.
 | En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent. Voir « En-tête d'un match » |
+| Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
@@ -387,6 +388,46 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
   camp : celui qui reçoit est à gauche (sa composition, ses temps forts, sa part
   des barres). Les compositions n'ont pas de titre.
 
+### Match dans une liste
+
+Le tour d'une compétition, la journée d'un championnat, les matches d'un pays
+s'écrivent avec un seul composant (`.fixture`) : face à face, celui qui reçoit à
+gauche. Le calendrier d'un club ou d'une sélection, qui se lit de son côté (ses
+buts d'abord, le score coloré V, N ou D), garde sa ligne propre.
+
+- **Camps** : le nom de celui qui reçoit puis sa pastille, le score, la pastille
+  de l'autre puis son nom. Les deux pastilles, les drapeaux pour des sélections,
+  touchent le score. Un nom trop long est coupé, jamais sa pastille.
+- **Score** : en chiffre clé (16, `--display`) sur un fond de 22 (`--panel-2`),
+  lien vers le match. Le chiffre du vainqueur est à l'encre forte, l'autre
+  atténué ; à égalité, les deux sont atténués. Avant le match, « À venir »,
+  atténué, sans fond.
+- **Vainqueur** : son nom en 700, à l'encre de l'accent (`--accent-text`) ; celui
+  du battu est en retrait, à l'encre courante (`--ink-2`). À égalité et avant le
+  match, les deux noms s'écrivent comme tout nom. Dans un aller-retour, c'est le
+  club qualifié qui est en gras, même battu au match retour ; sur le match
+  aller, personne tant que le retour n'est pas joué, puis le qualifié.
+- **Ce qui a départagé** : un étage sous le score, collé à lui (18, bordé, sur le
+  fond de la carte) : « CUMUL 3 – 2 » ou « T.A.B. 4 – 2 ». Une seule mention : des
+  tirs au but disent que le cumul était à égalité. Ses chiffres sont à la même
+  encre, sans gras ; ceux du match passent alors à l'encre courante (`--ink-2`),
+  comme ceux d'un match aller, qui ne départage rien.
+- **Buteurs** : sous chaque camp, en 11 / 14, atténués : le nom de famille, lien
+  vers le joueur, puis la minute de chaque but suivie d'une apostrophe, un point
+  médian entre deux buteurs (« Mendes 12’ · Barcola 58’ 71’ »).
+- **Club dirigé** : son match a le fond `--own-row`, sur toute la ligne. Son
+  vainqueur s'y lit comme sur les autres : même graisse, même encre.
+- **Mesures** : une ligne seule a 26 ; des buteurs ou un étage lui donnent une
+  seconde ligne et 4 de marge. La colonne du score a 56, et 88 sur toutes les
+  lignes d'une liste où un match a un étage : les noms restent alignés d'une
+  ligne à l'autre.
+- **Coupe d'un pays** (`.tie`) : la division de chaque club aux deux bouts de sa
+  ligne (D1, D2), en 10, atténuée.
+- **Tableau d'une coupe** : les mêmes règles. Le nom du qualifié est en 700, à
+  l'encre de l'accent, ses chiffres à l'encre forte ; le nom de l'éliminé à
+  l'encre courante, ses chiffres atténués. La case du match du club dirigé a le
+  fond `--own-row`.
+
 ### En-tête d'une compétition
 
 La page d'un championnat, d'une coupe nationale, d'une coupe d'Europe, d'une
@@ -559,7 +600,7 @@ la largeur de sa carte.
 taille de sa carte.
 
 - Un trait de 2 en `--series-1`, un point par mois ; l'abscisse est le temps.
-- Un point de 12 aux couleurs du club où il jouait ce mois-là (`.kit-dot`, gris
+- La pastille du club où il jouait ce mois-là, en 12 (`.kit-dot`, grise
   sans club), cerné du fond, à l'ouverture de chaque saison et au dernier mois.
 - Le niveau s'écrit au premier et au dernier point, en 16 `--display`.
 - L'ordonnée, une ligne `--row-line` par graduation, et les dates sont en
@@ -663,9 +704,12 @@ pays ajouté suit la règle : CP pour le Portugal.
 
 ### Clubs et pays
 
-- Le nom d'un club suit toujours la pastille à ses couleurs (`.kit-dot` : 10,
-  coupée en diagonale, première puis seconde couleur) ; son écusson la remplace
-  dans un en-tête.
+- Le nom d'un club suit toujours sa pastille (`.kit-dot`) : un carré de 14 au
+  rayon de la charte, sur le fond du bandeau du club (sa première couleur, ou la
+  seconde quand la première est proche du blanc), son autre couleur dans un
+  coin, coupé en diagonale. Son écusson la remplace dans un en-tête. Dans un
+  match face à face, la pastille de celui qui reçoit suit son nom : voir
+  « Match dans une liste ».
 - Le nom d'un pays suit toujours son drapeau (16 × 12). Une nationalité en
   colonne : le drapeau, puis le code de trois lettres. Un joueur n'y a qu'une
   nation, celle de sa sélection, à défaut la première de ses nationalités ; les
@@ -724,6 +768,8 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
 | En-tête d'une compétition | Le bandeau d'un club (`competitionHero`, `web/club-hero.js`) sur un championnat, une coupe nationale, une coupe d'Europe et une édition des sélections, à la place de la ligne du titre : l'emblème seul sur le bandeau (`web/emblems/`) ou le drapeau du pays sur le disque, une tuile pour le vainqueur ou le tenant du titre (`winner`, `holder` de l'API) à la place de la ligne « Vainqueur » sous les onglets ; ses couleurs et son fond (`COMPETITION_COLORS`, `api/nations.py`). Le bloc de navigation du bandeau remplace le choix C1, C3, C4 de Coupes d'Europe et le pas d'édition des sélections (`europeNavigation`, `editionNavigation`, `web/navigation.js`) ; dans sa liste, une compétition suit sa pastille |
 | Navigation d'un bandeau | `.entity-nav` à gauche du bandeau d'un club, d'une sélection, d'un joueur et d'une compétition (`neighbours`, `web/navigation.js`) : le pas de saison en colonne, à la place du bloc de trois boutons bordés. Ses flèches et ses traits à la seconde couleur du bandeau quand elle s'y lit, sinon à son encre, et le voile sous le pointeur (`--hero-step`, `--hero-veil`, `heroColors`, `web/club-hero.js`). Sa liste est le menu de la charte, sans titre ; le compte du groupe est l'infobulle des trois traits |
+| Pastille d'un club | Le carré de 14 sur le fond du bandeau, son autre couleur dans un coin (`kitDot`, `bandColours`, `web/ui.js`), à la place de la pastille ronde coupée en deux, sur tous les écrans ; le bandeau d'un club lit ses couleurs par la même règle (`heroColors`) |
+| Match dans une liste | `fixtureRow` (`web/ui.js`) sur le tour d'une compétition, le calendrier d'un championnat, la Vue d'ensemble, les éditions des sélections et la page d'un pays, à la place de sa ligne propre : les pastilles contre le score, le score en chiffre clé, le nom du vainqueur en 700 à l'encre de l'accent et celui du battu à l'encre courante (`.won`, `.lost`), le match du club dirigé sur fond jaune (`setOwnClub`), l'étage du cumul ou des tirs au but à la place des deux lignes sous le score, les buteurs écrits « Mendes 12’ 58’ ». L'API dit sur les deux matches d'un aller-retour quel club s'est qualifié (`qualified_id`, `return_leg_id`). Dans le tableau d'une coupe, le qualifié et l'éliminé s'écrivent de même, et la case du match du club dirigé a le fond jaune (`web/bracket.js`). La ligne du club dirigé est colorée dans tous les classements, plus seulement sur la page d'un pays et dans Actualités (`standingsTable`) |
 
 Ce qui reste :
 
@@ -755,3 +801,10 @@ sur son écran `/europe`, il remplace celui du premier canevas.
 La navigation d'un bandeau a la sienne (proposition A, « Colonne », l'encre sous
 un contraste de 3) : <https://claude.ai/artifact/8489MjUnN55vhza5VESzc3> ; les
 bandeaux des canevas antérieurs montrent l'ancien bloc.
+La pastille d'un club et le match dans une liste ont la leur (pastille « Coin »,
+face à face de la proposition A, cumuls et tirs au but en « Étage », sans gras
+dans l'étage) : <https://claude.ai/artifact/3uRbkWyENMLACemkt859vX> ; les canevas
+antérieurs montrent la pastille ronde. Le nom du vainqueur a été repris depuis
+(proposition F : 700 à l'encre de l'accent, le battu à l'encre courante) :
+<https://claude.ai/artifact/J9aYxRuK5KGRCFmDpBs6xe> ; ce canevas-là le montre
+encore en 600, sans couleur.

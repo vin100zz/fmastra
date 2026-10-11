@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {roundContent} from '../../web/rounds.js';
+import {fixtures,setOwnClub} from '../../web/ui.js';
 import {leagueScreen} from '../../web/screens.js';
 import {cupScreen} from '../../web/cups.js';
 import {europeScreen} from '../../web/europe.js';
@@ -25,7 +26,7 @@ test('a round lists its matches on the left, with each side’s scorers and thei
  assert.match(html,/8 nov\. 2026/);
  assert.ok(html.indexOf('round-matches')<html.indexOf('round-table'));
  // surnames linked to the player, the minutes of each goal gathered per scorer
- assert.match(html,/<div class="fixture-scorers home"><a href="#\/player\/101" title="Neal Maupay">Maupay<\/a> \(14, 75\)<\/div><span><\/span><div class="fixture-scorers"><a href="#\/player\/201" title="Amine Gouiri">Gouiri<\/a> \(26\)<\/div>/);
+ assert.match(html,/<div class="fixture-scorers home"><a href="#\/player\/101" title="Neal Maupay">Maupay<\/a> 14’ 75’<\/div><div class="fixture-scorers away"><a href="#\/player\/201" title="Amine Gouiri">Gouiri<\/a> 26’<\/div>/);
  assert.match(html,/class="fixture with-scorers"/);
  // the whole table beside a single block, form included
  assert.match(html,/FORME/);
@@ -44,9 +45,41 @@ test('the leading scorers of the competition follow its table, ranked, and only 
 test('several scorers of one side follow each other; a goalless match or one to come has no scorers line',()=>{
  const scorers=[[{id:101,name:'Neal Maupay',minutes:['14']},{id:-5,name:'Renfort <b>',minutes:['45+2','90+1']}],[]];
  const html=roundContent({...league,groups:[{...league.groups[0],matches:[{...played,scorers},{...played,id:8,score:[0,0],scorers:[[],[]]},{...played,id:9,score:null,scorers:null}]}]},'latest');
- assert.match(html,/Maupay<\/a> \(14\), <span title="Renfort &lt;b&gt;">&lt;b&gt;<\/span> \(45\+2, 90\+1\)<\/div><span><\/span><div class="fixture-scorers"><\/div>/);
+ assert.match(html,/Maupay<\/a> 14’ · <span title="Renfort &lt;b&gt;">&lt;b&gt;<\/span> 45\+2’ 90\+1’<\/div><div class="fixture-scorers away"><\/div>/);
  assert.equal(count(html,/fixture-scorers home/g),1);
  assert.match(html,/À venir/);
+});
+
+test('the winner’s side and the one that lost are told apart, the winner’s figure in the strong ink; the match of the user’s club is washed',()=>{
+ const html=roundContent(league,'latest');
+ // the side at home is written before its mark, which stands against the score
+ assert.match(html,/<div class="fixture with-scorers"><div class="fixture-side home won"><a href="#\/club\/1" class="club-link reversed"><span>Brighton<\/span><\/a><\/div><a class="fixture-score" href="#\/match\/7"><b>2<\/b> – 1<\/a><div class="fixture-side away lost"><a href="#\/club\/2" class="club-link">Nice<\/a><\/div>/);
+ // a draw tells nobody apart; a match to come has no score
+ const others=fixtures({items:[{...played,id:8,score:[1,1],scorers:null},{...played,id:9,score:null,scorers:null}]});
+ assert.match(others,/<a class="fixture-score" href="#\/match\/8">1 – 1<\/a>/);assert.match(others,/<a class="fixture-score pending" href="#\/match\/9">À venir<\/a>/);
+ assert.doesNotMatch(others,/won|lost|<b>/);
+ assert.doesNotMatch(html,/class="fixture[^"]* own/);
+ setOwnClub(2);
+ // so is its row in the table beside, and no other
+ // and on its match the winner is told as on any other
+ try{const mine=roundContent(league,'latest');assert.match(mine,/<div class="fixture with-scorers own"><div class="fixture-side home won">.*?<div class="fixture-side away lost">/);assert.equal(count(mine,/<tr class="[^"]*\bown\b[^"]*"/g),1);}finally{setOwnClub(null);}
+ assert.equal(count(html,/<tr class="[^"]*\bown\b[^"]*"/g),0);
+});
+
+test('a tie is told by who went through, on a storey under the score: the shoot-out, else the aggregate',()=>{
+ const leg={...played,scorers:null,first_leg_id:41,winner_id:2,qualified_id:2};
+ // the side that lost the return leg went through: its name in bold, no figure told apart, the aggregate named under the score
+ const aggregate=fixtures({items:[{...leg,score:[2,0],aggregate:[2,3]}]});
+ assert.match(aggregate,/<div class="fixture wide"><div class="fixture-side home lost"><a[^>]*><span>Brighton<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/7"><span class="fixture-score settled">2 – 0<\/span><span class="fixture-floor"><small>Cumul<\/small>2 – 3<\/span><\/a><div class="fixture-side away won">/);
+ // a shoot-out says the aggregate was level: it is the one thing written
+ const shootout=fixtures({items:[{...leg,score:[1,0],aggregate:[2,2],penalties:[4,5]}]});
+ assert.match(shootout,/<span class="fixture-floor"><small>T\.a\.b\.<\/small>4 – 5<\/span>/);assert.doesNotMatch(shootout,/Cumul|<b>/);
+ // a first leg settles nothing: nobody in bold until the return is played, then the side that went through
+ const first={...played,scorers:null,return_leg_id:8,winner_id:null,qualified_id:null};
+ assert.match(fixtures({items:[first]}),/<div class="fixture"><div class="fixture-side home"><a[^>]*><span>Brighton<\/span><\/a><\/div><a class="fixture-score settled" href="#\/match\/7">2 – 1<\/a><div class="fixture-side away">/);
+ assert.match(fixtures({items:[{...first,qualified_id:2}]}),/<div class="fixture-side home lost"><a[^>]*><span>Brighton<\/span><\/a><\/div>.*<div class="fixture-side away won">/);
+ // every line of a list where a match has a storey keeps its room
+ assert.equal(count(fixtures({items:[{...leg,score:[2,0],aggregate:[2,3]},{...played,id:8,scorers:null}]}),/class="fixture wide"/g),2);
 });
 
 test('groups show each group with its own compact table, and a cup round spreads its ties over two columns',()=>{

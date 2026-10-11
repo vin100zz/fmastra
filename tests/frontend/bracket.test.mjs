@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {bracket} from '../../web/bracket.js';
+import {setOwnClub} from '../../web/ui.js';
 
 const club=id=>({id,name:`Club ${id}`});
 const played=(id,home,away,score,winner)=>({id,home:club(home),away:club(away),score,winner_id:winner,first_leg_id:null});
@@ -40,4 +41,17 @@ test('a cup bracket drawn with sides runs both halves towards the final in the m
  assert.equal((html.match(/class="bracket-tie/g)||[]).length,7);
  // one-sided draws are unchanged
  assert.doesNotMatch(bracket([{label:'Demies',matches:semis},{label:'Finale',matches:[]}]),/sided/);
+});
+
+test('the side that went through is in bold; the tie of the user’s club is washed, never the winner’s',()=>{
+ const stages=[{label:'Demies',matches:[played(1,1,2,[1,0],1),played(2,3,4,[0,2],4)]},{label:'Finale',matches:[]}];
+ const html=bracket(stages);
+ assert.match(html,/<div class="bracket-tie"><a class="bracket-match" href="#\/match\/1"[^>]*><\/a><div class="bracket-team winner">/);
+ assert.doesNotMatch(html,/bracket-tie own/);
+ setOwnClub(4);
+ try{
+  const mine=bracket(stages);
+  assert.equal((mine.match(/class="bracket-tie own"/g)||[]).length,1);
+  assert.match(mine,/<div class="bracket-tie own"><a class="bracket-match" href="#\/match\/2"/);
+ }finally{setOwnClub(null);}
 });
