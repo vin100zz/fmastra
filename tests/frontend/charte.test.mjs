@@ -121,3 +121,17 @@ test('a club’s dot and a match on a line of a list are drawn the same by the r
  // The line a country's page once drew for itself is gone.
  for(const name of [...OLDER,'charte.css'])assert.doesNotMatch(await read(`web/${name}`),/country-match/,name);
 });
+
+test('a card that folds is drawn the same by the reference sheet and by the application’s: its whole head opens it',async()=>{
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  assert.match(body('.card-head.toggle'),/cursor:pointer/,sheet);
+  // A bare arrow, the chevron of an icon in the muted ink, turned over while the card is open; folded, what is secondary
+  // takes no room.
+  assert.match(body('.toggle-arrow'),/width:16px;height:16px;fill:none;stroke:var\(--muted\);stroke-width:1\.7/,sheet);
+  assert.match(body('.card.fold.open .toggle-arrow'),/transform:rotate\(180deg\)/,sheet);
+  assert.match(body('.card.fold:not(.open) .fold-more'),/display:none/,sheet);
+  // Under the pointer, the whole head takes the ground.
+  assert.ok(said.some(([selector,rule])=>/^\.card-head\.toggle:(is\(:hover,\.hover\)|hover)$/.test(selector)&&/background:var\(--panel-3\)/.test(rule)),sheet);
+ }
+});

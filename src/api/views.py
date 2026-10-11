@@ -669,9 +669,65 @@ def match_player_name(world: World, result: MatchResult, player_id: int | None) 
     return result.temporary_players.get(player_id) or player_name(world, player_id)
 
 
-def lineup_rows(world: World, result: MatchResult, side: str) -> list[dict]:
-    """The starting eleven of one side, with the positions and ratings of that match."""
-    return [{"id": pid, "name": match_player_name(world, result, pid), "position": position,
+# The words a family name may start with ("de Lange", "Van der Sar"); `surname` of web/ui.js reads a name the same way.
+NAME_PARTICLES = frozenset({"da", "das", "de", "del", "della", "den", "der", "des", "di", "do", "dos", "du", "el", "la", "le", "lo",
+                            "ten", "ter", "van", "von"})
+
+
+def name_parts(name: str) -> tuple[str, str]:
+    """A name as it is shown, cut into given names and family name: the last word with the particles before it, never the
+    first word."""
+    words = name.split()
+    start = len(words) - 1
+    while start > 1 and words[start - 1].lower() in NAME_PARTICLES:
+        start -= 1
+    return " ".join(words[:start]), " ".join(words[start:])
+
+
+def short_names(names: dict[int, str]) -> dict[int, str]:
+    """The names of one squad where room is short: the family name alone, or, when a team-mate bears it too, after as many
+    letters of the given name as tell them apart ("L. Hernandez" beside Théo, "Be. Cheyrou" beside Bruno)."""
+    parts = {pid: name_parts(name) for pid, name in names.items() if name}
+    bearers: dict[str, list[str]] = {}
+    for given, family in parts.values():
+        bearers.setdefault(family.casefold(), []).append(given.casefold())
+
+    def short(given: str, family: str) -> str:
+        own, others = given.casefold(), list(bearers[family.casefold()])
+        others.remove(own)
+        if not others or not given:
+            return family
+        longest = max(len(own), *map(len, others))
+        size = next((size for size in range(1, longest + 1) if all(other[:size] != own[:size] for other in others)), 1)
+        # The cut never ends on a hyphen or a space: "Jean-P.", not "Jean-.".
+        while size < len(given) and given[size - 1] in "- ":
+            size += 1
+        return f"{given} {family}" if size >= len(given) else f"{given[:size]}. {family}"
+
+    return {pid: short(*parts[pid]) for pid in parts}
+
+
+def squad_short_names(world: World, club_id: int | None, names: dict[int, str]) -> dict[int, str]:
+    """The short names of `names` (a match's sheet, a squad) and of the club's players, told apart among all of them."""
+    club = world.clubs.get(club_id)
+    squad = {pid: world.players[pid].name for pid in (club.player_ids if club else ()) if pid in world.players}
+    return short_names({**squad, **names})
+
+
+def side_short_names(world: World, match: Match, side: str) -> dict[int, str]:
+    """The short names of one side of a played match, told apart within its squad: the club's players, and those of the
+    match (a selection's call-up, a player who has left the club since)."""
+    result, team_id = match.result, getattr(match, f"{side}_id")
+    sheet = {*(pid for pid, _ in getattr(result, f"{side}_lineup")), *getattr(result, f"{side}_bench"),
+             *(event.player_id for event in result.events if event.team_id == team_id and event.player_id is not None)}
+    return squad_short_names(world, team_id, {pid: match_player_name(world, result, pid) for pid in sheet})
+
+
+def lineup_rows(world: World, match: Match, side: str, shorts: dict[int, str] | None = None) -> list[dict]:
+    """The starting eleven of one side, with the positions and ratings of that match and each player's short name."""
+    result = match.result
+    shorts = side_short_names(world, match, side) if shorts is None else shorts
+    return [{"id": pid, "name": match_player_name(world, result, pid), "short": shorts.get(pid), "position": position,
              "temporary": pid in result.temporary_players,
              "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None}
             for pid, position in getattr(result, f"{side}_lineup")]
@@ -692,14 +748,19 @@ def match_detail(world: World, match: Match) -> dict:
     detail = {"engine": result.engine, "status": result.status, "duration": result.duration,
               "home_stats": asdict(result.home_stats) if result.home_stats else None,
               "away_stats": asdict(result.away_stats) if result.away_stats else None}
+    # Where room is short (the highlights, the pitch), a player goes by his short name, told apart within his side's squad.
+    shorts = {match.home_id: side_short_names(world, match, "home"), match.away_id: side_short_names(world, match, "away")}
     detail["events"] = [{**asdict(event), "player": match_player_name(world, result, event.player_id),
                          "secondary": match_player_name(world, result, event.secondary_id),
+                         "player_short": shorts.get(event.team_id, {}).get(event.player_id),
+                         "secondary_short": shorts.get(event.team_id, {}).get(event.secondary_id),
                          "temporary": event.player_id in result.temporary_players,
                          "secondary_temporary": event.secondary_id in result.temporary_players} for event in result.events]
     for side in ("home", "away"):
-        bench = getattr(result, f"{side}_bench")
-        detail[f"{side}_lineup"] = lineup_rows(world, result, side)
-        detail[f"{side}_bench"] = [{"id": pid, "name": match_player_name(world, result, pid), "temporary": pid in result.temporary_players,
+        bench, side_shorts = getattr(result, f"{side}_bench"), shorts[getattr(match, f"{side}_id")]
+        detail[f"{side}_lineup"] = lineup_rows(world, match, side, side_shorts)
+        detail[f"{side}_bench"] = [{"id": pid, "name": match_player_name(world, result, pid), "short": side_shorts.get(pid),
+                                      "temporary": pid in result.temporary_players,
                                       "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None} for pid in bench]
     data["result"] = detail
     return data

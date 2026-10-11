@@ -1,6 +1,6 @@
 import {replayCard} from './match-replay.js';
 import {matchHero} from './club-hero.js';
-import {api,escape as e,number as n,matchNoteBadge,date,clubLink,playerLink,empty,card,table,pitch,competitionBadge,safeColor,contrastText,contrastRatio,chartColours} from './ui.js';
+import {api,escape as e,number as n,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
@@ -61,23 +61,29 @@ export function statsCard(match){
  const [homeColor,awayColor]=chartColours(match.home,match.away);
  const stats=[['Buts attendus (xG)',home.xg,away.xg],['Tirs',home.shots,away.shots],['Tirs cadrés',home.on_target,away.on_target],['Possession',100*home.possession_seconds/Math.max(1,totalPoss),100*away.possession_seconds/Math.max(1,totalPoss)],['Corners',home.corners,away.corners],['Coups francs',home.free_kicks,away.free_kicks],['Cartons jaunes',home.yellows,away.yellows],['Cartons rouges',home.reds,away.reds]];
  // One bar a line, shared between the two sides by their part of the two figures, the home side's on the left; the larger
- // figure is the strong one.
- const rows=stats.map(([label,a=0,b=0])=>{
+ // figure is the strong one. The card folds on its first four lines, the same on the report and in the live match.
+ const rows=stats.map(([label,a=0,b=0],index)=>{
   const unit=label==='Possession'?'\u00a0%':'',total=a+b;
-  return `<div class="comparison"><span class="${a>b?'lead':''}">${n(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${n(b)}${unit}</span></div>`;
+  return `<div class="comparison${index>=4?' fold-more':''}"><span class="${a>b?'lead':''}">${n(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${n(b)}${unit}</span></div>`;
  }).join('');
- return card('Le match en chiffres',`<div class="comparisons">${rows}</div>`,'','match-stats');
+ return foldCard('match-stats','Le match en chiffres',`<div class="comparisons">${rows}</div>`,'match-stats');
 }
 
-// Goals, injuries and red cards in the order they came, the home side's on the left and the away side's on the right.
-// `link` names a player: a link to his page, or plain text where leaving the screen is not allowed (the live match).
+// Goals, injuries and red cards in the order they came, the home side's on the left and the away side's on the right, one
+// line each whatever the names. Its marks say what happened; then the player by his short name (his family name, with as
+// much of his given name as tells him from a team-mate: `player_short` of the API) and, after a goal's scorer, the passer,
+// smaller. Their whole names are in the tooltips. `link` names a player: a link to his page, or plain text where leaving the
+// screen is not allowed (the live match).
 export function highlightsCard(match,link=playerLink){
  const events=match.result.events.filter(event=>['goal','injury','red'].includes(event.kind)&&event.period!==3);
+ const named=(tag,id,name,short,title)=>{const shown=shortName(name,short);return `<${tag}${title||shown!==name?` title="${e(title||name)}"`:''}>${link(id,shown)}</${tag}>`;};
  const content=event=>{
-  const label=event.kind==='goal'?'But':event.kind==='injury'?'Blessure':event.detail==='second_yellow'?'Deuxième carton jaune':'Carton rouge';
-  const mark=event.kind==='goal'?icon('goal','',label):event.kind==='injury'?icon('injury','',label):icon('booking red','',label);
-  const detail=event.kind==='goal'&&event.secondary?`Passe de ${link(event.secondary_id,event.secondary)}`:label;
-  return `${mark}<div><strong>${event.player?link(event.player_id,event.player):'—'}</strong><small>${detail}</small></div>`;
+  // A second yellow card shows as a yellow card followed by the red one.
+  const marks=event.kind==='goal'?icon('goal','','But'):event.kind==='injury'?icon('injury','','Blessure')
+   :event.detail==='second_yellow'?icon('booking yellow','','Carton jaune')+icon('booking red','','Deuxième carton jaune'):icon('booking red','','Carton rouge');
+  const player=event.player?named('strong',event.player_id,event.player,event.player_short):'<strong>—</strong>';
+  const passer=event.kind==='goal'&&event.secondary?named('small',event.secondary_id,event.secondary,event.secondary_short,`Passe de ${event.secondary}`):'';
+  return `<span class="marks">${marks}</span><span class="highlight-names">${player}${passer}</span>`;
  };
  const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
  return card('Les temps forts',rows?`<div class="highlights">${rows}</div>`:`<div class="card-body">${empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);

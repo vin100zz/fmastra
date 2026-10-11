@@ -49,17 +49,21 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
     match = world.matches[world.live_match.match_id]
     side = live_side(world, match)
     names = {pid: player.name for team in live.teams for pid, player in team.players.items()}
+    shorts = {team.club_id: team_short_names(world, team) for team in live.teams}
 
     def event_row(event: MatchEvent) -> dict:
+        squad = shorts.get(event.team_id, {})
         return {**asdict(event), "player": names.get(event.player_id), "secondary": names.get(event.secondary_id),
+                "player_short": squad.get(event.player_id), "secondary_short": squad.get(event.secondary_id),
                 "temporary": (event.player_id or 0) < 0, "secondary_temporary": (event.secondary_id or 0) < 0}
 
-    def lineup(initial) -> list[dict]:
-        return [{"id": slot.player.id, "name": slot.player.name, "position": slot.position.value, "temporary": slot.player.id < 0}
-                for slot in initial.slots]
+    def lineup(initial, team) -> list[dict]:
+        return [{"id": slot.player.id, "name": slot.player.name, "short": shorts[team.club_id].get(slot.player.id),
+                 "position": slot.position.value, "temporary": slot.player.id < 0} for slot in initial.slots]
 
-    def bench(initial) -> list[dict]:
-        return [{"id": player.id, "name": player.name, "temporary": player.id < 0} for player in initial.bench]
+    def bench(initial, team) -> list[dict]:
+        return [{"id": player.id, "name": player.name, "short": shorts[team.club_id].get(player.id), "temporary": player.id < 0}
+                for player in initial.bench]
 
     shown = stored_events(live.log.events[:live.delivered]) if events is None else events
     team = live.teams[side]
@@ -70,32 +74,38 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
             "score": [live.teams[0].goals, live.teams[1].goals], "decision": decision,
             "result": {"events": [event_row(event) for event in shown], "duration": round(live.log.second),
                        "home_stats": asdict(live.teams[0].stats), "away_stats": asdict(live.teams[1].stats),
-                       "home_lineup": lineup(live.home), "away_lineup": lineup(live.away),
-                       "home_bench": bench(live.home), "away_bench": bench(live.away)},
-            "manager": manager_view(world, live, side)}
+                       "home_lineup": lineup(live.home, live.teams[0]), "away_lineup": lineup(live.away, live.teams[1]),
+                       "home_bench": bench(live.home, live.teams[0]), "away_bench": bench(live.away, live.teams[1])},
+            "manager": manager_view(world, live, side, shorts[team.club_id])}
 
 
-def manager_view(world: World, live: LiveMatch, side: int) -> dict:
-    """The human side as the Tactique panel edits it."""
+def team_short_names(world: World, team) -> dict[int, str]:
+    """The short names of a side of the live match, told apart within its squad: its club's players and those of the match."""
+    return v.squad_short_names(world, team.club_id, {pid: player.name for pid, player in team.players.items()})
+
+
+def manager_view(world: World, live: LiveMatch, side: int, shorts: dict[int, str]) -> dict:
+    """The human side as the Tactique panel edits it, each player with his short name for the pitch."""
     cfg, team = world.config, live.teams[side]
     rules = cfg.world.match_rules
     replaced = {event.player_id for event in live.log.events if event.kind == "substitution" and event.team_id == team.club_id}
     vacancies = [pid for pid in sorted(team.injured) if pid not in replaced][:max(0, live.vacancies(team))]
-    return {"active": [{"id": slot.player.id, "name": slot.player.name, "position": slot.position.value,
+    return {"active": [{"id": slot.player.id, "name": slot.player.name, "short": shorts.get(slot.player.id), "position": slot.position.value,
                         "natural": slot.player.position.value, "fitness": round(team.fitness[slot.player.id], 3), "yellows": team.individual[slot.player.id].yellows}
                        for slot in team.active],
-            "bench": [{"id": player.id, "name": player.name, "position": player.position.value,
+            "bench": [{"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": player.position.value,
                        "fitness": round(team.fitness[player.id], 3)} for player in team.bench],
-            "vacancies": [{"id": pid, "name": team.players[pid].name, "position": team.players[pid].position.value} for pid in vacancies],
+            "vacancies": [{"id": pid, "name": team.players[pid].name, "short": shorts.get(pid), "position": team.players[pid].position.value}
+                          for pid in vacancies],
             "substitutions_left": rules.max_substitutions - team.substituted,
             "windows_left": rules.substitution_windows - team.windows,
-            "squad": squad_strip(live, side),
+            "squad": squad_strip(live, side, shorts),
             "mentality": team.mentality, "mentalities": list(cfg.formations.block_height.mentalities),
             "formations": {**{name: list(roles) for name, roles in cfg.formations.formations.items()},
                            **({CUSTOM_FORMATION: [position for position, _, _ in world.custom_formation]} if world.custom_formation else {})}}
 
 
-def squad_strip(live: LiveMatch, side: int) -> list[dict]:
+def squad_strip(live: LiveMatch, side: int, shorts: dict[int, str]) -> list[dict]:
     """Every player of the human side's sheet, starters then substitutes, as the match leaves them now."""
     team, initial = live.teams[side], (live.home, live.away)[side]
     playing = {slot.player.id for slot in team.active}
@@ -104,7 +114,7 @@ def squad_strip(live: LiveMatch, side: int) -> list[dict]:
     def row(player, starter: bool) -> dict:
         stats = team.individual.get(player.id)
         played = stats is not None and player.id not in waiting
-        return {"id": player.id, "name": player.name, "position": player.position.value, "starter": starter,
+        return {"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": player.position.value, "starter": starter,
                 "state": "on" if player.id in playing else "bench" if player.id in waiting else "off",
                 "fitness": round(team.fitness.get(player.id, player.fitness), 3),
                 "rating": round(player_rating(team, live.teams[1 - side], player.id, live.cfg), 1) if played else None,

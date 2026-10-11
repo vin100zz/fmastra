@@ -137,3 +137,8 @@ test('an international round lays three groups a row beside the leading scorers'
  assert.match(html,/<aside class="round-rail"><h3>Meilleurs buteurs<\/h3>.*Buteur.*<b>4<\/b>/s);
  assert.doesNotMatch(roundContent(data,'latest'),/round-rail/);
 });
+
+test('a scorer goes by his short name, told apart within his squad, his whole name in the tooltip',()=>{
+ const html=fixtures({items:[{...played,scorers:[[{id:101,name:'Lucas Hernandez',short:'L. Hernandez',minutes:['14']}],[{id:-5,name:'Bruno Cheyrou',short:'Br. Cheyrou',minutes:['26']}]]}]});
+ assert.match(html,/<div class="fixture-scorers home"><a href="#\/player\/101" title="Lucas Hernandez">L\. Hernandez<\/a> 14’<\/div><div class="fixture-scorers away"><span title="Bruno Cheyrou">Br\. Cheyrou<\/span> 26’<\/div>/);
+});

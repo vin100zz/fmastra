@@ -32,10 +32,15 @@ def scorers(world: World, match: Match) -> list[list[dict]] | None:
         return None
     half_end = next((event.second for event in result.events if event.kind == "period_end" and event.period == 1), HALF_SECONDS)
     sides: dict[int, dict[int, dict]] = {match.home_id: {}, match.away_id: {}}
+    shorts: dict[int, dict[int, str]] = {}
     for event in result.events:
         if event.kind == "goal" and event.period in (1, 2) and event.team_id in sides:
+            # A scorer goes by his short name, told apart within his side's squad.
+            if event.team_id not in shorts:
+                shorts[event.team_id] = v.side_short_names(world, match, "home" if event.team_id == match.home_id else "away")
             row = sides[event.team_id].setdefault(event.player_id, {
-                "id": event.player_id, "name": v.match_player_name(world, result, event.player_id), "minutes": []})
+                "id": event.player_id, "name": v.match_player_name(world, result, event.player_id),
+                "short": shorts[event.team_id].get(event.player_id), "minutes": []})
             row["minutes"].append(goal_minute(event.second, event.period, half_end))
     return [list(sides[match.home_id].values()), list(sides[match.away_id].values())]
 

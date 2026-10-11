@@ -388,10 +388,13 @@ def router(service: GameService) -> APIRouter:
                 default = {"formation": formation, **suggestions[formation]}
             opponent = None if match is None else match.away_id if match.home_id == club_id else match.home_id
             from .scouting import scouting
+            # On the pitch and the bench, a player goes by his short name, told apart within the squad.
+            shorts = v.squad_short_names(world, club_id, {player.id: player.name for player in context.players})
             return {"match_id": match.id if match else None, "opponent": v.club_ref(world, opponent) if match else None,
                     "home": match is not None and match.home_id == club_id, "scouting": scouting(world, match, club_id),
                     "club": v.club_ref(world, club_id),
-                    "players": [lineup_player(world, player, competition_id, stats[player.id]) for player in context.players],
+                    "players": [{**lineup_player(world, player, competition_id, stats[player.id]), "short": shorts.get(player.id)}
+                                for player in context.players],
                     "formations": {name: list(roles) for name, roles in formations.items()},
                     "custom": [list(place) for place in world.custom_formation] or None,
                     "composites_by_position": {position: list(keys) for position, keys in v.COMPOSITES_BY_POSITION.items()},

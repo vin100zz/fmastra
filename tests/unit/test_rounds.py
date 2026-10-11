@@ -18,10 +18,13 @@ def test_scorers_gather_each_players_goals_in_order_of_first_goal_and_leave_the_
               goal(2760 + 10 * 60, 2, 1, 102), goal(2760 + 29 * 60 + 30, 2, 1, 101), MatchEvent(5400, 2, 0, "yellow", 2, 202),
               goal(2760 + 46 * 60, 2, 2, -7), goal(6000, 3, 1, 102)]
     result = MatchResult(3, 2, "possession", events, temporary_players={-7: "Renfort"})
-    world = SimpleNamespace(players={}, retired={101: "Neal Maupay", 102: "Danny Welbeck", 201: "Amine Gouiri"})
+    world = SimpleNamespace(players={}, clubs={}, retired={101: "Neal Maupay", 102: "Danny Welbeck", 201: "Amine Gouiri"})
     home, away = scorers(world, Match(1, 16, 2026, 12, Date(2026, 11, 8), 1, 2, result))
-    assert home == [{"id": 101, "name": "Neal Maupay", "minutes": ["14", "75"]}, {"id": 102, "name": "Danny Welbeck", "minutes": ["56"]}]
-    assert away == [{"id": 201, "name": "Amine Gouiri", "minutes": ["26"]}, {"id": -7, "name": "Renfort", "minutes": ["90+2"]}]
+    # Each goes by his short name, told apart within his side.
+    assert home == [{"id": 101, "name": "Neal Maupay", "short": "Maupay", "minutes": ["14", "75"]},
+                    {"id": 102, "name": "Danny Welbeck", "short": "Welbeck", "minutes": ["56"]}]
+    assert away == [{"id": 201, "name": "Amine Gouiri", "short": "Gouiri", "minutes": ["26"]},
+                    {"id": -7, "name": "Renfort", "short": "Renfort", "minutes": ["90+2"]}]
     # Without a stored half-time whistle, the first half is taken to end at 45 minutes.
     assert scorers(world, Match(2, 16, 2026, 12, Date(2026, 11, 8), 1, 2, MatchResult(0, 1, "possession", [goal(2700 + 60, 2, 2, 201)])))[1][0]["minutes"] == ["47"]
     assert scorers(world, Match(3, 16, 2026, 13, Date(2026, 11, 15), 1, 2)) is None

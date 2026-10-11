@@ -156,6 +156,12 @@
 .card-body{padding:var(--s2) var(--s3)}
 .card>.tabs{padding:0 var(--s2);border-bottom:0}
 .section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* A card that folds what is secondary: its whole head opens and closes it, a bare arrow at its end (the chevron of an icon,
+   in the muted ink), turned over while it is open. Folded, what is secondary (.fold-more) takes no room. */
+.card-head.toggle{cursor:pointer}
+.toggle-arrow{flex:none;width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.card.fold.open .toggle-arrow{transform:rotate(180deg)}
+.card.fold:not(.open) .fold-more{display:none}
 
 /* Tables: 26 px headings and rows, figures on the right. A row is a grid; each table sets its columns. */
 .table{display:flex;flex-direction:column;min-width:0}
@@ -352,7 +358,7 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .balance-note.right{grid-column:2;text-align:right}
 .balance-note b{font-weight:600;color:var(--strong)}
 /* What happened to a player in a match. */
-.marks{display:inline-flex;align-items:center;gap:3px}
+.marks{display:inline-flex;align-items:center;gap:3px;flex:none}
 .mark{display:inline-block;flex:none;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
 .mark.goal{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
 .mark.yellow,.mark.red{width:8px;height:11px;border-radius:1px}
@@ -460,11 +466,15 @@ span.entity-step svg{opacity:.3}
 
 /* Match report: under its header, what happened minute by minute and the two sides' figures face to face. Nothing names
    a side again: the one at home is on the left, as in the band. */
-.highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;height:40px;padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
-.highlight{display:flex;align-items:center;gap:var(--s2)}
-.highlight.away{flex-direction:row-reverse;text-align:right}
-.highlight>div{display:flex;flex-direction:column;line-height:16px}
-.highlight.away>div{align-items:flex-end}
+/* A highlight is one line of 26, whatever the names: its marks at the side's edge (a second yellow card, a yellow then a
+   red), the player by his short name, and after a goal's scorer the passer, smaller and muted, cut before him. */
+.highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.highlight{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.highlight.away{flex-direction:row-reverse}
+.highlight-names{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
+.highlight-names>*{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.highlight-names>strong{flex:0 1 auto;font-weight:600;color:var(--strong)}
+.highlight-names>small{flex:0 999 auto;font-size:var(--fs-small);color:var(--muted)}
 .highlight-row:last-child{border-bottom:0}
 .minute{font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--accent-text)}
 /* Two sides compared: the figures at the ends, the label over one bar shared between them. Each part is its side's share
@@ -545,6 +555,8 @@ span.entity-step svg{opacity:.3}
    underlines nothing. */
 :is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen)):is(:hover,.hover){background:var(--panel-3)}
 a:is(.tr,.match-row,.result){cursor:pointer}
+/* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
+.card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
 .app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}

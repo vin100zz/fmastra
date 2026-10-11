@@ -32,9 +32,9 @@ def last_lineup(world: World, club_id: int, played: list[Match]) -> dict | None:
     """The eleven of the latest match that kept one; archived results carry none."""
     for match in reversed(played):
         side = "home" if match.home_id == club_id else "away"
-        players = v.lineup_rows(world, match.result, side)
-        if players:
-            return {"match": {**v.match_row(world, match), "outcome": outcome(club_id, match)}, "side": side, "players": players}
+        if getattr(match.result, f"{side}_lineup"):
+            return {"match": {**v.match_row(world, match), "outcome": outcome(club_id, match)}, "side": side,
+                    "players": v.lineup_rows(world, match, side)}
     return None
 
 

@@ -330,7 +330,7 @@ qu'il résume :
 | Widget | Contenu | Lien |
 |---|---|---|
 | Calendrier | le même bloc qu'Actualités : 5 derniers matches (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne), puis 3 prochains, sans intertitres | onglet Calendrier |
-| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur un terrain à l'horizontale qui attaque vers la droite (latéral gauche en haut), noms réduits au nom de famille, maillots au corps de la couleur principale et aux manches de la seconde, le poste écrit dessus, sans note | compte rendu du match |
+| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur un terrain à l'horizontale qui attaque vers la droite (latéral gauche en haut), noms réduits au nom court (charte, « Joueurs »), maillots au corps de la couleur principale et aux manches de la seconde, le poste écrit dessus, sans note | compte rendu du match |
 | Championnat | « Ligue 1 – 18e journée » : cinq lignes du classement autour du club, avec les points puis la différence de buts | page de la compétition |
 | Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, masse salariale mensuelle en anneau rempli à sa part du plafond, rouge à partir de 95 % | onglet Finances |
 
@@ -531,7 +531,7 @@ ses matches et son classement réduit (#, points, J, différence), deux groupes 
 ses matches sur deux colonnes. Chaque match s'écrit face à face (charte, « Match dans une liste ») :
 la pastille de chaque club contre le score, le nom du vainqueur en gras à l'encre de l'accent et celui
 du battu en retrait, le match du club dirigé sur fond jaune ; dans tout classement, la ligne du club dirigé a le même fond. Sous chaque match joué, les buteurs de chaque équipe sont alignés sous
-elle, par nom de famille (lien vers la fiche), dans l'ordre de leur premier but, avec les minutes de
+elle, par nom court (le nom de famille, l'initiale du prénom devant un homonyme de l'effectif ; lien vers la fiche), dans l'ordre de leur premier but, avec les minutes de
 leurs buts regroupées : « Maupay 14’ 75’ · Welbeck 56’ ». Les minutes suivent la feuille de match
 (1 à 45, puis 45+1…, 46 à 90, puis 90+1…) ; la séance de tirs au but n'y figure pas. Ce qui a
 départagé un match s'écrit sur un étage sous son score : « T.a.b. 4 – 2 » après des tirs au but,
@@ -751,9 +751,13 @@ message (« il vient d'arriver ») reste dans son infobulle.
   camp qui reçoit
 - Trois colonnes : la composition d'un camp, les temps forts et les chiffres, la composition de l'autre
 - Temps forts : buts, blessures et cartons rouges dans l'ordre du match, la minute au milieu, chaque camp à
-  son bord
+  son bord, une ligne par fait : sa marque, le joueur par son nom court (le nom de famille, l'initiale du
+  prénom devant un homonyme de son effectif), et pour un but le passeur après lui, en petit (charte, « Temps
+  forts d'un match » et « Joueurs »)
 - xG, tirs, possession, corners, cartons : une barre par ligne, partagée entre les deux camps, chacun à sa
-  couleur (charte, « Graphiques »)
+  couleur (charte, « Graphiques »). La carte est repliée sur les buts attendus, les tirs, les tirs cadrés et
+  la possession ; son en-tête entier montre les corners, les coups francs et les cartons (charte, « Carte
+  repliable »), et le choix est gardé d'un match à l'autre
 - Compositions des deux équipes sur le terrain de la charte, sans titre : le poste sur le maillot, la note du
   match à sa droite, les faits du match à sa gauche ; les remplaçants en liste, avec leur entrée et leur note
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
@@ -818,7 +822,7 @@ segment par segment : seules les occasions sont animées, le compteur défile en
 elles. Sous le terrain, une vignette par joueur de l'équipe (titulaires puis
 remplaçants) : note, buts, cartons, blessure et fatigue. À droite, les temps forts
 (le widget du compte rendu, sans liens, un but n'y paraît qu'une fois marqué à
-l'écran), les statistiques, le multiplex de la compétition et le classement tel
+l'écran), les statistiques (la carte du compte rendu, repliée de même), le multiplex de la compétition et le classement tel
 qu'il serait si les matches s'arrêtaient à la minute affichée.
 
 - « Tactique » termine l'occasion en cours, ou arrête le compteur tout de suite
@@ -1127,7 +1131,7 @@ GET  /api/joueurs/{id}/historique         carrière (chaque ligne : competition,
                                           championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
-GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection
+GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection ; chaque fait donne le nom court de ses joueurs (player_short, secondary_short), chaque joueur des compositions le sien (short), distingués dans l'effectif de leur camp ; les buteurs d'une liste de matches, la composition et le direct donnent aussi short
 
 GET  /api/ma-partie/actualites?page=&message=&taille=   le fil, du plus récent au plus ancien : la page demandée, sinon celle du message ;
                                           chaque ligne : {id, date, kind, title, segments: [{text, ref?}], read, pending}

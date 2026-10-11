@@ -1,4 +1,4 @@
-import {escape as e,surname,empty,clubLink,competitionBadge} from './ui.js';
+import {escape as e,shortName,empty,clubLink,competitionBadge} from './ui.js';
 import {awayIcon,outcomeLabels} from './club-overview.js';
 
 // The badge of a competition and its two characters are the same on every screen (ui.js).
@@ -7,8 +7,8 @@ export {competitionCode,competitionBadge} from './ui.js';
 const day=value=>new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
 // A round as short as it reads: J12 for a league round, the round of a cup as it is named.
 const roundShort=label=>String(label||'').replace(/^Journée (\d+)$/,'J$1').replace(/ de finale$/,'');
-// One side's scorers by surname, each with the minutes of his goals: "Ivanović 8’ 64’ · Aouad 89’".
-const scorerList=side=>(side||[]).map(scorer=>`${scorer.id<0?e(surname(scorer.name)):`<a href="#/player/${scorer.id}" title="${e(scorer.name)}">${e(surname(scorer.name))}</a>`} ${scorer.minutes.map(minute=>`${e(minute)}’`).join(' ')}`).join(' · ');
+// One side's scorers by short name, each with the minutes of his goals: "Ivanović 8’ 64’ · Aouad 89’".
+const scorerList=side=>(side||[]).map(scorer=>`${scorer.id<0?e(shortName(scorer.name,scorer.short)):`<a href="#/player/${scorer.id}" title="${e(scorer.name)}">${e(shortName(scorer.name,scorer.short))}</a>`} ${scorer.minutes.map(minute=>`${e(minute)}’`).join(' ')}`).join(' · ');
 
 // `written` writes the day and `round` the round, as a club's season reads them unless told otherwise. A selection's match
 // on neutral ground is not an away game.

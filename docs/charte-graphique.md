@@ -136,10 +136,12 @@ où le fond est déjà jaune.
 | En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent. Voir « En-tête d'un match » |
+| Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
 | Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
+| Carte repliable | `.card.fold`, `.card-head.toggle`, `.toggle-arrow`, `.fold-more` | L'en-tête entier montre ou cache ce qui est secondaire. Voir « Carte repliable » |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur |
@@ -235,6 +237,7 @@ voile de son encre.
 | Lien dans une phrase : le manuel, le titre et le texte d'une actualité (`.prose`) | `--accent-text`, non souligné | Souligné, même couleur |
 | Ligne d'un tableau ou d'une liste, fait | Son fond | `--panel-3` ; la ligne teintée (club dirigé, ligne choisie, état) garde sa teinte |
 | Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
+| En-tête d'une carte repliable | Son fond | `--panel-3` et la main ; la flèche garde sa couleur |
 | Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne d'un menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
 | Flèche d'un pas de saison, saison qui ouvre sa liste | Aucun fond | `--panel-3` ; la flèche garde la couleur du club |
 | Flèche de la navigation d'un bandeau, traits qui ouvrent sa liste | Aucun fond | Un voile de l'encre du bandeau, à 12 % ; ils gardent leur couleur |
@@ -393,6 +396,23 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
   camp : celui qui reçoit est à gauche (sa composition, ses temps forts, sa part
   des barres). Les compositions n'ont pas de titre.
 
+### Temps forts d'un match
+
+Les buts, les blessures et les cartons rouges, dans l'ordre du match
+(`.highlight-row`) : la minute au milieu, en chiffre clé (16, `--display`,
+`--accent-text`), chaque fait au bord de son camp, celui qui reçoit à gauche.
+
+- **Une ligne de 26 par fait**, quels que soient les noms : aucune ne passe sur
+  deux lignes.
+- **Marques** (`.marks`), au bord : le ballon, la croix de la blessure, le
+  carton rouge ; un carton jaune puis le rouge pour un deuxième avertissement.
+  Aucun libellé (« But », « Blessure ») : la marque le dit, son infobulle aussi.
+- **Joueur** : son nom court (voir « Joueurs »), en 600 à l'encre forte.
+- **Passeur** : après le buteur, en 11, atténué, sans mot ni signe. Quand les
+  deux ne tiennent pas, il est coupé avant le buteur.
+- **Infobulles** : le nom entier du joueur ; « Passe de » et le nom entier sur le
+  passeur.
+
 ### Match dans une liste
 
 Le tour d'une compétition, la journée d'un championnat, les matches d'un pays
@@ -417,9 +437,9 @@ buts d'abord, le score coloré V, N ou D), garde sa ligne propre.
   tirs au but disent que le cumul était à égalité. Ses chiffres sont à la même
   encre, sans gras ; ceux du match passent alors à l'encre courante (`--ink-2`),
   comme ceux d'un match aller, qui ne départage rien.
-- **Buteurs** : sous chaque camp, en 11 / 14, atténués : le nom de famille, lien
-  vers le joueur, puis la minute de chaque but suivie d'une apostrophe, un point
-  médian entre deux buteurs (« Mendes 12’ · Barcola 58’ 71’ »).
+- **Buteurs** : sous chaque camp, en 11 / 14, atténués : le nom court (voir
+  « Joueurs »), lien vers le joueur, puis la minute de chaque but suivie d'une
+  apostrophe, un point médian entre deux buteurs (« Mendes 12’ · Barcola 58’ 71’ »).
 - **Club dirigé** : son match a le fond `--own-row`, sur toute la ligne. Son
   vainqueur s'y lit comme sur les autres : même graisse, même encre.
 - **Mesures** : une ligne seule a 26 ; des buteurs ou un étage lui donnent une
@@ -509,6 +529,28 @@ faute de place.
 | D'un autre club | Faire une offre, Négocier le contrat ou Proposer un contrat (joueur libre), puis Emprunter |
 | Sur l'écran Composition | D'abord « Sortir de la composition » ou « Mettre dans la composition », seul dans son groupe |
 
+### Carte repliable
+
+Une carte dont une partie est secondaire la replie (`.card.fold`) : elle montre
+l'essentiel, et son en-tête entier montre le reste (`.card-head.toggle`).
+
+- **En-tête** : son titre, puis, à son bout, une flèche nue (`.toggle-arrow`) :
+  le chevron de 16 au trait d'une icône (1.7), en `--muted`, vers le bas quand
+  la carte est repliée, retourné quand elle est ouverte. Ni bouton, ni bordure,
+  ni libellé.
+- **Sous le pointeur** : tout l'en-tête prend `--panel-3` et la main ; la flèche
+  garde sa couleur.
+- **Repliée** : ce qui est secondaire (`.fold-more`) ne prend aucune place, et
+  rien ne dit ce qui attend.
+- **Le choix est gardé**, carte par carte : d'un match à l'autre, après un
+  rechargement.
+- Une carte dont l'en-tête porte déjà un lien ou des commandes ne se replie pas
+  ainsi.
+
+| Carte | Montré | Replié |
+|---|---|---|
+| Le match en chiffres (compte rendu, direct) | Buts attendus, tirs, tirs cadrés, possession | Corners, coups francs, cartons jaunes, cartons rouges |
+
 ## Terrain et maillot
 
 Un seul terrain et un seul joueur, sur tous les écrans.
@@ -554,6 +596,8 @@ gardent les encres, la couleur reste à la barre.
   deux sont atténués.
 - Les camps ne sont pas nommés : celui qui reçoit est à gauche, comme dans le
   bandeau du match.
+- La carte se replie sur ses quatre premières lignes ; son en-tête montre les
+  autres (voir « Carte repliable »).
 
 ### La couleur d'un club dans un graphique
 
@@ -675,6 +719,27 @@ phase finale : Euro 2032.
 - Tout montant s'écrit en €, k€ ou M€ : € sous 1 000, k€ sous 1 000 000, M€
   au-delà (850 €, 95 k€, 1.2 M€).
 
+### Joueurs
+
+Là où la place manque, un joueur s'écrit par son nom court : son nom de famille
+seul, le dernier mot de son nom avec les particules qui le précèdent
+(« De Bruyne », « van der Sar ») ; un nom d'un seul mot reste entier
+(« Ângelo »). Quand un coéquipier de l'effectif du club ou de la sélection porte
+le même nom, l'initiale du prénom le précède (« L. Hernandez » à côté de Théo),
+ou autant de lettres qu'il en faut pour les distinguer (« Be. Cheyrou » à côté
+de « Br. Cheyrou »). Le nom entier est dans l'infobulle.
+
+L'API le donne (`short`, et `player_short`, `secondary_short` sur un fait du
+match), calculé dans l'effectif du camp : les joueurs du club et ceux du match.
+Il s'écrit partout où le nom de famille suffisait :
+
+| Où | Effectif où il se distingue |
+|---|---|
+| Temps forts d'un match, buteurs sous un match dans une liste | Le camp du joueur dans ce match |
+| Terrain du compte rendu, dernier onze, résumé 2D | Le camp du joueur dans ce match |
+| Composition : terrain et banc | Le club dirigé |
+| Direct : terrain de la tactique, vignettes sous le terrain | Le camp du joueur |
+
 ### Transferts
 
 Dans une liste, un transfert s'écrit du club quitté au club rejoint, une flèche
@@ -764,7 +829,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`) |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU et CM ; classements dans l'ordre des colonnes de la charte (D, non P) |
-| Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) |
+| Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
 | Sous le pointeur | Une seule règle pour les liens, les lignes et les commandes, dans `web/charte.css` ; les autres feuilles n'en disent plus rien (`tests/frontend/charte.test.mjs`) |
@@ -773,7 +838,8 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 | Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
 | Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club, sur Calendrier d'une sélection, sur le tableau d'une coupe nationale et sur une coupe d'Europe (`tools` de `clubHero`, `nationHero` et `competitionHero`), au bout de la ligne du titre sur Mercato mondial, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
-| Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`) |
+| Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`). Les temps forts sur une ligne de 26 chacun, sans libellé : les marques, le nom court du joueur, le passeur en petit (`highlightsCard`, `web/match.js` ; `short_names`, `src/api/views.py`, aussi au direct) |
+| Noms courts | Le nom de famille, et l'initiale ou les lettres du prénom devant un homonyme de l'effectif (`short_names`, `squad_short_names`, `src/api/views.py` ; `shortName`, `web/ui.js`) : temps forts, buteurs sous un match, terrain du compte rendu, dernier onze, résumé 2D, composition, direct |
 | Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
 | Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
 | En-tête d'une compétition | Le bandeau d'un club (`competitionHero`, `web/club-hero.js`) sur un championnat, une coupe nationale, une coupe d'Europe et une édition des sélections, à la place de la ligne du titre : l'emblème seul sur le bandeau (`web/emblems/`) ou le drapeau du pays sur le disque, une tuile pour le vainqueur ou le tenant du titre (`winner`, `holder` de l'API) à la place de la ligne « Vainqueur » sous les onglets ; ses couleurs et son fond (`COMPETITION_COLORS`, `api/nations.py`). Le bloc de navigation du bandeau remplace le choix C1, C3, C4 de Coupes d'Europe et le pas d'édition des sélections (`europeNavigation`, `editionNavigation`, `web/navigation.js`) ; dans sa liste, une compétition suit sa pastille |
@@ -821,3 +887,7 @@ encore en 600, sans couleur.
 Le rang d'un classement a la sienne (proposition F, « Pâle cerclée ») :
 <https://claude.ai/artifact/XtXAQFjzDkHCpFNR7hn5R2> ; les canevas et planches
 antérieurs montrent le trait à gauche du rang.
+La carte repliable et les temps forts d'un match ont la leur (chiffres :
+proposition E, « L'en-tête entier » ; temps forts : proposition G, l'initiale
+seulement entre homonymes d'un effectif) :
+<https://claude.ai/artifact/BY9WbaVsvTNye4bL8CQUan>.

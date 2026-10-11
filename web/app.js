@@ -1,5 +1,5 @@
 import {worldHistoryScreen} from './world-history.js';
-import {api,escape as e,number as n,date,season,kitDot,card,stat,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub} from './ui.js';
+import {api,escape as e,number as n,date,season,kitDot,card,stat,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
 import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
@@ -409,6 +409,10 @@ main.addEventListener('click',async event=>{
 // So does the menu of a filter, which also closes when another one opens.
 document.addEventListener('click',event=>document.querySelectorAll('.entity-menu[open],.filter-menu[open],.season-pick[open]').forEach(menu=>{if(!menu.contains(event.target)||event.target.closest('.entity-menu .menu>*,.filter-menu a,.season-pick .menu>*'))menu.removeAttribute('open');}));
 document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=document.querySelector('.entity-menu[open],.filter-menu[open],.season-pick[open]');if(menu){menu.removeAttribute('open');menu.querySelector('summary').focus();}});
+// A card that folds opens and closes from its whole head, with the mouse or Enter and Space; the choice is kept (foldCard).
+const turnFold=head=>{const open=head.closest('.card').classList.toggle('open');head.setAttribute('aria-expanded',open);setFoldOpen(head.dataset.fold,open);};
+document.addEventListener('click',event=>{const head=event.target.closest?.('.card-head.toggle');if(head)turnFold(head);});
+document.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches?.('.card-head.toggle')){event.preventDefault();turnFold(event.target);}});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.filter-menu')||!menu.open)return;main.querySelectorAll('.filter-menu[open]').forEach(other=>{if(other!==menu)other.removeAttribute('open');});if(!menu.contains(document.activeElement))menu.querySelector('input')?.focus();},true);
 // A row picked in a list refreshes the preview beside it, without drawing the list again; the address keeps the row for the
 // next redraw. The arrows step through the rows, Enter opens the page of the picked one.

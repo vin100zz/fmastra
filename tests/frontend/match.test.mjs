@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {matchHero} from '../../web/club-hero.js';
 import {matchScreen} from '../../web/match.js';
-import {setNations} from '../../web/ui.js';
+import {setNations,setFoldOpen} from '../../web/ui.js';
 
 const home={id:1,name:'Real <Madrid>',major_color:'#F8F8F8',minor_color:'#F8C028'},away={id:2,name:'Marseille',major_color:'#F8F8F8',minor_color:'#2098C8'};
 
@@ -69,7 +69,31 @@ test('each side is named once, in the band: the line-ups have no heading, nothin
  assert.doesNotMatch(html,/match-sides|match-banner|scoreboard/);
  assert.equal((html.match(/<section class="card match-lineup"><div class="pitch" aria-label="Composition de /g)||[]).length,2);
  // The home side's highlights stand on the left of the minute, the away side's on its right.
- assert.match(html,/<h2>Les temps forts<\/h2><\/div><div class="highlights"><div class="highlight-row"><div class="highlight home"><span class="match-mark goal"[^]*?<span class="minute">40′<\/span><div class="highlight away"><\/div><\/div>/);
- assert.match(html,/<div class="highlight home"><\/div><span class="minute">66′<\/span><div class="highlight away"><span class="match-mark booking red"/);
- assert.match(html,/<h2>Le match en chiffres<\/h2><\/div><div class="comparisons"><div class="comparison">/);
+ assert.match(html,/<h2>Les temps forts<\/h2><\/div><div class="highlights"><div class="highlight-row"><div class="highlight home"><span class="marks"><span class="match-mark goal"[^]*?<span class="minute">40′<\/span><div class="highlight away"><\/div><\/div>/);
+ assert.match(html,/<div class="highlight home"><\/div><span class="minute">66′<\/span><div class="highlight away"><span class="marks"><span class="match-mark booking red"/);
+ assert.match(html,/<h2>Le match en chiffres<\/h2><svg class="toggle-arrow"[^]*?<\/svg><\/div><div class="comparisons"><div class="comparison">/);
+});
+
+test('a highlight takes one line: its marks, the player by his short name, a goal’s passer after him, whole names in tooltips',async()=>{
+ const events=[{kind:'goal',period:1,second:840,team_id:1,player_id:11,player:'Lucas Hernandez',player_short:'L. Hernandez',secondary_id:12,secondary:'Benoit Cheyrou',secondary_short:'Be. Cheyrou',detail:''},
+  {kind:'red',period:2,second:3840,team_id:2,player_id:21,player:'Honest Ahanor',player_short:'Ahanor',secondary_id:null,secondary:null,detail:'second_yellow'},
+  {kind:'injury',period:2,second:4000,team_id:2,player_id:22,player:'Ângelo',player_short:null,secondary_id:null,secondary:null,detail:''}];
+ const html=await screen({...report,result:{...report.result,events}});
+ assert.match(html,/<div class="highlight home"><span class="marks"><span class="match-mark goal" title="But"><\/span><\/span><span class="highlight-names"><strong title="Lucas Hernandez"><a href="#\/player\/11">L\. Hernandez<\/a><\/strong><small title="Passe de Benoit Cheyrou"><a href="#\/player\/12">Be\. Cheyrou<\/a><\/small><\/span><\/div><span class="minute">14′<\/span>/);
+ // A second yellow card: a yellow card, then the red one. No label is written under the name.
+ assert.match(html,/<span class="marks"><span class="match-mark booking yellow" title="Carton jaune"><\/span><span class="match-mark booking red" title="Deuxième carton jaune"><\/span><\/span><span class="highlight-names"><strong title="Honest Ahanor"><a href="#\/player\/21">Ahanor<\/a><\/strong><\/span>/);
+ // Without a short name from the API, the family name; a single name needs no tooltip.
+ assert.match(html,/<strong><a href="#\/player\/22">Ângelo<\/a><\/strong>/);
+ assert.doesNotMatch(html,/<small>(But|Blessure)|Passe de <a/);
+});
+
+test('the figures of a match fold on their first four lines; the whole head opens the rest, and the choice is kept',async()=>{
+ const html=await screen(report);
+ assert.match(html,/<section class="card fold match-stats"><div class="card-head toggle" role="button" tabindex="0" aria-expanded="false" data-fold="match-stats"><h2>Le match en chiffres<\/h2><svg class="toggle-arrow"[^>]*><path[^>]*\/><\/svg><\/div><div class="comparisons">/);
+ const lines=[...html.matchAll(/<div class="comparison( fold-more)?">.*?<div>([^<]+)</g)].map(([,more,label])=>`${label}${more?' (replié)':''}`);
+ assert.deepEqual(lines,['Buts attendus (xG)','Tirs','Tirs cadrés','Possession','Corners (replié)','Coups francs (replié)','Cartons jaunes (replié)','Cartons rouges (replié)']);
+ // Opened once, the card is open on the next match.
+ setFoldOpen('match-stats',true);
+ try{assert.match(await screen(report),/<section class="card fold open match-stats"><div class="card-head toggle" role="button" tabindex="0" aria-expanded="true"/);}
+ finally{setFoldOpen('match-stats',false);}
 });

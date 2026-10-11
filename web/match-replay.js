@@ -4,7 +4,7 @@
 // The ball always belongs to someone. A carrier dribbles it at his feet; a pass flies to where the receiver
 // is *now*, not where he stood when it was struck, so it never lands in empty grass. Every other player
 // glides towards a target recomputed each frame from the ball, with frame-rate independent smoothing.
-import {escape as e,surname} from './ui.js';
+import {escape as e,shortName} from './ui.js';
 
 const W=105,H=68;
 // The engine's grid in a side's own frame: u from its goal (0) to the opponent's (1), v from its left to its right.
@@ -736,8 +736,8 @@ let keys=0;
 // `teams` holds {name, major, minor, keeper} for each side; the element starts itself once inserted.
 function rosterNames(result){
  const names=new Map();
- for(const player of [...result.home_lineup,...result.home_bench,...result.away_lineup,...result.away_bench])names.set(player.id,surname(player.name));
- for(const event of result.events){if(event.player&&!names.has(event.player_id))names.set(event.player_id,surname(event.player));if(event.secondary&&!names.has(event.secondary_id))names.set(event.secondary_id,surname(event.secondary));}
+ for(const player of [...result.home_lineup,...result.home_bench,...result.away_lineup,...result.away_bench])names.set(player.id,shortName(player.name,player.short));
+ for(const event of result.events){if(event.player&&!names.has(event.player_id))names.set(event.player_id,shortName(event.player,event.player_short));if(event.secondary&&!names.has(event.secondary_id))names.set(event.secondary_id,shortName(event.secondary,event.secondary_short));}
  return names;
 }
 // The live match: `state` is the match so far (as GET /direct returns it), `next()` fetches the following segment.

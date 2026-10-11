@@ -165,3 +165,14 @@ test('beside the list of clubs, the picked one is previewed: standing, matches, 
  for(const tab of ['squad','calendar','finances','transfers'])assert.ok(html.includes(`<a class="button" href="#/club/7/${tab}">`));
  assert.doesNotMatch(html,/NaN|undefined/);
 });
+
+test('on a compact pitch and in the last eleven, a player goes by his short name; his whole name is in the tooltip',()=>{
+ const players=[{id:1,name:'Lucas Hernandez',short:'L. Hernandez',position:'DC'},{id:2,name:'Kylian Mbappé',position:'BU'}];
+ const compact=pitch(players,'x',{compact:true});
+ assert.match(compact,/title="Lucas Hernandez"[^>]*>[^]*?<small>L\. Hernandez<\/small>/);
+ // Without a short name from the API, his surname; a full pitch writes the whole name.
+ assert.match(compact,/title="Kylian Mbappé"[^>]*>[^]*?<small>Mbappé<\/small>/);
+ assert.match(pitch(players),/<small>Lucas Hernandez<\/small>/);
+ const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players:players.map(player=>({...player,temporary:false}))};
+ assert.match(lineupBlock(club,lineup),/<small>L\. Hernandez<\/small>/);
+});

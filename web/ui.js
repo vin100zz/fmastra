@@ -190,10 +190,20 @@ export const position = value => `<span class="position ${group(value)}">${escap
 // The family name for tight spaces: the last word with the particles before it ("de Lange", "Van der Sar"), never the first word.
 const PARTICLES=new Set(['da','das','de','del','della','den','der','des','di','do','dos','du','el','la','le','lo','ten','ter','van','von']);
 export const surname = name => {const words=String(name??'').trim().split(/\s+/);let start=words.length-1;while(start>1&&PARTICLES.has(words[start-1].toLowerCase()))start--;return words.slice(start).join(' ');};
+// A player's short name: the one the API gives (`short`), told apart within his squad ("L. Hernandez"), else his surname.
+export const shortName = (name, short) => short || surname(name);
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
 export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
 export const card = (title, content, action='', className='') => `<section class="card${className?` ${className}`:''}"><div class="card-head"><h2>${escape(title)}</h2>${action}</div>${content}</section>`;
+// A card that folds what is secondary (what `content` marks `fold-more`): its whole head opens and closes it, a bare arrow at
+// its end (app.js turns it). The choice is kept for each `key`, from one match to the next and across reloads.
+const FOLDS_KEY='touchline-folds';
+let folds={};
+const readFolds=()=>{try{return JSON.parse(localStorage.getItem(FOLDS_KEY))||folds;}catch{return folds;}};
+export const isFoldOpen = key => readFolds()[key]===true;
+export const setFoldOpen = (key, open) => {folds={...readFolds(),[key]:open};try{localStorage.setItem(FOLDS_KEY,JSON.stringify(folds));}catch{}};
+export const foldCard = (key, title, content, className='') => {const open=isFoldOpen(key);return `<section class="card fold${open?' open':''}${className?` ${className}`:''}"><div class="card-head toggle" role="button" tabindex="0" aria-expanded="${open}" data-fold="${escape(key)}"><h2>${escape(title)}</h2><svg class="toggle-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></div>${content}</section>`;};
 export const stat = (label, value, hint='') => `<div class="stat-card"><span class="label">${escape(label)}</span><strong>${escape(value)}</strong><small>${escape(hint)}</small></div>`;
 export const fact = (label,value) => `<div class="fact"><span>${escape(label)}</span><strong>${value}</strong></div>`;
 // `lead` (the block stepping between peers) sits at the left of the title.
@@ -371,8 +381,8 @@ export function standingsTable(data, compact=false, sortable=false, own=ownClub)
 let ownClub=null;
 export const setOwnClub = id => ownClub=id??null;
 export const isOwnClub = club => ownClub!=null&&club?.id===ownClub;
-// Under each side of a played match, its scorers by surname, each with the minutes of his goals: "Maupay 14’ 75’ · Gouiri 26’".
-const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(surname(scorer.name))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(surname(scorer.name))}</a>`} ${scorer.minutes.map(minute=>`${escape(minute)}’`).join(' ')}`).join(' · ');
+// Under each side of a played match, its scorers by short name, each with the minutes of his goals: "Maupay 14’ 75’ · Gouiri 26’".
+const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(shortName(scorer.name,scorer.short))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(shortName(scorer.name,scorer.short))}</a>`} ${scorer.minutes.map(minute=>`${escape(minute)}’`).join(' ')}`).join(' · ');
 const scorersRow = scorers => scorers&&scorers.some(side=>side.length)?`<div class="fixture-scorers home">${scorerList(scorers[0])}</div><div class="fixture-scorers away">${scorerList(scorers[1])}</div>`:'';
 // A match on a line of a list (docs/charte-graphique.md, « Match dans une liste »): the side at home, the score, the other
 // side, each mark against the score, and under each side its scorers. The name in bold, in the accent's ink, is the winner's
@@ -398,7 +408,7 @@ export function fixtureRow(match,{own=ownClub,levels=null,wide=false}={}){
 export const hasStorey = matches => matches.some(match=>match.aggregate||match.penalties);
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide})}`;}).join('');}
 // The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
-// grey) with his position on it, his name under it (his surname when `compact`), his note of the match on its right (on its
+// grey) with his position on it, his name under it (his short name when `compact`), his note of the match on its right (on its
 // left along the right touchline) and what he did (`marks(player)`) on its left.
 export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null}={}){
  const bands={GB:90,DC:75,DG:69,DD:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
@@ -411,7 +421,7 @@ export function pitch(lineup,label='Composition initiale',{compact=false,kit=nul
   const row=rows[line(player)],y=bands[player.position]??45;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
   const tag=player.temporary?'span':'a',note=player.stats?.rating?`<span class="position-note${x>80?' left':''}">${matchNoteBadge(player.stats.rating)}</span>`:'';
-  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position)}${marks?marks(player):''}${note}<small>${escape(compact?surname(player.name):player.name)}${player.temporary?' (temp.)':''}</small></${tag}>`;
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position)}${marks?marks(player):''}${note}<small>${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}</small></${tag}>`;
  }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};

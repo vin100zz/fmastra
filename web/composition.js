@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,surname,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,PITCH_BOXES,clubLink,form,date,safeColor} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,PITCH_BOXES,clubLink,form,date,safeColor} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -181,7 +181,7 @@ function slotHtml(id,role,cell,index,byId){
  const note=player?positionNote(player,role,wantedAt(role)):'',side=noteSide(shape(),cell);
  // A starter wears the club's kit; an empty place keeps the outline of a shirt.
  const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player,inside:player?affinityTag(player.position_affinities?.[role],role)+formArrow(player.form):''});
- return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small></div>`;
+ return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${note?`<span class="position-note${side?` ${side}`:''}">${note}</span>`:''}<small>${player?`${unavailableIcon(player)}${e(shortName(player.name,player.short))}`:'—'}</small></div>`;
 }
 // The free cells of the grid, shown while a place of the pitch is dragged.
 function cellsHtml(){
@@ -191,7 +191,7 @@ function cellsHtml(){
 }
 function benchHtml(id,index,byId){
  const player=byId.get(id);
- return `<div class="bench-slot${player?'':' empty'}${player?.unavailable?' invalid':''}" data-bench="${index}"${player?` data-player="${player.id}" draggable="true" title="${e(player.name)}"`:''}>${player?`${position(player.position)}<span>${unavailableIcon(player)}${e(surname(player.name))}</span>`:'<span class="muted">Remplaçant</span>'}</div>`;
+ return `<div class="bench-slot${player?'':' empty'}${player?.unavailable?' invalid':''}" data-bench="${index}"${player?` data-player="${player.id}" draggable="true" title="${e(player.name)}"`:''}>${player?`${position(player.position)}<span>${unavailableIcon(player)}${e(shortName(player.name,player.short))}</span>`:'<span class="muted">Remplaçant</span>'}</div>`;
 }
 
 const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['form','FORME'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
@@ -348,7 +348,7 @@ function install(){
   const role=pitch?roles()[dragged.slot]:spot?.kind==='slot'?roles()[spot.index]:player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}${player?player.unavailable?' invalid':'':' empty'}`;
-  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player})}<small>${player?`${unavailableIcon(player)}${e(surname(player.name))}`:'—'}</small>`;
+  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player})}<small>${player?`${unavailableIcon(player)}${e(shortName(player.name,player.short))}`:'—'}</small>`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());
