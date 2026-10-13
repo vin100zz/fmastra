@@ -12,9 +12,9 @@ Il répartit son effectif sur les {{monde.regles_match.joueurs_sur_terrain}} pla
 
 ## Quand et qui il regarde
 
-Le jour d'ouverture d'un mercato, tous les clubs font leur plan. Les jours suivants, un club ne retourne sur le marché qu'avec une faible probabilité chaque jour ({{pct(ia_gestion.mercato.daily_proposal_probability, 0)}} s'il ne peut plus ouvrir qu'un dossier, {{pct(ia_gestion.mercato.daily_proposal_probability / ia_gestion.mercato.negociations_actives_max, 0)}} s'il peut en ouvrir {{ia_gestion.mercato.negociations_actives_max}}), sauf urgence, ou quand une de ses offres vient d'échouer : il cherche alors aussitôt une autre cible.
+Tous les clubs font leur plan le jour d'ouverture d'un mercato, et de nouveau le {{date(monde.dates_cles.bilan_demographique.jour, monde.dates_cles.bilan_demographique.mois)}}, quand le bilan annuel renouvelle leurs budgets (voir [Le budget de transferts](#/aide/finances/le-budget-de-transferts)). Les autres jours, un club ne retourne sur le marché qu'avec une faible probabilité chaque jour ({{pct(ia_gestion.mercato.daily_proposal_probability, 0)}} s'il ne peut plus ouvrir qu'un dossier, {{pct(ia_gestion.mercato.daily_proposal_probability / ia_gestion.mercato.negociations_actives_max, 0)}} s'il peut en ouvrir {{ia_gestion.mercato.negociations_actives_max}}), sauf urgence, quand une de ses offres vient d'échouer ou quand il vient de vendre un joueur : il cherche alors aussitôt une cible pour chaque offre échouée et chaque joueur vendu.
 
-Un club mène au plus {{ia_gestion.mercato.negociations_actives_max}} dossiers à la fois et ne recrute pas deux fois au même poste dans la même fenêtre, sauf pénurie.
+Un club mène au plus {{ia_gestion.mercato.negociations_actives_max}} dossiers à la fois et ne recrute pas deux fois au même poste dans la même fenêtre, sauf pénurie : il n'a plus à ce poste assez de joueurs pour sa formation ({{ia_gestion.garde_fous.gardiens_min}} pour les gardiens), sans compter la réserve ni les joueurs sous le niveau qu'il vise pour une doublure.
 
 Pour le poste recherché, il examine :
 

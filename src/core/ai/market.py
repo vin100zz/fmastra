@@ -381,6 +381,17 @@ def reinforced_positions(world: World) -> dict[int, set[Position]]:
     return completed
 
 
+def sales_today(world: World) -> Counter[int]:
+    """Players each club sold today: the settlement of the day's offers comes before the clubs' reviews."""
+    sold: Counter[int] = Counter()
+    # Movements are appended chronologically: today's are the tail.
+    for move in reversed(world.transfers):
+        if move.date < world.date: break
+        if move.date == world.date and move.kind == "transfer" and move.source_id is not None:
+            sold[move.source_id] += 1
+    return sold
+
+
 def short_of_players(squad: list[Player], cfg: Config) -> bool:
     """Below the hard squad or goalkeeper minimum: the club must recruit."""
     guard = cfg.management.guardrails
@@ -438,8 +449,10 @@ def recruitment_plan(world: World, club: Club, pending: list, slots: int, reinfo
     projected = squad + [world.players[offer.player_id] for offer in pending if offer.player_id in world.players]
     covered = {player.position for player in projected[len(squad):]}
     # Keep the window's plan after signatures; don't buy successive small
-    # upgrades at an already reinforced position. Actual shortages reopen it.
-    counts = Counter(player.position for player in projected)
+    # upgrades at an already reinforced position. Actual shortages reopen it:
+    # only first-team players count, not the reserve nor anyone beneath the club's backups.
+    floor = target_level(club, cfg) - cfg.management.target_profile.backup_discount
+    counts = Counter(player.position for player in projected if player.reserve_since is None and player.rating >= floor)
     required_counts = Counter(Position(role) for role in cfg.formations.formations[club.formation])
     required_counts[Position.GOALKEEPER] = cfg.management.guardrails.min_goalkeepers
     if len(projected) >= cfg.management.guardrails.min_squad:
@@ -508,8 +521,13 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         """The human club turned this club's offer down for good in this window; listed since, he is offered to all."""
         return player.id not in listed and club.id in world.turned_away.get(player.id, ())
     proposals = []
-    opening_day = any((world.date.month, world.date.day) == (window.start_month, window.start_day)
-                      for window in (cfg.world.market.summer, cfg.world.market.winter))
+    # Every club plans on the day a window opens, and again on the day the annual review renews its budgets, which
+    # falls in the summer window: the season's money is not left to chance reviews.
+    review = cfg.world.key_dates.population_review
+    planning_day = (world.date.month, world.date.day) in {
+        *((window.start_month, window.start_day) for window in (cfg.world.market.summer, cfg.world.market.winter)),
+        (review.month, review.day)}
+    sold = sales_today(world)
     completed_positions = reinforced_positions(world)
     # Quotes are valid for this snapshot; settlement checks the seller again.
     quotes: dict[int, int] = {}
@@ -592,12 +610,14 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         urgent = short_of_players([world.players[pid] for pid in club.player_ids], cfg)
         if emergency and not urgent: continue
         slots = open_slots(club, pending, cfg)
-        if club.id in rejected: slots = min(slots, len(rejected[club.id]))
+        # A failed offer or a sale sends a club back to the market at once, for one player in place of each.
+        prompted = len(rejected.get(club.id, ())) + sold[club.id]
+        if prompted and not planning_day: slots = min(slots, prompted)
         if slots <= 0: continue
-        # Opening-day planning covers several positions. Later batch reviews
+        # Planning days cover several positions. Later batch reviews
         # preserve the configured rate of opportunities instead of tripling it.
         review_probability = cfg.management.market.daily_proposal_probability / max(1, slots)
-        reviewing = urgent or opening_day or club.id in rejected or rng.random() < review_probability
+        reviewing = urgent or planning_day or prompted > 0 or rng.random() < review_probability
         # One day of each window, a club that cares for the young looks for a prospect, whatever its needs.
         searching = (not emergency and not urgent and window is not None and approach_day(
             world.seed, club.id, *window, min(1.0, 2 * scouting.prospect_search_probability * club.personality.youth_preference),

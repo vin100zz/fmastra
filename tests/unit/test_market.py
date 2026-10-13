@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import replace
 from random import Random
 
@@ -7,7 +8,7 @@ from benchmarks.fixtures import synthetic_lineup
 from core.domain.clubs import Club, ClubPersonality, ClubStatus
 from core.domain.date import Date
 from core.domain.world import World, TransferRecord
-from core.domain.players import Contract
+from core.domain.players import Contract, Position
 from core.domain.offers import TransferOffer
 from core.ai.market import squad_quality
 from core.ai.external_market import approach_day
@@ -570,6 +571,45 @@ def test_completed_position_reopens_for_a_real_shortage(config):
     club.player_ids.remove(keeper_ids[1])
     assert any(world.players[p.player_id].position == "GB" and p.target_id == 1
                for p in propose_transfers(world, Random(1)))
+
+
+@pytest.mark.parametrize("unfit", ["reserve", "weak"])
+def test_reinforced_position_reopens_without_enough_first_team_players(config, monkeypatch, unfit):
+    from core.ai.market import propose_transfers, Need
+    from core.ai.controller import AIController
+    world = recruitment_world(config)
+    club = world.clubs[1]
+    monkeypatch.setattr(AIController, "evaluate_needs", lambda *args: [Need(Position.CENTER_BACK, 100)])
+    reinforcement, *others = [pid for pid in club.player_ids if world.players[pid].position == Position.CENTER_BACK]
+    world.transfers.append(TransferRecord(world.date, reinforcement, 2, 1, 1000))
+    assert not any(p.target_id == 1 for p in propose_transfers(world, Random(1)))
+    for pid in others:
+        if unfit == "reserve": world.players[pid].reserve_since = world.date
+        else: world.players[pid].rating = 50
+    assert any(world.players[p.player_id].position == Position.CENTER_BACK and p.target_id == 1
+               for p in propose_transfers(world, Random(1)))
+
+
+def test_sale_sends_the_seller_back_to_market_for_one_player(config):
+    from core.ai.market import propose_transfers
+    world = recruitment_world(config, probability=0)
+    world.date = Date(2026, 7, 15)
+    assert not propose_transfers(world, Random(1))
+    assert apply(world, PlayerSigned(201, 2, 1, Contract(1500, Date(2029, 6, 30), world.date), 50000))
+    assert [p.target_id for p in propose_transfers(world, Random(1))] == [2]
+    world.date = world.date.add_days(1)
+    assert not propose_transfers(world, Random(1))
+
+
+def test_budget_renewal_day_is_a_planning_day(config):
+    from core.ai.market import propose_transfers
+    world = recruitment_world(config, probability=0)
+    review = config.world.key_dates.population_review
+    world.date = Date(2026, review.month, review.day)
+    planned = Counter(p.target_id for p in propose_transfers(world, Random(1)))
+    assert planned[1] > 1 and planned[2] > 1
+    world.date = world.date.add_days(1)
+    assert not propose_transfers(world, Random(1))
 
 
 def test_initial_funding_shrinks_with_payroll_and_never_refills(config):

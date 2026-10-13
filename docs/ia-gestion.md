@@ -291,7 +291,9 @@ est tiré pour la fenêtre (flux `outside-need`) pour un club dormant, qui n'a p
 d'effectif simulé. Un club ne propose rien pour un joueur dont le prix demandé
 dépasse ce maximum : il passe au candidat suivant.
 
-À l'ouverture de chaque fenêtre, chaque club évalue son effectif et peut ouvrir
+À l'ouverture de chaque fenêtre, et le jour du bilan annuel qui renouvelle les
+budgets (`dates_cles.bilan_demographique`, dans la fenêtre d'été), chaque club
+évalue son effectif et peut ouvrir
 jusqu'à `negociations_actives_max` dossiers sur des postes différents (trois).
 Les besoins utilisent une affectation unique aux places de titulaire, rotation
 et doublure, avec les postes secondaires et les décotes de niveau configurées.
@@ -299,10 +301,14 @@ Les cibles en cours sont intégrées à l'effectif projeté : pas de doublon au 
 poste ni de budget ou de salaire promis plusieurs fois. Les revues ultérieures
 divisent `daily_proposal_probability` par le nombre de places de négociation
 disponibles, afin que les dossiers multiples ne triplent pas la fréquence.
+Une offre échouée ou une vente (`sales_today`) renvoie le club sur le marché le
+jour même, pour une cible par offre échouée ou par joueur vendu.
 Un poste renforcé reste traité jusqu'à la prochaine fenêtre : le club ne
 rachète pas plusieurs améliorations successives au même poste. Un manque réel
 de joueurs pour la formation, de gardiens ou d'effectif minimal peut rouvrir
-le dossier. Le plan est reconstitué depuis l'historique des transferts, y compris
+le dossier ; ne comptent pour la formation et les gardiens que les joueurs
+hors réserve au moins au niveau visé pour une doublure
+(`profil_cible.decote_doublure` sous le niveau visé). Le plan est reconstitué depuis l'historique des transferts, y compris
 après rechargement et lorsque la fenêtre estivale traverse le bilan annuel.
 
 La shortlist est constituée après les contrôles de disponibilité, de salaire
@@ -572,7 +578,7 @@ ils ne garantissent pas que tous les joueurs sont disponibles chaque jour.
 
 ## Validation
 
-La suite économique couvre 25 saisons après stabilisation, plusieurs graines,
+La suite économique couvre 15 saisons après stabilisation, plusieurs graines,
 et des valeurs réelles sans inflation. Mesurer dérive cumulative des salaires,
 concentration, trésorerie et diversité des transferts ; ne pas confondre une
 croissance annuelle bornée avec une croissance durablement bornée.

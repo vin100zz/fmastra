@@ -137,7 +137,15 @@ Rapporter la durée de calendrier couverte pour comparer les résultats.
 L'import contient au maximum 30 joueurs par club ; l'IA vise le profil nominal,
 qui peut être inférieur. Exclure la phase de stabilisation configurée des
 comparaisons de dérive. Après elle, simuler 30 saisons pour la démographie et
-25 pour l'économie, sur les graines de monde configurées.
+15 pour l'économie, sur les graines de monde configurées.
+
+Pour l'économie, 15 saisons observées suffisent au verdict : recalculés sur les mesures
+saison par saison d'une référence de 25 saisons (12 octobre 2026), tous les critères
+qui en dépendent donnaient le même verdict à 15 saisons qu'à 25. À 10 saisons, les
+dérives lentes (masse salariale, élites au-dessus de 85, indemnités, trésorerie, postes)
+passaient encore sous leur seuil : 10 saisons servent à comparer deux variantes côte à
+côte, pas à trancher. Un changement de règle se compare critère par critère à la
+référence du code actuel, lancée avec la même graine et le même horizon.
 
 Comparer les moyennes des fenêtres initiale et finale, de largeur configurée,
 pour réduire l'effet d'une cohorte exceptionnelle. Actifs, dormants et libres
@@ -169,9 +177,10 @@ transferts entre régimes pour vérifier l'identité comptable des populations.
   clôture du nombre configuré de saisons consécutives. Rapporter aussi les creux.
 - Transferts : arrivées définitives par club et fenêtre ; part depuis dormants
   parmi les arrivées ayant un club vendeur (les libres sont une ligne distincte).
-- Champions différents : par pays, sur les 25 saisons après stabilisation.
+- Champions différents : par pays, sur les saisons observées après stabilisation
+  (la clé `champions_differents_par_pays_sur_25` garde son nom d'origine).
 - Réputation des clubs (`docs/reputation.md`), sur les clubs actifs, garde-fous larges
-  posés sur les premières saisons observées, à resserrer avec les 25 saisons : dérive de la
+  posés sur les premières saisons observées, à resserrer avec les saisons observées : dérive de la
   moyenne entre fenêtres (≤ 3 points), dérive relative de la dispersion (≤ 25 %), variation
   annuelle moyenne en valeur absolue (0,5 à 3 points), plus grand saut annuel (≤ 20 points),
   et part du top 10 des réputations conservée d'une saison à l'autre (≥ 0,6). Le classement

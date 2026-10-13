@@ -4,7 +4,7 @@
     "iterations_defaut_match": 10000,
     "iterations_defaut_saison": 1000,
     "saisons_demographie": 30,
-    "saisons_economie": 25,
+    "saisons_economie": 15,
     "graine_defaut": 20260910,
     "graines_monde": [20260910, 20260911, 20260912, 20260913, 20260914],
     "fenetre_comparaison_saisons": 5,
