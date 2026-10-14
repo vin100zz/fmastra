@@ -13,6 +13,7 @@ import tempfile
 from dataclasses import replace
 from pathlib import Path
 
+from core.config.models.management import PLANNING_ROUNDS
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
@@ -26,10 +27,18 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 30
+SCHEMA_VERSION = 31
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Rounds of planning through each window instead of chance reviews, long contracts holding a club's regulars, free
+    # agents every club sees and who lower their demands with time, and players letting their contract run out
+    # (see `_upgrade_market`).
+    (31, ("ia_gestion", "mercato"), {
+         "tours_planification": [{"mois": month, "jour": day} for month, day in PLANNING_ROUNDS],
+         "agents_libres": {"visibles": 10, "baisse_salaire_mensuelle": 0.1, "salaire_plancher": 0.5},
+         "contrats_longs": {"annees_min": 1.0, "annees_pleines": 3.0, "prime_max": 0.6, "revenu_club_riche": 100000000}}),
+    (31, ("ia_gestion", "contrats"), {"refus_prolongation": {"poids_appat_gain": 0.05, "poids_mecontentement": 0.1}}),
     # A player asks a new contract for a raise worth asking for, or for more years (see `_forget_small_demands`).
     (30, ("ia_gestion", "contrats"), {"hausse_min_prolongation": 0.1}),
     # Income by reputation and championship, cup prizes, idle cash spent, bounded opinions, exposure and form in a player's
@@ -248,6 +257,7 @@ class SaveStore:
             if version < 27: _recall_refusals(world)
             if version < 29: _upgrade_economy(world)
             if version < 30: _forget_small_demands(world)
+            if version < 31: _upgrade_market(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -352,6 +362,16 @@ def _upgrade_news(world: World) -> None:
                   for item in world.news if item.kind != "result"]
 
 
+def _upgrade_market(world: World) -> None:
+    """Schema 31: clubs plan their windows in rounds rather than by chance (see `MARKET_RECALIBRATED_RULES`), and a free
+    agent lowers his demands with the time he goes without a contract. A player without a club is dated by his last
+    release; one who never had a contract stays undated (see `core.ai.market.months_free`)."""
+    _recalibrate(world, MARKET_RECALIBRATED_RULES)
+    for move in world.transfers:
+        player = world.players.get(move.player_id)
+        if player is not None and player.club_id is None and move.kind == "release": player.free_since = move.date
+
+
 def _forget_small_demands(world: World) -> None:
     """Schema 30: a demand for a raise too small to ask for, without more years, is no longer made; one still awaiting an
     answer lapses, and the player asks again when he has something to ask for. So does a demand left behind by a
@@ -405,6 +425,21 @@ RECALIBRATED_RULES = (("management", "budgets", "accounting", "other_cost_share"
                       ("management", "guardrails", None, "min_balance", -5000000, 0),
                       ("demography", "potential_estimate", None, "max_noise", 22.0, 10.0),
                       ("demography", "cohort", None, "sorting_reputation_weight", 0.0, 1.0))
+# Rules recalibrated by schema 31, in the same form: the planning rounds replace chance reviews.
+MARKET_RECALIBRATED_RULES = (("management", "market", None, "daily_proposal_probability", 0.06, 0.0),)
+
+
+def _recalibrate(world: World, recalibrated: tuple) -> None:
+    """A rule the save still holds as it shipped takes its new value; any other was chosen, and is kept."""
+    cfg = world.config
+    for domain, section, inner, key, before, since in recalibrated:
+        rules = getattr(getattr(cfg, domain), section)
+        holder = getattr(rules, inner) if inner else rules
+        if getattr(holder, key) != before: continue
+        holder = replace(holder, **{key: since})
+        rules = replace(rules, **{inner: holder}) if inner else holder
+        cfg = replace(cfg, **{domain: replace(getattr(cfg, domain), **{section: rules})})
+    world.config = cfg
 
 
 def _upgrade_economy(world: World) -> None:
@@ -419,15 +454,8 @@ def _upgrade_economy(world: World) -> None:
     """
     from core.ai.market import unseen_wages
     from core.world.finances import structural_income
+    _recalibrate(world, RECALIBRATED_RULES)
     cfg = world.config
-    for domain, section, inner, key, before, since in RECALIBRATED_RULES:
-        rules = getattr(getattr(cfg, domain), section)
-        holder = getattr(rules, inner) if inner else rules
-        if getattr(holder, key) != before: continue
-        holder = replace(holder, **{key: since})
-        rules = replace(rules, **{inner: holder}) if inner else holder
-        cfg = replace(cfg, **{domain: replace(getattr(cfg, domain), **{section: rules})})
-    world.config = cfg
     budgets = cfg.management.budgets
     floor = budgets.wages.weekly_minimum
     for club in world.clubs.values():

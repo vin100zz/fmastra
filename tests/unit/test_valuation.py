@@ -164,6 +164,7 @@ def test_a_dormant_club_never_refuses_to_sell_a_player_who_wants_to_leave(config
 def test_every_club_sees_the_players_who_want_to_leave_and_one_day_looks_for_a_prospect(config, monkeypatch):
     from core.ai.market import propose_transfers
     import core.ai.external_market as external_market
+    import core.ai.market as market_module
     world = mini_world(config)
     market = replace(config.management.market, daily_proposal_probability=1, max_candidates_scanned=0, visible_talents=0)
     world.config = replace(config, management=replace(config.management, market=market))
@@ -190,6 +191,9 @@ def test_every_club_sees_the_players_who_want_to_leave_and_one_day_looks_for_a_p
     # On its day, a club with no need left bids for the best prospect it reads above its level.
     keeper.rating, seller.reputation, buyer.reputation = 70, 70, 70
     buyer.player_ids = squad
+    # A rich club would keep its young starter, and years of contract would raise his price: neither is at stake here.
+    seller.income = config.management.market.long_contracts.rich_income - 1
+    monkeypatch.setattr(market_module, "contract_hold", lambda *args: 0.0)
     young = prospect(world, rating=60.0, potential=99.0)
     monkeypatch.setattr(external_market, "approach_day", lambda seed, club_id, start, end, probability, purpose="external_approach":
                         world.date if purpose == "prospect_search" and club_id == buyer.id else None)

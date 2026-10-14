@@ -179,6 +179,16 @@ plus faible pour laquelle un joueur demande un nouveau contrat qui ne lui apport
 d'année de plus. Au chargement, une demande en attente qui n'apporte ni cette hausse
 ni d'année de plus reste sans suite (`_forget_small_demands`).
 
+Les configurations antérieures à la version 31 reçoivent, dans `ia_gestion.mercato`,
+`tours_planification` (10 juin, 10 juillet, 10 août, 1er et 16 janvier : les jours où
+chaque club de l'IA fait le point, tous dans une fenêtre), `agents_libres` (`visibles`
+10, `baisse_salaire_mensuelle` 0,1 et `salaire_plancher` 0,5, dans ]0, 1]) et
+`contrats_longs` (`annees_min` 1 et `annees_pleines` 3, ordonnées, `prime_max` 0,6 et
+`revenu_club_riche` 100 M€, positifs), et dans `ia_gestion.contrats`
+`refus_prolongation` (`poids_appat_gain` 0,05 et `poids_mecontentement` 0,1, positifs).
+Les tours remplacent les revues au hasard : `daily_proposal_probability` passe de 0,06,
+la valeur livrée, à 0 (`_upgrade_market`) ; une valeur choisie est gardée.
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

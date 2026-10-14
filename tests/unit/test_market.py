@@ -590,26 +590,44 @@ def test_reinforced_position_reopens_without_enough_first_team_players(config, m
                for p in propose_transfers(world, Random(1)))
 
 
-def test_sale_sends_the_seller_back_to_market_for_one_player(config):
+def test_every_club_plans_on_each_round_of_the_window(config):
     from core.ai.market import propose_transfers
     world = recruitment_world(config, probability=0)
-    world.date = Date(2026, 7, 15)
-    assert not propose_transfers(world, Random(1))
-    assert apply(world, PlayerSigned(201, 2, 1, Contract(1500, Date(2029, 6, 30), world.date), 50000))
-    assert [p.target_id for p in propose_transfers(world, Random(1))] == [2]
-    world.date = world.date.add_days(1)
+    for day in config.management.market.planning_rounds:
+        world.date = Date(2026 if day.month >= 6 else 2027, day.month, day.day)
+        planned = Counter(p.target_id for p in propose_transfers(world, Random(1)))
+        assert planned[1] > 1 and planned[2] > 1
+        world.date = world.date.add_days(1)
+        assert not propose_transfers(world, Random(1))
+
+
+def test_every_club_sees_the_best_free_agents(config):
+    from core.ai.market import propose_transfers
+    world = recruitment_world(config)
+    rules = replace(world.config.management.market, max_candidates_scanned=0, visible_talents=0)
+    world.config = replace(world.config, management=replace(world.config.management, market=rules))
+    assert any(p.source_id is None for p in propose_transfers(world, Random(1)))
+    hidden = replace(rules, free_agents=replace(rules.free_agents, visible=0))
+    world.config = replace(world.config, management=replace(world.config.management, market=hidden))
     assert not propose_transfers(world, Random(1))
 
 
-def test_budget_renewal_day_is_a_planning_day(config):
-    from core.ai.market import propose_transfers
-    world = recruitment_world(config, probability=0)
-    review = config.world.key_dates.population_review
-    world.date = Date(2026, review.month, review.day)
-    planned = Counter(p.target_id for p in propose_transfers(world, Random(1)))
-    assert planned[1] > 1 and planned[2] > 1
-    world.date = world.date.add_days(1)
-    assert not propose_transfers(world, Random(1))
+def test_a_free_agent_lowers_his_demands_with_time_down_to_a_floor(config):
+    from core.ai.market import wage_demand
+    from core.world.events import PlayerReleased
+    world = mini_world(config)
+    player, club = world.players[201], world.clubs[1]
+    under_contract = wage_demand(player, club, world)
+    assert apply(world, PlayerReleased(player.id))
+    assert player.free_since == world.date
+    rules = config.management.market.free_agents
+    fresh = wage_demand(player, club, world)
+    world.date = world.date.add_days(61)
+    assert wage_demand(player, club, world) == pytest.approx(fresh * (1 - 2 * rules.monthly_wage_cut), rel=0.02)
+    world.date = world.date.add_years(5)
+    assert wage_demand(player, club, world) == pytest.approx(fresh * rules.wage_floor, rel=0.01)
+    assert apply(world, PlayerSigned(player.id, None, 1, Contract(fresh, Date(2031, 6, 30), world.date), 0))
+    assert player.free_since is None and under_contract > 0
 
 
 def test_initial_funding_shrinks_with_payroll_and_never_refills(config):
@@ -1086,6 +1104,8 @@ def test_an_older_save_lets_a_demand_for_a_raise_too_small_to_ask_for_lapse(conf
     payload["schema_version"] = 29
     rules = payload["world"]["config"]
     del rules["ia_gestion"]["contrats"]["hausse_min_prolongation"]
+    del rules["ia_gestion"]["contrats"]["refus_prolongation"]
+    for key in ("contrats_longs", "tours_planification", "agents_libres"): del rules["ia_gestion"]["mercato"][key]
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("demands")
@@ -1324,3 +1344,91 @@ def test_regens_take_the_places_a_dormant_club_keeps_for_unseen_players(config):
     # Its known player holds the wages of the whole squad: nothing is left for a regen.
     club.wage_bill = club.wage_cap
     assert intake_room(club, world.config) == 0
+
+
+def long_contract_world(config, income):
+    """A starter of club 2 under contract for three and a half more years, at a club earning `income` a year."""
+    from core.ai.market import squad_status, STARTER_STATUS
+    world = mini_world(config)
+    seller = world.clubs[2]
+    seller.income = income
+    player = next(world.players[pid] for pid in seller.player_ids if world.players[pid].position != "GB"
+                  and squad_status(world.players[pid], seller, world) >= STARTER_STATUS)
+    player.contract = replace(player.contract, end=Date(world.date.year + 3, 12, 31))
+    return world, player, seller
+
+
+def test_a_rich_club_keeps_a_starter_with_years_left_on_his_contract(config):
+    from core.ai.market import can_sell
+    rich = config.management.market.long_contracts.rich_income
+    world, player, seller = long_contract_world(config, rich)
+    assert not can_sell(player, seller, world)
+    seller.income = rich - 1
+    assert can_sell(player, seller, world)
+    # Nearer the end of his contract, he is for sale at a rich club too.
+    seller.income = rich
+    player.contract = replace(player.contract, end=world.date.add_days(500))
+    assert can_sell(player, seller, world)
+
+
+def test_years_left_on_a_starters_contract_raise_his_price(config):
+    from core.ai.market import asking_price, contract_hold
+    rules = config.management.market.long_contracts
+    world, player, seller = long_contract_world(config, 0)
+    held = asking_price(player, seller, world)
+    assert contract_hold(player, seller, world) == 1
+    # Half way between the years that start and complete the hold, he costs about half the premium more.
+    player.contract = replace(player.contract, end=world.date.add_days(round(365.25 * (rules.min_years + rules.full_years) / 2)))
+    half = contract_hold(player, seller, world)
+    assert half == pytest.approx(0.5, abs=0.01)
+    assert held / asking_price(player, seller, world) == pytest.approx((1 + rules.premium) / (1 + rules.premium * half), rel=1e-3)
+
+
+def test_a_player_may_let_his_contract_run_out_rather_than_extend(config):
+    from core.world.contracts import renewal_events
+    from core.world.events import PlayerSigned, RenewalProposed
+    world, player = renewal_setup(config, reputation=100)
+    player.greed = 1.0
+
+    def renewed(greed_weight):
+        contracts = config.management.contracts
+        rules = replace(contracts, free_agency=replace(contracts.free_agency, greed_weight=greed_weight, discontent_weight=0))
+        world.config = replace(config, management=replace(config.management, contracts=rules))
+        return any(isinstance(event, PlayerSigned) and event.player_id == player.id
+                   or isinstance(event, RenewalProposed) and event.proposal.player_id == player.id for event in renewal_events(world))
+    assert renewed(0)
+    assert not renewed(1)
+    # A player of the human club still asks it for his renewal.
+    world.controlled_club_id = player.club_id
+    assert renewed(1)
+
+
+def test_an_older_save_plans_in_rounds_and_dates_its_free_agents(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from core.domain.clubs import Competition
+    from core.world.events import PlayerReleased
+    from infrastructure.persistence.store import SaveStore
+    world = mini_world(config)
+    world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
+    for club in world.clubs.values(): club.competition_id = -16
+    world.rngs = {key: Random(1) for key in ("market", "matches", "states", "progression", "demography")}
+    free = world.players[205]
+    released = world.date
+    assert apply(world, PlayerReleased(free.id))
+    # An older save knew neither the day a player became free nor the rounds of the windows.
+    free.free_since = None
+    world.date = world.date.add_days(40)
+    path = SaveStore(tmp_path).save(world, "market")
+    payload = json.loads(gzip.decompress(path.read_bytes()))
+    payload["schema_version"] = 30
+    rules = payload["world"]["config"]
+    for key in ("tours_planification", "agents_libres", "contrats_longs"): del rules["ia_gestion"]["mercato"][key]
+    del rules["ia_gestion"]["contrats"]["refus_prolongation"]
+    rules["ia_gestion"]["mercato"]["daily_proposal_probability"] = 0.06
+    payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+    path.write_bytes(gzip.compress(json.dumps(payload).encode()))
+    restored = SaveStore(tmp_path).load("market")
+    assert restored.config == config and restored.config.management.market.daily_proposal_probability == 0
+    assert restored.players[free.id].free_since == released

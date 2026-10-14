@@ -101,7 +101,7 @@ Le salaire minimal qu'un joueur accepte pour rejoindre un club part du salaire a
 - **l'appât du gain** module les deux : ces chiffres valent pour un joueur moyen ; un joueur très intéressé demande une hausse une fois et demie plus forte et concède une baisse deux fois plus faible, un joueur désintéressé fait l'inverse ;
 - une prime s'ajoute enfin, jusqu'à {{pct(ia_gestion.contrats.prime_appat_gain, 0)}} pour l'appât du gain le plus élevé.
 
-Un joueur libre n'a pas de club de départ : il demande le salaire attendu dans le club qui le veut, plus cette prime.
+Un joueur libre n'a pas de club de départ : il demande le salaire attendu dans le club qui le veut, plus cette prime. Il baisse ensuite ses prétentions de {{pct(ia_gestion.mercato.agents_libres.baisse_salaire_mensuelle, 0)}} par mois passé sans contrat, jusqu'à {{pct(ia_gestion.mercato.agents_libres.salaire_plancher, 0)}} de ce montant.
 
 Pour votre club, ce montant est la colonne PRÉTENTIONS de la liste des joueurs, par mois et arrondi au-dessus : c'est la contre-offre que le joueur vous fera, et offrir ce montant suffit.
 
@@ -124,6 +124,7 @@ satisfaction = {{pct(ia_gestion.contrats.poids_salaire, 0)}} × salaire + {{pct(
 Les trois termes sont ceux du [moral](#/aide/etats/le-moral). La prolongation n'a lieu que si tout ceci est vrai :
 
 - **le joueur ne veut pas partir** : un joueur frustré par un club trop petit pour lui ne prolonge jamais ;
+- **le joueur ne préfère pas aller au bout** : dans un club de l'IA, pendant les {{ia_gestion.contrats.mois_avant_fin_declenchant}} derniers mois de son contrat, un joueur peut le laisser courir pour choisir son prochain club. Son risque vaut {{n(ia_gestion.contrats.refus_prolongation.poids_appat_gain, 2)}} × appât du gain + {{n(ia_gestion.contrats.refus_prolongation.poids_mecontentement, 2)}} × (1 − satisfaction) ; une semaine où il dépasse un tirage fait une fois pour le contrat, le joueur ne prolonge pas. Un joueur avide et mécontent part donc plus souvent libre. Vos joueurs ne sont pas concernés : ils vous demandent leur prolongation ;
 - **le joueur n'arrive pas tout juste** : pendant les {{ia_gestion.mercato.stabilite_apres_arrivee_jours}} jours qui suivent son transfert, il ne rouvre pas le contrat qu'il vient de signer ;
 - **le club tient à lui** : son départ affaiblirait le meilleur effectif que le club peut aligner, ou c'est l'un de ses {{ia_gestion.garde_fous.gardiens_min}} premiers gardiens, ou l'effectif est au minimum ;
 - **le club en a les moyens** : un club de l'IA dont la masse salariale dépasse {{n(ia_gestion.contrats.depassement_revenus_sans_prolongation, 1)}} fois ce que son revenu autorise ne prolonge plus personne. Ses joueurs partent à la fin de leur contrat, jusqu'à ce que ses salaires redescendent à sa mesure ;
@@ -152,5 +153,7 @@ Les joueurs dont le club ne veut plus vont au bout de leur contrat : c'est ce qu
 ## La fin de contrat
 
 Le lendemain de la fin de son contrat, le joueur quitte le club sans indemnité et devient libre. Il peut signer dans n'importe quel club pendant un mercato, sans indemnité de transfert. Hors mercato, seuls les clubs passés sous l'effectif minimal recrutent des joueurs libres.
+
+Tous les clubs connaissent les meilleurs joueurs libres de chaque poste (voir [Le mercato des clubs](#/aide/mercato/quand-et-qui-il-regarde)), et un joueur libre demande moins à mesure qu'il reste sans club (voir [Ce qu'un joueur demande pour signer](#/aide/contrats/ce-qu-un-joueur-demande-pour-signer)).
 
 Un joueur libre continue de vieillir et de progresser, au rythme réduit des joueurs sans club (voir [Progression](#/aide/progression/la-progression)).

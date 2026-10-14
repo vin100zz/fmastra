@@ -238,9 +238,13 @@ Une mutation ne peut transférer deux fois le même joueur.
 Les vendeurs utilisent la valeur décotée, le surplus et leur patience. Entre
 plusieurs offres, le joueur compare salaire, minutes projetées, réputation et
 ambition normalisés, avec le bruit configuré. Les clubs libres de recruter
-traitent aussi les agents libres dès l'ouverture de la fenêtre ; ils n'ont pas
-de vendeur à consulter. Les négociations inachevées à la clôture expirent et
-libèrent leurs réservations.
+traitent aussi les agents libres ; ils n'ont pas de vendeur à consulter. Chaque
+club connaît, à chaque poste, les `agents_libres.visibles` (10) meilleurs agents
+libres en plus de son échantillon. Un agent libre baisse ses prétentions de
+`agents_libres.baisse_salaire_mensuelle` (10 %) par mois sans contrat, compté depuis
+`Player.free_since`, jusqu'à `agents_libres.salaire_plancher` (la moitié) de ce
+qu'il demanderait sous contrat (`months_free`). Les négociations inachevées à la
+clôture expirent et libèrent leurs réservations.
 
 Le joueur peut aussi refuser. Un joueur qui veut partir (voir « Contrats, moral et
 départs ») ne cherche pas un mouvement latéral : il n'accepte qu'un club dont la
@@ -291,18 +295,20 @@ est tiré pour la fenêtre (flux `outside-need`) pour un club dormant, qui n'a p
 d'effectif simulé. Un club ne propose rien pour un joueur dont le prix demandé
 dépasse ce maximum : il passe au candidat suivant.
 
-À l'ouverture de chaque fenêtre, et le jour du bilan annuel qui renouvelle les
-budgets (`dates_cles.bilan_demographique`, dans la fenêtre d'été), chaque club
-évalue son effectif et peut ouvrir
+À chaque tour de `tours_planification` (10 juin, 10 juillet, 10 août, 1er et
+16 janvier ; le tour de juillet suit le bilan annuel qui renouvelle les budgets et
+libère les contrats échus), chaque club évalue son effectif et peut ouvrir
 jusqu'à `negociations_actives_max` dossiers sur des postes différents (trois).
 Les besoins utilisent une affectation unique aux places de titulaire, rotation
 et doublure, avec les postes secondaires et les décotes de niveau configurées.
 Les cibles en cours sont intégrées à l'effectif projeté : pas de doublon au même
-poste ni de budget ou de salaire promis plusieurs fois. Les revues ultérieures
-divisent `daily_proposal_probability` par le nombre de places de négociation
-disponibles, afin que les dossiers multiples ne triplent pas la fréquence.
-Une offre échouée ou une vente (`sales_today`) renvoie le club sur le marché le
-jour même, pour une cible par offre échouée ou par joueur vendu.
+poste ni de budget ou de salaire promis plusieurs fois. Entre deux tours, une
+offre échouée renvoie le club sur le marché le jour même, pour une cible par
+offre échouée. Les revues au hasard (`daily_proposal_probability`, divisée par le
+nombre de places de négociation disponibles) valent 0 : les tours les remplacent.
+Une revue après chaque vente a été essayée puis écartée : chaque vendeur rachetait
+aussitôt à un club plus petit, qui en faisait autant, et le volume des transferts
+augmentait de 60 %.
 Un poste renforcé reste traité jusqu'à la prochaine fenêtre : le club ne
 rachète pas plusieurs améliorations successives au même poste. Un manque réel
 de joueurs pour la formation, de gardiens ou d'effectif minimal peut rouvrir
@@ -317,6 +323,16 @@ Le prix demandé suit le statut du joueur chez le vendeur ; il est public, et
 l'acheteur l'offre tel quel en le réservant (`TransferOffer.ceiling`), son prix
 maximum (`TransferOffer.limit`) ne servant qu'à surenchérir. Une offre relevée
 réserve son nouveau montant.
+
+**Contrats longs** (`contract_hold`, `keeps`). Un club de l'IA tient un joueur par les
+années de contrat qui lui restent : rien sous `contrats_longs.annees_min` (1 an),
+pleinement à partir de `annees_pleines` (3 ans), en ligne droite entre ; rien pour un
+joueur qui veut partir. Le prix demandé est majoré de `prime_max` (60 %) × tenue pour
+un titulaire, d'une part de cette prime pour un joueur de rotation, de rien pour une
+doublure. Un club dont le revenu annuel atteint `revenu_club_riche` (100 M€) ne vend
+pas un titulaire ou un joueur de rotation qu'il tient pleinement (`can_sell` faux) :
+il n'a pas besoin de l'argent. La règle limite les reventes d'un joueur important un
+an après son arrivée, et le pillage des clubs riches par leurs rivaux.
 Un refus définitif ou une concurrence perdue libère les réservations et permet
 une recherche immédiate d'alternative, en excluant le joueur refusé pour ce tour
 et sans ouvrir davantage de dossiers que le nombre de pistes perdues.
@@ -482,7 +498,15 @@ la conservation du joueur avec le score de départ, pas avec un ajout en double.
 Le plafond salarial s'applique aussi aux renouvellements. Un club de l'IA dont la
 masse salariale dépasse `contrats.depassement_revenus_sans_prolongation` fois ce
 que son revenu autorise ne prolonge plus personne : ses joueurs partent à la fin de
-leur contrat. Un club actif sous l'effectif minimal reçoit toujours les jeunes qui
+leur contrat. Un joueur d'un club de l'IA peut aussi laisser courir son contrat pour
+choisir son prochain club (`lets_contract_run`, `core/world/contracts.py`) : dans ses
+`mois_avant_fin_declenchant` derniers mois, il ne prolonge pas la semaine où un tirage
+fait une fois par contrat (flux `free-agency`) passe sous
+`refus_prolongation.poids_appat_gain` (0,05) × appât du gain +
+`poids_mecontentement` (0,1) × (1 − satisfaction). Des poids de 0,15 et 0,5
+libéraient plus de 2 000 joueurs dès la première saison d'un monde neuf, contre 860
+sans la règle, et les agents libres ne retrouvaient pas tous un club. Les joueurs du
+club de l'utilisateur ne sont pas concernés. Un club actif sous l'effectif minimal reçoit toujours les jeunes qui
 lui manquent, son plafond s'élevant de leur salaire (`PlayerGenerated`). À échéance inclusive,
 le joueur est libéré le lendemain si aucun nouveau contrat n'est signé.
 Les attentes et la satisfaction alimentent aussi le moral et les demandes de

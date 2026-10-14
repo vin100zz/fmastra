@@ -121,6 +121,8 @@ class Player:
     reserve_days: int = 0
     # What his last season made of his transfer value (see `core.ai.market.performance_factor`); 1.0 is neutral.
     past_performance: float = 1.0
+    # The day his last contract ended, while he has no club; None under contract, or for a player who never had one.
+    free_since: Date | None = None
 
     @property
     def nation(self) -> str:
