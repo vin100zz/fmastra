@@ -66,20 +66,33 @@ test('the winner’s side and the one that lost are told apart, the winner’s f
  assert.equal(count(html,/<tr class="[^"]*\bown\b[^"]*"/g),0);
 });
 
-test('a tie is told by who went through, on a storey under the score: the shoot-out, else the aggregate',()=>{
+test('a tie is told by who went through, on a storey under the score: the aggregate, and a shoot-out on its winner’s side',()=>{
  const leg={...played,scorers:null,first_leg_id:41,winner_id:2,qualified_id:2};
- // the side that lost the return leg went through: its name in bold, no figure told apart, the aggregate named under the score
+ // the side that lost the return leg went through: its name in bold, no figure told apart, the aggregate under the score
  const aggregate=fixtures({items:[{...leg,score:[2,0],aggregate:[2,3]}]});
- assert.match(aggregate,/<div class="fixture wide"><div class="fixture-side home lost"><a[^>]*><span>Brighton<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/7"><span class="fixture-score settled">2 – 0<\/span><span class="fixture-floor"><small>Cumul<\/small>2 – 3<\/span><\/a><div class="fixture-side away won">/);
- // a shoot-out says the aggregate was level: it is the one thing written
+ assert.match(aggregate,/<div class="fixture wide"><div class="fixture-side home lost"><a[^>]*><span>Brighton<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/7"><span class="fixture-score settled">2 – 0<\/span><span class="fixture-floor">2 – 3<\/span><\/a><div class="fixture-side away won">/);
+ assert.doesNotMatch(aggregate,/Cumul|<small/);
+ // a level aggregate is still written, the mark of the shoot-out on the side of the one who won it, its figures in the tooltip
  const shootout=fixtures({items:[{...leg,score:[1,0],aggregate:[2,2],penalties:[4,5]}]});
- assert.match(shootout,/<span class="fixture-floor"><small>T\.a\.b\.<\/small>4 – 5<\/span>/);assert.doesNotMatch(shootout,/Cumul|<b>/);
+ assert.match(shootout,/<span class="fixture-floor">2 – 2<small title="Tirs au but 4 – 5">\(TAB\)<\/small><\/span>/);assert.doesNotMatch(shootout,/<b>/);
+ assert.match(fixtures({items:[{...leg,score:[1,0],aggregate:[2,2],penalties:[5,3],winner_id:1,qualified_id:1}]}),/<span class="fixture-floor"><small title="Tirs au but 5 – 3">\(TAB\)<\/small>2 – 2<\/span>/);
+ // after a single match, the mark stands alone, on its side
+ assert.match(fixtures({items:[{...played,scorers:null,score:[1,1],penalties:[3,4],winner_id:2}]}),/<span class="fixture-score settled">1 – 1<\/span><span class="fixture-floor away"><small title="Tirs au but 3 – 4">\(TAB\)<\/small><\/span>/);
  // a first leg settles nothing: nobody in bold until the return is played, then the side that went through
  const first={...played,scorers:null,return_leg_id:8,winner_id:null,qualified_id:null};
  assert.match(fixtures({items:[first]}),/<div class="fixture"><div class="fixture-side home"><a[^>]*><span>Brighton<\/span><\/a><\/div><a class="fixture-score settled" href="#\/match\/7">2 – 1<\/a><div class="fixture-side away">/);
  assert.match(fixtures({items:[{...first,qualified_id:2}]}),/<div class="fixture-side home lost"><a[^>]*><span>Brighton<\/span><\/a><\/div>.*<div class="fixture-side away won">/);
  // every line of a list where a match has a storey keeps its room
  assert.equal(count(fixtures({items:[{...leg,score:[2,0],aggregate:[2,3]},{...played,id:8,scorers:null}]}),/class="fixture wide"/g),2);
+});
+
+test('a return leg to come carries the first leg’s score on its storey, in the order of the line',()=>{
+ const coming={...played,scorers:null,score:null,first_leg_id:41,first_leg_score:[0,2]};
+ const html=fixtures({items:[coming,{...played,id:8,scorers:null,score:null}]});
+ assert.match(html,/<div class="fixture wide"><div class="fixture-side home"><a[^>]*><span>Brighton<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/7"><span class="fixture-score pending">À venir<\/span><span class="fixture-floor">0 – 2<\/span><\/a><div class="fixture-side away">/);
+ assert.equal(count(html,/class="fixture wide"/g),2);
+ // once played, the aggregate takes its place
+ assert.match(fixtures({items:[{...coming,score:[1,0],aggregate:[1,2]}]}),/<span class="fixture-floor">1 – 2<\/span>/);
 });
 
 test('groups show each group with its own compact table, and a cup round spreads its ties over two columns',()=>{
@@ -93,6 +106,12 @@ test('groups show each group with its own compact table, and a cup round spreads
  const cup=roundContent({round:{number:1,label:'32es de finale',date:'2026-12-02'},groups:[{name:null,matches:[played,{...played,id:8}],standings:null}]},'latest');
  assert.match(cup,/<div class="round-knockout">/);
  assert.doesNotMatch(cup,/round-table/);
+ // its leading scorers, once a goal is scored, stand beside the ties
+ const scorer={id:4,name:'Neal Maupay',club:{id:9,name:'Brighton'},goals:3};
+ const scored=roundContent({round:{number:2,label:'16es de finale',date:'2027-01-06'},groups:[{name:null,matches:[played],standings:null,top_scorers:[scorer]}]},'latest');
+ assert.match(scored,/<div class="round-block knockout"><div class="round-matches round-knockout">/);
+ assert.match(scored,/<div class="round-top-scorers">.*Neal Maupay/s);
+ assert.doesNotMatch(scored,/round-table/);
 });
 
 test('with no round, or a round not drawn yet, the tab says so',()=>{

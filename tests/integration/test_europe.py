@@ -196,10 +196,13 @@ def test_aggregate_winner_can_lose_return_and_shootout_after_non_draw(imported):
     cup = world.competitions[-101]
     second = next(world.matches[mid] for mid in cup.match_ids if world.matches[mid].first_leg_id)
     first = world.matches[second.first_leg_id]
+    assert match_row(world, second)["first_leg_score"] is None
     first.result = MatchResult(3, 0, "test")
     # Either leg names the other; nobody is through before the return is played.
     assert match_row(world, first)["return_leg_id"] == second.id and match_row(world, second)["return_leg_id"] is None
     assert match_row(world, first)["qualified_id"] is None
+    # The return leg to come carries the first leg's score, seen from its own sides.
+    assert match_row(world, second)["first_leg_score"] == (0, 3) and match_row(world, first)["first_leg_score"] is None
     result = MatchResult(2, 0, "test")
     decide_european_winner(world, second, result, [])
     assert result.winner_id == second.away_id and not result.penalties

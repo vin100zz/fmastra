@@ -82,7 +82,7 @@ test('the cup shows one of its rounds: the latest played, the first still to pla
  assert.equal(count(latest,/country-rounds.*?<\/nav>/g),1);assert.equal(count(latest.slice(0,latest.indexOf('</nav>')),/<a /g),7);
  assert.match(latest,/<\/nav><h3>32es de finale · 4 déc\. 2030<\/h3>/);
  // each club's division at the ends, none for a club from below; a shoot-out on a storey under the score, its winner in bold
- assert.match(latest,/<div class="fixture tie wide"><small><\/small><div class="fixture-side home lost">.*?Amateurs<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/31"><span class="fixture-score settled">1 – 1<\/span><span class="fixture-floor"><small>T\.a\.b\.<\/small>4 – 5<\/span><\/a><div class="fixture-side away won">.*?Paris<\/a><\/div><small>D1<\/small><\/div>/);
+ assert.match(latest,/<div class="fixture tie wide"><small><\/small><div class="fixture-side home lost">.*?Amateurs<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/31"><span class="fixture-score settled">1 – 1<\/span><span class="fixture-floor away"><small title="Tirs au but 4 – 5">\(TAB\)<\/small><\/span><\/a><div class="fixture-side away won">.*?Paris<\/a><\/div><small>D1<\/small><\/div>/);
  // every line of that round keeps the room of a storey; the scorers stand under their side
  assert.match(latest,/<div class="fixture tie wide with-scorers"><small>D2<\/small><div class="fixture-side home won">.*?Metz<\/span><\/a><\/div><a class="fixture-score" href="#\/match\/32"><b>2<\/b> – 0<\/a><div class="fixture-side away lost">.*?<\/div><small>D1<\/small><div class="fixture-scorers home"><a href="#\/player\/61" title="Jean Buteur">Buteur<\/a> 12’ 80’<\/div><div class="fixture-scorers away"><\/div><\/div>/);
  // a match not played yet has no line of scorers

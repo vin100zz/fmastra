@@ -153,6 +153,12 @@ def aggregate_score(world: World, match: Match, result: MatchResult | None = Non
     return result.home_goals + first.result.away_goals, result.away_goals + first.result.home_goals
 
 
+def first_leg_score(world: World, match: Match) -> tuple[int, int] | None:
+    """The score of the first leg seen from a return leg's sides, its home first; None for any other match or before it is played."""
+    first = world.matches.get(match.first_leg_id) if match.first_leg_id is not None else None
+    return (first.result.away_goals, first.result.home_goals) if first is not None and first.result else None
+
+
 def return_leg(world: World, match: Match) -> Match | None:
     """The return leg of a first leg: the two legs of a tie are drawn one after the other, so it is the next match."""
     second = world.matches.get(match.id + 1)

@@ -105,3 +105,8 @@ test('the figures of a match fold on their first four lines; the whole head open
  try{assert.match(await screen(report),/<section class="card fold open match-stats"><div class="card-head toggle" role="button" tabindex="0" aria-expanded="true"/);}
  finally{setFoldOpen('match-stats',false);}
 });
+
+test('expected goals keep one figure after the point, even round ones',async()=>{
+ const html=await screen({...report,result:{...report.result,home_stats:{...stats,xg:2},away_stats:{...stats,xg:0.95}}});
+ assert.match(html,/<div class="comparison"><span class="lead">2\.0<\/span><div>Buts attendus \(xG\)<[^]*?<\/div><span class="">1\.0<\/span><\/div>/);
+});

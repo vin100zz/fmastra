@@ -13,8 +13,8 @@ test('a cup match names its round and tells a shoot-out apart from the score',()
  assert.match(html,/32es de finale/);
  assert.doesNotMatch(html,/Journée 1/);
  assert.match(html,/1 – 1/);
- // the shoot-out stands on a storey under the score, which no longer tells the sides apart
- assert.match(html,/<a class="fixture-stack" href="#\/match\/1"><span class="fixture-score settled">1 – 1<\/span><span class="fixture-floor"><small>T\.a\.b\.<\/small>4 – 5<\/span><\/a>/);
+ // the shoot-out stands on a storey under the score, which no longer tells the sides apart: its mark alone, on its winner's side
+ assert.match(html,/<a class="fixture-stack" href="#\/match\/1"><span class="fixture-score settled">1 – 1<\/span><span class="fixture-floor away"><small title="Tirs au but 4 – 5">\(TAB\)<\/small><\/span><\/a>/);
  assert.match(html,/<div class="fixture-side away won">/);assert.doesNotMatch(html,/fixture-side home won/);
 });
 

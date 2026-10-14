@@ -130,7 +130,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .card.fold.open .toggle-arrow{transform:rotate(180deg)}
 .card.fold:not(.open) .fold-more{display:none}
 .card-body{padding:var(--s2) var(--s3)}
-.grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.history-row,.movement-summary,.history-side,.history-leaders,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.league-tiles,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
+.grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.history-row,.movement-summary,.history-side,.club-leaders,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.league-tiles,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
 .club-hero,.club-overview,.stat-grid,.match-replay-card,.finance-figures,.finance-row,.history-row,.movement-summary,.seasons-card,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
 .section-title,.country h3,.preview h3,.attributes-card .attribute-group h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.biggest-card h3,.lineup-field>h3,.activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
@@ -206,6 +206,9 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .fixture-stack>.fixture-score{justify-self:stretch;border-radius:var(--radius) var(--radius) 0 0}
 .fixture-floor{display:flex;align-items:center;justify-content:center;gap:var(--s1);height:var(--h-chip);padding:0 var(--s2);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);background:var(--panel);font:600 var(--fs-small)/1 var(--text);color:var(--muted);white-space:nowrap}
 .fixture-floor small{font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase}
+.fixture-score.pending+.fixture-floor{border-top:1px solid var(--line);border-radius:var(--radius)}
+.fixture-floor.home{justify-content:flex-start}
+.fixture-floor.away{justify-content:flex-end}
 .fixture-scorers{grid-row:2;align-self:start;line-height:14px}
 .fixture-scorers.home{grid-column:1;text-align:right}
 .fixture-scorers.away{grid-column:3}

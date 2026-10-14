@@ -155,5 +155,5 @@ export function seasonsHistory(data,club={},today=null){
  const charts=`<div class="history-row">${card('Classement en championnat',`<div class="cc-body">${rankChart(data.items,leagues,today==null?null:club.standing,today,club.competition_id)}</div>`,'','cc-card')}`
   +`<div class="history-side">${honoursCard(data.honours||{league:[],cup:0,europe:[]})}${reputation?card('Réputation',`<div class="cc-body">${reputation}</div>`,'<span class="card-hint">à l’ouverture de la saison</span>','reputation-card'):''}</div></div>`;
  const {leaders,transfers}=data;
- return charts+seasons+`<div class="history-leaders">${leaderBars('Plus utilisés',leaders.matches,'matches','matches')}${leaderBars('Meilleurs buteurs',leaders.goals,'goals','buts')}${biggestCard(transfers)}</div>`;
+ return charts+seasons+`<div class="club-leaders">${leaderBars('Plus utilisés',leaders.matches,'matches','matches')}${leaderBars('Meilleurs buteurs',leaders.goals,'goals','buts')}${biggestCard(transfers)}</div>`;
 }

@@ -468,14 +468,17 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 
 /* A competition's latest or next round: the matches, no wider than they need, then the table they count for, which takes
    the rest of the width (and the leading scorers, beside it where there is room, else below it); groups two a row;
-   a cup round, with no table, lays its ties out over two columns. */
+   a cup round, with no table, lays its ties out over two columns, and its leading scorers in a third one where there is
+   room, else below the second. */
 .round-block{display:grid;grid-template-columns:minmax(0,460px) minmax(max-content,1fr);grid-template-areas:"matches table";align-items:start}
 .round-block.with-top-scorers{grid-template-areas:"matches table" "matches top-scorers"}
+.round-block.knockout{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"matches matches" ". top-scorers"}
 .round-matches{min-width:0;grid-area:matches}
 .round-table{grid-area:table;border-left:1px solid var(--line)}
 .round-top-scorers{grid-area:top-scorers;border-left:1px solid var(--line);border-top:1px solid var(--line)}
 @media(min-width:1450px){
  .round-block.with-top-scorers{grid-template-columns:minmax(0,460px) minmax(max-content,1fr) minmax(max-content,1fr);grid-template-areas:"matches table top-scorers"}
+ .round-block.knockout{grid-template-columns:minmax(0,2fr) minmax(max-content,1fr);grid-template-areas:"matches top-scorers"}
  .round-top-scorers{border-top:0}
 }
 .round-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -493,7 +496,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .fixture-scorers a{color:inherit}
 
 @media(max-width:1329px){.round-groups{grid-template-columns:1fr}.round-group:nth-child(2){border-top:1px solid var(--line)}.round-group:nth-child(odd){border-right:0}}
-@media(max-width:950px){.round-block,.round-group .round-block,.round-block.with-top-scorers,.round-knockout{grid-template-columns:1fr}.round-block,.round-block.with-top-scorers{grid-template-areas:"matches" "table" "top-scorers"}.round-table,.round-top-scorers{border-left:0;border-top:1px solid var(--line)}.round-knockout .fixture:nth-child(odd){border-right:0}.round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--row-line)}}
+@media(max-width:950px){.round-block,.round-group .round-block,.round-block.with-top-scorers,.round-knockout{grid-template-columns:1fr}.round-block,.round-block.with-top-scorers{grid-template-areas:"matches" "table" "top-scorers"}.round-block.knockout{grid-template-columns:1fr;grid-template-areas:"matches" "top-scorers"}.round-table,.round-top-scorers{border-left:0;border-top:1px solid var(--line)}.round-knockout .fixture:nth-child(odd){border-right:0}.round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:1px solid var(--row-line)}}
 
 /* Composites. What the position does not ask for is a grey badge, in the lists as on the player page. */
 .off-role .rating.graded,:root[data-theme="light"] .off-role .rating.graded{background:var(--panel-2);color:var(--muted);border-color:var(--line)}

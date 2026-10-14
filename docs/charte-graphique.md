@@ -434,10 +434,17 @@ buts d'abord, le score coloré V, N ou D), garde sa ligne propre.
   club qualifié qui est en gras, même battu au match retour ; sur le match
   aller, personne tant que le retour n'est pas joué, puis le qualifié.
 - **Ce qui a départagé** : un étage sous le score, collé à lui (18, bordé, sur le
-  fond de la carte) : « CUMUL 3 – 2 » ou « T.A.B. 4 – 2 ». Une seule mention : des
-  tirs au but disent que le cumul était à égalité. Ses chiffres sont à la même
-  encre, sans gras ; ceux du match passent alors à l'encre courante (`--ink-2`),
-  comme ceux d'un match aller, qui ne départage rien.
+  fond de la carte). Au retour d'un aller-retour, le cumul, sans mention, même à
+  égalité : « 3 – 2 ». Une séance de tirs au but y ajoute « (TAB) », en 10,
+  du côté de celui qui l'a gagnée : « (TAB) 3 – 3 » quand c'est celui qui reçoit,
+  « 3 – 3 (TAB) » sinon ; le score de la séance est dans son infobulle. Après un
+  match sans aller, « (TAB) » est seul sur l'étage, rangé de son côté. Les
+  chiffres de l'étage sont à la même encre, sans gras ; ceux du match passent
+  alors à l'encre courante (`--ink-2`), comme ceux d'un match aller, qui ne
+  départage rien.
+- **Match retour à venir** : sous « À venir », le même étage porte le score de
+  l'aller, seul, sans mention, dans l'ordre de la ligne, celui qui reçoit
+  d'abord : « 0 – 2 ». Sans fond au-dessus, il est bordé sur ses quatre côtés.
 - **Buteurs** : sous chaque camp, en 11 / 14, atténués : le nom court (voir
   « Joueurs »), lien vers le joueur, puis la minute de chaque but suivie d'une
   apostrophe, un point médian entre deux buteurs (« Mendes 12’ · Barcola 58’ 71’ »).
@@ -714,6 +721,9 @@ part (le budget de transferts et le plafond salarial d'un club).
 Le séparateur décimal est le point, pour tous les nombres : notes, montants,
 moyennes, buts attendus.
 
+Des buts attendus s'écrivent avec un chiffre après le point, même ronds : 2.0,
+pas 2.
+
 ### Saisons
 
 Une saison s'écrit de ses deux années entières, une barre entre deux espaces :
@@ -846,7 +856,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Onglets | `.tabs` partout, en-tête de club compris |
 | Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), un ballon par but, la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
-| Nombres | Point décimal, notes à un et deux chiffres, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `amount`), y compris dans le manuel |
+| Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`) |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU et CM ; classements dans l'ordre des colonnes de la charte (D, non P) |

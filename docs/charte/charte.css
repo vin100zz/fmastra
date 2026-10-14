@@ -203,7 +203,7 @@
    ink: in a two-legged tie the winner is the side that went through, whatever the score of the leg. The match of the
    user's club is washed, and its winner told the same way. The score is a key figure on a ground of 22, the
    winner's figure in the strong ink and the other one muted. What settled a tie stands on a storey under the score, joined
-   to it (the shoot-out, else the aggregate): the figures of the match then tell nothing apart, nor do a leg's, and a list
+   to it (the aggregate, and a shoot-out's mark on the side of the one who won it, alone after a single match): the figures of the match then tell nothing apart, nor do a leg's, and a list
    where a match has a storey keeps its room on every line (.wide). A line alone has the height of a table's row; scorers
    or a storey give it a second one. In a cup, each club's division stands at the two ends of the line (.tie). */
 .fixture{display:grid;grid-template-columns:minmax(0,1fr) var(--score-column,56px) minmax(0,1fr);align-items:center;align-content:center;gap:0 var(--s2);min-height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
@@ -227,6 +227,9 @@
 .fixture-stack>.fixture-score{justify-self:stretch;border-radius:var(--radius) var(--radius) 0 0}
 .fixture-floor{display:flex;align-items:center;justify-content:center;gap:var(--s1);height:var(--h-chip);padding:0 var(--s2);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);background:var(--panel);font:600 var(--fs-small)/1 var(--text);color:var(--muted);white-space:nowrap}
 .fixture-floor small{font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase}
+.fixture-score.pending+.fixture-floor{border-top:1px solid var(--line);border-radius:var(--radius)}
+.fixture-floor.home{justify-content:flex-start}
+.fixture-floor.away{justify-content:flex-end}
 .fixture-scorers{grid-row:2;align-self:start;font-size:var(--fs-small);line-height:14px;color:var(--muted)}
 .fixture-scorers.home{grid-column:1;text-align:right}
 .fixture-scorers.away{grid-column:3}

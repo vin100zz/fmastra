@@ -314,13 +314,14 @@ def match_row(world: World, match: Match) -> dict:
     if match.id in world.international.matches:
         from .international import international_match_row
         return international_match_row(world, match)
-    from core.world.europe import aggregate_score, qualified_club, return_leg, round_label
+    from core.world.europe import aggregate_score, first_leg_score, qualified_club, return_leg, round_label
     competition = world.competitions[match.competition_id]
     second = return_leg(world, match)
     return {"id": match.id, "date": match.date.iso(), "round": match.round_number,
             "season": match.season, "competition_id": match.competition_id,
             "competition": competition.name, "aggregate": aggregate_score(world, match),
-            "first_leg_id": match.first_leg_id, "return_leg_id": second.id if second else None,
+            "first_leg_id": match.first_leg_id, "first_leg_score": first_leg_score(world, match),
+            "return_leg_id": second.id if second else None,
             "qualified_id": qualified_club(world, match),
             "home": club_ref(world, match.home_id), "away": club_ref(world, match.away_id),
             "score": [match.result.home_goals, match.result.away_goals] if match.result else None,

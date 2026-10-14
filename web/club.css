@@ -219,8 +219,8 @@
 .rank-chip.europe{background:var(--info-soft);color:var(--info)}.rank-chip.promotion{background:var(--good-soft);color:var(--good)}.rank-chip.relegation{background:var(--bad-soft);color:var(--bad)}
 .run-europe{display:inline-flex;align-items:center;gap:8px}
 .seasons-card{margin-bottom:12px}
-.history-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
-.history-leaders>.card{margin:0}
+.club-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.club-leaders>.card{margin:0}
 .leader-bars{padding:6px 14px 10px!important;counter-reset:leader}
 .leader-bars li{grid-template-columns:22px 150px minmax(0,1fr) 40px;height:26px;counter-increment:leader}
 .leader-bars li:before{content:counter(leader);text-align:right;font-weight:600;color:var(--muted)}
@@ -229,7 +229,7 @@
 .biggest-transfers li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .biggest-transfers small{font-weight:400;color:var(--muted)}
 .biggest-transfers b{text-align:right;color:var(--strong)}
-@media(max-width:1250px){.history-leaders{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:1250px){.club-leaders{grid-template-columns:minmax(0,1fr)}}
 
 /* Composition: the tactics over the pitch, the substitutes on one line, the list with its controls, the opponent on the right. */
 .composition-card .lineup-layout{grid-template-columns:auto minmax(0,1fr);align-items:start}

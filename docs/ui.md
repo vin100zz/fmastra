@@ -528,14 +528,18 @@ ils n'apparaissent qu'une fois un but marqué.
 Une compétition à groupes (qualifications et phase de groupes des sélections) montre chaque groupe avec
 ses matches et son classement réduit (#, points, J, différence), deux groupes par ligne (un seul sous
 1330 px), les places qualificatives surlignées. Un tour à élimination directe, sans classement, étale
-ses matches sur deux colonnes. Chaque match s'écrit face à face (charte, « Match dans une liste ») :
+ses matches sur deux colonnes ; les 10 meilleurs buteurs de la compétition sur la saison (coupe
+nationale, coupe d'Europe) les suivent dans une troisième de même largeur à partir de 1450 px,
+sous la deuxième en deçà. Chaque match s'écrit face à face (charte, « Match dans une liste ») :
 la pastille de chaque club contre le score, le nom du vainqueur en gras à l'encre de l'accent et celui
 du battu en retrait, le match du club dirigé sur fond jaune ; dans tout classement, la ligne du club dirigé a le même fond. Sous chaque match joué, les buteurs de chaque équipe sont alignés sous
 elle, par nom court (le nom de famille, l'initiale du prénom devant un homonyme de l'effectif ; lien vers la fiche), dans l'ordre de leur premier but, avec les minutes de
 leurs buts regroupées : « Maupay 14’ 75’ · Welbeck 56’ ». Les minutes suivent la feuille de match
 (1 à 45, puis 45+1…, 46 à 90, puis 90+1…) ; la séance de tirs au but n'y figure pas. Ce qui a
-départagé un match s'écrit sur un étage sous son score : « T.a.b. 4 – 2 » après des tirs au but,
-sinon « Cumul 3 – 2 » au retour d'un aller-retour. Le nom en gras est alors celui du club qualifié,
+départagé un match s'écrit sur un étage sous son score : au retour d'un aller-retour, le cumul sans
+mention, même à égalité (« 3 – 2 ») ; après des tirs au but, « (TAB) » du côté de leur vainqueur
+(« (TAB) 3 – 3 », « 3 – 3 (TAB) »), seul après un match unique, le score de la séance en infobulle.
+Le nom en gras est alors celui du club qualifié,
 même battu au match retour ; un match aller n'a personne en gras tant que le retour n'est pas joué.
 
 L'onglet Tableau d'une coupe nationale (sa seule vue des tours, ouverte par défaut), la Phase
@@ -1099,7 +1103,7 @@ GET  /api/competitions                    chacune : clubs, rounds (journées de 
                                           sélection de son pays | null), winner et holder de la saison en cours (voir /coupe)
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (avec scorers, comme journee/derniere), numéros des journées
-GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison, avec le classement) | null}]}
+GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison)}]}
 GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification ou de phase finale
 GET  /api/international/nations/{id}?tri=&ordre=   fiche d'une sélection : major_color, minor_color, competition {year, name, stage} | null, camp,
                                           squad (trié comme un effectif ; chaque joueur : caps, international_goals, et pour l'édition du rassemblement

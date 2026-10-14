@@ -37,7 +37,7 @@ def international_match_row(world, match):
     return {"id": match.id, "date": match.date.iso(), "round": number, "season": edition.year,
             "competition_id": edition.competition_id, "competition": edition.name, "international": True,
             "competition_code": EDITION_CODES[edition.kind],
-            "aggregate": None, "first_leg_id": None, "return_leg_id": None, "qualified_id": None,
+            "aggregate": None, "first_leg_id": None, "first_leg_score": None, "return_leg_id": None, "qualified_id": None,
             "home": nation_ref(world, match.home_id),
             "away": nation_ref(world, match.away_id), "score": [match.result.home_goals, match.result.away_goals] if match.result else None,
             "penalties": match.result.penalties if match.result else None, "winner_id": match.result.winner_id if match.result else None,

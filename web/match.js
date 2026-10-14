@@ -1,6 +1,6 @@
 import {replayCard} from './match-replay.js';
 import {matchHero} from './club-hero.js';
-import {api,escape as e,number as n,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
+import {api,escape as e,number as n,expectedGoals,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
@@ -65,8 +65,8 @@ export function statsCard(match){
  // One bar a line, shared between the two sides by their part of the two figures, the home side's on the left; the larger
  // figure is the strong one. The card folds on its first four lines, the same on the report and in the live match.
  const rows=stats.map(([label,a=0,b=0],index)=>{
-  const unit=label==='Possession'?'\u00a0%':'',total=a+b;
-  return `<div class="comparison${index>=4?' fold-more':''}"><span class="${a>b?'lead':''}">${n(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${n(b)}${unit}</span></div>`;
+  const unit=label==='Possession'?'\u00a0%':'',figure=label==='Buts attendus (xG)'?expectedGoals:n,total=a+b;
+  return `<div class="comparison${index>=4?' fold-more':''}"><span class="${a>b?'lead':''}">${figure(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${figure(b)}${unit}</span></div>`;
  }).join('');
  return foldCard('match-stats','Le match en chiffres',`<div class="comparisons">${rows}</div>`,'match-stats');
 }

@@ -757,13 +757,15 @@ def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(pl
         assert get(f"/competitions/{cup.id}/journee/derniere") == {"round": None, "groups": []}
         coming = get(f"/competitions/{cup.id}/journee/prochaine")
         assert coming["round"]["label"] == "32es de finale" and [len(block["matches"]) for block in coming["groups"]] == [32]
-        assert coming["groups"][0]["standings"] is None and coming["groups"][0]["top_scorers"] is None
+        # A knockout round has no table, but its leading scorers all the same.
+        assert coming["groups"][0]["standings"] is None and coming["groups"][0]["top_scorers"] == top_scorers(cup.id)
     for europe in (item for item in world.competitions.values() if item.kind == "europe"):
         for which in ("derniere", "prochaine"):
             data = get(f"/competitions/{europe.id}/journee/{which}?saison={world.season}")
+            if data["groups"]:
+                assert data["groups"][0]["top_scorers"] == top_scorers(europe.id, f"&saison={world.season}")
             if data["round"] and data["round"]["number"] <= world.config.world.europe.league_rounds:
                 assert data["round"]["label"].startswith("Phase de ligue") and len(data["groups"][0]["standings"]) == 36
-                assert data["groups"][0]["top_scorers"] == top_scorers(europe.id, f"&saison={world.season}")
                 check_scorers(data["groups"][0]["matches"])
     [edition] = world.international.editions.values()
     latest = get(f"/international/editions/{edition.year}/journee/derniere")

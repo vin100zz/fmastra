@@ -5,6 +5,8 @@ export const number = value => new Intl.NumberFormat('fr-FR', {maximumFractionDi
 // A match's note has one figure after the point, a season's average two.
 export const matchNote = value => Number(value).toFixed(1);
 export const averageNote = value => Number(value).toFixed(2);
+// Expected goals have one figure after the point, even round ones: "2.0".
+export const expectedGoals = value => new Intl.NumberFormat('fr-FR', {minimumFractionDigits:1, maximumFractionDigits:1}).format(value ?? 0).replace(',','.');
 // Matches played as starts, with the ones coming off the bench in brackets: "12 (3)", or just "12" without any.
 export const appearances = (total, substitutes=0) => substitutes ? `${number(total-substitutes)} (${number(substitutes)})` : number(total);
 export const minutes = value => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(value??0);
@@ -398,28 +400,40 @@ export const isOwnClub = club => ownClub!=null&&club?.id===ownClub;
 // Under each side of a played match, its scorers by short name, each with the minutes of his goals: "Maupay 14’ 75’ · Gouiri 26’".
 const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(shortName(scorer.name,scorer.short))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(shortName(scorer.name,scorer.short))}</a>`} ${scorer.minutes.map(minute=>`${escape(minute)}’`).join(' ')}`).join(' · ');
 const scorersRow = scorers => scorers&&scorers.some(side=>side.length)?`<div class="fixture-scorers home">${scorerList(scorers[0])}</div><div class="fixture-scorers away">${scorerList(scorers[1])}</div>`:'';
+// What stands under the score of a match in a list, without a label and in the order of the line: the aggregate of a return
+// leg, level or not; before a return leg, the score of the first leg. A shoot-out adds "(TAB)" on the side of the one who won
+// it (`side`), alone after a single match.
+const storey = match => {
+ const figures=match.aggregate??(!match.score?match.first_leg_score:null)??null;
+ const side=match.penalties?(match.penalties[0]>match.penalties[1]?'home':'away'):null;
+ return figures||side?{figures,side}:null;
+};
 // A match on a line of a list (docs/charte-graphique.md, « Match dans une liste »): the side at home, the score, the other
 // side, each mark against the score, and under each side its scorers. The name in bold, in the accent's ink, is the winner's
 // (`won`), and the other side's steps back (`lost`); in a two-legged tie the winner is the side that went through
 // (`qualified_id`, on either leg once the return is played), whatever the leg's score. What
-// settled stands on a storey under the score: the shoot-out, else the aggregate; the figures of the match then tell nothing
-// apart, nor do a leg's. The match of the user's club (`own`) is washed. `levels` names each club's division at the two
-// ends (a cup); `wide` keeps the room of a storey, for a list where a match has one.
+// settled stands on a storey under the score (`storey`); the figures of the match then tell nothing apart, nor do a leg's.
+// The match of the user's club (`own`) is washed. `levels` names each club's division at the two ends (a cup); `wide` keeps
+// the room of a storey, for a list where a match has one.
 export function fixtureRow(match,{own=ownClub,levels=null,wide=false}={}){
  const [home,away]=match.score||[],leg=match.first_leg_id!=null||match.return_leg_id!=null;
- const settled=match.penalties?['T.a.b.',match.penalties]:match.aggregate?['Cumul',match.aggregate]:null;
+ const settled=storey(match);
  const decided=Boolean(match.score)&&!leg&&!settled&&home!==away;
  const winner=match.qualified_id??match.winner_id??(decided?(home>away?match.home:match.away)?.id:null);
  const side=(club,name)=>`<div class="fixture-side ${name}${winner==null||!club?'':winner===club.id?' won':' lost'}">${clubLink(club,{reversed:name==='home'})}</div>`;
  const level=club=>levels?`<small>${levels[club?.id]||''}</small>`:'';
  const figures=!match.score?'À venir':!decided?`${home} – ${away}`:home>away?`<b>${home}</b> – ${away}`:`${home} – <b>${away}</b>`;
- const score=settled?`<a class="fixture-stack" href="#/match/${match.id}"><span class="fixture-score settled">${figures}</span><span class="fixture-floor"><small>${settled[0]}</small>${settled[1].join(' – ')}</span></a>`
+ // The shoot-out's figures are in the tooltip of its mark.
+ const mark=settled?.side?`<small title="Tirs au but ${match.penalties.join(' – ')}">(TAB)</small>`:'';
+ // A mark alone keeps to its side; with figures, the two stand together in the middle.
+ const floor=settled&&`<span class="fixture-floor${settled.side&&!settled.figures?` ${settled.side}`:''}">${settled.side==='home'?mark:''}${settled.figures?settled.figures.join(' – '):''}${settled.side==='away'?mark:''}</span>`;
+ const score=settled?`<a class="fixture-stack" href="#/match/${match.id}"><span class="fixture-score ${match.score?'settled':'pending'}">${figures}</span>${floor}</a>`
   :`<a class="fixture-score${match.score?leg?' settled':'':' pending'}" href="#/match/${match.id}">${figures}</a>`;
  const scorers=scorersRow(match.scorers),mine=own!=null&&[match.home?.id,match.away?.id].includes(own);
  return `<div class="fixture${levels?' tie':''}${wide?' wide':''}${scorers?' with-scorers':''}${mine?' own':''}">${level(match.home)}${side(match.home,'home')}${score}${side(match.away,'away')}${level(match.away)}${scorers}</div>`;
 }
 // Whether a match of a list has a storey under its score: every line of that list then keeps its room.
-export const hasStorey = matches => matches.some(match=>match.aggregate||match.penalties);
+export const hasStorey = matches => matches.some(storey);
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide})}`;}).join('');}
 // The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
 // grey) with his position on it and his block under it: his name (his short name when `compact`), then his note of the match
