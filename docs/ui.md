@@ -762,9 +762,10 @@ message (« il vient d'arriver ») reste dans son infobulle.
   couleur (charte, « Graphiques »). La carte est repliée sur les buts attendus, les tirs, les tirs cadrés et
   la possession ; son en-tête entier montre les corners, les coups francs et les cartons (charte, « Carte
   repliable »), et le choix est gardé d'un match à l'autre
-- Compositions des deux équipes sur le terrain de la charte, sans titre : le poste sur le maillot ; dessous, le
-  bloc du joueur, son nom, puis la note du match dans sa couleur et les faits du match (un ballon par but, les
-  cartons, la blessure, la sortie en blanc) ; les remplaçants en liste, avec leur entrée et leur note
+- Compositions des deux équipes sur le terrain de la charte, sans titre : le poste sur le maillot, ses buts en
+  haut à droite du maillot (un ballon par but, en grappe) ; dessous, le bloc du joueur, son nom, puis la note du
+  match dans sa couleur et les autres faits du match (les cartons, la blessure, la sortie en blanc) ; les
+  remplaçants en liste, avec leur entrée et leur note (les buts d'un remplaçant après son nom)
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
   de la barre de l'en-tête, l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
@@ -832,8 +833,9 @@ qu'il serait si les matches s'arrêtaient à la minute affichée.
 
 - « Tactique » termine l'occasion en cours, ou arrête le compteur tout de suite
   entre deux occasions, puis ouvre une fenêtre dans le style de la composition :
-  le terrain à gauche, chaque joueur avec son bloc (son nom, puis sa note et ce qu'il a fait, tels
-  que le match les a montrés), les joueurs (sur le terrain, remplaçants, sortis) à droite.
+  le terrain à gauche, chaque joueur avec ses buts au maillot et son bloc (son nom, puis sa note et
+  ce qu'il a fait d'autre, tels que le match les a montrés), les joueurs (sur le terrain, remplaçants,
+  sortis) à droite.
   Glisser un remplaçant sur le terrain le fait entrer, glisser deux joueurs du
   terrain l'un sur l'autre échange leurs postes, renvoyer un entrant vers la liste
   annule son entrée ; tactiques et mentalité en haut. « Reprendre » applique les

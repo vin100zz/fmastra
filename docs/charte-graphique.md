@@ -575,7 +575,12 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   à 20 % et une ombre le détachent du gazon. Le poste est écrit dessus, dans
   l'encre lisible sur le corps. La couleur de poste reste dans les listes, pas
   sur le terrain.
-- **Bloc** (`.player-block`) : sous le maillot, et rien d'autre autour. Des
+- **Buts** (`.kit-goals`) : en haut à droite du maillot, pas dans le bloc. Un
+  ballon de 10 par but, celui du gazon (blanc cerné de `--strong`, son centre
+  `--strong`) avec l'ombre du maillot. Le premier est posé sur le bout de la
+  manche droite, 5 sur le maillot et 4 au-dessus ; chaque suivant se glisse à
+  sa droite, 3 derrière le précédent : le premier reste entier, devant.
+- **Bloc** (`.player-block`) : sous le maillot ; autour, rien que les buts. Des
   lignes de 16 sur l'étiquette sombre (`--pitch-label`, noir à 70 %), autant
   pour tous les joueurs d'un terrain : une ligne vide garde sa hauteur. D'abord
   le nom, puis la note et ce que le joueur a fait. Le joueur se tient par son
@@ -583,9 +588,9 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   dessous.
 - **Note** (`.block-note`) : écrite dans sa couleur, éclaircie pour se lire sur
   le noir, sans pastille.
-- **Faits** : à 8 de la note, 4 entre deux. Un ballon par but, les cartons, la
-  blessure, la sortie (« ▼ 65′ ») toute en blanc : seule une note se lit en
-  rouge. Sur la composition, la flèche de la forme d'au moins ±5 %, puis
+- **Faits** : à 8 de la note, 4 entre deux. Les cartons, la blessure, la sortie
+  (« ▼ 65′ ») toute en blanc : seule une note se lit en rouge. Les buts sont au
+  maillot. Sur la composition, la flèche de la forme d'au moins ±5 %, puis
   l'affinité sous 20.
 - **États** : place vide en pointillé, son bloc sans fond ; joueur choisi cerclé
   de l'accent, son bloc sur l'accent ; joueur indisponible cerclé de rouge, son
@@ -854,7 +859,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Échelles | Sept tailles, trois graisses, un rayon, dans toutes les feuilles |
 | Fond | Blanc en thème clair |
 | Onglets | `.tabs` partout, en-tête de club compris |
-| Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), un ballon par but, la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
+| Terrain et maillot | `.pitch` (debout ou couché) et `.kit-shirt` sur la composition, le match, le dernier onze, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), les buts en grappe au coin du maillot (`.kit-goals`), la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |

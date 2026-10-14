@@ -25,15 +25,16 @@ function playerEvents(events){
 }
 const icon=(className,text,title)=>`<span class="match-mark ${className}" title="${e(title)}">${text}</span>`;
 const onIcon=value=>icon('sub-on',`▲ ${value}′`,`Entré à la ${value}e minute`);
-// `substitutions` false leaves the coming-on minute out, for the bench where it has its own column.
-function marksOf(player,{substitutions=true}={}){
+// `substitutions` false leaves the coming-on minute out, for the bench where it has its own column; `goals` false leaves the
+// goals out, for the pitch where they stand on the shirt.
+function marksOf(player,{substitutions=true,goals=true}={}){
  if(!player)return '';
  // A second yellow shows as one yellow card followed by the red one.
  const yellows=player.red?.secondYellow?Math.min(1,player.yellows):player.yellows;
  return [
   substitutions&&player.on!=null?onIcon(player.on):'',
   // A ball for each goal.
-  ...Array.from({length:player.goals},()=>icon('goal','',`${player.goals} but${player.goals>1?'s':''}`)),
+  ...Array.from({length:goals?player.goals:0},()=>icon('goal','',`${player.goals} but${player.goals>1?'s':''}`)),
   ...Array.from({length:yellows},()=>icon('booking yellow','','Carton jaune')),
   player.red?icon('booking red','',`${player.red.secondYellow?'Deuxième carton jaune':'Carton rouge'} (${player.red.minute}′)`):'',
   player.injury!=null?icon('injury','',`Blessé à la ${player.injury}e minute`):'',
@@ -44,10 +45,10 @@ function marksOf(player,{substitutions=true}={}){
 function lineupCard(match,side,marks){
  const result=match.result,kit=kitOf(match[side],side);
  const bench=result[`${side}_bench`].map(player=>{const events=marks[player.id];return [`<span class="bench-player${events?.on==null?' unused':''}">${playerLink(player.id,player.name)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—',matchNoteBadge(player.stats?.rating)||'—'];});
- // On the pitch, what each player did follows his note in his block.
- const onPitch=player=>marksOf(marks[player.id]);
+ // On the pitch, his goals stand on his shirt and the rest of what he did follows his note in his block.
+ const onPitch=player=>marksOf(marks[player.id],{goals:false}),goals=player=>marks[player.id]?.goals??0;
  // No heading: the side at home is on the left of the page, as in the band.
- return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
+ return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch,goals})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
 }
 
 // Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.

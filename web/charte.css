@@ -443,7 +443,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .match-lineup .pitch{margin:var(--s3)}
 .positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,360px);min-width:0;margin:var(--s2) auto}
 
-/* A player on a pitch: the shirt of his club, the block under it, nothing else around. One size, 32 px, on every pitch. He
+/* A player on a pitch: the shirt of his club, his goals at its top right, the block under it. One size, 32 px, on every pitch. He
    is held by his shirt: whatever hangs under it, the shirts of a line stay level. On the lying pitch, where every block has
    one line, the shirt and its block are centred together. */
 .pitch-player,.lineup-slot,.pitch.ratings button.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;padding:0;border:0;border-radius:0;background:none;transform:translate(-50%,calc(-1*var(--s4)));color:#fff;text-align:center;text-decoration:none}
@@ -466,6 +466,12 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .kit-shirt.empty :is(.kit-body,.kit-collar){fill:none}
 .kit-shirt.empty .kit-outline{stroke:#ffffffcc;stroke-dasharray:3 2}
 .kit-shirt.empty b{color:#fff}
+/* His goals at the top right of the shirt, not in his block: a ball of 10 for each, the first laid on the tip of the right
+   sleeve (5 over the shirt, 4 above it), each next one to the right, 3 of it behind the one before; the ball of the grass,
+   with the shirt's shadow. The first ball comes last in the reversed row, so it is drawn on top. */
+.kit-goals{position:absolute;left:calc(100% - 5px);top:-4px;display:flex;flex-direction:row-reverse;filter:drop-shadow(0 1px 1px #00000066)}
+.kit-goals i{flex:none;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.kit-goals i+i{margin-right:-3px}
 /* Ringed in the accent when picked, in red when he cannot play; a player's main position, on his aptitudes, in a white veil. */
 .pitch-player.picked .kit-shirt::before,.pitch-player.invalid .kit-shirt::before,.pitch-player.main .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
 .pitch-player.main:not(.picked) .kit-shirt::before{box-shadow:0 0 0 2px #ffffff80}
@@ -482,10 +488,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .pitch-player.invalid .player-block{background:var(--bad)}
 .pitch-player:is(.picked,.invalid) .block-note{color:inherit}
 .pitch-player.empty .player-block{background:none}
-/* On the dark: a white ball, its dark patch in the middle, the balls of one player 2 apart; the way off all in white, so
-   that no one reads it as a bad note. */
-.player-block .match-mark.goal::before{background:radial-gradient(circle,var(--strong) 0 1.5px,#fff 2px);box-shadow:none}
-.player-block .match-mark.goal+.match-mark.goal{margin-left:-2px}
+/* On the dark, the way off all in white, so that no one reads it as a bad note. */
 .player-block .match-mark.sub-off{color:#fff}
 .player-block .lineup-icon{margin-right:var(--s1)}
 /* The affinity below 20 and the form of at least 5 % either way, after the note at a position. */

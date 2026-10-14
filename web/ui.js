@@ -101,14 +101,16 @@ export const contrastRatio = (first, second) => {const [light,dark]=[luminance(f
 // The one shirt of every pitch (docs/charte-graphique.md): square, its sleeves level, the club's kit, the body in its first
 // colour (white included) and the sleeves and the collar in its second, each fill drawing its own round edge, a light outline
 // around the whole; `label` (a position) is written on it in the ink that reads on the body. Grey without colours, a dashed
-// outline for an `empty` place. Nothing stands on it: what the player did goes in his block (`playerBlock`).
+// outline for an `empty` place. His `goals` stand at its top right, a ball for each; the rest of what he did goes in his block
+// (`playerBlock`).
 const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_BODY='M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
 export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
 // The custom properties a kit drawing reads its colours from; empty without a primary colour.
 export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='', {empty=false}={}) => {
+export const kitShirt = (major, minor, label='', {empty=false,goals=0}={}) => {
  const style=empty?'':kitStyle(major,minor);
- return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}</span>`;
+ const balls=goals>0?`<span class="kit-goals" title="${goals} but${goals>1?'s':''}">${'<i></i>'.repeat(goals)}</span>`:'';
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}${balls}</span>`;
 };
 // The block under a shirt: lines of 16 on the dark of the label, as many for every player of a pitch. His name first (`name`,
 // HTML), then his note and what he did (`facts`, HTML); a line given as '' keeps its height, one left out (null) is not drawn.
@@ -436,9 +438,9 @@ export function fixtureRow(match,{own=ownClub,levels=null,wide=false}={}){
 export const hasStorey = matches => matches.some(storey);
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide})}`;}).join('');}
 // The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
-// grey) with his position on it and his block under it: his name (his short name when `compact`), then his note of the match
-// and what he did (`marks(player)`).
-export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null}={}){
+// grey) with his position on it and his goals at its top right (`goals(player)`), his block under it: his name (his short
+// name when `compact`), then his note of the match and what else he did (`marks(player)`).
+export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null,goals=null}={}){
  const bands={GB:90,DC:75,DG:69,DD:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
  // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
  const line=player=>['DG','DC','DD'].includes(player.position)?'defence':bands[player.position]??45;
@@ -449,7 +451,7 @@ export function pitch(lineup,label='Composition initiale',{compact=false,kit=nul
   const row=rows[line(player)],y=bands[player.position]??45;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
   const tag=player.temporary?'span':'a',name=`${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}`;
-  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position)}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position,{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
  }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};

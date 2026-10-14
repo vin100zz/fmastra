@@ -133,21 +133,23 @@ export function tacticsProblems(draft,manager,halftime){
 
 const squad=()=>new Map([...view.manager.vacancies.map(player=>({...player,injured:true})),...view.manager.active,...view.manager.bench].map(player=>[player.id,player]));
 const hurt=player=>player.injured||view.decision?.player_id===player.id;
-// What a player of the pitch did, as far as the match has shown it: a ball for each goal, his cards, his injury.
+// What a player did, as far as the match has shown it: a ball for each goal (unless `goals` is false, on the pitch where
+// they stand on his shirt), his cards, his injury.
 const shownSheet=id=>view.shown?.manager?.squad?.find(player=>player.id===id);
-const marks=player=>{
+const shownGoals=player=>shownSheet(player.id)?.goals??0;
+const marks=(player,{goals=true}={})=>{
  const sheet=shownSheet(player.id),yellows=sheet?.yellows??player.yellows??0;
- return '<span class="match-mark goal"></span>'.repeat(sheet?.goals??0)+'<span class="match-mark booking yellow"></span>'.repeat(sheet?.red?Math.min(1,yellows):yellows)
+ return '<span class="match-mark goal"></span>'.repeat(goals?shownGoals(player):0)+'<span class="match-mark booking yellow"></span>'.repeat(sheet?.red?Math.min(1,yellows):yellows)
   +(sheet?.red?'<span class="match-mark booking red"></span>':'')+(hurt(player)?'<span class="match-mark injury" aria-label="Blessé"></span>':'');
 };
-// The block under a player of the pitch: his name, then his note and what he did.
-const tacticsBlock=player=>playerBlock(e(shortName(player.name,player.short)),matchBlockNote(shownSheet(player.id)?.rating)+marks(player));
+// The block under a player of the pitch: his name, then his note and what else he did.
+const tacticsBlock=player=>playerBlock(e(shortName(player.name,player.short)),matchBlockNote(shownSheet(player.id)?.rating)+marks(player,{goals:false}));
 
-// The shirt of the user's side, with a position on it.
-const ownShirt=role=>{const kit=replayTeams(view.state)[view.state.side];return kitShirt(kit.major,kit.minor,role);};
+// The shirt of the user's side, with a position and the player's goals on it.
+const ownShirt=(role,goals=0)=>{const kit=replayTeams(view.state)[view.state.side];return kitShirt(kit.major,kit.minor,role,{goals});};
 function tacticsSlotHtml(slot,place,index,byId){
  const player=byId.get(slot.id);
- return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(slot.role)}${tacticsBlock(player)}</div>`;
+ return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(slot.role,shownGoals(player))}${tacticsBlock(player)}</div>`;
 }
 // Those on the pitch in the order of positions, then the substitutes, then the players taken off in the draft.
 function tacticsListHtml(byId){
@@ -311,7 +313,7 @@ if(globalThis.document){
   const player=squad().get(dragged),role=view.draft.slots.find(slot=>slot.id===dragged)?.role??player.natural??player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}`;
-  token.innerHTML=`${ownShirt(role)}${tacticsBlock(player)}`;
+  token.innerHTML=`${ownShirt(role,shownGoals(player))}${tacticsBlock(player)}`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

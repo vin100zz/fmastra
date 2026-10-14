@@ -74,12 +74,23 @@ test('each side is named once, in the band: the line-ups have no heading, nothin
  assert.match(html,/<h2>Le match en chiffres<\/h2><svg class="toggle-arrow"[^]*?<\/svg><\/div><div class="comparisons"><div class="comparison">/);
 });
 
-test('on a line-up, what a player did follows his note in the block under his shirt: a ball for each goal, the way off last',async()=>{
+test('on a line-up, a player’s goals stand at the top right of his shirt, a ball for each; the rest follows his note in his block',async()=>{
  const scorer={kind:'goal',period:1,second:600,team_id:1,player_id:11,player:'Gardien Un',secondary_id:null,secondary:null,detail:''};
  const html=await screen({...report,result:{...report.result,events:[scorer,{...scorer,second:3000},{kind:'substitution',period:2,second:4200,team_id:1,player_id:11,player:'Gardien Un',secondary_id:null,secondary:null,detail:''}]}});
- const block=html.match(/aria-label="Composition de [^"]*">[^]*?<span class="player-block"><span class="block-name">[^<]+<\/span><span>(.*?)<\/span><\/span><\/a>/)[1];
- assert.match(block,/^<b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><span class="match-mark goal" title="2 buts"><\/span><span class="match-mark goal" title="2 buts"><\/span><span class="match-mark sub-off"[^>]*>▼ 70′<\/span>$/);
+ const [,shirt,block]=html.match(/aria-label="Composition de [^"]*">[^]*?(<span class="kit-shirt"[^]*?)<span class="player-block"><span class="block-name">[^<]+<\/span><span>(.*?)<\/span><\/span><\/a>/);
+ assert.match(shirt,/<b>GB<\/b><span class="kit-goals" title="2 buts"><i><\/i><i><\/i><\/span><\/span>$/);
+ assert.match(block,/^<b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><span class="match-mark sub-off"[^>]*>▼ 70′<\/span>$/);
+ // A player without a goal has none on his shirt.
+ assert.equal((html.match(/class="kit-goals"/g)||[]).length,1);
  assert.doesNotMatch(html,/pitch-marks|position-note|×2/);
+});
+
+test('a substitute’s goal follows his name in the bench’s list, which has no shirt',async()=>{
+ const html=await screen({...report,result:{...report.result,home_bench:[player(12,'Remplaçant')],events:[
+  {kind:'substitution',period:2,second:3600,team_id:1,player_id:11,player:'Gardien Un',secondary_id:12,secondary:'Remplaçant',detail:''},
+  {kind:'goal',period:2,second:4800,team_id:1,player_id:12,player:'Remplaçant',secondary_id:null,secondary:null,detail:''}]}});
+ assert.match(html,/<span class="bench-player"><a [^>]*>Remplaçant<\/a><span class="match-mark goal" title="1 but"><\/span><\/span>/);
+ assert.doesNotMatch(html,/class="kit-goals"/);
 });
 
 test('a highlight takes one line: its marks, the player by his short name, a goal’s passer after him, whole names in tooltips',async()=>{
