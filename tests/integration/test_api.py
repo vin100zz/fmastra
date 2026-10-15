@@ -512,7 +512,7 @@ def test_auto_mode_runs_on_the_server_until_stopped(client, monkeypatch):
     assert service.jobs[job_id].error is None and not service.recovery_required
     assert client.get("/api/monde/etat").json()["auto"]["running"] is False
     assert service.world.date.ordinal() > start_date.ordinal()
-    assert saves and saves[-1] == ("autosave", service.world.date.iso())
+    assert saves and saves[-1] == (service.slot, service.world.date.iso())  # in the slot the game was last saved in
     assert client.post("/api/monde/avancer", json={"jusqu_a": "jour"}).status_code == 202  # commands are accepted again
     assert wait_until(lambda: service.active is None)
 
@@ -577,6 +577,34 @@ def test_what_follows_an_advance_waits_for_its_autosave_instead_of_being_refused
         assert not service.recovery_required
     finally:
         permits.release(10)  # a regression must fail this test, not leave the autosave thread waiting
+        service.close()
+
+
+def test_the_game_is_saved_automatically_in_its_slot_beside_a_copy_of_its_previous_save(config, tmp_path):
+    app = create_app(ROOT, tmp_path)
+    service = app.state.game
+    world = import_world(ROOT / "data", config, 781)
+    start = world.date
+    service.store.save(world, "Marseille")
+    client = TestClient(app)
+    def run(path, **payload):
+        response = client.post(path, json=payload)
+        assert response.status_code == 202, response.text
+        job = response.json()["id"]
+        assert wait_until(lambda: service.jobs[job].status == "done" and service.pending_save is None), service.jobs[job]
+        service.store.rotation.submit(lambda: None).result()  # the older copy is deleted once the save is written
+    slots = lambda: [row["slot"] for row in client.get("/api/partie/slots").json()]
+    slot = lambda: client.get("/api/monde/etat").json()["slot"]
+    try:
+        run("/api/partie/charger", slot="Marseille")
+        assert slots() == ["Marseille"] and slot() == "Marseille"  # loading writes nothing
+        run("/api/monde/avancer", jusqu_a="jour")
+        assert slots() == ["Marseille", f"Marseille-{start.iso()}"]
+        run("/api/partie/sauvegarder", slot="Lyon")
+        assert slot() == "Lyon"
+        run("/api/partie/charger", slot=f"Marseille-{start.iso()}")  # a dated copy resumes its own slot
+        assert slot() == "Marseille" and service.world.date == start
+    finally:
         service.close()
 
 

@@ -1054,7 +1054,8 @@ signaler explicitement plutôt que d'afficher des sections vides.
 
 ```
 GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping),
-                                          controlled_club, news : {unread, next_unread, pending: [id]} (messages non lus, le prochain à lire, ceux à traiter)
+                                          controlled_club, news : {unread, next_unread, pending: [id]} (messages non lus, le prochain à lire, ceux à traiter),
+                                          slot (sauvegarde où la partie s'enregistre)
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}

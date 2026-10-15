@@ -112,10 +112,20 @@ multiplex des autres matches. « Simuler » saute le match. On peut sauvegarder,
 recharger ou redémarrer le serveur en plein match : il est reconstruit à l'identique.
 Voir `docs/ui.md` et `docs/architecture.md`.
 
-Les sauvegardes sont dans `saves/`. Le slot `autosave` est remplacé après chaque
-commande d'avance (et à l'arrêt du mode Auto) et chaque changement de mois. Utiliser un slot nommé dans
-« Ma partie » pour conserver plusieurs univers. Le chargement restitue la
-configuration de la sauvegarde, même si les JSON du dépôt ont changé.
+Les sauvegardes sont dans `saves/`. La partie s'enregistre automatiquement dans la
+sauvegarde dont elle vient, celle chargée ou la dernière enregistrée (`autosave` pour
+une nouvelle partie), après chaque commande d'avance (et à l'arrêt du mode Auto) et
+chaque changement de mois. Utiliser un autre nom dans « Ma partie » pour conserver
+plusieurs univers. Le chargement restitue la configuration de la sauvegarde, même si
+les JSON du dépôt ont changé.
+
+Chaque sauvegarde garde la précédente, datée, et seulement elle : `Marseille`
+enregistrée le 10 juin par-dessus celle du 30 mai la garde en `Marseille-2033-05-30` ;
+enregistrée le 20 juin, `Marseille-2033-06-10` prend sa place. Une sauvegarde du même
+jour que la précédente la met à jour sans copie. La copie (un second nom du fichier,
+sans recopie) et la suppression de l'ancienne se font sur un fil à part, pendant
+l'écriture. Reprendre `Marseille-2033-06-10` reprend la partie `Marseille` à cette date :
+la sauvegarde suivante va dans `Marseille`, dont la version plus avancée devient la copie.
 
 ## Sélections nationales
 

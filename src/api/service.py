@@ -18,7 +18,7 @@ from core.world.steps import day_results, step_over, step_target
 from core.world.validation import validate_world
 from infrastructure.config.loader import load_config
 from infrastructure.importation.loader import import_world
-from infrastructure.persistence.store import SaveStore
+from infrastructure.persistence.store import SaveStore, original_slot
 
 
 class CommandError(ValueError):
@@ -52,8 +52,11 @@ def round_competition(world: World, results: tuple[str, int] | None) -> dict | N
 class GameService:
     def __init__(self, root: Path, saves: Path | None = None) -> None:
         self.root = root
-        self.store = SaveStore(saves or root / "saves")
+        self.store = SaveStore(saves or root / "saves", rolling=True)
         self.world: World | None = None
+        # Where the game is saved, automatically too: the slot it was last saved in or loaded from (a dated copy
+        # resumes its own slot), `autosave` for a new game.
+        self.slot = "autosave"
         self.lock = RLock()
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="simulation")
         self.save_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="autosave")
@@ -146,16 +149,21 @@ class GameService:
                 if self.recovery_required and job.command not in ("create", "load"):
                     raise CommandError("Simulation interrompue : rechargez la dernière sauvegarde.")
                 job.status = "running"
+                slot = self.slot
             if job.command in ("create", "load"):
-                world = (import_world(self.root / "data", load_config(self.root / "config"), payload["seed"])
-                         if job.command == "create" else self.store.load(payload["slot"]))
-                self.store.save(world, "autosave")
+                if job.command == "create":
+                    world, slot = import_world(self.root / "data", load_config(self.root / "config"), payload["seed"]), "autosave"
+                    self.store.save(world, slot)
+                else:  # nothing to write: the file loaded is the game
+                    world, slot = self.store.load(payload["slot"]), original_slot(payload["slot"])
                 with self.lock:
                     self.world = world
+                    self.slot = slot
                     self.live = None
                     self.recovery_required = False
             elif job.command == "save":
                 self.store.save(self.world, payload["slot"])
+                with self.lock: self.slot = payload["slot"]
             elif job.command in ("live_start", "live_finish"):
                 world = self.world
                 with self.lock:
@@ -168,7 +176,7 @@ class GameService:
                         competition = round_competition(world, day_results(world))
                     advancing = False
                 validate_world(world)
-                self.store.save(world, "autosave")
+                self.store.save(world, slot)
             elif job.command == "auto":
                 world = self.world
                 moved, saved_on = False, None
@@ -183,7 +191,7 @@ class GameService:
                         moved = True
                         # Synchronous on purpose: a background write would race with the next day.
                         if world.date.day == 1:
-                            self.store.save(world, "autosave")
+                            self.store.save(world, slot)
                             saved_on = world.date.ordinal()
                         # Stops at a day boundary, the coherent point; also yields the lock to readers.
                         if self.auto_stop.wait(0.005): break
@@ -191,7 +199,7 @@ class GameService:
                         self.auto_stop.wait(self.auto_delay)
                 if moved:
                     validate_world(world)
-                    if saved_on != world.date.ordinal(): self.store.save(world, "autosave")
+                    if saved_on != world.date.ordinal(): self.store.save(world, slot)
             else:
                 world = self.world
                 # "etape" ends on a day the human club follows (see core.world.steps); the other targets
@@ -212,18 +220,18 @@ class GameService:
                     if not finished:
                         awaiting_lineup = True
                         break
-                    if world.date.day == 1: self.store.save(world, "autosave")
+                    if world.date.day == 1: self.store.save(world, slot)
                     if step_over(world, start, news_from) if step else index >= days: break
                 validate_world(world)
                 competition = round_competition(world, ("club", world.matches[pending_lineup_match(world)].competition_id)
                                                 if awaiting_lineup else day_results(world))
                 if awaiting_lineup:
                     # Terminal pause, not a failure: save synchronously so it survives a restart.
-                    self.store.save(world, "autosave")
+                    self.store.save(world, slot)
                 else:
                     # Nothing else mutates `world` in this job; the write can safely continue after we
                     # report success, as long as `pending_save` holds back whatever touches it next.
-                    pending_save = self.save_executor.submit(self.store.save, world, "autosave")
+                    pending_save = self.save_executor.submit(self.store.save, world, slot)
             with self.lock:
                 job.status, job.progress = ("awaiting_lineup", job.progress) if awaiting_lineup else ("done", 1)
                 job.date = self.world.date.iso()
@@ -255,3 +263,4 @@ class GameService:
         self.auto_stop.set()  # an unbounded auto job would otherwise block the shutdown forever
         self.executor.shutdown(wait=True)
         self.save_executor.shutdown(wait=True)
+        self.store.close()

@@ -256,7 +256,7 @@ def router(service: GameService) -> APIRouter:
             data = {"exists": world is not None, "job": service.active, "recovery_required": service.recovery_required,
                     "auto": service.auto_status()}
             if world and not service.recovery_required:
-                data.update({"date": world.date.iso(), "season": world.season, "seed": world.seed,
+                data.update({"date": world.date.iso(), "season": world.season, "seed": world.seed, "slot": service.slot,
                              "next_match": target_date(world, "journee").iso(), "market": market_window(world),
                              "players": len(world.players), "active_clubs": len(world.active_clubs()),
                              "played": sum(match.result is not None and match.season == world.season for match in world.matches.values()),

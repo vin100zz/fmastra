@@ -117,6 +117,9 @@ Un ID de commande reconnaît une relance après interruption réseau.
 Écrire les sauvegardes dans un fichier temporaire du même répertoire, puis
 remplacer atomiquement après succès ; conserver le dernier slot valide en cas
 d'échec. Valider et migrer un chargement avant de remplacer le monde courant.
+Le jeu garde la sauvegarde qu'il remplace, nommée d'après sa date (`slot-AAAA-MM-JJ`,
+lue en tête du fichier), et seulement elle : la copie, un lien physique, est faite
+sur un fil dédié pendant la sérialisation, l'ancienne copie y est supprimée ensuite.
 Les noms de slots sont des identifiants validés, jamais des chemins libres.
 
 ## Import

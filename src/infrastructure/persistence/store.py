@@ -9,7 +9,11 @@ import json
 import os
 import platform
 import re
+import shutil
 import tempfile
+import zlib
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
@@ -179,6 +183,11 @@ DELIVERY_OFFSETS = {"GB": (-25, -25), "DC": (-27, -37), "DG": (1, -17), "DD": (-
                     "MC": (-14, -16), "MOC": (-10, -11), "AILG": (-6, -15), "AILD": (-4, -15), "BU": (-20, -25)}
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
+# A slot, or the copy a save keeps of the one it replaced, named after the date that one was made at: `Marseille-2033-05-30`.
+SLOT_NAME = re.compile(r"[\w-]{1,64}(?:-\d{4}-\d{2}-\d{2})?")
+DATED_COPY = r"-\d{4}-\d{2}-\d{2}"
+# The world's date is the first field of its document: the head of a save tells the date it was made at.
+SAVED_DATE = re.compile(rb'"world":\s*\{"date":\s*\{"year":\s*(\d+),\s*"month":\s*(\d+),\s*"day":\s*(\d+)\}')
 
 
 class SaveError(ValueError):
@@ -186,17 +195,23 @@ class SaveError(ValueError):
 
 
 class SaveStore:
-    def __init__(self, directory: Path) -> None:
+    def __init__(self, directory: Path, rolling: bool = False) -> None:
         self.directory = directory
+        # A rolling store keeps the save a slot held before its last one, and only that one: `Marseille`, saved on 10 June
+        # over its save of 30 May, keeps it as `Marseille-2033-05-30`; saved again on 20 June, `Marseille-2033-06-10` takes
+        # its place. The copy is made, and the older one deleted, on a thread of their own while the new save is written.
+        self.rotation = ThreadPoolExecutor(max_workers=1, thread_name_prefix="save-rotation") if rolling else None
 
     def path_for(self, slot: str) -> Path:
-        if not re.fullmatch(r"[\w-]{1,64}", slot, re.UNICODE):
+        if not SLOT_NAME.fullmatch(slot):
             raise SaveError("Nom de sauvegarde invalide (lettres, chiffres, tirets uniquement).")
         return self.directory / f"{slot}.json.gz"
 
     def save(self, world: World, slot: str) -> Path:
         target = self.path_for(slot)
         self.directory.mkdir(parents=True, exist_ok=True)
+        # Made while the new save is serialized: it is long ready when the new save replaces the slot.
+        copying = self.rotation.submit(self._keep, slot, world.date.iso()) if self.rotation else None
         payload = SaveEnvelope(SCHEMA_VERSION, "0.1.0", platform.python_version(), config_fingerprint(world.config), world)
         raw = ADAPTER.dump_json(payload, by_alias=True, warnings="error")
         temporary = None
@@ -207,11 +222,41 @@ class SaveStore:
                     archive.write(raw)
                 handle.flush()
                 os.fsync(handle.fileno())
+            kept = copying.result() if copying else None
             os.replace(temporary, target)
+            if kept: self.rotation.submit(self._prune, slot, kept)
             return target
         finally:
             if temporary and temporary.exists():
                 temporary.unlink()
+
+    def _keep(self, slot: str, date: str) -> Path | None:
+        """A copy of the slot's save, named after the date it was made at. None for a save made on `date`, which the new one
+        only brings up to date, and when it cannot be read or copied: the new save is written all the same."""
+        target = self.path_for(slot)
+        made = saved_date(target)
+        if made is None or made == date: return None
+        copy = self.directory / f"{slot}-{made}.json.gz"
+        try:
+            copy.unlink(missing_ok=True)
+            try:
+                os.link(target, copy)  # a second name, not a copy: replacing the slot leaves it the former save
+            except OSError:
+                shutil.copyfile(target, copy)  # a file system without hard links
+            return copy
+        except OSError:
+            with suppress(OSError): copy.unlink(missing_ok=True)
+            return None
+
+    def _prune(self, slot: str, kept: Path) -> None:
+        """Deletes the slot's dated copies but `kept`; one that cannot be deleted now is at the slot's next save."""
+        dated = re.compile(re.escape(slot) + DATED_COPY + r"\.json\.gz")
+        for path in self.directory.glob(f"{slot}-*.json.gz"):
+            if path != kept and dated.fullmatch(path.name):
+                with suppress(OSError): path.unlink()
+
+    def close(self) -> None:
+        if self.rotation: self.rotation.shutdown(wait=True)
 
     def load(self, slot: str) -> World:
         target = self.path_for(slot)
@@ -267,8 +312,26 @@ class SaveStore:
     def slots(self) -> list[dict[str, object]]:
         if not self.directory.exists():
             return []
-        return [{"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size,
-                 "modified": path.stat().st_mtime} for path in sorted(self.directory.glob("*.json.gz"))]
+        # By name, a slot before its dated copy.
+        return sorted(({"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size, "modified": path.stat().st_mtime}
+                       for path in self.directory.glob("*.json.gz")), key=lambda row: row["slot"].casefold())
+
+
+def saved_date(path: Path) -> str | None:
+    """The date a save was made at, read from the head of its file; None for a missing or unreadable one."""
+    try:
+        with gzip.open(path, "rb") as handle:
+            head = handle.read(512)
+    except (OSError, EOFError, zlib.error):
+        return None
+    found = SAVED_DATE.search(head)
+    return None if found is None else "%04d-%02d-%02d" % tuple(int(part) for part in found.groups())
+
+
+def original_slot(slot: str) -> str:
+    """The slot a dated copy was kept for; a slot is its own."""
+    found = re.fullmatch(r"(.+)" + DATED_COPY, slot)
+    return found.group(1) if found else slot
 
 
 def _source_delivery(world: dict, source_path: Path, wanted: set[int]) -> dict[int, list[float]]:

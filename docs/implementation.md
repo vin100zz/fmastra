@@ -26,8 +26,9 @@ Les commandes d'installation et de benchmark figurent dans le README.
   classements, calendriers, statistiques, compositions et événements des matchs.
   Recherche, filtres, tri et pagination côté serveur ; interface adaptée au mobile.
 - Sauvegardes JSON compressées atomiques, slots nommés, sauvegarde automatique
-  mensuelle, après chaque commande d'avance et à l'arrêt du mode Auto (qui est
-  un travail serveur unique, arrêté par un signal). Configuration effective et états
+  dans le slot de la partie, mensuelle, après chaque commande d'avance et à l'arrêt
+  du mode Auto (qui est un travail serveur unique, arrêté par un signal), copie datée
+  de la sauvegarde précédente. Configuration effective et états
   des cinq générateurs aléatoires inclus ; lecture du schéma historique v1 et
   écriture du schéma v2. Une reprise garde les règles de sa sauvegarde.
 

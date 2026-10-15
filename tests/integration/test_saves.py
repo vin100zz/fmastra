@@ -2,7 +2,7 @@ from pathlib import Path
 import pytest
 
 from infrastructure.importation.loader import import_world
-from infrastructure.persistence.store import SaveStore, SaveError
+from infrastructure.persistence.store import SaveStore, SaveError, original_slot, saved_date
 from infrastructure.config.loader import config_fingerprint
 from core.engine.analytical import AnalyticalEngine
 from benchmarks.fixtures import fixture_lineup
@@ -71,6 +71,58 @@ def test_delete_slot(tmp_path):
     assert not any(slot["slot"] == "test" for slot in store.slots())
     with pytest.raises(SaveError): store.delete("test")
     with pytest.raises(SaveError): store.delete("../escape")
+
+
+def test_a_rolling_store_keeps_the_previous_save_under_its_date_and_only_it(config, tmp_path):
+    world = import_world(ROOT / "data", config, 15)
+    store = SaveStore(tmp_path, rolling=True)
+    def slots():
+        store.rotation.submit(lambda: None).result()  # the older copy is deleted once the save is written
+        return [row["slot"] for row in store.slots()]
+    first, second, third = world.date, world.date.add_days(10), world.date.add_days(20)
+    try:
+        store.save(world, "Marseille")
+        store.save(world, "Marseille-B")
+        store.save(world, "Marseille")  # made on the same date: brought up to date, nothing kept
+        assert slots() == ["Marseille", "Marseille-B"]
+        world.date = second
+        store.save(world, "Marseille")
+        assert slots() == ["Marseille", f"Marseille-{first.iso()}", "Marseille-B"]
+        assert saved_date(store.path_for(f"Marseille-{first.iso()}")) == first.iso()
+        world.date = third
+        store.save(world, "Marseille")
+        assert slots() == ["Marseille", f"Marseille-{second.iso()}", "Marseille-B"]
+        assert saved_date(store.path_for(f"Marseille-{second.iso()}")) == second.iso()
+        assert saved_date(store.path_for("Marseille")) == third.iso()
+    finally:
+        store.close()
+    assert original_slot(f"Marseille-{second.iso()}") == "Marseille" and original_slot("Marseille-B") == "Marseille-B"
+    assert original_slot("-2033-05-30") == "-2033-05-30"
+    with pytest.raises(SaveError): store.path_for("x" * 65)
+    assert store.path_for("x" * 64 + "-2033-05-30").name == "x" * 64 + "-2033-05-30.json.gz"
+
+
+def test_a_copy_that_cannot_be_linked_is_copied_and_one_that_cannot_be_made_does_not_stop_the_save(config, tmp_path, monkeypatch):
+    import infrastructure.persistence.store as module
+    world = import_world(ROOT / "data", config, 16)
+    store = SaveStore(tmp_path, rolling=True)
+    def refuse(*args): raise OSError("refused")
+    monkeypatch.setattr(module.os, "link", refuse)
+    first = world.date
+    try:
+        previous = store.save(world, "linkless").read_bytes()
+        world.date = first.add_days(1)
+        store.save(world, "linkless")
+        assert store.path_for(f"linkless-{first.iso()}").read_bytes() == previous
+        monkeypatch.setattr(module.shutil, "copyfile", refuse)
+        world.date = first.add_days(2)
+        store.save(world, "linkless")
+        store.rotation.submit(lambda: None).result()
+    finally:
+        store.close()
+    assert saved_date(store.path_for("linkless")) == first.add_days(2).iso()
+    # The copy it could not make leaves the one before in place.
+    assert [row["slot"] for row in store.slots()] == ["linkless", f"linkless-{first.iso()}"]
 
 
 def test_old_save_receives_rotation_rules_without_accepting_tampered_config(config, tmp_path):
