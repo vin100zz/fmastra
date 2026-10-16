@@ -28,6 +28,9 @@ def test_an_expression_reads_the_configuration_and_computes_on_it():
     assert evaluate("pct(sigmoide(0), 0)", SCOPE) == "50\u00a0%" and evaluate("date(1, 7)", SCOPE) == "1er juillet"
     assert evaluate("poids(postes.GB)", SCOPE) == "jeu de tête 60\u00a0%, réflexes 40\u00a0%"
     assert evaluate("n(min(1, 0.04 * 5 ** 1.9), 2)", SCOPE) == "0.85"
+    # Half of what is missing each day, at least 3 points: 60 %, 80 %, 90 %, then the floor takes over.
+    assert evaluate("pct(recuperation(0.6, 0.5, 0.03, 2), 0)", SCOPE) == "90 %"
+    assert evaluate("pct(recuperation(0.98, 0.5, 0.03, 1), 0)", SCOPE) == "100 %"
     kinship = {"parentes": {"DC": {"MC": 6.0, "MDC": 9.0}, "GB": {}}}
     assert evaluate("notes(parentes.DC)", kinship) == "MDC 9, MC 6" and evaluate("notes(parentes.GB)", kinship) == MISSING
 

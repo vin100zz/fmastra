@@ -173,6 +173,9 @@ par tentative, même si le tir est non cadré ou arrêté.
   Le xG de l'action dépend de sa livraison : qualité du centreur (`centre`) ou du
   tireur de corner (`cpa`), voir `docs/attributs.md`.
 - Probabilité de but = sigmoïde(logit(xG) + sensibilité × écart des composites).
+  Les composites sont multipliés par l'état, sans la fraîcheur du tireur : le
+  gardien se fatigue à peine (facteur gardien de `etats.fatigue`), et un tireur
+  fatigué face à lui rendait les buts de plus en plus rares au fil du match.
 - Probabilité de cadrage = maximum de la probabilité de but et d'une sigmoïde
   du logit de cadrage de base corrigé du niveau du tireur.
 - Un seul tirage catégoriel produit but, arrêt ou non-cadré, avec probabilités

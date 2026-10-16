@@ -22,7 +22,7 @@ L'IA retient le onze dont la somme des valeurs est la plus haute, toutes combina
 
 Si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement étranger, l'IA essaie les autres formations et garde celle qui place le plus de joueurs à un poste qu'ils connaissent, puis la meilleure somme.
 
-**La rotation.** Un titulaire dont la condition est passée sous {{pct(ia_gestion.selection.seuil_rotation_fatigue, 0)}} cède sa place à un joueur plus frais, si celui-ci vaut à ce poste au moins son niveau moins {{ia_gestion.selection.ecart_niveau_acceptable_rotation * 2}} points.
+**La rotation.** Un titulaire dont la condition est passée sous {{pct(ia_gestion.selection.seuil_rotation_fatigue, 0)}} cède sa place à un joueur plus frais, si celui-ci vaut à ce poste au moins son niveau moins {{ia_gestion.selection.ecart_niveau_acceptable_rotation * 2}} points. Quand le match suivant du club est européen, l'IA ménage aussi le titulaire qu'un match complet laisserait sous ce seuil le jour de ce match (voir [La condition physique](#/aide/etats/la-condition-physique)).
 
 ## Le banc
 

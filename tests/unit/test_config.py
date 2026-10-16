@@ -71,6 +71,18 @@ def test_invalid_rotation_rules(config, key, value):
         decode_config(raw)
 
 
+@pytest.mark.parametrize("section,key,value", [
+    ("fatigue", "recuperation_minimale_par_jour", 0), ("fatigue", "recuperation_base_par_jour", 0.9),
+    ("fatigue", "recuperation_facteur_endurance", -0.1), ("fatigue", "facteur_gardien", 1.5),
+    ("blessures", "facteur_fatigue_max", 1.0),
+])
+def test_invalid_fatigue_rules(config, section, key, value):
+    raw = config_payload(config)
+    raw["etats"][section][key] = value
+    with pytest.raises(ConfigError):
+        decode_config(raw)
+
+
 @pytest.mark.parametrize("key,value", [
     ("marge_depassement_club", -1), ("ambition_base", 1.5), ("ambition_base", -0.1),
     ("ambition_poids_ego", -1), ("ecart_frustration_maximale", 0),

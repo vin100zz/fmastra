@@ -17,6 +17,7 @@ from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
+from core.config.model import Config
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
@@ -30,10 +31,13 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 30
+SCHEMA_VERSION = 31
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Daily recovery fills a share of what a player lacks, never less than a floor (see `_upgrade_fatigue`); a goalkeeper
+    # spends only a share of an outfield player's condition.
+    (31, ("etats", "fatigue"), {"recuperation_minimale_par_jour": 0.03, "facteur_gardien": 0.15}),
     # A player asks a new contract for a raise worth asking for, or for more years (see `_forget_small_demands`).
     (30, ("ia_gestion", "contrats"), {"hausse_min_prolongation": 0.1}),
     # Income by reputation and championship, cup prizes, idle cash spent, bounded opinions, exposure and form in a player's
@@ -293,6 +297,7 @@ class SaveStore:
             if version < 27: _recall_refusals(world)
             if version < 29: _upgrade_economy(world)
             if version < 30: _forget_small_demands(world)
+            if version < 31: _upgrade_fatigue(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -468,6 +473,32 @@ RECALIBRATED_RULES = (("management", "budgets", "accounting", "other_cost_share"
                       ("management", "guardrails", None, "min_balance", -5000000, 0),
                       ("demography", "potential_estimate", None, "max_noise", 22.0, 10.0),
                       ("demography", "cohort", None, "sorting_reputation_weight", 0.0, 1.0))
+# Rules recalibrated by schema 31, in the same form: a slower recovery, a stronger link between fatigue and injuries,
+# an AI that rests its starters sooner, and a smaller credit per save now that a goalkeeper barely tires.
+RECALIBRATED_FATIGUE_RULES = (("states", "fitness", None, "daily_recovery", 0.10, 0.24),
+                              ("states", "fitness", None, "stamina_recovery", 0.05, 0.20),
+                              ("states", "injuries", None, "fitness_factor", 1.9, 1.2),
+                              ("states", "injuries", None, "possession_probability", 0.0025, 0.0065),
+                              ("management", "selection", None, "rotation_fitness", 0.65, 0.90),
+                              ("engine", "player_ratings", None, "saving", 0.10, 0.08))
+
+
+def _recalibrated(cfg: Config, recalibrated: tuple) -> Config:
+    """A rule the save still holds as it shipped takes its new value; any other was chosen, and is kept."""
+    for domain, section, inner, key, before, since in recalibrated:
+        rules = getattr(getattr(cfg, domain), section)
+        holder = getattr(rules, inner) if inner else rules
+        if getattr(holder, key) != before: continue
+        holder = replace(holder, **{key: since})
+        rules = replace(rules, **{inner: holder}) if inner else holder
+        cfg = replace(cfg, **{domain: replace(getattr(cfg, domain), **{section: rules})})
+    return cfg
+
+
+def _upgrade_fatigue(world: World) -> None:
+    """Schema 31: an older save takes the recalibrated fatigue rules. Daily recovery became a share of what a player
+    lacks, so the two rules that set it change meaning along with their value."""
+    world.config = _recalibrated(world.config, RECALIBRATED_FATIGUE_RULES)
 
 
 def _upgrade_economy(world: World) -> None:
@@ -482,15 +513,7 @@ def _upgrade_economy(world: World) -> None:
     """
     from core.ai.market import unseen_wages
     from core.world.finances import structural_income
-    cfg = world.config
-    for domain, section, inner, key, before, since in RECALIBRATED_RULES:
-        rules = getattr(getattr(cfg, domain), section)
-        holder = getattr(rules, inner) if inner else rules
-        if getattr(holder, key) != before: continue
-        holder = replace(holder, **{key: since})
-        rules = replace(rules, **{inner: holder}) if inner else holder
-        cfg = replace(cfg, **{domain: replace(getattr(cfg, domain), **{section: rules})})
-    world.config = cfg
+    cfg = world.config = _recalibrated(world.config, RECALIBRATED_RULES)
     budgets = cfg.management.budgets
     floor = budgets.wages.weekly_minimum
     for club in world.clubs.values():

@@ -270,7 +270,7 @@
     "poids_composite": 1.0,
     "poids_forme": 1.0,
     "poids_fatigue": 1.0,
-    "seuil_rotation_fatigue": 0.65,
+    "seuil_rotation_fatigue": 0.90,
     "ecart_niveau_acceptable_rotation": 6.0
   }
 }

@@ -10,6 +10,7 @@ from core.domain.date import Date
 from core.domain.matches import Lineup, LineupSlot, SubmittedLineup
 from core.domain.players import Player, Position
 from core.engine.abilities import overall, state_multiplier
+from core.engine.fitness import projected_fitness
 from .assignment import maximize_assignment
 from .playing_time import playing_time_priorities, rotation_bonus
 
@@ -33,18 +34,24 @@ class LineupContext:
     games_played: int = 0
     # Players who joined during the season, see `season_arrivals`.
     arrivals: dict[int, tuple[int, float]] = field(default_factory=dict)
+    # Days until the club's next match when that one is European and this one is not.
+    european_in: int | None = None
 
     @classmethod
     def from_world(cls, world: "World", club_id: int, competition_id: int, date: Date) -> "LineupContext":
         from core.world.transfer_rules import season_arrivals
         club = world.clubs[club_id]
-        games = sum(match.result is not None and match.season == world.season
-                    and club_id in (match.home_id, match.away_id) for match in world.matches.values())
+        played = [match for match in world.matches.values() if club_id in (match.home_id, match.away_id)]
+        games = sum(match.result is not None and match.season == world.season for match in played)
+        upcoming = min((match for match in played if match.result is None and match.date > date),
+                       key=lambda match: (match.date.ordinal(), match.id), default=None)
+        european = (upcoming is not None and world.competitions[upcoming.competition_id].kind == "europe"
+                    and world.competitions[competition_id].kind != "europe")
         called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
         # Neither the players away with their national team nor those of the reserve.
         return cls(club, [player for pid in club.player_ids if pid not in called_up and (player := world.players[pid]).reserve_since is None],
                    competition_id, date, world.seed, games,
-                   season_arrivals(world, club_id))
+                   season_arrivals(world, club_id), upcoming.date.ordinal() - date.ordinal() if european else None)
 
 
 def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None,
@@ -85,10 +92,13 @@ def select_lineup(context: LineupContext, cfg: Config, formation: str | None = N
     chosen = {slot.player.id for slot in slots}
     rotation = cfg.management.selection
     for index, slot in enumerate(slots):
-        if slot.player.fitness >= rotation.rotation_fitness:
+        # Rested when tired, or when this match would leave him tired for the European one that comes next.
+        fresh = slot.player.fitness if context.european_in is None else min(
+            slot.player.fitness, projected_fitness(slot.player, slot.position, slot.player.born.age_on(context.date), context.european_in, cfg))
+        if fresh >= rotation.rotation_fitness:
             continue
         alternatives = [player for player in players if player.id not in chosen
-                        and player.fitness > slot.player.fitness
+                        and player.fitness > fresh
                         and overall(player.attributes, slot.position, cfg) >= overall(slot.player.attributes, slot.position, cfg) - rotation.rotation_gap]
         if alternatives:
             replacement = max(alternatives, key=lambda player: (overall(player.attributes, slot.position, cfg)

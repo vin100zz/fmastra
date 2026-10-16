@@ -8,7 +8,7 @@
 risque = {{pct(etats.blessures.probabilite_base_par_possession, 2)}} × ({{etats.blessures.facteur_fatigue_max}} − condition) × fragilité × effort du bloc
 ```
 
-- **La condition** : un joueur frais (100 %) a un facteur de {{etats.blessures.facteur_fatigue_max - 1}}, un joueur à 50 % un facteur de {{etats.blessures.facteur_fatigue_max - 0.5}}. Le risque augmente donc au fil du match, et un joueur aligné fatigué part avec un risque plus élevé.
+- **La condition** : un joueur frais (100 %) a un facteur de {{etats.blessures.facteur_fatigue_max - 1}}, un joueur à 50 % un facteur de {{etats.blessures.facteur_fatigue_max - 0.5}}, soit {{n((etats.blessures.facteur_fatigue_max - 0.5) / (etats.blessures.facteur_fatigue_max - 1), 1)}} fois plus. Le risque augmente donc au fil du match, et un joueur qui enchaîne les matches sans récupérer part avec un risque plus élevé (voir [La condition physique](#/aide/etats/la-condition-physique)).
 - **La fragilité** : trait caché, de {{etats.blessures.fragilite_min}} à {{etats.blessures.fragilite_max}}.
 - **L'effort du bloc** : de {{etats.fatigue.intensite_par_hauteur_bloc.bloc_bas}} (bloc bas) à {{etats.fatigue.intensite_par_hauteur_bloc.pressing_haut}} (pressing haut).
 

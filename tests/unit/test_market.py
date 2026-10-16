@@ -1069,7 +1069,7 @@ def test_an_older_save_lets_a_demand_for_a_raise_too_small_to_ask_for_lapse(conf
     from core.domain.offers import RenewalProposal
     from core.world import news
     from core.world.events import RenewalProposed
-    from infrastructure.persistence.store import SaveStore
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, SaveStore
     world = mini_world(config)
     world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
     for club in world.clubs.values(): club.competition_id = -16
@@ -1085,7 +1085,9 @@ def test_an_older_save_lets_a_demand_for_a_raise_too_small_to_ask_for_lapse(conf
     payload = json.loads(gzip.decompress(path.read_bytes()))
     payload["schema_version"] = 29
     rules = payload["world"]["config"]
-    del rules["ia_gestion"]["contrats"]["hausse_min_prolongation"]
+    for introduced, config_path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 29:
+            for key in defaults: del rules[config_path[0]][config_path[1]][key]
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("demands")

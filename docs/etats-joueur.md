@@ -12,19 +12,45 @@ Il multiplie les composites.
 
 Consommation = minutes × consommation de base × intensité / résistance.
 Résistance = base + coefficient × endurance normalisée. Interpoler l'intensité
-entre bloc bas, équilibré et pressing haut selon la hauteur effective.
+entre bloc bas, équilibré et pressing haut selon la hauteur effective. Au poste
+de gardien, la consommation est multipliée par le facteur gardien configuré :
+un gardien se fatiguait autant qu'un joueur de champ et perdait près de 40 % de
+sa qualité d'arrêt sur un match ; il en perd désormais quelques points. Cette
+fatigue des gardiens portait la calibration des buts : la retirer seule faisait
+tomber la suite `stats_match` de 1,54 à 0,96 but par équipe, la plupart dans le
+premier quart d'heure, car un tireur fatigué affrontait un gardien frais. Le duel
+tireur-gardien ignore donc la fraîcheur du tireur (`shots.py`) : 1,45 but par
+équipe, répartis à peu près également entre les quarts d'heure, et la suite
+`match` passe de 10 à 12 critères sur 15. Le crédit par arrêt des notes passe de
+0,10 à 0,08, ce qui ramène la note moyenne des gardiens de 6,64 à 6,58.
 
-Récupération quotidienne = vitesse de base + coefficient × endurance normalisée,
-modulée par la classe d'âge. Borner à [0, 1]. Mettre à jour aux paliers de match
-configurés et aux passages de jour, sans récupérer deux fois un même jour.
-Un joueur blessé n'est pas sélectionnable ; à la guérison, réinitialiser sa
-fraîcheur et sa forme avec les valeurs de retour configurées, une seule fois.
+Récupération quotidienne = part × (1 − fraîcheur), au moins le minimum configuré,
+où part = base + coefficient × endurance normalisée, modulée par la classe
+d'âge. Borner à [0, 1]. Mettre à jour aux paliers de match configurés et aux
+passages de jour, sans récupérer deux fois un même jour. Un joueur blessé n'est
+pas sélectionnable ; à la guérison, réinitialiser sa fraîcheur et sa forme avec
+les valeurs de retour configurées, une seule fois.
 
-Avec un seul championnat et sept jours entre journées, la récupération ramène
-souvent les joueurs à pleine fraîcheur : ne pas promettre une rotation forte
-par la fatigue seule en v1. Blessures, suspensions, remplacements et profondeur
-de l'effectif restent utiles ; le calendrier congestionné renforcera ensuite
-ce mécanisme. Ne pas ajouter artificiellement des matches hors périmètre.
+Une récupération fixe par jour (schéma 30 et avant) donnait un effet binaire :
+au-dessus d'environ 7/20 d'endurance, deux matches par semaine ne laissaient
+aucune trace, en dessous la fatigue s'accumulait sans limite. La part du
+déficit donne au contraire un équilibre qui baisse avec la fréquence des
+matches et remonte avec l'endurance : environ 99 % pour un match par semaine,
+85 à 95 % trois jours après un match complet. Une semaine ramène à pleine
+fraîcheur. Mesuré d'août à novembre 2033 sur une partie (octobre 2026) : 96 % des
+titularisations étaient à 100 % avant le changement ; trois jours après un match,
+la fraîcheur moyenne au coup d'envoi passe de 98,4 % à 91,5 %, et une semaine
+après de 100 % à 99,7 %. Les titularisations trois jours après un match baissent
+de 12 % (rotation), le nombre de buts ne change pas.
+
+Le facteur de fatigue des blessures passe de 1,9 à 1,2 : à 50 %, un joueur se
+blesse 3,5 fois plus qu'à 100 % (1,6 fois avant). La probabilité de base
+(0,0065) garde le total annuel dans la cible : 17,2 blessures par club et par
+saison sur la suite `injuries` (18,2 avant, au-dessus du maximum de 18).
+
+L'IA fait souffler un titulaire sous le seuil de rotation, ou qu'un match
+complet laisserait sous ce seuil le jour d'un match européen qui suit
+immédiatement (projection par la règle de récupération, bloc équilibré).
 
 ## Blessures
 

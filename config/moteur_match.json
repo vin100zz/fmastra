@@ -99,7 +99,7 @@
     "but": 0.8,
     "passe_decisive": 0.5,
     "tir_cadre_sans_but": 0.05,
-    "arret": 0.10,
+    "arret": 0.08,
     "but_encaisse_gardien": -0.15,
     "jaune": -0.20,
     "expulsion": -1.0,

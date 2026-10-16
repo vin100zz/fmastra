@@ -179,6 +179,24 @@ plus faible pour laquelle un joueur demande un nouveau contrat qui ne lui apport
 d'année de plus. Au chargement, une demande en attente qui n'apporte ni cette hausse
 ni d'année de plus reste sans suite (`_forget_small_demands`).
 
+Les configurations antérieures à la version 31 reçoivent
+`etats.fatigue.facteur_gardien` (0,15, entre 0 et 1) : la part de la perte de
+condition d'un joueur de champ que supporte un gardien, qui jusque-là se fatiguait
+autant qu'eux ; et `etats.fatigue.recuperation_minimale_par_jour` (0,03, strictement
+positif) : la récupération quotidienne comble désormais une part de ce qui manque au joueur,
+`(recuperation_base_par_jour + recuperation_facteur_endurance × endurance) × facteur
+d'âge`, et au moins ce minimum. Les deux clés de cette part changent donc de sens et
+de valeur ; avec quatre autres règles recalibrées par la même version, elles sont
+remplacées dans une sauvegarde plus ancienne quand elle porte encore leur valeur
+d'origine, et gardées sinon (`_upgrade_fatigue`) : `recuperation_base_par_jour`
+(0,10 par jour devient une part de 0,24), `recuperation_facteur_endurance` (0,05
+devient 0,20), `blessures.facteur_fatigue_max` (1,9 devient 1,2 : un joueur à 50 %
+se blesse 3,5 fois plus qu'à 100 %, contre 1,6 fois avant),
+`blessures.probabilite_base_par_possession` (0,0025 devient 0,0065, pour garder le
+total annuel de blessures), `ia_gestion.selection.seuil_rotation_fatigue` (0,65
+devient 0,90) et `moteur_match.notes_joueurs.arret` (0,10 devient 0,08 : un gardien
+frais arrête davantage, et sa note moyenne restait sinon au-dessus de la cible).
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

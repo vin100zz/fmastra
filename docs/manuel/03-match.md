@@ -82,7 +82,7 @@ Le tireur est désigné parmi les joueurs impliqués à l'endroit de l'occasion,
 | Corner | {{pct(moteur_match.coups_arretes.xg_base_corner, 1)}} | Jeu aérien | Comme un centre |
 | Coup franc direct | {{pct(moteur_match.coups_arretes.xg_base_coup_franc_direct, 1)}} | Frappe, plus son avance en coups arrêtés | Arrêts |
 
-Les qualités du tireur et du gardien sont multipliées par leur état (forme, condition, moral, affinité au poste), comme les notes de zone. Pour une frappe dans l'axe, l'écart entre les deux donne :
+Les qualités du tireur et du gardien sont multipliées par leur état (forme, condition, moral, affinité au poste), comme les notes de zone, sauf la condition du tireur : un gardien se fatigue à peine (voir [La condition physique](#/aide/etats/la-condition-physique)), et la fatigue des attaquants pèse déjà sur la création des occasions. Pour une frappe dans l'axe, l'écart entre les deux donne :
 
 | Tireur moins gardien (points sur 200) | Probabilité de but |
 |---:|---:|

@@ -86,6 +86,14 @@ def sigmoid(value: float) -> float:
     return 1 / (1 + math.exp(-value))
 
 
+def recovery(start: float, share: float, floor: float, days: int) -> float:
+    """A condition after `days` days of the game's own daily recovery (see `recover`)."""
+    from core.engine.fitness import recover
+    for _ in range(int(days)):
+        start = recover(start, share, floor)
+    return start
+
+
 def text(value: Any) -> str:
     if isinstance(value, bool): return "oui" if value else "non"
     if isinstance(value, (int, float)): return number(value)
@@ -94,7 +102,7 @@ def text(value: Any) -> str:
 
 
 FUNCTIONS = {"min": min, "max": max, "abs": abs, "len": len, "sum": sum, "exp": math.exp, "log": math.log, "tanh": math.tanh,
-             "sigmoide": sigmoid, "logit": lambda value: math.log(value / (1 - value)),
+             "sigmoide": sigmoid, "logit": lambda value: math.log(value / (1 - value)), "recuperation": recovery,
              "n": number, "pct": percentage, "eur": euros, "poids": weights, "notes": ratings, "liste": text, "date": day, "annee": lambda value: str(int(value)),
              "attribut": lambda name: ATTRIBUTE_LABELS[name]}
 OPERATORS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv, ast.Pow: operator.pow}

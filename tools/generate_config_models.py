@@ -237,6 +237,8 @@ facteur_age_vieux=old_recovery
 seuil_age_vieux=old_age
 seuil_alerte=alert_threshold
 fatigue_retour_de_blessure=injury_return_fitness
+recuperation_minimale_par_jour=min_daily_recovery
+facteur_gardien=goalkeeper_factor
 blessures=injuries
 probabilite_base_par_possession=possession_probability
 facteur_fatigue_max=fitness_factor
@@ -613,6 +615,7 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "etats.blessures.fragilite_note_basse": 2.3,
             "etats.blessures.fragilite_note_reference": 8.3,
             "etats.blessures.fragilite_note_haute": 14.3,
+            "etats.fatigue.recuperation_minimale_par_jour": 0.03, "etats.fatigue.facteur_gardien": 0.15,
             "ia_gestion.contrats.ego_note_basse": 8.4,
             "ia_gestion.contrats.ego_note_reference": 12.4,
             "ia_gestion.contrats.ego_note_haute": 16.4,

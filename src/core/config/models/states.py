@@ -29,6 +29,8 @@ class StatesConfigFitness:
     old_age: int = Field(alias="seuil_age_vieux")
     alert_threshold: float = Field(alias="seuil_alerte")
     injury_return_fitness: float = Field(alias="fatigue_retour_de_blessure")
+    min_daily_recovery: float = Field(default=0.03, alias="recuperation_minimale_par_jour")
+    goalkeeper_factor: float = Field(default=0.15, alias="facteur_gardien")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

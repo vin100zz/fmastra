@@ -56,8 +56,10 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
     keeper = defender.goalkeeper()
     shooting_weights = cfg.attributes.composites.heading if header else cfg.attributes.composites.shooting
     # The dead-ball specialist strikes a direct free kick with his own shot, plus the points his skill exceeds the reference.
+    # The shooter's fatigue stays out of the duel: the keeper barely tires, and a tired shooter facing him would make goals
+    # rarer as the match goes on. Fatigue weighs on the chance itself, through the zones that make and stop it.
     shot_quality = (weighted_rating(shooter.player.attributes, shooting_weights)
-                    * state_multiplier(shooter.player, shooter.position, cfg, attacker.fitness[shooter.player.id]) + free_kick_edge)
+                    * state_multiplier(shooter.player, shooter.position, cfg, 1.0) + free_kick_edge)
     keeper_quality = weighted_rating(keeper.player.attributes, cfg.attributes.composites.saving)
     if header:
         weights = rules.header_keeper_weights
