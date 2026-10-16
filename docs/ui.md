@@ -190,7 +190,8 @@ Le fil ne raconte pas les résultats des matches : ils se lisent dans « Dernier
 BP, BC, DIFF., le club marqué), les indisponibles de l'équipe première (blessés avec leur date de retour, suspendus
 avec leurs matchs), le calendrier (derniers et prochains matches), les joueurs (cinq premiers aux buts, aux passes,
 à la note parmi ceux qui ont joué au moins la moitié des matches du plus utilisé, et aux matches), les finances (budget
-de transferts disponible en grand, masse salariale en anneau rempli à sa part du plafond, rouge à partir de 95 %).
+de transferts disponible en grand, marge salariale — le plafond moins la masse salariale et les salaires réservés aux
+offres en cours — en anneau rempli à sa part du plafond, rouge à 5 % ou moins).
 
 Les offres reçues, les offres en cours, la liste des transferts et les prêts du club se lisent dans l'onglet
 Transferts de sa fiche, carte « Mercato en cours ».
@@ -332,7 +333,7 @@ qu'il résume :
 | Calendrier | le même bloc qu'Actualités : 5 derniers matches (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne), puis 3 prochains, sans intertitres | onglet Calendrier |
 | Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur un terrain à l'horizontale qui attaque vers la droite (latéral gauche en haut), noms réduits au nom court (charte, « Joueurs ») sur un bloc d'une ligne, maillots au corps de la couleur principale et aux manches et au col de la seconde, le poste écrit dessus, sans note | compte rendu du match |
 | Championnat | « Ligue 1 – 18e journée » : cinq lignes du classement autour du club, avec les points puis la différence de buts | page de la compétition |
-| Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, masse salariale mensuelle en anneau rempli à sa part du plafond, rouge à partir de 95 % | onglet Finances |
+| Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 
 **Calendrier.** Une ligne par match de la saison, du premier au dernier, sans intertitre de mois :
 le jour, la pastille de la compétition (deux caractères, voir la charte : C1, L1, D2, CF ; le
@@ -814,7 +815,13 @@ Les composites demandés par poste sont une liste d'affichage de l'API (`COMPOSI
 tirée de `implications.json`, la clé en premier) : aucun match ne la lit.
 
 « Infos » et « Jeu », à côté de « Meilleure composition », changent les colonnes de la liste :
-potentiel, fatigue, forme (son effet signé, comme dans l'effectif) et saison, ou les huit composites. Cliquer un poste du terrain le choisit : la
+potentiel, fatigue, cinq derniers matches, forme (son effet signé, comme dans l'effectif) et saison, ou les huit composites.
+« 5 DERNIERS » dessine les cinq derniers matches du club (charte, « Cinq derniers matches ») : une barre par match à la
+hauteur des minutes jouées, la piste vide sur le banc, un tiret quand il n'était pas retenu, la croix ou le carton quand il
+était blessé ou suspendu ; les barres passent au jaune quand sa charge dépasse le seuil où elle ralentit sa récupération.
+L'infobulle donne la charge puis chaque match ; la colonne se trie sur la charge. Les absences d'un match sont celles du coup
+d'envoi, gardées avec son résultat (`home_absent`, `away_absent`) ; les matches d'une saison passée n'ont plus de composition
+et n'y paraissent pas. Cliquer un poste du terrain le choisit : la
 liste ajoute après COMPO la colonne « EN » suivie du poste, avec la note, la flèche de forme et l'affinité de chacun à
 ce poste, et se trie dessus ; en vue Jeu, les composites de ce poste passent en jaune dans l'en-tête,
 les autres en gris. Un second clic, ou une autre tactique, le libère.
@@ -1161,7 +1168,10 @@ POST /api/partie/preter                   {commande_id, joueur_id, club_id, dure
 POST /api/partie/emprunter                {commande_id, joueur_id, duree}
 GET  /api/ma-partie/composition?match_id=   effectif, tactiques, tactique du club (custom : [poste, ligne, colonne] | null), onze de départ, suggestions,
                                           club (couleurs du maillot), scouting : {match, home, club (avec formation), standing, record {venue, won, drawn, lost},
-                                          key_players, absent, last_meeting} | null
+                                          key_players, absent, last_meeting} | null ; recent_matches (cinq derniers matches du club,
+                                          du plus ancien : id, date, home, opponent, competition, score du côté du club),
+                                          load_threshold ; par joueur load et recent [{status : starter | sub | unused | injured |
+                                          suspended | out, minutes}] aligné sur recent_matches
 GET  /api/ma-partie/composition/suggestion?postes=&match_id=   meilleur onze et banc de l'IA sur les postes de la tactique du club
 POST /api/partie/composition              {commande_id, match_id, formation, titulaires, banc, perso} ; perso garde la tactique du club
 

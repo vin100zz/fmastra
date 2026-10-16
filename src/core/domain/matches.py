@@ -131,6 +131,9 @@ class MatchResult:
     away_lineup: list[tuple[int, str]] = field(default_factory=list)
     home_bench: list[int] = field(default_factory=list)
     away_bench: list[int] = field(default_factory=list)
+    # The players of each club who could not take part, "injured" or "suspended", as it stood at kickoff.
+    home_absent: dict[int, str] = field(default_factory=dict)
+    away_absent: dict[int, str] = field(default_factory=dict)
     duration: int = 0
     status: str = "played"
     penalties: tuple[int, int] | None = None

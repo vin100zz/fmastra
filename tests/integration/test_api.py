@@ -744,6 +744,24 @@ def test_the_lineup_screen_scouts_the_next_opponent(played):
     assert sum(scout["record"][key] for key in ("won", "drawn", "lost")) == len(venue)
     if scout["standing"]: assert set(scout["standing"]) == {"rank", "points", "form"}
     if scout["last_meeting"]: assert {scout["last_meeting"]["home"]["id"], scout["last_meeting"]["away"]["id"]} == {club.id, rival.id}
+    # Each player's last five matches with the club, oldest first, and the load they leave him.
+    played_matches = sorted((match for match in world.matches.values() if match.result and club.id in (match.home_id, match.away_id)),
+                            key=lambda match: (match.date, match.id))[-5:]
+    assert [row["id"] for row in lineup["recent_matches"]] == [match.id for match in played_matches] and played_matches
+    assert lineup["load_threshold"] == world.config.states.fitness.load_threshold
+    for row, match in zip(lineup["recent_matches"], played_matches):
+        home = match.home_id == club.id
+        assert row["home"] == home and row["opponent"]["id"] == (match.away_id if home else match.home_id)
+        assert row["score"] == ([match.result.home_goals, match.result.away_goals] if home else [match.result.away_goals, match.result.home_goals])
+    for player in lineup["players"]:
+        assert player["load"] == round(world.players[player["id"]].load, 2) and len(player["recent"]) == len(played_matches)
+        for usage, match in zip(player["recent"], played_matches):
+            side = "home" if match.home_id == club.id else "away"
+            starters, bench = {pid for pid, _ in getattr(match.result, f"{side}_lineup")}, getattr(match.result, f"{side}_bench")
+            assert usage["status"] == ("starter" if player["id"] in starters else ("sub" if usage["minutes"] else "unused") if player["id"] in bench
+                                       else getattr(match.result, f"{side}_absent").get(player["id"], "out"))
+    assert any(usage["status"] == "starter" and usage["minutes"] > 0 for player in lineup["players"] for usage in player["recent"])
+    assert any(player["load"] > 0 for player in lineup["players"])
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 

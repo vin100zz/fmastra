@@ -32,6 +32,21 @@ def test_new_suspension_is_not_served_by_match_that_caused_it(config):
     assert suspended.discipline[16].suspended_matches == 0
 
 
+def test_a_match_keeps_who_could_not_play_for_each_club(config):
+    from core.domain.players import Injury
+    from core.world.player_states import absences
+    world = mini_world(config)
+    injured, suspended, elsewhere, healed = world.players[101], world.players[102], world.players[103], world.players[104]
+    injured.injury = Injury(world.date, world.date.add_days(10), "moyenne")
+    healed.injury = Injury(world.date.add_days(-10), world.date, "legere")
+    suspended.discipline[16] = Discipline(suspended_matches=1)
+    # A suspension in another competition does not keep him from this match.
+    elsewhere.discipline[40] = Discipline(suspended_matches=2)
+    match = Match(10, 16, 2025, 1, world.date, 1, 2)
+    assert absences(world, match, 1) == {injured.id: "injured", suspended.id: "suspended"}
+    assert absences(world, match, 2) == {}
+
+
 def test_appearances_tell_starts_from_substitute_entries(config):
     world = mini_world(config)
     starter, substitute, unused = world.players[101], world.players[102], world.players[103]

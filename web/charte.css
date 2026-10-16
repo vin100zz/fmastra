@@ -386,9 +386,20 @@ span.entity-step svg{opacity:.3}
 .curve{stroke:var(--series-1);stroke-width:2}
 .chart-point .kit-dot{width:12px;height:12px}
 .point-value{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-figure);font-weight:700;color:var(--strong)}
+/* A player's last five matches with his club, oldest first: a bar of 10 × 18 each to the minutes he played; an empty track on
+   the bench, a dash when left out, the cross or the card when he could not play, nothing before the club's first match. The
+   bars turn yellow once his load passes its threshold. */
+.recent{display:inline-flex;align-items:flex-end;gap:3px;height:var(--h-chip);vertical-align:middle}
+.recent>i{display:flex;align-items:flex-end;justify-content:center;flex:none;width:10px;height:100%}
+.recent>i:not(.out,.injured,.suspended,.none){border-radius:2px;background:var(--panel-3);overflow:hidden}
+.recent>i>u{display:block;width:100%;background:var(--ink-2)}
+.recent.loaded>i>u{background:var(--accent)}
+.recent>i.out::before{content:"";width:6px;height:2px;margin-bottom:1px;border-radius:1px;background:var(--line)}
+.recent>i:is(.injured,.suspended){align-items:center}
 
-/* Menus and what a pointer shows. */
+/* Menus and what a pointer shows. A tooltip keeps the lines its text is written on. */
 .filter-panel,dialog,#toast{border-radius:var(--radius)}
+#tooltip{white-space:pre-line}
 :root[data-theme="light"] #tooltip{padding:var(--s1) var(--s2);border:0;background:var(--strong);color:#fff;font-size:var(--fs-body);line-height:18px;box-shadow:0 4px 12px #0a141e33}
 :root[data-theme="light"] #tooltip::after{border:0;background:var(--strong)}
 /* A player's menu, at the pointer on a right click: what can be done with him, in the words of his page. Rows of 26: an

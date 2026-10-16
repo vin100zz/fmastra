@@ -64,10 +64,10 @@ test('the widgets show the table, the players out, the calendar, the leaders and
  assert.equal(list('Passes'),'Bob Deux 6 Ada Un 1');
  assert.equal(list('Notes'),'Ada Un 7.40 Bob Deux 6.90');
  assert.equal(list('Matches'),'Ada Un 10 Bob Deux 9 Cid Trois 1');
- // Finances: what is left to spend, and the wage bill as a share of its cap.
+ // Finances: what is left to spend on transfers and in wages, the wage margin as a share of its cap.
  assert.match(html,/<span>Budget transferts<\/span><strong>4\sM€<\/strong>/);
- assert.match(html,/aria-label="85 % du plafond salarial utilisé"/);assert.match(html,/stroke-dasharray="138\.9 163\.4"/);
- assert.match(html,/<span>Masse salariale<\/span><strong>740\s€<\/strong><small>sur 870\s€<\/small>/);
+ assert.match(html,/aria-label="15 % du plafond salarial disponible"/);assert.match(html,/stroke-dasharray="24\.5 163\.4"/);
+ assert.match(html,/<span>Marge salariale<\/span><strong>130\s€<\/strong><small>sur 870\s€<\/small>/);
 });
 
 test('the offers of a day for a player are answered one by one or all at once',async()=>{
@@ -170,7 +170,8 @@ test('a transfer window is told when it opens and on the eve of its last day',as
  const closing={...row(8,'market_close','Le mercato d’hiver ferme demain'),market:{window:'winter',budget:19e6,wages:null,end:null,talks:[{id:20,name:'Cible',gone:false}],offers:[{id:11,name:'Vendu',gone:false}]}};
  const eve=await screen([closing],closing,'msg=8');
  assert.match(eve,/<span>Vos offres en cours<\/span><strong><a href="#\/player\/20">Cible<\/a><\/strong>.*<span>Offres reçues<\/span><strong><a href="#\/player\/11">Vendu<\/a><\/strong>/);
- assert.doesNotMatch(eve,/Fermeture|Marge salariale/);
+ // The message alone: the finances widget beside it has its own wage margin.
+ assert.doesNotMatch(eve.split('<aside')[0],/Fermeture|Marge salariale/);
 });
 
 test('the recap of a window lists its main transfers, in the club’s division then in the world',async()=>{

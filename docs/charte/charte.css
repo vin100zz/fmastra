@@ -331,6 +331,16 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .gauge.signed>i{position:absolute;top:0;border-radius:2px}
 .gauge.signed>.down{background:var(--bad)}
 .gauge.signed::after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:10px;background:var(--muted)}
+/* A player's last five matches with his club, oldest first: a bar of 10 × 18 each, filled from the bottom to the minutes he
+   played (90 fills it); an empty track when he sat on the bench, a dash when he was left out, the injury cross or the red card
+   when he could not play, nothing before the club's first match. The bars turn yellow once his load passes its threshold. */
+.recent{display:inline-flex;align-items:flex-end;gap:3px;height:var(--h-chip);vertical-align:middle}
+.recent>i{display:flex;align-items:flex-end;justify-content:center;flex:none;width:10px;height:100%}
+.recent>i:not(.out,.injured,.suspended,.none){border-radius:2px;background:var(--panel-3);overflow:hidden}
+.recent>i>u{display:block;width:100%;background:var(--ink-2)}
+.recent.loaded>i>u{background:var(--accent)}
+.recent>i.out::before{content:"";width:6px;height:2px;margin-bottom:1px;border-radius:1px;background:var(--line)}
+.recent>i:is(.injured,.suspended){align-items:center}
 .ring{position:relative;display:grid;place-items:center;flex:none;width:56px;height:56px}
 .ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke:var(--line);stroke-width:6}

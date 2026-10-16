@@ -129,10 +129,24 @@ test('under each starter\'s shirt, his block: his name, then his note at his pos
 
 test('a position picked on the pitch puts everyone\'s note there right after COMPO; the game view lists the composites',async()=>{
  const {lineupColumns}=await import('../../web/composition.js');
- assert.deepEqual(lineupColumns('infos',null).map(([key])=>key),['selected','position','name','rating','potential','fatigue','form','appearances','goals','assists','average']);
+ assert.deepEqual(lineupColumns('infos',null).map(([key])=>key),['selected','position','name','rating','potential','fatigue','recent','form','appearances','goals','assists','average']);
  assert.deepEqual(lineupColumns('jeu','MDC').map(([key,label])=>key==='fit'?label:key),
   ['selected','EN MDC','position','name','rating','progression_attaque','occasion_attaque','tir','tete','progression_defense','occasion_defense','arret','sortie']);
  assert.deepEqual(lineupColumns('jeu',null).filter(([,,opens])=>opens).map(([key])=>key),['progression_attaque','progression_defense','arret']);
+});
+
+test('the last five matches draw a bar to the minutes, the cross or the card, and turn yellow beyond the load threshold',async()=>{
+ const {recentStrip}=await import('../../web/composition.js');
+ const match=(date,name,code,home,score)=>({date,home,score,opponent:{id:1,name},competition:{kind:code==='C1'?'europe':'league',code,nation:'FRA',level:1}});
+ const matches=[match('2033-05-04','Real Madrid','C1',true,[3,1]),match('2033-05-08','Auxerre','L1',true,[3,1]),match('2033-05-11','Real Madrid','C1',false,[1,3])];
+ const player={load:3.84,recent:[{status:'starter',minutes:90},{status:'sub',minutes:27},{status:'injured',minutes:0}]};
+ const html=recentStrip(player,matches,3.5);
+ // Two empty places before the club's first match of the five, then a full bar, a third of one and the cross.
+ assert.match(html,/^<span class="recent loaded" title="[^"]+"><i class="none"><\/i><i class="none"><\/i><i><u style="height:100%"><\/u><\/i><i><u style="height:30%"><\/u><\/i><i class="injured"><span class="match-mark injury"><\/span><\/i><\/span>$/);
+ assert.match(html,/title="Charge 3\.8, au-delà de 3\.5 : il récupère moins vite\n[^\n]+Real Madrid \(C1, dom\.\) 3–1 · titulaire, 90 min\n[^\n]+Auxerre \(L1, dom\.\) 3–1 · entré, 27 min\n[^\n]+Real Madrid \(C1, ext\.\) 1–3 · blessé"/);
+ // Below the threshold the bars keep their ink; a player left out has a dash, one suspended the red card.
+ const calm=recentStrip({load:2.1,recent:[{status:'out',minutes:0},{status:'suspended',minutes:0},{status:'unused',minutes:0},{status:'starter',minutes:90},{status:'starter',minutes:61}]},[],3.5);
+ assert.match(calm,/^<span class="recent" title="Charge 2\.1"><i class="out"><\/i><i class="suspended"><span class="match-mark booking red"><\/span><\/i><i><u style="height:0%"><\/u><\/i>/);
 });
 
 test('every tactic sits on the grid of the pitch: five columns a line, full-backs and wingers on the outer ones',async()=>{

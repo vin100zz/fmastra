@@ -103,6 +103,18 @@ def monthly_player_events(world: World) -> list[PlayerChanged]:
     return changes
 
 
+def absences(world: World, match: Match, club_id: int) -> dict[int, str]:
+    """The club's players who cannot take part in this match: injured, or suspended in its competition. Read before the
+    match is applied, so what happens in it does not count yet."""
+    absent = {}
+    for pid in world.clubs[club_id].player_ids:
+        player = world.players[pid]
+        discipline = player.discipline.get(match.competition_id)
+        if player.injury is not None and player.injury.end > match.date: absent[pid] = "injured"
+        elif discipline and discipline.suspended_matches: absent[pid] = "suspended"
+    return absent
+
+
 def match_event(world: World, match: Match, result: MatchResult) -> MatchPlayed:
     # Its own stream: the consequences of a match do not depend on which matches were applied before it.
     cfg, rng = world.config, stream(world.seed, "match-states", match.season, match.id)

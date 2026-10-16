@@ -20,7 +20,7 @@ from .prizes import came_down, cup_prizes, europe_prizes, league_place
 from .budgets import carried_shift
 from .human import is_human_club, pending_lineup_match
 from .news import daily_notices, draw_notices, morale_alerts, morale_levels
-from .player_states import daily_player_events, monthly_player_events, match_event
+from .player_states import absences, daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
 from .talks import progress_talks
 from .loans import return_events, run_loan_round
@@ -218,6 +218,7 @@ def settle_match(world: World, match: Match, result: MatchResult, lineups: list[
             decide_european_winner(world, match, result, lineups)
         else:
             decide_winner(world, match, result, lineups)
+    result.home_absent, result.away_absent = absences(world, match, match.home_id), absences(world, match, match.away_id)
     apply(world, match_event(world, match, result))
 
 

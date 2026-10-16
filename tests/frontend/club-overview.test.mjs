@@ -26,12 +26,16 @@ test('beside the squad, the widgets open the calendar, the last match, the leagu
  assert.ok(html.indexOf('<h2>Calendrier')<html.indexOf('<h2>Dernier onze')&&html.indexOf('<h2>Dernier onze')<html.indexOf('<h2>Finances'));
 });
 
-test('the finances widget shows the free budget, the cash and the wage bill as a ring',()=>{
+test('the finances widget shows the free budget, the cash and the wage margin as a ring',()=>{
  const html=clubOverview(club,data());
  assert.match(html,/Budget transferts<\/span><strong>38\sM€<\/strong><small>Trésorerie <b>1\sM€<\/b><\/small>/);
- assert.match(html,/<span class="news-ring" role="img" aria-label="80 % du plafond salarial utilisé">/);
+ assert.match(html,/<span class="news-ring" role="img" aria-label="20 % du plafond salarial disponible">/);
+ assert.match(html,/<span>Marge salariale<\/span><strong>430\sk€<\/strong><small>sur 2\.2\sM€<\/small>/);
+ // The wages the offers under way reserve are no longer free; red from 5 % left, never below nothing.
+ const held=clubOverview(club,data({finances:{...data().finances,reserved_wages:80000}}));
+ assert.match(held,/class="news-ring full"/);assert.match(held,/<b>4 %<\/b>/);
  const over=clubOverview(club,data({finances:{...data().finances,wage_bill:600000,transfer_budget:1e6,reserved_transfer_budget:5e6}}));
- assert.match(over,/class="news-ring full"/);assert.match(over,/120 %/);assert.match(over,/Budget transferts<\/span><strong>0\s€/);
+ assert.match(over,/class="news-ring full"/);assert.match(over,/<b>0 %<\/b>/);assert.match(over,/Marge salariale<\/span><strong>0\s€/);assert.match(over,/Budget transferts<\/span><strong>0\s€/);
  assert.doesNotMatch(clubOverview(club,data({finances:{...data().finances,wage_cap:0}})),/NaN|Infinity/);
 });
 

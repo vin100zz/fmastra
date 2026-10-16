@@ -31,12 +31,14 @@ export function calendarBlock(club,data,link=`#/club/${club.id}/calendar`){
  return card('Calendrier',`<div class="card-body">${matchList([...[...data.last].reverse(),...data.next],club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir →</a>`);
 }
 
-// What is left to spend on transfers, and the wage bill as a ring filled to its share of the cap; `balance` adds the cash in hand.
+// What is left to spend on transfers and in wages, the offers under way set aside; the wage margin as a ring filled to its
+// share of the cap. `balance` adds the cash in hand.
 export function financesBlock(club,data,{balance=false}={}){
- const budget=Math.max(0,data.transfer_budget-data.reserved_transfer_budget),used=Math.round(100*data.wage_bill/Math.max(1,data.wage_cap));
- const ring=`<span class="news-ring${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(Math.min(100,used)*1.6336).toFixed(1)} 163.4"/></svg><b>${used} %</b></span>`;
+ const budget=Math.max(0,data.transfer_budget-data.reserved_transfer_budget),margin=Math.max(0,data.wage_cap-data.wage_bill-(data.reserved_wages||0));
+ const left=Math.round(100*margin/Math.max(1,data.wage_cap));
+ const ring=`<span class="news-ring${left<=5?' full':''}" role="img" aria-label="${left} % du plafond salarial disponible"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(left*1.6336).toFixed(1)} 163.4"/></svg><b>${left} %</b></span>`;
  const cash=balance?`<small>Trésorerie <b>${money(data.balance)}</b></small>`:'';
- return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Masse salariale</span><strong>${money(monthlyAmount(data.wage_bill))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
+ return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Marge salariale</span><strong>${money(monthlyAmount(margin))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
   `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
 }
 

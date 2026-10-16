@@ -148,6 +148,7 @@ où le fond est déjà jaune.
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
+| Cinq derniers matches | `.recent` | Une barre par match du club, à la hauteur des minutes jouées, jaune au-delà du seuil de charge. Voir « Graphiques » |
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
@@ -693,8 +694,26 @@ taille de sa carte.
 - **Jauge signée** (`.gauge.signed`) : une valeur qui va dans les deux sens (la
   forme) part du milieu de sa barre, marqué d'un trait : verte vers la droite,
   rouge vers la gauche, vide quand elle ne change rien.
-- **Anneau** (`.ring`) : 56, la part d'un plafond écrite en son centre ; rouge à
-  partir de 95 % (`.ring.full`).
+- **Anneau** (`.ring`) : 56, rempli à la part d'un plafond qui reste libre,
+  écrite en son centre ; rouge quand il en reste 5 % ou moins (`.ring.full`).
+
+### Cinq derniers matches
+
+Ce qu'un joueur a fait aux cinq derniers matches de son club (`.recent`), dans une
+colonne de liste : une barre de 10 × 18 par match, 3 entre deux, du plus ancien au
+plus récent.
+
+- **Joué** : la barre se remplit depuis le bas, à l'encre `--ink-2`, à hauteur des
+  minutes jouées ; 90 la remplit, un remplaçant entré tard n'en a qu'un peu.
+- **Sans jouer** : sur le banc, la piste vide (`--panel-3`) ; non retenu, un tiret
+  (`.out`) ; blessé ou suspendu, la croix ou le carton rouge des faits de match
+  (`.injured`, `.suspended`) ; avant le premier match du club dans la saison, rien
+  (`.none`), la colonne garde sa largeur.
+- **Chargé** (`.loaded`) : les barres passent au jaune de l'accent quand la charge
+  du joueur dépasse son seuil (voir le manuel, « La condition physique »).
+- L'infobulle donne la charge, puis un match par ligne : le jour, l'adversaire, la
+  compétition, le score, ce que le joueur a fait et ses minutes. La colonne se trie
+  sur la charge.
 
 ### Répartition réglable
 

@@ -204,6 +204,38 @@ def lineup_player(world, player, competition_id: int, stats: dict) -> dict:
     return row
 
 
+def recent_matches(world, club_id: int, before, count: int = 5) -> list:
+    """The club's last matches of the season still holding their lineups, oldest first; `before`, the match being prepared,
+    is left out."""
+    played = [match for match in world.matches.values() if match.result is not None and match is not before
+              and club_id in (match.home_id, match.away_id) and getattr(match.result, f"{club_side(match, club_id)}_lineup")]
+    return sorted(played, key=lambda match: (match.date, match.id))[-count:]
+
+
+def club_side(match, club_id: int) -> str:
+    return "home" if match.home_id == club_id else "away"
+
+
+def recent_match_row(world, match, club_id: int) -> dict:
+    """A match of the strip of the lineup's list: its day, the opponent, the competition and the score from the club's side."""
+    home = match.home_id == club_id
+    goals = (match.result.home_goals, match.result.away_goals)
+    return {"id": match.id, "date": match.date.iso(), "home": home, "opponent": v.club_ref(world, match.away_id if home else match.home_id),
+            "competition": v.competition_badge(world.competitions[match.competition_id]), "score": list(goals if home else goals[::-1])}
+
+
+def recent_usage(match, club_id: int, player_id: int) -> dict:
+    """What a player did in a match of his club: started, came on, sat on the bench, could not play (injured, suspended)
+    or was left out, with his minutes."""
+    result, where = match.result, club_side(match, club_id)
+    stats = result.player_stats.get(player_id)
+    minutes = round(stats.minutes) if stats else 0
+    if player_id in {pid for pid, _ in getattr(result, f"{where}_lineup")}: status = "starter"
+    elif player_id in getattr(result, f"{where}_bench"): status = "sub" if minutes else "unused"
+    else: status = getattr(result, f"{where}_absent").get(player_id, "out")
+    return {"status": status, "minutes": minutes}
+
+
 def previous_lineup(world, match, context, formations: dict) -> dict | None:
     """The club's last starting eleven and bench laid out on the formation they fit, players who left dropped.
 
@@ -390,11 +422,16 @@ def router(service: GameService) -> APIRouter:
             from .scouting import scouting
             # On the pitch and the bench, a player goes by his short name, told apart within the squad.
             shorts = v.squad_short_names(world, club_id, {player.id: player.name for player in context.players})
+            # Each player's last five matches with the club and the load they leave him, beside the threshold it slows him from.
+            recent = recent_matches(world, club_id, match)
             return {"match_id": match.id if match else None, "opponent": v.club_ref(world, opponent) if match else None,
                     "home": match is not None and match.home_id == club_id, "scouting": scouting(world, match, club_id),
                     "club": v.club_ref(world, club_id),
-                    "players": [{**lineup_player(world, player, competition_id, stats[player.id]), "short": shorts.get(player.id)}
+                    "players": [{**lineup_player(world, player, competition_id, stats[player.id]), "short": shorts.get(player.id),
+                                 "load": round(player.load, 2), "recent": [recent_usage(other, club_id, player.id) for other in recent]}
                                 for player in context.players],
+                    "recent_matches": [recent_match_row(world, other, club_id) for other in recent],
+                    "load_threshold": world.config.states.fitness.load_threshold,
                     "formations": {name: list(roles) for name, roles in formations.items()},
                     "custom": [list(place) for place in world.custom_formation] or None,
                     "composites_by_position": {position: list(keys) for position, keys in v.COMPOSITES_BY_POSITION.items()},

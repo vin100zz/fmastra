@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -190,7 +190,22 @@ function benchHtml(id,index,byId){
  return `<div class="bench-slot${player?'':' empty'}${player?.unavailable?' invalid':''}" data-bench="${index}"${player?` data-player="${player.id}" draggable="true" title="${e(player.name)}"`:''}>${player?`${position(player.position)}<span>${unavailableIcon(player)}${e(shortName(player.name,player.short))}</span>`:'<span class="muted">Remplaçant</span>'}</div>`;
 }
 
-const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['form','FORME'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
+// A player's last five matches with the club, oldest first (charter, « Cinq derniers matches »): a bar to the minutes he played,
+// the cross or the card when he could not, yellow once his load passes its threshold. The tooltip gives his load, then a match
+// a line.
+const USAGE={starter:'titulaire',sub:'entré',unused:'sur le banc',injured:'blessé',suspended:'suspendu',out:'non retenu'};
+export function recentStrip(player,matches=[],threshold=null){
+ const recent=player.recent||[],loaded=threshold!=null&&player.load>threshold;
+ const bar=({status,minutes})=>status==='injured'?'<i class="injured"><span class="match-mark injury"></span></i>'
+  :status==='suspended'?'<i class="suspended"><span class="match-mark booking red"></span></i>'
+  :status==='out'?'<i class="out"></i>':`<i><u style="height:${Math.min(100,Math.round(minutes/90*100))}%"></u></i>`;
+ const line=(match,{status,minutes})=>`${shortDate(match.date)} · ${match.opponent?.name??'—'} (${competitionCode(match.competition)}, ${match.home?'dom.':'ext.'}) ${match.score.join('–')} · ${USAGE[status]}${minutes?`, ${minutes} min`:''}`;
+ const load=`Charge ${number(player.load??0)}${loaded?`, au-delà de ${number(threshold)} : il récupère moins vite`:''}`;
+ const title=[load,...recent.map((usage,index)=>matches[index]?line(matches[index],usage):'')].filter(Boolean).join('\n');
+ return `<span class="recent${loaded?' loaded':''}" title="${e(title)}">${'<i class="none"></i>'.repeat(Math.max(0,5-recent.length))}${recent.map(bar).join('')}</span>`;
+}
+
+const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['recent','5 DERNIERS'],['form','FORME'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
 // The composites by section, a line opening each section.
 const GAME_COLUMNS=COMPOSITE_SECTIONS.flatMap(section=>section.composites.map((key,index)=>[key,compositeHeader(key),index===0]));
 // The squad list's columns, [key, header, opens a section]: with a position picked on the pitch (`role`), everyone's note there
@@ -203,6 +218,7 @@ function sortValue(player,key){
  if(key==='selected')return spot?spot.kind==='slot'?spot.index:100+spot.index:1000+POSITION_ORDER.indexOf(player.position)*1000-player.rating;
  if(key==='position')return POSITION_ORDER.indexOf(player.position);
  if(key==='fatigue')return fatigue(player);
+ if(key==='recent')return player.load??0;
  if(key==='name')return player.name;
  if(key==='fit')return player.position_notes?.[pickedRole()]??-1;
  if(key in (player.composites||{}))return player.composites[key];
@@ -224,6 +240,7 @@ function squadHtml(byId){
    name:`<span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span>`,
    rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),
    fatigue:`<span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span>`,
+   recent:recentStrip(player,editor.data.recent_matches,editor.data.load_threshold),
    form:formBadge(player.form),appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?averageNote(player.average):'—'};
   const cell=([column,,opens])=>{const classes=[column==='name'?'strong':'',opens?'group-start':''].filter(Boolean).join(' ');
    return `<td${classes?` class="${classes}"`:''}>${column in cells?cells[column]:compositeCell(player,column,wanted||player.key_composites)}</td>`;};
