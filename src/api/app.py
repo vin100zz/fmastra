@@ -1,4 +1,9 @@
-"""Run with: python -m uvicorn api.app:app --app-dir src --workers 1."""
+"""Run with: python -m uvicorn api.app:app --app-dir src --workers 1.
+
+Hosted elsewhere than on this machine: FMASTRA_HOSTS adds host names to the local ones the server answers
+(`fmastra.onrender.com`, several separated by commas), FMASTRA_SAVES moves the saves out of `saves/`.
+"""
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,9 +16,13 @@ from infrastructure.persistence.store import SaveError
 from .service import GameService, CommandError
 from .routes import router
 
+LOCAL_HOSTS = ["localhost", "127.0.0.1", "testserver", "[::1]"]
+
 
 def create_app(root: Path | None = None, saves: Path | None = None) -> FastAPI:
     root = root or Path(__file__).resolve().parents[2]
+    if saves is None and os.environ.get("FMASTRA_SAVES"): saves = Path(os.environ["FMASTRA_SAVES"])
+    hosts = [host.strip() for host in os.environ.get("FMASTRA_HOSTS", "").split(",") if host.strip()]
     service = GameService(root, saves)
 
     @asynccontextmanager
@@ -23,7 +32,7 @@ def create_app(root: Path | None = None, saves: Path | None = None) -> FastAPI:
 
     app = FastAPI(title="Football Manager", version="0.1.0", lifespan=lifespan)
     app.state.game = service
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver", "[::1]"])
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=LOCAL_HOSTS + hosts)
 
     @app.middleware("http")
     async def local_requests(request: Request, call_next):

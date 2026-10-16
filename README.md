@@ -25,6 +25,22 @@ sauvegarde. Les CSV sont chargés à la création ; aucun service externe n'est
 nécessaire pendant le jeu. Pour un autre port : `./run.ps1 -Port 8012`.
 Conserver un seul processus serveur : l'état est en mémoire.
 
+### En ligne (Render)
+
+Un *Web Service* Render, branché sur le dépôt :
+
+- **Build Command** : `pip install -e .`
+- **Start Command** : `python -m uvicorn api.app:app --app-dir src --host 0.0.0.0 --port $PORT --workers 1 --forwarded-allow-ips "*"`
+  (`--forwarded-allow-ips` fait croire au serveur le HTTPS du proxy de Render ; sans lui, les commandes sont refusées).
+- **Variables d'environnement** :
+  - `FMASTRA_HOSTS` : le nom du service, par exemple `fmastra.onrender.com` (plusieurs noms séparés par des virgules).
+    Le serveur ne répond qu'à `localhost` et à ces noms.
+  - `FMASTRA_SAVES` : le dossier des sauvegardes, `saves/` par défaut. Le disque d'un service Render est effacé à
+    chaque déploiement et redémarrage : pour garder les parties, monter un *Persistent Disk* (offre payante) et y
+    pointer, par exemple `/var/data/saves`.
+
+Le jeu n'a pas d'authentification : quiconque a l'adresse joue la même partie.
+
 L'interface comprend le tableau de bord, les classements, calendriers,
 statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
 les comptes rendus et les compositions. L'utilisateur dirige un club, choisi à la

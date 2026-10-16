@@ -517,6 +517,21 @@ def test_auto_mode_runs_on_the_server_until_stopped(client, monkeypatch):
     assert wait_until(lambda: service.active is None)
 
 
+def test_a_hosted_server_answers_its_host_names_and_saves_where_it_is_told(tmp_path, monkeypatch):
+    hosted = {"host": "fmastra.onrender.com"}
+    assert TestClient(create_app(ROOT, tmp_path)).get("/", headers=hosted).status_code == 400
+    monkeypatch.setenv("FMASTRA_HOSTS", "fmastra.onrender.com, fmastra.example")
+    monkeypatch.setenv("FMASTRA_SAVES", str(tmp_path / "disk"))
+    app = create_app(ROOT)
+    client = TestClient(app)
+    assert client.get("/", headers=hosted).status_code == 200
+    assert client.get("/", headers={"host": "fmastra.example"}).status_code == 200
+    assert client.get("/").status_code == 200  # the local names still answer
+    assert client.get("/", headers={"host": "untrusted.example"}).status_code == 400
+    assert app.state.game.store.directory == tmp_path / "disk"
+    assert create_app(ROOT, tmp_path / "given").state.game.store.directory == tmp_path / "given"  # a directory given wins
+
+
 def test_closing_the_service_ends_a_running_auto_job(config, tmp_path, monkeypatch):
     app = create_app(ROOT, tmp_path)
     service = app.state.game
