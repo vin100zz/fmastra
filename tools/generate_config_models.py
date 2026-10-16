@@ -239,6 +239,10 @@ seuil_alerte=alert_threshold
 fatigue_retour_de_blessure=injury_return_fitness
 recuperation_minimale_par_jour=min_daily_recovery
 facteur_gardien=goalkeeper_factor
+charge_perte_par_jour=load_decay
+charge_seuil=load_threshold
+charge_ralentissement=load_slowdown
+facteur_charge=load_factor
 blessures=injuries
 probabilite_base_par_possession=possession_probability
 facteur_fatigue_max=fitness_factor
@@ -616,6 +620,8 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "etats.blessures.fragilite_note_reference": 8.3,
             "etats.blessures.fragilite_note_haute": 14.3,
             "etats.fatigue.recuperation_minimale_par_jour": 0.03, "etats.fatigue.facteur_gardien": 0.15,
+            "etats.fatigue.charge_perte_par_jour": 0.05, "etats.fatigue.charge_seuil": 3.5,
+            "etats.fatigue.charge_ralentissement": 0.5, "etats.blessures.facteur_charge": 0.5,
             "ia_gestion.contrats.ego_note_basse": 8.4,
             "ia_gestion.contrats.ego_note_reference": 12.4,
             "ia_gestion.contrats.ego_note_haute": 16.4,

@@ -64,6 +64,8 @@ def validate_world(world: World) -> None:
             raise ValueError("Invalid contractual terms")
         if not cfg.states.fitness.min <= player.fitness <= cfg.states.fitness.max:
             raise ValueError("Invalid fitness")
+        if not isfinite(player.load) or player.load < 0:
+            raise ValueError("Invalid load")
     if set(world.players) & set(world.retired): raise ValueError("A retired player is still active")
     if world.next_id <= max((*world.players, *world.retired, *world.matches), default=0):
         raise ValueError("Next identifier would reuse an existing entity")

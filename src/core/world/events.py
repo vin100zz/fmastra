@@ -18,6 +18,7 @@ class PlayerChanged:
     injury: Injury | None = None
     healed: bool = False
     reset_month: bool = False
+    load: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

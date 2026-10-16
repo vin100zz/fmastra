@@ -197,6 +197,15 @@ total annuel de blessures), `ia_gestion.selection.seuil_rotation_fatigue` (0,65
 devient 0,90) et `moteur_match.notes_joueurs.arret` (0,10 devient 0,08 : un gardien
 frais arrête davantage, et sa note moyenne restait sinon au-dessus de la cible).
 
+Les configurations antérieures à la version 32 reçoivent les règles de la charge :
+`etats.fatigue.charge_perte_par_jour` (0,05, entre 0 et 1 exclus), `charge_seuil`
+(3,5, en matches complets d'un joueur d'endurance 10) et `charge_ralentissement`
+(0,5, positif ou nul) : au-delà du seuil, la part récupérée chaque jour est divisée
+par `1 + charge_ralentissement × (charge − charge_seuil)` ; et
+`etats.blessures.facteur_charge` (0,5, positif ou nul), qui multiplie le risque de
+blessure en match par `1 + facteur_charge × (charge − charge_seuil)`. Les joueurs
+d'une sauvegarde plus ancienne commencent sans charge.
+
 ## Version et sauvegarde
 
 `monde.version_config` identifie la version des règles par défaut. Chaque

@@ -5,12 +5,13 @@
 À la fin de chaque possession, un seul joueur est exposé : il est tiré parmi ceux qui étaient impliqués dans l'action, d'un côté ou de l'autre. Son risque de blessure vaut :
 
 ```
-risque = {{pct(etats.blessures.probabilite_base_par_possession, 2)}} × ({{etats.blessures.facteur_fatigue_max}} − condition) × fragilité × effort du bloc
+risque = {{pct(etats.blessures.probabilite_base_par_possession, 2)}} × ({{etats.blessures.facteur_fatigue_max}} − condition) × fragilité × effort du bloc × (1 + {{etats.blessures.facteur_charge}} × charge au-delà de {{n(etats.fatigue.charge_seuil)}})
 ```
 
 - **La condition** : un joueur frais (100 %) a un facteur de {{etats.blessures.facteur_fatigue_max - 1}}, un joueur à 50 % un facteur de {{etats.blessures.facteur_fatigue_max - 0.5}}, soit {{n((etats.blessures.facteur_fatigue_max - 0.5) / (etats.blessures.facteur_fatigue_max - 1), 1)}} fois plus. Le risque augmente donc au fil du match, et un joueur qui enchaîne les matches sans récupérer part avec un risque plus élevé (voir [La condition physique](#/aide/etats/la-condition-physique)).
 - **La fragilité** : trait caché, de {{etats.blessures.fragilite_min}} à {{etats.blessures.fragilite_max}}.
 - **L'effort du bloc** : de {{etats.fatigue.intensite_par_hauteur_bloc.bloc_bas}} (bloc bas) à {{etats.fatigue.intensite_par_hauteur_bloc.pressing_haut}} (pressing haut).
+- **La charge** : chaque point de charge au-delà de {{n(etats.fatigue.charge_seuil)}} ajoute {{pct(etats.blessures.facteur_charge, 0)}} au risque. Un joueur qui sort d'une longue série de matches rapprochés se blesse donc plus souvent, même frais (voir [La condition physique](#/aide/etats/la-condition-physique)).
 
 Les joueurs les plus impliqués à l'endroit où l'action s'est terminée sont les plus souvent exposés.
 

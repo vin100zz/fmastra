@@ -52,6 +52,36 @@ L'IA fait souffler un titulaire sous le seuil de rotation, ou qu'un match
 complet laisserait sous ce seuil le jour d'un match européen qui suit
 immédiatement (projection par la règle de récupération, bloc équilibré).
 
+## Charge
+
+La fraîcheur seule n'a pas de mémoire : sa récupération ne dépend que de son
+niveau du moment. La charge (`Player.load`, schéma 32) garde celle des séries.
+Après chaque match, club ou sélection, elle reçoit la fraîcheur dépensée divisée
+par celle d'un match complet d'un joueur d'endurance moyenne en bloc équilibré
+(`match_load`) ; chaque jour, blessé ou non, elle perd la part configurée
+(`rested_load`), et tombe à zéro sous 0,05 pour ne pas changer chaque jour tous
+les joueurs qui ont cessé de jouer. Au-delà du seuil, la part récupérée chaque
+jour est divisée par `1 + ralentissement × dépassement`, et le risque de blessure
+en match multiplié par `1 + facteur_charge × dépassement`. La perte quotidienne
+fixe la fenêtre : à 5 %, la moitié d'une série est oubliée en deux semaines, et
+un match par semaine plafonne à 3,3, sous le seuil de 3,5 ; seuls les calendriers
+chargés le dépassent. La projection de l'IA (`projected_fitness`) en tient compte.
+
+Calibré en octobre 2026 sur une saison entière d'une partie (2033-34, IA aux
+commandes de tous les clubs). Avec un seuil de 4 et des effets de 0,25, la charge
+ne mordait presque jamais : l'IA fait tourner son effectif, et les clubs
+européens jouent surtout un match par semaine, un match européen toutes les deux
+semaines environ, jusqu'à la phase finale. Seuil 3,5, ralentissement et facteur
+de blessure 0,5 : les clubs sans coupe d'Europe ne changent pas (0,3 % des
+titularisations au-dessus du seuil, avec ou sans charge) ; les clubs européens
+en ont jusqu'à 10 % en février, et ces joueurs démarrent à 85 % trois jours
+après un match au lieu de 89 %. Un joueur d'endurance 10 qui jouerait les 51
+matches du club de l'utilisateur tombe à 79-83 % au coup d'envoi dans les séries
+de janvier-février et de mai, contre 86-90 %. Au-delà d'une charge de 4, on
+compte 66 blessures pour 1 000 titularisations contre 48 sans charge ; le total
+de la saison ne change guère (3 187 blessures en match contre 3 224), les buts
+non plus (−0,7 %).
+
 ## Blessures
 
 À chaque possession, choisir un joueur impliqué nommé, parmi les joueurs de

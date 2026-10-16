@@ -31,10 +31,13 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 31
+SCHEMA_VERSION = 32
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A loaded series slows recovery and raises the injury risk; an older save's players start with no load.
+    (32, ("etats", "fatigue"), {"charge_perte_par_jour": 0.05, "charge_seuil": 3.5, "charge_ralentissement": 0.5}),
+    (32, ("etats", "blessures"), {"facteur_charge": 0.5}),
     # Daily recovery fills a share of what a player lacks, never less than a floor (see `_upgrade_fatigue`); a goalkeeper
     # spends only a share of an outfield player's condition.
     (31, ("etats", "fatigue"), {"recuperation_minimale_par_jour": 0.03, "facteur_gardien": 0.15}),

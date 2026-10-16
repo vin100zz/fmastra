@@ -4,6 +4,7 @@ from core.domain.players import Discipline, Loan
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, NewsLine, TransferRecord, SeasonRecord, MovementSnapshot
 from core.domain.matches import MatchResult, stored_events
+from core.engine.fitness import match_load
 from .finances import book_cash, book_daily_cash
 from .human import record as add_news, report
 from .transfer_rules import recent_arrival_ids
@@ -37,7 +38,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         world.date = event.date
     elif isinstance(event, PlayerChanged):
         player = world.players[event.player_id]
-        for name in ("attributes", "rating", "fitness", "form", "morale"):
+        for name in ("attributes", "rating", "fitness", "form", "morale", "load"):
             value = getattr(event, name)
             if value is not None: setattr(player, name, value)
         if event.healed: player.injury = None
@@ -338,6 +339,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         if pid in event.result.temporary_players:
             continue
         player = world.players[pid]
+        player.load += match_load(player.fitness - stats.final_fitness, world.config)
         player.fitness = stats.final_fitness
         player.monthly_minutes += stats.minutes
         player.season_minutes += stats.minutes

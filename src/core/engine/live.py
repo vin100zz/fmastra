@@ -9,7 +9,7 @@ from core.domain.players import Position
 from core.math import clamp
 from core.randomness import side_stream
 from .analytical import lineup_strength
-from .fitness import consume, intensity
+from .fitness import consume, intensity, overload
 from .local_state import TeamState, MatchLog
 from .personnel import ensure_keeper, substitutions, injure
 from .possession import play_possession, next_possession
@@ -220,7 +220,9 @@ class LiveMatch:
         injury_zone, injury_lane = (outcome.zone, outcome.lane) if side == owner else mirror(outcome.zone, outcome.lane, cfg)
         candidate = involved_player(affected, injury_zone, injury_lane, side == owner, rng)
         injuries = cfg.states.injuries
-        risk = injuries.possession_probability * (injuries.fitness_factor - affected.fitness[candidate.player.id]) * candidate.player.fragility * intensity(affected.block_height, cfg)
+        # A loaded series weighs on top of the fatigue of the match itself.
+        risk = (injuries.possession_probability * (injuries.fitness_factor - affected.fitness[candidate.player.id]) * candidate.player.fragility
+                * intensity(affected.block_height, cfg) * (1 + injuries.load_factor * overload(candidate.player.load, cfg)))
         if rng.random() < clamp(risk, 0, 1):
             injure(affected, candidate.player.id, log, cfg, self.controllers[side])
         if self._short_handed():

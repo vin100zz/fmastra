@@ -9,7 +9,7 @@ from core.domain.world import World, JournalEntry, NewsLine
 from core.domain.matches import stored_events
 from core.engine.match import PossessionEngine
 from .human import report
-from core.engine.fitness import recovered_fitness
+from core.engine.fitness import match_load, recovered_fitness, rested_load
 from core.math import clamp
 from core.randomness import stream
 from .calendar import standings
@@ -167,6 +167,7 @@ def prepare_international_day(world: World) -> None:
                 del state.temporary[pid]
                 del state.temporary_editions[pid]
             continue
+        player.load = rested_load(player.load, world.config)
         if player.injury and player.injury.end <= world.date:
             player.injury = None
             player.fitness = world.config.states.fitness.injury_return_fitness
@@ -225,6 +226,7 @@ def apply_international_result(world, edition, match, result, lineups):
         player.national_team = code
         player.international_caps += 1
         player.international_goals += stats.goals
+        player.load += match_load(player.fitness - stats.final_fitness, cfg)
         player.fitness = stats.final_fitness
         player.monthly_minutes += stats.minutes
         if stats.rating is not None:

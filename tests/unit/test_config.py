@@ -74,7 +74,8 @@ def test_invalid_rotation_rules(config, key, value):
 @pytest.mark.parametrize("section,key,value", [
     ("fatigue", "recuperation_minimale_par_jour", 0), ("fatigue", "recuperation_base_par_jour", 0.9),
     ("fatigue", "recuperation_facteur_endurance", -0.1), ("fatigue", "facteur_gardien", 1.5),
-    ("blessures", "facteur_fatigue_max", 1.0),
+    ("fatigue", "charge_perte_par_jour", 0), ("fatigue", "charge_ralentissement", -0.1),
+    ("blessures", "facteur_fatigue_max", 1.0), ("blessures", "facteur_charge", -0.1),
 ])
 def test_invalid_fatigue_rules(config, section, key, value):
     raw = config_payload(config)

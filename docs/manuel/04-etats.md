@@ -118,6 +118,14 @@ La récupération est donc rapide au lendemain du match et ralentit à l'approch
 
 (Un match complet en bloc neutre, parti à 100 %, joueur de champ de {{etats.fatigue.seuil_age_jeune}} à {{etats.fatigue.seuil_age_vieux}} ans.)
 
+**La charge.** Chaque match ajoute à la charge du joueur la condition qu'il lui a coûtée, comptée en matches complets d'un joueur d'endurance 10 en bloc neutre : un tel match ajoute 1, moins pour un joueur plus endurant, un remplaçant ou un gardien. La charge perd {{pct(etats.fatigue.charge_perte_par_jour, 0)}} chaque jour, que le joueur joue ou non. Un match par semaine la laisse sous {{n(1 / (1 - (1 - etats.fatigue.charge_perte_par_jour) ** 7), 1)}} ; deux matches par semaine la portent jusqu'à {{n((1 + (1 - etats.fatigue.charge_perte_par_jour) ** 3) / (1 - (1 - etats.fatigue.charge_perte_par_jour) ** 7), 1)}}. Au-delà de {{n(etats.fatigue.charge_seuil)}}, la récupération ralentit :
+
+```
+part récupérée chaque jour ÷ (1 + {{etats.fatigue.charge_ralentissement}} × (charge − {{n(etats.fatigue.charge_seuil)}}))
+```
+
+À {{n(etats.fatigue.charge_seuil + 2)}} de charge, cette part est divisée par {{n(1 + 2 * etats.fatigue.charge_ralentissement, 2)}} : trois jours après un match complet, un joueur d'endurance 10 n'est qu'à environ {{pct(recuperation(1 - etats.fatigue.consommation_par_minute * 90 / (etats.fatigue.resistance_base + etats.fatigue.resistance_facteur_endurance * 0.5), (etats.fatigue.recuperation_base_par_jour + etats.fatigue.recuperation_facteur_endurance * 0.5) / (1 + 2 * etats.fatigue.charge_ralentissement), etats.fatigue.recuperation_minimale_par_jour, 3), 0)}}, au lieu de {{pct(recuperation(1 - etats.fatigue.consommation_par_minute * 90 / (etats.fatigue.resistance_base + etats.fatigue.resistance_facteur_endurance * 0.5), etats.fatigue.recuperation_base_par_jour + etats.fatigue.recuperation_facteur_endurance * 0.5, etats.fatigue.recuperation_minimale_par_jour, 3), 0)}}. Seules les séries chargées le fatiguent ainsi, et quelques semaines de rythme normal effacent la charge. Elle augmente aussi le risque de blessure (voir [Blessures et suspensions](#/aide/blessures)).
+
 Un blessé ne récupère pas pendant sa blessure et revient à {{pct(etats.fatigue.fatigue_retour_de_blessure, 0)}} de condition. La condition est partagée entre le club et la sélection : un international rentre avec la fatigue de ses matches.
 
 **Son impact.**

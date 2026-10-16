@@ -31,6 +31,9 @@ class StatesConfigFitness:
     injury_return_fitness: float = Field(alias="fatigue_retour_de_blessure")
     min_daily_recovery: float = Field(default=0.03, alias="recuperation_minimale_par_jour")
     goalkeeper_factor: float = Field(default=0.15, alias="facteur_gardien")
+    load_decay: float = Field(default=0.05, alias="charge_perte_par_jour")
+    load_threshold: float = Field(default=3.5, alias="charge_seuil")
+    load_slowdown: float = Field(default=0.5, alias="charge_ralentissement")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -63,6 +66,7 @@ class StatesConfigInjuries:
     fragility_source_low: float = Field(default=2.3, alias="fragilite_note_basse")
     fragility_source_reference: float = Field(default=8.3, alias="fragilite_note_reference")
     fragility_source_high: float = Field(default=14.3, alias="fragilite_note_haute")
+    load_factor: float = Field(default=0.5, alias="facteur_charge")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

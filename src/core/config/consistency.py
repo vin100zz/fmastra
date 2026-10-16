@@ -134,6 +134,8 @@ def validate_consistency(cfg: Config) -> None:
             and (fitness.daily_recovery + fitness.stamina_recovery) * max(1, fitness.young_recovery, fitness.old_recovery) <= 1,
             "Daily recovery shares must stay within [0, 1] and its floor be positive")
     require(0 <= fitness.goalkeeper_factor <= 1, "A goalkeeper spends at most what an outfield player spends")
+    require(0 < fitness.load_decay < 1 and fitness.load_threshold >= 0 and fitness.load_slowdown >= 0
+            and cfg.states.injuries.load_factor >= 0, "Load must fade, from a nonnegative threshold, with nonnegative effects")
     require(cfg.states.injuries.fitness_factor > fitness.max, "A fresh player's injury risk must stay positive")
     require(cfg.engine.set_pieces.corner_probability + cfg.engine.set_pieces.free_kick_probability <= 1, "Set-piece probabilities overlap")
     require(cfg.engine.chance.probability_min > 0 and cfg.engine.chance.probability_max < 1, "Logit bounds must be open")

@@ -7,7 +7,7 @@ from core.domain.players import Attributes, ATTRIBUTE_NAMES, Player, Injury, Pos
 from core.domain.world import World
 from core.domain.matches import Match, MatchResult
 from core.engine.abilities import overall, recenter
-from core.engine.fitness import recovered_fitness
+from core.engine.fitness import recovered_fitness, rested_load
 from core.math import clamp, weighted_choice
 from core.randomness import stream
 from .events import PlayerChanged, MatchPlayed
@@ -27,6 +27,8 @@ def daily_player_events(world: World) -> list[PlayerChanged]:
     called_up = {pid for camp in world.international.camps.values() for pid in camp.player_ids}
     for player in world.players.values():
         active = player.id in called_up or (player.club_id is not None and world.clubs[player.club_id].competition_id is not None)
+        # The load fades every day, for the injured too; None when there is none to fade.
+        load = rested_load(player.load, cfg) if player.load else None
         if player.injury:
             if player.injury.end <= world.date:
                 attributes = player.attributes
@@ -36,12 +38,18 @@ def daily_player_events(world: World) -> list[PlayerChanged]:
                     attributes = Attributes(tuple(max(cfg.attributes.bounds.min, value - loss) if name in rules.affected_attributes else value
                                                   for name, value in zip(ATTRIBUTE_NAMES, attributes.values)))
                 events.append(PlayerChanged(player.id, attributes, overall(attributes, player.position, cfg),
-                                            cfg.states.fitness.injury_return_fitness, cfg.states.injuries.injury_return_form, healed=True))
+                                            cfg.states.fitness.injury_return_fitness, cfg.states.injuries.injury_return_form, healed=True,
+                                            load=load))
+            elif load is not None:
+                events.append(PlayerChanged(player.id, load=load))
             continue
         if active and rng.random() < cfg.states.injuries.daily_probability:
-            events.append(PlayerChanged(player.id, injury=draw_injury(world.date, cfg, rng)))
+            events.append(PlayerChanged(player.id, injury=draw_injury(world.date, cfg, rng), load=load))
         elif player.fitness < cfg.states.fitness.max:
-            events.append(PlayerChanged(player.id, fitness=recovered_fitness(player, player.born.age_on(world.date), cfg)))
+            events.append(PlayerChanged(player.id, fitness=recovered_fitness(player, player.born.age_on(world.date), cfg, load=load),
+                                        load=load))
+        elif load is not None:
+            events.append(PlayerChanged(player.id, load=load))
     return events
 
 
