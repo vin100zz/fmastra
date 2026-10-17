@@ -2,6 +2,7 @@
 
 Hosted elsewhere than on this machine: FMASTRA_HOSTS adds host names to the local ones the server answers
 (`fmastra.onrender.com`, several separated by commas), FMASTRA_SAVES moves the saves out of `saves/`.
+FMASTRA_RESUME=1, set by start.bat, loads the save made last as the server starts.
 """
 import os
 from contextlib import asynccontextmanager
@@ -19,14 +20,17 @@ from .routes import router
 LOCAL_HOSTS = ["localhost", "127.0.0.1", "testserver", "[::1]"]
 
 
-def create_app(root: Path | None = None, saves: Path | None = None) -> FastAPI:
+def create_app(root: Path | None = None, saves: Path | None = None, resume: bool | None = None) -> FastAPI:
     root = root or Path(__file__).resolve().parents[2]
     if saves is None and os.environ.get("FMASTRA_SAVES"): saves = Path(os.environ["FMASTRA_SAVES"])
+    if resume is None: resume = os.environ.get("FMASTRA_RESUME") == "1"
     hosts = [host.strip() for host in os.environ.get("FMASTRA_HOSTS", "").split(",") if host.strip()]
     service = GameService(root, saves)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        # A load job like any other: the page that opens meanwhile follows it, then shows the game.
+        if resume: service.resume()
         yield
         service.close()
 

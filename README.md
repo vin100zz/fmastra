@@ -8,9 +8,10 @@ individuelles avec les joueurs.
 ## Lancer le jeu
 
 Si l'environnement est déjà installé, double-cliquer sur **start.bat** :
-le serveur démarre et le navigateur s'ouvre automatiquement. Garder la fenêtre
-du serveur ouverte ; `Ctrl+C` arrête le jeu. Si le serveur tourne déjà, le
-lanceur ouvre simplement le jeu.
+le serveur démarre, charge la dernière sauvegarde enregistrée et le navigateur
+s'ouvre automatiquement sur la partie. Garder la fenêtre du serveur ouverte ;
+`Ctrl+C` arrête le jeu. Si le serveur tourne déjà, le lanceur ouvre simplement
+le jeu.
 
 Python 3.12 est requis. Depuis ce dossier, dans PowerShell :
 
@@ -38,6 +39,7 @@ Un *Web Service* Render, branché sur le dépôt :
   - `FMASTRA_SAVES` : le dossier des sauvegardes, `saves/` par défaut. Le disque d'un service Render est effacé à
     chaque déploiement et redémarrage : pour garder les parties, monter un *Persistent Disk* (offre payante) et y
     pointer, par exemple `/var/data/saves`.
+  - `FMASTRA_RESUME` : `1` pour charger la dernière sauvegarde au démarrage du serveur, comme le fait `start.bat`.
 
 Le jeu n'a pas d'authentification : quiconque a l'adresse joue la même partie.
 
@@ -142,6 +144,8 @@ jour que la précédente la met à jour sans copie. La copie (un second nom du f
 sans recopie) et la suppression de l'ancienne se font sur un fil à part, pendant
 l'écriture. Reprendre `Marseille-2033-06-10` reprend la partie `Marseille` à cette date :
 la sauvegarde suivante va dans `Marseille`, dont la version plus avancée devient la copie.
+La dernière sauvegarde, que `start.bat` charge, est celle écrite en dernier ; une copie
+datée n'y prétend que si sa sauvegarde a été supprimée.
 
 ## Sélections nationales
 
