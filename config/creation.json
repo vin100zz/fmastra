@@ -1,0 +1,27 @@
+{
+  "_note": "Les nations qu'une nouvelle partie peut simuler, dans l'ordre de l'écran de création. Pour chacune, ses divisions possibles de la première à la plus basse (division_id : DivisionUID de data/clubs.csv), puis la réserve sous la plus basse : les groupes non simulés d'où montent ses promus. Quand une division plus haute est la plus basse jouée, la division qui la suit sert de réserve. Par défaut, chaque nation joue les divisions de monde.json, qui doivent ouvrir sa liste.",
+  "nations": [
+    {"pays": "FRA", "divisions": [
+      {"nom": "Ligue 1", "nb_clubs": 18, "division_id": 16},
+      {"nom": "Ligue 2", "nb_clubs": 18, "division_id": 17},
+      {"nom": "National", "nb_clubs": 18, "division_id": 18}
+    ], "reserve": [19, 914522, 914523]},
+    {"pays": "ITA", "divisions": [
+      {"nom": "Serie A", "nb_clubs": 20, "division_id": 32},
+      {"nom": "Serie B", "nb_clubs": 20, "division_id": 33}
+    ], "reserve": [43127172, 43127173, 43127174]},
+    {"pays": "ESP", "divisions": [
+      {"nom": "La Liga", "nb_clubs": 20, "division_id": 67},
+      {"nom": "La Liga 2", "nb_clubs": 22, "division_id": 68}
+    ], "reserve": [2000048844, 2000048846]},
+    {"pays": "ENG", "divisions": [
+      {"nom": "Premier League", "nb_clubs": 20, "division_id": 11},
+      {"nom": "Championship", "nb_clubs": 24, "division_id": 12}
+    ], "reserve": [13]},
+    {"pays": "GER", "divisions": [
+      {"nom": "Bundesliga", "nb_clubs": 18, "division_id": 22},
+      {"nom": "Bundesliga 2", "nb_clubs": 18, "division_id": 23},
+      {"nom": "3. Liga", "nb_clubs": 20, "division_id": 35010926}
+    ], "reserve": [2000469344, 2000469346, 2000469347, 2000469362, 2000469371]}
+  ]
+}

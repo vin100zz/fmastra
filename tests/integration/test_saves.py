@@ -102,6 +102,26 @@ def test_a_rolling_store_keeps_the_previous_save_under_its_date_and_only_it(conf
     assert store.path_for("x" * 64 + "-2033-05-30").name == "x" * 64 + "-2033-05-30.json.gz"
 
 
+def test_a_save_lists_its_club_and_date_its_dated_copy_too_and_both_leave_with_it(config, tmp_path):
+    world = import_world(ROOT / "data", config, 15)
+    store = SaveStore(tmp_path, rolling=True)
+    first = world.date
+    try:
+        store.save(world, "observer")
+        world.controlled_club_id = 884
+        world.date = first.add_days(3)
+        store.save(world, "observer")
+        store.rotation.submit(lambda: None).result()
+    finally:
+        store.close()
+    rows = {row["slot"]: row for row in store.slots()}
+    assert rows["observer"]["date"] == world.date.iso() and rows["observer"]["club"]["name"] == "Rennes"
+    # The copy is the save it replaced: no club then.
+    assert rows[f"observer-{first.iso()}"]["date"] == first.iso() and rows[f"observer-{first.iso()}"]["club"] is None
+    store.delete("observer")
+    assert not store.summary_path("observer").exists() and store.summary_path(f"observer-{first.iso()}").exists()
+
+
 def test_a_copy_that_cannot_be_linked_is_copied_and_one_that_cannot_be_made_does_not_stop_the_save(config, tmp_path, monkeypatch):
     import infrastructure.persistence.store as module
     world = import_world(ROOT / "data", config, 16)
