@@ -101,7 +101,7 @@ en haut à droite à côté de l'icône de « Ma partie ».
 - une journée de sa division (pas celles des autres divisions du pays) ;
 - un tour de la coupe de son pays, même éliminé ;
 - une soirée européenne, même sans y participer : C1, C3 et C4 jouent le même soir ;
-- une date de match des sélections (qualifications et phase finale) ;
+- une date de match des sélections (Ligue des nations, qualifications, phases finales) ;
 - le 1er juillet (nouvelle saison) et la veille de la fermeture de chaque mercato.
 
 L'avance s'arrête plus tôt sur une nouvelle actualité qui demande une décision
@@ -251,8 +251,8 @@ choix du type (Joueurs, Clubs, Compétitions, Sélections) ne garde qu'un genre.
 
 Les flèches déplacent la ligne choisie, Entrée ouvre sa fiche, Échap ferme, comme un
 clic hors de la boîte. Le nom affiché est celui des fiches (le nom d'usage d'un
-joueur) : c'est sur lui que porte la recherche. L'Euro et la Coupe du monde ne sont
-pas dans la recherche : leurs pages restent sous « Sélections nationales ».
+joueur) : c'est sur lui que porte la recherche. L'Euro, la Coupe du monde et la Ligue des
+nations ne sont pas dans la recherche : leurs pages restent sous « Sélections nationales ».
 
 ### Menu d'un joueur
 
@@ -458,23 +458,25 @@ temporaire n'a ni club, ni valeur, ni contrat ; ce qui manque se range en fin de
 
 - **Calendrier** : les cinq derniers matches et les trois prochains, toutes éditions confondues.
   L'adversaire suit son drapeau ; un match d'une autre édition que celle en cours porte sa pastille
-  (EU, CM) ; un match sur terrain neutre n'a pas d'avion.
+  (EU, CM, LN) ; un match sur terrain neutre n'a pas d'avion.
 - **Dernier onze aligné** : le dernier match joué et ses onze titulaires sur le terrain couché, aux
   couleurs de la sélection.
-- **Groupe** : le groupe de la sélection dans l'édition en cours (celui de la phase finale une fois
-  tiré, sinon celui des qualifications), en entier : rang, nation, points, différence. Les places
-  qualificatives sont marquées (la première en qualifications, les deux premières en phase finale)
-  et la ligne de la sélection est teintée. Absent pour une nation que l'édition ne concerne pas.
+- **Groupe** : le groupe de la sélection dans l'édition de son prochain match (à défaut de son
+  dernier) : celui de sa Ligue des nations, de ses qualifications, ou de la phase finale une fois
+  tiré, en entier : rang, nation, points, différence. Les places qualificatives sont marquées (la
+  première en qualifications, les deux premières en phase finale ; en Ligue des nations, en vert la
+  place qui monte d'une division ou mène à la phase finale, en rouge celle qui descend) et la ligne
+  de la sélection est teintée. Absent pour une nation que l'édition ne concerne pas.
 
 **Calendrier.** Le calendrier d'un club, pour une édition : une ligne par match, du premier au dernier,
-avec le jour et son année (une édition court sur deux ans), la pastille de l'édition (EU, CM), le
-tour (J3 en qualifications, puis « Groupes · J1 », « Quarts de finale »… en toutes lettres), un avion
+avec le jour et son année (une édition court sur deux ans), la pastille de l'édition (EU, CM, LN), le
+tour (J3 en qualifications et en Ligue des nations, puis « Groupes · J1 », « Quarts de finale »… en
+toutes lettres), un avion
 à l'extérieur (jamais sur terrain neutre), l'adversaire après son drapeau, le score du côté de la
 sélection (ses buts d'abord, coloré V/N/D, la séance de tirs au but à côté de l'adversaire), ses
 buteurs avec leurs minutes, puis ceux de l'adversaire en gris. Le prochain match est surligné.
 Les éditions se parcourent comme les saisons d'un club, au bout de la rangée d'onglets (`edition`
-dans l'adresse) : par défaut celle en cours si la sélection y joue, sinon la dernière qu'elle a
-jouée. À droite, sur 560 px (dessous sous 1330 px) :
+dans l'adresse) : par défaut celle de son prochain match, sinon la dernière qu'elle a jouée. À droite, sur 560 px (dessous sous 1330 px) :
 
 - **Groupe** : le groupe de la sélection dans l'édition choisie, en entier et avec toutes les
   colonnes du classement, « Voir → » vers la page de l'édition.
@@ -482,6 +484,8 @@ jouée. À droite, sur 560 px (dessous sous 1330 px) :
   vers l'édition), la place, puis matches, victoires, nuls, défaites, buts marqués et encaissés. La
   place est le rang dans le groupe tant que les groupes se jouent (« 1er du groupe D »), puis le
   tour à jouer, sinon « Éliminé · » et le tour de l'élimination, « Finaliste » ou « ✦ Vainqueur ».
+  Une Ligue des nations dont les groupes sont finis donne la division de la sélection et où elle l'a
+  menée (« Division B · Promu », « Division A · Relégué », « Division C »).
 
 ### Compétition
 
@@ -501,8 +505,10 @@ de titre.
 - **Couleurs** : un championnat et une coupe nationale portent les deux couleurs du maillot de la
   sélection de leur pays ; les trois coupes d'Europe partagent un fond bleu nuit que traverse la
   couleur de la coupe (bleu, orange, vert) ; la Coupe du monde est sur un fond noir traversé d'or,
-  l'Euro bleu traversé de jaune (`COMPETITION_COLORS`, `api/nations.py` : une donnée d'affichage).
-- **Emblème** : celui de la coupe d'Europe, de l'Euro ou de la Coupe du monde, seul sur le bandeau
+  l'Euro bleu traversé de jaune, la Ligue des nations sur un fond bleu marine traversé de cyan
+  (`COMPETITION_COLORS`, `api/nations.py` : une donnée d'affichage).
+- **Emblème** : celui de la coupe d'Europe, de l'Euro, de la Coupe du monde ou de la Ligue des
+  nations, seul sur le bandeau
   (`web/emblems/`) ; pour un championnat ou une coupe nationale, le drapeau du pays sur le disque,
   lien vers sa sélection. Puis le nom, seul.
 - **Tuile** : une seule. « Vainqueur » (« Champion » pour un championnat) une fois le titre de la
@@ -510,23 +516,36 @@ de titre.
   avant un premier titre. Aucune ligne sous les onglets ne nomme le vainqueur.
 - **Bloc de navigation**, à gauche du bandeau, celui d'un club : les compétitions du pays (ses
   championnats, puis sa coupe), les trois coupes d'Europe (l'onglet ouvert et la saison gardés), les
-  éditions des sélections de la première à la dernière (l'onglet ouvert gardé). Dans sa liste, chaque
+  éditions des sélections de la première à la dernière (l'onglet ouvert gardé, les Qualifications
+  d'un tournoi répondant à la Phase de ligue d'une Ligue des nations). Dans sa liste, chaque
   compétition suit sa pastille.
 - **Pas de saison** : au bout de la rangée d'onglets d'une coupe d'Europe et du tableau d'une coupe
   nationale. Un championnat n'en a pas ; une édition non plus.
 
 L'entrée « Coupes d'Europe » du menu ouvre la Ligue des champions ; la seule rangée d'onglets est
-celle des rubriques de la coupe. Une édition ouverte sans onglet montre sa phase finale.
+celle des rubriques de la coupe. Une édition ouverte sans onglet montre sa phase finale, une Ligue
+des nations sa phase de ligue.
 
-Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro et de
-la Coupe du monde) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
+Une Ligue des nations a pour onglets Phase de ligue, Phase finale, Derniers matches, Prochains
+matches et Statistiques. Sa Phase de ligue montre ses quatre divisions l'une sous l'autre, chacune
+sous son nom (« Division A »), ses groupes quatre par ligne (A1 à D2), chacun avec son classement
+complet : en vert la place qui monte d'une division ou mène à la phase finale, en rouge celle qui
+descend, d'après le classement du moment. Dessous, les résultats d'une journée, groupe par groupe, la
+journée choisie par ses pastilles comme en qualifications. Sa Phase finale est l'arbre des
+demi-finales et de la finale, en cases vides jusqu'au tirage. Sur la page Sélections nationales,
+chaque édition en cours a sa carte (la Ligue des nations et le tournoi qui la suit), celle dont le
+prochain match vient le premier en haut.
+
+Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, éditions de l'Euro, de la
+Coupe du monde et de la Ligue des nations) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
 Le dernier tour est celui du résultat le plus récent, le prochain celui du plus proche match à jouer ;
 un tour pas encore tiré garde son nom et sa date, sans matches. Les matches sont à gauche, sur 460 px au
 plus, et le classement qu'ils concernent prend le reste de la largeur : le championnat, ou le classement
 de la phase de ligue d'une coupe d'Europe. Ce classement est suivi des 10 meilleurs buteurs de la
 compétition sur la saison (#, joueur, club, buts), à sa droite à partir de 1450 px, dessous en deçà ;
 ils n'apparaissent qu'une fois un but marqué.
-Une compétition à groupes (qualifications et phase de groupes des sélections) montre chaque groupe avec
+Une compétition à groupes (qualifications et phase de groupes des sélections, phase de ligue d'une
+Ligue des nations) montre chaque groupe avec
 ses matches et son classement réduit (#, points, J, différence), deux groupes par ligne (un seul sous
 1330 px), les places qualificatives surlignées. Un tour à élimination directe, sans classement, étale
 ses matches sur deux colonnes ; les 10 meilleurs buteurs de la compétition sur la saison (coupe
@@ -1114,12 +1133,14 @@ GET  /api/competitions                    chacune : clubs, rounds (journées de 
 GET  /api/competitions/{id}/classement
 GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (avec scorers, comme journee/derniere), numéros des journées
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison)}]}
-GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification ou de phase finale
+GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification, de phase finale
+                                          ou de Ligue des nations (chaque ligne de son classement avec movement)
 GET  /api/international/nations/{id}?tri=&ordre=   fiche d'une sélection : major_color, minor_color, competition {year, name, stage} | null, camp,
                                           squad (trié comme un effectif ; chaque joueur : caps, international_goals, et pour l'édition du rassemblement
-                                          appearances, goals, assists, average), calendar {last, next}, lineup, group {year, edition, finals,
-                                          name, places, rows} | null, editions, leaders
-GET  /api/international/nations/{id}/calendrier?edition=   les matches d'une édition (celle en cours par défaut, sinon la dernière jouée), chacun avec
+                                          appearances, goals, assists, average), calendar {last, next}, lineup, group {year, edition, stage,
+                                          finals, name, places, rows} | null (le groupe de l'édition de son prochain match ; en Ligue des
+                                          nations, chaque ligne avec movement), editions, leaders
+GET  /api/international/nations/{id}/calendrier?edition=   les matches d'une édition (celle de son prochain match par défaut, sinon la dernière jouée), chacun avec
                                           scorers et outcome (V/N/D du côté de la sélection, null à venir) ; edition, editions [{year, name}], group
                                           (celui de l'édition), competitions : {id, year, name, kind, code, place, winner, played, won, drawn, lost,
                                           goals_for, goals_against} pour chaque édition jouée
@@ -1131,9 +1152,11 @@ GET  /api/competitions/{id}/historique?page=&saison=   champions par saison pagi
 GET  /api/competitions/{id}/coupe?saison=, /europe?saison=   le tableau d'une coupe, la saison d'une coupe d'Europe ; season, previous_season,
                                           next_season, seasons (celles qui ont des matches, et celle montrée), current_season ; winner (le
                                           vainqueur de la saison montrée | null) et holder (celui de la dernière saison gagnée avant elle | null)
-GET  /api/international, /api/international/editions/{année}   les éditions (year, name, kind, code EU ou CM, winner) et les nations ; une édition :
-                                          ses groupes, ses matches, ses records, et pour son en-tête code, major_color, minor_color, ground_color,
-                                          winner, holder (le vainqueur de la dernière édition de la même compétition | null)
+GET  /api/international, /api/international/editions/{année}   les éditions (year, name, kind euro, world ou nations, code EU, CM ou LN, winner) et
+                                          les nations ; une édition : ses groupes (divisions pour une Ligue des nations : {name, groups: [{name,
+                                          rows}]}, chaque ligne avec movement : qualified, promotion, relegation | null), ses matches, ses
+                                          records, et pour son en-tête code, major_color, minor_color, ground_color, winner, holder (le
+                                          vainqueur de la dernière édition de la même compétition | null)
 GET  /api/competitions/{id}/navigation    compétitions du même pays : précédent, suivant, liste
 
 GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&niveau_max=&potentiel_min=&potentiel_max=&valeur_min=&valeur_max=&prix_max=&salaire_min=&salaire_max=
@@ -1141,7 +1164,7 @@ GET  /api/joueurs?poste=&age_min=&age_max=&niveau_min=&niveau_max=&potentiel_min
                   &interesse=oui|non|pret&pretentions_max=   pour le club de l'utilisateur (ignorés sans club) ; tri : wage_demand, interested
                   &liste=transfert|pret   joueurs que leur club vend ou prête ; tri : listed ; chaque joueur : transfer_listed, loan_listed, loan_interested, loan, reserve
 GET  /api/joueurs/{id}                    la fiche, avec interested et wage_demand comme dans la liste ; international_records : une édition par ligne,
-                                          avec competition (son nom) et code (EU, CM ; null pour une édition que la partie n'a plus)
+                                          avec competition (son nom) et code (EU, CM, LN ; null pour une édition que la partie n'a plus)
 GET  /api/joueurs/{id}/historique         carrière (chaque ligne : competition, competition_nation, et competition_badges, ce dont la page tire ses
                                           pastilles : le championnat puis les coupes d'Europe, {id, name, kind, code, nation, level}, sans id hors des
                                           championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club}, du plus ancien au plus récent

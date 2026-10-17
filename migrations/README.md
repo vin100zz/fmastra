@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 30` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 33` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -162,6 +162,17 @@ une hausse plus faible quand il ne lui apporte pas d'année de plus (`docs/ia-ge
 départs »). La configuration embarquée la reçoit après vérification de l'empreinte d'origine. À la lecture d'une
 sauvegarde antérieure, une demande en attente qui n'apporte ni cette hausse ni d'année de plus est retirée de
 `World.pending_renewals` : son message reste sans suite, et le joueur redemandera quand il aura de quoi.
+
+La v33 ajoute la Ligue des nations (`docs/manuel/15-selections.md`) et décale les qualifications de l'Euro et de la
+Coupe du monde au mois de mars qui suit ses groupes : `InternationalEdition.windows` (les fenêtres de matches de groupe
+d'une édition, premier et dernier jour) et `InternationalEdition.divisions` (les divisions d'une Ligue des nations, chacune
+une liste de groupes). À la lecture d'une sauvegarde antérieure, chaque édition déjà tirée reçoit les fenêtres où ses
+qualifications ont été datées, lues deux matches à la fois : elle se joue jusqu'au bout sur l'ancien calendrier, et le
+calendrier des clubs continue de lui laisser ces dates. La première Ligue des nations vient avec la campagne suivante,
+tirée le 1er août deux ans avant le tournoi d'après, en même temps que lui. Un renfort temporaire suit désormais sa
+sélection d'une édition à l'autre de la campagne. Le calendrier des clubs ne garde plus de jours de repos en plus autour
+d'un rassemblement : un club joue jusqu'à la veille de son ouverture et dès le lendemain de sa fin, toujours à trois jours
+au moins d'un match de sélection ; les saisons déjà tirées gardent leurs dates. Aucun paramètre de configuration n'est ajouté.
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

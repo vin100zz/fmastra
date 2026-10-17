@@ -71,7 +71,8 @@ def test_call_up_reaches_the_human_clubs_news_feed(world):
 
 
 def test_qualification_format_and_even_year_cycles(world):
-    assert set(world.international.editions) == {2028}
+    # The Nations League before the first tournament, then the tournament.
+    assert {year: edition.kind for year, edition in world.international.editions.items()} == {2027: "nations", 2028: "euro"}
     assert len(world.international.nations) == 211
     edition = world.international.editions[2028]
     assert Counter(map(len, edition.qualification_groups)) == {5: 6, 6: 4}
@@ -81,7 +82,9 @@ def test_qualification_format_and_even_year_cycles(world):
         pairs = Counter((m.home_id, m.away_id) for m in matches if m.home_id in group)
         assert len(pairs) == len(group) * (len(group) - 1)
         assert set(pairs.values()) == {1}
-    assert {m.date.year for m in matches} == {2026, 2027}
+    # From the March after the Nations League's groups to the March of the tournament.
+    assert sorted({m.date for m in matches})[0] == Date(2027, 3, 18) and max(m.date for m in matches) == Date(2028, 3, 22)
+    assert [first.month for first, _ in edition.windows] == [3, 9, 10, 11, 3]
     assert target_date(world, "journee") == Date(2026, 8, 10)
     world.season = 2026
     assert target_date(world, "journee") == Date(2026, 9, 3)
@@ -231,7 +234,10 @@ def test_save_and_real_match_resume(world, tmp_path):
         assert result.temporary_players
         assert any(p.fitness < candidate.config.states.fitness.initial for p in candidate.international.temporary.values())
         validate_international(candidate)
+        # What the engine reports of a match of the selections is written as it is typed: its length, no absentees.
+        assert result.duration > 0 and result.status == "played" and result.home_absent == result.away_absent == {}
     assert world.international == restored.international
+    store.save(restored, "played")
 
 
 def test_retirement_during_tournament_is_deferred(world):
@@ -256,7 +262,8 @@ def test_two_complete_international_cycles_with_match_engine(world):
         play_international_day(world)
     assert world.international.editions[2028].winner_id is not None
     assert world.international.editions[2030].winner_id is not None
-    assert len(world.international.matches) == 240 * 2 + 31 + 63
+    assert len(world.international.matches) == 240 * 2 + 31 + 63 + 2 * (156 + 3)
+    assert world.international.editions[2027].winner_id is not None and world.international.editions[2029].winner_id is not None
     assert all(m.result for m in world.international.matches.values())
     assert not world.international.camps
     assert not world.international.temporary
@@ -287,10 +294,18 @@ def test_international_shootout_and_suspension(world):
 
 def test_a_nations_group_follows_it_from_its_qualifiers_to_its_finals(world):
     from api.international import nation_group
-    edition = world.international.editions[2028]
-    group = nation_group(world, edition.qualification_groups[0][0])
-    assert (group["year"], group["edition"], group["finals"], group["name"], group["places"]) == (2028, "Euro 2028", False, "A", 1)
-    assert {row["nation"]["id"] for row in group["rows"]} == set(edition.qualification_groups[0])
+    league, edition = world.international.editions[2027], world.international.editions[2028]
+    # Its Nations League's group first, then its qualifying group once that one's groups are over.
+    first = edition.qualification_groups[0][0]
+    group = nation_group(world, first)
+    assert (group["year"], group["stage"], group["finals"]) == (2027, "Phase de ligue", False) and first in [row["nation"]["id"] for row in group["rows"]]
+    assert {row["movement"] for row in group["rows"]} <= {"qualified", "promotion", "relegation", None}
+    finish_rounds(world, league, 1, 6)
+    nid = next(nid for group in edition.qualification_groups for nid in group if nid not in league.qualifiers)
+    group = nation_group(world, nid)
+    index = next(index for index, members in enumerate(edition.qualification_groups) if nid in members)
+    assert (group["year"], group["edition"], group["finals"], group["name"], group["places"]) == (2028, "Euro 2028", False, chr(65 + index), 1)
+    assert {row["nation"]["id"] for row in group["rows"]} == set(edition.qualification_groups[index])
     # The qualifiers leave out the nations of the other confederations.
     outsider = next(nation.id for nation in world.international.nations.values() if nation.federation != "Europe")
     assert nation_group(world, outsider) is None
@@ -332,7 +347,9 @@ def test_a_camps_list_carries_the_editions_figures_and_sorts_with_what_is_unknow
     assert all(row["appearances"] == 0 and row["goals"] == 0 and row["average"] is None for row in rows)
     called = next(pid for pid in camp.player_ids if pid >= 0)
     get_player(world, called).international_caps = 7
-    world.international.records[f"2028:{called}"] = InternationalRecord(called, "x", team.id, 2028, matches=3, goals=2, assists=1, rating_sum=21.3, rating_count=3)
+    # The camp is the Nations League's: its figures are that edition's.
+    assert camp.edition == 2027
+    world.international.records[f"2027:{called}"] = InternationalRecord(called, "x", team.id, 2027, matches=3, goals=2, assists=1, rating_sum=21.3, rating_count=3)
     row = next(row for row in camp_rows(world, camp) if row["id"] == called)
     assert (row["caps"], row["appearances"], row["goals"], row["assists"], row["average"]) == (7, 3, 2, 1, 7.1)
     # A reinforcement has no value: whichever way the column runs, it stays last.
@@ -348,11 +365,18 @@ def test_a_camps_list_carries_the_editions_figures_and_sorts_with_what_is_unknow
 
 def test_a_nations_calendar_lists_one_edition_with_its_group_and_where_it_stands_in_each(world):
     from api.international import edition_place, nation_calendar
-    edition = world.international.editions[2028]
+    league, edition = world.international.editions[2027], world.international.editions[2028]
     members = edition.qualification_groups[0]
     nid = members[0]
+    # The Nations League comes first, then the qualifiers once its groups are over.
     data = nation_calendar(world, nid)
-    assert (data["edition"], data["editions"]) == (2028, [{"year": 2028, "name": "Euro 2028"}])
+    assert (data["edition"], data["editions"]) == (2027, [{"year": 2028, "name": "Euro 2028"}, {"year": 2027, "name": "Ligue des nations 2027"}])
+    assert {item["competition_code"] for item in data["items"]} == {"LN"} and data["items"][0]["round_label"].endswith(" · J1")
+    finish_rounds(world, league, 1, 6)
+    for number in (15, 16):
+        finish_rounds(world, league, number, number)
+    data = nation_calendar(world, nid)
+    assert data["edition"] == 2028
     # Home and away against each of the others, in the order they are played, nothing played yet.
     assert len(data["items"]) == 2 * (len(members) - 1)
     assert [item["date"] for item in data["items"]] == sorted(item["date"] for item in data["items"])
@@ -393,8 +417,141 @@ def test_a_nations_calendar_lists_one_edition_with_its_group_and_where_it_stands
     # The edition under way comes first and opens by default; another one is picked by its year.
     create_edition(world, 2030)
     later = nation_calendar(world, nid)
-    assert later["edition"] == 2030 and [item["year"] for item in later["editions"]] == [2030, 2028]
-    assert [row["code"] for row in later["competitions"]] == ["CM", "EU"]
+    assert later["edition"] == 2030 and [item["year"] for item in later["editions"]] == [2030, 2028, 2027]
+    assert [row["code"] for row in later["competitions"]] == ["CM", "EU", "LN"]
     assert nation_calendar(world, nid, 2028)["edition"] == 2028 and nation_calendar(world, nid, 2026)["edition"] == 2030
     # Out of the qualifiers of a World Cup, a nation of another confederation keeps nothing to show.
     assert nation_calendar(world, outsider)["items"] == []
+
+
+def test_a_nations_league_has_four_divisions_of_groups_home_and_away_in_the_autumn(world):
+    league = world.international.editions[2027]
+    europe = {n.id for n in world.international.nations.values() if n.federation == "Europe"}
+    assert [[len(group) for group in division] for division in league.divisions] == [[4, 4, 4, 4]] * 3 + [[3, 3]]
+    assert {nid for division in league.divisions for group in division for nid in group} == europe
+    # The strongest nations make the first division of the first edition.
+    strength = lambda nid: world.international.nations[nid].strength
+    assert min(strength(nid) for group in league.divisions[0] for nid in group) >= max(strength(nid) for group in league.divisions[1] for nid in group)
+    matches = edition_matches(world, league)
+    assert len(matches) == 4 * 12 * 3 + 2 * 6
+    assert sorted({m.date for m in matches}) == [Date(2026, 9, 3), Date(2026, 9, 7), Date(2026, 10, 8), Date(2026, 10, 12),
+                                                 Date(2026, 11, 12), Date(2026, 11, 16)]
+    for division in league.divisions:
+        for group in division:
+            pairs = Counter((m.home_id, m.away_id) for m in matches if m.home_id in group)
+            assert len(pairs) == len(group) * (len(group) - 1) and set(pairs.values()) == {1}
+    validate_international(world)
+
+
+def test_a_nations_league_ends_with_four_nations_and_moves_each_division(world):
+    from core.world.international import next_divisions, league_divisions
+    from core.world.international_calendar import create_league
+    league = world.international.editions[2027]
+    finish_rounds(world, league, 1, 6)
+    # Division A's group winners, drawn into two semi-finals on neutral ground in June.
+    winners = {group_table(world, league, group)[0].club_id for group in league.divisions[0]}
+    assert set(league.qualifiers) == winners
+    semis = edition_matches(world, league, 15, 15)
+    assert len(semis) == 2 and all(m.neutral and m.date == Date(2027, 6, 6) for m in semis)
+    finish_rounds(world, league, 15, 15)
+    final = edition_matches(world, league, 16, 16)
+    assert len(final) == 1 and final[0].date == Date(2027, 6, 10)
+    finish_rounds(world, league, 16, 16)
+    assert (league.winner_id, league.runner_up_id) == (final[0].home_id, final[0].away_id)
+    validate_international(world)
+    # The last of each group goes down, the winner of each group of B and C up, the first two of each group of D up.
+    tables = [[[row.club_id for row in group_table(world, league, group)] for group in division] for division in league.divisions]
+    after = next_divisions(world, league)
+    assert [len(division) for division in after] == [16, 16, 16, 6]
+    for index in range(3):
+        assert {table[-1] for table in tables[index]} <= set(after[index + 1])
+    for index in (1, 2):
+        assert {table[0] for table in tables[index]} <= set(after[index - 1])
+    assert {nid for table in tables[3] for nid in table[:2]} <= set(after[2])
+    assert {nid for table in tables[3] for nid in table[2:]} <= set(after[3])
+    # The next Nations League starts from there.
+    assert league_divisions(world, 2029) == after
+    nxt = create_league(world, 2029, after)
+    assert [{nid for group in division for nid in group} for division in nxt.divisions] == [set(division) for division in after]
+    validate_international(world)
+
+
+def test_a_last_division_of_another_size_has_groups_of_four_at_most_and_still_sends_four_up(world):
+    from core.world.international import next_divisions
+    from core.world.international_calendar import create_league, european
+    europe = european(world)
+    extra = next(n.id for n in world.international.nations.values() if n.federation != "Europe")
+    divisions = [europe[:16], europe[16:32], europe[32:48], europe[48:] + [extra]]
+    league = create_league(world, 2031, divisions)
+    assert sorted(len(group) for group in league.divisions[3]) == [3, 4]
+    larger = max(league.divisions[3], key=len)
+    # Every home side wins, so places fall to the tie-breaks; a second of the larger group is compared without its matches
+    # against its last.
+    finish_rounds(world, league, 1, 6)
+    after = next_divisions(world, league)
+    assert [len(division) for division in after] == [16, 16, 16, 7]
+    promoted = set(after[2]) & set(divisions[3])
+    tables = [[row.club_id for row in group_table(world, league, group)] for group in league.divisions[3]]
+    assert len(promoted) == 4 and {table[0] for table in tables} <= promoted
+    seconds = [table[1] for table in tables]
+    trimmed = {nid: row for group in league.divisions[3]
+               for row in group_table(world, league, [r.club_id for r in group_table(world, league, group)[:3]])
+               for nid in [row.club_id]}
+    best = min(seconds, key=lambda nid: (-trimmed[nid].points, -trimmed[nid].difference, -trimmed[nid].goals_for, nid))
+    assert best in promoted and len(larger) == 4
+
+
+def test_club_calendars_keep_the_autumn_and_march_windows_free(world):
+    from core.world.international_calendar import reserved_dates
+    reserved = set(reserved_dates(world, 2026))
+    for day in (Date(2026, 9, 3), Date(2026, 10, 12), Date(2026, 11, 16), Date(2027, 3, 18), Date(2027, 6, 10)):
+        assert day in reserved
+    # No window in late September, December or June before the Nations League's final four.
+    for day in (Date(2026, 9, 20), Date(2026, 12, 10), Date(2027, 5, 20)):
+        assert day not in reserved
+
+
+def test_a_reinforcement_stays_with_its_selection_from_the_nations_league_to_the_qualifiers(world):
+    world.date = Date(2026, 8, 31)
+    prepare_international_day(world)
+    team = next(n for n in world.international.nations.values() if n.name == "Andorre")
+    autumn = set(world.international.camps[team.id].player_ids)
+    assert all(world.international.temporary_editions[pid] == 2027 for pid in autumn)
+    world.date = Date(2027, 3, 15)
+    prepare_international_day(world)
+    camp = world.international.camps[team.id]
+    assert camp.edition == 2028 and set(camp.player_ids) == autumn
+    assert all(world.international.temporary_editions[pid] == 2028 for pid in autumn)
+    validate_international(world)
+
+
+def test_an_edition_drawn_before_the_nations_league_keeps_its_windows(world):
+    from infrastructure.persistence.store import _date_international_windows
+    edition = world.international.editions[2028]
+    windows = list(edition.windows)
+    edition.windows = []
+    _date_international_windows(world)
+    assert edition.windows == windows
+
+
+def test_a_league_of_twenty_four_clubs_fits_every_season_beside_the_selections_and_the_cups(world):
+    from random import Random
+    from core.domain.clubs import Competition
+    from core.world.calendar import schedule
+    from core.world.europe_calendar import competition_dates
+    from core.world.international_calendar import reserved_dates
+    league = Competition(1, "Championship", "ENG", 2, list(range(1, 25)))
+    for season in range(2026, 2042):
+        reserved = competition_dates(world, season) + competition_dates(world, season, domestic=True) + reserved_dates(world, season)
+        matches = schedule(league, season, 1, world.config, Random(season), reserved)
+        assert len({m.date for m in matches}) == 46
+
+
+def test_a_club_plays_up_to_the_day_before_a_camp_and_from_the_day_after_it(world):
+    from core.world.international_calendar import reserved_dates
+    rest = world.config.world.europe.min_rest_days
+    reserved = reserved_dates(world, 2026)
+    free = lambda day: all(abs(day.ordinal() - other.ordinal()) >= rest for other in reserved)
+    # The September window's camp runs from 31 August to 9 September.
+    assert free(Date(2026, 8, 30)) and not free(Date(2026, 8, 31))
+    assert not free(Date(2026, 9, 9)) and free(Date(2026, 9, 10))

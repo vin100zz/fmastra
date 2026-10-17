@@ -9,8 +9,10 @@ from core.domain.world import World
 from core.world.cups import ROUND_NAMES
 from core.world.europe import round_label as europe_label
 from core.world.international import edition_matches, group_table
+from core.world.international_calendar import LEAGUE_ROUNDS
 from . import views as v
-from .international import FINALS_LABELS, international_match_row, nation_ref, round_label as international_label
+from .international import (FINALS_LABELS, international_match_row, league_groups, league_movements, nation_ref,
+                            round_label as international_label)
 from .statistics import leaders
 
 Which = Literal["derniere", "prochaine"]
@@ -99,16 +101,30 @@ def nation_standings(world: World, edition, group: list[int], finals: bool) -> l
             for index, row in enumerate(group_table(world, edition, group, finals))]
 
 
+def league_standings(world: World, edition, group: list[int], moves: dict[int, str]) -> list[dict]:
+    """A Nations League group's table in the shape of a club table, each nation marked with where it goes."""
+    return [{**asdict(row), "club": nation_ref(world, row.club_id), "difference": row.difference, "rank": index + 1,
+             "form": row.form[-5:], "movement": moves.get(row.club_id)}
+            for index, row in enumerate(group_table(world, edition, group))]
+
+
 def edition_round(world: World, year: int, which: Which) -> dict:
-    """A Euro or a World Cup: group by group while there are groups, each beside its table, then the knockout ties."""
+    """A Euro, a World Cup or a Nations League: group by group while there are groups, each beside its table, then the
+    knockout ties."""
     edition = world.international.editions[year]
     matches = edition_matches(world, edition)
-    number = upcoming(matches, which, FINAL_GROUP_ROUNDS + len(FINALS_LABELS[edition.kind]))
+    league = edition.kind == "nations"
+    number = upcoming(matches, which, LEAGUE_ROUNDS if league else FINAL_GROUP_ROUNDS + len(FINALS_LABELS[edition.kind]))
     if number is None:
         return view(None, None, None, [])
     fixtures = sorted((match for match in matches if match.round_number == number), key=lambda match: match.id)
     rows = {match.id: {**international_match_row(world, match), "scorers": scorers(world, match)} for match in fixtures}
-    if number > FINAL_GROUP_ROUNDS:
+    if league and number <= LEAGUE_ROUNDS:
+        moves = league_movements(world, edition)
+        groups = [{"name": f"Groupe {name}", "matches": [rows[match.id] for match in fixtures if match.home_id in group],
+                   "standings": league_standings(world, edition, group, moves)}
+                  for name, group in league_groups(edition)] if rows else []
+    elif number > FINAL_GROUP_ROUNDS:
         groups = [{"name": None, "matches": list(rows.values()), "standings": None}] if rows else []
     else:
         finals = number > GROUP_ROUNDS

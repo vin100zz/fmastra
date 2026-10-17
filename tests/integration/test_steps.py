@@ -49,7 +49,7 @@ def test_the_european_cup_shown_is_the_clubs_own_or_else_the_champions_league(wo
 
 def test_continuer_stops_on_every_day_the_club_follows_and_never_goes_past_a_week(world):
     """From the opening of the game to the first European evening: the summer weeks, the club's first league days,
-    the eve of the transfer deadline and the September international window."""
+    the eve of the transfer deadline and the Nations League's September window."""
     league = world.clubs[world.controlled_club_id].competition_id
     followed = followed_competitions(world)
     assert league in followed and all(world.competitions[cid].kind in ("league", "cup", "europe") for cid in followed)
@@ -66,8 +66,9 @@ def test_continuer_stops_on_every_day_the_club_follows_and_never_goes_past_a_wee
             assert not any(m.date == world.date and m.result is not None for m in world.international.matches.values())
         assert world.date.ordinal() - start.ordinal() <= STEP_DAYS
         days[world.date] = day_results(world)
-    assert days[Date(2026, 8, 30)] is None  # the eve of the deadline, nothing played
-    assert days[Date(2026, 9, 3)] == ("international", 2028)
+    # The eve of the deadline is the eve of the September camp too: the league plays its last round before it.
+    assert days[Date(2026, 8, 30)] == ("club", league)
+    assert days[Date(2026, 9, 3)] == ("international", 2027)
     assert days[Date(2026, 9, 16)] == ("club", european_cup(world))
     league_days = sorted({m.date for m in world.matches.values() if m.competition_id == league and m.date <= world.date})
     assert league_days and all(days[day] == ("club", league) for day in league_days)

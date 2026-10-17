@@ -828,15 +828,23 @@ def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(pl
             if data["round"] and data["round"]["number"] <= world.config.world.europe.league_rounds:
                 assert data["round"]["label"].startswith("Phase de ligue") and len(data["groups"][0]["standings"]) == 36
                 check_scorers(data["groups"][0]["matches"])
-    [edition] = world.international.editions.values()
+    # The autumn's internationals are the Nations League's: a block per group of each division.
+    assert sorted(world.international.editions) == [2027, 2028]
+    edition = world.international.editions[2027]
+    groups = [group for division in edition.divisions for group in division]
     latest = get(f"/international/editions/{edition.year}/journee/derniere")
-    assert latest["round"]["label"].startswith("Qualifications · J") and len(latest["groups"]) == len(edition.qualification_groups) == 10
-    for group, block in zip(edition.qualification_groups, latest["groups"]):
+    assert latest["round"]["label"].startswith("Phase de ligue · J") and len(latest["groups"]) == len(groups) == 14
+    assert [block["name"] for block in latest["groups"]][::4] == ["Groupe A1", "Groupe B1", "Groupe C1", "Groupe D1"]
+    for index, (group, block) in enumerate(zip(groups, latest["groups"])):
         assert {row["club"]["id"] for row in block["standings"]} == set(group) and all(row["club"]["national"] for row in block["standings"])
-        assert [row["movement"] for row in block["standings"]] == ["qualified"] + [None] * (len(group) - 1)
+        moves = [row["movement"] for row in block["standings"]]
+        if index < 12:
+            assert moves[0] == ("qualified" if index < 4 else "promotion") and moves[-1] == "relegation" and moves[1:-1] == [None, None]
+        else:
+            assert moves == ["promotion", "promotion", None]
         assert all({row["home"]["id"], row["away"]["id"]} <= set(group) and row["score"] for row in block["matches"])
         check_scorers(block["matches"])
-    assert sum(len(block["matches"]) for block in latest["groups"]) == sum(len(group) // 2 for group in edition.qualification_groups)
+    assert sum(len(block["matches"]) for block in latest["groups"]) == sum(len(group) // 2 for group in groups)
     assert played.get("/api/competitions/999999/journee/derniere").status_code == 404
     assert played.get(f"/api/competitions/{league.id}/journee/hier").status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states

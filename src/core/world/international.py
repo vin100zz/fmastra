@@ -15,8 +15,10 @@ from core.randomness import stream
 from .calendar import standings
 from .cup_matches import decide_winner
 from .player_states import draw_injury
-from .international_calendar import (QUOTAS, edition_kind, create_edition, windows, add_match,
-                                     group_fixtures, draw_final_groups)
+from .international_calendar import (QUOTAS, DIVISION_GROUPS, GROUP_SIZE, LEAGUE_ROUNDS, SEMI_FINALS, FINAL, CAMP_BEFORE,
+                                     CAMP_AFTER, edition_kind, create_edition, create_league, windows, league_windows,
+                                     league_finals, finals_camp, edition_groups, european, add_match, group_fixtures,
+                                     draw_final_groups)
 from .international_selection import (get_player, preferences, fill_camp, camp_lineup, revise_strengths)
 
 
@@ -44,8 +46,11 @@ def initialize_international(world: World) -> None:
             raise ValueError(f"Not enough active nations in {federation}")
     # Never invent already-played qualifiers if a custom game starts later.
     year = max(world.config.international.first_euro, world.date.year + 2)
-    while not edition_kind(world, year) or windows(year)[0][0].add_days(-3) <= world.date:
+    while not edition_kind(world, year) or windows(year)[0][0].add_days(-CAMP_BEFORE) <= world.date:
         year += 1
+    # The Nations League before it too, unless its first window has passed: the next campaign brings the next one.
+    if league_windows(year - 1)[0][0].add_days(-CAMP_BEFORE) > world.date:
+        create_league(world, year - 1, league_divisions(world, year - 1))
     create_edition(world, year)
 
 
@@ -60,6 +65,74 @@ def group_table(world, edition, group, finals=False, exclude=None):
                and exclude not in (m.home_id, m.away_id)]
     competition = Competition(edition.competition_id, edition.name, "", 0, group)
     return standings(competition, matches, world.config)
+
+
+def ranked_across(world, edition, groups) -> list[int]:
+    """The nations of several groups in one order: by place in their group, then, between nations of the same place, by
+    points, goal difference and goals scored, a larger group counting only the matches between as many of its nations as
+    the smallest has (its last ones left out)."""
+    smallest = min(map(len, groups))
+    keys = []
+    for group in groups:
+        table = group_table(world, edition, group)
+        kept = [row.club_id for row in table[:smallest]]
+        compared = {row.club_id: row for row in group_table(world, edition, kept)}
+        for place, row in enumerate(table):
+            row = compared.get(row.club_id, row)
+            keys.append((place, -row.points, -row.difference, -row.goals_for, row.club_id))
+    return [key[-1] for key in sorted(keys)]
+
+
+def next_divisions(world, edition) -> list[list[int]]:
+    """The nations of each division once a Nations League's groups are over: the last of each group goes down a division,
+    the winner of each group of B and C goes up; between C and D, as many go each way as D can send up, four at most, its
+    best placed up and C's worst placed last down."""
+    orders = [ranked_across(world, edition, division) for division in edition.divisions]
+    divisions = [list(order) for order in orders]
+    for upper in range(len(orders) - 1):
+        count = min(DIVISION_GROUPS, len(orders[upper + 1]))
+        down, up = orders[upper][-count:], orders[upper + 1][:count]
+        divisions[upper] = [nid for nid in divisions[upper] if nid not in down] + up
+        divisions[upper + 1] = down + [nid for nid in divisions[upper + 1] if nid not in up]
+    return divisions
+
+
+def league_divisions(world, year) -> list[list[int]]:
+    """The nations of each division of a Nations League: where the previous one left them, or for the first one the European
+    nations by strength, sixteen to a division and the others in the last."""
+    previous = world.international.editions.get(year - 2)
+    if previous is not None and previous.kind == "nations":
+        return next_divisions(world, previous)
+    europe, size = european(world), DIVISION_GROUPS * GROUP_SIZE
+    return [europe[:size], europe[size:2 * size], europe[2 * size:3 * size], europe[3 * size:]]
+
+
+def progress_league(world, edition):
+    """Once the groups are over, the four group winners of division A are drawn into the semi-finals; their two winners
+    play the final."""
+    if not edition.qualifiers:
+        groups = edition_matches(world, edition, 1, LEAGUE_ROUNDS)
+        if groups and all(m.result for m in groups):
+            finalists = [group_table(world, edition, group)[0].club_id for group in edition.divisions[0]]
+            stream(world.seed, "nations-finals-draw", edition.year).shuffle(finalists)
+            edition.qualifiers = finalists
+            day = league_finals(edition.year)[0]
+            for home, away in (finalists[:2], finalists[2:]):
+                add_match(world, edition, SEMI_FINALS, day, home, away, True)
+            world.journal.append(JournalEntry(world.date, "international", f"{edition.name} : les demi-finales sont tirées."))
+        return
+    knockouts = edition_matches(world, edition, SEMI_FINALS)
+    if any(m.result is None for m in knockouts):
+        return
+    final = next((m for m in knockouts if m.round_number == FINAL), None)
+    if final is None:
+        winners = [m.result.winner_id for m in sorted(knockouts, key=lambda m: m.id)]
+        add_match(world, edition, FINAL, league_finals(edition.year)[1], *winners, True)
+        return
+    edition.winner_id = final.result.winner_id
+    edition.runner_up_id = final.away_id if final.result.winner_id == final.home_id else final.home_id
+    world.journal.append(JournalEntry(world.date, "international_winner",
+                         f"{world.international.nations[edition.winner_id].name} remporte la {edition.name}."))
 
 
 def best_seconds(world, edition):
@@ -97,6 +170,9 @@ def qualify(world, edition):
 def progress_international(world: World) -> None:
     for edition in world.international.editions.values():
         if edition.winner_id is not None:
+            continue
+        if edition.kind == "nations":
+            progress_league(world, edition)
             continue
         qualifiers = edition_matches(world, edition, 1, 10)
         if not edition.final_groups:
@@ -156,7 +232,9 @@ def prepare_international_day(world: World) -> None:
     if (world.date.month, world.date.day) == (8, 1):
         year = world.date.year + 2
         if edition_kind(world, year) and year not in state.editions:
+            # A campaign: the Nations League from September, then the qualifiers from March.
             revise_strengths(world, year)
+            create_league(world, year - 1, league_divisions(world, year - 1))
             create_edition(world, year)
     _release_camps(world)
     for pid, player in list(state.temporary.items()):
@@ -177,19 +255,19 @@ def prepare_international_day(world: World) -> None:
     for edition in state.editions.values():
         if edition.winner_id is not None:
             continue
-        for first, last in windows(edition.year):
-            if world.date == first.add_days(-3):
-                openings += [NationalCamp(nid, edition.year, world.date, last.add_days(2), False)
-                             for group in edition.qualification_groups for nid in group]
-        if world.date == Date(edition.year, 6, 8) and edition.qualifiers:
-            # Qualification yellow totals reset; outstanding bans still have to be served.
+        for first, last in edition.windows:
+            if world.date == first.add_days(-CAMP_BEFORE):
+                openings += [NationalCamp(nid, edition.year, world.date, last.add_days(CAMP_AFTER), False)
+                             for group in edition_groups(edition) for nid in group]
+        start, end = finals_camp(edition)
+        if world.date == start and edition.qualifiers:
+            # Group-stage yellow totals reset; outstanding bans still have to be served.
             for player in [*world.players.values(), *state.temporary.values()]:
                 discipline = player.international_discipline.get(edition.competition_id)
                 if discipline:
                     discipline.yellows = 0
                     discipline.served_thresholds.clear()
-            openings += [NationalCamp(nid, edition.year, world.date, Date(edition.year, 7, 14), True)
-                         for nid in edition.qualifiers]
+            openings += [NationalCamp(nid, edition.year, world.date, end, True) for nid in edition.qualifiers]
     replacements = [c for c in state.camps.values() if (not c.finals or not c.first_match_played)
                     and any(get_player(world, pid).injury and get_player(world, pid).injury.end > world.date for pid in c.player_ids)]
     if openings or replacements:

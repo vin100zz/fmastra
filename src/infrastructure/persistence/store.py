@@ -31,7 +31,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -301,6 +301,7 @@ class SaveStore:
             if version < 29: _upgrade_economy(world)
             if version < 30: _forget_small_demands(world)
             if version < 31: _upgrade_fatigue(world)
+            if version < 33: _date_international_windows(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -496,6 +497,17 @@ def _recalibrated(cfg: Config, recalibrated: tuple) -> Config:
         rules = replace(rules, **{inner: holder}) if inner else holder
         cfg = replace(cfg, **{domain: replace(getattr(cfg, domain), **{section: rules})})
     return cfg
+
+
+def _date_international_windows(world: World) -> None:
+    """Schema 33: a Nations League now comes before each tournament, whose qualifiers move to the March after it. An
+    edition drawn before keeps the windows its qualifiers were dated in, read from them two matches at a time; the first
+    Nations League comes with the next campaign."""
+    for edition in world.international.editions.values():
+        if not edition.windows:
+            days = sorted({match.date for match in world.international.matches.values()
+                           if match.season == edition.year and match.round_number <= 10})
+            edition.windows = list(zip(days[::2], days[1::2]))
 
 
 def _upgrade_fatigue(world: World) -> None:

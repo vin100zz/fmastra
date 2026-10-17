@@ -81,10 +81,10 @@ export function nationHero(nation,{lead='',menu,section,tools=''}){
 }
 
 // The emblem of a competition that has one, by the two characters of its badge.
-const EMBLEMS={C1:'c1',C3:'c3',C4:'c4',EU:'euro',CM:'coupe-du-monde'};
+const EMBLEMS={C1:'c1',C3:'c3',C4:'c4',EU:'euro',CM:'coupe-du-monde',LN:'ligue-des-nations'};
 
 // The header of a competition's page is a club's: its colours on the band, its name alone, its tabs under it. A European
-// cup, the Euro and the World Cup have their emblem alone on the band, at its height; a league and a national cup have
+// cup, the Euro, the World Cup and the Nations League have their emblem alone on the band, at its height; a league and a national cup have
 // the flag of their country on the disc, as its selection has, a link to it. On the right, one tile: who won the season or
 // the edition shown, and until it is won who holds the title. `base` is the address the tabs hang from, `lead` steps
 // between the competition's peers, `tools` close the row of tabs.
