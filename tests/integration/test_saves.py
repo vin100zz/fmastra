@@ -73,6 +73,24 @@ def test_delete_slot(tmp_path):
     with pytest.raises(SaveError): store.delete("../escape")
 
 
+def test_the_latest_save_is_the_slot_written_last_never_a_dated_copy_of_a_slot_still_there(tmp_path):
+    import os
+    store = SaveStore(tmp_path)
+    assert store.latest() is None
+    def write(slot, modified):
+        store.path_for(slot).write_bytes(b"data")
+        os.utime(store.path_for(slot), (modified, modified))
+    write("Lyon", 1_000)
+    write("Marseille", 2_000)
+    write("Marseille-2033-05-30", 3_000)  # copied without a hard link, after the save it comes from
+    assert store.latest() == "Marseille"
+    write("Lyon", 4_000)
+    assert store.latest() == "Lyon"
+    store.delete("Lyon")
+    store.delete("Marseille")
+    assert store.latest() == "Marseille-2033-05-30"  # its slot gone, the copy is the game
+
+
 def test_a_rolling_store_keeps_the_previous_save_under_its_date_and_only_it(config, tmp_path):
     world = import_world(ROOT / "data", config, 15)
     store = SaveStore(tmp_path, rolling=True)

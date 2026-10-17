@@ -179,7 +179,7 @@ const known = competition => ({...competition,...(competitions.get(competition.i
 // Words written in lower case in a competition's initials ("Coupe de France" reads CdF).
 const SMALL=new Set(['de','du','des','del','della','di','da','do','la','le','les','el','d','of','the','und','y']);
 // The two characters on a competition's badge (docs/charte-graphique.md): its code for a European cup or for an edition of
-// the selections (EU, CM), C and the initial of its country for a national cup, L and its level for a French league, D and its
+// the selections (EU, CM, LN), C and the initial of its country for a national cup, L and its level for a French league, D and its
 // level for another country's. A competition the game does not list keeps the initials of its name, up to its number if it has one.
 export function competitionCode(competition){
  const {name,kind,code,nation,level}=known(competition);

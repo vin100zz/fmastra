@@ -152,10 +152,10 @@ def kit_colors(name: str) -> dict[str, str | None]:
 
 # The header of a competition that has no country, by the two characters of its badge: its colour, its second one, and the
 # ground it stands on when its band is not filled with its own colour (the night blue the three European cups share, the
-# black under the World Cup's gold). A display choice, as a kit is.
+# black under the World Cup's gold, the navy under the Nations League's cyan). A display choice, as a kit is.
 COMPETITION_COLORS: dict[str, tuple[str, str | None, str | None]] = {
     "C1": ("#2447e6", None, "#0a0b5c"), "C3": ("#f26522", None, "#0a0b5c"), "C4": ("#16be28", None, "#0a0b5c"),
-    "EU": ("#003399", "#ffcc00", None), "CM": ("#d4a72c", None, "#111418"),
+    "EU": ("#003399", "#ffcc00", None), "CM": ("#d4a72c", None, "#111418"), "LN": ("#00a6d6", None, "#0b1e3f"),
 }
 
 

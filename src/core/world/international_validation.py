@@ -1,7 +1,24 @@
 """Save invariants for national allegiances, squads and tournament structures."""
 from math import isfinite
 from collections import Counter
-from .international_calendar import QUOTAS
+from .international_calendar import QUOTAS, DIVISION_GROUPS, GROUP_SIZE
+
+
+def validate_league(edition, europe):
+    """A Nations League: four divisions holding every European nation once, A to C in four groups of four, D in groups of
+    two to four; its semi-finalists are division A's, its finalists two of them."""
+    divisions = edition.divisions
+    members = [nid for division in divisions for group in division for nid in group]
+    if (len(edition.windows) != 3 or len(divisions) != 4 or edition.qualification_groups or edition.final_groups
+            or any(len(division) != DIVISION_GROUPS or any(len(group) != GROUP_SIZE for group in division) for division in divisions[:3])
+            or not divisions[3] or any(not 2 <= len(group) <= GROUP_SIZE for group in divisions[3])
+            or len(members) != len(set(members)) or set(members) != europe):
+        raise ValueError("Invalid Nations League divisions")
+    first = {nid for group in divisions[0] for nid in group}
+    if edition.qualifiers and (len(edition.qualifiers) != 4 or len(set(edition.qualifiers)) != 4 or not set(edition.qualifiers) <= first):
+        raise ValueError("Invalid Nations League semi-finalists")
+    if any(nid is not None and nid not in edition.qualifiers for nid in (edition.winner_id, edition.runner_up_id)):
+        raise ValueError("Invalid Nations League finalist")
 
 
 def validate_international(world):
@@ -37,9 +54,14 @@ def validate_international(world):
         raise ValueError("International match ID would be reused")
     europe = {n.id for n in state.nations.values() if n.federation == "Europe"}
     for year, edition in state.editions.items():
+        if year != edition.year:
+            raise ValueError("Invalid international edition year")
+        if edition.kind == "nations":
+            validate_league(edition, europe)
+            continue
         groups = edition.qualification_groups
         members = [nid for group in groups for nid in group]
-        if year != edition.year or len(groups) != 10 or any(len(g) not in (5, 6) for g in groups) or len(members) != len(set(members)) or set(members) != europe:
+        if len(edition.windows) != 5 or len(groups) != 10 or any(len(g) not in (5, 6) for g in groups) or len(members) != len(set(members)) or set(members) != europe:
             raise ValueError("Invalid international qualification groups")
         if edition.final_groups:
             finalists = [nid for group in edition.final_groups for nid in group]

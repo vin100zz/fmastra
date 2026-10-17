@@ -188,8 +188,8 @@ marque ouvre à gauche.
 Ce qui se lit saison par saison se parcourt avec un seul contrôle, le même sur
 tous les écrans (`.season`) : une flèche vers la saison d'avant, la saison
 montrée, une flèche vers la suivante. La saison montrée ouvre la liste de
-toutes. Sur le calendrier d'une sélection, les éditions (Euro, Coupe du monde)
-se parcourent de même ; la page d'une édition, elle, passe aux autres par la
+toutes. Sur le calendrier d'une sélection, les éditions (Euro, Coupe du monde, Ligue
+des nations) se parcourent de même ; la page d'une édition, elle, passe aux autres par la
 navigation de son bandeau (voir « Navigation d'un bandeau »). Jamais une liste
 déroulante du navigateur, une rangée d'options ni des blocs repliés.
 
@@ -397,6 +397,7 @@ la liste de tous, une flèche vers le suivant. Un groupe d'un seul n'en a pas.
 |---|---|---|---|
 | Ligue Europa | `#f26522` sur `#0a0b5c` | 5.48 | `#f26522` |
 | Euro | `#ffcc00` sur `#003399` | 7.18 | `#ffcc00` |
+| Ligue des nations | `#00a6d6` sur `#0b1e3f` | 5.84 | `#00a6d6` |
 | Nice | `#d2122e` sur `#1a1a1a` | 3.20 | `#d2122e` |
 | Paris SG | `#da291c` sur `#004170` | 2.17 | L'encre, `#ffffff` |
 | Ligue des champions | `#2447e6` sur `#0a0b5c` | 2.57 | L'encre, `#ffffff` |
@@ -517,11 +518,11 @@ buts d'abord, le score coloré V, N ou D), garde sa ligne propre.
 ### En-tête d'une compétition
 
 La page d'un championnat, d'une coupe nationale, d'une coupe d'Europe, d'une
-édition de l'Euro ou de la Coupe du monde s'ouvre sur le bandeau d'un club
+édition de l'Euro, de la Coupe du monde ou de la Ligue des nations s'ouvre sur le bandeau d'un club
 (`.hero`), ses onglets dessous. Elle n'a pas de ligne de titre.
 
-- **Emblème** (`.hero-emblem`) : une coupe d'Europe, l'Euro et la Coupe du monde
-  ont le leur, seul sur le bandeau, sans disque, dans une boîte de 72 quelle que
+- **Emblème** (`.hero-emblem`) : une coupe d'Europe, l'Euro, la Coupe du monde et
+  la Ligue des nations ont le leur, seul sur le bandeau, sans disque, dans une boîte de 72 quelle que
   soit sa forme : le nom garde sa place d'une compétition à l'autre. Un
   championnat et une coupe nationale ont le drapeau de leur pays sur le disque,
   comme sa sélection, lien vers elle ; un pays sans sélection garde son drapeau,
@@ -537,8 +538,9 @@ La page d'un championnat, d'une coupe nationale, d'une coupe d'Europe, d'une
 - **Navigation** : à gauche du bandeau, celle d'un club ou d'un joueur (voir
   « Navigation d'un bandeau »). Elle passe d'une coupe d'Europe à l'autre en
   gardant l'onglet ouvert et la saison, d'une édition des sélections à l'autre
-  (de la première à la dernière, Euro et Coupe du monde mêlés) en gardant
-  l'onglet, d'une compétition d'un pays à l'autre (ses championnats du premier
+  (de la première à la dernière, Euro, Coupe du monde et Ligue des nations
+  mêlés) en gardant l'onglet, les qualifications d'un tournoi répondant à la
+  phase de ligue d'une Ligue des nations, d'une compétition d'un pays à l'autre (ses championnats du premier
   au dernier, puis sa coupe). Dans sa liste, chaque compétition suit sa
   pastille.
 - **Saison** : le pas de saison ferme la rangée d'onglets d'une coupe d'Europe
@@ -558,10 +560,12 @@ couleur le traverse, et c'est elle, jamais ce fond, que prend l'onglet ouvert.
 | Ligue Conférence (C4) | `#0a0b5c` | Vert `#16be28` | `#00ab00`, le vert foncé pour se lire |
 | Coupe du monde (CM) | Noir `#111418` | Or `#d4a72c` | `#b18500`, l'or foncé pour se lire |
 | Euro (EU) | Bleu `#003399` | Jaune `#ffcc00` | `#003399` |
+| Ligue des nations (LN) | Bleu marine `#0b1e3f` | Cyan `#00a6d6` | `#009aca`, le cyan foncé pour se lire |
 | Championnat, coupe nationale | Les deux couleurs du maillot de la sélection du pays, avec les règles d'un club (un maillot proche du blanc cède la place à sa seconde couleur) | | Comme sur la fiche de la sélection |
 
 Les emblèmes sont des images (`web/emblems/`), en blanc pour les coupes
-d'Europe, à leur métal pour les trophées de l'Euro et de la Coupe du monde.
+d'Europe, à leur métal pour les trophées de l'Euro, de la Coupe du monde et de
+la Ligue des nations.
 
 ### Menu d'un joueur
 
@@ -876,7 +880,7 @@ Une pastille de deux caractères.
 | Famille | Codes | Apparence |
 |---|---|---|
 | Coupes d'Europe | C1 (Ligue des champions), C3 (Ligue Europa), C4 (Ligue Conférence) | Noir plein |
-| Sélections | EU (Euro), CM (Coupe du monde) | Noir plein |
+| Sélections | EU (Euro), CM (Coupe du monde), LN (Ligue des nations) | Noir plein |
 | Championnats de France | L1, L2, L3 | Contour gris |
 | Autres championnats | D1, D2, précédés du drapeau du pays | Contour gris |
 | Coupes nationales | C et l'initiale du pays : CF, CE, CA, CI | Contour bleu |
@@ -935,7 +939,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`) |
-| Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU et CM ; classements dans l'ordre des colonnes de la charte (D, non P) |
+| Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
@@ -947,7 +951,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club, sur Calendrier d'une sélection, sur le tableau d'une coupe nationale et sur une coupe d'Europe (`tools` de `clubHero`, `nationHero` et `competitionHero`), au bout de la ligne du titre sur Mercato mondial, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
 | Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`). Les temps forts sur une ligne de 26 chacun, sans libellé : les marques, le nom court du joueur, le passeur en petit (`highlightsCard`, `web/match.js` ; `short_names`, `src/api/views.py`, aussi au direct) |
 | Noms courts | Le nom de famille, et l'initiale ou les lettres du prénom devant un homonyme de l'effectif (`short_names`, `squad_short_names`, `src/api/views.py` ; `shortName`, `web/ui.js`) : temps forts, buteurs sous un match, terrain du compte rendu, dernier onze, résumé 2D, composition, direct |
-| Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU et CM pour une édition) ; la courbe du niveau en `--series-1` |
+| Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU, CM et LN pour une édition) ; la courbe du niveau en `--series-1` |
 | Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
 | En-tête d'une compétition | Le bandeau d'un club (`competitionHero`, `web/club-hero.js`) sur un championnat, une coupe nationale, une coupe d'Europe et une édition des sélections, à la place de la ligne du titre : l'emblème seul sur le bandeau (`web/emblems/`) ou le drapeau du pays sur le disque, une tuile pour le vainqueur ou le tenant du titre (`winner`, `holder` de l'API) à la place de la ligne « Vainqueur » sous les onglets ; ses couleurs et son fond (`COMPETITION_COLORS`, `api/nations.py`). Le bloc de navigation du bandeau remplace le choix C1, C3, C4 de Coupes d'Europe et le pas d'édition des sélections (`europeNavigation`, `editionNavigation`, `web/navigation.js`) ; dans sa liste, une compétition suit sa pastille |
 | Navigation d'un bandeau | `.entity-nav` à gauche du bandeau d'un club, d'une sélection, d'un joueur et d'une compétition (`neighbours`, `web/navigation.js`) : le pas de saison en colonne, à la place du bloc de trois boutons bordés. Ses flèches et ses traits à la seconde couleur du bandeau quand elle s'y lit, sinon à son encre, et le voile sous le pointeur (`--hero-step`, `--hero-veil`, `heroColors`, `web/club-hero.js`). Sa liste est le menu de la charte, sans titre ; le compte du groupe est l'infobulle des trois traits |

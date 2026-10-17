@@ -50,15 +50,25 @@ class NationalCamp:
     first_match_played: bool = False
 
 
+EDITION_NAMES = {"euro": "Euro", "world": "Coupe du monde", "nations": "Ligue des nations"}
+
+
 @dataclass(slots=True)
 class InternationalEdition:
+    """A Euro, a World Cup or a Nations League, known by the year of its finals: the tournaments in even years, the Nations
+    League in the odd year before each of them, so that no two editions share a year."""
     year: int
     kind: str
     qualification_groups: list[list[int]] = field(default_factory=list)
     final_groups: list[list[int]] = field(default_factory=list)
+    # The qualifiers of a tournament; the four group winners of a Nations League's first division, its semi-finalists.
     qualifiers: list[int] = field(default_factory=list)
     winner_id: int | None = None
     runner_up_id: int | None = None
+    # The first and the last day of each window its group matches are played in, two matches a window.
+    windows: list[tuple[Date, Date]] = field(default_factory=list)
+    # A Nations League's divisions, A to D, each a list of groups.
+    divisions: list[list[list[int]]] = field(default_factory=list)
 
     @property
     def competition_id(self) -> int:
@@ -66,7 +76,7 @@ class InternationalEdition:
 
     @property
     def name(self) -> str:
-        return f"{'Euro' if self.kind == 'euro' else 'Coupe du monde'} {self.year}"
+        return f"{EDITION_NAMES[self.kind]} {self.year}"
 
 
 @dataclass(slots=True)

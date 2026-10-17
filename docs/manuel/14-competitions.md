@@ -6,7 +6,7 @@ Chaque championnat se joue en matches aller et retour, du {{date(monde.saison.de
 
 Les égalités au classement sont départagées, dans l'ordre, par la différence de buts, les buts marqués, puis les points pris dans les confrontations directes entre les clubs à égalité.
 
-Le calendrier réserve d'abord les dates des coupes d'Europe, des coupes nationales et des sélections, puis place les journées de championnat en gardant au moins {{monde.europe.min_rest_days}} jours entre deux matches d'un même club. Les championnats les plus longs jouent des journées en semaine.
+Le calendrier réserve d'abord les dates des coupes d'Europe, des coupes nationales et des sélections, puis place les journées de championnat en gardant au moins {{monde.europe.min_rest_days}} jours entre deux matches d'un même club. Un club joue jusqu'à la veille de l'ouverture d'un rassemblement des sélections et dès le lendemain de sa fin (voir [Sélections nationales](#/aide/selections)). Les championnats les plus longs jouent des journées en semaine.
 
 ## Montées et descentes
 

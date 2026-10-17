@@ -1,3 +1,4 @@
+import os
 import time
 from pathlib import Path
 from threading import Event, Semaphore, Thread, current_thread
@@ -11,6 +12,7 @@ from api.nations import build_nation_table
 from core.domain.players import ATTRIBUTE_NAMES, Discipline, Injury
 from core.world.simulation import advance_day, target_date
 from infrastructure.importation.loader import import_world
+from infrastructure.persistence.store import SaveStore
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -532,6 +534,29 @@ def test_a_hosted_server_answers_its_host_names_and_saves_where_it_is_told(tmp_p
     assert create_app(ROOT, tmp_path / "given").state.game.store.directory == tmp_path / "given"  # a directory given wins
 
 
+def test_the_launcher_starts_the_server_on_the_save_made_last(config, tmp_path, monkeypatch):
+    with TestClient(create_app(ROOT, tmp_path, resume=True)) as client:  # no save: the welcome screen
+        assert client.get("/api/monde/etat").json() == {"exists": False, "job": None, "recovery_required": False,
+                                                        "auto": {"running": False, "stopping": False, "job": None}}
+    store = SaveStore(tmp_path)
+    world = import_world(ROOT / "data", config, 783)
+    start = world.date
+    store.save(world, "Marseille")
+    world.date = world.date.add_days(3)
+    store.save(world, "Lyon")
+    os.utime(store.path_for("Lyon"), (0, 0))  # saved first
+    with TestClient(create_app(ROOT, tmp_path)) as client:  # by default, nothing is loaded
+        assert client.get("/api/monde/etat").json()["exists"] is False
+    monkeypatch.setenv("FMASTRA_RESUME", "1")
+    app = create_app(ROOT, tmp_path)
+    service = app.state.game
+    with TestClient(app) as client:
+        [job] = service.jobs.values()  # a load the page that opens follows, as it would one asked for
+        assert job.command == "load" and wait_until(lambda: job.status == "done"), job
+        state = client.get("/api/monde/etat").json()
+        assert state["slot"] == "Marseille" and state["date"] == start.iso()
+
+
 def test_closing_the_service_ends_a_running_auto_job(config, tmp_path, monkeypatch):
     app = create_app(ROOT, tmp_path)
     service = app.state.game
@@ -828,15 +853,23 @@ def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(pl
             if data["round"] and data["round"]["number"] <= world.config.world.europe.league_rounds:
                 assert data["round"]["label"].startswith("Phase de ligue") and len(data["groups"][0]["standings"]) == 36
                 check_scorers(data["groups"][0]["matches"])
-    [edition] = world.international.editions.values()
+    # The autumn's internationals are the Nations League's: a block per group of each division.
+    assert sorted(world.international.editions) == [2027, 2028]
+    edition = world.international.editions[2027]
+    groups = [group for division in edition.divisions for group in division]
     latest = get(f"/international/editions/{edition.year}/journee/derniere")
-    assert latest["round"]["label"].startswith("Qualifications · J") and len(latest["groups"]) == len(edition.qualification_groups) == 10
-    for group, block in zip(edition.qualification_groups, latest["groups"]):
+    assert latest["round"]["label"].startswith("Phase de ligue · J") and len(latest["groups"]) == len(groups) == 14
+    assert [block["name"] for block in latest["groups"]][::4] == ["Groupe A1", "Groupe B1", "Groupe C1", "Groupe D1"]
+    for index, (group, block) in enumerate(zip(groups, latest["groups"])):
         assert {row["club"]["id"] for row in block["standings"]} == set(group) and all(row["club"]["national"] for row in block["standings"])
-        assert [row["movement"] for row in block["standings"]] == ["qualified"] + [None] * (len(group) - 1)
+        moves = [row["movement"] for row in block["standings"]]
+        if index < 12:
+            assert moves[0] == ("qualified" if index < 4 else "promotion") and moves[-1] == "relegation" and moves[1:-1] == [None, None]
+        else:
+            assert moves == ["promotion", "promotion", None]
         assert all({row["home"]["id"], row["away"]["id"]} <= set(group) and row["score"] for row in block["matches"])
         check_scorers(block["matches"])
-    assert sum(len(block["matches"]) for block in latest["groups"]) == sum(len(group) // 2 for group in edition.qualification_groups)
+    assert sum(len(block["matches"]) for block in latest["groups"]) == sum(len(group) // 2 for group in groups)
     assert played.get("/api/competitions/999999/journee/derniere").status_code == 404
     assert played.get(f"/api/competitions/{league.id}/journee/hier").status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states

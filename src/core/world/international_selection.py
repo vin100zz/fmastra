@@ -87,8 +87,8 @@ def fill_camp(world: World, camp: NationalCamp, choices: dict[int, str], retain:
     selected = [p for p in existing if available(p, edition, world.date, False)]
     removed = {p.id for p in existing} - {p.id for p in selected}
     pool = [p for p in world.players.values() if choices.get(p.id) == team.code and p.id not in removed]
-    pool += [p for pid, p in state.temporary.items() if p.national_team == team.code
-             and state.temporary_editions[pid] == edition.year and pid not in removed]
+    # A reinforcement stays with its selection through the campaign, from the Nations League to the tournament.
+    pool += [p for pid, p in state.temporary.items() if p.national_team == team.code and pid not in removed]
     pool = [p for p in pool if available(p, edition, world.date, False)]
     # A preferred player cannot be promised to two teams in overlapping camps.
     elsewhere = {pid for nid, other in state.camps.items() if nid != camp.nation_id for pid in other.player_ids}
@@ -114,6 +114,9 @@ def fill_camp(world: World, camp: NationalCamp, choices: dict[int, str], retain:
     newcomers = {p.id for p in selected} - {p.id for p in existing}
     camp.player_ids = [p.id for p in selected]
     for player in selected:
+        if player.id < 0:
+            # Kept until the latest edition it is called up for is over.
+            state.temporary_editions[player.id] = max(state.temporary_editions[player.id], edition.year)
         if player.id in newcomers and player.id >= 0:
             report(world, "call_up", NewsLine(player_id=player.id, text=team.name, key=str(camp.nation_id)), player.club_id)
 

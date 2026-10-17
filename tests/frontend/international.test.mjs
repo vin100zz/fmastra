@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {internationalScreen,editionContent,editionStages,campDays} from '../../web/international.js';
+import {internationalScreen,editionContent,editionStages,editionSection,editionRound,campDays} from '../../web/international.js';
 import {clubLink,setNations} from '../../web/ui.js';
 
 const nation={id:-1001,name:'France <test>',nation:'FRA',national:true,federation:'Europe',strength:80};
@@ -323,4 +323,69 @@ test('the nations list filters by federation and shows titles and the last editi
   assert.match(filtered,/Japon/);
   assert.doesNotMatch(filtered,/France &lt;test&gt;<\/span><\/a><\/td><td>Europe/);
  }finally{globalThis.fetch=previous;}
+});
+
+// A Nations League: four divisions of groups, each row marked with where its nation goes, then its final four.
+const leagueRow=(id,name,movement=null)=>({...row,nation:team(id,name),movement});
+const league={year:2027,name:'Ligue des nations 2027',kind:'nations',code:'LN',major_color:'#00a6d6',minor_color:null,ground_color:'#0b1e3f',winner:null,holder:null,
+ qualification_groups:[],final_groups:[],best_seconds:[],second_places:0,qualifiers:[],records:[],
+ divisions:['A','B','C','D'].map(letter=>({name:`Division ${letter}`,groups:(letter==='D'?[1,2]:[1,2,3,4]).map(number=>({name:`${letter}${number}`,
+  rows:[leagueRow(-10*number-1,`${letter}${number} premier`,letter==='A'?'qualified':letter==='D'||letter==='B'||letter==='C'?'promotion':null),leagueRow(-10*number-2,`${letter}${number} deuxième`,letter==='D'?'promotion':null),
+   leagueRow(-10*number-3,`${letter}${number} dernier`,letter==='D'?null:'relegation')]}))})),
+ knockout_rounds:[{number:15,label:'Demi-finales'},{number:16,label:'Finale'}],
+ matches:[{...game(1,1,team(-11,'A1 premier'),team(-12,'A1 deuxième'),[2,0]),round_label:'Division A · J1'},{...game(2,2,team(-12,'A1 deuxième'),team(-13,'A1 dernier'),null),round_label:'Division A · J2'}]};
+
+test('a Nations League shows its divisions group by group, the places going up, down and to the final four marked',()=>{
+ const html=editionContent(league,'league');
+ assert.deepEqual([...html.matchAll(/<h3 class="section-title">([^<]+)<\/h3>/g)].map(match=>match[1]),['Division A','Division B','Division C','Division D']);
+ assert.equal((html.match(/<h2>Groupe [A-D]\d<\/h2>/g)||[]).length,14);
+ const first=html.split('<h2>Groupe A1</h2>')[1].split('</table>')[0];
+ assert.match(first,/<tr class="promoted"[^>]*>.*A1 premier/s);assert.match(first,/<tr class="relegated"[^>]*>.*A1 dernier/s);
+ assert.doesNotMatch(first,/<tr class="promoted"[^>]*>(?:(?!<\/tr>).)*A1 deuxième/s);
+ // In the last division the first two of a group go up, nobody goes down.
+ const last=html.split('<h2>Groupe D1</h2>')[1].split('</table>')[0];
+ assert.equal((last.match(/<tr class="promoted"/g)||[]).length,2);assert.doesNotMatch(last,/relegated/);
+ // Its match days are picked as a tournament's qualifying days, under its own tab.
+ assert.match(html,/class="active" href="#\/international\/2027\/league\/1">J1<\/a><a class="" href="#\/international\/2027\/league\/2">J2/);assert.match(html,/<h3>Groupe A1<\/h3>/);
+ assert.deepEqual(editionStages(league).map(step=>[step.label,step.state]),[['Phase de ligue','current'],['Demi-finales','todo'],['Finale','todo']]);
+});
+
+test('a Nations League’s finals are its semi-finals and its final alone, empty until they are drawn',()=>{
+ const html=editionContent(league,'finals');
+ assert.match(html,/class="bracket"/);assert.equal((html.match(/bracket-tie empty/g)||[]).length,3);
+ assert.doesNotMatch(html,/qualifications|intl-groups/);
+});
+
+test('a Nations League’s page wears its navy and cyan, its trophy, and opens on its groups',async()=>{
+ const previous=globalThis.fetch;
+ const listed=[{year:2028,name:'Euro 2028',code:'EU',winner:null},{year:2027,name:'Ligue des nations 2027',code:'LN',winner:null}];
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/editions/')?league:{enabled:true,nations:[nation],editions:listed}});
+ try{
+  const html=await internationalScreen('2027');
+  assert.match(html,/^<header class="club-hero" style="--hero-field:#0b1e3f;--hero-ink:#ffffff;--hero-sash:#00a6d6;/);
+  assert.match(html,/<img class="club-hero-emblem" src="\/emblems\/ligue-des-nations\.png" alt="">/);
+  assert.match(html,/<a class="active" href="#\/international\/2027\/league" aria-current="page">Phase de ligue<\/a><a class="" href="#\/international\/2027\/finals">Phase finale<\/a>/);
+  assert.doesNotMatch(html,/Qualifications<\/a>/);
+  // A tournament's qualifications answer to its groups, from one edition to the other.
+  assert.match(await internationalScreen('2027','qualifications'),/aria-current="page">Phase de ligue</);
+  assert.match(html,/<a class="entity-step next" href="#\/international\/2028\/league"/);
+  assert.equal(editionSection({kind:'euro'},'league'),'qualifications');assert.equal(editionSection({kind:'nations'},'qualifications'),'league');
+  assert.equal(editionSection({kind:'nations'},'statistics'),'statistics');assert.equal(editionSection({kind:'nations'},'x'),'league');
+ }finally{globalThis.fetch=previous;}
+});
+
+test('the editions under way each have their card, the one playing first on top',async()=>{
+ const previous=globalThis.fetch;
+ const euro={...edition,kind:'euro',knockout_rounds:[],matches:[{...game(5,1,team(-1,'A'),team(-2,'B'),null),date:'2027-03-18',round_label:'Qualifications · J1'}]};
+ const editions=[{year:2028,name:'Euro 2028',winner:null},{year:2027,name:'Ligue des nations 2027',winner:null}];
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.endsWith('/2027')?{...league,matches:[{...league.matches[1],date:'2026-10-08'}]}:url.endsWith('/2028')?euro:{enabled:true,nations:[nation],editions}});
+ try{
+  const html=await internationalScreen();
+  const cards=[...html.matchAll(/<a class="card current-edition" href="([^"]+)">/g)].map(match=>match[1]);
+  assert.deepEqual(cards,['#/international/2027/league','#/international/2028/qualifications']);
+ }finally{globalThis.fetch=previous;}
+});
+
+test('a selection’s round reads J and its number in a Nations League’s groups as in its qualifiers',()=>{
+ assert.equal(editionRound('Division B · J4'),'J4');assert.equal(editionRound('Qualifications · J2'),'J2');assert.equal(editionRound('Demi-finales'),'Demi-finales');
 });

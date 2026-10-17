@@ -48,25 +48,33 @@ def test_national_api_and_player_history(imported, tmp_path):
     with TestClient(app) as client:
         data = client.get('/api/international').json()
         assert data['enabled'] and len(data['nations']) == 211
-        assert [(e['year'], e['code']) for e in data['editions']] == [(2028, 'EU')]
+        assert [(e['year'], e['code']) for e in data['editions']] == [(2028, 'EU'), (2027, 'LN')]
         assert {'titles', 'last_edition'} <= set(data['nations'][0])
         edition = client.get('/api/international/editions/2028').json()
         assert len(edition['qualification_groups']) == 10 and len(edition['matches']) == 240
         # What its header shows: its badge, the Euro's blue crossed by its yellow, and nobody to hold a first title.
         assert (edition['code'], edition['major_color'], edition['minor_color'], edition['ground_color']) == ('EU', '#003399', '#ffcc00', None)
         assert edition['winner'] is None and edition['holder'] is None
+        # The Nations League before it: its navy crossed by its cyan, four divisions, every row marked with where it goes.
+        league = client.get('/api/international/editions/2027').json()
+        assert (league['code'], league['major_color'], league['minor_color'], league['ground_color']) == ('LN', '#00a6d6', None, '#0b1e3f')
+        assert [division['name'] for division in league['divisions']] == ['Division A', 'Division B', 'Division C', 'Division D']
+        assert [[len(group['rows']) for group in division['groups']] for division in league['divisions']] == [[4] * 4] * 3 + [[3, 3]]
+        assert len(league['matches']) == 156 and [r['label'] for r in league['knockout_rounds']] == ['Demi-finales', 'Finale']
+        assert league['divisions'][0]['groups'][0]['rows'][0]['movement'] == 'qualified'
         france = next(n for n in data['nations'] if n['name'] == 'France')
         nation = client.get(f"/api/international/nations/{france['id']}").json()
         assert len(nation['squad']) == 23 and nation['camp']
         assert {'age', 'potential', 'club', 'value', 'wage', 'contract_end'} <= set(nation['squad'][0])
         # Its page wears a club's header and widgets: its kit, the edition it plays, its next matches, its group.
         assert (nation['major_color'], nation['minor_color']) == ('#1f3f94', '#ffffff')
-        assert nation['competition'] == {'year': 2028, 'name': 'Euro 2028', 'stage': 'Qualifications'}
+        assert nation['competition'] == {'year': 2027, 'name': 'Ligue des nations 2027', 'stage': 'Phase de ligue'}
         assert nation['calendar']['last'] == [] and len(nation['calendar']['next']) == 3 and nation['lineup'] is None
-        assert all(m['competition_code'] == 'EU' and france['id'] in (m['home']['id'], m['away']['id']) for m in nation['calendar']['next'])
+        assert all(m['competition_code'] == 'LN' and france['id'] in (m['home']['id'], m['away']['id']) for m in nation['calendar']['next'])
+        assert nation['calendar']['next'][0]['round_label'] == 'Division A · J1'
         group = nation['group']
-        assert (group['year'], group['finals'], group['places']) == (2028, False, 1) and len(group['name']) == 1
-        assert france['id'] in [row['nation']['id'] for row in group['rows']] and len(group['rows']) in (5, 6)
+        assert (group['year'], group['finals'], group['places'], group['name'][0]) == (2027, False, 0, 'A')
+        assert france['id'] in [row['nation']['id'] for row in group['rows']] and len(group['rows']) == 4
         # The list is sorted by the server as a club's squad is, on the position by default; what a player did in the edition goes with it.
         assert {'caps', 'international_goals', 'appearances', 'goals', 'assists', 'average', 'form'} <= set(nation['squad'][0])
         assert nation['squad'][0]['position'] == 'GB' and all(p['appearances'] == 0 and p['average'] is None for p in nation['squad'])
@@ -80,15 +88,16 @@ def test_national_api_and_player_history(imported, tmp_path):
         assert client.get(f"/api/international/nations/{france['id']}?tri=morale").status_code == 422
         # Its calendar: the matches of the edition under way, its group there, its record in each edition it played.
         calendar = client.get(f"/api/international/nations/{france['id']}/calendrier").json()
-        assert calendar['edition'] == 2028 and calendar['editions'] == [{'year': 2028, 'name': 'Euro 2028'}]
+        assert calendar['edition'] == 2027
+        assert calendar['editions'] == [{'year': 2028, 'name': 'Euro 2028'}, {'year': 2027, 'name': 'Ligue des nations 2027'}]
         assert len(calendar['items']) == 2 * (len(group['rows']) - 1) and calendar['group'] == group
         assert all(m['outcome'] is None and m['scorers'] is None and france['id'] in (m['home']['id'], m['away']['id']) for m in calendar['items'])
         assert [m['id'] for m in calendar['items'][:3]] == [m['id'] for m in nation['calendar']['next']]
-        record = calendar['competitions'][0]
-        assert (record['code'], record['kind'], record['played'], record['winner']) == ('EU', 'international', 0, False)
+        record = next(row for row in calendar['competitions'] if row['year'] == 2027)
+        assert (record['code'], record['kind'], record['played'], record['winner']) == ('LN', 'international', 0, False)
         assert record['place'].endswith(f" du groupe {group['name']}")
         # A year it played nothing in opens the default edition; the matches no longer travel with the squad.
-        assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=2030").json()['edition'] == 2028
+        assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=2030").json()['edition'] == 2027
         assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=x").status_code == 422
         assert 'matches' not in nation
         match = client.get(f"/api/matches/{edition['matches'][0]['id']}").json()

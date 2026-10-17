@@ -43,7 +43,7 @@ note = niveau à ce poste + 6 × (forme − 1) + 6 × (condition − 1) + aléa
 - **Un blessé** n'est pas appelé. **Un suspendu** peut l'être : sa suspension se purge pendant le rassemblement.
 - Ni le club, ni le temps de jeu en club, ni le moral, ni l'âge n'entrent dans le choix.
 
-Si un joueur se blesse pendant un rassemblement de qualification, il est remplacé. En phase finale, les blessés ne sont remplacés qu'avant le premier match de la sélection ; ensuite, la liste est figée.
+Si un joueur se blesse pendant un rassemblement de Ligue des nations ou de qualification, il est remplacé. En phase finale (celle d'un tournoi comme celle de la Ligue des nations), les blessés ne sont remplacés qu'avant le premier match de la sélection ; ensuite, la liste est figée.
 
 ## Le onze de la sélection
 
@@ -51,16 +51,16 @@ Le sélectionneur compose son équipe comme l'[entraîneur IA](#/aide/entraineur
 
 ## Ce que la sélection change pour votre club
 
-- **Vos internationaux sont absents** du rassemblement jusqu'à sa fin : ils ne peuvent pas jouer pour vous pendant ce temps. Le calendrier des clubs laisse ces fenêtres libres.
+- **Vos internationaux sont absents** du rassemblement jusqu'à sa fin : ils ne peuvent pas jouer pour vous pendant ce temps. Le calendrier des clubs laisse ces jours libres : votre club peut jouer la veille du départ et le lendemain du retour, jamais à moins de {{monde.europe.min_rest_days}} jours d'un match de sélection.
 - **La fatigue et les blessures sont partagées** : un joueur rentre avec la condition que lui ont laissée ses matches, et une blessure en sélection le prive de son club.
 - **La forme évolue** aussi sur les notes obtenues en sélection, et ses minutes comptent pour sa [progression](#/aide/progression/la-progression) mensuelle.
-- **Les cartons et les suspensions sont séparés** : un carton en sélection ne compte pas en club, et inversement.
+- **Les cartons et les suspensions sont séparés** : un carton en sélection ne compte pas en club, et inversement. Chaque compétition a les siens : un carton en Ligue des nations ne compte pas en qualifications.
 - **Les statistiques sont séparées** elles aussi : matches, buts, passes et note moyenne de chaque édition se lisent dans la carrière de la fiche du joueur, sous ses clubs, sans entrer dans ses statistiques de saison.
 - **Une retraite** décidée pendant un tournoi attend la fin du rassemblement.
 
 ## Les renforts
 
-Une nation qui n'a pas assez de joueurs pour remplir sa liste reçoit des joueurs temporaires. Leur niveau se situe un peu en dessous de la force de la nation ; ils restent attachés à leur sélection pendant toute la campagne, avec leur état physique, puis disparaissent. Ils n'ont pas de club et ne sont pas sur le marché.
+Une nation qui n'a pas assez de joueurs pour remplir sa liste reçoit des joueurs temporaires. Leur niveau se situe un peu en dessous de la force de la nation ; ils restent attachés à leur sélection pendant toute la campagne, de la Ligue des nations au tournoi, avec leur état physique, puis disparaissent à la fin de la dernière compétition pour laquelle ils ont été appelés. Ils n'ont pas de club et ne sont pas sur le marché.
 
 ## La force des nations
 
@@ -71,8 +71,36 @@ Chaque nation a une force sur 100, qui sert aux tirages, à l'attrait des binati
 
 ## Les compétitions
 
-L'Euro se joue tous les quatre ans à partir de {{annee(international.first_euro)}}, la Coupe du monde tous les quatre ans à partir de {{annee(international.first_world_cup)}}.
+L'Euro se joue tous les quatre ans à partir de {{annee(international.first_euro)}}, la Coupe du monde tous les quatre ans à partir de {{annee(international.first_world_cup)}} : un tournoi chaque été pair. Chacun clôt une campagne de deux ans, la Ligue des nations puis les qualifications.
 
-- **Les qualifications européennes** se jouent en dix groupes, en matches aller et retour, sur cinq rassemblements de deux matches : septembre et novembre de l'avant-dernière année, puis mars, juin et novembre de l'année précédant le tournoi. Les dix premiers de groupe se qualifient, avec les six meilleurs deuxièmes pour l'Euro et les quatre meilleurs pour la Coupe du monde.
+| Quand | Ce qui se joue |
+|---|---|
+| Septembre, octobre et novembre, deux ans avant le tournoi | Ligue des nations : les groupes, deux matches par mois |
+| Mars de l'année précédant le tournoi | Qualifications : deux matches |
+| Juin de l'année précédant le tournoi | Ligue des nations : demi-finales et finale |
+| Septembre, octobre et novembre de l'année précédant le tournoi | Qualifications : deux matches par mois |
+| Mars de l'année du tournoi | Qualifications : les deux derniers matches |
+| Juin et juillet de l'année du tournoi | Phase finale du tournoi |
+
+- **Les qualifications européennes** se jouent en dix groupes, en matches aller et retour, sur ces cinq rassemblements de deux matches. Les dix premiers de groupe se qualifient, avec les six meilleurs deuxièmes pour l'Euro et les quatre meilleurs pour la Coupe du monde.
 - **Hors d'Europe**, les qualifications ne sont pas jouées : les qualifiés de chaque confédération sont désignés selon leur force, avec un aléa qui permet des surprises entre nations proches.
 - **Les phases finales** se jouent en juin et juillet sur terrain neutre : des groupes de quatre, deux qualifiés par groupe, puis élimination directe avec tirs au but en cas d'égalité, sans prolongation.
+
+## La Ligue des nations
+
+Toutes les nations européennes la jouent, réparties en quatre divisions :
+
+- **Divisions A, B et C** : quatre groupes de quatre chacune.
+- **Division D** : les autres nations, en groupes de trois ou quatre.
+
+Chaque groupe se joue en matches aller et retour. La première édition range les nations par force : les seize plus fortes en A, les seize suivantes en B, les seize suivantes en C, les autres en D. Dans chaque division, les groupes sont tirés par chapeaux, selon la force.
+
+**La phase finale.** Les quatre premiers de groupe de la division A se retrouvent en juin, sur terrain neutre : deux demi-finales tirées au sort, puis la finale. Un match nul se décide aux tirs au but, sans prolongation.
+
+**Montées et descentes**, pour l'édition suivante :
+
+- le dernier de chaque groupe des divisions A, B et C descend d'une division ;
+- le premier de chaque groupe des divisions B et C monte d'une division ;
+- de la division D montent autant de nations qu'il en descend de la C, quatre : les mieux classées, place par place, soit les deux premiers de chaque groupe quand elle en a deux. Entre groupes de tailles différentes, une nation d'un groupe plus grand est comparée sans ses matches contre le dernier de son groupe.
+
+La Ligue des nations ne qualifie ni pour l'Euro ni pour la Coupe du monde.
