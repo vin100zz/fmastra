@@ -325,6 +325,14 @@ class SaveStore:
         return sorted(({"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size, "modified": path.stat().st_mtime}
                        for path in self.directory.glob("*.json.gz")), key=lambda row: row["slot"].casefold())
 
+    def latest(self) -> str | None:
+        """The slot saved last, None without any. A dated copy is an older state of its slot: it only counts once the slot is
+        gone, whatever its file's date (a copy made without a hard link is written at the same time as the new save)."""
+        rows = self.slots()
+        names = {row["slot"] for row in rows}
+        games = [row for row in rows if original_slot(row["slot"]) == row["slot"] or original_slot(row["slot"]) not in names]
+        return max(games, key=lambda row: row["modified"])["slot"] if games else None
+
 
 def saved_date(path: Path) -> str | None:
     """The date a save was made at, read from the head of its file; None for a missing or unreadable one."""

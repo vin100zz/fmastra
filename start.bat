@@ -19,6 +19,8 @@ if not errorlevel 1 (
 echo Demarrage de Football Manager : http://localhost:8011/
 echo Gardez cette fenetre ouverte. Ctrl+C pour arreter le jeu.
 set "PYTHONPATH=%~dp0src"
+rem Reprendre la derniere sauvegarde des le demarrage.
+set "FMASTRA_RESUME=1"
 ".venv\Scripts\python.exe" -c "import threading, time, urllib.request, webbrowser, uvicorn; exec('def open_game():\n for attempt in range(60):\n  try:\n   with urllib.request.urlopen(\'http://localhost:8011/openapi.json\', timeout=1): pass\n   webbrowser.open(\'http://localhost:8011/\')\n   return\n  except OSError: time.sleep(0.5)'); threading.Thread(target=open_game, daemon=True).start(); uvicorn.run('api.app:app', host='127.0.0.1', port=8011, workers=1)"
 if errorlevel 1 (
     echo Le serveur n'a pas pu demarrer. Consultez le message ci-dessus.
