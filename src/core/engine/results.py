@@ -18,7 +18,7 @@ def assemble(home: TeamState, away: TeamState, initial_home: Lineup, initial_awa
                        [(slot.player.id, slot.position.value) for slot in initial_home.slots],
                        [(slot.player.id, slot.position.value) for slot in initial_away.slots],
                        [player.id for player in initial_home.bench], [player.id for player in initial_away.bench],
-                       round(log.second), status)
+                       duration=round(log.second), status=status)
 
 
 def player_rating(team: TeamState, opponent: TeamState, pid: int, cfg: Config) -> float:
