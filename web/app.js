@@ -9,7 +9,6 @@ import {europeScreen} from './europe.js';
 import {honoursScreen,pickClub} from './honours.js';
 import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
-import {clubSelectScreen} from './club-select.js';
 import {homeScreen} from './home.js';
 import {newGameScreen,creationChoice,leaveCreation} from './new-game.js';
 import {newsScreen} from './news.js';
@@ -56,11 +55,11 @@ function showNews(){
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),simulate=document.querySelector('#simulate');
  showNews();
- // Without a game the bar holds nothing. On the screen of a new game it holds the first day of that game, and Commencer,
- // which waits for a club to be picked.
+ // Without a game to play (nor a club in it) the bar holds nothing. On the screen of a new game it holds the first day of
+ // that game, and Commencer, which waits for a club to be picked.
  const made=onCreationScreen()?creationChoice():null;
  document.body.classList.toggle('creating',Boolean(made));
- document.querySelector('.advance-group').hidden=!made&&(!state.exists||Boolean(state.recovery_required));
+ document.querySelector('.advance-group').hidden=!made&&(!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);
  if(made){
   document.querySelector('#season-label').textContent=`SAISON ${season(made.season)}`;
   document.querySelector('#game-date').textContent=date(made.date,true);
@@ -120,7 +119,7 @@ function nextMatchesHtml(){
   return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span><span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span></a>`;
  }).join('');
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required));document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation)}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation)}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
  const dialog=document.querySelector('#confirm-dialog');
@@ -241,7 +240,8 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
   // A new game is made from its own screen, with or without a game under way, though never over a live match.
   else if(screen==='nouvelle-partie'&&!state.live_match_id)html=await newGameScreen(params);
   else if(!state.exists||state.recovery_required)html=await savesScreen();else{
-  if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
+  // A game without a club (an old save) cannot be played: it opens on Ma partie, which makes another or resumes one.
+  if(state.controlled_club_id==null)html=await savesScreen();
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra,params);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'actualites':html=await newsScreen(await openMessage(params));break;default:html=await dashboard(leagues);}}
@@ -414,7 +414,6 @@ main.addEventListener('submit',async event=>{event.preventDefault();const elemen
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});
 main.addEventListener('change',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('select,input[type=checkbox],input[type=radio]'))return;applyFilter(form);});
 main.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if('tableSort' in button.dataset){const table=button.closest('table'),column=button.closest('th').cellIndex,direction=nextDirection(table,column);sortTable(table,column,direction);tableSorts.set(sortScope(table),{column,direction});return;}const {params}=routeParts();if('resetFilters' in button.dataset){settleFilter();changeParams(viewParams(params));return;}if(button.dataset.param){if(button.dataset.paramValue)params.set(button.dataset.param,button.dataset.paramValue);else params.delete(button.dataset.param);params.delete('page');changeParams(params);}if(button.dataset.page){params.set('page',button.dataset.page);changeParams(params);}if(button.dataset.sort){params.set('ordre',button.dataset.order?(button.dataset.order==='desc'?'asc':'desc'):button.dataset.first);params.set('tri',button.dataset.sort);params.delete('page');changeParams(params);}if(button.dataset.view&&button.getAttribute('aria-pressed')!=='true'){if(button.dataset.view==='infos')params.delete('vue');else params.set('vue',button.dataset.view);if(button.dataset.viewSort){params.set('tri',button.dataset.viewSort);params.set('ordre',button.dataset.viewOrder);}else{['tri','ordre','page'].forEach(key=>params.delete(key));}changeParams(params);}if(button.dataset.command==='load')command('/partie/charger',{slot:button.dataset.slot});if(button.dataset.command==='delete')await deleteSlot(button.dataset.slot);
- if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
  if(button.dataset.command==='liste-transferts')await action('/partie/liste-transferts',{joueur_id:Number(button.dataset.player),indemnite:null},'Joueur retiré de la liste des transferts.');
  if(button.dataset.command==='intransferable')await action('/partie/intransferable',{joueur_id:Number(button.dataset.player),intransferable:Boolean(button.dataset.kept)},button.dataset.kept?'Joueur déclaré intransférable.':'Joueur de nouveau transférable.');

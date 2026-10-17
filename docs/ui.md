@@ -163,6 +163,8 @@ sous son titre et le champ qui enregistre la partie, au-dessus du rapport de cr�
   ligne sous le pointeur, la supprime après confirmation.
 
 Sans partie, la barre du haut est vide et le menu de gauche n'a que le manuel et le thème.
+Une partie sans club, d'une ancienne sauvegarde, s'ouvre toujours sur « Ma partie », sans menu ni
+« Continuer » : le club se choisit à la création.
 
 ### Nouvelle partie
 
