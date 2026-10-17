@@ -800,12 +800,16 @@ message (« il vient d'arriver ») reste dans son infobulle.
 
 Écran de compte rendu, consultable après simulation :
 
+- Tout tient dans une fenêtre de navigateur sur un écran de 1080, même un banc de 12 (charte, « Compte rendu
+  d'un match »)
 - L'en-tête d'un match (charte, « En-tête d'un match ») : le bandeau partagé entre les deux camps, celui qui
-  reçoit à gauche, le score entre eux avec le cumul et les tirs au but dessous ; dans la barre, la compétition,
-  le tour, le jour, le stade et le vainqueur à gauche, « Match aller » et « Résumé 2D » à droite
+  reçoit à gauche, le score entre eux avec le cumul et les tirs au but dessous, sans barre dessous
 - Le nom des deux camps n'est écrit que dans le bandeau : sur le reste de l'écran, ce qui est à gauche est au
   camp qui reçoit
 - Trois colonnes : la composition d'un camp, les temps forts et les chiffres, la composition de l'autre
+- La ligne du match, en tête de la colonne du milieu au-dessus des temps forts (seule sous le bandeau avant le
+  match) : la compétition, le tour, le jour, un terrain neutre et le vainqueur, puis « Match aller » et
+  « Résumé 2D » à son bout. La capacité du stade n'est pas écrite
 - Temps forts : buts, blessures et cartons rouges dans l'ordre du match, la minute au milieu, chaque camp à
   son bord, une ligne par fait : sa marque, le joueur par son nom court (le nom de famille, l'initiale du
   prénom devant un homonyme de son effectif), et pour un but le passeur après lui, en petit (charte, « Temps
@@ -814,12 +818,14 @@ message (« il vient d'arriver ») reste dans son infobulle.
   couleur (charte, « Graphiques »). La carte est repliée sur les buts attendus, les tirs, les tirs cadrés et
   la possession ; son en-tête entier montre les corners, les coups francs et les cartons (charte, « Carte
   repliable »), et le choix est gardé d'un match à l'autre
-- Compositions des deux équipes sur le terrain de la charte, sans titre : le poste sur le maillot, ses buts en
-  haut à droite du maillot (un ballon par but, en grappe) ; dessous, le bloc du joueur, son nom, puis la note du
-  match dans sa couleur et les autres faits du match (les cartons, la blessure, la sortie en blanc) ; les
-  remplaçants en liste, avec leur entrée et leur note (les buts d'un remplaçant après son nom)
+- Compositions des deux équipes sur le terrain de la charte raccourci à 68 × 76 (l'attaque dans la surface
+  d'en face), sans titre : le poste sur le maillot, ses buts en haut à droite du maillot (un ballon par but, en
+  grappe) ; dessous, le bloc du joueur, son nom, puis la note du match dans sa couleur et les autres faits du
+  match (les cartons, la blessure, la sortie en blanc) ; sous le terrain, les remplaçants sur deux colonnes lues
+  de haut en bas, par leur nom court (le nom entier en infobulle), avec leur entrée et leur note (les buts d'un
+  remplaçant après son nom)
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
-  de la barre de l'en-tête, l'ouvre et lance la lecture, puis le replie (la lecture se
+  de la ligne du match, l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les

@@ -136,7 +136,8 @@ où le fond est déjà jaune.
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
-| En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent. Voir « En-tête d'un match » |
+| En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent ; sans barre, la ligne du match au-dessus des temps forts. Voir « En-tête d'un match » |
+| Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
 | Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
@@ -349,8 +350,7 @@ le reprend.
   même ligne de base, en 20, à 12 du nom. Un lien vers sa fiche quand il en a
   une.
 - **Tuiles** : ce que le bandeau chiffre va sur une tuile, jamais dans une ligne
-  de texte. La capacité du stade n'y est pas : elle se lit dans la barre d'un
-  match.
+  de texte. La capacité du stade n'y est pas.
 
 | Bandeau | À la suite du nom |
 |---|---|
@@ -364,8 +364,8 @@ forment un seul lien ; devant autre chose (un championnat), le drapeau est un
 lien à part, ce qui le suit a le sien. Un pays sans sélection dans le jeu garde
 son drapeau, sans lien.
 
-Le bandeau d'un match n'a rien à la suite de ses noms : sa barre dit le reste
-(voir « En-tête d'un match »).
+Le bandeau d'un match n'a rien à la suite de ses noms : la ligne du match dit
+le reste (voir « En-tête d'un match »).
 
 ### Navigation d'un bandeau
 
@@ -443,14 +443,33 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
 - **Score** : en 40, sur une tuile là où les deux moitiés se rejoignent ; « VS »
   avant le match. Dessous, sur une ligne, ce qui a départagé : « Cumul 3 – 3 »,
   « 4 – 2 t.a.b. ».
-- **Barre** (`.hero-bar`) : 36. À gauche (`.match-facts`) la pastille de la
-  compétition, le tour en gras, puis, atténués, le jour, les places du stade,
-  « Terrain neutre » ; enfin « Vainqueur : » et le camp qualifié, quand le match
-  en désigne un. À droite, les commandes de 28 : « Match aller », puis
-  « Résumé 2D ».
+- **Pas de barre** sous le bandeau : la ligne qu'elle prenait reste au terrain
+  et au banc.
+- **Ligne du match** (`.page-heading`, `.match-facts`) : 32, en tête de la
+  colonne du milieu, au-dessus des temps forts ; seule sous le bandeau avant le
+  match. À gauche la pastille de la compétition, le tour en gras, puis, atténués,
+  le jour et « Terrain neutre » ; enfin « Vainqueur : » et le camp qualifié,
+  quand le match en désigne un. À son bout, les commandes de 28 : « Match
+  aller », puis « Résumé 2D ». La capacité du stade n'est écrite nulle part.
 - **Les noms ne sont écrits qu'ici.** Sur le reste de l'écran, rien ne nomme un
   camp : celui qui reçoit est à gauche (sa composition, ses temps forts, sa part
   des barres). Les compositions n'ont pas de titre.
+
+### Compte rendu d'un match
+
+Tout tient dans une fenêtre de navigateur sur un écran de 1080 (environ 940 de
+haut), même un banc de 12 : trois colonnes sous le bandeau, la composition de
+celui qui reçoit à gauche (480), la ligne du match, les temps forts et le match
+en chiffres au milieu, la composition de l'autre à droite (480).
+
+- **Composition** : le terrain raccourci (voir « Terrain et maillot »), son banc
+  dessous, dans la même carte, sans titre.
+- **Banc** (`.halves`) : deux colonnes côte à côte, un trait entre elles, lues
+  de haut en bas, la première la plus longue (9 remplaçants en 5 lignes, 12 en
+  6). Chacune est un tableau : « Remplaçant », « Entrée », « Note ». Le
+  remplaçant par son nom court, comme sur le terrain, son nom entier en
+  infobulle, puis ce qu'il a fait (ses buts, ses cartons) ; celui qui n'est pas
+  entré est atténué, ni entrée ni note. Un camp sans remplaçant n'a pas de banc.
 
 ### Temps forts d'un match
 
@@ -625,6 +644,10 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   1.5 à 8 du bord. Debout (l'équipe attaque vers le haut) ou couché
   (`.pitch.lying`, vers la droite, latéral gauche en haut) : mêmes herbe, lignes
   et maillots.
+- **Terrain raccourci** (`.pitch.short`) : 68 × 76, celui du compte rendu d'un
+  match. Mêmes bandes et lignes, resserrées ; l'attaque se tient dans la surface
+  d'en face, sans gazon vide au-dessus d'elle, le bloc du gardien finit à 12 de
+  sa ligne.
 - **Maillot** (`.kit-shirt`) : 32, carré, les manches à l'horizontale. Le corps
   dans la première couleur du club ou de la sélection, blanc compris, les
   manches et le col dans la seconde. Le gazon n'est pas la page : la règle de la
@@ -950,7 +973,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 | Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
 | Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club, sur Calendrier d'une sélection, sur le tableau d'une coupe nationale et sur une coupe d'Europe (`tools` de `clubHero`, `nationHero` et `competitionHero`), au bout de la ligne du titre sur Mercato mondial, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
-| Compte rendu d'un match | Le bandeau partagé (`matchHero`, `web/club-hero.js`) et sa barre à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`). Les temps forts sur une ligne de 26 chacun, sans libellé : les marques, le nom court du joueur, le passeur en petit (`highlightsCard`, `web/match.js` ; `short_names`, `src/api/views.py`, aussi au direct) |
+| Compte rendu d'un match | Tout sur un écran : le bandeau sans barre, la ligne du match (`.match-line`) au-dessus des temps forts avec « Match aller » et « Résumé 2D », plus de capacité du stade (ni à l'écran, ni dans `match_detail`) ; le terrain raccourci à 68 × 76 (`.pitch.short`, `pitch`, `web/ui.js`) ; le banc sous son terrain en deux colonnes de noms courts (`benchHalves`, `web/match.js` ; `.halves`, `web/charte.css`). Le bandeau partagé (`matchHero`, `web/club-hero.js`) à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`). Les temps forts sur une ligne de 26 chacun, sans libellé : les marques, le nom court du joueur, le passeur en petit (`highlightsCard`, `web/match.js` ; `short_names`, `src/api/views.py`, aussi au direct) |
 | Noms courts | Le nom de famille, et l'initiale ou les lettres du prénom devant un homonyme de l'effectif (`short_names`, `squad_short_names`, `src/api/views.py` ; `shortName`, `web/ui.js`) : temps forts, buteurs sous un match, terrain du compte rendu, dernier onze, résumé 2D, composition, direct |
 | Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne réduite à la carte État et Contrat, ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU, CM et LN pour une édition) ; la courbe du niveau en `--series-1` |
 | Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
@@ -982,6 +1005,9 @@ et celle d'un joueur (proposition D, bloc sélection 3) : <https://claude.ai/art
 Le pas de saison a la sienne (proposition C1, page « Tour 2 ») : <https://claude.ai/artifact/JWEMGket7W9htqxx7FoCps>.
 Le compte rendu d'un match a été redessiné depuis (proposition A) :
 <https://claude.ai/artifact/X8NKTayKm5YXFuCJQTBWKo> ; sa planche du canevas montre l'ancienne bannière.
+Il tient depuis sur un écran (proposition B, le banc en deux colonnes, terrain en
+68 × 76) : <https://claude.ai/artifact/BV74Y91tpDC9BacYTRXFq5> ; les maquettes
+antérieures montrent la barre sous le bandeau et le banc d'une colonne.
 La marque et la barre du haut ont la leur (logo 1, « Terrain » ; barre,
 proposition J) : <https://claude.ai/artifact/5vwPBqcKJkDe99jEWJZZwv>.
 L'en-tête d'une compétition aussi (proposition B, le drapeau sur le disque pour

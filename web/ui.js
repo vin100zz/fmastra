@@ -437,18 +437,19 @@ export function fixtureRow(match,{own=ownClub,levels=null,wide=false}={}){
 // Whether a match of a list has a storey under its score: every line of that list then keeps its room.
 export const hasStorey = matches => matches.some(storey);
 export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide})}`;}).join('');}
-// The line-up of a match on an upright pitch: each player in his side's kit (`kit`: {major, minor}; a match-only player in
-// grey) with his position on it and his goals at its top right (`goals(player)`), his block under it: his name (his short
-// name when `compact`), then his note of the match and what else he did (`marks(player)`).
+// The line-up of a match on an upright pitch, shortened to 68 × 76 (`.pitch.short`): each player in his side's kit (`kit`:
+// {major, minor}; a match-only player in grey) with his position on it and his goals at its top right (`goals(player)`), his
+// block under it: his name (his short name when `compact`), then his note of the match and what else he did (`marks(player)`).
+// The attack stands in the far box, the goalkeeper's block ends 12 above the goal line, on a pitch 454 wide.
 export function pitch(lineup,label='Composition initiale',{compact=false,kit=null,marks=null,goals=null}={}){
- const bands={GB:90,DC:75,DG:69,DD:69,MDC:59,MC:47,MOC:33,AILG:22,AILD:22,BU:14};
+ const bands={GB:88,DC:72,DG:66,DD:66,MDC:55,MC:42,MOC:27,AILG:16,AILD:16,BU:7};
  // Full-backs and centre-backs form one line, spread from left to right; each other position spreads within its own band.
- const line=player=>['DG','DC','DD'].includes(player.position)?'defence':bands[player.position]??45;
+ const line=player=>['DG','DC','DD'].includes(player.position)?'defence':bands[player.position]??40;
  const lateral={DG:0,DC:1,DD:2};
  const rows={};lineup.forEach(player=>(rows[line(player)]??=[]).push(player));
  Object.values(rows).forEach(row=>row.sort((a,b)=>(lateral[a.position]??1)-(lateral[b.position]??1)));
- return `<div class="pitch" aria-label="${escape(label)}">${PITCH_BOXES}${lineup.map(player=>{
-  const row=rows[line(player)],y=bands[player.position]??45;
+ return `<div class="pitch short" aria-label="${escape(label)}">${PITCH_BOXES}${lineup.map(player=>{
+  const row=rows[line(player)],y=bands[player.position]??40;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
   const tag=player.temporary?'span':'a',name=`${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}`;
   return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position,{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;

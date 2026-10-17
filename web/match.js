@@ -42,13 +42,24 @@ function marksOf(player,{substitutions=true,goals=true}={}){
  ].join('');
 }
 
+// The bench under its pitch, on two columns read from top to bottom, the first one the longer: a substitute by his short
+// name, as on the pitch (his whole name in the tooltip), what he did, the minute he came on and his note.
+function benchHalves(bench,marks){
+ const rows=bench.map(player=>{
+  const events=marks[player.id],shown=shortName(player.name,player.short);
+  return [`<span class="bench-player${events?.on==null?' unused':''}"${shown!==player.name?` title="${e(player.name)}"`:''}>${playerLink(player.id,shown)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—',matchNoteBadge(player.stats?.rating)||'—'];
+ });
+ if(!rows.length)return '';
+ const half=Math.ceil(rows.length/2),column=part=>part.length?table(['REMPLAÇANT','ENTRÉE','NOTE'],part):'';
+ return `<div class="halves bench-halves">${column(rows.slice(0,half))}${column(rows.slice(half))}</div>`;
+}
+
 function lineupCard(match,side,marks){
  const result=match.result,kit=kitOf(match[side],side);
- const bench=result[`${side}_bench`].map(player=>{const events=marks[player.id];return [`<span class="bench-player${events?.on==null?' unused':''}">${playerLink(player.id,player.name)}${marksOf(events,{substitutions:false})}</span>`,events?.on!=null?onIcon(events.on):'—',matchNoteBadge(player.stats?.rating)||'—'];});
  // On the pitch, his goals stand on his shirt and the rest of what he did follows his note in his block.
  const onPitch=player=>marksOf(marks[player.id],{goals:false}),goals=player=>marks[player.id]?.goals??0;
  // No heading: the side at home is on the left of the page, as in the band.
- return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch,goals})}${table(['REMPLAÇANT','ENTRÉE','NOTE'],bench)}</section>`;
+ return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch,goals})}${benchHalves(result[`${side}_bench`],marks)}</section>`;
 }
 
 // Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.
@@ -95,18 +106,20 @@ export function highlightsCard(match,link=playerLink){
 export async function matchScreen(id){
  const match=await api(`/matches/${id}`);
  const result=match.result;
- // The 2D summary exists only for a played match with details; its toggle is the last command under the band.
+ // The 2D summary exists only for a played match with details; its toggle is the last command of the match's line.
  const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
- // Under the band: the competition and the round, the day and the ground, who went through; then the first leg and the summary.
+ // The band has no bar: the match's line says which match it is, over the highlights (or alone under the band before the
+ // match). The competition and the round, the day, a neutral ground, who went through; at its end the first leg and the summary.
  const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})});
- const where=[date(match.date,true),match.capacity?`${n(match.capacity)} places`:'',match.neutral?'Terrain neutre':''].filter(Boolean).join(' · ');
+ const when=[date(match.date,true),match.neutral?'Terrain neutre':''].filter(Boolean).join(' · ');
  const winner=match.winner_id?`<span>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</span>`:'';
  const commands=`${match.first_leg_id?`<a class="button" href="#/match/${match.first_leg_id}">Match aller</a>`:''}${replay.toggle}`;
- const header=matchHero(match,`<div class="club-hero-bar"><div class="hero-pills"><div class="match-facts">${badge}<strong>${e(match.round_label||`Journée ${match.round}`)}</strong><span class="muted">${where}</span>${winner}</div></div>`
-  +`${commands?`<div class="hero-commands">${commands}</div>`:''}</div>`);
- if(!result)return header+card('Avant-match',empty('Cette rencontre sera simulée à sa date prévue.','Le coup d’envoi approche'));
- if(!result.home_stats)return header+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
+ const line=`<div class="page-heading match-line"><div class="match-facts">${badge}<strong>${e(match.round_label||`Journée ${match.round}`)}</strong><span class="muted">${when}</span>${winner}</div>`
+  +`${commands?`<div class="tools">${commands}</div>`:''}</div>`;
+ const header=matchHero(match);
+ if(!result)return header+line+card('Avant-match',empty('Cette rencontre sera simulée à sa date prévue.','Le coup d’envoi approche'));
+ if(!result.home_stats)return header+line+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
  const marks=playerEvents(result.events);
  return header+(result.status!=='played'?`<div class="notice">Résultat attribué par forfait (${e(result.status)}).</div>`:'')
-  +replay.panel+`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${highlightsCard(match)}${statsCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;
+  +replay.panel+`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${line}${highlightsCard(match)}${statsCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;
 }

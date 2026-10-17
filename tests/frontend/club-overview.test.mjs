@@ -137,7 +137,9 @@ test('the match pitch shirts each side in its kit, the position on the shirt and
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}})),[red,' plain',red]);
  assert.deepEqual(shirts(pitch(line)),[' plain',' plain',' plain']);
  const html=pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}});
- assert.match(html,/^<div class="pitch" aria-label="x"><i class="pitch-box" aria-hidden="true"><\/i><i class="pitch-box far" aria-hidden="true"><\/i>/);
+ // the match's pitch is cut short at 68 × 76: the attack in the far box, the goalkeeper near his line
+ assert.match(html,/^<div class="pitch short" aria-label="x"><i class="pitch-box" aria-hidden="true"><\/i><i class="pitch-box far" aria-hidden="true"><\/i>/);
+ assert.deepEqual([...html.matchAll(/class="pitch-player[^"]*" style="left:[\d.]+%;top:(\d+)%"/g)].map(match=>Number(match[1])),[88,7,42]);
  // the position is written on the shirt; under it his block: his name, then the note of the match in its colour, one
  // figure after the point; without a note the second line keeps its place, empty
  assert.match(html,/<b>GB<\/b><\/span><span class="player-block"><span class="block-name">Ada Un<\/span><span><b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><\/span><\/span>/);

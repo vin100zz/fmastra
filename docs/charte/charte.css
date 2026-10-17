@@ -445,6 +445,8 @@ span.entity-step svg{opacity:.3}
 .pitch.lying::after{width:auto;height:30%}
 .pitch.lying .pitch-box{left:8px;bottom:auto;top:50%;width:13%;height:56%;transform:translateY(-50%);border:1.5px solid var(--pitch-line);border-left:0}
 .pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
+/* The match report's pitch, cut short at 68 × 76: the same bands and lines, closer; its attack stands in the far box. */
+.pitch.short{aspect-ratio:68/76}
 
 /* A player on a pitch: the shirt of his club, his goals at its top right, the block under it. One size, 32 px, on every pitch.
    He is held by his shirt: whatever hangs under it, the shirts of a line stay level. */

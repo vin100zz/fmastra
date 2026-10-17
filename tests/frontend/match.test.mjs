@@ -47,19 +47,24 @@ async function screen(data){
  try{return await matchScreen(data.id);}finally{globalThis.fetch=previous;}
 }
 
-test('under the band, the bar says which match it is, then holds the first leg and the summary',async()=>{
+test('the band has no bar: the match’s line, over the highlights, says which match it is, then holds the first leg and the summary',async()=>{
  const html=await screen(report);
  assert.match(html,/^<header class="club-hero match-hero"/);
- assert.match(html,/<strong class="big-score">3 : 1<\/strong><span>Cumul 4 – 3<\/span>/);
- assert.match(html,/<div class="club-hero-bar"><div class="hero-pills"><div class="match-facts"><span class="competition-code" title="Ligue des champions">LdC<\/span><strong>Barrages · retour<\/strong><span class="muted">mercredi 17 septembre 2031 · 83\s186 places<\/span><span>Vainqueur : <a href="#\/club\/1" class="club-link">/);
- assert.match(html,/<div class="hero-commands"><a class="button" href="#\/match\/8">Match aller<\/a><button type="button" class="replay-toggle"/);
- // A neutral ground has no capacity; a league match names its round by its number and has neither first leg nor winner.
- const league=await screen({...report,round_label:null,round:4,capacity:null,neutral:true,aggregate:null,winner_id:null,first_leg_id:null});
- assert.match(league,/<strong>Journée 4<\/strong><span class="muted">mercredi 17 septembre 2031 · Terrain neutre<\/span><\/div><\/div><div class="hero-commands"><button type="button" class="replay-toggle"/);
+ assert.match(html,/<strong class="big-score">3 : 1<\/strong><span>Cumul 4 – 3<\/span><\/div>/);
+ assert.doesNotMatch(html,/club-hero-bar|hero-commands/);
+ assert.match(html,/<div class="match-center"><div class="page-heading match-line"><div class="match-facts"><span class="competition-code" title="Ligue des champions">LdC<\/span><strong>Barrages · retour<\/strong><span class="muted">mercredi 17 septembre 2031<\/span><span>Vainqueur : <a href="#\/club\/1" class="club-link">/);
+ assert.match(html,/<div class="tools"><a class="button" href="#\/match\/8">Match aller<\/a><button type="button" class="replay-toggle"[^]*?<\/button><\/div><\/div><section class="card"><div class="card-head"><h2>Les temps forts<\/h2>/);
+ // The ground's capacity is written nowhere.
+ assert.doesNotMatch(html,/places/);
+ // A league match names its round by its number and has neither first leg nor winner; a neutral ground is said.
+ const league=await screen({...report,round_label:null,round:4,neutral:true,aggregate:null,winner_id:null,first_leg_id:null});
+ assert.match(league,/<strong>Journée 4<\/strong><span class="muted">mercredi 17 septembre 2031 · Terrain neutre<\/span><\/div><div class="tools"><button type="button" class="replay-toggle"/);
  assert.doesNotMatch(league,/Vainqueur|Match aller|Cumul/);
- // A match to come has no summary: the bar holds no command.
+ // A match to come has its line right under the band, without a command: there is no summary yet.
  const coming=await screen({...report,score:null,aggregate:null,winner_id:null,first_leg_id:null,result:null});
- assert.match(coming,/<strong class="big-score">VS<\/strong>/);assert.doesNotMatch(coming,/hero-commands/);
+ assert.match(coming,/<strong class="big-score">VS<\/strong>/);
+ assert.match(coming,/<\/header><div class="page-heading match-line"><div class="match-facts">[^]*?<\/div><\/div><section class="card">/);
+ assert.doesNotMatch(coming,/class="tools"/);
 });
 
 test('each side is named once, in the band: the line-ups have no heading, nothing names the sides over the cards',async()=>{
@@ -67,7 +72,7 @@ test('each side is named once, in the band: the line-ups have no heading, nothin
  assert.equal((html.match(/>Marseille</g)||[]).length,1);
  assert.equal((html.match(/>Real &lt;Madrid&gt;</g)||[]).length,1);
  assert.doesNotMatch(html,/match-sides|match-banner|scoreboard/);
- assert.equal((html.match(/<section class="card match-lineup"><div class="pitch" aria-label="Composition de /g)||[]).length,2);
+ assert.equal((html.match(/<section class="card match-lineup"><div class="pitch short" aria-label="Composition de /g)||[]).length,2);
  // The home side's highlights stand on the left of the minute, the away side's on its right.
  assert.match(html,/<h2>Les temps forts<\/h2><\/div><div class="highlights"><div class="highlight-row"><div class="highlight home"><span class="marks"><span class="match-mark goal"[^]*?<span class="minute">40′<\/span><div class="highlight away"><\/div><\/div>/);
  assert.match(html,/<div class="highlight home"><\/div><span class="minute">66′<\/span><div class="highlight away"><span class="marks"><span class="match-mark booking red"/);
@@ -91,6 +96,23 @@ test('a substitute’s goal follows his name in the bench’s list, which has no
   {kind:'goal',period:2,second:4800,team_id:1,player_id:12,player:'Remplaçant',secondary_id:null,secondary:null,detail:''}]}});
  assert.match(html,/<span class="bench-player"><a [^>]*>Remplaçant<\/a><span class="match-mark goal" title="1 but"><\/span><\/span>/);
  assert.doesNotMatch(html,/class="kit-goals"/);
+});
+
+test('the bench stands under its pitch on two columns, the first the longer, each substitute by his short name',async()=>{
+ const bench=[{...player(12,'Victor Taïpa'),short:'Taïpa',stats:null},{...player(13,'Kevin Pedro'),short:null},{...player(14,'Germain Mbiyavanga Kapela'),short:'Mbiyavanga Kapela',stats:null}];
+ const html=await screen({...report,result:{...report.result,home_bench:bench,events:[
+  {kind:'substitution',period:2,second:3300,team_id:1,player_id:11,player:'Gardien Un',secondary_id:13,secondary:'Kevin Pedro',detail:''}]}});
+ const [,lineup]=html.match(/<div class="match-home">(<section class="card match-lineup">[^]*?<\/section>)<\/div>/);
+ const [,first,second]=lineup.match(/<\/div><div class="halves bench-halves">(<div class="table-scroll">[^]*?<\/table><\/div>)(<div class="table-scroll">[^]*?<\/table><\/div>)<\/div><\/section>$/);
+ assert.equal((first.match(/<tr class=""/g)||[]).length,2);
+ assert.equal((second.match(/<tr class=""/g)||[]).length,1);
+ for(const column of [first,second])assert.match(column,/<thead><tr><th><button class="sort-toggle" data-table-sort>REMPLAÇANT<\/button><\/th><th><button class="sort-toggle" data-table-sort>ENTRÉE<\/button><\/th><th><button class="sort-toggle" data-table-sort>NOTE<\/button><\/th><\/tr><\/thead>/);
+ // His short name, his whole name in the tooltip; the one who came on with his minute and his note, the others dimmed.
+ assert.match(first,/<span class="bench-player unused" title="Victor Taïpa"><a href="#\/player\/12">Taïpa<\/a><\/span>/);
+ assert.match(first,/<span class="bench-player" title="Kevin Pedro"><a href="#\/player\/13">Pedro<\/a><\/span><\/td><td[^>]*><span class="match-mark sub-on"[^>]*>▲ 55′<\/span><\/td><td[^>]*><span class="rating graded"/);
+ assert.match(second,/<span class="bench-player unused" title="Germain Mbiyavanga Kapela"><a href="#\/player\/14">Mbiyavanga Kapela<\/a><\/span>/);
+ // A side without substitutes has no bench.
+ assert.equal((html.match(/bench-halves/g)||[]).length,1);
 });
 
 test('a highlight takes one line: its marks, the player by his short name, a goal’s passer after him, whole names in tooltips',async()=>{

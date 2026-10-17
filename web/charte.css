@@ -142,6 +142,9 @@ td,.player-table td,.league-summary-grid td{height:var(--h-row);padding-top:0!im
 .manual-body td{height:auto;padding-top:4px!important;padding-bottom:4px!important}
 /* A cell of figures stays a cell: `.num` is also the figure set in a line of text, which is a block. */
 td.num,th.num{display:table-cell}
+/* A short list on two columns side by side, a line between them: the first column the longer, read from top to bottom. */
+.halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.halves>*+*{border-left:1px solid var(--line)}
 /* Every heading sorts, and no sort moves a column: the arrow stands in the heading's own right margin, where it takes no room. */
 th{position:relative}
 th button.sort-toggle::after,th button[data-sort]::after{content:"";position:absolute;right:1px;top:50%;margin-top:-2px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;visibility:hidden}
@@ -450,6 +453,8 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .pitch.lying .pitch-box{left:8px;bottom:auto;top:50%;width:13%;height:56%;transform:translateY(-50%);border:1.5px solid var(--pitch-line);border-left:0}
 .pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
 .lineup-pitch{margin:0}
+/* The match report's pitch is cut short at 68 × 76: its attack stands in the far box, no grass is left empty over it. */
+.pitch.short{aspect-ratio:68/76}
 .match-lineup .pitch{margin:var(--s3)}
 .positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,360px);min-width:0;margin:var(--s2) auto}
 
@@ -525,9 +530,13 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .live-player{gap:2px}
 .live-player-name{font-size:var(--fs-small)}
 
-/* Match report: under its header, what happened minute by minute and the two sides' figures on shared bars, between the
-   two line-ups. Nothing names a side again: the one at home is on the left, as in the band. */
+/* Match report: under its header, the match's line, what happened minute by minute and the two sides' figures on shared
+   bars, between the two line-ups, each with its bench under its pitch. Nothing names a side again: the one at home is on the
+   left, as in the band. The header has no bar: the match's line, a page's heading, says which match it is. */
 @media(min-width:1330px){.match-layout{grid-template-columns:480px minmax(0,1fr) 480px}}
+.match-line{min-height:var(--h-head)}
+.match-center>.match-line{grid-column:1/-1}
+@media(max-width:1329px){.match-center>.match-line{margin-bottom:0}}
 .highlights{padding:0 var(--s3)}
 /* A highlight on one line of 26, whatever the names: its marks at the edge, the player by his short name, and after a
    goal's scorer the passer, smaller and muted, cut before him. */
