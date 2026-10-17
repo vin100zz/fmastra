@@ -84,9 +84,9 @@ Barre persistante en tête d'application :
   pastille ouvre le premier d'entre eux
 - Journal des événements du jour : résultats, transferts, blessures
 
-Le mode Auto (enchaîner les journées), le choix du thème clair ou sombre et le
-manuel du jeu sont en bas du menu de gauche, sous « Ma partie » ; sur téléphone,
-en haut à droite à côté de l'icône de « Ma partie ».
+« Ma partie », le mode Auto (enchaîner les journées), le choix du thème clair ou
+sombre et le manuel du jeu sont quatre icônes sur une ligne en bas du menu de
+gauche, leur nom en infobulle ; sur téléphone, en haut à droite.
 
 ### Enchaînement de « Continuer »
 

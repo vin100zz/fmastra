@@ -49,17 +49,16 @@ input::placeholder{color:var(--placeholder)}
 .sidebar:before{display:none}
 .brand{height:60px;padding:0 16px;gap:10px;border-bottom:3px solid var(--accent);font-size:20px!important;letter-spacing:var(--caps);color:var(--strong);font-weight:700;margin-bottom:4px}
 .nav-label{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:var(--caps);margin:16px 20px 4px!important}
-.sidebar nav a,.sidebar-bottom>a{margin:0 8px;padding:0 12px!important;min-height:40px;border-radius:var(--radius);font-size:13px;font-weight:400;color:var(--ink-2);gap:12px}
+.sidebar nav a{margin:0 8px;padding:0 12px!important;min-height:40px;border-radius:var(--radius);font-size:13px;font-weight:400;color:var(--ink-2);gap:12px}
 .sidebar nav a>span{width:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
-.sidebar nav a svg,.sidebar-bottom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sidebar nav a svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 
-.sidebar nav a.active,.sidebar-bottom>a.active{background:var(--panel-2);color:var(--strong);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
-.sidebar nav a.active>span,.sidebar-bottom>a.active svg{color:var(--accent-text)}
+.sidebar nav a.active{background:var(--panel-2);color:var(--strong);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
+.sidebar nav a.active>span{color:var(--accent-text)}
 .league-code{font:700 10px/1 "Segoe UI",sans-serif!important;letter-spacing:var(--caps)!important;height:18px;min-width:24px;border:1px solid var(--line);border-radius:var(--radius);color:var(--muted)}
 .sidebar nav a.active .league-code{border-color:var(--accent-text);color:var(--accent-text)}
 .sidebar-bottom{padding-top:12px;border-top:1px solid var(--line);margin-top:auto}
 .sidebar-bottom small{color:var(--muted);border-color:var(--line)}
-.sidebar-bottom>a{display:flex;align-items:center}
 .observer{border-color:var(--line);color:var(--muted)}
 .version{color:var(--muted)}
 
@@ -247,7 +246,7 @@ dialog::backdrop{background:var(--backdrop)}
 #advance,.cta{height:36px;font-size:16px;padding:0 12px 0 16px}
 #simulate{height:36px;padding:0 14px;font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:700;letter-spacing:var(--caps);text-transform:uppercase}
 .nav-label{margin:12px 20px 3px!important}
-.sidebar nav a,.sidebar-bottom>a{min-height:34px}
+.sidebar nav a{min-height:34px}
 .sidebar-bottom{padding-top:6px}
 
 main{padding:8px 16px 12px}
@@ -371,25 +370,20 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 :root[data-theme="light"] .rating.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
 :root[data-theme="light"] dialog,:root[data-theme="light"] #toast{box-shadow:0 12px 32px #1a2d3a2e}
 
-/* Theme switch in the top bar: shows the theme it leads to. */
-/* Auto mode, theme switch and manual, at the bottom of the sidebar under Ma partie. */
-.sidebar-tools{display:flex;gap:6px;margin:6px 8px 0}
-#autoplay{flex:1;height:34px;min-width:0;padding:0 10px;font-size:13px}
-#theme-toggle,#manual-link{width:34px;height:34px;padding:0;display:grid;place-items:center;flex-shrink:0}
-#manual-link{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink)}
-
-#manual-link.active{border-color:var(--accent-text);color:var(--accent-text)}
+/* Ma partie, auto mode, theme switch and manual: four icons of one width in a row at the bottom of the sidebar, named in
+   their tooltips. The auto mode shows what a click does (play, pause), the switch the theme it leads to. */
+.sidebar-tools{display:flex;gap:6px;margin:0 8px}
+.sidebar-tools>*{flex:1;min-width:0;padding:0;display:grid;place-items:center}
+.sidebar-tools>a{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink)}
+.sidebar-tools>a.active{border-color:var(--accent-text);color:var(--accent-text)}
 @media(max-width:650px){
- .sidebar-bottom{display:flex!important;align-items:center;gap:4px}
+ .sidebar-bottom{display:flex!important;align-items:center}
  .sidebar-tools{margin:0;gap:4px}
- .sidebar-bottom>a{font-size:0!important;gap:0;min-height:32px;padding:0 8px!important}
- #autoplay{flex:none;height:32px;min-width:72px}
- #theme-toggle,#manual-link{width:32px;height:32px}
+ .sidebar-tools>*{flex:none;width:var(--h-control)}
 }
-/* On a narrow phone the tools reach the brand: its tagline gives way. */
-#theme-toggle svg,#manual-link svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#theme-toggle .to-dark,:root[data-theme="light"] #theme-toggle .to-light{display:none}
-:root[data-theme="light"] #theme-toggle .to-dark{display:block}
+.sidebar-tools svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#theme-toggle .to-dark,:root[data-theme="light"] #theme-toggle .to-light,#autoplay .to-pause,#autoplay[aria-pressed="true"] .to-play{display:none}
+:root[data-theme="light"] #theme-toggle .to-dark,#autoplay[aria-pressed="true"] .to-pause{display:block}
 
 /* Club landing: the last line-up's pitch no longer sets a tall row above the squad. */
 .club-overview .lineup-card .pitch{flex:none;min-height:0;height:310px;margin:6px 8px 8px}
