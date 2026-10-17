@@ -1,3 +1,4 @@
+import os
 import time
 from pathlib import Path
 from threading import Event, Semaphore, Thread, current_thread
@@ -11,6 +12,7 @@ from api.nations import build_nation_table
 from core.domain.players import ATTRIBUTE_NAMES, Discipline, Injury
 from core.world.simulation import advance_day, target_date
 from infrastructure.importation.loader import import_world
+from infrastructure.persistence.store import SaveStore
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -530,6 +532,29 @@ def test_a_hosted_server_answers_its_host_names_and_saves_where_it_is_told(tmp_p
     assert client.get("/", headers={"host": "untrusted.example"}).status_code == 400
     assert app.state.game.store.directory == tmp_path / "disk"
     assert create_app(ROOT, tmp_path / "given").state.game.store.directory == tmp_path / "given"  # a directory given wins
+
+
+def test_the_launcher_starts_the_server_on_the_save_made_last(config, tmp_path, monkeypatch):
+    with TestClient(create_app(ROOT, tmp_path, resume=True)) as client:  # no save: the welcome screen
+        assert client.get("/api/monde/etat").json() == {"exists": False, "job": None, "recovery_required": False,
+                                                        "auto": {"running": False, "stopping": False, "job": None}}
+    store = SaveStore(tmp_path)
+    world = import_world(ROOT / "data", config, 783)
+    start = world.date
+    store.save(world, "Marseille")
+    world.date = world.date.add_days(3)
+    store.save(world, "Lyon")
+    os.utime(store.path_for("Lyon"), (0, 0))  # saved first
+    with TestClient(create_app(ROOT, tmp_path)) as client:  # by default, nothing is loaded
+        assert client.get("/api/monde/etat").json()["exists"] is False
+    monkeypatch.setenv("FMASTRA_RESUME", "1")
+    app = create_app(ROOT, tmp_path)
+    service = app.state.game
+    with TestClient(app) as client:
+        [job] = service.jobs.values()  # a load the page that opens follows, as it would one asked for
+        assert job.command == "load" and wait_until(lambda: job.status == "done"), job
+        state = client.get("/api/monde/etat").json()
+        assert state["slot"] == "Marseille" and state["date"] == start.iso()
 
 
 def test_closing_the_service_ends_a_running_auto_job(config, tmp_path, monkeypatch):

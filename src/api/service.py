@@ -126,6 +126,11 @@ class GameService:
             self.executor.submit(self._run, job, payload)
             return asdict(job)
 
+    def resume(self) -> dict | None:
+        """Loads the slot saved last, as Reprendre would; None when there is no save."""
+        slot = self.store.latest()
+        return None if slot is None else self.submit("load", uuid4().hex, {"slot": slot})
+
     def auto_status(self) -> dict:
         with self.lock:
             running = self.auto_job is not None
