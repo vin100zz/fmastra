@@ -10,11 +10,6 @@ Cela n'autorise pas à mélanger lecture et décision dans le code : les endpoin
 sont déjà organisés pour qu'ajouter le contrôle utilisateur consiste à ajouter
 des routes d'action et une gestion de l'attente, en préservant les vues de lecture.
 
-Afficher à la création le rapport d'import : au maximum 30 joueurs par club,
-classement par niveau estimé avec places réservées aux gardiens, joueurs écartés,
-agents libres et corrections de données. Les niveaux, potentiels et finances
-issus de la synthèse sont signalés comme estimés.
-
 ## Principes
 
 **Une charte graphique.** L'apparence est fixée par `docs/charte-graphique.md` :
@@ -149,6 +144,43 @@ entrée du menu. Les fiches club, sélection et joueur gardent leur en-tête d'i
 club, sélection, âge, stade), qui présente des données et non un titre ; la page d'une
 compétition (championnat, coupe nationale, coupe d'Europe, édition des sélections) s'ouvre de
 même sur son bandeau, sans ligne de titre (voir « Compétition »).
+
+### Accueil
+
+Sans partie, l'écran d'accueil ; avec une partie, « Ma partie » (`#/saves`), qui le reprend
+sous son titre et le champ qui enregistre la partie (`homeScreen`, `web/home.js`). Deux
+panneaux l'un sous l'autre, jusqu'au bas de la fenêtre :
+
+- **Créer une partie** ouvre « Nouvelle partie ».
+- **Reprendre une partie** liste les sauvegardes, la plus récente d'abord : son nom, le club
+  dirigé, la date de la partie, le moment de l'enregistrement. Un clic sur la ligne (ou
+  Entrée) charge la partie, qui s'ouvre sur sa première page ; la poubelle, au bout de la
+  ligne sous le pointeur, la supprime après confirmation.
+
+Sans partie, la barre du haut est vide et le menu de gauche n'a que le manuel et le thème.
+Une partie sans club, d'une ancienne sauvegarde, s'ouvre toujours sur « Ma partie », sans menu ni
+« Continuer » : le club se choisit à la création.
+
+### Nouvelle partie
+
+`#/nouvelle-partie` (`newGameScreen`, `web/new-game.js`), avec ou sans partie en cours, jamais
+pendant un match en direct. Tout se choisit sur un écran, avant que la partie ne soit tirée :
+
+- **Monde** : une ligne par nation de `config/creation.json`. La case joue ou écarte la nation
+  (la dernière jouée ne s'écarte pas) ; les divisions, de la première à la plus basse que le jeu
+  sait simuler, fixent la plus basse jouée. Par défaut, le monde de `config/monde.json`.
+- **Clubs** : ceux des divisions jouées, avec la recherche, les pays et le tri d'une liste ;
+  un clic sur la ligne choisit le club.
+- **Club** : son bandeau, ses tuiles, ses faits et ses 16 meilleurs joueurs.
+
+Tout le choix est dans l'adresse : `nations=FRA:3,ENG:2` (la plus basse division jouée de
+chaque nation), les filtres, le tri et la page de la liste, `club`. Un club que les divisions
+choisies n'incluent plus n'est plus choisi.
+
+La barre du haut porte le premier jour de la partie et « Commencer », grisé tant qu'aucun club
+n'est choisi. « Commencer » crée la partie avec ce monde et ce club (une partie en cours est
+remplacée après confirmation ; sa dernière sauvegarde reste) ; la graine est tirée au hasard.
+La partie s'ouvre sur sa première page, les tirages de coupe du club dans les actualités.
 
 ### Actualités
 
@@ -1208,9 +1240,18 @@ POST /api/direct/terminer                 {commande_id} -> travail_id ; applique
 POST /api/partie/sauvegarder              {slot: str}
 POST /api/partie/charger                  {slot: str}
 POST /api/partie/supprimer                {slot: str}
-GET  /api/partie/slots
-POST /api/partie/creer                   graine et date/config initiales explicites
-GET  /api/partie/rapport-import          volumes et corrections de la création
+GET  /api/partie/slots                    [{slot, modified, bytes, date, club: {id, name, major_color, minor_color} | null}] ;
+                                          date : celle de la partie ; club : celui qu'elle dirige
+GET  /api/creation                        ce qu'une nouvelle partie peut jouer : {date, season, flags, nations: [{code, name, default,
+                                          divisions: [{level, name, clubs}]}]} ; default : la plus basse division jouée par défaut, 0 sinon
+GET  /api/creation/clubs?nations=FRA:3,ENG:2&pays=&recherche=&tri=&ordre=&page=&taille=
+                                          les clubs des divisions choisies, paginés ; clubs : leur nombre dans ce monde, leagues ;
+                                          tri : reputation | niveau | potentiel | stade | nom | championnat ; 400 sans nation ou division valide
+GET  /api/creation/clubs/{id}             un club de la création : couleurs, championnat, réputation, stade, installations,
+                                          plafond salarial, niveau et potentiel, squad (ses 16 meilleurs joueurs)
+POST /api/partie/creer                   {commande_id, nations?: {FRA: 3, ENG: 2}, club_id?, graine?} -> travail_id ;
+                                          nations : la plus basse division jouée par nation (défaut : config/monde.json) ;
+                                          club_id : le club dirigé, joué dans ces divisions (400 sinon) ; graine : tirée sans elle
 ```
 
 ## Front

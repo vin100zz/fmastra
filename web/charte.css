@@ -650,3 +650,51 @@ small{font-size:var(--fs-small)}
 .honours-matrix .competition-code{margin-right:6px}
 .honours-table .count-column,.honours-table .sum-column{width:40px}
 .honours-table .total-column{width:84px}
+
+/* The home (docs/charte-graphique.md, « Accueil »): creating a game and resuming one, two panels one above the other and
+   alike. Creating is the main action, a band on the accent; resuming takes the rest of the window and lists the saves, each
+   line opening its game, the command that deletes it shown under the pointer. Without a game the bar holds nothing, the
+   rail only its tools. */
+body.no-game .sidebar nav,body.no-game .sidebar-bottom>a,body.no-game #autoplay,.advance-group[hidden]{display:none}
+/* The bar of a new game holds its first day and Commencer, not the matches of the game in play. */
+body.creating #next-matches,body.creating #market-badge{display:none}
+main:has(>.doors){display:flex;flex-direction:column;min-height:calc(100vh - var(--h-bar))}
+.doors{display:grid;grid-template-rows:auto minmax(0,1fr);flex:1;gap:var(--s2)}
+.door{display:grid;grid-template-columns:var(--h-bar-control) minmax(0,1fr);align-items:center;align-content:start;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
+.door.main{background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.door.main:hover{background:var(--accent-hover)}
+a.door:is(:hover,:focus-visible){text-decoration-line:none}
+.door>svg{width:var(--h-bar-control);height:var(--h-bar-control)}
+.door h2{display:flex;align-items:baseline;gap:var(--s3);margin:0;font:700 var(--fs-page)/32px var(--display);font-stretch:semi-condensed;letter-spacing:var(--caps);text-transform:uppercase;color:inherit}
+.door-mark{fill:none;stroke:var(--panel-2);stroke-width:2;stroke-linejoin:round}
+.door-mark rect{fill:currentColor;stroke:none}
+.door>.card{grid-column:1/-1;margin:0}
+.saves-list tbody tr{cursor:pointer}
+.saves-list .date-column{width:148px}
+.saves-list .saved-column{width:156px}
+.saves-list .delete-column{width:calc(var(--h-control-small) + 2*var(--s3))}
+.saves-list tbody td:last-child button{visibility:hidden}
+.saves-list tbody tr:is(:hover,:focus-within) td:last-child button{visibility:visible}
+button.square{display:inline-grid;place-items:center;width:var(--h-control);padding:0}
+button.square.small{width:var(--h-control-small);height:var(--h-control-small)}
+button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* A new game (« Nouvelle partie »): the world on the left, its clubs in the middle, the club picked on the right, under the
+   list on a narrower window. A nation stands on one line, the box that plays it first, its divisions a choice up to one. */
+.new-game{display:grid;grid-template-columns:400px minmax(0,1fr) 560px;gap:var(--s2);align-items:start}
+.new-game .card{margin:0}
+.new-game-club{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.new-game-club .club-hero{margin:0}
+.new-game-club .rail-tiles{gap:var(--s2);padding:var(--s3) var(--s3) 0}
+.new-game-club .tile span{white-space:nowrap}
+@media (max-width:1599px){.new-game{grid-template-columns:360px minmax(0,1fr)}.new-game-club{grid-column:1/-1}}
+@media (max-width:999px){.new-game{grid-template-columns:minmax(0,1fr)}}
+.check{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--accent-ink)}
+.check svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
+.check[aria-pressed="true"]{border-color:var(--accent-text);background:var(--accent)}
+.check[aria-pressed="true"] svg{visibility:visible}
+.nation-line{display:grid;grid-template-columns:var(--h-chip) minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.nation-line:last-child{border-bottom:0}
+.nation-line>.num{color:var(--muted)}
+.nation-line.off>.nation{color:var(--muted)}
+.nation-line.off .flag{filter:grayscale(1);opacity:.5}

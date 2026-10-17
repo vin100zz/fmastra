@@ -195,6 +195,8 @@ SLOT_NAME = re.compile(r"[\w-]{1,64}(?:-\d{4}-\d{2}-\d{2})?")
 DATED_COPY = r"-\d{4}-\d{2}-\d{2}"
 # The world's date is the first field of its document: the head of a save tells the date it was made at.
 SAVED_DATE = re.compile(rb'"world":\s*\{"date":\s*\{"year":\s*(\d+),\s*"month":\s*(\d+),\s*"day":\s*(\d+)\}')
+# Beside each save, what the list of the saves shows of it without opening it: the user's club.
+SUMMARY = ".resume.json"
 
 
 class SaveError(ValueError):
@@ -214,6 +216,9 @@ class SaveStore:
             raise SaveError("Nom de sauvegarde invalide (lettres, chiffres, tirets uniquement).")
         return self.directory / f"{slot}.json.gz"
 
+    def summary_path(self, slot: str) -> Path:
+        return self.path_for(slot).with_name(f"{slot}{SUMMARY}")
+
     def save(self, world: World, slot: str) -> Path:
         target = self.path_for(slot)
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -231,11 +236,23 @@ class SaveStore:
                 os.fsync(handle.fileno())
             kept = copying.result() if copying else None
             os.replace(temporary, target)
+            self._summarize(world, slot)
             if kept: self.rotation.submit(self._prune, slot, kept)
             return target
         finally:
             if temporary and temporary.exists():
                 temporary.unlink()
+
+    def _summarize(self, world: World, slot: str) -> None:
+        """Writes what the list of the saves shows of this one; a save without it lists without its club."""
+        club = world.clubs.get(world.controlled_club_id)
+        summary = {"club": None if club is None else {"id": club.id, "name": club.name, "major_color": club.home_kit_major_color,
+                                                      "minor_color": club.home_kit_minor_color}}
+        target = self.summary_path(slot)
+        with suppress(OSError):
+            temporary = target.with_name(f".{target.name}.tmp")
+            temporary.write_text(json.dumps(summary, ensure_ascii=False), "utf-8")
+            os.replace(temporary, target)
 
     def _keep(self, slot: str, date: str) -> Path | None:
         """A copy of the slot's save, named after the date it was made at. None for a save made on `date`, which the new one
@@ -250,6 +267,7 @@ class SaveStore:
                 os.link(target, copy)  # a second name, not a copy: replacing the slot leaves it the former save
             except OSError:
                 shutil.copyfile(target, copy)  # a file system without hard links
+            with suppress(OSError): shutil.copyfile(self.summary_path(slot), self.summary_path(f"{slot}-{made}"))
             return copy
         except OSError:
             with suppress(OSError): copy.unlink(missing_ok=True)
@@ -261,6 +279,7 @@ class SaveStore:
         for path in self.directory.glob(f"{slot}-*.json.gz"):
             if path != kept and dated.fullmatch(path.name):
                 with suppress(OSError): path.unlink()
+                with suppress(OSError): path.with_name(path.name.removesuffix(".json.gz") + SUMMARY).unlink()
 
     def close(self) -> None:
         if self.rotation: self.rotation.shutdown(wait=True)
@@ -317,13 +336,21 @@ class SaveStore:
             target.unlink()
         except FileNotFoundError as exc:
             raise SaveError(f"Sauvegarde introuvable : {slot}") from exc
+        with suppress(OSError): self.summary_path(slot).unlink()
 
     def slots(self) -> list[dict[str, object]]:
         if not self.directory.exists():
             return []
-        # By name, a slot before its dated copy.
-        return sorted(({"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size, "modified": path.stat().st_mtime}
+        # By name, a slot before its dated copy; each with the day its game stands at and the user's club, when known.
+        return sorted(({"slot": path.name.removesuffix(".json.gz"), "bytes": path.stat().st_size, "modified": path.stat().st_mtime,
+                        "date": saved_date(path), "club": self._club(path)}
                        for path in self.directory.glob("*.json.gz")), key=lambda row: row["slot"].casefold())
+
+    def _club(self, path: Path) -> dict | None:
+        try:
+            return json.loads(path.with_name(path.name.removesuffix(".json.gz") + SUMMARY).read_text("utf-8"))["club"]
+        except (OSError, ValueError, KeyError, TypeError):
+            return None
 
     def latest(self) -> str | None:
         """The slot saved last, None without any. A dated copy is an older state of its slot: it only counts once the slot is

@@ -62,5 +62,9 @@ test('the sidebar and the router know the manual, which opens without a game',as
  const page=await readFile(new URL('../../web/index.html',import.meta.url),'utf8');
  assert.match(page,/<div class="sidebar-tools">.*id="autoplay".*id="theme-toggle".*<a id="manual-link" href="#\/aide" data-nav="aide" aria-label="Manuel du jeu"/);
  const app=await readFile(new URL('../../web/app.js',import.meta.url),'utf8');
- assert.ok(app.indexOf("if(screen==='aide'&&!state.live_match_id)html=await manualScreen(id);")<app.indexOf('else if(!state.exists||state.recovery_required)html=await savesScreen(true)'));
+ const at=text=>{const index=app.indexOf(text);assert.ok(index>=0,text);return index;};
+ const home=at('else if(!state.exists||state.recovery_required)html=await savesScreen()');
+ assert.ok(at("if(screen==='aide'&&!state.live_match_id)html=await manualScreen(id);")<home);
+ // A new game is made from its own screen, without a game too.
+ assert.ok(at("else if(screen==='nouvelle-partie'&&!state.live_match_id)html=await newGameScreen(params);")<home);
 });

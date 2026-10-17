@@ -1,5 +1,5 @@
 import {worldHistoryScreen} from './world-history.js';
-import {api,escape as e,number as n,date,season,kitDot,card,stat,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
+import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
 import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
@@ -9,7 +9,8 @@ import {europeScreen} from './europe.js';
 import {honoursScreen,pickClub} from './honours.js';
 import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
-import {clubSelectScreen} from './club-select.js';
+import {homeScreen} from './home.js';
+import {newGameScreen,creationChoice,leaveCreation} from './new-game.js';
 import {newsScreen} from './news.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
@@ -40,6 +41,7 @@ function blockOn(button,issues,title=null){
  if(issues.length){button.setAttribute('aria-disabled','true');button.title=`Composition à corriger :\n• ${issues.join('\n• ')}`;}
  else{button.removeAttribute('aria-disabled');if(title)button.title=title;else button.removeAttribute('title');}
 }
+const onCreationScreen=()=>routeParts().parts[0]==='nouvelle-partie';
 // Actualités on screen, and the message it shows.
 const onNewsScreen=()=>routeParts().parts[0]==='actualites';
 function shownMessage(){const {parts,params}=routeParts();return parts[0]==='actualites'&&params.has('msg')?Number(params.get('msg')):null;}
@@ -53,6 +55,21 @@ function showNews(){
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),simulate=document.querySelector('#simulate');
  showNews();
+ // Without a game to play (nor a club in it) the bar holds nothing. On the screen of a new game it holds the first day of
+ // that game, and Commencer, which waits for a club to be picked.
+ const made=onCreationScreen()?creationChoice():null;
+ document.body.classList.toggle('creating',Boolean(made));
+ document.querySelector('.advance-group').hidden=!made&&(!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);
+ if(made){
+  document.querySelector('#season-label').textContent=`SAISON ${season(made.season)}`;
+  document.querySelector('#game-date').textContent=date(made.date,true);
+  button.innerHTML='Commencer <span>→</span>';
+  button.disabled=Boolean(polling)||submitting||Boolean(state.auto?.running)||!made.club;
+  blockOn(button,[]);
+  simulate.hidden=true;
+  document.querySelector('#advance-todo').hidden=true;
+  return;
+ }
  // During the live match the day waits: Continuer only closes it once the final whistle has gone.
  if(state.live_match_id){
   button.innerHTML='Continuer <span>→</span>';
@@ -102,9 +119,8 @@ function nextMatchesHtml(){
   return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span><span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span></a>`;
  }).join('');
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'VOTRE UNIVERS FOOTBALL';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'Bienvenue sur le banc de touche';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation)}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(!nationsLoaded){setNations(await api('/nations'));nationsLoaded=true;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation)}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
-function slotsHtml(slots){return slots.length?slots.map(slot=>`<div class="slot-row"><div><strong>${e(slot.slot==='autosave'?'Sauvegarde automatique':slot.slot)}</strong><small>${new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(slot.modified*1000))} · ${n(slot.bytes/1024/1024)} Mo</small></div><div class="slot-actions"><button data-command="load" data-slot="${e(slot.slot)}">Reprendre →</button><button class="danger" data-command="delete" data-slot="${e(slot.slot)}" aria-label="Supprimer ${e(slot.slot==='autosave'?'la sauvegarde automatique':slot.slot)}">Supprimer</button></div></div>`).join(''):empty('Vos sauvegardes apparaîtront ici.','Aucune partie enregistrée');}
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
  const dialog=document.querySelector('#confirm-dialog');
  dialog.querySelector('#confirm-eyebrow').textContent=eyebrow;
@@ -172,8 +188,10 @@ async function counterOffer(payload){
  catch(error){toast(error.message,true);}
  finally{submitting=false;await render();}
 }
-async function savesScreen(welcome=false){const slots=await api('/partie/slots');const intro=welcome?`<section class="hero"><div><span class="eyebrow">BIENVENUE SUR LE BANC DE TOUCHE</span><h1>Tout un monde de football.<br>À votre rythme.</h1><p>96 clubs, cinq championnats et des milliers de destins. Créez votre univers et suivez son histoire, saison après saison.</p></div><div class="hero-graphic" aria-hidden="true"></div></section>`:heading('Ma partie');let report='';if(state.exists&&!state.recovery_required){const data=await api('/partie/rapport-import');report=card('Rapport de création',`<div class="card-body"><div class="stat-grid">${stat('Joueurs retenus',n(data.counts.players))}${stat('Joueurs écartés',n(data.counts.excluded))}${stat('Joueurs actifs',n(data.counts.active_players))}${stat('Agents libres',n(data.counts.free_agents))}</div><p class="note">Au maximum ${data.max_squad} joueurs par club, dont deux places réservées aux meilleurs gardiens disponibles. Les CSV originaux restent inchangés. ${data.counts.attributes_from_source?'Les attributs et aptitudes proviennent du CSV. Les finances restent estimées.':'Cette ancienne partie utilise des attributs estimés.'}</p><details><summary>Détail des corrections à l’import</summary><pre>${e(JSON.stringify(data.counts,null,2))}</pre></details></div>`);}
-return `<div class="${welcome?'welcome':''}">${intro}${state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':''}<div class="grid equal">${card('Nouvelle partie',`<div class="card-body"><span class="eyebrow">SAISON INITIALE · 2025 / 2026</span><p>Chaque graine crée une simulation reproductible. Tous les clubs sont pilotés par l’IA.</p><form id="new-game"><label for="seed">Graine de la simulation</label><input id="seed" name="seed" type="number" min="0" max="9007199254740991" value="2025" required><div class="actions"><button class="primary" data-command="create">Créer mon univers →</button></div></form></div>`)}${card(welcome?'Reprendre une partie':'Mes sauvegardes',`<div class="card-body">${state.exists&&!state.recovery_required?`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="${e(state.slot&&state.slot!=='autosave'?state.slot:'ma-partie')}"><button data-command="save">Enregistrer</button></form>`:''}${slotsHtml(slots)}</div>`)}</div>${report}</div>`;}
+// The home (home.js): without a game the whole screen; with one, « Ma partie » sets the form that saves it above it.
+async function savesScreen(){const doors=await homeScreen();const notice=state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':'';if(!state.exists||state.recovery_required)return notice+doors;
+const saveForm=`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="${e(state.slot&&state.slot!=='autosave'?state.slot:'ma-partie')}"><button data-command="save">Enregistrer</button></form>`;
+return heading('Ma partie',saveForm)+doors;}
 
 // Brings the element `current` to `next` while keeping the nodes they share: a field stays the same field, with its caret,
 // and a menu stays open or folded. The fields take their new value, but `typed`, whose text is the user's.
@@ -218,8 +236,11 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  try{await refreshState();let html;const [screen,id,section,extra]=parts;
   // The manual needs no game: it opens from the welcome screen too, though never over a live match.
   if(screen==='aide'&&!state.live_match_id)html=await manualScreen(id);
-  else if(!state.exists||state.recovery_required)html=await savesScreen(true);else{
-  if(state.controlled_club_id==null&&screen!=='saves')html=await clubSelectScreen(params);
+  // A new game is made from its own screen, with or without a game under way, though never over a live match.
+  else if(screen==='nouvelle-partie'&&!state.live_match_id)html=await newGameScreen(params);
+  else if(!state.exists||state.recovery_required)html=await savesScreen();else{
+  // A game without a club (an old save) cannot be played: it opens on Ma partie, which makes another or resumes one.
+  if(state.controlled_club_id==null)html=await savesScreen();
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra,params);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'actualites':html=await newsScreen(await openMessage(params));break;default:html=await dashboard(leagues);}}
@@ -228,7 +249,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  // while it runs ahead of the address this screen was drawn from; otherwise it follows the address, as after a step back.
  const active=document.activeElement,field=main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active:null;
  const selection=field&&field.type!=='number'&&field.selectionStart!=null?[field.selectionStart,field.selectionEnd]:null;
- draw(html,moved?null:field,filterTimer!=null||location.hash!==hash);main.querySelectorAll('details.filters,details.filter-menu,details.season-pick').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?(Number(parts[1])===state.controlled_club_id?'own-club':'clubs'):parts[0]==='player'?'players':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
+ draw(html,moved?null:field,filterTimer!=null||location.hash!==hash);if(parts[0]==='nouvelle-partie')busyButtons();else leaveCreation();main.querySelectorAll('details.filters,details.filter-menu,details.season-pick').forEach((details,index)=>{if(index<folds.length)details.open=folds[index];});if(openMenu)reopenMenu(menuScroll);main.querySelectorAll('table[data-sortable]').forEach(table=>{const sort=tableSorts.get(sortScope(table));if(sort&&sort.column<table.tHead.rows[0].cells.length)sortTable(table,sort.column,sort.direction);});const navKey=parts[0]==='league'?(leagues.find(item=>item.id===Number(parts[1]))?.kind==='europe'?'europe':`country-${leagues.find(item=>item.id===Number(parts[1]))?.nation}`):parts[0]==='country'?`country-${parts[1]}`:parts[0]==='club'?(Number(parts[1])===state.controlled_club_id?'own-club':'clubs'):parts[0]==='player'?'players':parts[0]||'home';document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===navKey));busyButtons();
  // The message opened stays in sight in the feed, which scrolls by itself.
  if(parts[0]==='actualites')main.querySelector('.news-row.selected')?.scrollIntoView({block:'nearest'});
  // A chapter of the manual opened on one of its sections; a redraw of the same address leaves the scroll where it is.
@@ -313,9 +334,11 @@ async function pollJob(id){
     if(job.status==='failed'){pendingMatchRedirect=null;toast(job.error,true);}
     else if(job.status==='awaiting_lineup'){toast('Un match de votre club est programmé aujourd’hui : composez votre équipe pour poursuivre.');}
     else if(job.command==='live_start')toast('Coup d’envoi !');
-    else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='live_finish'?'Journée terminée. Partie sauvegardée.':job.command==='create'?'Votre univers est prêt.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
+    else toast(job.command==='advance'?'Le monde a avancé. Partie sauvegardée.':job.command==='auto'?'Avance automatique arrêtée. Partie sauvegardée.':job.command==='live_finish'?'Journée terminée. Partie sauvegardée.':job.command==='create'?'La partie commence.':job.command==='load'?'Partie restaurée.':'Partie sauvegardée.');
     if(job.status==='done'&&job.command==='live_start'&&location.hash!=='#/direct'){location.hash='#/direct';return;}
     if(job.status!=='failed'&&['create','load'].includes(job.command))resetFlow();
+    // A game made or loaded opens on its first page.
+    if(job.status==='done'&&['create','load'].includes(job.command)&&location.hash!=='#/'){location.hash='#/';return;}
     if(job.status==='done'&&job.command==='auto')setSteps([]);
     // An advance and the end of a live match land on the round the club follows (or Actualités), then queue what Continuer shows next.
     if(job.status!=='failed'&&['advance','live_finish'].includes(job.command)){
@@ -344,7 +367,16 @@ document.querySelector('#autoplay').addEventListener('click',async()=>{
  }
 });
 
+// Commencer, on the screen of a new game: the game is made with the divisions and the club chosen (a game under way is
+// replaced once the user agrees), then opens on its first day.
+async function startGame(){
+ const made=creationChoice();
+ if(!made?.club||polling||submitting)return;
+ if(state.exists&&!state.recovery_required&&!(await confirmDialog({eyebrow:'NOUVELLE PARTIE',title:'Remplacer la partie en cours ?',text:'Elle reste telle que sa dernière sauvegarde l’a gardée.',confirmLabel:'Commencer'})))return;
+ await command('/partie/creer',{nations:made.levels,club_id:made.club.id});
+}
 document.querySelector('#advance').addEventListener('click',()=>{
+ if(onCreationScreen()&&creationChoice())return startGame();
  if(state.live_match_id){if(liveStatus()==='finished')command('/direct/terminer',{});return;}
  if(state.awaiting_lineup&&!onCompositionScreen()){location.hash=compositionHash();return;}
  if(state.awaiting_lineup)return playMatch();
@@ -365,7 +397,7 @@ document.querySelector('#simulate').addEventListener('click',()=>{if(state.await
 let filterTimer=null;
 const settleFilter=()=>{clearTimeout(filterTimer);filterTimer=null;};
 function applyFilter(form){settleFilter();const values={...Object.fromEntries(new FormData(form)),...Object.fromEntries(viewParams(routeParts().params))};Object.keys(values).forEach(key=>{if(!values[key])delete values[key];});changeParams(values);}
-main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element),inMenu=Boolean(element.closest('#player-menu'));if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='new-game'){if(state.exists&&!(await confirmDialog({eyebrow:'NOUVEAU DÉPART',title:'Créer un nouvel univers ?',text:'La partie courante sera remplacée. Enregistrez-la dans un slot nommé pour la conserver.',confirmLabel:'Créer la partie'})))return;await command('/partie/creer',{graine:Number(data.get('seed'))});}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
+main.addEventListener('submit',async event=>{event.preventDefault();const element=event.target;const data=new FormData(element),inMenu=Boolean(element.closest('#player-menu'));if(element.matches('[data-filter]')){applyFilter(element);}else if(element.id==='save-game')await command('/partie/sauvegarder',{slot:data.get('slot')});
  // The form of the talks, on a page or in a player's menu (`data-kind`: what is being agreed).
  else if(element.dataset.kind){
   // Accepting a counter-offer sends it as is (euros, or the weekly wage); the field is typed in M€ or €/month.
@@ -381,7 +413,6 @@ main.addEventListener('submit',async event=>{event.preventDefault();const elemen
 main.addEventListener('input',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('input[type=search],input[type=number],input[type=text],input[type=date]'))return;clearTimeout(filterTimer);filterTimer=setTimeout(()=>applyFilter(form),400);});
 main.addEventListener('change',event=>{const field=event.target;const form=field.closest('[data-filter]');if(!form||!field.matches('select,input[type=checkbox],input[type=radio]'))return;applyFilter(form);});
 main.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if('tableSort' in button.dataset){const table=button.closest('table'),column=button.closest('th').cellIndex,direction=nextDirection(table,column);sortTable(table,column,direction);tableSorts.set(sortScope(table),{column,direction});return;}const {params}=routeParts();if('resetFilters' in button.dataset){settleFilter();changeParams(viewParams(params));return;}if(button.dataset.param){if(button.dataset.paramValue)params.set(button.dataset.param,button.dataset.paramValue);else params.delete(button.dataset.param);params.delete('page');changeParams(params);}if(button.dataset.page){params.set('page',button.dataset.page);changeParams(params);}if(button.dataset.sort){params.set('ordre',button.dataset.order?(button.dataset.order==='desc'?'asc':'desc'):button.dataset.first);params.set('tri',button.dataset.sort);params.delete('page');changeParams(params);}if(button.dataset.view&&button.getAttribute('aria-pressed')!=='true'){if(button.dataset.view==='infos')params.delete('vue');else params.set('vue',button.dataset.view);if(button.dataset.viewSort){params.set('tri',button.dataset.viewSort);params.set('ordre',button.dataset.viewOrder);}else{['tri','ordre','page'].forEach(key=>params.delete(key));}changeParams(params);}if(button.dataset.command==='load')command('/partie/charger',{slot:button.dataset.slot});if(button.dataset.command==='delete')await deleteSlot(button.dataset.slot);
- if(button.dataset.command==='choisir-club')await action('/partie/choisir-club',{club_id:Number(button.dataset.club)},'Club choisi. À vous de jouer !');
  if(button.dataset.command==='renouvellement')await action('/partie/renouvellement',{joueur_id:Number(button.dataset.player),decision:button.dataset.decision},button.dataset.decision==='accepter'?'Prolongation signée.':'Prolongation refusée.');
  if(button.dataset.command==='liste-transferts')await action('/partie/liste-transferts',{joueur_id:Number(button.dataset.player),indemnite:null},'Joueur retiré de la liste des transferts.');
  if(button.dataset.command==='intransferable')await action('/partie/intransferable',{joueur_id:Number(button.dataset.player),intransferable:Boolean(button.dataset.kept)},button.dataset.kept?'Joueur déclaré intransférable.':'Joueur de nouveau transférable.');
@@ -391,6 +422,10 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.dataset.command==='prolongation')await action('/partie/prolongation',{joueur_id:Number(button.dataset.player)},'Prolongation signée.');
  if(button.dataset.command==='abandon-negociation')await action('/partie/negociation/abandon',{joueur_id:Number(button.dataset.player)},'Négociation abandonnée.');
  if(button.id==='retry')render();});
+// A line that opens as a whole: a save resumes its game, a club of a new game is picked; Enter does it from the keyboard.
+const openLine=row=>{if(row.dataset.href)location.hash=row.dataset.href;else command('/partie/charger',{slot:row.dataset.slot});};
+main.addEventListener('click',event=>{const row=event.target.closest('tr[data-slot],tr[data-href]');if(row&&!event.target.closest('a,button'))openLine(row);});
+main.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches?.('tr[data-slot],tr[data-href]'))openLine(event.target);});
 // A card head with a single link ("Voir →") follows it wherever it is clicked.
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
 // Player actions open in a dialog kept inside the page, so each re-render closes it.

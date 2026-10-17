@@ -1,6 +1,7 @@
 """Serialize commands outside request threads, publishing coherent day boundaries."""
 from __future__ import annotations
 
+import secrets
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
@@ -13,12 +14,14 @@ from core.domain.world import World
 from core.engine.live import LiveMatch
 from core.world.live import build_live_match, finish_live_match, start_live_match
 from core.world.human import pending_lineup_match
+from core.world.news import draw_notices
 from core.world.simulation import advance_day, target_date
 from core.world.steps import day_results, step_over, step_target
 from core.world.validation import validate_world
-from infrastructure.config.loader import load_config
+from infrastructure.config.loader import configure_world, load_config, load_pyramids
 from infrastructure.importation.loader import import_world
 from infrastructure.persistence.store import SaveStore, original_slot
+from .creation import Catalogue
 
 
 class CommandError(ValueError):
@@ -38,6 +41,25 @@ class Job:
     competition: dict | None = None
 
 
+def take_charge(world: World, club_id: int) -> None:
+    """Gives the user an active club. The draws were made before it had a manager: he is told the cup matches that await it."""
+    club = world.clubs.get(club_id)
+    if club is None or club.competition_id is None:
+        raise ValueError("Club invalide ou non actif.")
+    world.controlled_club_id = club.id
+    draw_notices(world)
+
+
+def new_world(root: Path, seed: int | None, levels: dict[str, int] | None, club_id: int | None) -> World:
+    """A game whose nations play their divisions down to `levels` (the configuration's by default), from `seed` or a drawn
+    one, its club already chosen when `club_id` is given."""
+    cfg = load_config(root / "config")
+    if levels is not None: cfg = configure_world(cfg, load_pyramids(root / "config", cfg), levels)
+    world = import_world(root / "data", cfg, secrets.randbelow(2**53) if seed is None else seed)
+    if club_id is not None: take_charge(world, club_id)
+    return world
+
+
 def round_competition(world: World, results: tuple[str, int] | None) -> dict | None:
     """A competition as the pages showing its rounds address it."""
     if results is None:
@@ -53,6 +75,8 @@ class GameService:
     def __init__(self, root: Path, saves: Path | None = None) -> None:
         self.root = root
         self.store = SaveStore(saves or root / "saves", rolling=True)
+        # The nations, divisions and clubs a new game can be made of.
+        self.catalogue = Catalogue(root)
         self.world: World | None = None
         # Where the game is saved, automatically too: the slot it was last saved in or loaded from (a dated copy
         # resumes its own slot), `autosave` for a new game.
@@ -157,7 +181,7 @@ class GameService:
                 slot = self.slot
             if job.command in ("create", "load"):
                 if job.command == "create":
-                    world, slot = import_world(self.root / "data", load_config(self.root / "config"), payload["seed"]), "autosave"
+                    world, slot = new_world(self.root, payload["seed"], payload.get("levels"), payload.get("club_id")), "autosave"
                     self.store.save(world, slot)
                 else:  # nothing to write: the file loaded is the game
                     world, slot = self.store.load(payload["slot"]), original_slot(payload["slot"])

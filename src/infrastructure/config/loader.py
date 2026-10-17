@@ -10,6 +10,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from core.config.model import Config
 from core.config.consistency import ConfigError, validate_consistency
+from core.world.pyramids import Pyramid, check_pyramids, parse_pyramids, world_payload
 
 FILES = ("monde", "import", "attributs", "implications", "formations", "moteur_match",
          "etats", "ia_gestion", "demographie", "benchmarks", "nations", "international")
@@ -59,6 +60,23 @@ def load_config(directory: Path, overrides: Path | None = None) -> Config:
         return decode_config(payload)
     except (OSError, json.JSONDecodeError) as exc:
         raise ConfigError(f"Cannot load config from {directory}: {exc}") from exc
+
+
+def load_pyramids(directory: Path, cfg: Config) -> tuple[Pyramid, ...]:
+    """The nations a new game can play (creation.json), checked against the configuration's own leagues."""
+    try:
+        pyramids = parse_pyramids(strip_notes(json.loads((directory / "creation.json").read_text("utf-8"))))
+        check_pyramids(cfg, pyramids)
+        return pyramids
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise ConfigError(f"Cannot load the nations of a new game from {directory}: {exc}") from exc
+
+
+def configure_world(cfg: Config, pyramids: tuple[Pyramid, ...], levels: dict[str, int]) -> Config:
+    """The configuration of a game whose nations each play `levels[nation]` divisions."""
+    payload = config_payload(cfg)
+    payload["monde"] = world_payload(payload["monde"], pyramids, levels)
+    return decode_config(payload)
 
 
 def config_payload(cfg: Config) -> dict[str, Any]:

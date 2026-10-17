@@ -11,10 +11,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from core.domain.matches import SubmittedLineup
 from core.domain.players import ATTRIBUTE_INDEX, ATTRIBUTE_NAMES
 from core.world.human import listed_price, pending_lineup_match
-from core.world.news import draw_notices
 from core.world.transfer_rules import recent_arrival_ids
 from core.world.simulation import target_date, market_window
-from .service import GameService
+from .service import GameService, take_charge
+from . import creation as creation_views
 from . import navigation as nav
 from . import news
 from . import views as v
@@ -37,7 +37,11 @@ class Slot(Command):
 
 
 class NewGame(Command):
-    graine: int = Field(default=2025, ge=0, le=2**63 - 1, strict=True)
+    # The divisions each nation plays down to (FRA: 3 plays its first three), the configuration's by default; the club the
+    # user takes charge of, chosen later when none is given. Without a seed, the game draws one.
+    nations: dict[str, int] | None = None
+    club_id: int | None = None
+    graine: int | None = Field(default=None, ge=0, le=2**63 - 1, strict=True)
 
 
 class ChooseClub(Command):
@@ -321,9 +325,40 @@ def router(service: GameService) -> APIRouter:
             if job_id not in service.jobs: raise HTTPException(404, "Travail introuvable.")
             return asdict(service.jobs[job_id])
 
+    @api.get("/creation")
+    def creation() -> dict:
+        return creation_views.summary(service.catalogue.data())
+
+    def chosen_levels(data: dict, nations: str) -> dict[str, int]:
+        try:
+            levels = creation_views.parse_levels(nations, data["pyramids"])
+        except ValueError as error:
+            raise HTTPException(400, str(error))
+        if not levels: raise HTTPException(400, "Choisissez au moins une nation.")
+        return levels
+
+    @api.get("/creation/clubs")
+    def creation_clubs(nations: str, pays: str = "", recherche: str = "", tri: Literal[tuple(creation_views.SORTS)] = "reputation",
+                       ordre: Literal["asc", "desc"] | None = None, page: int = Query(1, ge=1), taille: int = page_size()) -> dict:
+        data = service.catalogue.data()
+        return creation_views.club_list(data, chosen_levels(data, nations), pays, recherche, tri, ordre, page, taille)
+
+    @api.get("/creation/clubs/{club_id}")
+    def creation_club(club_id: int) -> dict:
+        club = service.catalogue.data()["clubs"].get(club_id)
+        if club is None: raise HTTPException(404, "Club introuvable.")
+        return {name: value for name, value in club.items() if name != "order"}
+
     @api.post("/partie/creer", status_code=202)
     def create(command: NewGame) -> dict:
-        return service.submit("create", command.commande_id, {"seed": command.graine})
+        levels = command.nations
+        if levels is not None:
+            data = service.catalogue.data()
+            levels = chosen_levels(data, ",".join(f"{nation}:{level}" for nation, level in levels.items() if level))
+            club = data["clubs"].get(command.club_id) if command.club_id is not None else None
+            if command.club_id is not None and (club is None or not creation_views.played(club, levels)):
+                raise HTTPException(400, "Ce club ne joue aucune des divisions choisies.")
+        return service.submit("create", command.commande_id, {"seed": command.graine, "levels": levels, "club_id": command.club_id})
 
     @api.post("/partie/sauvegarder", status_code=202)
     def save(command: Slot) -> dict:
@@ -348,12 +383,10 @@ def router(service: GameService) -> APIRouter:
         with service.mutating() as world:
             if world.controlled_club_id is not None:
                 raise HTTPException(400, "Un club est déjà sélectionné pour cette partie.")
-            club = world.clubs.get(command.club_id)
-            if club is None or club.competition_id is None:
-                raise HTTPException(400, "Club invalide ou non actif.")
-            world.controlled_club_id = club.id
-            # The draws were made before it had a manager: he is told the cup matches that await it.
-            draw_notices(world)
+            try:
+                take_charge(world, command.club_id)
+            except ValueError as error:
+                raise HTTPException(400, str(error))
         return {"club_id": command.club_id}
 
     @api.post("/partie/composition")
@@ -681,13 +714,6 @@ def router(service: GameService) -> APIRouter:
                             "fin_contrat_actuelle": player.contract.end.iso()})
             rows.sort(key=lambda row: -row["salaire_propose"])
             return {"items": rows, "total": len(rows)}
-
-    @api.get("/partie/rapport-import")
-    def import_report() -> dict:
-        with service.reading() as world:
-            return {"counts": world.import_summary, "source_hashes": world.source_hashes,
-                    "max_squad": world.config.management.guardrails.max_squad,
-                    "estimated": True}
 
     @api.get("/ma-partie/actualites")
     def news_feed(page: int | None = Query(None, ge=1), message: int | None = None, taille: int = Query(NEWS_PAGE, ge=1, le=100)) -> dict:
