@@ -153,8 +153,8 @@ même sur son bandeau, sans ligne de titre (voir « Compétition »).
 ### Accueil
 
 Sans partie, l'écran d'accueil ; avec une partie, « Ma partie » (`#/saves`), qui le reprend
-sous son titre et le champ qui enregistre la partie, au-dessus du rapport de création
-(`homeScreen`, `web/home.js`). Deux panneaux côte à côte :
+sous son titre et le champ qui enregistre la partie (`homeScreen`, `web/home.js`). Deux
+panneaux l'un sous l'autre, jusqu'au bas de la fenêtre :
 
 - **Créer une partie** ouvre « Nouvelle partie ».
 - **Reprendre une partie** liste les sauvegardes, la plus récente d'abord : son nom, le club

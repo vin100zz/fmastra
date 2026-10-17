@@ -651,22 +651,24 @@ small{font-size:var(--fs-small)}
 .honours-table .count-column,.honours-table .sum-column{width:40px}
 .honours-table .total-column{width:84px}
 
-/* The home (docs/charte-graphique.md, « Accueil »): creating a game and resuming one, two panels side by side and alike, as
-   tall as what they hold. Creating is the main action, on the accent; resuming lists the saves, each line opening its game,
-   the command that deletes it shown under the pointer. Without a game the bar holds nothing, the rail only its tools. */
+/* The home (docs/charte-graphique.md, « Accueil »): creating a game and resuming one, two panels one above the other and
+   alike. Creating is the main action, a band on the accent; resuming takes the rest of the window and lists the saves, each
+   line opening its game, the command that deletes it shown under the pointer. Without a game the bar holds nothing, the
+   rail only its tools. */
 body.no-game .sidebar nav,body.no-game .sidebar-bottom>a,body.no-game #autoplay,.advance-group[hidden]{display:none}
 /* The bar of a new game holds its first day and Commencer, not the matches of the game in play. */
 body.creating #next-matches,body.creating #market-badge{display:none}
-.doors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);align-items:start}
-.door{display:flex;flex-direction:column;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
+main:has(>.doors){display:flex;flex-direction:column;min-height:calc(100vh - var(--h-bar))}
+.doors{display:grid;grid-template-rows:auto minmax(0,1fr);flex:1;gap:var(--s2)}
+.door{display:grid;grid-template-columns:var(--h-bar-control) minmax(0,1fr);align-items:center;align-content:start;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
 .door.main{background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .door.main:hover{background:var(--accent-hover)}
 a.door:is(:hover,:focus-visible){text-decoration-line:none}
-.door>svg{flex:none;width:var(--h-bar-control);height:var(--h-bar-control)}
+.door>svg{width:var(--h-bar-control);height:var(--h-bar-control)}
 .door h2{display:flex;align-items:baseline;gap:var(--s3);margin:0;font:700 var(--fs-page)/32px var(--display);font-stretch:semi-condensed;letter-spacing:var(--caps);text-transform:uppercase;color:inherit}
 .door-mark{fill:none;stroke:var(--panel-2);stroke-width:2;stroke-linejoin:round}
 .door-mark rect{fill:currentColor;stroke:none}
-.door>.card{margin:0}
+.door>.card{grid-column:1/-1;margin:0}
 .saves-list tbody tr{cursor:pointer}
 .saves-list .date-column{width:148px}
 .saves-list .saved-column{width:156px}

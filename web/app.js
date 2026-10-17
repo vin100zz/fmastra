@@ -1,5 +1,5 @@
 import {worldHistoryScreen} from './world-history.js';
-import {api,escape as e,number as n,date,season,kitDot,card,stat,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
+import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
 import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
@@ -188,11 +188,10 @@ async function counterOffer(payload){
  catch(error){toast(error.message,true);}
  finally{submitting=false;await render();}
 }
-// The home (home.js): without a game the whole screen; with one, « Ma partie » sets the form that saves it above it and the
-// report of its import under it.
-async function savesScreen(){const doors=await homeScreen();const notice=state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':'';if(!state.exists||state.recovery_required)return notice+doors;let report='';if(state.exists&&!state.recovery_required){const data=await api('/partie/rapport-import');report=card('Rapport de création',`<div class="card-body"><div class="stat-grid">${stat('Joueurs retenus',n(data.counts.players))}${stat('Joueurs écartés',n(data.counts.excluded))}${stat('Joueurs actifs',n(data.counts.active_players))}${stat('Agents libres',n(data.counts.free_agents))}</div><p class="note">Au maximum ${data.max_squad} joueurs par club, dont deux places réservées aux meilleurs gardiens disponibles. Les CSV originaux restent inchangés. ${data.counts.attributes_from_source?'Les attributs et aptitudes proviennent du CSV. Les finances restent estimées.':'Cette ancienne partie utilise des attributs estimés.'}</p><details><summary>Détail des corrections à l’import</summary><pre>${e(JSON.stringify(data.counts,null,2))}</pre></details></div>`);}
+// The home (home.js): without a game the whole screen; with one, « Ma partie » sets the form that saves it above it.
+async function savesScreen(){const doors=await homeScreen();const notice=state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':'';if(!state.exists||state.recovery_required)return notice+doors;
 const saveForm=`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="${e(state.slot&&state.slot!=='autosave'?state.slot:'ma-partie')}"><button data-command="save">Enregistrer</button></form>`;
-return heading('Ma partie',saveForm)+doors+report;}
+return heading('Ma partie',saveForm)+doors;}
 
 // Brings the element `current` to `next` while keeping the nodes they share: a field stays the same field, with its caret,
 // and a menu stays open or folded. The fields take their new value, but `typed`, whose text is the user's.

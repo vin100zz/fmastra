@@ -156,7 +156,7 @@ où le fond est déjà jaune.
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
-| Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list` | Deux panneaux côte à côte : créer une partie, reprendre une partie. Voir « Accueil » |
+| Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list` | Deux panneaux l'un sous l'autre : créer une partie, reprendre une partie. Voir « Accueil » |
 | Nouvelle partie | `.nation-line`, `.segmented.range`, `.check` | Le monde, ses clubs, le club choisi, sur un écran. Voir « Nouvelle partie » |
 | Case à cocher | `.check` | 18, bordée ; cochée, l'accent et son encre |
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
@@ -290,16 +290,17 @@ et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
 
 ### Accueil
 
-Sans partie, et sur « Ma partie », deux panneaux côte à côte et de même forme (`.doors`) :
-« Créer une partie » à gauche, « Reprendre une partie » à droite.
+Sans partie, et sur « Ma partie », deux panneaux de même forme, l'un sous l'autre (`.doors`) :
+« Créer une partie » en haut, « Reprendre une partie » dessous, jusqu'au bas de la fenêtre.
 
-- **Panneau** (`.door`) : aussi haut que ce qu'il tient, 16 de marge. En tête, un carré de 40,
-  puis son nom en capitales, à la taille d'un titre de page (26 / 32, `--display`).
-- **Créer une partie** (`.door.main`) : l'action principale de l'écran. Sur l'accent, la marque
-  inversée pour carré, une flèche après son nom ; il s'ouvre tout entier, `--accent-hover` sous le
-  pointeur. Il mène à « Nouvelle partie ».
-- **Reprendre une partie** : sur `--panel-2`. Son carré est dessiné comme la marque : un carré de
-  l'encre, une disquette dans le fond. Dessous, dans une carte, la liste des sauvegardes
+- **Panneau** (`.door`) : 16 de marge. En tête, sur une ligne, un carré de 40 et son nom en
+  capitales, à la taille d'un titre de page (26 / 32, `--display`).
+- **Créer une partie** (`.door.main`) : l'action principale de l'écran, une bande aussi haute que
+  son en-tête. Sur l'accent, la marque inversée pour carré, une flèche après son nom ; il s'ouvre
+  tout entier, `--accent-hover` sous le pointeur. Il mène à « Nouvelle partie ».
+- **Reprendre une partie** : sur `--panel-2`, il occupe le reste de la fenêtre. Son carré est
+  dessiné comme la marque : un carré de l'encre, une disquette dans le fond. Dessous, dans une
+  carte, la liste des sauvegardes
   (`.saves-list`), une ligne chacune : son nom (« Sauvegarde automatique » pour celle du jeu, le
   nom d'une copie datée atténué), son club après sa pastille, la date de la partie, le moment de
   l'enregistrement. La plus récente d'abord ; ses colonnes se trient.
@@ -1003,5 +1004,5 @@ B3 « Étage » et la note en chiffre coloré) : <https://claude.ai/artifact/Hsq
 comme le maillot (« Carré · Manches ») : <https://claude.ai/artifact/7JMrbN6uTc4DS6kgP5EtAR>
 et le terrain des aptitudes (proposition B) : <https://claude.ai/artifact/KfuMRqMWEQyzDN2cxaM9us>.
 L'accueil et la nouvelle partie ont la leur (accueil : proposition C0d, ses panneaux
-réduits depuis ; nouvelle partie : proposition C, « Tout sur un écran ») :
+réduits et mis l'un sous l'autre depuis ; nouvelle partie : proposition C, « Tout sur un écran ») :
 <https://claude.ai/artifact/Vfd8w6dFsdBPiwZQb5R9xi>.

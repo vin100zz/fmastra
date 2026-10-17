@@ -564,16 +564,18 @@ span.entity-step svg{opacity:.3}
 .point-value.first{transform:translate(calc(-1*var(--s1)),calc(-100% - var(--s3)))}
 .point-value.last{transform:translate(calc(-100% + var(--s1)),calc(-100% - var(--s3)))}
 
-/* The home of the game: two ways in, side by side and alike, each a panel as tall as what it holds, a square mark of 40 at
-   its top and its name in the size of a page's title, in capitals. Creating a game is the main action: on the accent, it
-   opens as a whole. Resuming one stands on the raised ground and holds the list of the saves (.saves-list), a line each:
+/* The home of the game: two ways in, one above the other and alike, each a panel opening on a square mark of 40 and its
+   name beside it, in the size of a page's title, in capitals. Creating a game is the main action: a band on the accent, it
+   opens as a whole. Resuming one takes the rest of the window, on the raised ground, and holds the list of the saves
+   (.saves-list), a line each:
    its name, its club after its dot, the day its game stands at, the moment it was saved. The line opens its game; the
    command that deletes it shows under the pointer only. The mark of resuming is drawn as the brand's: a square of the ink,
    a save drawn in the ground. */
-.doors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);align-items:start}
-.door{display:flex;flex-direction:column;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
+.doors{display:grid;grid-template-rows:auto minmax(0,1fr);gap:var(--s2)}
+.door{display:grid;grid-template-columns:var(--h-bar-control) minmax(0,1fr);align-items:center;align-content:start;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
 .door.main{background:var(--accent);color:var(--accent-ink);cursor:pointer}
-.door>svg{flex:none;width:var(--h-bar-control);height:var(--h-bar-control)}
+.door>svg{width:var(--h-bar-control);height:var(--h-bar-control)}
+.door>.card{grid-column:1/-1}
 .door h2{display:flex;align-items:baseline;gap:var(--s3);font:700 semi-condensed var(--fs-page)/32px var(--display);letter-spacing:var(--caps);text-transform:uppercase}
 .door-mark{fill:none;stroke:var(--panel-2);stroke-width:2;stroke-linejoin:round}
 .door-mark rect{fill:currentColor;stroke:none}
