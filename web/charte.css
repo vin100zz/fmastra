@@ -26,15 +26,14 @@ html{scrollbar-gutter:stable}
 .date-block .eyebrow{font-size:var(--fs-small);line-height:14px}
 .date-block strong{line-height:22px;margin-top:0!important}
 .next-match{height:calc(var(--h-bar-control) - 2px)}
-.sidebar nav a,.sidebar-bottom>a{min-height:32px;font-size:var(--fs-body);font-weight:600}
-.sidebar nav a.active,.sidebar-bottom>a.active{box-shadow:inset var(--mark) 0 0 var(--accent)}
+.sidebar nav a{min-height:32px;font-size:var(--fs-body);font-weight:600}
+.sidebar nav a.active{box-shadow:inset var(--mark) 0 0 var(--accent)}
 .sidebar nav a .flag{flex:none;width:16px;height:12px;margin:0 1px}
 .date-block strong{font-size:var(--fs-title)!important;font-weight:700}
 .next-match:first-child{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
 .next-match-who b{font-size:var(--fs-body)}
 .next-match-comp{font-size:var(--fs-small)}
-#autoplay,#theme-toggle,#manual-link{height:var(--h-control)}
-#theme-toggle,#manual-link{width:var(--h-control)}
+.sidebar-tools>*{height:var(--h-control)}
 main{padding:var(--s2) var(--s4) var(--s3)}
 .page-heading,.toolbar{margin-bottom:var(--s2)}
 
@@ -590,7 +589,7 @@ tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted)
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */
-button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,#manual-link:where(:not(.active)):hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
+button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
 :is(.chips,.presets,.round-pills,.manual-menu,.segmented,.edition-switch,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
 :is(.tactics,.segmented,.calendar-filters,.movement-filters) button:where(:not(.active,[aria-pressed="true"],:disabled)):hover{background:var(--panel-3);color:var(--strong)}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep

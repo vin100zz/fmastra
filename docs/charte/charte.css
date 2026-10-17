@@ -72,8 +72,8 @@
 .nav .flag{margin:0 6px}
 .nav .count{margin-left:auto}
 .sidebar-bottom{margin-top:auto;padding:var(--s2) 0 var(--s3);border-top:1px solid var(--line)}
-.sidebar-tools{display:flex;gap:var(--s1);margin:var(--s1) var(--s2) 0}
-.sidebar-tools .button:first-child{flex:1}
+.sidebar-tools{display:flex;gap:var(--s1);margin:0 var(--s2)}
+.sidebar-tools .button{flex:1;padding:0}
 .workspace{display:flex;flex-direction:column;min-width:0;min-height:0}
 /* The bar opens on a club's sash, 64 px wide: the slanted edge of the brand's corner, then a thin stripe. What stands in
    it is 40 px high. */

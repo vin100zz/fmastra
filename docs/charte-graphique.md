@@ -130,6 +130,7 @@ où le fond est déjà jaune.
 | Pas d'une série | `.segmented.steps` | Journées : une flèche à chaque bout, toutes écrites entre elles |
 | Pas de saison | `.season`, `.season-pick` | Saisons, éditions des sélections : une flèche de chaque côté de celle montrée, qui ouvre la liste de toutes. Voir « Pas de saison » |
 | Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Carré, 28 ; 22 dans une carte ou une ligne |
+| Pied du menu | `.sidebar-bottom`, `.sidebar-tools` | Ma partie, le mode Auto, le thème et le manuel du jeu : quatre boutons d'une icône, de même largeur, sur une ligne ; leur nom en infobulle. Auto montre ce que fait un clic (lecture, pause), sur fond d'accent tant qu'il tourne ; le thème, celui où il mène |
 | Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut |
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |

@@ -99,10 +99,9 @@ const busyButtons=()=>{
  updateAdvanceButton();
  const button=document.querySelector('#autoplay');
  button.disabled=stopping||(!auto&&(busy||!state.exists||Boolean(state.recovery_required)));
- button.textContent=stopping?'⏸ Arrêt…':auto?'⏸ Pause':'▶ Auto';
  button.setAttribute('aria-pressed',String(auto));
  button.setAttribute('aria-label',auto?'Mettre en pause les journées automatiques':'Passer les journées automatiquement');
- button.title=auto?'Arrêter après le jour en cours':'Enchaîner automatiquement les prochaines journées';
+ button.title=stopping?'Arrêt après le jour en cours…':auto?'Pause : arrêter après le jour en cours':'Auto : enchaîner les prochaines journées';
  showSearch();
 };
 // Each new date of the auto mode redraws the screen: the list of peers the user is browsing stays open where it was.
