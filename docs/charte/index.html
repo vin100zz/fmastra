@@ -620,6 +620,45 @@
 </div>
 </section>
 
+<section class="spec" style="grid-column: span 12">
+<h2>Accueil · .doors · .door · .saves-list</h2>
+<div class="spec-group"><span class="label">Deux panneaux de même forme · créer une partie, l’action principale, sur l’accent · reprendre une partie, la liste des sauvegardes · sous le pointeur, la poubelle de sa ligne (nantes)</span>
+<div class="doors">
+<a class="door main" href="#"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg><h2>Créer une partie <span>→</span></h2></a>
+<section class="door"><svg class="door-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M8 7h12.5L24 10.5V25H8z"></path><path d="M11.5 7v5h8V7"></path><path d="M11.5 25v-7h9v7"></path></svg><h2>Reprendre une partie</h2>
+<div class="card"><div class="table saves-list">
+<div class="tr head"><span>Sauvegarde</span><span>Club</span><span>Date de la partie</span><span class="sorted">Enregistrée</span><span></span></div>
+<a class="tr" href="#"><span class="strong">rennes</span><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #e03030 64%, #080808 64%)"></i>Rennes</span><span>14 mars 2028</span><span>17 oct. 2026 · 09:12</span><button type="button" class="button small square" aria-label="Supprimer rennes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></button></a>
+<a class="tr" href="#"><span class="muted">rennes-2028-03-07</span><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #e03030 64%, #080808 64%)"></i>Rennes</span><span>7 mars 2028</span><span>16 oct. 2026 · 23:58</span><button type="button" class="button small square" aria-label="Supprimer rennes-2028-03-07"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></button></a>
+<a class="tr" href="#"><span class="strong">Sauvegarde automatique</span><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #f8d000 64%, #e00000 64%)"></i>Lens</span><span>2 sept. 2026</span><span>14 oct. 2026 · 22:47</span><button type="button" class="button small square" aria-label="Supprimer Sauvegarde automatique"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></button></a>
+<a class="tr hover" href="#"><span class="strong">nantes</span><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #f8c800 64%, #009858 64%)"></i>Nantes</span><span>29 nov. 2026</span><span>12 oct. 2026 · 18:30</span><button type="button" class="button small square" aria-label="Supprimer nantes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"></path></svg></button></a>
+</div></div>
+</section>
+</div>
+</div>
+<div class="spec-line"><span class="token">Panneau</span><span class="value">aussi haut que ce qu’il tient · 16 de marge · un carré de 40, puis son nom en capitales, 26 / 32</span><span class="token" style="margin-left: 16px">Créer</span><span class="value">l’accent, la marque inversée, une flèche ; il s’ouvre tout entier, --accent-hover sous le pointeur</span><span class="token" style="margin-left: 16px">Reprendre</span><span class="value">--panel-2, une disquette dessinée comme la marque ; la ligne reprend sa partie</span></div>
+</section>
+
+<section class="spec" style="grid-column: span 6">
+<h2>Nouvelle partie · .nation-line · .segmented.range · .check</h2>
+<div class="spec-row">
+<div class="spec-group" style="flex: 0 0 420px"><span class="label">Le monde : une ligne par nation, ses divisions jusqu’à la plus basse jouée</span>
+<section class="card">
+<div class="card-head"><h2>Monde</h2><span class="muted">74 clubs</span></div>
+<div>
+<div class="nation-line"><button type="button" class="check" aria-pressed="true" aria-label="France"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="nation"><img class="flag" src="../../web/flags/fr.svg" alt="">France</span><div class="segmented small range" role="group" aria-label="Divisions de France"><button type="button" class="active">L1</button><button type="button" class="active">L2</button><button type="button" class="active">L3</button></div><span class="num">54</span></div>
+<div class="nation-line"><button type="button" class="check" aria-pressed="true" aria-label="Italie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="nation"><img class="flag" src="../../web/flags/it.svg" alt="">Italie</span><div class="segmented small range" role="group" aria-label="Divisions d’Italie"><button type="button" class="active">D1</button><button type="button" class="hover">D2</button></div><span class="num">20</span></div>
+<div class="nation-line off"><button type="button" class="check" aria-pressed="false" aria-label="Espagne"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="nation"><img class="flag" src="../../web/flags/es.svg" alt="">Espagne</span><div class="segmented small range" role="group" aria-label="Divisions d’Espagne"><button type="button">D1</button><button type="button">D2</button></div><span class="num">—</span></div>
+</div>
+</section>
+</div>
+<div class="spec-group"><span class="label">Case à cocher · .check · un bouton (aria-pressed)</span>
+<div class="spec-line"><button type="button" class="check" aria-pressed="false" aria-label="Non cochée"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="value">non cochée</span><button type="button" class="check hover" aria-pressed="false" aria-label="Sous le pointeur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="value">sous le pointeur</span><button type="button" class="check" aria-pressed="true" aria-label="Cochée"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="value">cochée</span></div>
+</div>
+</div>
+<div class="spec-line"><span class="token">Ligne</span><span class="value">26 · la case, le drapeau et le nom, les divisions, les clubs</span><span class="token" style="margin-left: 16px">Divisions</span><span class="value">écrites comme leur pastille ; un clic fait la plus basse jouée</span><span class="token" style="margin-left: 16px">Écartée</span><span class="value">atténuée, drapeau gris, divisions éteintes, « — »</span></div>
+</section>
+
 </div>
 </div>
 

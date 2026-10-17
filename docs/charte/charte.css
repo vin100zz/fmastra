@@ -564,6 +564,36 @@ span.entity-step svg{opacity:.3}
 .point-value.first{transform:translate(calc(-1*var(--s1)),calc(-100% - var(--s3)))}
 .point-value.last{transform:translate(calc(-100% + var(--s1)),calc(-100% - var(--s3)))}
 
+/* The home of the game: two ways in, side by side and alike, each a panel as tall as what it holds, a square mark of 40 at
+   its top and its name in the size of a page's title, in capitals. Creating a game is the main action: on the accent, it
+   opens as a whole. Resuming one stands on the raised ground and holds the list of the saves (.saves-list), a line each:
+   its name, its club after its dot, the day its game stands at, the moment it was saved. The line opens its game; the
+   command that deletes it shows under the pointer only. The mark of resuming is drawn as the brand's: a square of the ink,
+   a save drawn in the ground. */
+.doors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);align-items:start}
+.door{display:flex;flex-direction:column;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
+.door.main{background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.door>svg{flex:none;width:var(--h-bar-control);height:var(--h-bar-control)}
+.door h2{display:flex;align-items:baseline;gap:var(--s3);font:700 semi-condensed var(--fs-page)/32px var(--display);letter-spacing:var(--caps);text-transform:uppercase}
+.door-mark{fill:none;stroke:var(--panel-2);stroke-width:2;stroke-linejoin:round}
+.door-mark rect{fill:currentColor;stroke:none}
+.saves-list .tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 148px 156px var(--h-control-small);cursor:pointer}
+.saves-list .tr>.button{visibility:hidden}
+.saves-list .tr:is(:hover,.hover,:focus-within)>.button{visibility:visible}
+/* A box to tick, a badge's 18: ticked, it takes the accent and its ink. */
+.check{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--accent-ink)}
+.check svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
+.check[aria-pressed="true"]{border-color:var(--accent-text);background:var(--accent)}
+.check[aria-pressed="true"] svg{visibility:visible}
+/* A nation on one line of a list to choose from: the box that plays it, its flag and its name, the divisions it plays, its
+   clubs. The divisions are a choice up to one (.segmented.range): every option down to the lowest played carries the mark
+   of what is open. Left out, the nation is muted, its flag greyed, its divisions dimmed. */
+.nation-line{display:grid;grid-template-columns:var(--h-chip) minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.nation-line:last-child{border-bottom:0}
+.nation-line>.num{color:var(--muted)}
+.nation-line.off>.nation{color:var(--muted)}
+.nation-line.off .flag{filter:grayscale(1);opacity:.5}
+
 /* The search of the whole game: a dialog over the veiled page (in a mockup, .veil lays the veil and holds the dialog).
    Its head is a bar: a glass, the field, the kinds on its right. Its list holds every kind together, the best match
    first. A line found opens its page as a whole: first the badge that tells its kind (a position, a club's colours, a
@@ -593,12 +623,12 @@ span.entity-step svg{opacity:.3}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
 :is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen)):is(:hover,.hover){background:var(--panel-3)}
-a:is(.tr,.match-row,.result){cursor:pointer}
+a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
-.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
+.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
 :is(.nav a,.segmented>a,.segmented>button,.button):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
    their colour. */
@@ -607,7 +637,8 @@ a:is(.tr,.match-row,.result){cursor:pointer}
 :is(.season>:is(button,a):not(:disabled,[aria-disabled="true"]),.season-pick:not([open])>summary):is(:hover,.hover){background:var(--panel-3)}
 .app :is(.season a,.menu>a):is(:hover,.hover){text-decoration:none}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
-:is(.button.primary,.cta):is(:hover,.hover){background:var(--accent-hover)}
+:is(.button.primary,.cta,.door.main):is(:hover,.hover){background:var(--accent-hover)}
+.check:not([aria-pressed="true"]):is(:hover,.hover){background:var(--panel-3)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}
 /* On a pitch, a player's name is what underlines. */
 .pitch-player:is(:hover,.hover) .block-name{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}

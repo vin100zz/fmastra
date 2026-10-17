@@ -73,6 +73,13 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
    +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes')}${tile('Réputation',club.reputation==null?'—':n(club.reputation),change)}`});
 }
 
+// The band of a club before a game is made with it (« Nouvelle partie »): its colours, its crest, its name, its country's
+// flag and its league after it; no link, no tile, no tab: the screen sets its figures under it.
+export function creationHero(club){
+ return hero({colors:heroColors(club.major_color,club.minor_color),lead:'',name:club.name,foot:'',crest:clubCrest(club),
+  after:context(`${nationFlag(club.nation_code)}${e(club.competition)}`),tiles:''});
+}
+
 // The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its name alone,
 // then its strength. `lead` steps between the selections of the confederation, `tools` close the row of tabs.
 export function nationHero(nation,{lead='',menu,section,tools=''}){

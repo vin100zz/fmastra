@@ -21,7 +21,11 @@ py -3.12 -m venv .venv
 ```
 
 Ouvrir **http://127.0.0.1:8011**, puis créer une partie ou reprendre une
-sauvegarde. Les CSV sont chargés à la création ; aucun service externe n'est
+sauvegarde. Une nouvelle partie choisit ses nations (France, Italie, Espagne,
+Angleterre, Allemagne), la plus basse division simulée de chacune et le club
+dirigé ; sa graine est tirée au hasard. Les divisions que chaque nation peut
+simuler, et le vivier de ses promus sous la plus basse, sont dans
+`config/creation.json`. Les CSV sont chargés à la création ; aucun service externe n'est
 nécessaire pendant le jeu. Pour un autre port : `./run.ps1 -Port 8012`.
 Conserver un seul processus serveur : l'état est en mémoire.
 

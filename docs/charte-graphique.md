@@ -156,6 +156,9 @@ où le fond est déjà jaune.
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
+| Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list` | Deux panneaux côte à côte : créer une partie, reprendre une partie. Voir « Accueil » |
+| Nouvelle partie | `.nation-line`, `.segmented.range`, `.check` | Le monde, ses clubs, le club choisi, sur un écran. Voir « Nouvelle partie » |
+| Case à cocher | `.check` | 18, bordée ; cochée, l'accent et son encre |
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
 
@@ -241,6 +244,8 @@ voile de son encre.
 | Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
 | En-tête d'une carte repliable | Son fond | `--panel-3` et la main ; la flèche garde sa couleur |
 | Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne d'un menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Panneau « Créer une partie » de l'accueil | L'accent | `--accent-hover` et la main |
+| Case à cocher | Son fond | `--panel-3` tant qu'elle n'est pas cochée |
 | Flèche d'un pas de saison, saison qui ouvre sa liste | Aucun fond | `--panel-3` ; la flèche garde la couleur du club |
 | Flèche de la navigation d'un bandeau, traits qui ouvrent sa liste | Aucun fond | Un voile de l'encre du bandeau, à 12 % ; ils gardent leur couleur |
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
@@ -282,6 +287,52 @@ et le raccourci Ctrl K ouvrent une boîte de 720 de large sur la page voilée
 | Club | La pastille à ses couleurs | Le drapeau de son pays, puis la pastille de sa division |
 | Compétition | Sa pastille | Son pays, après son drapeau ; rien pour une coupe d'Europe |
 | Sélection | Son drapeau | Rien |
+
+### Accueil
+
+Sans partie, et sur « Ma partie », deux panneaux côte à côte et de même forme (`.doors`) :
+« Créer une partie » à gauche, « Reprendre une partie » à droite.
+
+- **Panneau** (`.door`) : aussi haut que ce qu'il tient, 16 de marge. En tête, un carré de 40,
+  puis son nom en capitales, à la taille d'un titre de page (26 / 32, `--display`).
+- **Créer une partie** (`.door.main`) : l'action principale de l'écran. Sur l'accent, la marque
+  inversée pour carré, une flèche après son nom ; il s'ouvre tout entier, `--accent-hover` sous le
+  pointeur. Il mène à « Nouvelle partie ».
+- **Reprendre une partie** : sur `--panel-2`. Son carré est dessiné comme la marque : un carré de
+  l'encre, une disquette dans le fond. Dessous, dans une carte, la liste des sauvegardes
+  (`.saves-list`), une ligne chacune : son nom (« Sauvegarde automatique » pour celle du jeu, le
+  nom d'une copie datée atténué), son club après sa pastille, la date de la partie, le moment de
+  l'enregistrement. La plus récente d'abord ; ses colonnes se trient.
+- **Ligne** : elle reprend sa partie tout entière. La poubelle qui la supprime (`.button.small.square`)
+  ne paraît qu'au bout de la ligne sous le pointeur, ou quand la ligne a le focus ; elle demande
+  confirmation.
+- Rien d'autre : ni texte d'accueil, ni compte. Sans sauvegarde, la carte le dit.
+- Sans partie, la barre du haut est vide et le menu n'a que le manuel.
+
+### Nouvelle partie
+
+Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
+
+- **Barre du haut** : la date est le premier jour de la partie (« Saison 2026 / 2027 »,
+  « mercredi 1 juillet 2026 ») ; l'action principale est « Commencer », grisée tant qu'aucun club
+  n'est choisi ; les prochains matches et le mercato de la partie en cours n'y sont pas. La graine
+  n'est écrite nulle part : la partie en tire une.
+- **Monde** : une carte, une ligne par nation (`.nation-line`, 26), dans l'ordre de
+  `config/creation.json`. La case qui la joue (`.check`), son drapeau et son nom, ses divisions,
+  ses clubs à droite ; le total des clubs dans l'en-tête de la carte.
+- **Divisions** : un choix jusqu'à une (`.segmented.small.range`), de la première à la plus basse
+  que le jeu sait simuler, écrites comme leur pastille (L1, L2, L3 ; D1, D2, D3) : toutes celles
+  jouées portent la marque de ce qui est ouvert, jusqu'à la plus basse. Un clic sur une division en
+  fait la plus basse jouée, et joue sa nation. Une nation écartée est atténuée, son drapeau gris, ses
+  divisions éteintes, « — » pour ses clubs.
+- **Clubs** : les clubs du monde choisi, filtrés par pays (les nations jouées), par réputation
+  décroissante ; club, championnat, réputation, niveau et potentiel (sur 200, les 16 meilleurs),
+  stade. Toutes les colonnes se trient ; la ligne choisie a le fond `--own-row`.
+- **Club choisi** : son bandeau (écusson, nom, drapeau et championnat à sa suite), sans tuile ;
+  dessous, ses tuiles (réputation, niveau et potentiel gradués, plafond salarial mensuel), ses faits
+  (stade, entraînement, recrutement des jeunes) et ses 16 meilleurs joueurs.
+- **Case à cocher** (`.check`) : 18, bordée, au rayon de la charte ; cochée, le fond de l'accent,
+  sa bordure `--accent-text`, la coche à l'encre de l'accent. C'est un bouton (`aria-pressed`).
 
 ### Bandeau
 
@@ -901,6 +952,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Navigation d'un bandeau | `.entity-nav` à gauche du bandeau d'un club, d'une sélection, d'un joueur et d'une compétition (`neighbours`, `web/navigation.js`) : le pas de saison en colonne, à la place du bloc de trois boutons bordés. Ses flèches et ses traits à la seconde couleur du bandeau quand elle s'y lit, sinon à son encre, et le voile sous le pointeur (`--hero-step`, `--hero-veil`, `heroColors`, `web/club-hero.js`). Sa liste est le menu de la charte, sans titre ; le compte du groupe est l'infobulle des trois traits |
 | Pastille d'un club | Le carré de 14 sur le fond du bandeau, son autre couleur dans un coin (`kitDot`, `bandColours`, `web/ui.js`), à la place de la pastille ronde coupée en deux, sur tous les écrans ; le bandeau d'un club lit ses couleurs par la même règle (`heroColors`) |
 | Match dans une liste | `fixtureRow` (`web/ui.js`) sur le tour d'une compétition, le calendrier d'un championnat, la Vue d'ensemble, les éditions des sélections et la page d'un pays, à la place de sa ligne propre : les pastilles contre le score, le score en chiffre clé, le nom du vainqueur en 700 à l'encre de l'accent et celui du battu à l'encre courante (`.won`, `.lost`), le match du club dirigé sur fond jaune (`setOwnClub`), l'étage du cumul ou des tirs au but à la place des deux lignes sous le score, les buteurs écrits « Mendes 12’ 58’ ». L'API dit sur les deux matches d'un aller-retour quel club s'est qualifié (`qualified_id`, `return_leg_id`). Dans le tableau d'une coupe, le qualifié et l'éliminé s'écrivent de même, et la case du match du club dirigé a le fond jaune (`web/bracket.js`). La ligne du club dirigé est colorée dans tous les classements, plus seulement sur la page d'un pays et dans Actualités (`standingsTable`) |
+| Accueil et nouvelle partie | Les deux panneaux de l'accueil (`homeScreen`, `savesList`, `web/home.js`) sans partie et sur « Ma partie », à la place du texte d'accueil, du formulaire de création et de la liste des emplacements ; la liste des sauvegardes y dit le club et la date de chaque partie (`slots`, `src/infrastructure/persistence/store.py`). L'écran « Nouvelle partie » (`newGameScreen`, `web/new-game.js` ; `creationHero`, `web/club-hero.js`) à la place du choix du club après la création : nations, divisions et club choisis avant que la partie ne soit tirée, « Commencer » dans la barre du haut. `.doors`, `.door`, `.saves-list`, `.check`, `.nation-line` dans `web/charte.css` |
 
 Ce qui reste :
 
@@ -950,3 +1002,6 @@ Le joueur sur un terrain a la sienne (le bloc : proposition B « Étiquette », 
 B3 « Étage » et la note en chiffre coloré) : <https://claude.ai/artifact/Hsqs282akMFByN9QUVUufT>,
 comme le maillot (« Carré · Manches ») : <https://claude.ai/artifact/7JMrbN6uTc4DS6kgP5EtAR>
 et le terrain des aptitudes (proposition B) : <https://claude.ai/artifact/KfuMRqMWEQyzDN2cxaM9us>.
+L'accueil et la nouvelle partie ont la leur (accueil : proposition C0d, ses panneaux
+réduits depuis ; nouvelle partie : proposition C, « Tout sur un écran ») :
+<https://claude.ai/artifact/Vfd8w6dFsdBPiwZQb5R9xi>.
