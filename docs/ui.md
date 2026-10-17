@@ -10,11 +10,6 @@ Cela n'autorise pas à mélanger lecture et décision dans le code : les endpoin
 sont déjà organisés pour qu'ajouter le contrôle utilisateur consiste à ajouter
 des routes d'action et une gestion de l'attente, en préservant les vues de lecture.
 
-Afficher à la création le rapport d'import : au maximum 30 joueurs par club,
-classement par niveau estimé avec places réservées aux gardiens, joueurs écartés,
-agents libres et corrections de données. Les niveaux, potentiels et finances
-issus de la synthèse sont signalés comme estimés.
-
 ## Principes
 
 **Une charte graphique.** L'apparence est fixée par `docs/charte-graphique.md` :
@@ -1234,7 +1229,6 @@ GET  /api/creation/clubs/{id}             un club de la création : couleurs, ch
 POST /api/partie/creer                   {commande_id, nations?: {FRA: 3, ENG: 2}, club_id?, graine?} -> travail_id ;
                                           nations : la plus basse division jouée par nation (défaut : config/monde.json) ;
                                           club_id : le club dirigé, joué dans ces divisions (400 sinon) ; graine : tirée sans elle
-GET  /api/partie/rapport-import          volumes et corrections de la création
 ```
 
 ## Front

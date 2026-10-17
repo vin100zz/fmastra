@@ -715,13 +715,6 @@ def router(service: GameService) -> APIRouter:
             rows.sort(key=lambda row: -row["salaire_propose"])
             return {"items": rows, "total": len(rows)}
 
-    @api.get("/partie/rapport-import")
-    def import_report() -> dict:
-        with service.reading() as world:
-            return {"counts": world.import_summary, "source_hashes": world.source_hashes,
-                    "max_squad": world.config.management.guardrails.max_squad,
-                    "estimated": True}
-
     @api.get("/ma-partie/actualites")
     def news_feed(page: int | None = Query(None, ge=1), message: int | None = None, taille: int = Query(NEWS_PAGE, ge=1, le=100)) -> dict:
         """A page of the feed, newest first: the one asked for, else the one showing `message`."""
