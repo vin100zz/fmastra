@@ -555,7 +555,10 @@ de titre.
   nationale. Un championnat n'en a pas ; une édition non plus.
 
 L'entrée « Coupes d'Europe » du menu ouvre la Ligue des champions ; la seule rangée d'onglets est
-celle des rubriques de la coupe. Une édition ouverte sans onglet montre sa phase finale, une Ligue
+celle des rubriques de la coupe. Ses clubs venant de plusieurs pays, chacun y est suivi du drapeau du
+sien, sur toutes ses vues (classement, phase de ligue, phase finale, derniers et prochains matches,
+statistiques, historique, tuile du vainqueur) et dans le compte rendu de ses matches (charte, « Clubs
+et pays »). Une édition ouverte sans onglet montre sa phase finale, une Ligue
 des nations sa phase de ligue.
 
 Une Ligue des nations a pour onglets Phase de ligue, Phase finale, Derniers matches, Prochains
@@ -803,7 +806,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
 - Tout tient dans une fenêtre de navigateur sur un écran de 1080, même un banc de 12 (charte, « Compte rendu
   d'un match »)
 - L'en-tête d'un match (charte, « En-tête d'un match ») : le bandeau partagé entre les deux camps, celui qui
-  reçoit à gauche, le score entre eux avec le cumul et les tirs au but dessous, sans barre dessous
+  reçoit à gauche, le score entre eux avec le cumul et les tirs au but dessous, sans barre dessous ; dans une
+  coupe d'Europe, le drapeau du pays de chaque club après son nom, du côté du score, lien vers sa sélection
 - Le nom des deux camps n'est écrit que dans le bandeau : sur le reste de l'écran, ce qui est à gauche est au
   camp qui reçoit
 - Trois colonnes : la composition d'un camp, les temps forts et les chiffres, la composition de l'autre
@@ -1208,7 +1212,7 @@ GET  /api/joueurs/{id}/historique         carrière (chaque ligne : competition,
                                           championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
-GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection ; chaque fait donne le nom court de ses joueurs (player_short, secondary_short), chaque joueur des compositions le sien (short), distingués dans l'effectif de leur camp ; les buteurs d'une liste de matches, la composition et le direct donnent aussi short
+GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection, et pour un club nation (son pays, comme tout club nommé par l'API) et nation_id (la sélection de ce pays | null) ; chaque fait donne le nom court de ses joueurs (player_short, secondary_short), chaque joueur des compositions le sien (short), distingués dans l'effectif de leur camp ; les buteurs d'une liste de matches, la composition et le direct donnent aussi short
 
 GET  /api/ma-partie/actualites?page=&message=&taille=   le fil, du plus récent au plus ancien : la page demandée, sinon celle du message ;
                                           chaque ligne : {id, date, kind, title, segments: [{text, ref?}], read, pending}

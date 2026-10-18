@@ -214,6 +214,8 @@
 .fixture>*{min-width:0}
 .fixture.own{background:var(--own-row)}
 .fixture-side{display:flex;align-items:center;gap:6px;height:var(--h-control-small);overflow:hidden;white-space:nowrap}
+.fixture-side>a{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.fixture-side>:is(.kit-dot,.flag){flex:none}
 .fixture-side.home{justify-content:flex-end}
 .fixture-side.won{font-weight:700;color:var(--accent-text)}
 .fixture-side.lost{color:var(--ink-2)}
@@ -297,6 +299,12 @@
 .kit-dot{display:inline-block;flex:none;width:14px;height:14px;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #0000003d}
 .flag{display:inline-block;flex:none;width:16px;height:12px;box-shadow:0 0 0 1px #0a141e1f}
 .nation{display:inline-flex;align-items:center;gap:6px}
+/* In a European cup, where clubs of several countries meet, a club's name is followed by the flag of its country, 6 apart: a
+   flag that is no link, its country in its tooltip. Face to face, the side at home has it before its name, so that its dot
+   keeps touching the score. A name too long is cut, never its marks. */
+.club-flag{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}
+.club-flag>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.club-flag>:is(.kit-dot,.flag){flex:none}
 /* What a pointer shows: never the browser's own title. Above its target, below when there is no room; the arrow points at it. */
 .tooltip{position:relative;display:inline-flex;flex-direction:column;max-width:320px;padding:var(--s1) var(--s2);border-radius:var(--radius);background:var(--strong);color:#fff;font:400 var(--fs-body)/18px var(--text);box-shadow:0 4px 12px #0a141e33}
 .tooltip::after{content:"";position:absolute;left:50%;top:100%;width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--strong);transform:rotate(45deg)}
@@ -430,6 +438,8 @@ span.entity-step svg{opacity:.3}
 .hero-side{display:flex;align-items:center;gap:var(--s4);min-width:0}
 .hero-side.away{flex-direction:row-reverse}
 .hero-side h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* In a European cup, the flag of each club's country follows its name, 24 × 18, on the side of the score. */
+.hero-side .flag{flex:none;width:24px;height:18px}
 .hero .tile.match-score{align-items:center;min-width:0;padding:var(--s1) var(--s4)}
 .big-score{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong);white-space:nowrap}
 .match-facts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}

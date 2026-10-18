@@ -200,6 +200,11 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-link.reversed{display:flex;align-items:center}
 .club-link.reversed>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .club-link.reversed .kit-dot{flex:none;margin:0 0 0 6px}
+/* In a European cup, a club's name is followed by the flag of its country, which is no link; the side at home of a match
+   face to face has it before its name, its dot against the score. A name too long is cut, never its flag. */
+.club-flag{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}
+.club-flag>.club-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.club-flag>.nation{flex:none}
 .fixture-score{display:block;justify-self:center;min-width:48px;height:var(--h-control-small);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);font:700 var(--fs-figure)/var(--h-control-small) var(--display);font-stretch:semi-condensed;text-align:center;color:var(--muted);white-space:nowrap}
 .fixture-score b{color:var(--strong)}
 .fixture-score.settled{color:var(--ink-2)}
@@ -364,6 +369,9 @@ span.entity-step svg{opacity:.3}
 .match-hero .club-hero-art span i.field{background:var(--hero-field);opacity:1;clip-path:polygon(54% 0,100% 0,100% 100%,46% 100%)}
 .match-hero-side{display:flex;align-items:center;gap:var(--s4);min-width:0;color:var(--hero-ink,var(--ink))}
 .match-hero-side.away{flex-direction:row-reverse}
+/* In a European cup, the flag of each club's country follows its name, 24 × 18, on the side of the score. */
+.match-hero-flag{display:flex;flex:none}
+.match-hero-flag .flag{width:24px;height:18px}
 .match-hero-name{min-width:0;font:700 var(--fs-hero)/1 var(--display);font-stretch:semi-condensed;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
 .club-hero-tile.match-score{align-items:center;min-width:0;padding:var(--s1) var(--s4)}
 .match-score .big-score{font-size:var(--fs-hero);line-height:1;white-space:nowrap}
