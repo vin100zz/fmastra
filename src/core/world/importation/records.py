@@ -46,3 +46,5 @@ class SourcePlayer:
     loyalty: float | None = None
     international_caps: int = 0
     international_goals: int = 0
+    # The source's 0-10000 world reputation, which decides only who a new world keeps.
+    world_reputation: int = 0

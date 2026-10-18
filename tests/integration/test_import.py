@@ -21,14 +21,20 @@ def test_real_source_import(imported, config):
     assert len(imported.players) == len(source_players) - len(imported.excluded_player_ids) + imported.import_summary["squad_completion_players"]
     assert len(imported.competitions) == 19
     assert len(imported.active_clubs()) == 216
-    assert imported.import_summary["active_players"] == 6405
-    assert imported.import_summary["squad_completion_players"] == 39
-    assert imported.import_summary["free_agents"] == 186
-    assert len(imported.excluded_player_ids) == 3
+    assert imported.import_summary["active_players"] == 6411
+    assert imported.import_summary["squad_completion_players"] == 36
+    assert imported.import_summary["free_agents"] == 682
+    # The tiers keep about a third of the source, and outside the simulated clubs no more than the budget.
+    assert len(imported.excluded_player_ids) == 30545 and len(imported.clubs) == 1826
+    outside = len(imported.players) - imported.import_summary["active_players"]
+    assert outside <= config.import_settings.squad_selection.tiers.outside_budget
     assert len(imported.matches) == 4064 + 5 * 32 + 3 * 144
     assert len(imported.competitions[18].club_ids) == 18
     assert imported.clubs[825].competition_id == 18  # Cannes completes the National.
+    assert imported.clubs[2000020415].competition_id == 18  # Paris 13 Atlético, among the clubs created lately.
     assert len(imported.competitions[18].match_ids) == 306
+    # Liechtenstein has no league of its own: its clubs, playing in Switzerland, stand for it in Europe.
+    assert imported.clubs[5720002].cup_nation == "X26"
     assert all(len(club.player_ids) <= 30 for club in imported.clubs.values())
     assert all(club.wage_bill <= club.wage_cap for club in imported.clubs.values())
     assert all(player.rating <= player.potential <= 100 for player in imported.players.values())
@@ -80,7 +86,8 @@ def test_supplied_attributes_abilities_and_positions(imported, config):
     from core.world.importation.construction import create_player
     from core.domain.players import Position
     clubs, rows, _ = read_sources(ROOT / "data", config)
-    assert all(imported.clubs[row.id].reputation == row.reputation / 100 for row in clubs)
+    # The world keeps some of the source's clubs (see the tiers), each with its reputation.
+    assert all(imported.clubs[row.id].reputation == row.reputation / 100 for row in clubs if row.id in imported.clubs)
     source = next(row for row in rows if row.id == 85139014)
     player = imported.players[source.id]
     assert player.attributes.get("finition") == 18 * 5

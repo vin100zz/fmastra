@@ -49,3 +49,9 @@ def parse_positions(source: str) -> tuple[Position, ...]:
                     candidates.append(position)
         result.extend(position for position in candidates if position not in result)
     return tuple(result)
+
+
+def ranked_positions(ratings: dict[Position, int], source: str) -> list[Position]:
+    """Positions from the best rated; the source's own listing breaks ties. The first is the player's position."""
+    preferred = parse_positions(source)
+    return sorted(ratings, key=lambda position: (-ratings[position], preferred.index(position) if position in preferred else len(preferred)))

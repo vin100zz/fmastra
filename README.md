@@ -27,7 +27,11 @@ Angleterre, Allemagne), la plus basse division simulée de chacune et le club
 dirigé ; sa graine est tirée au hasard. Les divisions que chaque nation peut
 simuler, et le vivier de ses promus sous la plus basse, sont dans
 `config/creation.json`. Les CSV sont chargés à la création ; aucun service externe n'est
-nécessaire pendant le jeu. Pour un autre port : `./run.ps1 -Port 8012`.
+nécessaire pendant le jeu. La partie ne garde qu'une partie de leurs joueurs : l'effectif des
+clubs simulés et, ailleurs, ce dont elle a besoin (vivier des promus, vedettes et pépites,
+meilleurs joueurs libres, clubs étrangers qui peuvent jouer l'Europe, une liste par
+sélection), sous un plafond ; les paliers sont réglés dans `config/import.json`
+(`selection_effectifs.paliers`), et le chapitre « Le monde » du manuel les décrit. Pour un autre port : `./run.ps1 -Port 8012`.
 Conserver un seul processus serveur : l'état est en mémoire.
 
 ### En ligne (Render)

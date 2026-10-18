@@ -25,7 +25,7 @@ def test_a_choice_of_nations_and_levels_becomes_the_leagues_and_reserves_of_the_
     assert [(league.nation, league.level, league.name) for league in cfg.world.competitions] == [
         ("FRA", 1, "Ligue 1"), ("FRA", 2, "Ligue 2"), ("GER", 1, "Bundesliga"), ("GER", 2, "Bundesliga 2"), ("GER", 3, "3. Liga")]
     assert {pool.nation: pool.division_ids for pool in cfg.world.promotion_relegation.reserves} == {
-        "FRA": (18,), "GER": (2000469344, 2000469346, 2000469347, 2000469362, 2000469371)}
+        "FRA": (18,), "GER": (26, 91107110, 35010927, 27, 91107111)}
     # Everything else is the configuration's own, and the default choice gives it back unchanged.
     assert cfg.world.season == config.world.season and cfg.engine == config.engine
     assert configure_world(config, pyramids, default_levels(config, pyramids)) == config

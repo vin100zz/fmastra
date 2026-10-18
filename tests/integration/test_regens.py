@@ -200,9 +200,10 @@ def test_a_cohort_of_regens_is_placed_coherently(world, config):
         position: rating / 20 for position, rating in player.position_ratings.items() if 1 < rating < 20} for player in players)
     assert sum(bool(player.secondary_positions) for player in players) > 0.6 * len(players)
     assert thin and all(any(player.club_id == club.id and player.position == Position.GOALKEEPER for player in playing) for club in thin)
-    # Dormant regens live mostly in their own country, and so do those of a nation with a club playing.
+    # Dormant regens live mostly in their own country, and so do those of a nation with a club playing. A nation the world
+    # keeps for its national team only, its players abroad, has no club of its own to take them.
     dormant = [player for player in outside if player.club_id]
-    assert sum(player.nation == world.clubs[player.club_id].nation for player in dormant) > 0.8 * len(dormant)
+    assert sum(player.nation == world.clubs[player.club_id].nation for player in dormant) > 0.75 * len(dormant)
     nations = {club.nation for club in world.active_clubs()}
     local = [player for player in playing if player.nation in nations]
     assert local and sum(player.nation == world.clubs[player.club_id].nation for player in local) > 0.8 * len(local)

@@ -22,6 +22,6 @@
       {"nom": "Bundesliga", "nb_clubs": 18, "division_id": 22},
       {"nom": "Bundesliga 2", "nb_clubs": 18, "division_id": 23},
       {"nom": "3. Liga", "nb_clubs": 20, "division_id": 35010926}
-    ], "reserve": [2000469344, 2000469346, 2000469347, 2000469362, 2000469371]}
+    ], "reserve": [26, 91107110, 35010927, 27, 91107111]}
   ]
 }
