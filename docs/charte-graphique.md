@@ -254,8 +254,11 @@ voile de son encre.
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
 | Joueur sur un terrain | Son nom | Son nom souligné |
 
-- Une pastille qui mène quelque part (le score d'un match) est un lien : son
-  texte se souligne, son fond ne change pas.
+- Une pastille qui mène quelque part (le score d'un match, la pastille d'une
+  compétition) est un lien : son texte se souligne, son fond ne change pas.
+- Un drapeau seul qui mène à sa sélection ne change pas sous le pointeur : la
+  main et son infobulle, qui nomme le pays, le disent. Suivi du nom ou du code
+  du pays, c'est ce texte qui se souligne.
 - Dans une carte dont l'en-tête entier ouvre une page, c'est son lien
   « Voir → » qui se souligne.
 - Un graphique garde ses propres réactions (repère, infobulle) : voir
@@ -421,9 +424,9 @@ sans disque.
 - **Sélection** (`.tile.split`) : une tuile de trois colonnes, un trait entre
   deux. Le drapeau au-dessus du code de trois lettres (jamais le nom du pays :
   la tuile garde sa largeur), « Sél. » et « Buts », la colonne des buts dès le
-  premier. C'est la sélection qui l'a appelé, lien vers elle ; à défaut la
-  première de ses nationalités, sans lien. Ses autres nationalités sont un fait
-  de la carte État, drapeau puis code.
+  premier. C'est la sélection qui l'a appelé, à défaut la première de ses
+  nationalités ; lien vers la sélection du pays quand le jeu en a une. Ses autres
+  nationalités sont un fait de la carte État, drapeau puis code.
 - **Barre** (`.hero-bar`) : 36, à la place des onglets d'un club, la page
   n'en ayant pas. À gauche, où il en est (`.pill` : « Sur la liste · 45 M€ »,
   « Prolongation en attente », « Prêté à Lorient · retour le 30 juin 2026 ») ;
@@ -920,6 +923,18 @@ Une pastille de deux caractères.
 Deux pays peuvent partager un code (CA pour l'Angleterre et l'Allemagne). Un
 pays ajouté suit la règle : CP pour le Portugal.
 
+La pastille est un lien vers la page de sa compétition : un championnat ou une
+coupe nationale, une coupe d'Europe, l'édition d'une compétition des sélections
+(Euro 2028). Son nom complet est dans son infobulle. Elle n'est pas un lien :
+
+- dans un filtre (les compétitions au-dessus du calendrier d'un club) ;
+- là où ce qui la porte en est déjà un : une ligne de la recherche globale, un
+  match de la Vue d'ensemble d'un club, la liste de la navigation d'un bandeau,
+  une compétition du palmarès ;
+- pour une compétition que le jeu ne simule pas (un championnat étranger dans
+  une carrière) ;
+- sur l'écran « Nouvelle partie », où le monde n'est pas encore tiré.
+
 ### Clubs et pays
 
 - Le nom d'un club suit toujours sa pastille (`.kit-dot`) : un carré de 14 au
@@ -930,10 +945,11 @@ pays ajouté suit la règle : CP pour le Portugal.
   « Match dans une liste ».
 - Dans une coupe d'Europe, où se croisent les clubs de plusieurs pays, le nom
   d'un club est suivi du drapeau de son pays (`.club-flag`) : la pastille, le nom,
-  puis le drapeau, à 6. Ce drapeau n'est pas un lien ; son infobulle nomme le
-  pays. Face à face, celui qui reçoit l'a devant son nom : sa pastille garde le
-  contact du score. Un nom trop long est coupé, jamais son drapeau. Il s'écrit
-  sur toutes les vues d'une coupe d'Europe (classement, phase de ligue, phase
+  puis le drapeau, à 6. Ce drapeau est un lien à part, vers la sélection de son
+  pays ; son infobulle nomme le pays. Face à face, celui qui reçoit l'a devant
+  son nom : sa pastille garde le contact du score. Un nom trop long est coupé,
+  jamais son drapeau. Il s'écrit sur toutes les vues d'une coupe d'Europe
+  (classement, phase de ligue, phase
   finale, derniers et prochains matches, statistiques, historique, tuile du
   vainqueur) et dans le compte rendu de ses matches ; ailleurs, le pays d'un club
   se lit sur sa fiche.
@@ -942,6 +958,14 @@ pays ajouté suit la règle : CP pour le Portugal.
   lettres. Un joueur n'y a qu'une
   nation, celle de sa sélection, à défaut la première de ses nationalités ; les
   autres ne sont ni comptées ni nommées : elles se lisent sur sa fiche.
+- Un drapeau mène toujours à la sélection de son pays : seul, ou avec le nom ou
+  le code qui le suit, en un seul lien ; devant autre chose (un championnat, un
+  club), il est un lien à part. Un pays sans sélection dans le jeu garde son
+  drapeau, sans lien. Il n'en est pas un dans un filtre (les pays au-dessus
+  d'une liste), dans le menu, sur l'écran « Nouvelle partie », ni là où ce qui
+  le porte est déjà un lien : une sélection dans une liste, dont le drapeau et
+  le nom mènent ensemble à sa fiche ; un pays du palmarès, qui mène à sa page ;
+  une ligne de la recherche globale ; un match de la Vue d'ensemble d'un club.
 - Une sélection a deux couleurs, celles de son maillot, comme un club : elles
   font son bandeau et ses maillots sur un terrain. Son en-tête est celui d'un
   club ; son drapeau remplit le disque où un club a son écusson. Dans une liste,
@@ -1002,6 +1026,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Drapeaux des clubs | Dans une coupe d'Europe, le drapeau du pays de chaque club après son nom, devant lui pour celui qui reçoit d'un match face à face (`clubLink`, option `flag`, `web/ui.js` ; `.club-flag`, `web/charte.css`) : son classement, sa phase de ligue et ses derniers et prochains matches (`flags` de `standingsTable`, `fixtures`, `fixtureRow`, `roundContent`), sa phase finale (`bracket`), ses buteurs, son historique et la tuile de son vainqueur (`competitionHero`). Dans le compte rendu d'un de ses matches, le drapeau de chaque club en 24 × 18 après son nom dans le bandeau, lien vers la sélection (`matchHero`, `web/club-hero.js`) ; la ligne du match ne le répète pas. L'API donne le pays de chaque club (`nation` de `club_ref`, `src/api/views.py`), et sa sélection dans le compte rendu (`nation_id`) |
 | Accueil et nouvelle partie | Les deux panneaux de l'accueil (`homeScreen`, `savesList`, `web/home.js`) sans partie et sur « Ma partie », à la place du texte d'accueil, du formulaire de création et de la liste des emplacements ; la liste des sauvegardes y dit le club et la date de chaque partie (`slots`, `src/infrastructure/persistence/store.py`). L'écran « Nouvelle partie » (`newGameScreen`, `web/new-game.js` ; `creationHero`, `web/club-hero.js`) à la place du choix du club après la création : nations, divisions et club choisis avant que la partie ne soit tirée, « Commencer » dans la barre du haut. `.doors`, `.door`, `.saves-list`, `.check`, `.nation-line` dans `web/charte.css` |
 | Attributs | Sur la fiche et dans l'aperçu d'un joueur, une colonne à la mesure du plus long nom de sa section et de sa pastille (`--attribute-column`, `web/charte.css`), à la place des 165 de toutes les sections sur la fiche et des deux colonnes fixes de l'aperçu : dans l'aperçu, la section Jeu passe sur une colonne, ses lignes et celles des attributs à 26 |
+| Liens des pastilles et des drapeaux | La pastille d'une compétition mène à sa page, le drapeau d'un pays à sa sélection, sur tous les écrans (`competitionBadge`, `competitionHref`, `nationFlag`, `nationBadge`, `nationHref`, `web/ui.js`) : le drapeau d'un club dans une coupe d'Europe (`clubLink`, option `flag`), la nationalité d'une liste de joueurs, la tuile de sélection d'un joueur jamais appelé (`selectionTile`, `web/club-hero.js`), la carrière d'un joueur, le calendrier d'un club ou d'une sélection, la ligne d'un match. L'option `link` les garde sans lien dans un filtre et dans ce qui est déjà un lien. L'API donne la sélection de chaque pays (`selection_id` de `/api/nations`), table relue à chaque changement de partie (`web/app.js`) |
 
 Ce qui reste :
 

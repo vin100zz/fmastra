@@ -69,7 +69,7 @@ test('the seasons table shows the rank, the reputation, the national cup and the
  const html=seasonsHistory(seasonsData(),club,2027);
  for(const label of ['COUPE NATIONALE','COUPE D’EUROPE','CLASSEMENT','PALMARÈS','RÉPUTATION'])assert.ok(html.includes(label),label);
  assert.match(html,/<span class="run-chip">Quarts de finale<\/span>/);assert.match(html,/<span class="run-chip won">✦ Vainqueur<\/span>/);
- assert.match(html,/<span class="competition-code europe" title="Ligue des champions">C1<\/span><span class="run-chip">Phase de ligue<\/span>/);
+ assert.match(html,/<a class="competition-code europe" href="#\/europe\/C1" title="Ligue des champions">C1<\/a><span class="run-chip">Phase de ligue<\/span>/);
  assert.match(html,/<span class="rank-chip europe">3e<\/span>/);assert.match(html,/<span class="rank-chip first">1er<\/span>/);
  assert.match(html,/88\.4 <span class="bad">−3\.1<\/span>/);assert.match(html,/91\.5<\/td>/);
  assert.match(html,/data-value="4"/);assert.match(html,/data-value="7"/);assert.match(html,/data-value="88.4"/);

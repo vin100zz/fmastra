@@ -63,7 +63,7 @@ export function positionChips(base, params){
 
 // A chip per nation, flag and name; the chosen one takes its filter off. `field` false when a list of the form carries the value.
 export function nationChips(base, params, codes, field=true){
- const chip=code=>{const on=params.get('pays')===code;return `<a class="chip nation-chip${on?' on':''}" href="${listHref(base,params,{pays:on?'':code})}"${on?' aria-current="true"':''}>${nationFlag(code)}${e(nationName(code))}</a>`;};
+ const chip=code=>{const on=params.get('pays')===code;return `<a class="chip nation-chip${on?' on':''}" href="${listHref(base,params,{pays:on?'':code})}"${on?' aria-current="true"':''}>${nationFlag(code,{link:false})}${e(nationName(code))}</a>`;};
  return `<div class="chips" role="group" aria-label="Pays"><span>${codes.map(chip).join('')}</span></div>${field?kept(params,'pays'):''}`;
 }
 

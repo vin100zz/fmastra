@@ -45,7 +45,7 @@ export function playerNavigation(nav){
 }
 
 // A competition in a list: its badge, then its name.
-const competitionRow=competition=>badged(competitionBadge(competition),competition.name);
+const competitionRow=competition=>badged(competitionBadge(competition,{link:false}),competition.name);
 
 // The divisions of a country from the top down, then its cup. A competition page has no tab in common with the next one, so it opens on its default.
 export function competitionNavigation(nav){

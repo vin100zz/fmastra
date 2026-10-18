@@ -256,7 +256,7 @@
 </div>
 </section>
 </div>
-<div class="spec-line"><span class="token">Sous le pointeur</span><span class="value">un seul fond, --panel-3 : ligne, fait, bouton, option, pas (Monaco, Plafond salarial, Actifs, 9)</span><span class="token" style="margin-left: 16px">Lien</span><span class="value">couleur du texte, non souligné ; souligné sous le pointeur, même couleur</span><span class="token" style="margin-left: 16px">Onglet</span><span class="value">--strong (Calendrier)</span></div>
+<div class="spec-line"><span class="token">Sous le pointeur</span><span class="value">un seul fond, --panel-3 : ligne, fait, bouton, option, pas (Monaco, Plafond salarial, Actifs, 9)</span><span class="token" style="margin-left: 16px">Lien</span><span class="value">couleur du texte, non souligné ; souligné sous le pointeur, même couleur ; une pastille (score, compétition) souligne son texte, un drapeau seul ne change pas</span><span class="token" style="margin-left: 16px">Onglet</span><span class="value">--strong (Calendrier)</span></div>
 <div class="spec-line"><span class="token">Tri</span><span class="value">toutes les colonnes de tous les tableaux</span><span class="token" style="margin-left: 16px">Largeur</span><span class="value">fixe par colonne : la flèche se loge dans la marge de l’en-tête, un tri ne déplace rien</span></div>
 </section>
 
@@ -265,10 +265,10 @@
 <div class="spec-row" style="gap: 16px 32px">
 <div class="spec-group"><span class="label">Poste · couleur pleine</span><div class="spec-line gap"><span class="position gk">GB</span><span class="position">DC</span><span class="position mid">MDC</span><span class="position att">BU</span><span class="position att">AILG</span><span class="position bench">R1</span><span class="position bench">REMP</span></div></div>
 <div class="spec-group"><span class="label">Note · fond pâle gradué</span><div class="spec-line gap"><span class="rating graded h0">62</span><span class="rating graded h30">90</span><span class="rating graded h60">110</span><span class="rating graded h90">130</span><span class="rating graded h120">168</span><span class="rating graded h120">8.4</span></div></div>
-<div class="spec-group"><span class="label">Compétition · contour</span><div class="spec-line gap"><span class="comp europe">C1</span><span class="comp europe">C3</span><span class="comp">L1</span><span class="comp">D2</span><span class="comp cup">CF</span><span class="comp cup">CA</span></div></div>
+<div class="spec-group"><span class="label">Compétition · contour · lien vers sa page (C1 sous le pointeur)</span><div class="spec-line gap"><a class="comp europe hover" href="#">C1</a><a class="comp europe" href="#">C3</a><a class="comp" href="#">L1</a><a class="comp" href="#">D2</a><a class="comp cup" href="#">CF</a><a class="comp cup" href="#">CA</a></div></div>
 <div class="spec-group"><span class="label">Forme, score</span><div class="spec-line gap"><span class="form"><i class="V">V</i><i class="N">N</i><i class="D">D</i></span><span class="score V">3 – 1</span><span class="score N">2 – 2</span><span class="score D">0 – 1</span><span class="score pending">À venir</span></div></div>
 <div class="spec-group"><span class="label">Statut</span><div class="spec-line gap"><span class="tag info">Prêt</span><span class="tag open">Mercato ouvert</span><span class="tag alert">Marquinhos est blessé</span><span class="count">3</span></div></div>
-<div class="spec-group"><span class="label">Club, pays</span><div class="spec-line gap"><span class="cell strong"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 64%, #da291c 64%)"></i><a href="#">Paris SG</a></span><span class="nation"><img class="flag" src="../../web/flags/fr.svg" alt="">France</span><span class="crest" style="background: linear-gradient(155deg, #004170 55%, #da291c 55%); color: #fff">PSG</span><svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></div></div>
+<div class="spec-group"><span class="label">Club, pays</span><div class="spec-line gap"><span class="cell strong"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 64%, #da291c 64%)"></i><a href="#">Paris SG</a></span><a class="nation" href="#"><img class="flag" src="../../web/flags/fr.svg" alt="">France</a><span class="crest" style="background: linear-gradient(155deg, #004170 55%, #da291c 55%); color: #fff">PSG</span><svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></div></div>
 <div class="spec-group"><span class="label">Faits de match</span><div class="spec-line gap"><span class="marks"><i class="mark goal"></i><i class="mark yellow"></i><i class="mark red"></i><i class="mark injury"></i><i class="mark on">▲ 70′</i><i class="mark off">▼ 70′</i></span></div></div>
 </div>
 </section>
@@ -351,8 +351,8 @@
 </div>
 <div class="spec-group">
 <span class="label">Sélection · .tile.split</span>
-<div class="spec-line gap"><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/fr.svg" alt=""></span><strong>FRA</strong></a><div><span class="label">Sél.</span><strong>112</strong></div><div><span class="label">Buts</span><strong>68</strong></div></div><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/ba.svg" alt=""></span><strong>BIH</strong></a><div><span class="label">Sél.</span><strong>12</strong></div></div><div class="tile split" style="flex: none"><div><span class="label"><img class="flag" src="../../web/flags/ci.svg" alt=""></span><strong>CIV</strong></div><div><span class="label">Sél.</span><strong>0</strong></div></div><div class="tile graded h60" style="flex: none"><span class="label">Niveau</span><strong>112</strong></div></div>
-<span class="value">le drapeau au-dessus du code de trois lettres, les sélections, puis les buts dès le premier ; lien vers la sélection qui l’a appelé</span>
+<div class="spec-line gap"><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/fr.svg" alt=""></span><strong>FRA</strong></a><div><span class="label">Sél.</span><strong>112</strong></div><div><span class="label">Buts</span><strong>68</strong></div></div><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/ba.svg" alt=""></span><strong>BIH</strong></a><div><span class="label">Sél.</span><strong>12</strong></div></div><div class="tile split" style="flex: none"><a href="#"><span class="label"><img class="flag" src="../../web/flags/ci.svg" alt=""></span><strong>CIV</strong></a><div><span class="label">Sél.</span><strong>0</strong></div></div><div class="tile graded h60" style="flex: none"><span class="label">Niveau</span><strong>112</strong></div></div>
+<span class="value">le drapeau au-dessus du code de trois lettres, les sélections, puis les buts dès le premier ; lien vers la sélection qui l’a appelé, à défaut celle de sa première nationalité ; sans lien pour un pays sans sélection dans le jeu</span>
 </div>
 </div>
 </section>
@@ -466,7 +466,7 @@
 <div class="entity-nav" role="group" aria-label="Toutes les coupes d’Europe"><a class="entity-step" href="#" aria-label="Coupe précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 14.5 12 9l5.5 5.5"></path></svg></a><details class="entity-menu"><summary aria-label="Toutes les coupes d’Europe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14M5 12h14M5 16.5h14"></path></svg></summary></details><a class="entity-step" href="#" aria-label="Coupe suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 9.5 12 15l5.5-5.5"></path></svg></a></div>
 <img class="hero-emblem" src="../../web/emblems/c1.png" alt="">
 <div class="hero-name"><h1>Ligue des champions</h1></div>
-<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><span class="club-flag"><i class="kit-dot" style="background: linear-gradient(135deg, #b03038 64%, #f8f8f8 64%)"></i><a href="#">FC Bayern</a><img class="flag" src="../../web/flags/de.svg" alt=""></span></strong></div></div>
+<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><span class="club-flag"><i class="kit-dot" style="background: linear-gradient(135deg, #b03038 64%, #f8f8f8 64%)"></i><a href="#">FC Bayern</a><a class="nation" href="#"><img class="flag" src="../../web/flags/de.svg" alt=""></a></span></strong></div></div>
 </div>
 <nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #2447e6">Classement</a><a href="#">Phase de ligue</a><a href="#">Phase finale</a><a href="#">Statistiques</a><a href="#">Historique</a><div class="tools"><div class="season" role="group" aria-label="Saison" style="--club: #2447e6"><button type="button" aria-label="Saison précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick"><summary>2032 / 2033<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary></details><button type="button" aria-label="Saison suivante" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div></div></nav>
 </section>
@@ -476,7 +476,7 @@
 <div class="entity-nav" role="group" aria-label="Toutes les coupes d’Europe"><a class="entity-step" href="#" aria-label="Coupe précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 14.5 12 9l5.5 5.5"></path></svg></a><details class="entity-menu"><summary aria-label="Toutes les coupes d’Europe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14M5 12h14M5 16.5h14"></path></svg></summary></details><a class="entity-step" href="#" aria-label="Coupe suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 9.5 12 15l5.5-5.5"></path></svg></a></div>
 <img class="hero-emblem" src="../../web/emblems/c3.png" alt="">
 <div class="hero-name"><h1>Ligue Europa</h1></div>
-<div class="tiles"><div class="tile"><span class="label">Vainqueur</span><strong><span class="club-flag"><i class="kit-dot" style="background: linear-gradient(135deg, #283040 64%, #283040 64%)"></i><a href="#">Strasbourg</a><img class="flag" src="../../web/flags/fr.svg" alt=""></span></strong></div></div>
+<div class="tiles"><div class="tile"><span class="label">Vainqueur</span><strong><span class="club-flag"><i class="kit-dot" style="background: linear-gradient(135deg, #283040 64%, #283040 64%)"></i><a href="#">Strasbourg</a><a class="nation" href="#"><img class="flag" src="../../web/flags/fr.svg" alt=""></a></span></strong></div></div>
 </div>
 <nav class="tabs" aria-label="Sections"><a href="#">Classement</a><a href="#">Phase de ligue</a><a class="active" href="#" style="border-bottom-color: #f26522">Phase finale</a><a href="#">Statistiques</a><a href="#">Historique</a><div class="tools"><div class="season" role="group" aria-label="Saison" style="--club: #f26522"><button type="button" aria-label="Saison précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick"><summary>2031 / 2032<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary></details><button type="button" aria-label="Saison suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div></div></nav>
 </section>
@@ -486,7 +486,7 @@
 <div class="entity-nav" role="group" aria-label="Toutes les coupes d’Europe"><a class="entity-step" href="#" aria-label="Coupe précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 14.5 12 9l5.5 5.5"></path></svg></a><details class="entity-menu"><summary aria-label="Toutes les coupes d’Europe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14M5 12h14M5 16.5h14"></path></svg></summary></details><a class="entity-step" href="#" aria-label="Coupe suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 9.5 12 15l5.5-5.5"></path></svg></a></div>
 <img class="hero-emblem" src="../../web/emblems/c4.png" alt="">
 <div class="hero-name"><h1>Conference League</h1></div>
-<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><span class="club-flag"><i class="kit-dot" style="background: linear-gradient(135deg, #d81820 64%, #f8f8f8 64%)"></i><a href="#">Shelbourne</a><img class="flag" src="../../web/flags/ie.svg" alt=""></span></strong></div></div>
+<div class="tiles"><div class="tile"><span class="label">Tenant du titre</span><strong><span class="club-flag"><i class="kit-dot" style="background: linear-gradient(135deg, #d81820 64%, #f8f8f8 64%)"></i><a href="#">Shelbourne</a><a class="nation" href="#"><img class="flag" src="../../web/flags/ie.svg" alt=""></a></span></strong></div></div>
 </div>
 <nav class="tabs" aria-label="Sections"><a class="active" href="#" style="border-bottom-color: #00ab00">Classement</a><a href="#">Phase de ligue</a><a href="#">Phase finale</a><a href="#">Statistiques</a><a href="#">Historique</a><div class="tools"><div class="season" role="group" aria-label="Saison" style="--club: #00ab00"><button type="button" aria-label="Saison précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick"><summary>2032 / 2033<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary></details><button type="button" aria-label="Saison suivante" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div></div></nav>
 </section>
@@ -879,12 +879,13 @@
 <div class="card"><div class="table t-rules">
 <div class="tr head"><span>Donnée</span><span>Exemple</span><span>Écriture</span></div>
 <div class="tr"><span class="strong">Nom d’un club</span><span class="cell strong"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 64%, #da291c 64%)"></i>Paris SG</span><span>Toujours après la pastille à ses couleurs</span></div>
-<div class="tr"><span class="strong">Club, coupe d’Europe</span><span class="club-flag strong"><i class="kit-dot" style="background: linear-gradient(135deg, #c81018 64%, #f8f8f8 64%)"></i><a href="#">Ajax</a><img class="flag" src="../../web/flags/nl.svg" alt=""></span><span>Après le nom, le drapeau de son pays, sans lien</span></div>
-<div class="tr"><span class="strong">Nom d’un pays</span><span class="nation strong"><img class="flag" src="../../web/flags/fr.svg" alt="">France</span><span>Toujours après son drapeau</span></div>
-<div class="tr"><span class="strong">Nationalité, en colonne</span><span class="nation"><img class="flag" src="../../web/flags/pt.svg" alt="">POR</span><span>Drapeau, puis code de trois lettres ; une seule nation : sa sélection, sinon sa première</span></div>
-<div class="tr"><span class="strong">Championnat étranger</span><span class="nation"><img class="flag" src="../../web/flags/gb-eng.svg" alt=""><span class="comp">D1</span></span><span>Drapeau, puis pastille de la division</span></div>
+<div class="tr"><span class="strong">Club, coupe d’Europe</span><span class="club-flag strong"><i class="kit-dot" style="background: linear-gradient(135deg, #c81018 64%, #f8f8f8 64%)"></i><a href="#">Ajax</a><a class="nation" href="#"><img class="flag" src="../../web/flags/nl.svg" alt=""></a></span><span>Après le nom, son drapeau, lien vers sa sélection</span></div>
+<div class="tr"><span class="strong">Nom d’un pays</span><a class="nation strong" href="#"><img class="flag" src="../../web/flags/fr.svg" alt="">France</a><span>Après son drapeau, un seul lien vers sa sélection</span></div>
+<div class="tr"><span class="strong">Nationalité, en colonne</span><a class="nation" href="#"><img class="flag" src="../../web/flags/pt.svg" alt="">POR</a><span>Drapeau, puis code de trois lettres ; une seule nation : sa sélection, sinon sa première</span></div>
+<div class="tr"><span class="strong">Championnat étranger</span><span class="nation"><a href="#"><img class="flag" src="../../web/flags/gb-eng.svg" alt=""></a><a class="comp" href="#">D1</a></span><span>Drapeau, puis pastille de la division : deux liens</span></div>
 </div></div>
 <div class="spec-line"><span class="token">Pastille</span><span class="value">carré de 14 au rayon de la charte : le fond du bandeau du club, son autre couleur dans un coin</span><span class="token" style="margin-left: 16px">Drapeau</span><span class="value">16 × 12 ; 24 × 18 dans le bandeau d’un match</span></div>
+<div class="spec-line"><span class="token">Lien</span><span class="value">un drapeau mène à la sélection de son pays, sauf dans un filtre ou dans un autre lien</span></div>
 </section>
 
 <section class="spec" style="grid-column: span 7">
@@ -919,36 +920,37 @@
 <h2>Compétitions</h2>
 <div class="families">
 <div class="spec-group" style="gap: 0"><span class="label" style="margin-bottom: 4px">Europe</span>
-<div class="comp-row"><span class="comp europe">C1</span><span class="strong">Ligue des champions</span></div>
-<div class="comp-row"><span class="comp europe">C3</span><span class="strong">Ligue Europa</span></div>
-<div class="comp-row"><span class="comp europe">C4</span><span class="strong">Ligue Conférence</span></div>
+<div class="comp-row"><a class="comp europe" href="#">C1</a><span class="strong">Ligue des champions</span></div>
+<div class="comp-row"><a class="comp europe" href="#">C3</a><span class="strong">Ligue Europa</span></div>
+<div class="comp-row"><a class="comp europe" href="#">C4</a><span class="strong">Ligue Conférence</span></div>
 </div>
 <div class="spec-group" style="gap: 0"><span class="label" style="margin-bottom: 4px">Sélections</span>
-<div class="comp-row"><span class="comp europe">EU</span><span class="strong">Euro</span></div>
-<div class="comp-row"><span class="comp europe">CM</span><span class="strong">Coupe du monde</span></div>
-<div class="comp-row"><span class="comp europe">LN</span><span class="strong">Ligue des nations</span></div>
+<div class="comp-row"><a class="comp europe" href="#">EU</a><span class="strong">Euro</span></div>
+<div class="comp-row"><a class="comp europe" href="#">CM</a><span class="strong">Coupe du monde</span></div>
+<div class="comp-row"><a class="comp europe" href="#">LN</a><span class="strong">Ligue des nations</span></div>
 </div>
 <div class="spec-group" style="gap: 0"><span class="label" style="margin-bottom: 4px">France</span>
-<div class="comp-row"><span class="comp">L1</span><span class="strong">Ligue 1</span></div>
-<div class="comp-row"><span class="comp">L2</span><span class="strong">Ligue 2</span></div>
-<div class="comp-row"><span class="comp">L3</span><span class="strong">National</span></div>
+<div class="comp-row"><a class="comp" href="#">L1</a><span class="strong">Ligue 1</span></div>
+<div class="comp-row"><a class="comp" href="#">L2</a><span class="strong">Ligue 2</span></div>
+<div class="comp-row"><a class="comp" href="#">L3</a><span class="strong">National</span></div>
 </div>
 <div class="spec-group" style="gap: 0"><span class="label" style="margin-bottom: 4px">Autres championnats</span>
-<div class="comp-row"><img class="flag" src="../../web/flags/gb-eng.svg" alt=""><span class="comp">D1</span><span class="strong">Premier League</span></div>
-<div class="comp-row"><img class="flag" src="../../web/flags/gb-eng.svg" alt=""><span class="comp">D2</span><span class="strong">Championship</span></div>
-<div class="comp-row"><img class="flag" src="../../web/flags/es.svg" alt=""><span class="comp">D1</span><span class="strong">Liga</span></div>
-<div class="comp-row"><img class="flag" src="../../web/flags/it.svg" alt=""><span class="comp">D1</span><span class="strong">Serie A</span></div>
-<div class="comp-row"><img class="flag" src="../../web/flags/de.svg" alt=""><span class="comp">D1</span><span class="strong">Bundesliga</span></div>
+<div class="comp-row"><img class="flag" src="../../web/flags/gb-eng.svg" alt=""><a class="comp" href="#">D1</a><span class="strong">Premier League</span></div>
+<div class="comp-row"><img class="flag" src="../../web/flags/gb-eng.svg" alt=""><a class="comp" href="#">D2</a><span class="strong">Championship</span></div>
+<div class="comp-row"><img class="flag" src="../../web/flags/es.svg" alt=""><a class="comp" href="#">D1</a><span class="strong">Liga</span></div>
+<div class="comp-row"><img class="flag" src="../../web/flags/it.svg" alt=""><a class="comp" href="#">D1</a><span class="strong">Serie A</span></div>
+<div class="comp-row"><img class="flag" src="../../web/flags/de.svg" alt=""><a class="comp" href="#">D1</a><span class="strong">Bundesliga</span></div>
 </div>
 <div class="spec-group" style="gap: 0"><span class="label" style="margin-bottom: 4px">Coupes nationales</span>
-<div class="comp-row"><span class="comp cup">CF</span><span class="strong">Coupe de France</span></div>
-<div class="comp-row"><span class="comp cup">CE</span><span class="strong">Coupe d’Espagne</span></div>
-<div class="comp-row"><span class="comp cup">CA</span><span class="strong">Coupe d’Angleterre</span></div>
-<div class="comp-row"><span class="comp cup">CI</span><span class="strong">Coupe d’Italie</span></div>
-<div class="comp-row"><span class="comp cup">CA</span><span class="strong">Coupe d’Allemagne</span></div>
+<div class="comp-row"><a class="comp cup" href="#">CF</a><span class="strong">Coupe de France</span></div>
+<div class="comp-row"><a class="comp cup" href="#">CE</a><span class="strong">Coupe d’Espagne</span></div>
+<div class="comp-row"><a class="comp cup" href="#">CA</a><span class="strong">Coupe d’Angleterre</span></div>
+<div class="comp-row"><a class="comp cup" href="#">CI</a><span class="strong">Coupe d’Italie</span></div>
+<div class="comp-row"><a class="comp cup" href="#">CA</a><span class="strong">Coupe d’Allemagne</span></div>
 </div>
 </div>
 <div class="spec-line"><span class="token">Deux caractères</span><span class="value">Europe en noir plein · championnat en contour gris · coupe nationale en contour bleu</span><span class="token" style="margin-left: 16px">Coupe nationale</span><span class="value">C et l’initiale du pays ; deux pays peuvent partager un code</span></div>
+<div class="spec-line"><span class="token">Lien</span><span class="value">vers la page de sa compétition ; aucun dans un filtre ni dans un autre lien</span></div>
 </section>
 
 </div>

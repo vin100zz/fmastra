@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {calendarContent,competitionCode,competitionBadge} from '../../web/club-calendar.js';
+import {competitionHref} from '../../web/ui.js';
 import {clubScreen} from '../../web/screens.js';
 import {setCompetitions,setNations} from '../../web/ui.js';
 
@@ -17,7 +18,10 @@ test('a competition reads in two characters: its code in Europe, L or D and its 
  // A screen that only names a competition finds the rest in what the game lists.
  setCompetitions([{id:-3,name:'Coupe de France',kind:'cup',nation:'FRA',level:0},{id:11,name:'Premier League',kind:'league',nation:'ENG',level:1}]);
  assert.equal(competitionCode({id:-3,name:'Coupe de France'}),'CF');assert.equal(competitionCode({name:'Premier League'}),'D1');
- assert.equal(competitionBadge({name:'Premier League'}),'<span class="competition-code league" title="Premier League">D1</span>');
+ // Its badge leads to its page, unless it stands in a filter or inside another link.
+ assert.equal(competitionBadge({name:'Premier League'}),'<a class="competition-code league" href="#/league/11" title="Premier League">D1</a>');
+ assert.equal(competitionBadge({id:-3},{link:false}),'<span class="competition-code cup" title="Coupe de France">CF</span>');
+ assert.equal(competitionHref({id:-3}),'#/league/-3');
  setCompetitions([]);setNations({});
  // A competition the game does not list keeps the initials of its name.
  assert.equal(competitionCode({name:'Ligue 1 McDonald’s',kind:'league'}),'L1');
@@ -25,7 +29,11 @@ test('a competition reads in two characters: its code in Europe, L or D and its 
  assert.equal(competitionCode({name:'Premier League',kind:'league'}),'PL');
  assert.equal(competitionCode({name:'FA Cup',kind:'cup'}),'FAC');
  assert.equal(competitionCode({name:'Ligue Europa',kind:'europe',code:'C3'}),'C3');
- assert.equal(competitionBadge({name:'Ligue des champions',kind:'europe',code:'C1'}),'<span class="competition-code europe" title="Ligue des champions">C1</span>');
+ assert.equal(competitionBadge({name:'Ligue des champions',kind:'europe',code:'C1'}),'<a class="competition-code europe" href="#/europe/C1" title="Ligue des champions">C1</a>');
+ // An edition of the selections leads to its page by its year; a competition the game does not know leads nowhere.
+ assert.equal(competitionBadge({id:-102028,name:'Euro 2028',kind:'international',code:'EU',year:2028}),'<a class="competition-code international" href="#/international/2028" title="Euro 2028">EU</a>');
+ assert.equal(competitionHref({name:'Euro 2028',kind:'international',code:'EU'}),'');
+ assert.equal(competitionBadge({name:'Premier League',kind:'league'}),'<span class="competition-code league" title="Premier League">PL</span>');
  assert.match(competitionBadge({name:'Coupe <de> France',kind:'cup'}),/class="competition-code cup" title="Coupe &lt;de&gt; France">C&lt;F</);
 });
 
@@ -47,13 +55,13 @@ test('one line per match: the day, the badge, the round, a plane away, the oppon
  const rows=html.split(/<div class="calendar-row(?=[ "])/).slice(1);
  assert.equal(rows.length,4);
  // Away at Nice, won 2–1: the club's goals first, its scorers first.
- assert.match(rows[0],/<span class="calendar-date">sam\. 17 août<\/span><span class="competition-code league" title="Ligue 1">L1<\/span><span class="calendar-round" title="Journée 1">J1<\/span><span class="calendar-venue"><svg class="away"/);
+ assert.match(rows[0],/<span class="calendar-date">sam\. 17 août<\/span><a class="competition-code league" href="#\/league\/16" title="Ligue 1">L1<\/a><span class="calendar-round" title="Journée 1">J1<\/span><span class="calendar-venue"><svg class="away"/);
  assert.match(rows[0],/<a class="calendar-score V" href="#\/match\/1" title="Victoire · Ligue 1 · Journée 1 · Extérieur">2–1<\/a><span class="calendar-scorers"><a href="#\/player\/71" title="Franjo Ivanović">Ivanović<\/a> 23’ 64’<\/span><span class="calendar-scorers theirs"><a href="#\/player\/91" title="Kévin Diallo">Diallo<\/a> 55’<\/span>/);
  // At home the plane is not there; a player without a page keeps his name without a link.
  assert.match(rows[1],/<span class="calendar-venue"><\/span>/);assert.match(rows[1],/<span class="calendar-scorers">Temporaire 12’<\/span>/);
  // The first match to play stands out; those to come have no score yet.
  assert.match(rows[2],/^ coming next" data-competition="16">/);assert.match(rows[2],/Auxerre<\/a><em>Prochain<\/em>/);assert.match(rows[2],/<a class="calendar-score" href="#\/match\/3" title="Ligue 1 · Journée 3 · Domicile">—<\/a>/);
- assert.match(rows[3],/^ coming" data-competition="40">/);assert.match(rows[3],/<span class="competition-code cup" title="Coupe de France">CdF<\/span><span class="calendar-round" title="32es de finale">32es<\/span>/);
+ assert.match(rows[3],/^ coming" data-competition="40">/);assert.match(rows[3],/<a class="competition-code cup" href="#\/league\/40" title="Coupe de France">CdF<\/a><span class="calendar-round" title="32es de finale">32es<\/span>/);
  assert.doesNotMatch(html,/fixture-date|Août 2030|undefined|null/);
 });
 

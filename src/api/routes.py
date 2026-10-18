@@ -824,7 +824,12 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/nations")
     def nations() -> dict[str, dict]:
-        with service.reading() as world: return build_nation_table(world.nation_names)
+        with service.reading() as world:
+            table = build_nation_table(world.nation_names)
+            # Wherever a flag stands, it leads to its country's selection: none for a country the game has no selection for.
+            for team in world.international.nations.values():
+                if team.code in table: table[team.code]["selection_id"] = team.id
+            return table
 
     @api.get("/clubs")
     def clubs(competition: int | None = None, statut: Literal["actif", "dormant"] | None = None, pays: str = "",

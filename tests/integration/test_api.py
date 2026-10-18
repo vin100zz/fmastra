@@ -417,6 +417,16 @@ def test_competitions_count_the_rounds_of_their_season(client):
     assert rounds['Ligue 1'] == 34 and rounds['Championship'] == 46 and rounds['Coupe de France'] == 6
 
 
+def test_nations_name_the_selection_their_flag_leads_to(client):
+    world = client.app.state.game.world
+    nations = client.get('/api/nations').json()
+    teams = {team.code: team.id for team in world.international.nations.values()}
+    assert nations['FRA']['selection_id'] == teams['FRA']
+    assert {code: row['selection_id'] for code, row in nations.items() if 'selection_id' in row} == {code: team for code, team in teams.items() if code in nations}
+    # A country the game has no selection for keeps its flag, without a page to lead to.
+    assert any('selection_id' not in row for row in nations.values())
+
+
 def test_competitions_carry_what_their_header_shows(client, monkeypatch):
     world = client.app.state.game.world
     listed = lambda: {item['name']: item for item in client.get('/api/competitions').json()}

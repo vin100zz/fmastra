@@ -1,4 +1,4 @@
-import {api,escape as e,season,number as n,clubLink,playerLink,position,kitDot,nationFlag,competitionBadge,empty,card,table,figure,miniBar,headPager} from './ui.js';
+import {api,escape as e,season,number as n,clubLink,playerLink,position,kitDot,nationFlag,nationBadge,competitionBadge,empty,card,table,figure,miniBar,headPager} from './ui.js';
 import {LEAGUE_ORDER} from './screens.js';
 import {searchField} from './listing.js';
 
@@ -35,7 +35,7 @@ function matrix(data,groups,params){
  const stage=block=>!block.current?'—':block.current.leader?`<span class="honours-pair">${clubLink(block.current.leader)}<small>J${block.current.round}</small></span>`:e(block.current.label);
  const scorer=block=>block.scorer?`<span class="honours-pair">${playerLink(block.scorer.player_id,block.scorer.player)}<b>${n(block.scorer.goals)}</b></span>`:'—';
  const row=(group,block,index)=>{
-  return `<tr>${index?'':`<td class="honours-nation" rowspan="${group.competitions.length}"><a href="${group.href}">${group.flag}${e(group.name)}</a></td>`}<td><a href="${link(block)}">${competitionBadge({id:block.id,name:block.name,kind:block.kind,code:block.code,level:block.level,nation:group.code})}<span class="strong">${e(block.name)}</span></a></td><td>${scorer(block)}</td>${champion(block,data.season,'current')||`<td class="current">${stage(block)}</td>`}${shown.map(year=>champion(block,year)||'<td>—</td>').join('')}</tr>`;
+  return `<tr>${index?'':`<td class="honours-nation" rowspan="${group.competitions.length}"><a href="${group.href}">${group.flag}${e(group.name)}</a></td>`}<td><a href="${link(block)}">${competitionBadge({id:block.id,name:block.name,kind:block.kind,code:block.code,level:block.level,nation:group.code},{link:false})}<span class="strong">${e(block.name)}</span></a></td><td>${scorer(block)}</td>${champion(block,data.season,'current')||`<td class="current">${stage(block)}</td>`}${shown.map(year=>champion(block,year)||'<td>—</td>').join('')}</tr>`;
  };
  const head=`<tr><th class="nation-column"></th><th class="competition-column">COMPÉTITION</th><th class="scorer-column">MEILLEUR BUTEUR</th><th class="current">${season(data.season)}<span class="honours-live">EN COURS</span></th>${shown.map(year=>`<th>${season(year)}</th>`).join('')}</tr>`;
  const title=`${n(blocks.length)} compétition${blocks.length>1?'s':''}${past.length?` · ${n(past.length)} saison${past.length>1?'s':''}`:''}`;
@@ -62,7 +62,7 @@ function lists(data){
  const where=row=>e(row.competitions.map(item=>`${item.code||item.name}${item.titles>1?` ×${item.titles}`:''}`).join(' · '));
  const scorers=data.scorers.length?card('Titres de meilleur buteur',table(['JOUEUR','COMPÉTITIONS','TITRES','BUTS'],data.scorers.map(row=>[`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,`<span class="honours-where" title="${where(row)}">${where(row)}</span>`,figure(`<b>${n(row.titles)}</b>`),figure(n(row.goals))]),undefined,undefined,undefined,['','competitions-column','count-column titles-column','count-column goals-column']),'','honours-table'):'';
  const most=data.nations[0]?.total||1;
- const nations=data.nations.length?card('Coupes d’Europe par pays',table(['PAYS',...data.europe.map(block=>e(block.code)),'TOTAL'],data.nations.map(row=>[`<span class="strong">${nationFlag(row.code)}${e(row.name)}</span>`,...row.titles.map(count=>figure(count||'')),total(row.total,most)]),undefined,undefined,undefined,['',...data.europe.map(()=>'count-column'),'total-column']),'','honours-table'):'';
+ const nations=data.nations.length?card('Coupes d’Europe par pays',table(['PAYS',...data.europe.map(block=>e(block.code)),'TOTAL'],data.nations.map(row=>[`<span class="strong">${nationBadge(row.code,{full:true})}</span>`,...row.titles.map(count=>figure(count||'')),total(row.total,most)]),undefined,undefined,undefined,['',...data.europe.map(()=>'count-column'),'total-column']),'','honours-table'):'';
  return [players,scorers,nations].filter(Boolean).join('');
 }
 
@@ -79,7 +79,7 @@ export async function honoursScreen(params=new URLSearchParams()){
  const data=await api('/monde/palmares');
  const countries=[...data.countries].sort((a,b)=>rank(a.code)-rank(b.code)||a.code.localeCompare(b.code));
  const groups=[...(data.europe.length?[{name:'Europe',href:'#/europe',flag:'',competitions:data.europe}]:[]),
-  ...countries.map(country=>({name:country.name,code:country.code,href:`#/country/${country.code}`,flag:nationFlag(country.code),competitions:country.competitions}))];
+  ...countries.map(country=>({name:country.name,code:country.code,href:`#/country/${country.code}`,flag:nationFlag(country.code,{link:false}),competitions:country.competitions}))];
  const rankings=lists(data);
  return `<form class="toolbar" data-filter><h1>Palmarès</h1>${searchField(params,'Rechercher un club…')}</form><div class="honours"><div class="honours-main">${matrix(data,groups,params)}${rankings?`<div class="honours-lists">${rankings}</div>`:''}</div><div class="honours-board">${board(data,params)}</div></div>`;
 }
