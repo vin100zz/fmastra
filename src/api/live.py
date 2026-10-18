@@ -59,11 +59,11 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
 
     def lineup(initial, team) -> list[dict]:
         return [{"id": slot.player.id, "name": slot.player.name, "short": shorts[team.club_id].get(slot.player.id),
-                 "position": slot.position.value, "temporary": slot.player.id < 0} for slot in initial.slots]
+                 "position": slot.position.value, "temporary": slot.player.id < 0, **v.play_style(slot.player)} for slot in initial.slots]
 
     def bench(initial, team) -> list[dict]:
-        return [{"id": player.id, "name": player.name, "short": shorts[team.club_id].get(player.id), "temporary": player.id < 0}
-                for player in initial.bench]
+        return [{"id": player.id, "name": player.name, "short": shorts[team.club_id].get(player.id), "temporary": player.id < 0,
+                 **v.play_style(player)} for player in initial.bench]
 
     shown = stored_events(live.log.events[:live.delivered]) if events is None else events
     team = live.teams[side]

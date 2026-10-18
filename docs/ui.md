@@ -827,13 +827,32 @@ message (« il vient d'arriver ») reste dans son infobulle.
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
   de la ligne du match, l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
+  Chaque occasion suit la trace du moteur (récupération, zones franchies, centre,
+  tir et issue) ; le résumé en choisit la manière, la même à chaque lecture. Le
+  ballon est un projectile (`replay-physics.js`) : frappé, il vole sous la
+  gravité, rebondit puis roule en ralentissant, et chaque touche est jouée là où
+  il sera, par un joueur envoyé à temps. Une passe va à ras de terre, tendue ou
+  par-dessus les lignes ; elle est jouée en une touche, contrôlée (du pied, de la
+  cuisse, de la poitrine) puis jouée, ou conduite touche après touche : en une
+  touche plus souvent en contre-attaque et pour un joueur technique, conduite plus
+  souvent par un joueur rapide (la technique et la vitesse de chacun viennent avec
+  les compositions du match, à défaut une valeur moyenne). Le ballon circule
+  parfois en retrait ou en travers avant de repartir ; un centre est lobé ou
+  fouetté, une frappe placée, puissante ou à ras de terre, et le coup franc
+  passe au-dessus d'un mur de quatre joueurs. Les joueurs courent à l'allure d'un
+  footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
+  la reprise et le défenseur qui contrera la frappe font leur course pendant
+  l'action.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
-  mêmes positions ; le choix est retenu, sans WebGL le bouton disparaît.
-  Le stade a des tribunes pleines (supporters aux couleurs des deux clubs, les
-  visiteurs dans un coin), des loges, des panneaux LED et des filets. Les joueurs
-  sont articulés : ils courent, frappent, reprennent de la tête les centres, le
-  gardien plonge et l'équipe qui marque célèbre avec ses supporters.
+  mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
+  le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
+  des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
+  filets. Les joueurs sont articulés : ils courent, frappent plus ou moins fort,
+  poussent le ballon en conduite, le contrôlent du pied, de la cuisse ou de la
+  poitrine, sautent pour les têtes, chaque geste calé sur l'instant où le ballon
+  les rencontre ; le gardien plonge et l'équipe qui marque célèbre avec ses
+  supporters.
 
 ### Composition
 
