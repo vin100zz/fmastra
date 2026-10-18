@@ -16,9 +16,9 @@ from .calendar import standings
 from .cup_matches import decide_winner
 from .player_states import draw_injury
 from .international_calendar import (QUOTAS, DIVISION_GROUPS, GROUP_SIZE, LEAGUE_ROUNDS, SEMI_FINALS, FINAL, CAMP_BEFORE,
-                                     CAMP_AFTER, edition_kind, create_edition, create_league, windows, league_windows,
-                                     league_finals, finals_camp, edition_groups, european, add_match, group_fixtures,
-                                     draw_final_groups)
+                                     CAMP_AFTER, CAMPAIGN_DRAW, edition_kind, create_edition, create_league, windows,
+                                     league_windows, league_finals, finals_camp, edition_groups, european, add_match,
+                                     group_fixtures, draw_final_groups)
 from .international_selection import (get_player, preferences, fill_camp, camp_lineup, revise_strengths)
 
 
@@ -229,7 +229,7 @@ def prepare_international_day(world: World) -> None:
     state = world.international
     if not state.nations:
         return
-    if (world.date.month, world.date.day) == (8, 1):
+    if (world.date.month, world.date.day) == CAMPAIGN_DRAW:
         year = world.date.year + 2
         if edition_kind(world, year) and year not in state.editions:
             # A campaign: the Nations League from September, then the qualifiers from March.

@@ -393,12 +393,12 @@ test('the career card is one table: the clubs, then the national team under its 
   assert.match(nation,/<tr class="total"><td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>2<\/td><td>6\.86<\/td><\/tr><\/tbody><\/table>/);
   // An edition without any rated match, and a player never capped.
   const unrated=(await render({...capped,historical_caps:0,historical_goals:0,international_records:[{edition:2028,matches:1,goals:0,assists:0,rating_sum:0,rating_count:0,average:null}]})).html;
-  assert.match(unrated,/<td colspan="4"><a href="#\/international\/2028">2028<\/a><\/td><td>1<\/td><td>0<\/td><td>0<\/td><td>—<\/td>/);
+  assert.match(unrated,/<td colspan="4"><a href="#\/international\/2028\/finals">2028<\/a><\/td><td>1<\/td><td>0<\/td><td>0<\/td><td>—<\/td>/);
   assert.match(unrated,/<td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>0<\/td><td>—<\/td>/);
   assert.doesNotMatch((await render({...capped,international_caps:0})).html,/nation-head|career-gap/);
   // An edition the server names carries its badge ahead of its year.
   const named=(await render({...capped,international_records:[{...records[1],competition:'Euro 2028',code:'EU'}]})).html;
-  assert.match(named,/<td colspan="4"><span class="competition"><span class="competition-code international" title="Euro 2028">EU<\/span><a href="#\/international\/2028">2028<\/a><\/span><\/td>/);
+  assert.match(named,/<td colspan="4"><span class="competition"><span class="competition-code international" title="Euro 2028">EU<\/span><a href="#\/international\/euro\/finals\?edition=2028">2028<\/a><\/span><\/td>/);
  }finally{setNations({});}
 });
 

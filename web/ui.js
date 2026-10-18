@@ -191,6 +191,17 @@ export function competitionCode(competition){
  const kept=number>=0?words.slice(0,number+1):words;
  return kept.map(word=>/^\d+$/.test(word)||/^[A-Z]{2,}$/.test(word)?word:SMALL.has(word.toLowerCase())?word[0].toLowerCase():word[0].toUpperCase()).join('').slice(0,4)||'—';
 }
+// The competitions of the selections, in the order the band of their pages steps through them. Each has its page,
+// `#/international/euro`: the edition shown rides in the address (`edition`), the open tab and the day picked in its path.
+export const SELECTION_COMPETITIONS=[{kind:'world',slug:'coupe-du-monde',code:'CM',name:'Coupe du monde'},{kind:'euro',slug:'euro',code:'EU',name:'Euro'},
+ {kind:'nations',slug:'ligue-des-nations',code:'LN',name:'Ligue des nations'}];
+// The page of an edition, by the badge of its competition (EU, CM, LN). An edition the game no longer knows by its badge
+// keeps its year alone: its page finds it, or Sélections nationales opens.
+export function editionHref(code,year,section='',day=''){
+ const competition=SELECTION_COMPETITIONS.find(item=>item.code===code);
+ if(!competition)return `#/international/${year}${section?`/${section}`:''}`;
+ return `#/international/${competition.slug}${section?`/${section}`:''}${section&&day?`/${day}`:''}${year?`?edition=${year}`:''}`;
+}
 // The badge of a competition: an outline for a league, a blue one for a national cup, a solid one for a European cup; its
 // full name in the tooltip.
 export const competitionBadge = competition => {const {name,kind}=known(competition);return `<span class="competition-code${kind?` ${kind}`:''}" title="${escape(name)}">${escape(competitionCode(competition))}</span>`;};
@@ -498,8 +509,10 @@ export function seasonArchive(archive){
 }
 
 // The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).
-export function leadersCards(leaders,note=''){
- const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR','MATCHS','BUTS'],rows.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,number(row.matches),number(row.goals)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
+// `nations` gives each player the nation he plays for, his flag then its code, in a competition of the selections.
+export function leadersCards(leaders,note='',{nations=false}={}){
+ const columns=row=>[`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,...(nations?[row.nation?nationBadge(row.nation):'—']:[]),number(row.matches),number(row.goals)];
+ const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR',...(nations?['NATION']:[]),'MATCHS','BUTS'],rows.map((row,index)=>[index+1,...columns(row)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
  return `${note?`<p class="muted">${escape(note)}</p>`:''}<div class="transfer-columns">${list('Joueurs les plus utilisés',leaders.matches)}${list('Meilleurs buteurs',leaders.goals)}</div>`;
 }
 

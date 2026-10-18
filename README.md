@@ -61,9 +61,9 @@ compétition a des groupes.
 
 La loupe de la barre du haut, ou Ctrl K, ouvre la recherche globale : quelques lettres mènent à la fiche d'un joueur, d'un club, d'une compétition ou d'une sélection nationale, sans tenir compte de la casse, des accents ni de l'ordre des mots (« ribery fra » trouve Franck Ribéry, « bommel » trouve van der Bommel).
 
-Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, les compétitions du même pays de la première division à la coupe, les trois coupes d'Europe, et les éditions de l'Euro et de la Coupe du monde de la première à la dernière. Le passage d'un club, d'une coupe d'Europe ou d'une édition à l'autre garde l'onglet ouvert.
+Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, les compétitions du même pays de la première division à la coupe, les trois coupes d'Europe, et la Coupe du monde, l'Euro et la Ligue des nations. Le passage d'un club, d'une coupe d'Europe ou d'une compétition des sélections à l'autre garde l'onglet ouvert ; les saisons d'une coupe et les éditions d'une compétition des sélections se parcourent au bout de la rangée d'onglets.
 
-La page d'une compétition s'ouvre, comme la fiche d'un club, sur un en-tête à ses couleurs : celles du maillot de la sélection du pays pour un championnat ou une coupe nationale, avec son drapeau ; son emblème pour une coupe d'Europe, l'Euro ou la Coupe du monde. Une case y nomme le vainqueur de la saison ou de l'édition montrée, ou le tenant du titre tant qu'elle n'est pas gagnée.
+La page d'une compétition s'ouvre, comme la fiche d'un club, sur un en-tête à ses couleurs : celles du maillot de la sélection du pays pour un championnat ou une coupe nationale, avec son drapeau ; son emblème pour une coupe d'Europe, l'Euro, la Coupe du monde ou la Ligue des nations. Une case y nomme le vainqueur de la saison ou de l'édition montrée, ou le tenant du titre tant qu'elle n'est pas gagnée.
 
 La liste des joueurs affiche toutes leurs nationalités, leur valeur et leur potentiel exact à côté du niveau actuel, tous deux sous forme de badges sur 200 dont la couleur suit une même échelle (rouge jusqu'à 70, jaune à 110, vert à partir de 150),
 avec un tri initial par valeur décroissante. Les clubs sont triés par réputation
@@ -154,8 +154,12 @@ datée n'y prétend que si sa sauvegarde a été supprimée.
 ## Sélections nationales
 
 Les nouvelles parties activent les nations marquées `active` dans `config/nations.json`.
-Le menu **Sélections nationales** présente leurs effectifs, calendriers, groupes,
-classements des deuxièmes, phases finales et statistiques. Les anciennes sauvegardes
+Le menu **Sélections nationales** présente la Coupe du monde, l'Euro et la Ligue des nations, une
+colonne chacune (tenant du titre, édition en cours, palmarès), puis les nations actives. Chaque
+compétition a sa page : ses éditions se parcourent comme les saisons d'une coupe d'Europe (groupes,
+classements des deuxièmes, phases finales, statistiques), et son onglet Historique donne ses finales,
+les titres de chaque nation, le parcours de chaque nation dans chaque édition et les joueurs de
+tous les temps de la compétition. Les anciennes sauvegardes
 restent jouables avec leur calendrier de clubs ; une nouvelle partie est nécessaire
 pour activer cette extension et importer les sélections et buts internationaux du CSV.
 

@@ -47,3 +47,8 @@ body{margin:0;background:var(--bg)}
 /* The list of a band's steps opens over what follows the band, which a board would cut. */
 :is(.card,.hero):has(.entity-menu[open]){overflow:visible}
 .menu-tip{position:absolute;z-index:1;left:50%;transform:translateX(-50%);width:max-content}
+/* The competitions of the selections, a column each; a final from its winner's side; the runs of the nations. */
+.hub-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+.t-finals .tr{grid-template-columns:64px minmax(0,1fr) 84px minmax(0,1fr)}
+.t-runs .tr{grid-template-columns:minmax(0,1fr) repeat(5,56px)}
+.t-runs .tr:has(>:nth-child(5):last-child){grid-template-columns:minmax(0,1fr) repeat(4,56px)}
