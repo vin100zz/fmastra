@@ -43,6 +43,14 @@ Un vainqueur de coupe de division inférieure conserve son droit à la C3, même
 s’il quitte les championnats simulés. Il n’existe aucun doublon entre compétitions,
 aucune qualification automatique des tenants européens et aucun reversement.
 
+Le classement d’un championnat donne, en cours de saison, la coupe de chaque ligne
+(`europe`, `european_places` dans `src/api/views.py`) par la même règle
+(`league_places`), avec les quotas de la saison suivante. Tant que la coupe nationale
+n’a pas de vainqueur, sa place en C3 revient au championnat ; une place que changerait
+la victoire d’un club encore en lice est dite sous réserve, avec ce qu’elle deviendrait
+(`tentative`, `fallback`). Le vainqueur de la coupe est marqué sur la ligne de son
+classement, en division inférieure aussi.
+
 ## Phase de ligue
 
 Les 36 participants sont répartis dans quatre chapeaux de neuf par réputation.

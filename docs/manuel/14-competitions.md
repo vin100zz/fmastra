@@ -31,6 +31,8 @@ Trois coupes (C1, C3, C4) de {{monde.europe.club_count}} clubs chacune.
 
 **Qui se qualifie.** Chaque pays a, pour chaque coupe, une fourchette de places. Le nombre exact est tiré chaque saison à l'intérieur de cette fourchette, à total constant. Dans un pays simulé, les places vont dans l'ordre du classement de première division : d'abord la C1, puis la C3 (dont une place pour le vainqueur de la coupe nationale), puis la C4. La première saison, et pour les pays non simulés, les clubs sont tirés au sort selon leur réputation. Le tenant du titre n'a pas de place réservée.
 
+**Au classement.** Le rang de chaque place européenne prend la couleur de sa coupe : bleu pour la C1, violet pour la C3, sarcelle pour la C4 ; le champion garde son vert. Tant que la coupe nationale n'est pas gagnée, sa place en C3 revient au championnat. Si elle va à un club moins bien classé, il prend cette place, et les derniers qualifiés reculent d'une coupe : le dernier en C3 passe en C4, le dernier en C4 n'a plus rien. Ces places sont en pointillé jusqu'à ce que la coupe ne puisse plus les changer ; l'infobulle du rang dit ce qu'elles deviendraient. Le vainqueur de la coupe a le rang à la couleur de la C3, même classé plus bas ou en deuxième division, sauf sur une place de montée ou de relégation, qui garde la sienne.
+
 **La phase de ligue.** Les clubs sont répartis en {{monde.europe.pot_count}} chapeaux par réputation. Chacun joue {{monde.europe.league_rounds}} matches contre des adversaires différents, dans un classement unique.
 
 **La phase finale.**

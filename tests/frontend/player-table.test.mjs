@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
+import {playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,europeLegend,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -17,6 +17,30 @@ test('standings give European qualification places a blue background, matching p
  assert.match(html,/<tr class="relegated"[^>]*>/);
  // the background says it all: no "Europe" text next to the club
  assert.doesNotMatch(html,/qualification-europe|Europe</);
+});
+
+test('a league tells the European cup of each place on its rank, dashed while the national cup may change it, and names the cups in its legend',()=>{
+ const cup=(code,name,more={})=>({code,name,tentative:false,fallback:null,cup:'Coupe de France',winner:false,...more});
+ const C1=cup('C1','Ligue des champions'),C4={code:'C4',name:'Conference League'};
+ const rows=[{rank:1,movement:'champion',europe:C1},{rank:2,movement:'europe',europe:C1},
+  {rank:6,movement:'europe',europe:cup('C3','Ligue Europa',{tentative:true,fallback:C4})},
+  {rank:7,movement:'europe',europe:cup('C4','Conference League',{tentative:true})},
+  {rank:10,movement:null,europe:cup('C3','Ligue Europa',{winner:true})},{rank:11,movement:null,europe:null},
+  {rank:17,movement:'relegation',europe:cup('C3','Ligue Europa',{winner:true})}]
+  .map(row=>({...row,club:{id:row.rank,name:`Club ${row.rank}`},played:0,points:0,difference:0,form:''}));
+ const html=standingsTable({items:rows});
+ // A place in the league keeps its colour (the title, a relegation), its cup in the tooltip; the others take their cup's,
+ // the cup's winner too, wherever he stands.
+ assert.deepEqual([...html.matchAll(/<tr class="([^"]*)"/g)].map(match=>match[1]),['promoted','europe-c1','europe-c3 tentative','europe-c4 tentative','europe-c3','','relegated']);
+ assert.match(html,/<span class="rank first" title="Ligue des champions">1<\/span>/);
+ assert.match(html,/title="Ligue des champions">2</);
+ assert.match(html,/title="Ligue Europa\nSous réserve : Conference League si la Coupe de France est gagnée par un club moins bien classé">6</);
+ assert.match(html,/title="Conference League\nSous réserve : aucune coupe d’Europe si la Coupe de France est gagnée par un club moins bien classé">7</);
+ assert.match(html,/title="Ligue Europa\nVainqueur de la Coupe de France">10</);
+ assert.equal(europeLegend(rows),'<span class="europe-legend"><span class="europe-c1">Ligue des champions</span><span class="europe-c3">Ligue Europa</span><span class="europe-c4">Conference League</span></span>');
+ assert.equal(europeLegend(rows,true),'<span class="europe-legend"><span class="europe-c1">C1</span><span class="europe-c3">C3</span><span class="europe-c4">C4</span></span>');
+ assert.match(html,/title="Ligue Europa\nVainqueur de la Coupe de France">17</);
+ assert.equal(europeLegend(rows.slice(5)),'');
 });
 
 const player={id:1,name:'Test',position:'BU',age:20,nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};

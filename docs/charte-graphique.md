@@ -52,6 +52,7 @@ la structure HTML des spécimens.
 | `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
 | `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
+| `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement ») |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
@@ -68,8 +69,8 @@ Trois familles de pastilles ne se ressemblent jamais :
 - **Compétition** : contour, ou noir plein pour une coupe d'Europe.
 
 Le rang d'une place marquée (voir « Classement ») prend le fond pâle d'un état,
-cerclé de sa couleur : il ne paraît que dans un classement, où aucune note ne
-se lit.
+ou de sa coupe d'Europe dans un championnat, cerclé de sa couleur : il ne paraît
+que dans un classement, où aucune note ne se lit.
 
 ### Typographie
 
@@ -148,7 +149,7 @@ où le fond est déjà jaune.
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur |
-| Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque. Voir « Classement » |
+| Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation`, `.club-flag` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Cinq derniers matches | `.recent` | Une barre par match du club, à la hauteur des minutes jouées, jaune au-delà du seuil de charge. Voir « Graphiques » |
@@ -905,6 +906,29 @@ centre, en `--muted` ; l'en-tête « # » est centré sur eux. Rien ne court le
 long de la ligne : seule la ligne du club dirigé est colorée. La légende des
 places (`.legend`) montre la même pastille, en carré de 12.
 
+**Coupes d'Europe.** Dans un championnat, une place européenne prend la couleur
+de sa coupe (`.rank.c1`, `.c3`, `.c4`) : le bleu de l'Europe (`--info`) pour la
+C1, le violet (`--c3`) pour la C3, la sarcelle (`--c4`) pour la C4, trois teintes
+tenues loin du rouge, du vert et du jaune des états. Une place du championnat
+(titre, montée, relégation) garde sa couleur : sa coupe n'est que dans l'infobulle.
+
+- **Vainqueur de la coupe nationale** : son rang prend la couleur de la C3 où
+  qu'il soit classé, en division inférieure aussi, hors d'une place de montée ou
+  de relégation.
+- **Sous réserve** : tant que la coupe nationale n'a pas de vainqueur, sa place
+  en C3 revient au championnat. Une place qu'un autre vainqueur changerait
+  (`.tentative`) a son cercle en pointillé ; elle redevient pleine dès que ceux
+  encore en lice ne la changent plus.
+- **Infobulle** : le nom de la coupe, puis la raison, sur une seconde ligne :
+  « Vainqueur de la Coupe de France », « Sous réserve : Conference League si la
+  Coupe de France est gagnée par un club moins bien classé ».
+- **Légende** : les coupes présentes, dans l'en-tête de la carte, chacune après
+  son carré : leur nom sur l'onglet Classement d'un championnat, leur code dans
+  une carte étroite (le classement réduit du calendrier, le classement archivé).
+  Un classement sans carte à lui (onglets Derniers et Prochains matches) ou un
+  extrait ailleurs (vue d'ensemble, actualités, page d'un pays) n'a que
+  l'infobulle.
+
 ### Compétitions
 
 Une pastille de deux caractères.
@@ -1001,6 +1025,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Match dans une liste | `fixtureRow` (`web/ui.js`) sur le tour d'une compétition, le calendrier d'un championnat, la Vue d'ensemble, les éditions des sélections et la page d'un pays, à la place de sa ligne propre : les pastilles contre le score, le score en chiffre clé, le nom du vainqueur en 700 à l'encre de l'accent et celui du battu à l'encre courante (`.won`, `.lost`), le match du club dirigé sur fond jaune (`setOwnClub`), l'étage du cumul ou des tirs au but à la place des deux lignes sous le score, les buteurs écrits « Mendes 12’ 58’ ». L'API dit sur les deux matches d'un aller-retour quel club s'est qualifié (`qualified_id`, `return_leg_id`). Dans le tableau d'une coupe, le qualifié et l'éliminé s'écrivent de même, et la case du match du club dirigé a le fond jaune (`web/bracket.js`). La ligne du club dirigé est colorée dans tous les classements, plus seulement sur la page d'un pays et dans Actualités (`standingsTable`) |
 | Drapeaux des clubs | Dans une coupe d'Europe, le drapeau du pays de chaque club après son nom, devant lui pour celui qui reçoit d'un match face à face (`clubLink`, option `flag`, `web/ui.js` ; `.club-flag`, `web/charte.css`) : son classement, sa phase de ligue et ses derniers et prochains matches (`flags` de `standingsTable`, `fixtures`, `fixtureRow`, `roundContent`), sa phase finale (`bracket`), ses buteurs, son historique et la tuile de son vainqueur (`competitionHero`). Dans le compte rendu d'un de ses matches, le drapeau de chaque club en 24 × 18 après son nom dans le bandeau, lien vers la sélection (`matchHero`, `web/club-hero.js`) ; la ligne du match ne le répète pas. L'API donne le pays de chaque club (`nation` de `club_ref`, `src/api/views.py`), et sa sélection dans le compte rendu (`nation_id`) |
 | Accueil et nouvelle partie | Les deux panneaux de l'accueil (`homeScreen`, `savesList`, `web/home.js`) sans partie et sur « Ma partie », à la place du texte d'accueil, du formulaire de création et de la liste des emplacements ; la liste des sauvegardes y dit le club et la date de chaque partie (`slots`, `src/infrastructure/persistence/store.py`). L'écran « Nouvelle partie » (`newGameScreen`, `web/new-game.js` ; `creationHero`, `web/club-hero.js`) à la place du choix du club après la création : nations, divisions et club choisis avant que la partie ne soit tirée, « Commencer » dans la barre du haut. `.doors`, `.door`, `.saves-list`, `.check`, `.nation-line` dans `web/charte.css` |
+| Places européennes | Dans un championnat, le rang d'une place européenne à la couleur de sa coupe (C1 bleu, C3 violet, C4 sarcelle), en pointillé sous réserve de la coupe nationale, à la place du bleu unique de l'Europe ; son infobulle et la légende des coupes dans l'en-tête de la carte (`europePlace`, `europeTip`, `europeLegend`, `web/ui.js`), à la place de « 3 points pour une victoire ». L'API donne la coupe de chaque ligne (`europe`, `european_places`, `src/api/views.py`), le vainqueur de la coupe nationale compris |
 | Attributs | Sur la fiche et dans l'aperçu d'un joueur, une colonne à la mesure du plus long nom de sa section et de sa pastille (`--attribute-column`, `web/charte.css`), à la place des 165 de toutes les sections sur la fiche et des deux colonnes fixes de l'aperçu : dans l'aperçu, la section Jeu passe sur une colonne, ses lignes et celles des attributs à 26 |
 
 Ce qui reste :
@@ -1059,3 +1084,5 @@ Les drapeaux des clubs d'une coupe d'Europe ont la leur (proposition A, « À la
 L'accueil et la nouvelle partie ont la leur (accueil : proposition C0d, ses panneaux
 réduits et mis l'un sous l'autre depuis ; nouvelle partie : proposition C, « Tout sur un écran ») :
 <https://claude.ai/artifact/Vfd8w6dFsdBPiwZQb5R9xi>.
+Les places européennes d'un classement ont la leur (proposition E1, « Bleu, violet,
+sarcelle ») : <https://claude.ai/artifact/8Q35koGuApLFLJ8HpByX4A>.
