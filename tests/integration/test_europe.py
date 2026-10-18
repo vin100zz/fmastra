@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import create_app
-from api.views import match_row, table
+from api.views import match_row, selection_id, table
 from core.domain.date import Date
 from core.domain.matches import MatchResult
 from core.world.calendar import Standing, standings
@@ -185,6 +185,14 @@ def test_complete_competition_seeding_resume_and_api(imported, tmp_path):
             assert data["holder"] is None
             assert len(data["rounds"]) == 17 and data["next_round"] is None
             assert data["rounds"][9]["items"][0]["aggregate"] is not None
+            # Clubs of several countries meet there: each one carries its country, whose flag follows its name.
+            countries = [row["club"]["nation"] for row in data["standings"]]
+            assert countries == [restored.clubs[row["club"]["id"]].nation for row in data["standings"]] and len(set(countries)) > 1
+            # The report's band leads each club's flag to its country's selection.
+            report = client.get(f"/api/matches/{data['rounds'][-1]['items'][0]['id']}").json()
+            for side in ("home", "away"):
+                nation = restored.clubs[report[side]["id"]].nation
+                assert report[side]["nation"] == nation and report[side]["nation_id"] == selection_id(restored, nation)
             assert client.get(f"/api/competitions/{cid}/historique").json()["items"][0]["champion"] == data["winner"]
     assert states == {key: rng.getstate() for key, rng in restored.rngs.items()}
 
