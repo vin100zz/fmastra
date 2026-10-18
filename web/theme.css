@@ -16,6 +16,7 @@
  --bg:#0e1217;--rail:#0a0d11;--panel:#161b22;--panel-2:#1d242d;--panel-3:#222b36;--row-line:#1f2630;
  --accent:#f5c400;--accent-ink:#111418;--accent-soft:#f5c4001f;--accent-text:#f5c400;--accent-hover:#ffd633;
  --good:#5fd08a;--warn:#e3c34f;--bad:#ff7a72;--info:#7cc4ff;--gold-bright:#ffd23f;
+ --c3:#b996e6;--c3-soft:#2a2140;--c4:#5cc8cf;--c4-soft:#12302f;
  --ink:#e8ecf1;--muted:#9aa5b4;--line:#2a323d;--paper:var(--bg);--white:var(--panel);--sidebar:var(--rail);
  --green:var(--accent);--lime:var(--accent);--red:#ff7a72;--green-light:#5fd08a;--red-light:#ff9d95;--gold:#ffd23f;--radius:3px;
  --strong:#fff;--ink-2:#c3ccd7;--ink-3:#c9d1db;--stripe:#191f27;--rail-hover:#141a21;--band:#121820;--unread:#1b222b;--disabled:#4a5563;--placeholder:#7d8896;--backdrop:#05080bb3;
@@ -365,6 +366,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  --stripe:#f7f9fb;--rail-hover:#f3f5f8;--band:#fff;--unread:#fffaeb;--disabled:#b9c1cb;--placeholder:#8a94a1;--backdrop:#0f172a66;
  --good-soft:#e1f3e7;--good-line:#a9d9bb;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--warn-soft:#fdf4d8;--warn-line:#ecd69a;--own-row:#fff3c4;
  --gold-soft:#fbf0cf;--info-soft:#e3eefa;--att-soft:#fbe6e3;
+ --c3:#7b46a4;--c3-soft:#f4edfc;--c4:#00646f;--c4-soft:#e0f5f8;
  color-scheme:light
 }
 :root[data-theme="light"] .rating.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}

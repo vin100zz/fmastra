@@ -10,6 +10,9 @@
  --accent:#f5c400;--accent-hover:#e6b800;--accent-ink:#111418;--accent-text:#7f6200;--own-row:#fff3c4;
  /* States, each with its wash. */
  --good:#1a7340;--good-soft:#e1f3e7;--warn:#8a6600;--warn-soft:#fdf4d8;--bad:#bf3329;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--info:#2166a8;--info-soft:#e3eefa;
+ /* The European cups a league's places lead to, each with its wash: the C1 takes the blue of Europe (--info), the C3 a
+    violet, the C4 a teal, all three kept clear of the red, green and yellow of the states. */
+ --c3:#7b46a4;--c3-soft:#f4edfc;--c4:#00646f;--c4-soft:#e0f5f8;
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in every list. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  /* Pitch. */
@@ -193,6 +196,13 @@
 .rank.info,.legend i.info{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .rank.warn,.legend i.warn{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 .rank.bad,.legend i.bad{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+/* In a league, a place in Europe takes the colour of its cup (the title keeps its green): C1 blue, C3 violet, C4 teal. One
+   that hangs on the winner of the national cup has its ring dashed. */
+.rank.c1,.legend i.c1{--cup:var(--info);--cup-soft:var(--info-soft)}
+.rank.c3,.legend i.c3{--cup:var(--c3);--cup-soft:var(--c3-soft)}
+.rank.c4,.legend i.c4{--cup:var(--c4);--cup-soft:var(--c4-soft)}
+.rank:is(.c1,.c3,.c4),.legend i:is(.c1,.c3,.c4){background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
+.rank.tentative,.legend i.tentative{box-shadow:none;border:1px dashed var(--cup)}
 .tr.head>.center{text-align:center}
 .cell{display:flex;align-items:center;gap:6px}
 /* A match on one line: its day, the other side, its score. */

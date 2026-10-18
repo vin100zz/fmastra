@@ -403,6 +403,23 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',P:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};
 export const standings = (headers, rows, rowClasses, sort) => `<div class="standings">${table(headers,rows,undefined,rowClasses,sort,headers.map(header=>STANDINGS_COLUMNS[header]||''))}</div>`;
+// A place in Europe, which its rank tells in the colour of its cup (C1, C3, C4): a place in the league (the title, a
+// promotion, a relegation) keeps its own. One that hangs on the winner of the national cup is dashed (`tentative`).
+const europePlace = row => row.europe&&!['champion','promotion','relegation'].includes(row.movement)?`europe-${row.europe.code.toLowerCase()}${row.europe.tentative?' tentative':''}`:'';
+// Its tooltip names the cup, then why: the national cup won, or what another winner of it would leave.
+const europeTip = row => {
+ const place=row.europe;
+ if(!place)return '';
+ const why=place.winner?`Vainqueur de la ${place.cup}`:place.tentative?`Sous réserve : ${place.fallback?place.fallback.name:'aucune coupe d’Europe'} si la ${place.cup} est gagnée par un club moins bien classé`:'';
+ return ` title="${escape(why?`${place.name}\n${why}`:place.name)}"`;
+};
+// The cups a table's places lead to, each after the square of its colour, for the head of its card: their names, or their
+// codes in a narrow card (`short`). Nothing when no place leads to Europe.
+export function europeLegend(items, short=false) {
+ const names=new Map(items.filter(europePlace).map(row=>[row.europe.code,row.europe.name]));
+ const codes=['C1','C3','C4'].filter(code=>names.has(code));
+ return codes.length?`<span class="europe-legend">${codes.map(code=>`<span class="europe-${code.toLowerCase()}">${escape(short?code:names.get(code))}</span>`).join('')}</span>`:'';
+}
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
@@ -410,12 +427,12 @@ export function roundTitle(title,items){const round=Math.max(0,...items.map(row=
 // difference only, for an extract beside the squad. `own` is the club whose row is washed: the user's, unless told otherwise.
 // `flags` (on `data`) follows each club with the flag of its country, in a European cup.
 export function standingsTable(data, compact=false, sortable=false, own=ownClub) {
- const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'';
+ const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':europePlace(row)||(row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'');
  const rowClasses=data.items.map(row=>`${zone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
  // A row's class names its place, which its rank's badge tells (web/charte.css); the icons below are hidden there.
  const icon=row=>row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
  const record=row=>[row.won,row.drawn,row.lost,row.goals_for,row.goals_against];
- const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club,{flag:data.flags})}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:compact==='points'?[]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
+ const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}"${europeTip(row)}>${row.rank}</span>`,`<span class="strong">${clubLink(row.club,{flag:data.flags})}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:compact==='points'?[]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
  const headers=compact==='record'?['#','CLUB','PTS','V','N','D','BP','BC','DIFF.']:compact==='figures'?['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.']:compact==='points'?['#','CLUB','PTS','DIFF.']:compact?['#','CLUB','PTS','J','DIFF.']:['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.','FORME'];
  // Form sorts by the points of the last five matches.
  const points=row=>[...row.form].reduce((sum,letter)=>sum+(letter==='V'?3:letter==='N'?1:0),0);
@@ -521,9 +538,12 @@ export function seasonSteps(data){
  return steps(years.map(year=>({value:year,label:season(year),note:year===data.current_season?'en cours':''})),data.season);
 }
 
-// The full table of a finished season of a league, the latest by default; its head steps through the others.
+// The full table of a finished season of a league, the latest by default; its head names the cups of its places and steps
+// through the other seasons.
 export function seasonArchive(archive){
- return archive?card('Classement',standingsTable({items:archive.standings},false,true),seasonSteps(archive)):'';
+ if(!archive)return '';
+ const legend=europeLegend(archive.standings,true);
+ return card('Classement',standingsTable({items:archive.standings},false,true),legend?`<div class="card-tools">${legend}${seasonSteps(archive)}</div>`:seasonSteps(archive));
 }
 
 // The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).

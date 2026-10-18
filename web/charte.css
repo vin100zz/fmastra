@@ -162,6 +162,13 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .standings tr.qualified-europe .rank{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .standings tr.europe-playoff .rank{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 .standings tr.relegated .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+/* In a league, a place in Europe takes the colour of its cup (C1 blue, C3 violet, C4 teal), the title keeping its green;
+   one that hangs on the winner of the national cup has its ring dashed. The legend of the cups shows the same square. */
+.standings tr.europe-c1 .rank,.europe-legend>.europe-c1::before{--cup:var(--info);--cup-soft:var(--info-soft)}
+.standings tr.europe-c3 .rank,.europe-legend>.europe-c3::before{--cup:var(--c3);--cup-soft:var(--c3-soft)}
+.standings tr.europe-c4 .rank,.europe-legend>.europe-c4::before{--cup:var(--c4);--cup-soft:var(--c4-soft)}
+.standings tr:is(.europe-c1,.europe-c3,.europe-c4) .rank,.europe-legend>:is(.europe-c1,.europe-c3,.europe-c4)::before{background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
+.standings tr.tentative .rank{box-shadow:none;border:1px dashed var(--cup)}
 .standings th.rank-column{text-align:center}
 .standings tbody tr.own,.standings tbody tr.own:hover,.standings-card tr:has(.own){background:var(--own-row)!important}
 .standings .movement-icon{display:none}
