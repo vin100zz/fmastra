@@ -22,6 +22,23 @@
       {"nom": "Bundesliga", "nb_clubs": 18, "division_id": 22},
       {"nom": "Bundesliga 2", "nb_clubs": 18, "division_id": 23},
       {"nom": "3. Liga", "nb_clubs": 20, "division_id": 35010926}
-    ], "reserve": [26, 91107110, 35010927, 27, 91107111]}
+    ], "reserve": [26, 91107110, 35010927, 27, 91107111]},
+    {"pays": "NED", "divisions": [
+      {"nom": "Eredivisie", "nb_clubs": 18, "division_id": 29},
+      {"nom": "Eerste Divisie", "nb_clubs": 16, "division_id": 30},
+      {"nom": "Tweede Divisie", "nb_clubs": 16, "division_id": 37059991}
+    ], "reserve": [37059992, 37059993]},
+    {"pays": "POR", "divisions": [
+      {"nom": "Primeira Liga", "nb_clubs": 18, "division_id": 60},
+      {"nom": "Liga Portugal 2", "nb_clubs": 18, "division_id": 61}
+    ], "reserve": [2000112232, 2000112233]},
+    {"pays": "BEL", "divisions": [
+      {"nom": "Pro League", "nb_clubs": 16, "division_id": 1},
+      {"nom": "Challenger Pro League", "nb_clubs": 17, "division_id": 2}
+    ], "reserve": [2000370106, 2000370107]},
+    {"pays": "TUR", "divisions": [
+      {"nom": "Süper Lig", "nb_clubs": 18, "division_id": 130286},
+      {"nom": "1. Lig", "nb_clubs": 20, "division_id": 463479}
+    ], "reserve": [463485, 463486]}
   ]
 }

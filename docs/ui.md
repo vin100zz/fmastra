@@ -624,7 +624,8 @@ Le lien **Palmarès** du menu de gauche (`#/honours`) réunit sur une page les v
 de toutes les compétitions, sur toutes les saisons archivées, dans un seul tableau : une
 ligne par compétition, une colonne par saison. Les lignes vont par groupe, nommé une fois
 à leur gauche : d'abord les trois coupes d'Europe (C1, C3, C4), puis chaque pays dans
-l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne), ses divisions de la D1
+l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne, Pays-Bas, Portugal, Belgique,
+Turquie), ses divisions de la D1
 vers le bas puis sa coupe nationale. Une ligne donne la pastille de la compétition (celle de
 la charte : C1, L1, D2, CF), son nom, qui ouvre son historique, son meilleur buteur de tous les temps avec ses
 buts, puis la saison en cours, en gris : le leader d'un championnat et le nombre de

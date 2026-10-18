@@ -55,6 +55,7 @@ def reserve_team(row: dict) -> bool:
     if (row.get("MainTeamUID", "") not in ("", "0", "-1", row["UID"])
             or row.get("TeamTypeCode", "0") not in ("", "0")):
         return True
+    if row["UID"] in {"1047"}: return False  # Willem II, a first team named after a king.
     name = row.get("ShortName") or row["Name"]
     return bool(re.search(r"\s(?:B|C|II|III|2|U[- ]?23|U[- ]?21)$", name, re.IGNORECASE)
                 or row["UID"] in {"1737"})  # Real Madrid Castilla, named without a B suffix.

@@ -879,14 +879,15 @@ def test_squad_sorts_by_what_each_column_shows(played):
     world = played.app.state.game.world
     club = world.clubs[next(iter(world.active_clubs())).id]
     hurt, banned = (world.players[player_id] for player_id in club.player_ids[:2])
-    # The six simulated matches may have injured or suspended others: only these two must be unavailable.
-    for player_id in club.player_ids:
+    def rows(sort, order="asc"):
+        return played.get(f"/api/clubs/{club.id}/effectif?tri={sort}&ordre={order}").json()["items"]
+    # The six simulated matches may have injured or suspended others, those it lent included: only these two must be
+    # unavailable.
+    for player_id in {*club.player_ids, *(row["id"] for row in rows("fitness"))}:
         world.players[player_id].injury = None
         world.players[player_id].discipline.clear()
     hurt.injury = Injury(world.date, world.date.add_days(20), "minor")
     banned.discipline[club.competition_id] = Discipline(suspended_matches=2)
-    def rows(sort, order="asc"):
-        return played.get(f"/api/clubs/{club.id}/effectif?tri={sort}&ordre={order}").json()["items"]
     condition = rows("fitness")
     assert [row["id"] for row in condition[:2]] == [hurt.id, banned.id]
     assert [row["fitness"] for row in condition[2:]] == sorted(row["fitness"] for row in condition[2:])

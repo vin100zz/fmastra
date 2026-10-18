@@ -29,7 +29,9 @@ def test_the_nations_of_a_new_game_open_on_the_divisions_played_by_default(clien
     assert data["date"] == "2026-07-01" and data["season"] == 2026
     assert [(nation["code"], nation["default"], [division["name"] for division in nation["divisions"]]) for nation in data["nations"]] == [
         ("FRA", 3, ["Ligue 1", "Ligue 2", "National"]), ("ITA", 2, ["Serie A", "Serie B"]), ("ESP", 2, ["La Liga", "La Liga 2"]),
-        ("ENG", 2, ["Premier League", "Championship"]), ("GER", 2, ["Bundesliga", "Bundesliga 2", "3. Liga"])]
+        ("ENG", 2, ["Premier League", "Championship"]), ("GER", 2, ["Bundesliga", "Bundesliga 2", "3. Liga"]),
+        ("NED", 0, ["Eredivisie", "Eerste Divisie", "Tweede Divisie"]), ("POR", 0, ["Primeira Liga", "Liga Portugal 2"]),
+        ("BEL", 0, ["Pro League", "Challenger Pro League"]), ("TUR", 0, ["Süper Lig", "1. Lig"])]
     assert data["flags"]["FRA"]["name"] == "France" and data["flags"]["ENG"]["flag"]
 
 

@@ -17,7 +17,7 @@ import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,mone
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
 
-export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER'];
+export const LEAGUE_ORDER=['FRA','ENG','ESP','ITA','GER','NED','POR','BEL','TUR'];
 // The countries whose leagues are simulated, in the sidebar's order.
 export const playableNations=leagues=>[...new Set(leagues.filter(league=>league.kind!=='europe').map(league=>league.nation))].sort((a,b)=>LEAGUE_ORDER.indexOf(a)-LEAGUE_ORDER.indexOf(b));
 
