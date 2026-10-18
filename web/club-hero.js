@@ -28,8 +28,11 @@ export function heroColors(majorColor,minorColor,groundColor){
   `--crest-major:${major}`,`--crest-minor:${minor}`,`--crest-ink:${inkOn(major)}`].join(';');
 }
 
-// A figure of the header, with its label above it; `hue` grades its ground as the badge of that note.
-const tile=(label,value,extra='',title='',hue=null)=>`<div class="club-hero-tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}${extra}</strong></div>`;
+// A figure of the header, with its label above it.
+const tile=(label,value,extra='',title='')=>`<div class="club-hero-tile"${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}${extra}</strong></div>`;
+// A column of a tile of several figures, its label above it; `hue` grades its ground as the badge of that note.
+const column=(label,value,title='',hue=null)=>`<div${hue==null?'':` class="graded" style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
+const split=columns=>`<div class="club-hero-tile split">${columns}</div>`;
 const signed=value=>value>0?`+${n(value)}`:value<0?`−${n(-value)}`:'0';
 // What fills the disc of a club: its initials, under its crest when the game has one.
 const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()">`;
@@ -129,21 +132,20 @@ function selectionTile(player){
  const main=mainNationCode(player);
  if(!main)return '';
  const nation=`<span>${nationFlag(main)}</span><strong>${e(nationCode(main))}</strong>`;
- const column=(label,value)=>`<div><span>${label}</span><strong>${n(value)}</strong></div>`;
- return `<div class="club-hero-tile split">${main===player.national_team&&player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nation}</a>`:`<div>${nation}</div>`}`
-  +`${player.international_caps==null?'':column('Sél.',player.international_caps)}${player.international_goals?column('Buts',player.international_goals):''}</div>`;
+ return split(`${main===player.national_team&&player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nation}</a>`:`<div>${nation}</div>`}`
+  +`${player.international_caps==null?'':column('Sél.',n(player.international_caps))}${player.international_goals?column('Buts',n(player.international_goals)):''}`);
 }
 
 // The header of a player's page is his club's: its colours on the band, its crest on the disc, his name with the club after
 // it, smaller (a plain band and « Libre » without a club). On the right his age, what he did for his selection, his level
-// and his potential on graded tiles, his market value and the fee asked for him (N/A when nobody can be asked). `lead`
-// steps through the squad; `foot` is what the user can do with him, where a club has its tabs.
+// and his potential on one tile of two graded columns, his market value and the fee asked for him (N/A when nobody can be
+// asked) on another. `lead` steps through the squad; `foot` is what the user can do with him, where a club has its tabs.
 export function playerHero(player,{lead='',foot=''}){
  const club=player.club;
- const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),'',title,levelHue(level(value)));
+ const grade=(label,value,title)=>value==null?column(label,'—'):column(label,level(value),title,levelHue(level(value)));
  const unasked=player.transferable===false?'Intransférable : son club refuse de le vendre':club?'':'Sans club : aucun prix demandé';
  return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',
   after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
-  tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}`
-   +`${tile('Valeur',money(player.value),'','Valeur de marché')}${unasked?tile('Prix demandé','N/A','',unasked):tile('Prix demandé',price(player.asking_price))}`});
+  tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${split(grade('Niveau',player.rating,'Niveau actuel sur 200')+grade('Potentiel',player.potential,'Potentiel sur 200'))}`
+   +split(column('Valeur',money(player.value),'Valeur de marché')+(unasked?column('Prix demandé','N/A',unasked):column('Prix demandé',price(player.asking_price))))});
 }

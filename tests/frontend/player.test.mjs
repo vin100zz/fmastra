@@ -243,11 +243,11 @@ test('career competition column shows the flag of the league country, and none f
  }finally{history.career.items=previous;setNations({});}
 });
 
-test('the header shows age, level and potential as tiles, the birth date in the tooltip of the age',async()=>{
+test('the header shows the age on a tile, the birth date in its tooltip, then the level and the potential as graded columns of one tile',async()=>{
  const head=header((await render()).html);
  assert.match(head,/<div class="club-hero-tile" title="Né le 1 janv\. 2005"><span>Âge<\/span><strong>19<\/strong>/);
- assert.match(head,/<div class="club-hero-tile graded" style="--hue:\d+" title="Niveau actuel sur 200"><span>Niveau<\/span><strong>140<\/strong>/);
- assert.match(head,/<div class="club-hero-tile graded" style="--hue:120" title="Potentiel sur 200"><span>Potentiel<\/span><strong>183<\/strong>/);
+ assert.match(head,/<div class="club-hero-tile split"><div class="graded" style="--hue:\d+" title="Niveau actuel sur 200"><span>Niveau<\/span><strong>140<\/strong><\/div><div class="graded" style="--hue:120" title="Potentiel sur 200"><span>Potentiel<\/span><strong>183<\/strong><\/div><\/div>/);
+ assert.match(header((await render({...detail,rating:null})).html),/<div class="club-hero-tile split"><div><span>Niveau<\/span><strong>—<\/strong><\/div><div class="graded"/);
  // The positions are read on the pitch, not under the name.
  assert.doesNotMatch(head.slice(head.indexOf('</h1>')),/class="position|secondary-positions/);
 });
@@ -256,7 +256,7 @@ test('his selection has one tile between his age and his level: its flag over it
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},SEN:{name:'Sénégal',display_code:'SEN',flag:'sn'},MLI:{name:'Mali',display_code:'MLI',flag:'ml'}});
  try{
   const flag=(name,file)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
-  const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile graded"/)[1];
+  const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile split"><div class="graded"/)[1];
   const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><h3>Contrat/)?.slice(1);
   const base={...detail,nationalities:['FRA','SEN'],national_team:'SEN',national_team_id:-12,international_caps:12,international_goals:3};
   const capped=(await render(base)).html;
@@ -279,7 +279,7 @@ test('his selection has one tile between his age and his level: its flag over it
   assert.deepEqual([...three[1].matchAll(/class="nation" title="([^"]+)"/g)].map(match=>match[1]),['France','Mali']);
   // An older server tells no cap, and a player without any nationality has no tile.
   assert.equal(tile((await render(detail)).html),`<div><span>${flag('France','fr')}</span></span><strong>FRA</strong></div>`);
-  assert.doesNotMatch((await render({...detail,nationalities:[]})).html,/club-hero-tile split/);
+  assert.match((await render({...detail,nationalities:[]})).html,/<strong>19<\/strong><\/div><div class="club-hero-tile split"><div class="graded"/);
  }finally{setNations({});}
 });
 
@@ -353,11 +353,11 @@ test('the rail counts yellow cards over all competitions and names a suspension 
  assert.doesNotMatch(rail((await render()).html),/Suspension/);
 });
 
-test('the rail carries salary and contract end; the market value and the asking price are tiles of the header',async()=>{
+test('the rail carries salary and contract end; the market value and the asking price are two columns of a tile of the header',async()=>{
  const {html}=await render({...detail,asking_price:2500000}),side=rail(html),head=header(html);
  const contract=side.slice(side.indexOf('>Contrat<'));
  for(const label of ['Salaire','Fin du contrat'])assert.ok(contract.includes(`<div class="fact"><span>${label}</span>`),label);
- assert.match(head,/<div class="club-hero-tile" title="Valeur de marché"><span>Valeur<\/span><strong>/);assert.match(head,/<span>Prix demandé<\/span><strong>2\.5\sM€<\/strong>/);
+ assert.match(head,/<div class="club-hero-tile split"><div title="Valeur de marché"><span>Valeur<\/span><strong>[^<]+<\/strong><\/div><div><span>Prix demandé<\/span><strong>2\.5\sM€<\/strong><\/div><\/div>/);
  assert.doesNotMatch(side,/Valeur|Prix demandé|class="tile/);
  assert.match(header((await render({...detail,transferable:false})).html),/title="Intransférable : son club refuse de le vendre"><span>Prix demandé<\/span><strong>N\/A<\/strong>/);
  const free=(await render({...detail,club:null,wage:0,contract_end:null})).html;

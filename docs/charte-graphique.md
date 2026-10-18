@@ -145,7 +145,7 @@ où le fond est déjà jaune.
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Carte repliable | `.card.fold`, `.card-head.toggle`, `.toggle-arrow`, `.fold-more` | L'en-tête entier montre ou cache ce qui est secondaire. Voir « Carte repliable » |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
-| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
+| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur |
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation` | Voir « Clubs et pays » |
@@ -412,10 +412,13 @@ sans disque.
 
 - **Nom** : celui du bandeau, son club à sa suite (voir « Bandeau »). Son
   poste n'y est pas : il se lit sur le terrain des aptitudes.
-- **Tuiles**, dans cet ordre : âge, sélection, niveau, potentiel, valeur, prix
-  demandé (« N/A » quand personne ne peut le demander, la raison en infobulle).
-  Niveau et potentiel sont gradués (`.tile.graded`) : le fond et l'encre de
-  leur pastille.
+- **Tuiles**, dans cet ordre : âge, sélection, niveau et potentiel, valeur et
+  prix demandé.
+- **Niveau et potentiel** : une tuile de deux colonnes graduées
+  (`.tile.split > .graded`), chacune sur le fond et dans l'encre de sa
+  pastille, un trait du panneau entre les deux.
+- **Valeur et prix demandé** : une tuile de deux colonnes (`.tile.split`) ; le
+  prix « N/A » quand personne ne peut le demander, la raison en infobulle.
 - **Sélection** (`.tile.split`) : une tuile de trois colonnes, un trait entre
   deux. Le drapeau au-dessus du code de trois lettres (jamais le nom du pays :
   la tuile garde sa largeur), « Sél. » et « Buts », la colonne des buts dès le

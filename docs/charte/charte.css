@@ -249,13 +249,18 @@
 .tile em{font:600 var(--fs-small)/1 var(--text);font-style:normal}
 /* A tile grades its ground as the badge of its note does (a player's level, his potential). One tile holds several figures
    in columns, a line between two, each under its label: what a player did for his selection, its flag over its code, then
-   his caps and his goals. */
-.tile.graded{background:hsl(var(--hue) 62% 91%);border-color:hsl(var(--hue) 45% 80%)}
-.tile.graded :is(.label,strong){color:hsl(var(--hue) 65% 26%)}
+   his caps and his goals; his market value and the fee asked. Graded columns fill the tile, each on the ground of its own
+   badge, the line between two in the panel's colour: his level and his potential. */
+.tile.graded,.tile.split>.graded{background:hsl(var(--hue) 62% 91%)}
+.tile.graded{border-color:hsl(var(--hue) 45% 80%)}
+:is(.tile.graded,.tile.split>.graded) :is(.label,strong){color:hsl(var(--hue) 65% 26%)}
 .tile.split{flex-direction:row;align-items:stretch;justify-content:flex-start;gap:var(--s3)}
 .tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px}
 .tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
 .tile.split .label{display:flex;align-items:center;height:14px}
+.tile.split:has(>.graded){gap:0;padding:0;border:0;background:none;overflow:hidden}
+.tile.split:has(>.graded)>*{padding:6px var(--s3)}
+.tile.split:has(>.graded)>*+*{border-left-color:var(--panel)}
 
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
    graded ground with its border, a competition an outline (a solid black for a European cup). */
