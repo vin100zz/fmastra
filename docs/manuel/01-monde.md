@@ -22,9 +22,24 @@ Seuls les clubs de ces championnats jouent leurs matches :
 |---|---|---:|---:|
 {{#chaque monde.competitions_simulees}}| {{pays}} | {{nom}} | {{niveau}} | {{nb_clubs}} |
 
-Tous les autres clubs du fichier de départ sont **non simulés**. Ils ne jouent pas de championnat, mais ils existent : ils gardent un effectif et des finances, leurs joueurs vieillissent, progressent et prennent leur retraite, ils reçoivent des regens, et ils achètent et vendent des joueurs. Ils forment le **marché extérieur**, sans lequel les championnats simulés tourneraient en vase clos.
+Les autres clubs que la partie garde du fichier de départ (voir [Les joueurs de départ](#/aide/monde/les-joueurs-de-depart)) sont **non simulés**. Ils ne jouent pas de championnat, mais ils existent : ils gardent un effectif et des finances, leurs joueurs vieillissent, progressent et prennent leur retraite, ils reçoivent des regens, et ils achètent et vendent des joueurs. Ils forment le **marché extérieur**, sans lequel les championnats simulés tourneraient en vase clos.
 
 Un club non simulé peut apparaître dans une coupe nationale ou une coupe d'Europe. S'il ne peut pas aligner onze joueurs, il reçoit pour ce seul match des joueurs temporaires, hors marché (voir [Compétitions](#/aide/competitions/joueurs-temporaires)).
+
+## Les joueurs de départ
+
+Le fichier de départ compte bien plus de joueurs que la partie n'en suit. À sa création, elle n'en garde qu'une partie, palier par palier ; chaque palier prend les meilleurs au niveau du fichier :
+
+- **Chaque club simulé** garde ses {{importation.selection_effectifs.paliers.clubs_simules.joueurs}} meilleurs joueurs, dont toujours ses {{importation.selection_effectifs.paliers.clubs_simules.gardiens}} meilleurs gardiens et ses {{importation.selection_effectifs.paliers.clubs_simules.espoirs}} plus forts potentiels de {{importation.selection_effectifs.paliers.clubs_simules.age_max_espoir}} ans ou moins.
+- **Les clubs d'où montent les promus**, sous la plus basse division simulée, gardent chacun leurs {{importation.selection_effectifs.paliers.vivier.joueurs}} meilleurs joueurs.
+- **Les vedettes**, où qu'elles jouent : les joueurs d'une réputation mondiale d'au moins {{n(importation.selection_effectifs.paliers.vedettes.reputation_min, 0)}} sur 100, et les pépites, d'un potentiel d'au moins {{importation.selection_effectifs.paliers.vedettes.potentiel_min_pepite}} sur 200 à {{importation.selection_effectifs.paliers.vedettes.age_max_pepite}} ans ou moins.
+- **Les {{importation.selection_effectifs.paliers.agents_libres.joueurs}} meilleurs joueurs libres.**
+- **Les clubs étrangers qui comptent** : dans chaque pays non simulé, les plus réputés, {{importation.selection_effectifs.paliers.clubs_etrangers.clubs_par_place_europe}} par place européenne du pays (entre {{importation.selection_effectifs.paliers.clubs_etrangers.clubs_europe_min}} et {{importation.selection_effectifs.paliers.clubs_etrangers.clubs_europe_max}}), et tout club d'une réputation d'au moins {{n(importation.selection_effectifs.paliers.clubs_etrangers.reputation_min, 0)}}. Chacun garde ses {{importation.selection_effectifs.paliers.clubs_etrangers.joueurs}} meilleurs joueurs.
+- **Une liste pour chaque sélection** : chaque nationalité garde au moins {{importation.selection_effectifs.paliers.plancher_nation.joueurs_min}} joueurs, et jusqu'à {{importation.selection_effectifs.paliers.plancher_nation.joueurs_max}} pour les plus fortes : le nombre croît avec la [force de la nation](#/aide/selections/la-force-des-nations), de {{n(importation.selection_effectifs.paliers.plancher_nation.force_min, 0)}} à {{n(importation.selection_effectifs.paliers.plancher_nation.force_max, 0)}}. Les joueurs déjà gardés comptent ; les autres sont pris parmi les meilleurs hors des clubs simulés. Une nation qui manque encore de joueurs complète sa liste avec des [renforts](#/aide/selections/les-renforts).
+
+Aucun club ne garde plus de {{importation.selection_effectifs.joueurs_max_par_club}} joueurs. Hors des clubs simulés, la partie garde au plus {{importation.selection_effectifs.paliers.plafond_hors_simules}} joueurs : au-delà, les clubs étrangers descendent à {{importation.selection_effectifs.paliers.clubs_etrangers.joueurs_min}} joueurs, puis les joueurs libres sont réduits de moitié puis écartés, et enfin ceux du vivier de même.
+
+Restent alors les clubs simulés, ceux du vivier, les {{importation.selection_effectifs.paliers.coupe.clubs_par_nation}} clubs les plus réputés de chaque nation simulée pour sa coupe, les clubs étrangers qui comptent et tout club qui garde un joueur ; les autres ne sont pas repris. Les joueurs écartés ne reviennent pas, mais leurs noms servent aux regens de leur pays. Les clubs d'une nation qui a des places européennes sans championnat à elle, comme le Liechtenstein dont les clubs jouent en Suisse, la représentent en coupe d'Europe.
 
 ## Ce qui se passe chaque jour
 

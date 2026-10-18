@@ -1,0 +1,69 @@
+﻿DivisionUID;NationUID;Nation;Division;SimpleDivision;Level
+22;771;Allemagne;Bundesliga;Bundesliga;1
+23;771;Allemagne;Bundesliga 2;Bundesliga 2;2
+35010926;771;Allemagne;3. Liga;3. Liga;3
+11;765;Angleterre;Premier League;Premier League;1
+12;765;Angleterre;Sky Bet Championship;Championship;2
+13;765;Angleterre;Sky Bet League One;League One;3
+1;757;Belgique;Jupiler Pro League;Jupiler Pro League;1
+2;757;Belgique;Belgian Challenger Pro League;Challenger Pro League;2
+2000370106;757;Belgique;Division 1 amateur de Belgique - VV;Division 1 amateur - VV;3
+2000370107;757;Belgique;Division 1 amateur de Belgique - ACFF;Division 1 amateur - ACFF;3
+67;796;Espagne;Première Division d'Espagne;LaLiga;1
+68;796;Espagne;2ème Division d'Espagne;LaLiga 2;2
+2000048844;796;Espagne;Première Division A de la Fédération espagnole;Première Division A de la Fédération espagnole;3
+2000048846;796;Espagne;Première Division B de la Fédération espagnole;Première Division B de la Fédération espagnole;3
+16;769;France;Ligue 1 McDonald's;Ligue 1;1
+17;769;France;Ligue 2 BKT;Ligue 2;2
+18;769;France;Championnat National;Championnat National;3
+19;769;France;National 2 - Groupe A;National 2 - Groupe A;4
+914522;769;France;National 2 - Groupe B;National 2 - Groupe B;4
+914523;769;France;National 2 - Groupe C;National 2 - Groupe C;4
+2000279692;769;France;National 3 - Groupe A;National 3 - Groupe A;5
+2000279693;769;France;National 3 - Groupe B;National 3 - Groupe B;5
+2000279694;769;France;National 3 - Groupe C;National 3 - Groupe C;5
+2000279695;769;France;National 3 - Groupe D;National 3 - Groupe D;5
+2000279696;769;France;National 3 - Groupe E;National 3 - Groupe E;5
+2000279697;769;France;National 3 - Groupe F;National 3 - Groupe F;5
+2000279698;769;France;National 3 - Groupe G;National 3 - Groupe G;5
+2000279699;769;France;National 3 - Groupe H;National 3 - Groupe H;5
+2000003898;769;France;Régional 1 - Pays de la Loire - Poule A;Régional 1 - Pays de la Loire - Poule A;6
+2000003900;769;France;Régional 1 - Pays de la Loire - Poule B;Régional 1 - Pays de la Loire - Poule B;6
+2000003902;769;France;Régional 1 - Auvergne Rhône Alpes - Poule A;Régional 1 - Auvergne Rhône Alpes - Poule A;6
+2000003903;769;France;Régional 1 - Auvergne Rhône Alpes - Poule B;Régional 1 - Auvergne Rhône Alpes - Poule B;6
+2000003904;769;France;Régional 1 - Corse;Régional 1 - Corse;6
+2000003905;769;France;Régional 1 - Méditerranée;Régional 1 - Méditerranée;6
+2000003906;769;France;Régional 1 - Occitanie - Poule A;Régional 1 - Occitanie - Poule A;6
+2000003907;769;France;Régional 1 - Occitanie - Poule B;Régional 1 - Occitanie - Poule B;6
+2000003909;769;France;Régional 1 - Bretagne - Poule A;Régional 1 - Bretagne - Poule A;6
+2000003910;769;France;Régional 1 - Bretagne - Poule B;Régional 1 - Bretagne - Poule B;6
+2000003911;769;France;Régional 1 - Nouvelle Aquitaine - Poule A;Régional 1 - Nouvelle Aquitaine - Poule A;6
+2000003912;769;France;Régional 1 - Nouvelle Aquitaine - Poule B;Régional 1 - Nouvelle Aquitaine - Poule B;6
+2000003914;769;France;Régional 1 - Grand Est - Poule A;Régional 1 - Grand Est - Poule A;6
+2000003916;769;France;Régional 1 - Grand Est - Poule B;Régional 1 - Grand Est - Poule B;6
+2000003917;769;France;Regional 1 - Grand Est - Poule C;Regional 1 - Grand Est - Poule C;6
+2000003918;769;France;Régional 1 - Centre Val de Loire;Régional 1 - Centre Val de Loire;6
+2000003919;769;France;Régional 1 - Hauts de France - Poule A;Régional 1 - Hauts de France - Poule A;6
+2000003920;769;France;Régional 1 - Hauts de France - Poule B;Régional 1 - Hauts de France - Poule B;6
+2000003921;769;France;Régional 1 - Paris Ile de France - Poule A;Régional 1 - Paris Ile de France - Poule A;6
+2000003922;769;France;Régional 1 - Normandie - Poule A;Régional 1 - Normandie - Poule A;6
+2000003923;769;France;Régional 1 - Normandie - Poule B;Régional 1 - Normandie - Poule B;6
+2000003924;769;France;Régional 1 - Paris Ile de France - Poule B;Régional 1 - Paris Ile de France - Poule B;6
+2000003925;769;France;Régional 1 - Bourgogne-Franche Comté - Poule A;Régional 1 - Bourgogne-Franche Comté - Poule A;6
+2000003926;769;France;Régional 1 - Bourgogne-Franche Comté - Poule B;Régional 1 - Bourgogne-Franche Comté - Poule B;6
+32;776;Italie;Italian Serie A;Serie A;1
+33;776;Italie;Serie BKT;Serie B;2
+43127172;776;Italie;Série C/A italienne;Série C/A italienne;3
+43127173;776;Italie;Série C/B italienne;Série C/B italienne;3
+43127174;776;Italie;Série C/C italienne;Série C/C italienne;3
+29;784;Pays-Bas;VriendenLoterij Eredivisie;Eredivisie;1
+30;784;Pays-Bas;Keuken Kampioen Divisie;Eerste Divisie;2
+37059991;784;Pays-Bas;Tweede Divisie des Pays-Bas;Tweede Divisie;3
+60;788;Portugal;Première Ligue portugaise;Primeira Liga;1
+61;788;Portugal;Deuxième Ligue portugaise;Liga Portugal 2;2
+2000112232;788;Portugal;Troisième division du Portugal - Nord;Troisième division - Nord;3
+2000112233;788;Portugal;Troisième division du Portugal - Sud;Troisième division - Sud;3
+130286;799;Turquie;Turkish Super League;Süper Lig;1
+463479;799;Turquie;Turkish 1. League;1. Lig;2
+463485;799;Turquie;Turkish 2. League Group 1;Turkish 2. League Group 1;3
+463486;799;Turquie;Turkish 2. League Group 2;Turkish 2. League Group 2;3

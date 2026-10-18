@@ -133,9 +133,11 @@ def test_the_players_list_tells_the_human_club_who_would_join_it_and_at_what_wag
 def test_outgoing_offer_and_incoming_offer_response(client):
     world = client.app.state.game.world
     assert market_window(world) is not None  # a fresh game starts inside the summer window
-    max_squad = world.config.management.guardrails.max_squad
-    roomy = [club for club in world.active_clubs() if len(club.player_ids) < max_squad]
-    club_id, other_club = roomy[0].id, roomy[1]
+    guard = world.config.management.guardrails
+    # Room to buy, and players to spare above the minimum squad, to sell one.
+    roomy = [club for club in world.active_clubs() if guard.min_squad + 2 <= len(club.player_ids) < guard.max_squad]
+    # The other club can pay the 5 M€ it offers below for one of ours.
+    club_id, other_club = roomy[0].id, next(club for club in roomy[1:] if min(club.transfer_budget, club.balance) >= 5_000_000)
     client.post("/api/partie/choisir-club", json={"club_id": club_id})
     target_player = next(pid for pid in other_club.player_ids if opening_obstacle(world, world.players[pid]) is None)
 

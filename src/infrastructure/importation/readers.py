@@ -55,6 +55,7 @@ def reserve_team(row: dict) -> bool:
     if (row.get("MainTeamUID", "") not in ("", "0", "-1", row["UID"])
             or row.get("TeamTypeCode", "0") not in ("", "0")):
         return True
+    if row["UID"] in {"1047"}: return False  # Willem II, a first team named after a king.
     name = row.get("ShortName") or row["Name"]
     return bool(re.search(r"\s(?:B|C|II|III|2|U[- ]?23|U[- ]?21)$", name, re.IGNORECASE)
                 or row["UID"] in {"1737"})  # Real Madrid Castilla, named without a B suffix.
@@ -82,7 +83,8 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
                         hex_color(row, "HomeKitThirdColorRGB"),
                         bounded(row, "Reputation", 0, 10000) if row.get("Reputation") else None,
                         reserve_team(row))
-             for row in rows("clubs.csv")]
+             # The export lists placeholders without a nation ("Club inconnu", empty rows); no player belongs to them.
+             for row in rows("clubs.csv") if row["Nation"]]
     players = []
     for row in rows("players.csv"):
         ca, pa = bounded(row, "CurrentAbility", 1, 200), bounded(row, "PotentialAbility", 1, 200)
@@ -99,7 +101,8 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
             injury_proneness=optional_note(row, "InjuryProneness"), ambition=optional_note(row, "Ambition"),
             aggression=optional_note(row, "Aggression", "Dirtiness"), loyalty=optional_note(row, "Loyality", "Loyalty"),
             international_caps=int(row.get("InternationalCaps") or 0),
-            international_goals=int(row.get("InternationalGoals") or 0)))
+            international_goals=int(row.get("InternationalGoals") or 0),
+            world_reputation=bounded(row, "WorldReputation", 0, 10000) if row.get("WorldReputation") else 0))
     if len({club.id for club in clubs}) != len(clubs) or len({player.id for player in players}) != len(players):
         raise ValueError("Duplicate source ID")
     return clubs, players, names
