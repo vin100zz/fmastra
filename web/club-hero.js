@@ -1,4 +1,4 @@
-import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -64,7 +64,7 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
  const change=club.reputation_change==null?'':`<em class="${club.reputation_change<0?'down':'up'}">${signed(club.reputation_change)}</em>`;
  // After the name, two links: the flag of its country to its selection, then its league to its page. Outside a league,
  // one link: its country after the flag, the whole to the selection. A country without a selection is no link.
- const flag=nationFlag(club.nation_code),selection=club.nation_id==null?'':`#/international/nation/${club.nation_id}`;
+ const flag=nationFlag(club.nation_code,{link:false}),selection=club.nation_id==null?'':`#/international/nation/${club.nation_id}`;
  const after=club.competition_id==null?context(`${flag}${e(club.nation||'')}`,selection)
   :context(`${flag&&selection?`<a href="${selection}">${flag}</a>`:flag}<a href="#/league/${club.competition_id}">${e(club.competition)}</a>`);
  return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section,tools),
@@ -77,7 +77,7 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
 // flag and its league after it; no link, no tile, no tab: the screen sets its figures under it.
 export function creationHero(club){
  return hero({colors:heroColors(club.major_color,club.minor_color),lead:'',name:club.name,foot:'',crest:clubCrest(club),
-  after:context(`${nationFlag(club.nation_code)}${e(club.competition)}`),tiles:''});
+  after:context(`${nationFlag(club.nation_code,{link:false})}${e(club.competition)}`),tiles:''});
 }
 
 // The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its name alone,
@@ -103,7 +103,7 @@ export function competitionHero(competition,{lead='',base,menu,section,tools=''}
  const won=competition.winner,named=won||competition.holder;
  return hero({colors:heroColors(competition.major_color,competition.minor_color,competition.ground_color),lead,name:competition.name,foot:tabs(base,menu,section,tools),
   mark:emblem?`<img class="club-hero-emblem" src="/emblems/${emblem}.png" alt="">`:disc,
-  tiles:named?tile(won?competition.kind==='league'?'Champion':'Vainqueur':'Tenant du titre',clubLink(named)):''});
+  tiles:named?tile(won?competition.kind==='league'?'Champion':'Vainqueur':'Tenant du titre',clubLink(named,{flag:competition.kind==='europe'})):''});
 }
 
 // A side of a match without colours keeps the panel's, whatever the other side wears.
@@ -112,10 +112,16 @@ const sideColors=team=>heroColors(team.major_color,team.minor_color)||PLAIN_SIDE
 
 // The header of a match is the two sides' headers in one band: the side at home on the left, the other on the right, each in
 // its colours with its sash, its crest (a selection's flag) and its name, a link to its page. The score stands on a tile
-// where they meet, over what settled a tie (the aggregate, the shoot-out). `foot` is what stands under the band.
-export function matchHero(match,foot=''){
+// where they meet, over what settled a tie (the aggregate, the shoot-out). `foot` is what stands under the band. `flags`
+// follows each club's name with the flag of its country, on the side of the score, a link to its selection when the game
+// has one (a European cup).
+export function matchHero(match,foot='',{flags=false}={}){
+ const country=team=>{
+  const flag=flags&&!team.national?nationFlag(team.nation,{link:false}):'';
+  return !flag?'':team.nation_id==null?`<span class="match-hero-flag">${flag}</span>`:`<a class="match-hero-flag" href="#/international/nation/${team.nation_id}">${flag}</a>`;
+ };
  const side=(team,away)=>`<div class="match-hero-side${away?' away':''}"${away?` style="${sideColors(team)}"`:''}><div class="crest club-hero-crest">${team.national?nationCrest(team):clubCrest(team)}</div>`
-  +`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a></div>`;
+  +`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a>${country(team)}</div>`;
  const settled=[match.aggregate?`Cumul ${match.aggregate.join(' – ')}`:'',match.penalties?`${match.penalties.join(' – ')} t.a.b.`:''].filter(Boolean).join(' · ');
  return `<header class="club-hero match-hero" style="${sideColors(match.home)}"><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i>`
   +`<span style="${sideColors(match.away)}"><i class="field"></i><i></i><i class="thin"></i></span></div>`
@@ -124,13 +130,13 @@ export function matchHero(match,foot=''){
 }
 
 // What a player did for his selection, on one tile of three columns: its flag over its code (the nation he plays for, else
-// the first of his nationalities; a link to the selection once it has called him), his caps, and his goals once he has scored.
+// the first of his nationalities; a link to its selection when the game has one), his caps, and his goals once he has scored.
 function selectionTile(player){
  const main=mainNationCode(player);
  if(!main)return '';
- const nation=`<span>${nationFlag(main)}</span><strong>${e(nationCode(main))}</strong>`;
+ const nation=`<span>${nationFlag(main,{link:false})}</span><strong>${e(nationCode(main))}</strong>`,selection=nationHref(main);
  const column=(label,value)=>`<div><span>${label}</span><strong>${n(value)}</strong></div>`;
- return `<div class="club-hero-tile split">${main===player.national_team&&player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nation}</a>`:`<div>${nation}</div>`}`
+ return `<div class="club-hero-tile split">${selection?`<a href="${e(selection)}">${nation}</a>`:`<div>${nation}</div>`}`
   +`${player.international_caps==null?'':column('Sél.',player.international_caps)}${player.international_goals?column('Buts',player.international_goals):''}</div>`;
 }
 

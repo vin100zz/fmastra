@@ -305,12 +305,10 @@ function disciplineFacts(player) {
 // His nations: the one he plays for, else the first of his nationalities, then the others in the order of the source.
 const nationCodes=player=>[...new Set([player.national_team,...(player.nationalities||[])].filter(Boolean))];
 
-// Beside a list, the flag of his main nation flies by his name, alone, named in its tooltip.
+// Beside a list, the flag of his main nation flies by his name, alone, named in its tooltip, a link to its selection.
 function nationFlags(player) {
  const [main]=nationCodes(player);
- const flag=code=>nationFlag(code)||nationBadge(code);
- const capped=main===player.national_team&&player.national_team_id!=null;
- return {main:!main?'':capped?`<a href="#/international/nation/${player.national_team_id}">${flag(main)}</a>`:flag(main)};
+ return {main:main?nationFlag(main)||nationBadge(main):''};
 }
 
 // "12 sél - 3 buts": the goals only once he has scored.
@@ -361,12 +359,12 @@ function internationalCareer(player) {
  const nation=player.national_team?nationBadges([player.national_team],{full:true}):'Sélection';
  // An edition is named by its year, after the badge that tells the Euro from the World Cup.
  const edition=row=>{const link=`<a href="#/international/${row.edition}">${row.edition}</a>`;
-  return row.code?`<span class="competition">${competitionBadge({name:row.competition,kind:'international',code:row.code})}${link}</span>`:link;};
+  return row.code?`<span class="competition">${competitionBadge({name:row.competition,kind:'international',code:row.code,year:row.edition})}${link}</span>`:link;};
  const rows=records.map(row=>careerRow([edition(row),n(row.matches),row.goals,row.assists,row.average?averageNote(row.average):'—'],wide));
  if(player.historical_caps||player.historical_goals)rows.push(careerRow(['Historique importé',n(player.historical_caps),n(player.historical_goals),'—','—'],wide));
  const rated=records.reduce((sum,row)=>sum+(row.rating_count||0),0);
  const total=['Total',n(player.international_caps),n(player.international_goals),n(records.reduce((sum,row)=>sum+row.assists,0)),rated?averageNote(records.reduce((sum,row)=>sum+row.rating_sum,0)/rated):'—'];
- const head=[player.national_team_id!=null?`<a href="#/international/nation/${player.national_team_id}">${nation}</a>`:nation,'MATCHS','BUTS','PASSES','NOTE'];
+ const head=[nation,'MATCHS','BUTS','PASSES','NOTE'];
  return `<tbody>${careerRow(head,{tag:'th',lead:4,name:'nation-head'})}</tbody><tbody>${rows.join('')}${careerRow(total,{lead:4,name:'total'})}</tbody>`;
 }
 

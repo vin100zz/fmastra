@@ -7,9 +7,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import create_app
-from api.views import match_row, table
+from api.views import match_row, selection_id, table
 from core.domain.date import Date
-from core.domain.matches import MatchResult
+from core.domain.matches import Match, MatchResult
 from core.world.calendar import Standing, standings
 from core.world.cup_matches import cup_lineup
 from core.world.cups import season_fixtures
@@ -152,6 +152,43 @@ def test_a_country_without_a_cup_fills_its_cup_place_from_its_league(imported):
     assert selected == [set(ranked[:c1n]), set(ranked[c1n:c1n + c3n]), set(ranked[c1n + c3n:c1n + c3n + c4n])]
 
 
+def test_a_league_table_tells_the_european_cup_of_each_place_and_what_the_national_cup_may_change(imported):
+    world = copy_world(imported)
+    league = next(c for c in world.competitions.values() if c.kind == "league" and c.level == 1 and c.nation == "FRA")
+    lower = next(c for c in world.competitions.values() if c.kind == "league" and c.level == 2 and c.nation == "FRA")
+    cup = next(c for c in world.competitions.values() if c.kind == "cup" and c.nation == "FRA")
+    assert resolve_european_quotas(world, world.season + 1)["FRA"] == (3, 3, 1)
+    places = lambda: [(row["europe"]["code"], row["europe"]["tentative"], (row["europe"]["fallback"] or {}).get("code"))
+                      if row["europe"] else None for row in table(world, league.id)[:10]]
+    ranked = [row["club_id"] for row in table(world, league.id)]
+    sure = [("C1", False, None)] * 3 + [("C3", False, None)] * 2
+    # The cup in play: its place in C3 falls to the league, the 6th's and the 7th's hanging on its winner.
+    assert places() == sure + [("C3", True, "C4"), ("C4", True, None)] + [None] * 3
+    rows = table(world, league.id)
+    assert [row["movement"] for row in rows[:8]] == ["champion"] + ["europe"] * 6 + [None]
+    assert rows[5]["europe"]["cup"] == "Coupe de France" and rows[5]["europe"]["fallback"]["name"] == "Conference League"
+    # Its finalists already qualified: nothing hangs on it any more.
+    final = Match(world.next_id, cup.id, world.season, 6, Date(2027, 5, 26), ranked[0], ranked[5], neutral=True)
+    world.matches[final.id] = final
+    cup.match_ids.append(final.id)
+    assert places() == sure + [("C3", False, None), ("C4", False, None)] + [None] * 3
+    # Won by the 10th: he takes the C3, the 6th falls to the C4 and the 7th out.
+    world.champions[cup.id] = [(world.season, ranked[9])]
+    assert places() == sure + [("C4", False, None), None, None, None, ("C3", False, None)]
+    rows = table(world, league.id)
+    assert rows[9]["europe"]["winner"] and rows[9]["movement"] is None and rows[6]["movement"] is None
+    # Won by a club of Ligue 2: its row tells it there.
+    winner = lower.club_ids[0]
+    world.champions[cup.id] = [(world.season, winner)]
+    assert places() == sure + [("C4", False, None)] + [None] * 4
+    assert [row["europe"] for row in table(world, lower.id) if row["europe"]] == [
+        {"code": "C3", "name": "Ligue Europa", "tentative": False, "fallback": None, "cup": "Coupe de France", "winner": True}]
+    assert next(row for row in table(world, lower.id) if row["club_id"] == winner)["movement"] != "europe"
+    # Won by a club already in C1: the places go down the table.
+    world.champions[cup.id] = [(world.season, ranked[0])]
+    assert places() == sure + [("C3", False, None), ("C4", False, None)] + [None] * 3
+
+
 def test_complete_competition_seeding_resume_and_api(imported, tmp_path):
     world = copy_world(imported)
     for number in range(1, 9):
@@ -203,6 +240,14 @@ def test_complete_competition_seeding_resume_and_api(imported, tmp_path):
             assert data["holder"] is None
             assert len(data["rounds"]) == 17 and data["next_round"] is None
             assert data["rounds"][9]["items"][0]["aggregate"] is not None
+            # Clubs of several countries meet there: each one carries its country, whose flag follows its name.
+            countries = [row["club"]["nation"] for row in data["standings"]]
+            assert countries == [restored.clubs[row["club"]["id"]].nation for row in data["standings"]] and len(set(countries)) > 1
+            # The report's band leads each club's flag to its country's selection.
+            report = client.get(f"/api/matches/{data['rounds'][-1]['items'][0]['id']}").json()
+            for side in ("home", "away"):
+                nation = restored.clubs[report[side]["id"]].nation
+                assert report[side]["nation"] == nation and report[side]["nation_id"] == selection_id(restored, nation)
             assert client.get(f"/api/competitions/{cid}/historique").json()["items"][0]["champion"] == data["winner"]
     assert states == {key: rng.getstate() for key, rng in restored.rngs.items()}
 

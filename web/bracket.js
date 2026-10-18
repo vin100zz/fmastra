@@ -21,7 +21,8 @@ function order(columns,stages,last){
 
 // The whole box opens the match (the return leg once played, as it carries the aggregate); a club's name opens the club, and in a
 // two-legged tie each score opens its own leg. The side that went through is in bold; the tie of the user's club is washed.
-function tieBox(tie){
+// `flags` follows each club with the flag of its country.
+function tieBox(tie,flags){
  if(!tie)return '<div class="bracket-tie empty"></div>';
  const legs=tie.legs,twoLegs=legs.length>1,shootout=legs.some(leg=>leg.penalties);
  const main=legs.findLast(leg=>leg.score)||legs[0];
@@ -30,7 +31,7 @@ function tieBox(tie){
   const scores=legs.map(leg=>twoLegs?`<a class="bracket-score" href="#/match/${leg.id}">${goals(leg,club,leg.score)??'–'}</a>`:`<span class="bracket-score">${goals(leg,club,leg.score)??'–'}</span>`);
   if(shootout){const leg=legs.find(item=>item.penalties);scores.push(`<span class="bracket-pens" title="Tirs au but">(${goals(leg,club,leg.penalties)})</span>`);}
   const state=tie.winner==null?'':tie.winner===club?.id?' winner':' beaten';
-  return `<div class="bracket-team${state}"><span class="bracket-club">${clubLink(club)}</span>${scores.join('')}</div>`;
+  return `<div class="bracket-team${state}"><span class="bracket-club">${clubLink(club,{flag:flags})}</span>${scores.join('')}</div>`;
  };
  return `<div class="bracket-tie${tie.clubs.some(isOwnClub)?' own':''}"><a class="bracket-match" href="#/match/${main.id}" aria-label="Voir le match"></a>${tie.clubs.map(row).join('')}</div>`;
 }
@@ -40,7 +41,8 @@ function tieBox(tie){
 // they are joined to the previous round only when the draw is `fixed` (the pairings are known in advance).
 // With `sides`, the first half of each round runs left to right and the second half right to left, both ending at the final
 // in the middle, so a cup of many ties keeps its height to half; a draw with a `single` round (the play-offs) stays one-sided.
-export function bracket(stages,{fixed=false,sides=false}={}){
+// `flags` follows each club with the flag of its country (a European cup).
+export function bracket(stages,{fixed=false,sides=false,flags=false}={}){
  const sizes=[];
  for(let index=stages.length-1;index>=0;index--)sizes[index]=index===stages.length-1?1:stages[index].single?sizes[index+1]:2*sizes[index+1];
  const columns=stages.map(stage=>ties(stage.matches));
@@ -50,7 +52,7 @@ export function bracket(stages,{fixed=false,sides=false}={}){
  const linked=index=>index<stages.length-1&&(fixed||index<last);
  const round=(index,list,extra='')=>{
   const stage=stages[index];
-  const slots=list.map(tie=>`<div class="bracket-slot">${tieBox(tie)}</div>`);
+  const slots=list.map(tie=>`<div class="bracket-slot">${tieBox(tie,flags)}</div>`);
   const paired=linked(index)&&!stage.single&&slots.length>1?Array.from({length:Math.ceil(slots.length/2)},(_,pair)=>`<div class="bracket-pair">${slots.slice(2*pair,2*pair+2).join('')}</div>`):slots;
   const classes=['bracket-round',linked(index)?'linked':'',index>0&&linked(index-1)?'fed':'',columns[index].some(tie=>tie?.legs.length>1)?'legs':'',extra].filter(Boolean).join(' ');
   return `<div class="${classes}"><div class="bracket-head"><strong>${e(stage.label)}</strong>${stage.date?`<span>${date(stage.date)}</span>`:''}</div><div class="bracket-slots">${paired.join('')}</div></div>`;
