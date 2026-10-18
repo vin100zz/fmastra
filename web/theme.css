@@ -602,7 +602,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .attributes-card>.card-body{padding:0}
 .attributes-card .attribute-group h3{display:flex;align-items:center;gap:6px;height:25px;margin:0;padding:0 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;color:var(--ink)}
 .attributes-card .attribute-group+.attribute-group h3{border-top:1px solid var(--line)}
-.attributes-card .attributes-grid{grid-template-columns:repeat(auto-fill,minmax(max(165px,calc((100% - 48px)/3)),1fr));gap:0 24px;padding:3px 12px 9px}
+.attributes-card .attributes-grid{gap:0 24px;padding:3px 12px 9px}
 .attributes-card .attribute{height:27px;margin:0;padding:0;border-bottom:1px solid var(--row-line);white-space:nowrap}
 .attributes-card .attribute-others{padding:8px 12px;border-top:1px solid var(--line)}
 .attributes-card .attribute-others .attributes-grid{padding:0;margin-top:8px}
@@ -771,8 +771,8 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .preview .positions-list{display:flex;flex-direction:column;flex:none;margin:0;border:0}
 .preview .position-row{height:25px}
 .preview .position-row.head{height:22px;border-top:0}
-.preview .attributes-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;padding:0 12px 4px}
-.preview .attribute{height:25px;margin:0;padding:0;border-bottom:1px solid var(--row-line);white-space:nowrap}
+.preview .attributes-grid{gap:0 16px;padding:0 12px 4px}
+.preview .attribute{margin:0;padding:0;border-bottom:1px solid var(--row-line);white-space:nowrap}
 .preview .club-matches{padding:2px 12px}
 .preview-table table{table-layout:fixed}
 .preview-table th,.preview-table td{padding-left:5px!important;padding-right:5px!important;overflow:hidden;text-overflow:ellipsis}

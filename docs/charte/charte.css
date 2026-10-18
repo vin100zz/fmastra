@@ -257,6 +257,15 @@
 .tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
 .tile.split .label{display:flex;align-items:center;height:14px}
 
+/* Attributes: a line of 26 each, its name then its badge at the edge; a key one in 700, a dot of the accent after its name.
+   A column holds the longest name of its section and its badge, the composites' out of 200 more than the attributes': a
+   grid has as many as leave them that room, down to one. */
+.attributes-grid{--attribute-column:140px;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--attribute-column),1fr));column-gap:var(--s4);padding:0 var(--s3)}
+.composites-group .attributes-grid{--attribute-column:180px}
+.attribute{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);border-bottom:1px solid var(--row-line);white-space:nowrap}
+.attribute.key>span:first-child{font-weight:700}
+.attribute.key>span:first-child::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:middle}
+
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
    graded ground with its border, a competition an outline (a solid black for a European cup). */
 .position,.rating,.score,.tag,.comp{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px;border-radius:var(--radius);white-space:nowrap}
