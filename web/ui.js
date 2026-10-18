@@ -167,9 +167,17 @@ export const nationName = code => nations[code]?.name || code || '—';
 // The three letters a nation is written with after its flag.
 export const nationCode = code => nations[code]?.display_code || code || '—';
 const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:'';
-export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return `<span class="nation" title="${escape(info?.name||code||'')}">${flagImage(info)}${escape(label)}</span>`;};
+// Where a nation's flag leads: the page of its selection; nothing for a country the game has no selection for.
+export const nationHref = code => nations[code]?.selection_id==null ? '' : `#/international/nation/${nations[code].selection_id}`;
+// A flag and what follows it, named in its tooltip: a link to its selection, unless `link` is false (a filter, or a flag
+// standing inside another link).
+const nationTag = (code, content, link) => {
+ const href=link?nationHref(code):'',title=`title="${escape(nations[code]?.name||code||'')}"`;
+ return href?`<a class="nation" href="${escape(href)}" ${title}>${content}</a>`:`<span class="nation" ${title}>${content}</span>`;
+};
+export const nationBadge = (code, {full=false,link=true}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return nationTag(code,`${flagImage(info)}${escape(label)}`,link);};
 // The flag alone, named in its tooltip, for compact cells; empty when the nation or its flag is unknown.
-export const nationFlag = code => nations[code]?.flag ? `<span class="nation" title="${escape(nations[code].name||code)}">${flagImage(nations[code])}</span>` : '';
+export const nationFlag = (code, {link=true}={}) => nations[code]?.flag ? nationTag(code,flagImage(nations[code]),link) : '';
 // Where a nation's flag is served from, for a flag drawn larger than in a line of text; empty when it has none.
 export const flagUrl = code => nations[code]?.flag ? `/flags/${nations[code].flag}.svg` : '';
 let competitions=new Map();
@@ -193,17 +201,29 @@ export function competitionCode(competition){
 }
 // What a competition is (league, cup, europe, international), as the game lists it.
 export const competitionKind = competition => known(competition).kind;
+// Where a competition's badge leads: the page of a league or a national cup, of a European cup, of an edition of the
+// selections (by its `year`); nothing for one the game does not know.
+export function competitionHref(competition){
+ const {id,kind,code,year}=known(competition);
+ if(kind==='international')return year==null?'':`#/international/${year}`;
+ if(kind==='europe')return code?`#/europe/${code}`:'';
+ return ['league','cup'].includes(kind)&&id!=null?`#/league/${id}`:'';
+}
 // The badge of a competition: an outline for a league, a blue one for a national cup, a solid one for a European cup; its
-// full name in the tooltip.
-export const competitionBadge = competition => {const {name,kind}=known(competition);return `<span class="competition-code${kind?` ${kind}`:''}" title="${escape(name)}">${escape(competitionCode(competition))}</span>`;};
+// full name in the tooltip. A link to its page, unless `link` is false (a filter, or a badge standing inside another link).
+export const competitionBadge = (competition, {link=true}={}) => {
+ const {name,kind}=known(competition),href=link?competitionHref(competition):'';
+ const attributes=`class="competition-code${kind?` ${kind}`:''}"${href?` href="${escape(href)}"`:''} title="${escape(name)}"`;
+ return href?`<a ${attributes}>${escape(competitionCode(competition))}</a>`:`<span ${attributes}>${escape(competitionCode(competition))}</span>`;
+};
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 // A club's name after its dot, a selection's after its flag; `reversed` writes the name first, for the side at home of a
 // match face to face, whose mark stands against the score (the name in an element of its own, cut when too long). `flag`
-// follows a club's name with the flag of its country, which is no link (a European cup, where clubs of several countries
-// meet): before the name when `reversed`, so that the dot keeps touching the score.
+// follows a club's name with the flag of its country, a link to its selection (a European cup, where clubs of several
+// countries meet): before the name when `reversed`, so that the dot keeps touching the score.
 export const clubLink = (club, {reversed=false,flag=false}={}) => {
  if(!club)return '<span class="muted">Libre</span>';
- const mark=club.national?nationFlag(club.nation):kitDot(club),name=escape(club.name),named=reversed?`${club.national?name:`<span>${name}</span>`}${mark}`:`${mark}${name}`;
+ const mark=club.national?nationFlag(club.nation,{link:false}):kitDot(club),name=escape(club.name),named=reversed?`${club.national?name:`<span>${name}</span>`}${mark}`:`${mark}${name}`;
  const link=`<a href="#/${club.national?'international/nation':'club'}/${club.id}" class="club-link${reversed?' reversed':''}">${club.national?`<span class="nation">${named}</span>`:named}</a>`;
  const country=flag&&!club.national?nationFlag(club.nation):'';
  return country?`<span class="club-flag">${reversed?`${country}${link}`:`${link}${country}`}</span>`:link;

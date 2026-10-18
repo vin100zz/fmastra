@@ -110,7 +110,7 @@ export async function matchScreen(id){
  const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
  // The band has no bar: the match's line says which match it is, over the highlights (or alone under the band before the
  // match). The competition and the round, the day, a neutral ground, who went through; at its end the first leg and the summary.
- const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})});
+ const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code,year:match.season}:{})});
  const when=[date(match.date,true),match.neutral?'Terrain neutre':''].filter(Boolean).join(' · ');
  const winner=match.winner_id?`<span>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</span>`:'';
  const commands=`${match.first_leg_id?`<a class="button" href="#/match/${match.first_leg_id}">Match aller</a>`:''}${replay.toggle}`;

@@ -253,9 +253,11 @@ test('the header shows age, level and potential as tiles, the birth date in the 
 });
 
 test('his selection has one tile between his age and his level: its flag over its code, his caps, his goals; his other nationalities close the state',async()=>{
- setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},SEN:{name:'Sénégal',display_code:'SEN',flag:'sn'},MLI:{name:'Mali',display_code:'MLI',flag:'ml'}});
+ // Mali has no selection in the game: its flag leads nowhere.
+ setNations({FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1},SEN:{name:'Sénégal',display_code:'SEN',flag:'sn',selection_id:-12},MLI:{name:'Mali',display_code:'MLI',flag:'ml'}});
  try{
   const flag=(name,file)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
+  const linked=(name,file,id)=>`<a class="nation" href="#/international/nation/${id}" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
   const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile graded"/)[1];
   const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><h3>Contrat/)?.slice(1);
   const base={...detail,nationalities:['FRA','SEN'],national_team:'SEN',national_team_id:-12,international_caps:12,international_goals:3};
@@ -264,21 +266,25 @@ test('his selection has one tile between his age and his level: its flag over it
   assert.equal(tile(capped),`<a href="#/international/nation/-12"><span>${flag('Sénégal','sn')}</span></span><strong>SEN</strong></a>`
    +'<div><span>Sél.</span><strong>12</strong></div><div><span>Buts</span><strong>3</strong></div>');
   // The others after the cards and the suspensions, each a flag then its code, never its name.
-  assert.deepEqual(others(capped),['Autre nationalité',`${flag('France','fr')}FRA</span>`]);
+  assert.deepEqual(others(capped),['Autre nationalité',`${linked('France','fr',-1)}FRA</a>`]);
   assert.doesNotMatch(header(capped)+rail(capped),/>France<|>Sénégal</);
   // The goals have their column only once he has scored.
   assert.match(tile((await render({...base,international_goals:0})).html),/<strong>SEN<\/strong><\/a><div><span>Sél\.<\/span><strong>12<\/strong><\/div>$/);
-  // Never capped: the first of his nationalities, without a link, and no cap to count.
+  // Never capped: the first of his nationalities, a link to its selection, and no cap to count.
   const uncapped=(await render({...base,national_team:null,national_team_id:null,international_caps:0,international_goals:0})).html;
-  assert.equal(tile(uncapped),`<div><span>${flag('France','fr')}</span></span><strong>FRA</strong></div><div><span>Sél.</span><strong>0</strong></div>`);
-  assert.match(others(uncapped)[1],/title="Sénégal"[^]*SEN<\/span>$/);
+  assert.equal(tile(uncapped),`<a href="#/international/nation/-1"><span>${flag('France','fr')}</span></span><strong>FRA</strong></a><div><span>Sél.</span><strong>0</strong></div>`);
+  assert.match(others(uncapped)[1],/href="#\/international\/nation\/-12" title="Sénégal"[^]*SEN<\/a>$/);
+  // A country the game has no selection for keeps its flag, without a link.
+  const malian=(await render({...base,nationalities:['MLI'],national_team:null,national_team_id:null,international_caps:0,international_goals:0})).html;
+  assert.equal(tile(malian),`<div><span>${flag('Mali','ml')}</span></span><strong>MLI</strong></div><div><span>Sél.</span><strong>0</strong></div>`);
   // One nationality: no line for the others; several others: all on the line, in the order of the source.
   assert.equal(others((await render({...base,nationalities:['SEN']})).html),undefined);
   const three=others((await render({...base,nationalities:['FRA','SEN','MLI']})).html);
   assert.equal(three[0],'Autres nationalités');
-  assert.deepEqual([...three[1].matchAll(/class="nation" title="([^"]+)"/g)].map(match=>match[1]),['France','Mali']);
+  assert.deepEqual([...three[1].matchAll(/class="nation"[^>]* title="([^"]+)"/g)].map(match=>match[1]),['France','Mali']);
+  assert.match(three[1],/<span class="nation" title="Mali">/);
   // An older server tells no cap, and a player without any nationality has no tile.
-  assert.equal(tile((await render(detail)).html),`<div><span>${flag('France','fr')}</span></span><strong>FRA</strong></div>`);
+  assert.equal(tile((await render(detail)).html),`<a href="#/international/nation/-1"><span>${flag('France','fr')}</span></span><strong>FRA</strong></a>`);
   assert.doesNotMatch((await render({...detail,nationalities:[]})).html,/club-hero-tile split/);
  }finally{setNations({});}
 });
@@ -375,7 +381,7 @@ test('attributes are graded badges without bars, and greed closes Général in a
 });
 
 test('the career card is one table: the clubs, then the national team under its name in the same four columns',async()=>{
- setNations({SEN:{name:'Sénégal',display_code:'SEN',flag:'sn'}});
+ setNations({SEN:{name:'Sénégal',display_code:'SEN',flag:'sn',selection_id:-12}});
  try{
   const records=[{edition:2026,matches:3,goals:1,assists:0,rating_sum:13,rating_count:2,average:6.5},{edition:2028,matches:5,goals:2,assists:2,rating_sum:35,rating_count:5,average:7}];
   const capped={...detail,national_team:'SEN',national_team_id:-12,international_caps:20,international_goals:5,historical_caps:12,historical_goals:2,international_records:records};
@@ -386,7 +392,7 @@ test('the career card is one table: the clubs, then the national team under its 
   assert.match(card,/<tr class="total"><td>Total<\/td><td><\/td><td>—<\/td><td><\/td><td>4<\/td><td>1<\/td><td>0<\/td><td>6\.50<\/td><\/tr><\/tbody><tbody class="career-gap" aria-hidden="true"><tr><td colspan="8"><\/td><\/tr><\/tbody><tbody><tr class="nation-head">/);
   // The nation's name spans the four columns the national team has no use for, so that its figures fall under the clubs'.
   const nation=card.slice(card.indexOf('<tr class="nation-head">'));
-  assert.match(nation,/^<tr class="nation-head"><th colspan="4"><a href="#\/international\/nation\/-12"><span class="nation" title="Sénégal"><img[^>]*>Sénégal<\/span><\/a><\/th><th>MATCHS<\/th><th>BUTS<\/th><th>PASSES<\/th><th>NOTE<\/th><\/tr>/);
+  assert.match(nation,/^<tr class="nation-head"><th colspan="4"><a class="nation" href="#\/international\/nation\/-12" title="Sénégal"><img[^>]*>Sénégal<\/a><\/th><th>MATCHS<\/th><th>BUTS<\/th><th>PASSES<\/th><th>NOTE<\/th><\/tr>/);
   // Editions newest first, then what he had played before the game, then his totals with the mean of every rated match.
   assert.deepEqual([...nation.matchAll(/<tr>(.*?)<\/tr>/g)].map(match=>match[1].replace(/<[^>]+>/g,'|').replace(/\|+/g,'|')),
    ['|2028|5|2|2|7.00|','|2026|3|1|0|6.50|','|Historique importé|12|2|—|—|']);
@@ -398,12 +404,12 @@ test('the career card is one table: the clubs, then the national team under its 
   assert.doesNotMatch((await render({...capped,international_caps:0})).html,/nation-head|career-gap/);
   // An edition the server names carries its badge ahead of its year.
   const named=(await render({...capped,international_records:[{...records[1],competition:'Euro 2028',code:'EU'}]})).html;
-  assert.match(named,/<td colspan="4"><span class="competition"><span class="competition-code international" title="Euro 2028">EU<\/span><a href="#\/international\/2028">2028<\/a><\/span><\/td>/);
+  assert.match(named,/<td colspan="4"><span class="competition"><a class="competition-code international" href="#\/international\/2028" title="Euro 2028">EU<\/a><a href="#\/international\/2028">2028<\/a><\/span><\/td>/);
  }finally{setNations({});}
 });
 
 test('a season of his career shows what his club played as badges: its league, after the flag of a country other than France, then its European cup',async()=>{
- setNations({ITA:{name:'Italie',display_code:'ITA',flag:'it'},FRA:{name:'France',display_code:'FRA',flag:'fr'}});
+ setNations({ITA:{name:'Italie',display_code:'ITA',flag:'it',selection_id:-5},FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1}});
  const previous=history.career.items,base=previous[0];
  const league=(name,nation,level,id)=>({id,name,kind:'league',code:null,nation,level}),c1={id:30,name:'Ligue des champions',kind:'europe',code:'C1',nation:'',level:0};
  history.career.items=[{...base,season:2027,competition:'Serie A · C1',competition_nation:'ITA',competition_badges:[league('Serie A','ITA',1,16),c1]},
@@ -412,9 +418,10 @@ test('a season of his career shows what his club played as badges: its league, a
   {...base,season:2024,competition:null,competition_nation:null,competition_badges:[]}];
  try{
   const cells=[...(await render()).html.matchAll(/<td><span class="competition">(.*?)<\/span>(?=<\/td>)/g)].map(match=>match[1]);
-  const italy='<span class="nation" title="Italie"><img class="flag" src="/flags/it.svg" alt="" width="16" height="12" loading="lazy"></span>';
-  assert.deepEqual(cells,[`${italy}<span class="competition-code league" title="Serie A">D1</span><span class="competition-code europe" title="Ligue des champions">C1</span>`,
-   '<span class="competition-code league" title="Ligue 2">L2</span>',`${italy}<span class="competition-code league" title="D3">D3</span>`,'Marché extérieur']);
+  // The flag leads to the country's selection, each badge to its competition's page; a league the game does not simulate, nowhere.
+  const italy='<a class="nation" href="#/international/nation/-5" title="Italie"><img class="flag" src="/flags/it.svg" alt="" width="16" height="12" loading="lazy"></a>';
+  assert.deepEqual(cells,[`${italy}<a class="competition-code league" href="#/league/16" title="Serie A">D1</a><a class="competition-code europe" href="#/europe/C1" title="Ligue des champions">C1</a>`,
+   '<a class="competition-code league" href="#/league/17" title="Ligue 2">L2</a>',`${italy}<span class="competition-code league" title="D3">D3</span>`,'Marché extérieur']);
  }finally{history.career.items=previous;setNations({});}
 });
 

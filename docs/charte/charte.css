@@ -309,11 +309,11 @@
 .flag{display:inline-block;flex:none;width:16px;height:12px;box-shadow:0 0 0 1px #0a141e1f}
 .nation{display:inline-flex;align-items:center;gap:6px}
 /* In a European cup, where clubs of several countries meet, a club's name is followed by the flag of its country, 6 apart: a
-   flag that is no link, its country in its tooltip. Face to face, the side at home has it before its name, so that its dot
-   keeps touching the score. A name too long is cut, never its marks. */
+   link of its own to its country's selection, its country in its tooltip. Face to face, the side at home has it before its
+   name, so that its dot keeps touching the score. A name too long is cut, never its marks. */
 .club-flag{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}
-.club-flag>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.club-flag>:is(.kit-dot,.flag){flex:none}
+.club-flag>a:not(.nation){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.club-flag>:is(.kit-dot,.flag,.nation){flex:none}
 /* What a pointer shows: never the browser's own title. Above its target, below when there is no room; the arrow points at it. */
 .tooltip{position:relative;display:inline-flex;flex-direction:column;max-width:320px;padding:var(--s1) var(--s2);border-radius:var(--radius);background:var(--strong);color:#fff;font:400 var(--fs-body)/18px var(--text);box-shadow:0 4px 12px #0a141e33}
 .tooltip::after{content:"";position:absolute;left:50%;top:100%;width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--strong);transform:rotate(45deg)}
