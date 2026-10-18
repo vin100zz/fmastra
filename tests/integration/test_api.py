@@ -211,7 +211,7 @@ def test_player_history_gives_each_month_the_club_played_for_then(client):
         assert clubs() == [first, first, first, last, last, loaner, last, last, None]
         point = client.get(f"/api/joueurs/{player.id}/historique").json()["trajectory"][0]
         assert point["club"] == {"id": first, "name": world.clubs[first].name, "major_color": world.clubs[first].home_kit_major_color,
-                                 "minor_color": world.clubs[first].home_kit_minor_color}
+                                 "minor_color": world.clubs[first].home_kit_minor_color, "nation": world.clubs[first].nation}
     finally:
         world.trajectories[player.id], world.transfers = kept, transfers
 
@@ -434,7 +434,7 @@ def test_competitions_carry_what_their_header_shows(client, monkeypatch):
     assert all(item['winner'] is None and item['holder'] is None for item in data.values())
     league, cup = (next(item for item in world.competitions.values() if item.name == name) for name in ('Ligue 1', 'Coupe de France'))
     first, second, third = league.club_ids[:3]
-    ref = lambda club_id: {key: value for key, value in client.get(f'/api/clubs/{club_id}').json().items() if key in ('id', 'name', 'major_color', 'minor_color')}
+    ref = lambda club_id: {key: value for key, value in client.get(f'/api/clubs/{club_id}').json().items() if key in ('id', 'name', 'major_color', 'minor_color')} | {'nation': world.clubs[club_id].nation}
     # The holder is the winner of the latest season before the one shown; the winner, the one of that season once decided.
     monkeypatch.setitem(world.champions, league.id, [(world.season - 2, first), (world.season - 1, second)])
     monkeypatch.setitem(world.champions, cup.id, [(world.season - 1, first), (world.season, third)])
