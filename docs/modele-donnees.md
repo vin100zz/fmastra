@@ -30,6 +30,13 @@ La date initiale reste le 1er juillet 2025, définie par la configuration.
 - Joueurs : UID, Name, FirstName, LastName, CommonName, Nation, Position,
   ClubUID, WeeklyWage, Value, DateOfBirth, ContractEnd, CurrentAbility,
   PotentialAbility, les attributs et les colonnes Position_* ci-dessous.
+  Le numéro de maillot est facultatif, sous le premier de ces noms que l'export
+  a : SquadNumber, ShirtNumber, Number (`SHIRT_COLUMNS`,
+  `infrastructure/importation/readers.py`). Une cellule vide ou hors de 1 à 99
+  laisse le jeu le choisir ; de deux joueurs d'un club au même numéro, le
+  premier dans l'ordre des titulaires, remplaçants puis jeunes (niveau
+  décroissant) le garde, l'autre en reçoit un. Le rapport d'import compte les
+  numéros choisis par le jeu (`shirts_assigned`).
 - Utiliser WeeklyWage et Value, qui sont les montants affichés en euros dans
   l'export, et non les colonnes Raw dans l'unité interne de la source.
 - Un salaire nul sous contrat reçoit le salaire attendu. Une échéance absente
@@ -139,13 +146,13 @@ seul l'affichage les arrondit, afin de conserver les petites progressions.
 
 | Entité | Éléments indispensables |
 |---|---|
-| `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, charge des matches récents, forme, moral, fragilité, ego et agressivité stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur, prêt en cours (`Loan` : club propriétaire, début, dernier jour), jour d'entrée en réserve et jours de réserve du mois |
+| `Player` | ID, identité d'affichage et décomposée, nationalités, naissance, poste et affinités, attributs, potentiel privé, fraîcheur, charge des matches récents, forme, moral, fragilité, ego et agressivité stables, club, contrat, blessure, compteurs disciplinaires, estimations par observateur, prêt en cours (`Loan` : club propriétaire, début, dernier jour), jour d'entrée en réserve et jours de réserve du mois, numéro de maillot (`shirt`, unique dans l'effectif où il joue, aucun sans club ; voir `core/world/shirts.py` et le manuel, « Joueurs ») |
 | `Contract` | salaire hebdomadaire entier, signature et échéance, rôle/temps de jeu attendu, origine réelle ou synthétique |
 | `Club` | ID, noms, nation, division source, compétition simulée optionnelle, statut, capacité connue ou absente, réputation, centre, formation, personnalité, revenus de référence et facteur initial de financement, budget, plafond salarial, écart choisi entre les deux (`wage_shift`, salaires hebdomadaires passés du budget au plafond), solde, kit domicile (ID et couleurs, optionnels), joueurs prêtés à d'autres clubs (`loaned_ids`) et joueurs empruntés (`borrowed_ids`, compris dans `player_ids`) |
 | `ClubPersonality` | goût du risque, préférence jeunes, agressivité salariale, patience ; tirés une fois |
 | `Competition` | ID, pays, niveau, clubs, journées, références aux règles |
 | `Match` | ID, compétition, journée, date, clubs, résultat optionnel |
-| `MatchResult` | moteur utilisé et détail disponible, score, compositions initiales et bancs, rôles, événements horodatés et ordonnés, statistiques et notes éventuelles |
+| `MatchResult` | moteur utilisé et détail disponible, score, compositions initiales et bancs, rôles, numéros portés (`shirts`, un match de club), événements horodatés et ordonnés, statistiques et notes éventuelles |
 | `World` | date, saison, joueurs, clubs, compétitions, matches, historique, négociations, objectifs démographiques, cohorte en attente, ID suivant, graine et états RNG, configuration effective et empreinte |
 
 Une suspension contient sa compétition, son nombre de matches restant et sa

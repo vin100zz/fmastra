@@ -1,4 +1,4 @@
-import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,kitShirt,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -140,15 +140,17 @@ function selectionTile(player){
   +`${player.international_caps==null?'':column('Sél.',player.international_caps)}${player.international_goals?column('Buts',player.international_goals):''}</div>`;
 }
 
-// The header of a player's page is his club's: its colours on the band, its crest on the disc, his name with the club after
-// it, smaller (a plain band and « Libre » without a club). On the right his age, what he did for his selection, his level
-// and his potential on graded tiles, his market value and the fee asked for him (N/A when nobody can be asked). `lead`
-// steps through the squad; `foot` is what the user can do with him, where a club has its tabs.
+// The header of a player's page is his club's: its colours on the band, his shirt in its kit with his number in place of
+// the disc (its crest on the disc for a player without a number), his name with the club after it, smaller (a plain band
+// and « Libre » without a club). On the right his age, what he did for his selection, his level and his potential on
+// graded tiles, his market value and the fee asked for him (N/A when nobody can be asked). `lead` steps through the squad;
+// `foot` is what the user can do with him, where a club has its tabs.
 export function playerHero(player,{lead='',foot=''}){
  const club=player.club;
  const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),'',title,levelHue(level(value)));
  const unasked=player.transferable===false?'Intransférable : son club refuse de le vendre':club?'':'Sans club : aucun prix demandé';
- return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',
+ const shirt=club&&player.shirt!=null?kitShirt(club.major_color,club.minor_color,player.shirt,{large:true}).replace('<span ',`<span title="Numéro ${player.shirt}" `):null;
+ return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',...(shirt?{mark:shirt}:{}),
   after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
   tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}`
    +`${tile('Valeur',money(player.value),'','Valeur de marché')}${unasked?tile('Prix demandé','N/A','',unasked):tile('Prix demandé',price(player.asking_price))}`});

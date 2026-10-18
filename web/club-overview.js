@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 
 const BEST_PLAYERS=8;
@@ -57,7 +57,7 @@ export function sidePitch(players,club,label){
   const row=rows[line(player)];
   let across=aside.get(player)??50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));
   if(player.position==='AILG')across=15;if(player.position==='AILD')across=85;
-  const shirt=kitShirt(player.temporary?null:club.major_color,club.minor_color,player.position);
+  const shirt=kitShirt(player.temporary?null:club.major_color,club.minor_color,shirtLabel(player));
   const tag=player.temporary?'span':'a',link=player.temporary?' title="Joueur temporaire"':` href="#/player/${player.id}" title="${e(player.name)}"`;
   return `<${tag} class="pitch-player"${link} style="left:${DEPTH[player.position]??55}%;top:${across}%">${shirt}${playerBlock(e(shortName(player.name,player.short)))}</${tag}>`;
  }).join('');

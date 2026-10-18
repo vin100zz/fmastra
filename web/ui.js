@@ -100,18 +100,22 @@ const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(in
 export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
 // The one shirt of every pitch (docs/charte-graphique.md): square, its sleeves level, the club's kit, the body in its first
 // colour (white included) and the sleeves and the collar in its second, each fill drawing its own round edge, a light outline
-// around the whole; `label` (a position) is written on it in the ink that reads on the body. Grey without colours, a dashed
-// outline for an `empty` place. His `goals` stand at its top right, a ball for each; the rest of what he did goes in his block
-// (`playerBlock`).
+// around the whole; `label` (his number, else a position: see `shirtLabel`) is written on it in the ink that reads on the
+// body, a number larger than a position. Grey without colours, a dashed outline for an `empty` place. His `goals` stand at
+// its top right, a ball for each; the rest of what he did goes in his block (`playerBlock`). A `large` one, at the size of a
+// band's disc, shows a player's number in his header; a `former` one, veiled, the number a player leaves.
 const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_BODY='M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
 export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
 // The custom properties a kit drawing reads its colours from; empty without a primary colour.
 export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='', {empty=false,goals=0}={}) => {
- const style=empty?'':kitStyle(major,minor);
+export const kitShirt = (major, minor, label='', {empty=false,goals=0,large=false,former=false}={}) => {
+ const style=empty?'':kitStyle(major,minor),number=/^\d+$/.test(String(label));
  const balls=goals>0?`<span class="kit-goals" title="${goals} but${goals>1?'s':''}">${'<i></i>'.repeat(goals)}</span>`:'';
- return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}${balls}</span>`;
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}${number?' number':''}${large?' large':''}${former?' former':''}"${style?` style="${style}"`:''}>${KIT_SVG}${label!==''&&label!=null?`<b>${escape(label)}</b>`:''}${balls}</span>`;
 };
+// What a player's shirt says on a pitch: his number, or `position` (his own by default) when he has none: a selection's
+// player, a temporary reinforcement.
+export const shirtLabel = (player, position=player?.position) => player?.shirt!=null?String(player.shirt):position;
 // The block under a shirt: lines of 16 on the dark of the label, as many for every player of a pitch. His name first (`name`,
 // HTML), then his note and what he did (`facts`, HTML); a line given as '' keeps its height, one left out (null) is not drawn.
 export const playerBlock = (name, facts=null) => `<span class="player-block">${name==null?'':`<span class="block-name">${name}</span>`}${facts==null?'':`<span>${facts}</span>`}</span>`;
@@ -498,7 +502,7 @@ export function pitch(lineup,label='Composition initiale',{compact=false,kit=nul
   const row=rows[line(player)],y=bands[player.position]??40;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
   const tag=player.temporary?'span':'a',name=`${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}`;
-  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position,{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,shirtLabel(player),{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
  }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};

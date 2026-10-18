@@ -78,6 +78,11 @@ prêté joue pour un autre club jusqu'à la fin de la saison ou pour une demi-sa
 liste des joueurs dit qui est listé et qui est intéressé, pour un transfert (T) ou pour un prêt (P). Le chapitre
 « Réserve et prêts » du manuel du jeu en donne les règles.
 
+Chaque joueur d'un effectif porte son numéro de maillot, celui de `players.csv` quand il le donne : il s'écrit sur les
+maillots des terrains (composition, compte rendu, dernier onze, direct) et dans le bandeau de sa fiche. Un joueur qui
+arrive prend un numéro libre selon son poste et sa place (titulaire de 1 à 11, remplaçant, jeune), que les actualités
+du club annoncent, comme les changements de numéro du 1er juillet ; le manuel (« Joueurs ») en donne les règles.
+
 La fiche d'un club s'ouvre sur un en-tête à ses couleurs (tactique, entraînement, recrutement des jeunes, réputation) et sur
 son effectif, avec à côté le calendrier, le dernier onze aligné, son championnat et ses finances. Le calendrier tient en une
 ligne par match, buteurs compris, avec le bilan de chaque compétition ; les finances et l'historique se lisent en

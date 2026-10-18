@@ -46,3 +46,5 @@ class SourcePlayer:
     loyalty: float | None = None
     international_caps: int = 0
     international_goals: int = 0
+    # His shirt number at his club, 1 to 99; None when the export lacks it.
+    shirt: int | None = None

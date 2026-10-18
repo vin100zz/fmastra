@@ -496,6 +496,17 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .kit-shirt .kit-collar{fill:var(--kit-sleeves);stroke:none}
 .kit-shirt .kit-outline{fill:none;stroke:#00000033;stroke-width:1;stroke-linejoin:round}
 .kit-shirt b{position:relative;margin-top:7px;font:700 var(--fs-micro)/1 var(--display);font-stretch:semi-condensed;color:var(--kit-ink)}
+/* The number on a player's shirt, larger than a position; at the size of a band's disc, his shirt in his header
+   (« En-tête d'un joueur »): ringed in white as the disc is, its number in 26. */
+.kit-shirt.number b{margin-top:6px;font-size:var(--fs-body)}
+.kit-shirt.large{width:64px;height:64px}
+.kit-shirt.large svg{filter:drop-shadow(0 1px 4px #0a141e38)}
+.kit-shirt.large .kit-outline{stroke:#fff;stroke-width:1.6}
+.kit-shirt.large b{margin-top:10px;font-size:var(--fs-page)}
+/* Off the pitch, in a message: the number a player takes on his club's shirt; the one he leaves veiled, a muted arrow
+   between the two (« Terrain et maillot »). */
+.kit-shirt.former{opacity:.45}
+.shirt-change{display:inline-flex;align-items:center;gap:var(--s2);color:var(--muted)}
 .kit-shirt.plain{--kit-body:#8a9193;--kit-sleeves:#8a9193;--kit-ink:#fff}
 .kit-shirt.empty svg{filter:none}
 .kit-shirt.empty :is(.kit-sleeves,.kit-body){stroke:none}

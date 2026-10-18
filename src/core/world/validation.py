@@ -21,6 +21,10 @@ def validate_world(world: World) -> None:
             raise ValueError(f"{club.name}: overfull squad")
         if not all(value is None or isfinite(value) and 0 <= value <= bounds.max for value in (club.reputation, club.reputation_anchor)):
             raise ValueError(f"{club.name}: invalid reputation")
+        # Each player of a squad wears his own number.
+        shirts = [world.players[pid].shirt for pid in club.player_ids if pid in world.players]
+        if any(shirt is None or not 1 <= shirt <= 99 for shirt in shirts) or len(set(shirts)) != len(shirts):
+            raise ValueError(f"{club.name}: invalid shirt numbers")
         wages = 0
         for player_id in club.player_ids:
             if player_id in seen or player_id not in world.players:
@@ -51,7 +55,8 @@ def validate_world(world: World) -> None:
         if player.id != player_id:
             raise ValueError("Player identifier mismatch")
         if player.club_id is None:
-            if player.contract is not None or player.loan is not None: raise ValueError("A free agent cannot have a contract")
+            if player.contract is not None or player.loan is not None or player.shirt is not None:
+                raise ValueError("A free agent cannot have a contract nor a number")
         elif player_id not in seen:
             raise ValueError("Missing squad membership")
         if not all(isfinite(value) and bounds.min <= value <= bounds.max for value in player.attributes.values):

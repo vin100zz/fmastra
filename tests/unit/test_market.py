@@ -13,6 +13,7 @@ from core.domain.offers import TransferOffer
 from core.ai.market import squad_quality
 from core.ai.external_market import approach_day
 from core.world.application import apply
+from core.world.shirts import number_squads
 from core.world.events import PlayerSigned
 from core.world.transfer_rules import recent_arrival_ids
 
@@ -29,7 +30,9 @@ def mini_world(config):
         clubs[cid] = Club(cid, f"Club {cid}", "FRA", 16, 16, ClubStatus.ACTIVE, 30000, 70, 70, "4-3-3",
                           ClubPersonality(.5, .5, .5, .5), [player.id for player in squad],
                           wage_bill=len(squad)*1000, wage_cap=100000, transfer_budget=1000000, balance=2000000)
-    return World(start, start.year, 1, config, players, clubs, {}, {}, 1000, rngs={"market":Random(4)})
+    world = World(start, start.year, 1, config, players, clubs, {}, {}, 1000, rngs={"market":Random(4)})
+    number_squads(world)
+    return world
 
 
 def test_transfer_moves_money_membership_and_wages_once(config):

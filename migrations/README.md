@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 33` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 34` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -173,6 +173,13 @@ tirée le 1er août deux ans avant le tournoi d'après, en même temps que lui. 
 sélection d'une édition à l'autre de la campagne. Le calendrier des clubs ne garde plus de jours de repos en plus autour
 d'un rassemblement : un club joue jusqu'à la veille de son ouverture et dès le lendemain de sa fin, toujours à trois jours
 au moins d'un match de sélection ; les saisons déjà tirées gardent leurs dates. Aucun paramètre de configuration n'est ajouté.
+
+La v34 donne à chaque joueur d'un effectif son numéro de maillot (`Player.shirt`, `core/world/shirts.py`), et à chaque match
+de club joué les numéros de sa feuille (`MatchResult.shirts`). À la lecture d'une sauvegarde antérieure, chaque effectif est
+numéroté par les règles d'une nouvelle partie sans numéro source (`number_squads`) : les titulaires du onze type d'abord, les
+remplaçants, puis les jeunes, chacun par niveau décroissant, le premier numéro libre de ceux de sa place. Les matches déjà
+joués n'ont pas de numéros : leur compte rendu montre celui du joueur s'il est encore au club, son poste sinon. Aucun
+paramètre de configuration n'est ajouté ; la règle de numérotation n'a pas de paramètre.
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

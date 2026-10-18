@@ -7,10 +7,11 @@ from core.domain.matches import MatchResult, stored_events
 from core.engine.fitness import match_load
 from .finances import book_cash, book_daily_cash
 from .human import record as add_news, report
+from .shirts import assign
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
                      FinancePosted, BudgetRenewed, BudgetShifted, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
-                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded)
+                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded, ShirtsRenumbered)
 
 
 def movement_snapshot(world: World, player) -> MovementSnapshot:
@@ -70,7 +71,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             club = world.clubs[source]
             club.wage_bill -= player.contract.weekly_wage
             if player.loan is not None: club.loaned_ids.remove(player.id)
-        player.club_id, player.contract, player.loan = None, None, None
+        player.club_id, player.contract, player.loan, player.shirt = None, None, None, None
         _leave_reserve(player)
         if event.retirement:
             from core.domain.international import InternationalCareer
@@ -103,6 +104,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             club.player_ids.append(player.id)
             club.wage_bill += player.contract.weekly_wage
         world.players[player.id] = player
+        if player.club_id is not None: player.shirt = assign(world, player)
         world.next_id = max(world.next_id, player.id + 1)
         world.record_level(player)
         if player.club_id is not None:
@@ -111,7 +113,7 @@ def apply(world: World, event: WorldEvent) -> bool:
         if player.club_id and world.clubs[player.club_id].competition_id:
             text = f"{player.name} rejoint le centre de formation"
             world.journal.append(JournalEntry(world.date, "academy", text, player.club_id, player.id))
-            report(world, "academy", NewsLine(player_id=player.id), player.club_id)
+            report(world, "academy", NewsLine(player_id=player.id, amount=player.shirt), player.club_id)
     elif isinstance(event, ReserveChanged):
         player = world.players[event.player_id]
         if event.reserve:
@@ -122,6 +124,11 @@ def apply(world: World, event: WorldEvent) -> bool:
         return _start_loan(world, event)
     elif isinstance(event, LoanEnded):
         _end_loan(world, event)
+    elif isinstance(event, ShirtsRenumbered):
+        for pid, number in sorted(event.numbers.items()):
+            player = world.players[pid]
+            before, player.shirt = player.shirt, number
+            report(world, "shirt_numbers", NewsLine(player_id=pid, amount=number, text="" if before is None else str(before)), event.club_id)
     elif isinstance(event, FinancePosted):
         club = world.clubs[event.club_id]
         book_daily_cash(world, club, event.change, event.investment, event.unseen_wages)
@@ -246,6 +253,7 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     player.club_id, player.contract = club.id, event.contract
     _leave_reserve(player)
     club.player_ids.append(player.id)
+    player.shirt = assign(world, player)
     club.wage_bill += event.contract.weekly_wage
     if event.fee: book_cash(world, club, transfer_index=len(world.transfers), transfer_expenses=event.fee)
     club.balance -= event.fee
@@ -254,7 +262,8 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
     world.transfers.append(TransferRecord(world.date, player.id, event.source_id, club.id, event.fee, "transfer", world.season))
     text = f"{player.name} rejoint {club.name}"
     world.journal.append(JournalEntry(world.date, "transfer", text, club.id, player.id))
-    add_news(world, "transfer", text, club.id, player.id, lines=(NewsLine(club_id=club.id),))
+    # The club he joins is told the number he takes.
+    add_news(world, "transfer", text, club.id, player.id, lines=(NewsLine(club_id=club.id, amount=player.shirt),))
     if event.source_id is not None:
         add_news(world, "transfer", text, event.source_id, player.id, lines=(NewsLine(club_id=club.id),))
     world.pending_renewals.pop(player.id, None)
@@ -284,10 +293,12 @@ def _start_loan(world: World, event: LoanStarted) -> bool:
     club.borrowed_ids.append(player.id)
     player.club_id, player.loan = club.id, Loan(owner.id, world.date, event.end)
     _leave_reserve(player)
+    player.shirt = assign(world, player)
     world.transfers.append(TransferRecord(world.date, player.id, owner.id, club.id, 0, "loan", world.season))
     text = f"{player.name} est prêté à {club.name} jusqu'au {event.end.day_month()} {event.end.year}"
     world.journal.append(JournalEntry(world.date, "loan", text, club.id, player.id))
-    for club_id in (owner.id, club.id): add_news(world, "loan", text, club_id, player.id, lines=(NewsLine(club_id=club.id),))
+    add_news(world, "loan", text, owner.id, player.id, lines=(NewsLine(club_id=club.id),))
+    add_news(world, "loan", text, club.id, player.id, lines=(NewsLine(club_id=club.id, amount=player.shirt),))
     # His owner no longer sells him nor extends his contract while he is away.
     world.pending_renewals.pop(player.id, None)
     _off_sale(world, player.id, away=True)
@@ -303,9 +314,11 @@ def _end_loan(world: World, event: LoanEnded) -> None:
     owner.loaned_ids.remove(player.id)
     owner.player_ids.append(player.id)
     player.club_id, player.loan = owner.id, None
+    player.shirt = assign(world, player)
     world.transfers.append(TransferRecord(world.date, player.id, club.id, owner.id, 0, "loan_return", world.season))
     text = f"{player.name} revient de son prêt à {club.name}"
-    for club_id in (owner.id, club.id): add_news(world, "loan_return", text, club_id, player.id, lines=(NewsLine(club_id=club.id),))
+    add_news(world, "loan_return", text, owner.id, player.id, lines=(NewsLine(club_id=club.id, amount=player.shirt),))
+    add_news(world, "loan_return", text, club.id, player.id, lines=(NewsLine(club_id=club.id),))
 
 
 def _off_sale(world: World, player_id: int, away: bool = False) -> None:

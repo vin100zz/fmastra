@@ -28,6 +28,7 @@ from .reserves import reserve_events
 from .promotion import promotion_event
 from .reputation import reputation_events
 from .squads import complete_squads
+from .shirts import renumbering_events
 from .cups import season_fixtures, progress_cups
 from .cup_matches import cup_lineup, decide_winner
 from .europe import qualify_europe, progress_europe, decide_european_winner
@@ -109,6 +110,9 @@ def annual_review(world: World) -> None:
     matches = season_fixtures(world, world.date.year)
     apply(world, SeasonOpened(world.date.year, matches, champions))
     draw_notices(world, drawn)
+    # The squads of the new season, once the players at the end of their contracts have left: who won his place takes a
+    # number to match, before the young players and the signings of the day choose among those left.
+    for event in renumbering_events(world): apply(world, event)
     complete_squads(world, list(incoming))
     for event in cohort_events(world): apply(world, event)
     ensure_minimums(world)
@@ -219,6 +223,8 @@ def settle_match(world: World, match: Match, result: MatchResult, lineups: list[
         else:
             decide_winner(world, match, result, lineups)
     result.home_absent, result.away_absent = absences(world, match, match.home_id), absences(world, match, match.away_id)
+    sheet = [*(pid for pid, _ in result.home_lineup + result.away_lineup), *result.home_bench, *result.away_bench]
+    result.shirts = {pid: player.shirt for pid in sheet if (player := world.players.get(pid)) is not None and player.shirt is not None}
     apply(world, match_event(world, match, result))
 
 
