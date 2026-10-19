@@ -962,6 +962,9 @@ Une pastille de deux caractères.
 Deux pays peuvent partager un code (CA pour l'Angleterre et l'Allemagne). Un
 pays ajouté suit la règle : CP pour le Portugal.
 
+Dans la carrière d'un joueur, le drapeau du pays précède toujours la pastille
+du championnat, y compris pour la France.
+
 La pastille est un lien vers la page de sa compétition : un championnat ou une
 coupe nationale, une coupe d'Europe, l'édition d'une compétition des sélections
 (Euro 2028). Son nom complet est dans son infobulle. Elle n'est pas un lien :

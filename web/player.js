@@ -368,12 +368,12 @@ function internationalCareer(player) {
  return `<tbody>${careerRow(head,{tag:'th',lead:4,name:'nation-head'})}</tbody><tbody>${rows.join('')}${careerRow(total,{lead:4,name:'total'})}</tbody>`;
 }
 
-// What a club played in a season of his career: the badge of its league, after the flag of its country when it is not a
-// French one, then those of its European cups. An older server names them in one text, written after the flag.
+// What a club played in a season of his career: the badge of its league, after the flag of its country,
+// then those of its European cups. An older server names them in one text, written after the flag.
 function careerCompetitions(row) {
  const badges=row.competition_badges;
  if(!badges?.length)return `${nationFlag(row.competition_nation)}${e(row.competition||'Marché extérieur')}`;
- return `${row.competition_nation==='FRA'?'':nationFlag(row.competition_nation)}${badges.map(competitionBadge).join('')}`;
+ return `${nationFlag(row.competition_nation)}${badges.map(competitionBadge).join('')}`;
 }
 
 // One card and one table for the whole career: a row per season and club, newest first, then the national team, a gap

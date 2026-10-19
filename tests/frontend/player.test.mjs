@@ -408,7 +408,7 @@ test('the career card is one table: the clubs, then the national team under its 
  }finally{setNations({});}
 });
 
-test('a season of his career shows what his club played as badges: its league, after the flag of a country other than France, then its European cup',async()=>{
+test('a season of his career shows what his club played as badges: its league, after the country flag including France, then its European cup',async()=>{
  setNations({ITA:{name:'Italie',display_code:'ITA',flag:'it',selection_id:-5},FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1}});
  const previous=history.career.items,base=previous[0];
  const league=(name,nation,level,id)=>({id,name,kind:'league',code:null,nation,level}),c1={id:30,name:'Ligue des champions',kind:'europe',code:'C1',nation:'',level:0};
@@ -421,7 +421,7 @@ test('a season of his career shows what his club played as badges: its league, a
   // The flag leads to the country's selection, each badge to its competition's page; a league the game does not simulate, nowhere.
   const italy='<a class="nation" href="#/international/nation/-5" title="Italie"><img class="flag" src="/flags/it.svg" alt="" width="16" height="12" loading="lazy"></a>';
   assert.deepEqual(cells,[`${italy}<a class="competition-code league" href="#/league/16" title="Serie A">D1</a><a class="competition-code europe" href="#/europe/C1" title="Ligue des champions">C1</a>`,
-   '<a class="competition-code league" href="#/league/17" title="Ligue 2">L2</a>',`${italy}<span class="competition-code league" title="D3">D3</span>`,'Marché extérieur']);
+   '<a class="nation" href="#/international/nation/-1" title="France"><img class="flag" src="/flags/fr.svg" alt="" width="16" height="12" loading="lazy"></a><a class="competition-code league" href="#/league/17" title="Ligue 2">L2</a>',`${italy}<span class="competition-code league" title="D3">D3</span>`,'Marché extérieur']);
  }finally{history.career.items=previous;setNations({});}
 });
 
