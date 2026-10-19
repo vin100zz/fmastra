@@ -15,8 +15,9 @@ from core.world.finances import initial_finances
 from core.world.transfer_rules import greed_trait
 from .records import SourceClub, SourcePlayer
 from .selection import select_squad
-from .source_positions import parse_positions
+from .source_positions import ranked_positions
 from .synthesis import club_strength, level_wage
+from .tiers import select_world
 
 
 def source_trait(note: float, low: float, reference: float, high: float,
@@ -25,11 +26,16 @@ def source_trait(note: float, low: float, reference: float, high: float,
     return interpolate(((low, minimum), (reference, neutral), (high, maximum)), note)
 
 
+def source_names(row: SourcePlayer) -> tuple[str, str]:
+    """Given name and surname: the source's own columns, else its "Surname, Given" display name."""
+    surname, separator, given_name = row.name.partition(",")
+    surname, given_name = surname.strip(), given_name.strip() if separator else ""
+    return row.given_name or given_name, row.surname or surname
+
+
 def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, corrections: Counter) -> Player:
     rng = stream(seed, "import-player", row.id)
-    preferred = parse_positions(row.positions)
-    positions = sorted(row.position_ratings, key=lambda position: (
-        -row.position_ratings[position], preferred.index(position) if position in preferred else len(preferred)))
+    positions = ranked_positions(row.position_ratings, row.positions)
     age = row.born.age_on(date)
     if age < 0:
         raise ValueError(f"Player {row.id} is born after the start date")
@@ -39,10 +45,8 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
     # Keep the actual attributes and their weighted rating intact.
     margin = (row.potential_ability - row.current_ability) / 2
     potential = min(cfg.attributes.bounds.max, rating + margin)
-    surname, separator, given_name = row.name.partition(",")
-    surname, given_name = surname.strip(), given_name.strip() if separator else ""
-    surname, given_name = row.surname or surname, row.given_name or given_name
-    free = row.club_id == cfg.import_settings.source_format.free_agent_club_id
+    given_name, surname = source_names(row)
+    free =row.club_id == cfg.import_settings.source_format.free_agent_club_id
     contract = None
     if row.value <= 0: corrections["missing_values"] += 1
     if not free:
@@ -95,6 +99,9 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         if row.division_id > 0 and not row.is_reserve:
             division_nations[row.division_id][row.nation] += 1
     affiliations = {did: min(counts, key=lambda nation: (-counts[nation], nation)) for did, counts in division_nations.items()}
+    # A nation with European places but no league of its own (Liechtenstein, whose clubs play in Switzerland) keeps its clubs.
+    european_places = {nation: sum(high for _, high in ranges) for nation, ranges in (european_quota_ranges or {}).items()}
+    without_league = set(european_places) - set(affiliations.values())
     affiliations.update({did: pool.nation for pool in cfg.world.promotion_relegation.reserves for did in pool.division_ids})
     affiliations.update({league.division_id: league.nation for league in cfg.world.competitions})
     clubs: dict[int, Club] = {}
@@ -116,8 +123,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                              home_kit_id=row.home_kit_id, home_kit_major_color=row.home_kit_major_color,
                              home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color,
                              division_id=row.division_id, is_reserve=row.is_reserve,
-                             cup_nation=affiliations.get(row.division_id, row.nation))
-    grouped: dict[int | None, list[Player]] = defaultdict(list)
+                             cup_nation=row.nation if row.nation in without_league and not active
+                             else affiliations.get(row.division_id, row.nation))
     corrections = Counter()
     seen = set()
     identities: dict[str, list[tuple[str, str]]] = defaultdict(list)
@@ -126,11 +133,19 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         seen.add(row.id)
         if row.club_id != cfg.import_settings.source_format.free_agent_club_id and row.club_id not in clubs:
             raise ValueError(f"Player {row.id}: unknown club {row.club_id}")
+        # Every source name, kept or not, can name a regen of its nation.
+        identities[row.nations[0]].append(source_names(row))
+    chosen = select_world(clubs, source_players, cfg, date, nation_names, european_places)
+    clubs = {club_id: club for club_id, club in clubs.items() if club_id in chosen.clubs}
+    grouped: dict[int | None, list[Player]] = defaultdict(list)
+    excluded: list[int] = []
+    for row in source_players:
+        if row.id not in chosen.players:
+            excluded.append(row.id)
+            continue
         player = create_player(row, cfg, seed, date, corrections)
         grouped[player.club_id].append(player)
-        identities[player.nation].append((player.given_name, player.surname))
     players: dict[int, Player] = {}
-    excluded: list[int] = []
     selection = cfg.import_settings.squad_selection
     for club_id, squad in grouped.items():
         if club_id is None:
@@ -156,7 +171,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         if club.wage_bill > club.wage_cap:
             raise ValueError(f"{club.name}: starting wages exceed funding")
     season = date.year if date.month >= cfg.world.key_dates.population_review.month else date.year - 1
-    next_id = max([*clubs, *seen], default=0) + 1
+    # Above every source identifier, those the world left out included.
+    next_id = max([*(row.id for row in source_clubs), *seen], default=0) + 1
     world = World(date, season, seed, cfg, dict(sorted(players.items())), clubs, competitions, {}, next_id)
     world.nation_names = nation_names
     world.identity_pool = {code: sorted(pool) for code, pool in sorted(identities.items())}
@@ -195,7 +211,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     world.external_target = len(players) - len(active_players)
     world.import_summary = {"source_clubs": len(source_clubs), "source_players": len(source_players),
                             "players": len(players), "active_players": len(active_players), "excluded": len(excluded),
-                            "free_agents": len(grouped[None]), "active_clubs": len(world.active_clubs()),
+                            "free_agents": len(grouped[None]), "active_clubs": len(world.active_clubs()), "clubs": len(clubs),
+                            **{f"tier_{tier}": count for tier, count in sorted(Counter(chosen.players.values()).items())},
                             "missing_capacities": sum(row.capacity <= 0 for row in source_clubs),
                             "missing_youth_recruitment": sum(row.youth_recruitment is None for row in source_clubs),
                             "attributes_from_source": len(source_players) - len(excluded), **corrections}

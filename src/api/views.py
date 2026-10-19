@@ -784,13 +784,22 @@ def match_shirt(world: World, match: Match, side: str, pid: int) -> int | None:
     return player.shirt if player.club_id == getattr(match, f"{side}_id") else None
 
 
+def play_style(player: Player | None) -> dict:
+    """What the 2D replay animates a player by: how sure his touch is and how fast he carries the ball. Nothing for a
+    player no longer in the world (a call-up, a retired player); the replay then gives him an average touch."""
+    if player is None:
+        return {}
+    return {"technique": round(player.attributes.get("technique")), "vitesse": round(player.attributes.get("vitesse"))}
+
+
 def lineup_rows(world: World, match: Match, side: str, shorts: dict[int, str] | None = None) -> list[dict]:
     """The starting eleven of one side, with the positions, numbers and ratings of that match and each player's short name."""
     result = match.result
     shorts = side_short_names(world, match, side) if shorts is None else shorts
     return [{"id": pid, "name": match_player_name(world, result, pid), "short": shorts.get(pid), "position": position,
              "shirt": match_shirt(world, match, side, pid), "temporary": pid in result.temporary_players,
-             "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None}
+             "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None,
+             **play_style(world.players.get(pid))}
             for pid, position in getattr(result, f"{side}_lineup")]
 
 
@@ -825,6 +834,7 @@ def match_detail(world: World, match: Match) -> dict:
         detail[f"{side}_lineup"] = lineup_rows(world, match, side, side_shorts)
         detail[f"{side}_bench"] = [{"id": pid, "name": match_player_name(world, result, pid), "short": side_shorts.get(pid),
                                       "shirt": match_shirt(world, match, side, pid), "temporary": pid in result.temporary_players,
-                                      "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None} for pid in bench]
+                                      "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None,
+                                      **play_style(world.players.get(pid))} for pid in bench]
     data["result"] = detail
     return data

@@ -102,16 +102,16 @@ export const contrastRatio = (first, second) => {const [light,dark]=[luminance(f
 // colour (white included) and the sleeves and the collar in its second, each fill drawing its own round edge, a light outline
 // around the whole; `label` (his number, else a position: see `shirtLabel`) is written on it in the ink that reads on the
 // body, a number larger than a position. Grey without colours, a dashed outline for an `empty` place. His `goals` stand at
-// its top right, a ball for each; the rest of what he did goes in his block (`playerBlock`). A `large` one, at the size of a
-// band's disc, shows a player's number in his header; a `former` one, veiled, the number a player leaves.
+// its top right, a ball for each; the rest of what he did goes in his block (`playerBlock`). A `former` one, veiled, shows
+// the number a player leaves.
 const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_BODY='M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
 export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
 // The custom properties a kit drawing reads its colours from; empty without a primary colour.
 export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='', {empty=false,goals=0,large=false,former=false}={}) => {
+export const kitShirt = (major, minor, label='', {empty=false,goals=0,former=false}={}) => {
  const style=empty?'':kitStyle(major,minor),number=/^\d+$/.test(String(label));
  const balls=goals>0?`<span class="kit-goals" title="${goals} but${goals>1?'s':''}">${'<i></i>'.repeat(goals)}</span>`:'';
- return `<span class="kit-shirt${empty?' empty':style?'':' plain'}${number?' number':''}${large?' large':''}${former?' former':''}"${style?` style="${style}"`:''}>${KIT_SVG}${label!==''&&label!=null?`<b>${escape(label)}</b>`:''}${balls}</span>`;
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}${number?' number':''}${former?' former':''}"${style?` style="${style}"`:''}>${KIT_SVG}${label!==''&&label!=null?`<b>${escape(label)}</b>`:''}${balls}</span>`;
 };
 // What a player's shirt says on a pitch: his number, or `position` (his own by default) when he has none: a selection's
 // player, a temporary reinforcement.

@@ -10,9 +10,8 @@ test('a shirt on a pitch carries the player’s number, larger than a position, 
  assert.equal(shirtLabel({position:'BU',shirt:39},'AILG'),'39');
  assert.match(kitShirt('#cc0000','#ffd700','9'),/^<span class="kit-shirt number" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff"><svg[^]*<\/svg><b>9<\/b><\/span>$/);
  assert.match(kitShirt('#cc0000','#ffd700','MC'),/^<span class="kit-shirt" style=/);
- // The number a player leaves, veiled; the shirt of a band, at the size of its disc.
+ // The number a player leaves, veiled.
  assert.match(kitShirt('#cc0000','#ffd700',16,{former:true}),/^<span class="kit-shirt number former" /);
- assert.match(kitShirt('#cc0000','#ffd700',7,{large:true}),/^<span class="kit-shirt number large" /);
 });
 
 test('a match report writes the number each player wore, the position of a temporary player',()=>{
@@ -21,13 +20,14 @@ test('a match report writes the number each player wore, the position of a tempo
  assert.match(html,/<span class="kit-shirt plain"><svg[^]*?<\/svg><b>DC<\/b>/);
 });
 
-test('a player’s band wears his shirt and number in place of his club’s disc, the disc without a number',()=>{
+test('a player’s band writes his number before his name, his club’s crest keeping its disc',()=>{
  const club={id:7,name:'Lens',major_color:'#cc0000',minor_color:'#ffd700'};
  const player={id:3,name:'Ange Lago',age:22,club,rating:120,potential:157,value:5e6,asking_price:6e6,shirt:9};
  const html=playerHero(player,{});
- assert.match(html,/<span title="Numéro 9" class="kit-shirt number large" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff"><svg[^]*?<\/svg><b>9<\/b><\/span>/);
- assert.doesNotMatch(html,/club-hero-crest/);
- const without=playerHero({...player,shirt:null},{});
- assert.match(without,/<div class="crest club-hero-crest">[^<]*<img class="crest-logo" src="\/crests\/TCM1_7.png"/);
- assert.doesNotMatch(without,/kit-shirt/);
+ assert.match(html,/<div class="crest club-hero-crest">[^<]*<img class="crest-logo" src="\/crests\/TCM1_7.png"/);
+ assert.match(html,/<div class="club-hero-name"><span class="club-hero-number" title="Numéro de maillot">9<\/span><h1>Ange Lago<\/h1><a class="club-hero-context" href="#\/club\/7">Lens<\/a><\/div>/);
+ assert.doesNotMatch(html,/kit-shirt/);
+ // Without a number, or without a club, the name stands alone.
+ assert.match(playerHero({...player,shirt:null},{}),/<div class="club-hero-name"><h1>Ange Lago<\/h1>/);
+ assert.match(playerHero({...player,club:null,shirt:null},{}),/<div class="club-hero-name"><h1>Ange Lago<\/h1>/);
 });

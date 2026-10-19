@@ -134,6 +134,24 @@ def test_domestic_cup_slot_reallocation_and_lower_division_winner(imported, winn
     assert ranked[-1] not in set.union(*selected)
 
 
+def test_a_country_without_a_cup_fills_its_cup_place_from_its_league(imported):
+    world = replace(imported, competitions=deepcopy(imported.competitions), champions={})
+    tables = {c.id: [Standing(cid) for cid in c.club_ids if not world.clubs[cid].is_reserve]
+              for c in world.competitions.values() if c.kind == "league"}
+    for cup in list(world.competitions.values()):
+        if cup.kind != "cup": continue
+        if cup.nation == "FRA":
+            del world.competitions[cup.id]
+            continue
+        league = next(c for c in world.competitions.values() if c.kind == "league" and c.level == 1 and c.nation == cup.nation)
+        world.champions[cup.id] = [(2025, tables[league.id][0].club_id)]
+    c1n, c3n, c4n = resolve_european_quotas(world, 2026)["FRA"]
+    qualify_europe(world, 2026, tables)
+    selected = [{cid for cid in world.competitions[c].club_ids if association(world, cid) == "FRA"} for c in (-101, -103, -104)]
+    ranked = [r.club_id for r in tables[16]]
+    assert selected == [set(ranked[:c1n]), set(ranked[c1n:c1n + c3n]), set(ranked[c1n + c3n:c1n + c3n + c4n])]
+
+
 def test_a_league_table_tells_the_european_cup_of_each_place_and_what_the_national_cup_may_change(imported):
     world = copy_world(imported)
     league = next(c for c in world.competitions.values() if c.kind == "league" and c.level == 1 and c.nation == "FRA")

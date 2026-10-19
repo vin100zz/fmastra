@@ -1,4 +1,4 @@
-import {escape as e,number as n,kitShirt,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -28,8 +28,11 @@ export function heroColors(majorColor,minorColor,groundColor){
   `--crest-major:${major}`,`--crest-minor:${minor}`,`--crest-ink:${inkOn(major)}`].join(';');
 }
 
-// A figure of the header, with its label above it; `hue` grades its ground as the badge of that note.
-const tile=(label,value,extra='',title='',hue=null)=>`<div class="club-hero-tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}${extra}</strong></div>`;
+// A figure of the header, with its label above it.
+const tile=(label,value,extra='',title='')=>`<div class="club-hero-tile"${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}${extra}</strong></div>`;
+// A column of a tile of several figures, its label above it; `hue` grades its ground as the badge of that note.
+const column=(label,value,title='',hue=null)=>`<div${hue==null?'':` class="graded" style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
+const split=columns=>`<div class="club-hero-tile split">${columns}</div>`;
 const signed=value=>value>0?`+${n(value)}`:value<0?`−${n(-value)}`:'0';
 // What fills the disc of a club: its initials, under its crest when the game has one.
 const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()">`;
@@ -38,12 +41,12 @@ const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(
 
 // The band and what closes it, a club's, a selection's, a player's or a competition's: `colors` is what heroColors gives,
 // `lead` steps between peers, `crest` fills the disc (`mark` is what stands in the disc's place when it is not one),
-// `after` is what follows the `name` on its line, smaller (nothing stands over the name), `tiles` the figures on the
-// right, `foot` what stands under the band.
-function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',name,after='',tiles,foot}){
+// `before` is what precedes the `name` on its line, as large (a player's number), `after` what follows it, smaller (nothing
+// stands over the name), `tiles` the figures on the right, `foot` what stands under the band.
+function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',name,before='',after='',tiles,foot}){
  return `<header class="club-hero${colors?'':' plain'}"${colors?` style="${colors}"`:''}><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div>`
   +`<div class="club-hero-main">${lead}${mark}`
-  +`<div class="club-hero-identity"><div class="club-hero-name"><h1>${e(name)}</h1>${after}</div></div>`
+  +`<div class="club-hero-identity"><div class="club-hero-name">${before}<h1>${e(name)}</h1>${after}</div></div>`
   +`<div class="club-hero-tiles">${tiles}</div></div></div>${foot}</header>`;
 }
 // What follows a name on its line: where it plays, a link to that page when it has one.
@@ -135,23 +138,22 @@ function selectionTile(player){
  const main=mainNationCode(player);
  if(!main)return '';
  const nation=`<span>${nationFlag(main,{link:false})}</span><strong>${e(nationCode(main))}</strong>`,selection=nationHref(main);
- const column=(label,value)=>`<div><span>${label}</span><strong>${n(value)}</strong></div>`;
- return `<div class="club-hero-tile split">${selection?`<a href="${e(selection)}">${nation}</a>`:`<div>${nation}</div>`}`
-  +`${player.international_caps==null?'':column('Sél.',player.international_caps)}${player.international_goals?column('Buts',player.international_goals):''}</div>`;
+ return split(`${selection?`<a href="${e(selection)}">${nation}</a>`:`<div>${nation}</div>`}`
+  +`${player.international_caps==null?'':column('Sél.',n(player.international_caps))}${player.international_goals?column('Buts',n(player.international_goals)):''}`);
 }
 
-// The header of a player's page is his club's: its colours on the band, his shirt in its kit with his number in place of
-// the disc (its crest on the disc for a player without a number), his name with the club after it, smaller (a plain band
-// and « Libre » without a club). On the right his age, what he did for his selection, his level and his potential on
-// graded tiles, his market value and the fee asked for him (N/A when nobody can be asked). `lead` steps through the squad;
-// `foot` is what the user can do with him, where a club has its tabs.
+// The header of a player's page is his club's: its colours on the band, its crest on the disc, his number before his name,
+// as large and veiled, and the club after it, smaller (a plain band and « Libre » without a club). On the right his age,
+// what he did for his selection, his level and his potential on one tile of two graded columns, his market value and the
+// fee asked for him (N/A when nobody can be asked) on another. `lead` steps through the squad; `foot` is what the user can
+// do with him, where a club has its tabs.
 export function playerHero(player,{lead='',foot=''}){
  const club=player.club;
- const grade=(label,value,title)=>value==null?tile(label,'—'):tile(label,level(value),'',title,levelHue(level(value)));
+ const grade=(label,value,title)=>value==null?column(label,'—'):column(label,level(value),title,levelHue(level(value)));
  const unasked=player.transferable===false?'Intransférable : son club refuse de le vendre':club?'':'Sans club : aucun prix demandé';
- const shirt=club&&player.shirt!=null?kitShirt(club.major_color,club.minor_color,player.shirt,{large:true}).replace('<span ',`<span title="Numéro ${player.shirt}" `):null;
- return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',...(shirt?{mark:shirt}:{}),
+ const number=club&&player.shirt!=null?`<span class="club-hero-number" title="Numéro de maillot">${n(player.shirt)}</span>`:'';
+ return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',before:number,
   after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
-  tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${grade('Niveau',player.rating,'Niveau actuel sur 200')}${grade('Potentiel',player.potential,'Potentiel sur 200')}`
-   +`${tile('Valeur',money(player.value),'','Valeur de marché')}${unasked?tile('Prix demandé','N/A','',unasked):tile('Prix demandé',price(player.asking_price))}`});
+  tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${split(grade('Niveau',player.rating,'Niveau actuel sur 200')+grade('Potentiel',player.potential,'Potentiel sur 200'))}`
+   +split(column('Valeur',money(player.value),'Valeur de marché')+(unasked?column('Prix demandé','N/A',unasked):column('Prix demandé',price(player.asking_price))))});
 }

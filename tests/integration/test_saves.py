@@ -342,7 +342,7 @@ def test_save_from_before_the_shirt_numbers_numbers_every_squad_by_the_rules_of_
     store = SaveStore(tmp_path)
     store.save(world, "modern")
     legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
-    legacy["schema_version"] = 33
+    legacy["schema_version"] = 34
     for player in legacy["world"]["players"].values(): del player["shirt"]
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")

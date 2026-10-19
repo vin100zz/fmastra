@@ -629,7 +629,8 @@ Le lien **Palmarès** du menu de gauche (`#/honours`) réunit sur une page les v
 de toutes les compétitions, sur toutes les saisons archivées, dans un seul tableau : une
 ligne par compétition, une colonne par saison. Les lignes vont par groupe, nommé une fois
 à leur gauche : d'abord les trois coupes d'Europe (C1, C3, C4), puis chaque pays dans
-l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne), ses divisions de la D1
+l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne, Pays-Bas, Portugal, Belgique,
+Turquie), ses divisions de la D1
 vers le bas puis sa coupe nationale. Une ligne donne la pastille de la compétition (celle de
 la charte : C1, L1, D2, CF), son nom, qui ouvre son historique, son meilleur buteur de tous les temps avec ses
 buts, puis la saison en cours, en gris : le leader d'un championnat et le nombre de
@@ -747,7 +748,7 @@ son nom, sa courbe et sa carrière.
 
 | Bloc | Contenu |
 |---|---|
-| En-tête · bandeau | aux couleurs du club du joueur ; à la place du disque, son maillot aux couleurs du club, son numéro dessus (charte, « En-tête d'un joueur ») ; l'écusson du club sur le disque pour un joueur sans numéro (bandeau neutre, sans disque, pour un joueur libre). À gauche du disque, le bloc de navigation dans l'effectif. Le nom du joueur, puis son club à sa suite, plus petit, lien vers sa fiche (« Libre » sans club). Ni ligne au-dessus du nom, ni poste : les postes se lisent sur le terrain. À droite, six tuiles : âge (date de naissance en infobulle) ; sélection ; niveau et potentiel exacts sur 200, colorés comme les badges ; valeur de marché ; prix demandé (« N/A » pour un joueur intransférable ou libre, la raison en infobulle) |
+| En-tête · bandeau | aux couleurs du club du joueur, son écusson sur le disque (bandeau neutre, sans disque, pour un joueur libre). À gauche du disque, le bloc de navigation dans l'effectif. Son numéro de maillot, à la taille du nom et voilé (charte, « En-tête d'un joueur »), puis le nom du joueur, puis son club à sa suite, plus petit, lien vers sa fiche (« Libre » sans club). Ni ligne au-dessus du nom, ni poste : les postes se lisent sur le terrain. À droite, quatre tuiles : âge (date de naissance en infobulle) ; sélection ; niveau et potentiel exacts sur 200, deux colonnes d'une tuile colorées comme les badges ; valeur de marché et prix demandé, deux colonnes d'une tuile (prix « N/A » pour un joueur intransférable ou libre, la raison en infobulle) |
 | En-tête · sélection | une tuile de trois colonnes : le drapeau de sa nation principale au-dessus de son code de trois lettres (celle de sa sélection, à défaut la première de ses nationalités ; lien vers la sélection du pays quand le jeu en a une), « Sél. » et son total, « Buts » dès qu'il a marqué. Le nom du pays n'est jamais écrit : il est en infobulle du drapeau |
 | En-tête · barre | sous le bandeau, à la place des onglets d'un club : à gauche les pastilles, à droite les boutons, par groupes (voir plus bas). Absente sans club dirigé |
 | Colonne · État | condition, forme et moral, chacun avec une barre et sa valeur. La barre de la forme part de son milieu, entre les bornes de la configuration (`form_bounds` de la fiche) : verte vers la droite au-dessus de 1, rouge vers la gauche en dessous, vide entre −2 % et +2 % ; la valeur est l'effet signé, comme dans les listes (1,09 se lit « +9 % »). La barre du moral prend la couleur de son niveau ; devant elle, l'icône de ce qui le retient le plus (€ salaire, ◷ temps de jeu, ★ club en dessous de son niveau, ⊘ départ refusé), dès que le serveur nomme une cause (`morale_cause` de la fiche, même calcul que la liste de l'effectif), avec la cause en infobulle ; l'infobulle de la ligne donne la cible et la satisfaction pour le salaire et le temps de jeu. Puis la blessure (« Disponible » ou la date de retour), le total des cartons jaunes (détail par compétition en infobulle), une ligne par suspension en cours, avec sa compétition, et, pour un joueur qui en a, une ligne « Autre nationalité » (« Autres nationalités ») : le drapeau puis le code de trois lettres de chacune |
@@ -834,13 +835,32 @@ message (« il vient d'arriver ») reste dans son infobulle.
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
   de la ligne du match, l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
+  Chaque occasion suit la trace du moteur (récupération, zones franchies, centre,
+  tir et issue) ; le résumé en choisit la manière, la même à chaque lecture. Le
+  ballon est un projectile (`replay-physics.js`) : frappé, il vole sous la
+  gravité, rebondit puis roule en ralentissant, et chaque touche est jouée là où
+  il sera, par un joueur envoyé à temps. Une passe va à ras de terre, tendue ou
+  par-dessus les lignes ; elle est jouée en une touche, contrôlée (du pied, de la
+  cuisse, de la poitrine) puis jouée, ou conduite touche après touche : en une
+  touche plus souvent en contre-attaque et pour un joueur technique, conduite plus
+  souvent par un joueur rapide (la technique et la vitesse de chacun viennent avec
+  les compositions du match, à défaut une valeur moyenne). Le ballon circule
+  parfois en retrait ou en travers avant de repartir ; un centre est lobé ou
+  fouetté, une frappe placée, puissante ou à ras de terre, et le coup franc
+  passe au-dessus d'un mur de quatre joueurs. Les joueurs courent à l'allure d'un
+  footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
+  la reprise et le défenseur qui contrera la frappe font leur course pendant
+  l'action.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
-  mêmes positions ; le choix est retenu, sans WebGL le bouton disparaît.
-  Le stade a des tribunes pleines (supporters aux couleurs des deux clubs, les
-  visiteurs dans un coin), des loges, des panneaux LED et des filets. Les joueurs
-  sont articulés : ils courent, frappent, reprennent de la tête les centres, le
-  gardien plonge et l'équipe qui marque célèbre avec ses supporters.
+  mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
+  le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
+  des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
+  filets. Les joueurs sont articulés : ils courent, frappent plus ou moins fort,
+  poussent le ballon en conduite, le contrôlent du pied, de la cuisse ou de la
+  poitrine, sautent pour les têtes, chaque geste calé sur l'instant où le ballon
+  les rencontre ; le gardien plonge et l'équipe qui marque célèbre avec ses
+  supporters.
 
 ### Composition
 

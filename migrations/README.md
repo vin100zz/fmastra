@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 34` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 35` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -174,7 +174,11 @@ sélection d'une édition à l'autre de la campagne. Le calendrier des clubs ne 
 d'un rassemblement : un club joue jusqu'à la veille de son ouverture et dès le lendemain de sa fin, toujours à trois jours
 au moins d'un match de sélection ; les saisons déjà tirées gardent leurs dates. Aucun paramètre de configuration n'est ajouté.
 
-La v34 donne à chaque joueur d'un effectif son numéro de maillot (`Player.shirt`, `core/world/shirts.py`), et à chaque match
+La v34 ajoute les paliers de sélection de l'import (`import.selection_effectifs.paliers`, `MIGRATION_DEFAULTS` dans
+`store.py` en fait foi), reçus par la configuration embarquée après vérification de l'empreinte d'origine : ils ne décident que
+de ce que garde un monde nouveau, une partie déjà créée n'est pas concernée.
+
+La v35 donne à chaque joueur d'un effectif son numéro de maillot (`Player.shirt`, `core/world/shirts.py`), et à chaque match
 de club joué les numéros de sa feuille (`MatchResult.shirts`). À la lecture d'une sauvegarde antérieure, chaque effectif est
 numéroté par les règles d'une nouvelle partie sans numéro source (`number_squads`) : les titulaires du onze type d'abord, les
 remplaçants, puis les jeunes, chacun par niveau décroissant, le premier numéro libre de ceux de sa place. Les matches déjà
