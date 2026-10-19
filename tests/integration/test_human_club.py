@@ -133,9 +133,11 @@ def test_the_players_list_tells_the_human_club_who_would_join_it_and_at_what_wag
 def test_outgoing_offer_and_incoming_offer_response(client):
     world = client.app.state.game.world
     assert market_window(world) is not None  # a fresh game starts inside the summer window
-    max_squad = world.config.management.guardrails.max_squad
-    roomy = [club for club in world.active_clubs() if len(club.player_ids) < max_squad]
-    club_id, other_club = roomy[0].id, roomy[1]
+    guard = world.config.management.guardrails
+    # Room to buy, and players to spare above the minimum squad, to sell one.
+    roomy = [club for club in world.active_clubs() if guard.min_squad + 2 <= len(club.player_ids) < guard.max_squad]
+    # The other club can pay the 5 M€ it offers below for one of ours.
+    club_id, other_club = roomy[0].id, next(club for club in roomy[1:] if min(club.transfer_budget, club.balance) >= 5_000_000)
     client.post("/api/partie/choisir-club", json={"club_id": club_id})
     target_player = next(pid for pid in other_club.player_ids if opening_obstacle(world, world.players[pid]) is None)
 
@@ -410,7 +412,7 @@ def test_the_cups_tell_their_draws_and_a_window_closed_its_main_transfers(client
     rival = lambda match: world.clubs[match.away_id if match.home_id == club.id else match.home_id]
     venue = lambda match: "home" if match.home_id == club.id else "away"
     line = lambda match: {"id": match.id, "opponent": {"id": rival(match).id, "name": rival(match).name, "major_color": rival(match).home_kit_major_color,
-                                                       "minor_color": rival(match).home_kit_minor_color},
+                                                       "minor_color": rival(match).home_kit_minor_color, "nation": rival(match).nation},
                           "date": match.date.iso(), "venue": venue(match)}
     told = lambda competition: [message for index in range(len(world.news)) if (message := client.get(f"/api/ma-partie/actualites/{index}").json())
                                 ["segments"][0]["ref"] == {"competition": {"id": competition.id, "name": competition.name, "kind": competition.kind, "code": competition.code}}]
@@ -461,7 +463,7 @@ def test_the_cups_tell_their_draws_and_a_window_closed_its_main_transfers(client
     assert [row["player"]["id"] for row in everywhere["transfers"]] == [sold.id, free.id]
     assert everywhere["transfers"][1] == {"player": {"id": free.id, "name": free.name, "gone": False}, "source": None,
                                           "target": {"id": buyer.id, "name": buyer.name, "major_color": buyer.home_kit_major_color,
-                                                     "minor_color": buyer.home_kit_minor_color},
+                                                     "minor_color": buyer.home_kit_minor_color, "nation": buyer.nation},
                                           "fee": None, "rating": int(free.rating * 2 + .5) / 2}
 
 

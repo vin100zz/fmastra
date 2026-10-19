@@ -23,11 +23,15 @@ py -3.12 -m venv .venv
 
 Ouvrir **http://127.0.0.1:8011**, puis créer une partie ou reprendre une
 sauvegarde. Une nouvelle partie choisit ses nations (France, Italie, Espagne,
-Angleterre, Allemagne), la plus basse division simulée de chacune et le club
+Angleterre, Allemagne, Pays-Bas, Portugal, Belgique, Turquie), la plus basse division simulée de chacune et le club
 dirigé ; sa graine est tirée au hasard. Les divisions que chaque nation peut
 simuler, et le vivier de ses promus sous la plus basse, sont dans
 `config/creation.json`. Les CSV sont chargés à la création ; aucun service externe n'est
-nécessaire pendant le jeu. Pour un autre port : `./run.ps1 -Port 8012`.
+nécessaire pendant le jeu. La partie ne garde qu'une partie de leurs joueurs : l'effectif des
+clubs simulés et, ailleurs, ce dont elle a besoin (vivier des promus, vedettes et pépites,
+meilleurs joueurs libres, clubs étrangers qui peuvent jouer l'Europe, une liste par
+sélection), sous un plafond ; les paliers sont réglés dans `config/import.json`
+(`selection_effectifs.paliers`), et le chapitre « Le monde » du manuel les décrit. Pour un autre port : `./run.ps1 -Port 8012`.
 Conserver un seul processus serveur : l'état est en mémoire.
 
 ### En ligne (Render)
@@ -63,7 +67,7 @@ La loupe de la barre du haut, ou Ctrl K, ouvre la recherche globale : quelques l
 
 Dans l'en-tête des fiches, à gauche du nom, un triangle haut, un menu ☰ et un triangle bas permettent de passer au pair précédent ou suivant, ou d'en choisir un dans la liste complète : les clubs de la même division par ordre alphabétique (tous les clubs du pays si le club n'a pas de division), les joueurs du même club, les compétitions du même pays de la première division à la coupe, les trois coupes d'Europe, et les éditions de l'Euro et de la Coupe du monde de la première à la dernière. Le passage d'un club, d'une coupe d'Europe ou d'une édition à l'autre garde l'onglet ouvert.
 
-La page d'une compétition s'ouvre, comme la fiche d'un club, sur un en-tête à ses couleurs : celles du maillot de la sélection du pays pour un championnat ou une coupe nationale, avec son drapeau ; son emblème pour une coupe d'Europe, l'Euro ou la Coupe du monde. Une case y nomme le vainqueur de la saison ou de l'édition montrée, ou le tenant du titre tant qu'elle n'est pas gagnée.
+La page d'une compétition s'ouvre, comme la fiche d'un club, sur un en-tête à ses couleurs : celles du maillot de la sélection du pays pour un championnat ou une coupe nationale, avec son drapeau ; son emblème pour une coupe d'Europe, l'Euro ou la Coupe du monde. Une case y nomme le vainqueur de la saison ou de l'édition montrée, ou le tenant du titre tant qu'elle n'est pas gagnée. Sur les vues d'une coupe d'Europe, où se croisent des clubs de plusieurs pays, et dans le compte rendu de ses matches, le nom d'un club est suivi du drapeau de son pays.
 
 La liste des joueurs affiche toutes leurs nationalités, leur valeur et leur potentiel exact à côté du niveau actuel, tous deux sous forme de badges sur 200 dont la couleur suit une même échelle (rouge jusqu'à 70, jaune à 110, vert à partir de 150),
 avec un tri initial par valeur décroissante. Les clubs sont triés par réputation

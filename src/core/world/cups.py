@@ -8,14 +8,16 @@ from .calendar import schedule
 from .human import record as add_news
 from .international_calendar import reserved_dates
 
-CUP_NAMES = {"FRA": "Coupe de France", "ENG": "FA Cup", "ESP": "Coupe du Roi",
-             "ITA": "Coupe d’Italie", "GER": "Coupe d’Allemagne"}
+# A cup's identifier is minus its place here: a new cup goes at the end, so that the others keep theirs.
+CUP_NAMES = {"ENG": "FA Cup", "ESP": "Coupe du Roi", "FRA": "Coupe de France", "GER": "Coupe d’Allemagne",
+             "ITA": "Coupe d’Italie", "BEL": "Coupe de Belgique", "NED": "Coupe des Pays-Bas", "POR": "Coupe du Portugal",
+             "TUR": "Coupe de Turquie"}
 ROUND_NAMES = ("32es de finale", "16es de finale", "8es de finale", "Quarts de finale", "Demi-finales", "Finale")
 
 
 def initialize_cups(world: World) -> None:
     nations = {c.nation for c in world.competitions.values() if c.kind == "league"}
-    for index, nation in enumerate(sorted(CUP_NAMES), 1):
+    for index, nation in enumerate(CUP_NAMES, 1):
         if nation in nations:
             world.competitions[-index] = Competition(-index, CUP_NAMES[nation], nation, 0, [], kind="cup")
 

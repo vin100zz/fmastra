@@ -56,7 +56,7 @@ export function calendarContent(club,data,params){
  const nextId=data.items.find(match=>!match.score)?.id;
  const rows=data.items.filter(match=>shown==null||match.competition_id===shown);
  const chip=(value,label,count)=>`<button type="button" data-param="competition" data-param-value="${value??''}" aria-pressed="${(value??null)===shown}" class="${(value??null)===shown?'active':''}">${label} <span class="count">${count}</span></button>`;
- const chips=[chip(null,'Toutes',data.items.length),...data.competitions.map(row=>chip(row.id,`${competitionBadge(row)}${e(row.name)}`,data.items.filter(match=>match.competition_id===row.id).length))].join('');
+ const chips=[chip(null,'Toutes',data.items.length),...data.competitions.map(row=>chip(row.id,`${competitionBadge(row,{link:false})}${e(row.name)}`,data.items.filter(match=>match.competition_id===row.id).length))].join('');
  return `<div class="calendar-layout club-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2><div class="calendar-filters" role="group" aria-label="Compétitions">${chips}</div></div>`
   +`<div class="calendar-rows">${rows.map(match=>calendarRow(match,club,competitions,match.id===nextId)).join('')}</div></section>${recordCard(data.competitions)}</div>`;
 }

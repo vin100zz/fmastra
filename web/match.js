@@ -1,6 +1,6 @@
 import {replayCard} from './match-replay.js';
 import {matchHero} from './club-hero.js';
-import {api,escape as e,number as n,expectedGoals,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
+import {api,escape as e,number as n,expectedGoals,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,competitionKind,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
@@ -110,13 +110,14 @@ export async function matchScreen(id){
  const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
  // The band has no bar: the match's line says which match it is, over the highlights (or alone under the band before the
  // match). The competition and the round, the day, a neutral ground, who went through; at its end the first leg and the summary.
- const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})});
+ const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code,year:match.season}:{})});
  const when=[date(match.date,true),match.neutral?'Terrain neutre':''].filter(Boolean).join(' · ');
  const winner=match.winner_id?`<span>Vainqueur : ${clubLink(match.winner_id===match.home.id?match.home:match.away)}</span>`:'';
  const commands=`${match.first_leg_id?`<a class="button" href="#/match/${match.first_leg_id}">Match aller</a>`:''}${replay.toggle}`;
  const line=`<div class="page-heading match-line"><div class="match-facts">${badge}<strong>${e(match.round_label||`Journée ${match.round}`)}</strong><span class="muted">${when}</span>${winner}</div>`
   +`${commands?`<div class="tools">${commands}</div>`:''}</div>`;
- const header=matchHero(match);
+ // In a European cup, each club's name is followed by its country's flag in the band; the line, under it, does not repeat it.
+ const header=matchHero(match,'',{flags:!match.international&&competitionKind({id:match.competition_id,name:match.competition})==='europe'});
  if(!result)return header+line+card('Avant-match',empty('Cette rencontre sera simulée à sa date prévue.','Le coup d’envoi approche'));
  if(!result.home_stats)return header+line+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
  const marks=playerEvents(result.events);

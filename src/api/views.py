@@ -80,9 +80,10 @@ def season_steps(seasons, selected: int, current: int | None = None) -> dict:
 
 
 def club_ref(world: World, club_id: int | None) -> dict | None:
+    """A club where a page names it: its name, its colours, and its country, whose flag follows it in a European cup."""
     club = world.clubs.get(club_id)
     return {"id": club.id, "name": club.name, "major_color": club.home_kit_major_color,
-            "minor_color": club.home_kit_minor_color} if club else None
+            "minor_color": club.home_kit_minor_color, "nation": club.nation} if club else None
 
 
 def selection_id(world: World, nation: str | None) -> int | None:
@@ -349,17 +350,67 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
                  "movement": "direct" if index < rules.direct_places else
                              "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
                 for index, row in enumerate(standings(competition, matches, world.config))]
-    european_places = 0
-    if competition.level == 1:
-        from core.world.europe import resolve_european_quotas
-        quotas = resolve_european_quotas(world, season if season is not None else world.season)
-        european_places = sum(quotas.get(competition.nation, (0, 0, 0)))
+    rows = standings(competition, matches, world.config)
+    europe, by_rank = european_places(world, competition, [row.club_id for row in rows], season if season is not None else world.season)
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
              "movement": ("champion" if competition.level == 1 and index == 0 else
-                          "europe" if competition.level == 1 and index < european_places else
+                          "europe" if row.club_id in by_rank else
                           "promotion" if competition.level > 1 and index < count else
-                          "relegation" if index >= len(competition.club_ids) - count else None)}
-            for index, row in enumerate(standings(competition, matches, world.config))]
+                          "relegation" if index >= len(competition.club_ids) - count else None),
+             "europe": europe.get(row.club_id)}
+            for index, row in enumerate(rows)]
+
+
+def cup_contenders(world: World, cup: Competition, season: int) -> list[int | None]:
+    """Who may win a national cup's season: its winner once it has one; while it is played, every club its last round
+    leaves in; none known (an archive without it) leaves its place to the league."""
+    winner = next((cid for year, cid in world.champions.get(cup.id, []) if year == season), None)
+    if winner is not None:
+        return [winner]
+    matches = [world.matches[mid] for mid in cup.match_ids] if season == world.season else []
+    if not matches:
+        return [None]
+    last = max(match.round_number for match in matches)
+    return sorted({cid for match in matches if match.round_number == last
+                   for cid in ((match.result.winner_id,) if match.result else (match.home_id, match.away_id))})
+
+
+def european_places(world: World, competition: Competition, ranked: list[int], season: int) -> tuple[dict[int, dict], set[int]]:
+    """The European cup each club of a league's table goes to as it stands (docs/europe.md, « Qualifications »), with the
+    quotas of the season it qualifies for, and the clubs whose rank alone takes them there.
+
+    Before the national cup has a winner, its place in C3 falls to the league, as when an already qualified club wins it:
+    a club whose cup another winner would change is `tentative`, `fallback` naming what it would keep (None: nothing). The
+    cup's winner is marked (`winner`), in a lower division too."""
+    from core.world.europe import COMPETITIONS, league_places, resolve_european_quotas
+    quotas = resolve_european_quotas(world, season + 1).get(competition.nation)
+    cup = next((c for c in world.competitions.values() if c.kind == "cup" and c.nation == competition.nation), None)
+    if not quotas or competition.kind != "league":
+        return {}, set()
+    contenders = cup_contenders(world, cup, season) if cup is not None else [None]
+    winner = contenders[0] if len(contenders) == 1 else None
+    cups = [world.competitions[cid] for cid, _, _ in COMPETITIONS]
+    cup_name = cup.name if cup is not None else None
+    reference = lambda tier: {"code": cups[tier].code, "name": cups[tier].name} if tier is not None else None
+    if competition.level > 1:
+        # A lower division's club goes to Europe only as the cup's winner, in C3.
+        if winner in ranked and quotas[1]:
+            return {winner: {**reference(1), "tentative": False, "fallback": None, "cup": cup_name, "winner": True}}, set()
+        return {}, set()
+    eligible = [cid for cid in ranked if cid in world.clubs and not world.clubs[cid].is_reserve]
+    tier = lambda places, cid: next((index for index, clubs in enumerate(places) if cid in clubs), None)
+    order = lambda index: 3 if index is None else index
+    places = league_places(eligible, winner, quotas)
+    by_rank = {cid for clubs in league_places(eligible, None, quotas) for cid in clubs}
+    # While the cup is played, what each of its possible winners would leave to the others.
+    outcomes = [(other, league_places(eligible, other, quotas)) for other in contenders if other is not None] if winner is None else []
+    europe = {}
+    for index, clubs in enumerate(places):
+        for cid in clubs:
+            worst = max((tier(other_places, cid) for other, other_places in outcomes if other != cid), key=order, default=index)
+            europe[cid] = {**reference(index), "tentative": order(worst) > index, "fallback": reference(worst) if order(worst) > index else None,
+                           "cup": cup_name, "winner": cid == winner}
+    return europe, by_rank & set(europe)
 
 
 TOP_SQUAD = 16
@@ -750,6 +801,10 @@ def match_detail(world: World, match: Match) -> dict:
         from .nations import kit_colors
         for side in ("home", "away"):
             data[side] = {**data[side], **kit_colors(data[side]["name"])}
+    else:
+        # The flag that follows a club's name in the band leads to its country's selection.
+        for side in ("home", "away"):
+            if data[side]: data[side] = {**data[side], "nation_id": selection_id(world, data[side]["nation"])}
     result = match.result
     if result is None:
         data["result"] = None

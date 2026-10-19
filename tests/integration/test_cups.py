@@ -235,6 +235,7 @@ def test_reserve_identification():
     for uid, name, parent in [("1", "Club B", "1"), ("2", "Club II", "2"), ("1737", "Castilla", "1737"), ("3", "Other", "4")]:
         assert reserve_team({"UID": uid, "Name": name, "MainTeamUID": parent})
     assert not reserve_team({"UID": "5", "Name": "FC Schalke 04", "MainTeamUID": "5"})
+    assert not reserve_team({"UID": "1047", "Name": "Willem II", "MainTeamUID": "1047"})
 
 
 def test_reinforcement_level_and_missing_keeper(imported):

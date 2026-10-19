@@ -42,6 +42,14 @@ def tables(world):
             for league in world.competitions.values()}
 
 
+def test_a_reserve_team_never_goes_up_to_the_first_division(pyramid):
+    pyramid.clubs[200].is_reserve = pyramid.clubs[300].is_reserve = True
+    apply(pyramid, promotion_event(pyramid, tables(pyramid)))
+    # The second division's winner stays down and the next three go up; a reserve team may still reach the second.
+    assert set(pyramid.competitions[16].club_ids) == {100, 101, 102, 103, 104, 201, 202, 203}
+    assert {200, 300} <= set(pyramid.competitions[17].club_ids)
+
+
 def test_simultaneous_movements_preserve_sizes_and_original_divisions(pyramid):
     before = deepcopy(pyramid, {id(pyramid.config): pyramid.config})
     event = promotion_event(pyramid, tables(pyramid))

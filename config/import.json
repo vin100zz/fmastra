@@ -9,13 +9,24 @@
     "unite_salaire": "euros_par_semaine"
   },
   "selection_effectifs": {
-    "_note": "Attributs fournis, note globale ponderee selon le poste principal. Deux gardiens reserves si disponibles, puis niveau decroissant et ID croissant.",
+    "_note": "Attributs fournis, note globale ponderee selon le poste principal. Les joueurs gardes viennent des paliers ; un club garde au plus joueurs_max_par_club joueurs, deux gardiens reserves si disponibles, puis niveau decroissant et ID croissant.",
     "joueurs_max_par_club": 30,
     "gardiens_reserves_si_disponibles": 2,
     "critere": "note_globale_attributs",
     "departage": "identifiant_croissant",
     "joueurs_ecartes": "non_importes",
-    "agents_libres": "tous_conserves"
+    "agents_libres": "meilleurs",
+    "paliers": {
+      "_note": "Qui une nouvelle partie garde du fichier, palier par palier, au niveau (CA) decroissant puis ID croissant. Niveau et potentiel sur 200 comme le fichier ; reputations sur 100 (celle du fichier divisee par 100) ; force d'une nation : nations.json. Le vivier est la reserve des promus (monde.json). Un club etranger est un club non simule d'une nation non simulee ; ses places europeennes sont les maxima de qualifs_europe.csv. Au-dela du plafond de joueurs hors clubs simules, les clubs etrangers descendent a joueurs_min, puis les agents libres puis le vivier se reduisent de moitie, puis a zero.",
+      "clubs_simules": {"joueurs": 30, "gardiens": 3, "espoirs": 3, "age_max_espoir": 21},
+      "vivier": {"joueurs": 11},
+      "vedettes": {"reputation_min": 60.0, "potentiel_min_pepite": 150, "age_max_pepite": 21},
+      "agents_libres": {"joueurs": 300},
+      "clubs_etrangers": {"joueurs": 15, "joueurs_min": 11, "clubs_par_place_europe": 2, "clubs_europe_min": 4, "clubs_europe_max": 12, "reputation_min": 60.0},
+      "coupe": {"clubs_par_nation": 96},
+      "plancher_nation": {"joueurs_min": 23, "joueurs_max": 110, "force_min": 25.0, "force_max": 80.0},
+      "plafond_hors_simules": 8000
+    }
   },
   "valeurs_manquantes": {
     "_note": "Replis explicites, chacun compte dans le rapport d'import. Ne jamais appliquer log a une valeur non positive.",

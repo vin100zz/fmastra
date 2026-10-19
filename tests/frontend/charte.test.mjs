@@ -135,3 +135,19 @@ test('a card that folds is drawn the same by the reference sheet and by the appl
   assert.ok(said.some(([selector,rule])=>/^\.card-head\.toggle:(is\(:hover,\.hover\)|hover)$/.test(selector)&&/background:var\(--panel-3\)/.test(rule)),sheet);
  }
 });
+
+test('an attribute’s column holds the longest name of its section and its badge, in both sheets',async()=>{
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  // The composites out of 200 (Défense de surface) need more room than the attributes out of 20 (Coups arrêtés).
+  assert.match(body('.attributes-grid'),/--attribute-column:140px/,sheet);
+  assert.match(body('.composites-group .attributes-grid'),/^--attribute-column:180px$/,sheet);
+ }
+ // On the page and in a preview, a column is never narrower than that room: in a preview's 348 the composites take one
+ // column, the attributes two. The older sheets no longer fix their columns.
+ const app=rules(await read('web/charte.css')),told=selector=>app.find(([found])=>found===selector)?.[1]??'';
+ assert.match(told('.attributes-card .attributes-grid'),/grid-template-columns:repeat\(auto-fill,minmax\(max\(var\(--attribute-column\),calc\(\(100% - 2\*var\(--s6\)\)\/3\)\),1fr\)\)/);
+ assert.match(told('.preview .attributes-grid'),/grid-template-columns:repeat\(auto-fill,minmax\(max\(var\(--attribute-column\),calc\(\(100% - var\(--s4\)\)\/2\)\),1fr\)\)/);
+ const older=rules(await read('web/theme.css'));
+ assert.ok(!older.some(([selector,rule])=>/^\.(attributes-card|preview) \.attributes-grid$/.test(selector)&&/grid-template-columns/.test(rule)));
+});
