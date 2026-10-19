@@ -41,12 +41,12 @@ const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(
 
 // The band and what closes it, a club's, a selection's, a player's or a competition's: `colors` is what heroColors gives,
 // `lead` steps between peers, `crest` fills the disc (`mark` is what stands in the disc's place when it is not one),
-// `after` is what follows the `name` on its line, smaller (nothing stands over the name), `tiles` the figures on the
-// right, `foot` what stands under the band.
-function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',name,after='',tiles,foot}){
+// `before` is what precedes the `name` on its line, as large (a player's number), `after` what follows it, smaller (nothing
+// stands over the name), `tiles` the figures on the right, `foot` what stands under the band.
+function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',name,before='',after='',tiles,foot}){
  return `<header class="club-hero${colors?'':' plain'}"${colors?` style="${colors}"`:''}><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div>`
   +`<div class="club-hero-main">${lead}${mark}`
-  +`<div class="club-hero-identity"><div class="club-hero-name"><h1>${e(name)}</h1>${after}</div></div>`
+  +`<div class="club-hero-identity"><div class="club-hero-name">${before}<h1>${e(name)}</h1>${after}</div></div>`
   +`<div class="club-hero-tiles">${tiles}</div></div></div>${foot}</header>`;
 }
 // What follows a name on its line: where it plays, a link to that page when it has one.
@@ -142,15 +142,17 @@ function selectionTile(player){
   +`${player.international_caps==null?'':column('Sél.',n(player.international_caps))}${player.international_goals?column('Buts',n(player.international_goals)):''}`);
 }
 
-// The header of a player's page is his club's: its colours on the band, its crest on the disc, his name with the club after
-// it, smaller (a plain band and « Libre » without a club). On the right his age, what he did for his selection, his level
-// and his potential on one tile of two graded columns, his market value and the fee asked for him (N/A when nobody can be
-// asked) on another. `lead` steps through the squad; `foot` is what the user can do with him, where a club has its tabs.
+// The header of a player's page is his club's: its colours on the band, its crest on the disc, his number before his name,
+// as large and veiled, and the club after it, smaller (a plain band and « Libre » without a club). On the right his age,
+// what he did for his selection, his level and his potential on one tile of two graded columns, his market value and the
+// fee asked for him (N/A when nobody can be asked) on another. `lead` steps through the squad; `foot` is what the user can
+// do with him, where a club has its tabs.
 export function playerHero(player,{lead='',foot=''}){
  const club=player.club;
  const grade=(label,value,title)=>value==null?column(label,'—'):column(label,level(value),title,levelHue(level(value)));
  const unasked=player.transferable===false?'Intransférable : son club refuse de le vendre':club?'':'Sans club : aucun prix demandé';
- return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',
+ const number=club&&player.shirt!=null?`<span class="club-hero-number" title="Numéro de maillot">${n(player.shirt)}</span>`:'';
+ return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',before:number,
   after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
   tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${split(grade('Niveau',player.rating,'Niveau actuel sur 200')+grade('Potentiel',player.potential,'Potentiel sur 200'))}`
    +split(column('Valeur',money(player.value),'Valeur de marché')+(unasked?column('Prix demandé','N/A',unasked):column('Prix demandé',price(player.asking_price))))});

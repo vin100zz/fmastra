@@ -10,7 +10,11 @@ A message of one of these kinds has no sentence of its own: the pages write it f
 - `renewal_proposed`, about a player: the contract he has (`text` "current") then the one he asks for ("asked"), each
   with `amount` its weekly wage and `until` its end; the `state` of the asked one is the answer.
 - `injury`, `injury_end`, `suspension`, `release`, `retirement`, `academy`, `loan_return`: one line per player,
-  `until` the end of an injury, `amount` the matches of a suspension.
+  `until` the end of an injury, `amount` the matches of a suspension, the number of a young player.
+- `shirt_numbers`, on 1 July: one line per player whose number changed, `amount` his new number and `text` the one he
+  wore (see `core.world.shirts`).
+- `transfer`, `loan`, `loan_return`: a sentence, its line naming the club the player joined, or left for a loan return;
+  for the club he comes to, `amount` is the number he takes there.
 - `call_up`: one line per player, `text` the national team and `key` its id.
 - `morale`: one line per player whose morale fell under the alert, `text` what weighs on him and `amount` his morale
   out of 100.

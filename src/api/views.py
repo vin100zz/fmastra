@@ -112,7 +112,7 @@ def loan_ref(world: World, player: Player) -> dict | None:
 
 def player_row(world: World, player: Player) -> dict:
     contract = player.contract
-    return {"id": player.id, "name": player.name, "position": player.position.value,
+    return {"id": player.id, "name": player.name, "position": player.position.value, "shirt": player.shirt,
             "loan": loan_ref(world, player), "reserve": player.reserve_since is not None,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
             "potential": round(player.potential, 1),
@@ -775,6 +775,15 @@ def side_short_names(world: World, match: Match, side: str) -> dict[int, str]:
     return squad_short_names(world, team_id, {pid: match_player_name(world, result, pid) for pid in sheet})
 
 
+def match_shirt(world: World, match: Match, side: str, pid: int) -> int | None:
+    """The number a player wore in a club match: the one its sheet keeps, else (a match played before the game had
+    numbers) his own, while he still plays for that club. A selection's players have none."""
+    if pid in match.result.shirts: return match.result.shirts[pid]
+    player = world.players.get(pid)
+    if match.id in world.international.matches or player is None: return None
+    return player.shirt if player.club_id == getattr(match, f"{side}_id") else None
+
+
 def play_style(player: Player | None) -> dict:
     """What the 2D replay animates a player by: how sure his touch is and how fast he carries the ball. Nothing for a
     player no longer in the world (a call-up, a retired player); the replay then gives him an average touch."""
@@ -784,11 +793,11 @@ def play_style(player: Player | None) -> dict:
 
 
 def lineup_rows(world: World, match: Match, side: str, shorts: dict[int, str] | None = None) -> list[dict]:
-    """The starting eleven of one side, with the positions and ratings of that match and each player's short name."""
+    """The starting eleven of one side, with the positions, numbers and ratings of that match and each player's short name."""
     result = match.result
     shorts = side_short_names(world, match, side) if shorts is None else shorts
     return [{"id": pid, "name": match_player_name(world, result, pid), "short": shorts.get(pid), "position": position,
-             "temporary": pid in result.temporary_players,
+             "shirt": match_shirt(world, match, side, pid), "temporary": pid in result.temporary_players,
              "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None,
              **play_style(world.players.get(pid))}
             for pid, position in getattr(result, f"{side}_lineup")]
@@ -824,7 +833,7 @@ def match_detail(world: World, match: Match) -> dict:
         bench, side_shorts = getattr(result, f"{side}_bench"), shorts[getattr(match, f"{side}_id")]
         detail[f"{side}_lineup"] = lineup_rows(world, match, side, side_shorts)
         detail[f"{side}_bench"] = [{"id": pid, "name": match_player_name(world, result, pid), "short": side_shorts.get(pid),
-                                      "temporary": pid in result.temporary_players,
+                                      "shirt": match_shirt(world, match, side, pid), "temporary": pid in result.temporary_players,
                                       "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None,
                                       **play_style(world.players.get(pid))} for pid in bench]
     data["result"] = detail

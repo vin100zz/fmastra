@@ -319,3 +319,16 @@ test('an own player goes on the transfer list or is offered to the clubs, and hi
  assert.match(listed,/data-open-dialog="offers-dialog">Offres reçues · 1<\/button>/);
  assert.match(listed,/<dialog id="offers-dialog"[^]*href="#\/club\/9"[^]*data-command="reponse-offre" data-decision="accepter" data-offer="proposition:1"/);
 });
+
+test('an arrival shows the number he takes on the club’s shirt, under a title without it; a change of number both shirts',async()=>{
+ const arrival={...row(5,'transfer','Icardi rejoint Lens'),shirt:9};
+ let html=await screen([arrival],arrival,'msg=5');
+ assert.match(html,/<h2>Icardi rejoint Lens<\/h2>/);
+ assert.match(html,/<ul class="news-lines shirts"><li><span class="muted">Numéro<\/span><span class="kit-shirt number" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff"><svg[^]*?<\/svg><b>9<\/b><\/span><\/li><\/ul>/);
+ const change={...row(6,'shirt_numbers','Vermot change de numéro'),players:[{player:{id:1,name:'Théo Vermot',gone:false},shirt:1,before:16}]};
+ html=await screen([change],change,'msg=6');
+ assert.match(html,/<li><span><a href="#\/player\/1">Théo Vermot<\/a><\/span><span class="shirt-change"><span class="kit-shirt number former"[^>]*><svg[^]*?<\/svg><b>16<\/b><\/span><small>→<\/small><span class="kit-shirt number"[^>]*><svg[^]*?<\/svg><b>1<\/b><\/span><\/span><\/li>/);
+ const academy={...row(7,'academy','2 joueurs rejoignent le centre de formation'),players:[{player:{id:2,name:'Ugo Tégar',gone:false},shirt:34},{player:{id:3,name:'Axel Djoco',gone:false},shirt:35}]};
+ html=await screen([academy],academy,'msg=7');
+ assert.match(html,/<ul class="news-lines shirts"><li><span><a href="#\/player\/2">Ugo Tégar<\/a><\/span><span class="kit-shirt number"[^>]*><svg[^]*?<\/svg><b>34<\/b><\/span><\/li>/);
+});

@@ -50,7 +50,10 @@ def cases(config):
 
 
 def fingerprint(result) -> str:
-    return sha256(json.dumps(asdict(result), sort_keys=True, default=repr).encode()).hexdigest()
+    # The numbers of the match sheet are written by the world once the match is played, not by the engine.
+    data = asdict(result)
+    del data["shirts"]
+    return sha256(json.dumps(data, sort_keys=True, default=repr).encode()).hexdigest()
 
 
 def play(config):

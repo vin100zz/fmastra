@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -175,8 +175,8 @@ function slotHtml(id,role,cell,index,byId){
  const player=byId.get(id);
  const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}${index===editor.picked?' picked':''}`;
  const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
- // A starter wears the club's kit; an empty place keeps the outline of a shirt.
- const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player});
+ // A starter wears the club's kit and his number; an empty place keeps the outline of a shirt, its position on it.
+ const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,shirtLabel(player,role),{empty:!player});
  return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${slotBlock(player,role)}</div>`;
 }
 // The free cells of the grid, shown while a place of the pitch is dragged.
@@ -361,7 +361,7 @@ function install(){
   const role=pitch?roles()[dragged.slot]:spot?.kind==='slot'?roles()[spot.index]:player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}${player?player.unavailable?' invalid':'':' empty'}`;
-  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,role,{empty:!player})}${slotBlock(player,role)}`;
+  token.innerHTML=`${kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,shirtLabel(player,role),{empty:!player})}${slotBlock(player,role)}`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

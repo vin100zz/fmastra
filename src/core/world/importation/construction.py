@@ -83,7 +83,8 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
                   position_ratings=dict(row.position_ratings), aggression=aggression,
                   greed=greed_trait(row.loyalty, cfg, seed, row.id),
                   international_caps=row.international_caps, international_goals=row.international_goals,
-                  historical_caps=row.international_caps, historical_goals=row.international_goals)
+                  historical_caps=row.international_caps, historical_goals=row.international_goals,
+                  shirt=None if free else row.shirt)
 
 
 def construct_world(source_clubs: list[SourceClub], source_players: list[SourcePlayer], cfg: Config,
@@ -178,6 +179,9 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     world.excluded_player_ids = sorted(excluded)
     world.last_annual_review = season
     world.rngs = {name: stream(seed, name) for name in ("matches", "market", "states", "progression", "demography")}
+    # The numbers of the source first, those it lacks then: the players a squad still needs choose among what is left.
+    from core.world.shirts import number_squads
+    corrections["shirts_assigned"] = number_squads(world)
     from core.world.squads import complete_squads
     corrections["squad_completion_players"] = complete_squads(world, [club.id for club in world.active_clubs()])
     players = world.players

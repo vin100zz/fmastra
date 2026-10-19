@@ -48,3 +48,5 @@ class SourcePlayer:
     international_goals: int = 0
     # The source's 0-10000 world reputation, which decides only who a new world keeps.
     world_reputation: int = 0
+    # His shirt number at his club, 1 to 99; None when the export lacks it.
+    shirt: int | None = None
