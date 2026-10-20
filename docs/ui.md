@@ -856,11 +856,35 @@ message (« il vient d'arriver ») reste dans son infobulle.
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
   le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
   des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
-  filets. Les joueurs sont articulés : ils courent, frappent plus ou moins fort,
-  poussent le ballon en conduite, le contrôlent du pied, de la cuisse ou de la
-  poitrine, sautent pour les têtes, chaque geste calé sur l'instant où le ballon
-  les rencontre ; le gardien plonge et l'équipe qui marque célèbre avec ses
-  supporters.
+  filets. L'éclairage, les ombres et le cadrage rapproché rendent lisibles les
+  volumes des joueurs. Leur modèle articulé (`replay-player.js`) distingue le
+  buste, les épaules, les membres, le visage, les cheveux, les chaussures et les
+  gants ; le maillot porte le numéro du match (`shirt`) et les couleurs du camp.
+  La locomotion (`replay-locomotion.js`) fait avancer chaque foulée avec la
+  distance parcourue. Chaque joueur conserve sa phase, sa cadence et son
+  amplitude de bras propres. La marche garde un double appui ; la course et
+  le sprint alternent poussée, suspension et retour du talon, avec déroulé du
+  pied, opposition des bras et inclinaison dans les accélérations et virages.
+  Les cibles des pieds sont résolues par les articulations pour conserver le
+  contact avec la pelouse, y compris au départ et à l'arrêt. Le bassin prépare
+  l'atterrissage avant la pose du pied. Les gestes (`replay-motion.js`) se
+  superposent à ces foulées sans synchroniser les joueurs.
+  Passes, centres et frappes ont leur préparation, leur contact et leur
+  accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
+  poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
+  La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
+  Le gardien garde ses pas pendant le placement, se prépare à l'arrêt, plonge
+  à la hauteur de la frappe, retombe puis se relève ;
+  après un arrêt, le ballon tenu suit ses gants. L'équipe qui marque célèbre avec
+  ses supporters. Tous ces gestes utilisent le temps du résumé : la vitesse de
+  lecture les accélère ensemble et la pause fige joueurs, ballon, public et caméra.
+  La présentation conserve les trajectoires et le résultat du moteur. La page
+  `tests/fixtures/replay-3d.html` permet de revoir des scènes déterministes de
+  passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
+  de tir contré et de coup franc, avec ralenti et arrêt sur image.
+  `tests/fixtures/replay-locomotion.html` compare six joueurs en marche, course
+  et sprint, ou à allure identique, avec caméra de profil ou trois quarts,
+  ralenti et progression image par image sur le même squelette que le match.
 
 ### Composition
 

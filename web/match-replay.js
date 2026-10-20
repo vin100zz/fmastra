@@ -347,7 +347,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.runs.clear();this.posts.clear();this.wall=null;this.pressLock=null;
   for(let pass=0;pass<2;pass++){
    const targets=this.targets(point,side);
-   for(const team of ['home','away'])for(const [id,dot] of this.dots[team]){const spot=targets.get(team).get(id);if(spot){dot.x=spot.x;dot.y=spot.y;dot.vx=dot.vy=dot.sx=dot.sy=0;dot.gesture=null;}}
+   for(const team of ['home','away'])for(const [id,dot] of this.dots[team]){const spot=targets.get(team).get(id);dot.gesture=null;dot.gestures=[];if(spot){dot.x=spot.x;dot.y=spot.y;dot.vx=dot.vy=dot.sx=dot.sy=0;}}
   }
   carrier=carrier&&this.dot(carrier)?carrier:this.nearest(side,point,{exclude});
   const dot=this.dot(carrier);
@@ -448,6 +448,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // Puts the pitch where the server says the match stands: on opening, and after new orders replaced what came next.
  resync(state){
   this.run++;this.settle(false);this.running=false;this.hold=true;
+  this.shirts=rosterShirts(state.result,this.shirts);
   this.events=state.result.events;this.refreshSequences();
   this.status=state.status;
   this.reset(state.second,this.sequences.length);
@@ -457,6 +458,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   else if(state.status==='finished')this.finishLive(false);
  }
  append(data){
+  this.shirts=rosterShirts(data.result,this.shirts);
   const known=new Set(this.events.map(event=>event.sequence));
   const fresh=data.result.events.filter(event=>!known.has(event.sequence));
   this.events=[...this.events,...fresh];
@@ -611,7 +613,14 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // Keeps `who` on `point` (the ball at his feet, a wall) until a run sends him elsewhere.
  post(who,point){if(this.dot(who))this.posts.set(this.key(who),{x:point.x,y:point.y});}
  // How `who` will meet the ball at `at`: the 3D view swings his leg, lifts his knee or jumps in time for it.
- gesture(who,touch,at){const dot=this.dot(who);if(dot)dot.gesture=touch?{...touch,at}:null;}
+ gesture(who,touch,at){
+  const dot=this.dot(who);
+  if(!dot)return;
+  dot.gesture=touch?{...touch,at}:null;
+  // Scheduling the next touch must not erase the previous one's follow-through. At contact the planned
+  // gesture is refined with the actual ball target; keep only four contacts, and clear them on a scene cut.
+  if(touch)dot.gestures=[...(dot.gestures||[]).filter(item=>item.at!==at),dot.gesture].sort((a,b)=>a.at-b.at).slice(-4);
+ }
  // Something that happens at a set time of the replay (the ball meeting the net or a defender), applied in order.
  cue(at,apply){this.cues.push({at,apply});this.cues.sort((a,b)=>a.at-b.at);}
  // How sure his touch is and how quick he is, from 0 to 1 (his technique and pace; average without them).
@@ -623,8 +632,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  touchOf(move,height=0){
   if(!move||move.type==='corner'||move.type==='free_kick'||move.header)return null;
   if(move.type==='control')return {kind:height>1.6?'head':height>1?'chest':height>.45?'thigh':'cushion'};
-  if(move.type==='carry')return {kind:'touch'};
-  return {kind:'kick',strength:move.type==='pass'?{ground:.5,driven:.8,lofted:1}[move.lift]:move.type==='cross'?.9:1};
+  const point=move.point||move.box,target=point&&{x:point.x,y:point.y};
+  if(move.type==='carry')return {kind:'touch',target};
+  return {kind:'kick',style:move.type,technique:move.freeKick?'free_kick':move.lift||move.style,target,
+   strength:move.type==='pass'?{ground:.5,driven:.8,lofted:1}[move.lift]??.6:move.type==='cross'?.9:1};
  }
  // Off the ball, whoever the next pass or cross is meant for starts his run before it is struck, and the defender
  // who will block the next shot steps into its way.
@@ -671,7 +682,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  async pass(move,next,ahead){
   const to=move.to,receiver=this.dot(to);
   if(!receiver)return true;
-  const t0=this.start(),from=ballAt(this.ballPath,t0),height=move.lift==='lofted'?move.height:0,timing=point=>FLIGHT[move.lift](distance(from,point));
+  const by=this.carrier,t0=this.start(),from=ballAt(this.ballPath,t0),height=move.lift==='lofted'?move.height:0,timing=point=>FLIGHT[move.lift](distance(from,point));
   // As far towards the spot as he can run while the ball travels there (a shorter pass gives him less time).
   const gap=distance(receiver,move.point);
   let share=1;
@@ -685,13 +696,14 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   if(height)({velocity,options}=lofted(from,aim,duration,height,{bend:move.bend}));
   else({velocity,duration}=rolled(from,aim,duration));
   this.ballPath=path(from,velocity,t0,options);
+  this.gesture(by,{...this.touchOf(move),target:{x:aim.x,y:aim.y},contact:{x:from.x,y:from.y,z:from.z}},t0);
   this.loose();this.lastSide=to.side;
   const side=distance(receiver,aim)<1?unit(from,aim):unit(aim,receiver),onward=unit(aim,ahead||this.toPitch(to.side,1,.5));
   this.runTo(to,{x:aim.x+side.x*CONTACT,y:aim.y+side.y*CONTACT},t0+duration,scale(onward,{one:.004,carry:.003}[move.then]??.001));
   this.gesture(to,move.then==='one'?this.touchOf(next):this.touchOf({type:'control'},height),t0+duration);
   this.advance(t0+duration);
   if(move.then==='one')this.prepare(next,t0+duration);
-  const done=await this.perform({kind:'pass',to,duration,t0,line:height?'replay-cross':'replay-pass'});
+  const done=await this.perform({kind:'pass',by,to,target:{x:aim.x,y:aim.y},duration,t0,line:height?'replay-cross':'replay-pass'});
   if(done)this.carrier=to;
   return done;
  }
@@ -736,10 +748,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    // Long enough for him to get onto it at a sprint at most.
    const duration=Math.max(last?Math.max(320,gap/pace):interval,distance(dot,{x:aim.x-direction.x*CONTACT,y:aim.y-direction.y*CONTACT})/.0085);
    this.ballPath=path(from,rolled(from,aim,duration,TOUCH_FRICTION).velocity,t0,{friction:TOUCH_FRICTION});
+   this.gesture(by,{kind:'touch',target:{x:aim.x,y:aim.y},contact:{x:from.x,y:from.y,z:from.z}},t0);
    const ball=ballAt(this.ballPath,t0+duration);
    this.carrier=by;this.lastSide=by.side;
    this.runTo(by,{x:ball.x-direction.x*CONTACT,y:ball.y-direction.y*CONTACT},t0+duration,scale(direction,pace*(last?.75:1)));
-   this.gesture(by,last?this.touchOf(next):{kind:'touch'},t0+duration);
+   this.gesture(by,last?this.touchOf(next):{kind:'touch',target:{x:move.point.x,y:move.point.y}},t0+duration);
    this.advance(t0+duration);
    this.prepare(next,t0+duration);
    if(!(await this.perform({kind:'carry',by,duration,t0,line:'replay-carry'})))return false;
@@ -750,7 +763,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  }
  // A cross, met in the box on the side the scorer is already coming from, as he leaves the ground for it.
  async cross(move){
-  const t0=this.start(),from=ballAt(this.ballPath,t0),header=move.to,dot=this.dot(header);
+  const by=this.carrier||move.by,t0=this.start(),from=ballAt(this.ballPath,t0),header=move.to,dot=this.dot(header);
   const local=dot?this.toLocal(move.side,dot):{u:.9,v:.5};
   let spot=this.toPitch(move.side,clamp(.915+(this.random()-.5)*.024,.88,.95),clamp(local.v+(this.random()-.5)*.08,.37,.63));
   let duration=FLIGHT[move.style](distance(from,spot));
@@ -762,10 +775,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   }
   const {velocity,options}=lofted(from,spot,duration,move.height,{bend:move.bend});
   this.ballPath=path(from,velocity,t0,options);
+  this.gesture(by,{...this.touchOf(move),target:{x:spot.x,y:spot.y},contact:{x:from.x,y:from.y,z:from.z}},t0);
   this.loose();
   if(dot)this.runTo(header,spot,t0+duration,scale(unit(dot,spot),.002));
-  this.gesture(header,{kind:'head',jump:clamp(move.height-1.75,0,.6)},t0+duration);
-  return this.perform({kind:'cross',by:move.by,to:header,duration,t0,line:'replay-cross'});
+  this.gesture(header,{kind:'head',style:'shot',target:this.toPitch(move.side,1,.5),jump:clamp(move.height-1.75,0,.6)},t0+duration);
+  return this.perform({kind:'cross',by,to:header,target:{x:spot.x,y:spot.y},duration,t0,line:'replay-cross'});
  }
  // A dead ball: the taker runs in from where he stands and strikes it as he reaches it.
  runUp(taker,ball,next,duration){
@@ -836,6 +850,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    ({velocity,options}=lofted(from,target,duration,height,{bend,gravity}));
   }
   this.ballPath=path(from,velocity,t0,options);
+  this.gesture(move.by,{...(move.header?{kind:'head',style:'shot',jump:clamp(from.z-1.75,0,.6)}:this.touchOf(move)),
+   target:{x:target.x,y:target.y},contact:{x:from.x,y:from.y,z:from.z}},t0);
   this.loose();
   // The wall jumps as the ball goes over it.
   if(move.freeKick)for(const man of this.wall||[])this.gesture(man,{kind:'head',jump:.35},t0+duration*Math.min(.9,9.15/distance(from,target)));
@@ -857,7 +873,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   }
   else if(outcome==='goal')this.cue(t0+end,()=>{const ball=ballAt(this.ballPath,t0+end);this.ballPath=path(ball,{x:ball.vx*.1,y:ball.vy*.1,z:Math.min(0,ball.vz)*.1},t0+end,{friction:NET_FRICTION});});
   else if(outcome==='save')this.cue(t0+end,()=>{this.place(ballAt(this.ballPath,t0+end),t0+end);this.carrier=keeper;const dot=this.dot(keeper);if(dot)this.post(keeper,dot);});
-  return this.perform({kind:'shot',by:move.by,keeper,keeperFrom:keeperDot&&{x:keeperDot.x,y:keeperDot.y},keeperPoint:dive,duration:end,t0,line:'replay-shot'});
+  // Presentation metadata is sampled from the existing flight; it never changes the result or its timing.
+  const keeperHeight=ballAt(this.ballPath,t0+duration*.92).z;
+  return this.perform({kind:'shot',by:move.by,target:{x:target.x,y:target.y},style:move.header?'header':move.freeKick?'free_kick':move.style,
+   outcome,keeper,keeperFrom:keeperDot&&{x:keeperDot.x,y:keeperDot.y},keeperPoint:dive,
+   keeperTarget:dive&&{x:dive.x,y:dive.y,z:keeperHeight},keeperHeight,duration:end,t0,line:'replay-shot'});
  }
  // A teammate a short pass square or back from the ball, for the move to go round before it goes forward.
  support(owner,receiver,ball){
@@ -1044,16 +1064,21 @@ function rosterStyles(result){
  for(const player of [...result.home_lineup,...result.home_bench,...result.away_lineup,...result.away_bench])if(player.technique!=null)styles.set(player.id,{technique:player.technique,vitesse:player.vitesse});
  return styles;
 }
+// Bench players keep their own number when they enter the field, including after a live resync.
+function rosterShirts(result,shirts=new Map()){
+ for(const key of ['home_lineup','home_bench','away_lineup','away_bench'])for(const player of result[key]||[])if(player.shirt!=null)shirts.set(player.id,player.shirt);
+ return shirts;
+}
 // The live match: `state` is the match so far (as GET /direct returns it), `next()` fetches the following segment.
 export function liveReplay(state,teams,next){
  const result=state.result,key=String(++keys);
- pending.set(key,{events:[],duration:0,homeId:state.home.id,awayId:state.away.id,teams,names:rosterNames(result),styles:rosterStyles(result),
+ pending.set(key,{events:[],duration:0,homeId:state.home.id,awayId:state.away.id,teams,names:rosterNames(result),styles:rosterStyles(result),shirts:rosterShirts(result),
                   lineups:{home:result.home_lineup,away:result.away_lineup},live:{state,next}});
  return `<match-replay data-key="${key}"></match-replay>`;
 }
 export function replayCard(match,teams){
  const result=match.result,key=String(++keys);
- pending.set(key,{events:result.events,duration:result.duration,homeId:match.home.id,awayId:match.away.id,teams,names:rosterNames(result),styles:rosterStyles(result),
+ pending.set(key,{events:result.events,duration:result.duration,homeId:match.home.id,awayId:match.away.id,teams,names:rosterNames(result),styles:rosterStyles(result),shirts:rosterShirts(result),
                   lineups:{home:result.home_lineup,away:result.away_lineup}});
  // Folded by default: the toggle sits in the match banner, the panel below it stays empty until first opened.
  const toggle=`<button type="button" class="replay-toggle" data-replay-toggle="${key}" aria-controls="replay-${key}" aria-expanded="false">`

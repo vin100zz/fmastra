@@ -716,6 +716,26 @@ Un seul terrain et un seul joueur, sur tous les écrans.
 Les aptitudes d'un joueur n'ont pas de liste à côté de leur terrain : le bloc de
 chaque poste en tient lieu, sur un terrain de 360 de large.
 
+### Match en 3D
+
+La vue du match reprend les couleurs et les numéros des maillots dans un stade
+éclairé, cadré depuis la tribune comme une retransmission télévisée. Les joueurs
+ont des volumes anatomiques lisibles, des articulations et des matières mates ;
+le tissu, la peau, les chaussures et les gants se distinguent par leur relief
+et leur réponse à la lumière. Les gestes suivent le ballon : appuis des courses,
+préparation et accompagnement des passes et des tirs, contrôles, têtes, plongeon
+bas ou haut puis reprise d'appui du gardien. Ces animations procédurales restent
+calées sur les contacts et le temps du résumé, sans changer les déplacements ni
+le résultat du match. La pause fige l'image, joueurs, ballon, public et caméra
+compris ; les commandes autour du terrain gardent les composants de la charte.
+Les joueurs ont des phases de foulée et des styles de course individuels,
+stables d'une scène à l'autre. La marche, la course et le sprint se distinguent
+par les appuis, la suspension, le retour du talon et le mouvement opposé des
+bras. Les pieds se déroulent au sol, le bassin absorbe l'atterrissage, le buste
+accompagne l'accélération et les virages. À l'arrêt, les mouvements restent
+discrets et décalés entre joueurs. Le spécimen rapproché de ces allures est
+`tests/fixtures/replay-locomotion.html`.
+
 ## Graphiques
 
 Un texte n'est jamais dans la couleur de ce qu'il mesure : chiffres et libellés

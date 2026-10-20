@@ -3,21 +3,14 @@
 // Pitch units are metres: x along the touchline (0 to 105), y across (0 at the far touchline, 68 at the near one).
 // In the scene, x runs along the touchline from the centre spot, z across towards the camera, y up.
 import * as THREE from './vendor/three/three.module.js';
+import {createPlayerParts,createPlayerFigure} from './replay-player.js';
+import {activeGesture,angleDelta,playerMotion,strideLength} from './replay-motion.js';
 
 const W=105,H=68,MARGIN_X=6,MARGIN_Y=5;
 // The players are drawn a little larger than life so that they read from the stand.
 const SCALE=1.25;
 const SKINS=['#f1c9a0','#d9a577','#b27b52','#8a5a3b','#5e3b27'];
-const HAIR=['#16110d','#2b1d14','#3f2a1c','#5c3d24','#8a6038','#c9a36a','#7c3a1d'];
-const BOOTS=['#141414','#141414','#f2f2f2','#d7ff3c','#ff5b3a','#2f7bff'];
-const GLOVES=['#eef2f5','#d7ff3c','#ff8a3d'];
 const BALL=.24;
-// A touch of the ball, timed on the moment the 2D replay has the ball meet him: the move starts `lead` ms before it
-// and lasts `span` ms in all, in ms of replay time so that it keeps the replay's pace and stops when it is paused.
-// A kick, a dribbling touch and a cushioned control are one swing of the leg, of different sizes.
-const GESTURES={kick:{lead:126,span:450},touch:{lead:80,span:290},cushion:{lead:110,span:400},thigh:{lead:230,span:520},
-                chest:{lead:250,span:620},head:{lead:280,span:560}};
-const RECOVER_MS=600;
 // Below this pace, in metres per second of replay, a player walks and faces the ball.
 const JOG=1.2;
 // The fans' tile: seats along the stand and rows up its slope, in metres.
@@ -30,11 +23,9 @@ const MAIN_STAND={tiers:[[0,14,1.2,8.3],[12,30,12.4,24.1,11.2]],boxes:[14,8.3,11
 const END_STAND={tiers:[[0,24,1.2,15.1]],roof:[5,26,19.5]};
 const lerp=(a,b,k)=>a+(b-a)*k;
 const clamp=(value,low,high)=>Math.min(high,Math.max(low,value));
-const smooth=k=>k*k*(3-2*k);
 const toWorld=(x,y)=>({x:x-W/2,z:y-H/2});
 // Shortest turn from one heading to another.
-const turn=(from,to,k)=>from+(((to-from+Math.PI*3)%(Math.PI*2))-Math.PI)*k;
-const hash=id=>Math.abs(id*2654435761|0);
+const turn=(from,to,k)=>from+angleDelta(from,to)*k;
 // Stable randomness, so that a player, a stand or a shot looks the same each time.
 const seeded=seed=>()=>{seed=(seed+0x6d2b79f5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
 const canvas=(width,height)=>{const node=document.createElement('canvas');node.width=width;node.height=height;return [node,node.getContext('2d')];};
@@ -185,18 +176,6 @@ function skyCanvas(){
  return node;
 }
 
-// The name above a player, drawn once and shown while he takes part in the move.
-function label(text){
- const canvas=document.createElement('canvas'),g=canvas.getContext('2d'),font='700 44px system-ui,sans-serif';
- g.font=font;canvas.width=Math.ceil(g.measureText(text).width)+24;canvas.height=64;
- g.font=font;g.textAlign='center';g.textBaseline='middle';g.lineWidth=8;g.strokeStyle='#000a';g.fillStyle='#fff';
- g.strokeText(text,canvas.width/2,32);g.fillText(text,canvas.width/2,32);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
- const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false,transparent:true}));
- sprite.scale.set(canvas.width/canvas.height*1.3,1.3,1);sprite.position.y=2.75;sprite.renderOrder=2;sprite.visible=false;
- return sprite;
-}
-
 export class Pitch3D{
  constructor(replay){
   this.replay=replay;
@@ -205,20 +184,21 @@ export class Pitch3D{
   this.canvas.setAttribute('aria-hidden','true');
   const renderer=this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true});
   renderer.setPixelRatio(Math.min(2,devicePixelRatio));
-  renderer.toneMapping=THREE.NeutralToneMapping;
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
   this.textures=[];this.materials=new Map();
   const scene=this.scene=new THREE.Scene();
   scene.background=this.texture(skyCanvas());
   scene.fog=new THREE.Fog('#1b2738',170,430);
-  this.camera=new THREE.PerspectiveCamera(26,1.5,1,500);
+  this.camera=new THREE.PerspectiveCamera(25,1.5,1,500);
   // An evening match under floodlights: a cool sky light, and one key light high over the main stand for the shadows.
-  scene.add(new THREE.HemisphereLight('#dfe8ff','#35553a',1.7));
-  const sun=new THREE.DirectionalLight('#fff4e0',2.4);
+  scene.add(new THREE.HemisphereLight('#e4efff','#52684b',1.9));
+  const sun=new THREE.DirectionalLight('#fff2db',2.7);
   sun.position.set(-35,70,25);sun.castShadow=true;
   Object.assign(sun.shadow.camera,{left:-62,right:62,top:42,bottom:-42,near:10,far:160});
   sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
   scene.add(sun);
+  const fill=new THREE.DirectionalLight('#c5dcff',1.15);fill.position.set(35,28,-42);scene.add(fill);
   this.build();
   this.figures=new Map();
   this.look={x:0,z:0};this.last=performance.now();
@@ -252,7 +232,7 @@ export class Pitch3D{
   this.fans={};
   for(const [side,seed] of [['home',3],['away',5]]){
    const frames=[0,1,2].map(pose=>this.texture(crowdCanvas(teams[side],seat,pose,seed),[1/(SEATS*SEAT),1/(ROWS*ROW)]));
-   this.fans[side]={frames,material:new THREE.MeshLambertMaterial({map:frames[0],color:'#b4b4b4'})};
+   this.fans[side]={frames,material:new THREE.MeshLambertMaterial({map:frames[0],color:'#8d9299'})};
   }
   this.led=new THREE.MeshBasicMaterial({map:this.texture(boardCanvas(teams,accent),[1/BOARD_TILE,1])});
   this.windows=new THREE.MeshBasicMaterial({map:this.texture(boxesCanvas(),[1/BOX_TILE,1]),color:'#c8ccd2'});
@@ -277,17 +257,7 @@ export class Pitch3D{
   const ring=this.ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.15,32),new THREE.MeshBasicMaterial({color:accent,transparent:true,opacity:.9,depthWrite:false}));
   ring.rotation.x=-Math.PI/2;ring.position.y=.04;ring.visible=false;scene.add(ring);
   this.people=new THREE.Group();scene.add(this.people);
-  // Shared by every player, in metres before SCALE, feet on the grass; limbs hang from their joints.
-  this.parts={
-   thigh:new THREE.CapsuleGeometry(.075,.3,4,10).translate(0,-.225,0),shortsLeg:new THREE.CylinderGeometry(.1,.095,.22,10).translate(0,-.1,0),
-   shin:new THREE.CapsuleGeometry(.058,.3,4,10).translate(0,-.21,0),boot:new THREE.BoxGeometry(.11,.08,.27).translate(0,-.44,.05),
-   pelvis:new THREE.CylinderGeometry(.2,.21,.24,12),torso:new THREE.CapsuleGeometry(.19,.34,6,14).scale(1,1,.68),
-   neck:new THREE.CylinderGeometry(.055,.06,.12,8),head:new THREE.SphereGeometry(.115,16,12).scale(1,1.12,1.02),
-   hair:new THREE.SphereGeometry(.122,16,8,0,Math.PI*2,0,1.75).scale(1,1.1,1.04).rotateX(-.35),
-   sleeve:new THREE.CapsuleGeometry(.058,.2,4,8).translate(0,-.16,0),forearm:new THREE.CapsuleGeometry(.047,.2,4,8).translate(0,-.15,0),
-   hand:new THREE.SphereGeometry(.05,10,8).translate(0,-.3,0),glove:new THREE.SphereGeometry(.068,10,8).translate(0,-.31,0),
-   blob:new THREE.CircleGeometry(.62*SCALE,24),
-  };
+  this.parts=createPlayerParts();
  }
  // Sets a piece of the ground on one side, `distance` metres beyond the lines, facing the pitch; `along` shifts an end one towards the camera.
  place(object,side,distance,along=0){
@@ -350,40 +320,8 @@ export class Pitch3D{
   group.position.set(end-W/2,0,0);
   return group;
  }
- // A player: legs and arms hang from pivots at the hips, knees, shoulders and elbows, so that he can run, strike
- // the ball, jump and dive. His hair, boots and gloves are drawn from his id, so that he keeps them.
- figure(side,id,keeper){
-  const kit=this.replay.teams[side],parts=this.parts,random=seeded(hash(id)),pick=list=>list[Math.floor(random()*list.length)];
-  const shirt=this.material(keeper?kit.keeper:kit.major,.7),shorts=this.material(keeper?kit.keeper:kit.minor,.7),socks=shirt;
-  const skin=this.material(SKINS[hash(id)%SKINS.length],.65),boots=this.material(pick(BOOTS),.5),hair=random()<.1?null:this.material(pick(HAIR),.9);
-  const hands=keeper?this.material(pick(GLOVES),.6):skin;
-  const body=new THREE.Group();body.rotation.order='YXZ';
-  const mesh=(geometry,material,parent,shadow=true)=>{const node=new THREE.Mesh(geometry,material);node.castShadow=shadow;parent.add(node);return node;};
-  const pivot=(parent,x,y)=>{const node=new THREE.Group();node.position.set(x,y,0);parent.add(node);return node;};
-  const hips=[],knees=[],shoulders=[],elbows=[];
-  for(const x of [-.1,.1]){
-   const hip=pivot(body,x,.93),knee=pivot(hip,0,-.45);
-   mesh(parts.thigh,skin,hip);mesh(parts.shortsLeg,shorts,hip);mesh(parts.shin,socks,knee);mesh(parts.boot,boots,knee,false);
-   hips.push(hip);knees.push(knee);
-  }
-  for(const x of [-.245,.245]){
-   const shoulder=pivot(body,x,1.56),elbow=pivot(shoulder,0,-.3);
-   mesh(parts.sleeve,shirt,shoulder);mesh(parts.forearm,keeper?shirt:skin,elbow);mesh(keeper?parts.glove:parts.hand,hands,elbow,false);
-   shoulders.push(shoulder);elbows.push(elbow);
-  }
-  mesh(parts.pelvis,shorts,body).position.y=.95;
-  mesh(parts.torso,shirt,body).position.y=1.3;
-  mesh(parts.neck,skin,body,false).position.y=1.69;
-  mesh(parts.head,skin,body).position.y=1.83;
-  if(hair)mesh(parts.hair,hair,body,false).position.set(0,1.845,-.01);
-  body.scale.setScalar(SCALE);
-  const root=new THREE.Group();root.add(body);
-  const blob=new THREE.Mesh(parts.blob,this.blob);blob.rotation.x=-Math.PI/2;blob.position.y=.025;root.add(blob);
-  const name=label(this.replay.names.get(id)||'');root.add(name);
-  this.people.add(root);
-  return {root,body,hips,knees,shoulders,elbows,name,blob,keeper,foot:random()<.2?0:1,seed:random()*6,
-          phase:0,speed:0,ready:0,cheer:0,yaw:null,x:null,z:null,dive:null,hold:false};
- }
+ figure(side,id,keeper){return createPlayerFigure(this,side,id,keeper);}
+
  drop(key,figure){
   this.people.remove(figure.root);
   figure.name.material.map.dispose();figure.name.material.dispose();
@@ -400,9 +338,10 @@ export class Pitch3D{
   cancelAnimationFrame(this.frame);this.frame=null;
   this.resize.disconnect();
   for(const figure of this.figures.values())figure.name.material.map.dispose();
-  this.scene.traverse(node=>{node.geometry?.dispose();node.material?.dispose?.();});
-  for(const part of Object.values(this.parts))part.dispose();
-  for(const {material} of Object.values(this.fans))material.dispose();
+  const geometries=new Set(Object.values(this.parts)),materials=new Set(this.materials.values());
+  this.scene.traverse(node=>{if(node.geometry)geometries.add(node.geometry);if(node.material)materials.add(node.material);});
+  for(const geometry of geometries)geometry.dispose();
+  for(const material of materials)material.dispose();
   for(const texture of this.textures)texture.dispose();
   this.renderer.dispose();
   this.canvas.remove();
@@ -420,9 +359,9 @@ export class Pitch3D{
  update(dt){
   const replay=this.replay,stage=replay.stage,away=stage.classList.contains('fast')||stage.classList.contains('cut');
   // The replay's own clock: it runs faster during a chance, at the chosen speed, and stops on pause.
-  const time=replay.time||0,rdt=this.clock==null?0:clamp(time-this.clock,0,400);this.clock=time;
+  const time=replay.time||0,reset=time<this.clock||this.replayRun!==replay.run||this.wasAway&&!away;
+  const rdt=this.clock==null||reset?0:clamp(time-this.clock,0,400);this.clock=time;this.replayRun=replay.run;this.wasAway=away;
   const action=replay.action;
-  if(action!==this.action){this.begin(action);this.action=action;}
   const ballAt=replay.ballAt||{x:W/2,y:H/2},ball=toWorld(ballAt.x,ballAt.y);
   this.people.visible=this.ball.visible=this.ballShadow.visible=!away;
   const cheering=away?null:this.cheering(),holding=replay.carrier&&(!action||action.kind==='wait');
@@ -436,23 +375,29 @@ export class Pitch3D{
    seen.add(key);
    const carries=replay.carrier?.side===side&&replay.carrier.id===id;
    figure.hold=keeper&&carries&&holding;
-   this.pose(figure,toWorld(dot.x,dot.y),ball,rdt,cheering===side,dot.gesture,time);
+   if(reset){figure.dive=null;figure.yaw=null;}
+   if(keeper&&action?.keeper?.side===side&&action.keeper.id===id&&(action!==this.action||reset))this.begin(action);
+   this.pose(figure,toWorld(dot.x,dot.y),ball,rdt,cheering===side,dot.gestures||[dot.gesture].filter(Boolean),time,reset);
    figure.name.visible=dot.node.classList.contains('on');
    if(carries)carrier=figure;
   }
   for(const [key,figure] of this.figures)if(!seen.has(key))this.drop(key,figure);
+  this.action=action;
   this.placeBall(ball,carrier);
   this.ring.visible=!!carrier&&!away&&!carrier.hold;
   if(carrier)this.ring.position.set(carrier.x,.04,carrier.z);
-  for(const side of ['home','away']){const fans=this.fans[side];fans.material.map=fans.frames[cheering===side?1+Math.floor(this.last/170)%2:0];}
-  this.frameCamera(ball,away,dt);
+  for(const side of ['home','away']){const fans=this.fans[side];fans.material.map=fans.frames[cheering===side?1+Math.floor(time/170)%2:0];}
+  this.frameCamera(ball,away,reset||!this.cameraReady?10000:Math.min(64,rdt));this.cameraReady=true;
  }
  // A strike at goal: a keeper who has to reach the ball dives for it.
  begin(action){
   const keeper=action?.kind==='shot'&&action.keeperPoint&&action.keeperFrom&&action.keeper&&this.figures.get(`${action.keeper.side}:${action.keeper.id}`);
   if(!keeper)return;
   const from=toWorld(action.keeperFrom.x,action.keeperFrom.y),to=toWorld(action.keeperPoint.x,action.keeperPoint.y);
-  if(Math.hypot(to.x-from.x,to.z-from.z)>1.6)keeper.dive={action,amount:0,dx:to.x-from.x,dz:to.z-from.z};
+  const ball=this.replay.ballAt||action.target,yaw=keeper.yaw??Math.atan2(ball.x-action.keeperFrom.x,ball.y-action.keeperFrom.y);
+  const lateral=(to.x-from.x)*Math.cos(yaw)-(to.z-from.z)*Math.sin(yaw);
+  keeper.dive={start:action.t0,duration:action.duration*.92,distance:Math.abs(lateral),side:Math.sign(lateral)||1,
+   height:action.keeperHeight??.6,yaw};
  }
  // The goal banner is up: the side that scored celebrates, on the pitch and in the stands.
  cheering(){
@@ -464,114 +409,75 @@ export class Pitch3D{
  placeBall(ball,carrier){
   let height=(this.replay.ballZ||0)*SCALE,at={x:ball.x,z:ball.z};
   if(carrier?.hold){
-   // A keeper who caught it holds it to his chest.
-   const reach=.45*SCALE;at={x:carrier.x+Math.sin(carrier.yaw)*reach,z:carrier.z+Math.cos(carrier.yaw)*reach};height=1.05*SCALE+carrier.body.position.y-BALL;
+   // The caught ball follows both gloves, including during the landing and rise.
+   carrier.root.updateMatrixWorld(true);
+   const hands=carrier.wrists.map(wrist=>wrist.getWorldPosition(new THREE.Vector3()));
+   const centre=hands[0].add(hands[1]).multiplyScalar(.5);
+   at={x:centre.x,z:centre.z};height=Math.max(0,centre.y-BALL);
   }
   const previous=this.ball.position.clone(),position=new THREE.Vector3(at.x,BALL+height,at.z);
   // It rolls and spins with the ground it covers; a jump of the replay does not spin it.
   const step=Math.hypot(position.x-previous.x,position.z-previous.z);
   if(step>1e-4&&step<8)this.ball.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3((position.z-previous.z)/step,0,-(position.x-previous.x)/step),step/BALL));
   this.ball.position.copy(position);
-  this.ballShadow.position.set(at.x,.03,at.z);this.ballShadow.scale.setScalar(1/(1+height*.15));
+  this.ballShadow.position.set(at.x,.03,at.z);this.ballShadow.scale.setScalar(1+height*.12);
  }
- // Runs, turns, touches the ball, jumps and dives: his run from how far he moved in the replay's time since the last
- // frame, a touch from `gesture`, the moment and the way the 2D replay has the ball meet him.
- pose(figure,at,ball,rdt,cheer,gesture,time){
+ // Positions remain those of the replay; only the skeleton and its weight shift are animated.
+ pose(figure,at,ball,rdt,cheer,gestures,time,reset=false){
   let moved=figure.x==null?0:Math.hypot(at.x-figure.x,at.z-figure.z);
-  // The replay cut to a new scene: he is simply there.
-  if(moved>6){moved=0;figure.speed=0;figure.yaw=null;}
+  if(reset||moved>6){moved=0;figure.speed=0;figure.acceleration=0;figure.course=null;figure.yaw=null;if(!reset)figure.dive=null;figure.ready=0;figure.cheer=0;figure.phase=figure.style.phase;}
   const course=moved>1e-4?Math.atan2(at.x-figure.x,at.z-figure.z):null;
-  figure.x=at.x;figure.z=at.z;
-  figure.root.position.set(at.x,0,at.z);
-  // While the replay is paused everyone holds his pose.
+  figure.x=at.x;figure.z=at.z;figure.root.position.set(at.x,0,at.z);
   if(!rdt&&figure.yaw!=null)return;
-  if(rdt)figure.speed+=(moved/rdt*1000-figure.speed)*(1-Math.exp(-rdt/80));
-  const speed=figure.speed,running=speed>JOG&&course!=null;
-  const shape=gesture&&GESTURES[gesture.kind],g=shape?(time-gesture.at+shape.lead)/shape.span:-1,touching=g>=0&&g<1;
-  const heading=running&&!figure.dive&&!touching&&!figure.hold?course:Math.atan2(ball.x-at.x,ball.z-at.z);
-  figure.yaw=figure.yaw==null?heading:turn(figure.yaw,heading,1-Math.exp(-rdt/(touching?60:running?110:240)));
-  // About one stride per 1.8 m; the swing grows with the pace.
-  figure.phase+=moved/1.8*Math.PI;
-  const pace=figure.hold?0:Math.min(.95,speed/9),s=Math.sin(figure.phase),c=Math.cos(figure.phase);
-  const hip=[0,0],knee=[0,0],shoulder=[0,0],spread=[.1,.1],elbow=[0,0];
-  let lift=Math.abs(c)*Math.min(.08,speed/110),lean=Math.min(.22,speed/60),roll=0;
-  for(const [leg,sign] of [[0,1],[1,-1]]){
-   hip[leg]=-pace*sign*s;
-   // The knee folds as the leg swings through, and stays almost straight while the foot is down.
-   knee[leg]=.08+pace*(1.5*Math.max(0,sign*c)+.25);
-   shoulder[leg]=pace*.9*sign*s;elbow[leg]=-(.25+pace*1.1);
+  const measured=rdt?Math.min(11,moved/rdt*1000):0,previousSpeed=figure.speed;
+  if(rdt){
+   figure.speed+=(measured-figure.speed)*(1-Math.exp(-rdt/100));
+   figure.acceleration+=(clamp((figure.speed-previousSpeed)*1000/rdt,-6,6)-figure.acceleration)*(1-Math.exp(-rdt/180));
+   if(course!=null)figure.course=figure.course==null?course:turn(figure.course,course,1-Math.exp(-rdt/65));
   }
-  const blend=(list,value,k)=>{for(const side of [0,1])list[side]=lerp(list[side],typeof value==='function'?value(side):value,k);};
-  if(figure.keeper){
-   // A keeper sets himself, knees bent and hands out, when the ball comes near.
-   const near=!running&&Math.hypot(ball.x-at.x,ball.z-at.z)<30?1:0;
-   figure.ready+=(near-figure.ready)*(1-Math.exp(-rdt/200));
-   const k=figure.ready;
-   blend(hip,-.35,k);blend(knee,.75,k);blend(spread,.55,k);blend(elbow,-.9,k);blend(shoulder,-.35,k);
-   lift-=.08*k;lean=lerp(lean,.2,k);
+  const speed=figure.speed,running=speed>JOG&&figure.course!=null,gesture=activeGesture(gestures,time);
+  const gaze=Math.atan2(ball.x-at.x,ball.z-at.z),target=gesture?.target;
+  // Commit to the pass/shot direction through contact instead of chasing the departing ball.
+  let heading=gesture&&target?Math.atan2(target.x-W/2-at.x,target.y-H/2-at.z):speed>.25&&figure.course!=null?figure.course:gaze;
+  if(figure.dive)heading=figure.dive.yaw;
+  const previousYaw=figure.yaw;
+  figure.yaw=previousYaw==null?heading:turn(previousYaw,heading,1-Math.exp(-rdt/(gesture?85:running?135:260)));
+  const angularSpeed=previousYaw==null||!rdt?0:angleDelta(previousYaw,figure.yaw)*1000/rdt;
+  figure.phase+=moved/strideLength(measured,figure.style)*Math.PI*2;
+  const near=figure.keeper&&!figure.hold&&!running&&Math.hypot(ball.x-at.x,ball.z-at.z)<32?1:0;
+  figure.ready+=(near-figure.ready)*(1-Math.exp(-rdt/220));
+  figure.cheer=clamp(figure.cheer+(cheer?rdt/300:-rdt/350),0,1);
+  if(figure.dive&&time>figure.dive.start+figure.dive.duration+1080)figure.dive=null;
+  const p=playerMotion({speed:figure.hold?0:speed,phase:figure.phase,time,seed:figure.seed,style:figure.style,acceleration:figure.acceleration,ready:figure.ready,
+   hold:figure.hold,gesture,foot:figure.foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive});
+  for(let side=0;side<2;side++){
+   figure.hips[side].rotation.set(p.hip[side],p.hipYaw[side],0);figure.knees[side].rotation.x=p.knee[side];
+   figure.ankles[side].rotation.x=p.ankle[side];
+   figure.shoulders[side].rotation.set(p.shoulder[side],0,(side?1:-1)*p.spread[side]);figure.elbows[side].rotation.x=p.elbow[side];
   }
-  if(figure.hold){blend(shoulder,-1.1,1);blend(elbow,-1,1);blend(spread,.2,1);}
-  if(touching){
-   const foot=figure.foot,kind=gesture.kind;
-   if(kind==='kick'||kind==='touch'||kind==='cushion'){
-    // Back, through the ball, then the follow-through and back to his stride: the harder the strike, the wider the swing.
-    const size=kind==='kick'?.55+.45*(gesture.strength??1):kind==='touch'?.38:.3;
-    const k=smooth(Math.min(1,g/.08))*(1-smooth(clamp((g-.6)/.4,0,1)));
-    const swing=(g<.28?lerp(.6,-1.15,smooth(g/.28)):lerp(-1.15,-.2,smooth((g-.28)/.72)))*size,bend=g<.28?lerp(1.2,.1,g/.28):lerp(.1,.4,(g-.28)/.72);
-    hip[foot]=lerp(hip[foot],swing,k);knee[foot]=lerp(knee[foot],bend*Math.max(.5,size),k);
-    hip[1-foot]=lerp(hip[1-foot],.15*size,k);knee[1-foot]=lerp(knee[1-foot],.25,k);
-    blend(spread,.1+.6*size,k);blend(shoulder,side=>side===foot?.4*size:-.5*size,k);
-    lean=lerp(lean,-.08*size,k);
-   }else{
-    // The ball meets him halfway through: on the raised thigh, on the chest as he leans back with his arms out,
-    // or on the head, up in the air to meet it if it is high, nodding through it.
-    const k=Math.sin(Math.PI*g);
-    if(kind==='thigh'){hip[foot]=lerp(hip[foot],-1.35,k);knee[foot]=lerp(knee[foot],1.6,k);blend(spread,.45,k);lean=lerp(lean,-.1,k);}
-    else if(kind==='chest'){lean=lerp(lean,-.32,k);blend(shoulder,-.5,k);blend(spread,1,k);blend(elbow,-.6,k);blend(knee,.35,k);}
-    else{
-     const jump=gesture.jump||0;
-     lift+=jump*SCALE*k;
-     blend(knee,jump?1.1:.3,k);blend(hip,jump?-.5:-.1,k);blend(shoulder,jump?-1.6:-.3,k);blend(spread,.5,k);blend(elbow,-.4,k);
-     lean=lerp(lean,lerp(-.18,.3,smooth(g)),k);
-    }
-   }
+  figure.body.rotation.set(0,figure.yaw,p.roll);
+  figure.spine.rotation.set(p.lean,p.twist,p.spineRoll);
+  figure.head.rotation.set(p.headPitch,(clamp(angleDelta(figure.yaw,gaze),-.65,.65)+p.headYaw)*(1-p.diveWeight),-p.spineRoll*.55);
+  figure.body.position.set(Math.cos(figure.yaw)*(p.shift+p.sway),p.lift,-Math.sin(figure.yaw)*(p.shift+p.sway));
+  if(figure.dive&&p.diveWeight>0){
+   // The skeleton reaches with its gloves: the replay dot already marks the
+   // interception, so leaving the feet there would send the hands past the ball.
+   figure.root.updateMatrixWorld(true);
+   const gloves=figure.wrists.map(wrist=>wrist.getWorldPosition(new THREE.Vector3()));
+   const centre=gloves[0].add(gloves[1]).multiplyScalar(.5),k=p.diveWeight;
+   figure.body.position.x+=(at.x-centre.x)*k;figure.body.position.z+=(at.z-centre.z)*k;
+   figure.body.position.y=Math.max(Math.min(.025,p.lift),figure.body.position.y+(BALL+figure.dive.height*SCALE-centre.y)*k);
   }
-  const dive=figure.dive;
-  if(dive){
-   const action=this.replay.action;
-   const flying=action===dive.action;
-   if(flying)dive.amount=smooth(clamp((this.replay.time-action.t0)/action.duration*1.7,0,1));
-   else dive.amount-=rdt/RECOVER_MS;
-   if(!flying&&dive.amount<=0)figure.dive=null;
-   else{
-    // Towards the side of the ball in his own frame, at full stretch, arms beyond his head.
-    const k=dive.amount,side=Math.sign(dive.dx*Math.cos(figure.yaw)-dive.dz*Math.sin(figure.yaw))||1;
-    roll=-side*1.15*k;lift+=.5*k;
-    blend(shoulder,-2.9,k);blend(spread,.15,k);blend(elbow,-.1,k);blend(knee,.15,k);blend(hip,-.1,k);lean=lerp(lean,0,k);
-   }
-  }
-  figure.cheer=clamp(figure.cheer+(cheer?rdt/250:-rdt/300),0,1);
-  if(figure.cheer>0){
-   const k=figure.cheer;
-   lift+=.25*Math.abs(Math.sin(this.clock*.012+figure.seed))*k;
-   blend(shoulder,-2.75,k);blend(spread,.35,k);blend(elbow,-.2,k);
-  }
-  for(const side of [0,1]){
-   figure.hips[side].rotation.x=hip[side];figure.knees[side].rotation.x=knee[side];
-   figure.shoulders[side].rotation.set(shoulder[side],0,(side?1:-1)*spread[side]);figure.elbows[side].rotation.x=elbow[side];
-  }
-  figure.body.rotation.set(lean,figure.yaw,roll);
-  figure.body.position.y=lift;
-  figure.name.position.y=2.75+Math.max(0,lift);
-  figure.blob.scale.setScalar(1/(1+Math.max(0,lift)*.6));
+  figure.name.position.y=2.75+Math.max(0,figure.body.position.y);
+  figure.blob.scale.set(1+Math.abs(p.roll)*.35,1/(1+Math.max(0,p.lift)*.5),1);
  }
  // The main camera: high in the stand on the near side, panning with the ball, wider while the clock runs.
  frameCamera(ball,wide,dt){
-  const target=wide?{x:0,z:0}:{x:clamp(ball.x,-34,34),z:ball.z*.4};
+  const target=wide?{x:0,z:0}:{x:clamp(ball.x,-40,40),z:ball.z*.48};
   const k=1-Math.exp(-dt/(wide?900:520));
   this.look.x=lerp(this.look.x,target.x,k);this.look.z=lerp(this.look.z,target.z,k);
-  const back=wide?84:50,up=wide?40:22;
+  const back=wide?84:39,up=wide?40:25;
   this.camera.position.set(this.look.x*.85,up,H/2+back-H/2*.3);
-  this.camera.lookAt(this.look.x,0,this.look.z);
+  this.camera.lookAt(this.look.x,.65,this.look.z);
  }
 }
