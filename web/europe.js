@@ -18,6 +18,7 @@ function knockoutStages(data){
  return stages;
 }
 
+// Clubs of several countries meet in a European cup: on each of its views, a club's name is followed by its country's flag.
 export async function europeScreen(code,section,params,competitions){
  const cups=competitions.filter(item=>item.kind==='europe').sort((a,b)=>a.code.localeCompare(b.code));
  if(!cups.length)return heading('Coupes d’Europe')+empty('Créez une nouvelle partie pour découvrir les trois compétitions.');
@@ -30,24 +31,24 @@ export async function europeScreen(code,section,params,competitions){
   // 36 clubs fit a screen as two tables of 18, the second one carrying on from the first.
   const halves=[data.standings.slice(0,18),data.standings.slice(18)];
   const legend='<span class="europe-legend"><span class="qualification-direct">1–8 : huitièmes directs</span><span class="qualification-playoff">9–24 : barrages</span><span>25–36 : élimination</span></span>';
-  content=card('Phase de ligue · 36 clubs',`<div class="europe-halves">${halves.map(items=>`<div>${standingsTable({items})}</div>`).join('')}</div>`,legend);
+  content=card('Phase de ligue · 36 clubs',`<div class="europe-halves">${halves.map(items=>`<div>${standingsTable({items,flags:true})}</div>`).join('')}</div>`,legend);
  }else if(section==='knockout'){
-  content=bracket(knockoutStages(data));
+  content=bracket(knockoutStages(data),{flags:true});
  }else if(section==='calendar'){
   const rounds=data.rounds.filter(round=>round.number<=data.league_rounds);
   const focus=rounds.some(round=>round.number===data.next_round)?data.next_round:
    rounds.some(round=>round.number===data.latest_round)?data.latest_round:rounds.find(round=>!round.complete)?.number||rounds.at(-1).number;
-  content=rounds.map(round=>`<details class="card cup-round" ${round.number===focus?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures(round):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
+  content=rounds.map(round=>`<details class="card cup-round" ${round.number===focus?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures({...round,flags:true}):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
  }else if(isRoundTab(section)){
-  content=roundContent(await api(`/competitions/${cup.id}/${roundPath(section)}?${year}`),section);
+  content=roundContent(await api(`/competitions/${cup.id}/${roundPath(section)}?${year}`),section,{flags:true});
  }else if(section==='stats'){
   const stats=await api(`/competitions/${cup.id}/statistiques?type=buteurs&${year}&page=${params.get('page')||1}`);
-  content=card(`Meilleurs buteurs · ${season(data.season)}`,table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]))+pager(stats));
+  content=card(`Meilleurs buteurs · ${season(data.season)}`,table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club,{flag:true}),n(row.value)]))+pager(stats));
  }else{
   const history=await api(`/competitions/${cup.id}/historique?page=${params.get('page')||1}`);
-  const winners=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[`<a href="#/europe/${cup.code}/knockout?saison=${row.season}">${season(row.season)}</a>`,clubLink(row.champion)]))+pager(history));
+  const winners=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[`<a href="#/europe/${cup.code}/knockout?saison=${row.season}">${season(row.season)}</a>`,clubLink(row.champion,{flag:true})]))+pager(history));
   const byNation=titlesCard('Titres par pays',countTitles(history.items,row=>row.nation,row=>nationBadge(row.nation,{full:true})));
-  const final=data.standings.length?card(`Classement de la phase de ligue · ${season(data.season)}`,standingsTable({items:data.standings},'figures')):'';
+  const final=data.standings.length?card(`Classement de la phase de ligue · ${season(data.season)}`,standingsTable({items:data.standings,flags:true},'figures')):'';
   content=`<div class="history-layout three"><div class="history-main">${winners}${byNation}</div><div class="history-leaders">${leadersCards(history.leaders)}</div><div class="history-archives">${final}</div></div>`;
  }
  // The cup's header: the other cups are stepped to from its band, the open tab and the season kept; its seasons from the

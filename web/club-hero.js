@@ -103,7 +103,7 @@ export function competitionHero(competition,{lead='',base,menu,section,tools=''}
  const won=competition.winner,named=won||competition.holder;
  return hero({colors:heroColors(competition.major_color,competition.minor_color,competition.ground_color),lead,name:competition.name,foot:tabs(base,menu,section,tools),
   mark:emblem?`<img class="club-hero-emblem" src="/emblems/${emblem}.png" alt="">`:disc,
-  tiles:named?tile(won?competition.kind==='league'?'Champion':'Vainqueur':'Tenant du titre',clubLink(named)):''});
+  tiles:named?tile(won?competition.kind==='league'?'Champion':'Vainqueur':'Tenant du titre',clubLink(named,{flag:competition.kind==='europe'})):''});
 }
 
 // A competition's band at the head of its column, on Sélections nationales: the band of its header, its emblem and its name,
@@ -121,10 +121,16 @@ const sideColors=team=>heroColors(team.major_color,team.minor_color)||PLAIN_SIDE
 
 // The header of a match is the two sides' headers in one band: the side at home on the left, the other on the right, each in
 // its colours with its sash, its crest (a selection's flag) and its name, a link to its page. The score stands on a tile
-// where they meet, over what settled a tie (the aggregate, the shoot-out). `foot` is what stands under the band.
-export function matchHero(match,foot=''){
+// where they meet, over what settled a tie (the aggregate, the shoot-out). `foot` is what stands under the band. `flags`
+// follows each club's name with the flag of its country, on the side of the score, a link to its selection when the game
+// has one (a European cup).
+export function matchHero(match,foot='',{flags=false}={}){
+ const country=team=>{
+  const flag=flags&&!team.national?nationFlag(team.nation):'';
+  return !flag?'':team.nation_id==null?`<span class="match-hero-flag">${flag}</span>`:`<a class="match-hero-flag" href="#/international/nation/${team.nation_id}">${flag}</a>`;
+ };
  const side=(team,away)=>`<div class="match-hero-side${away?' away':''}"${away?` style="${sideColors(team)}"`:''}><div class="crest club-hero-crest">${team.national?nationCrest(team):clubCrest(team)}</div>`
-  +`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a></div>`;
+  +`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a>${country(team)}</div>`;
  const settled=[match.aggregate?`Cumul ${match.aggregate.join(' – ')}`:'',match.penalties?`${match.penalties.join(' – ')} t.a.b.`:''].filter(Boolean).join(' · ');
  return `<header class="club-hero match-hero" style="${sideColors(match.home)}"><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i>`
   +`<span style="${sideColors(match.away)}"><i class="field"></i><i></i><i class="thin"></i></span></div>`

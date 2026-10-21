@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {europeScreen} from '../../web/europe.js';
-import {fixtures} from '../../web/ui.js';
+import {fixtures,standingsTable,setNations} from '../../web/ui.js';
 import {matchScreen} from '../../web/match.js';
 
 const cups=[{id:-101,code:'C1',name:'Ligue des champions',kind:'europe'},
@@ -78,4 +78,44 @@ test('European scorer request keeps the selected archived season',async()=>{
   await europeScreen('C4','stats',new URLSearchParams('saison=2025'),cups);
   assert.ok(urls.some(url=>url.includes('/-104/statistiques?')&&url.includes('saison=2025')));
  }finally{globalThis.fetch=previous;}
+});
+
+test('clubs of several countries meet in a European cup: on each of its views, a club’s name is followed by its country’s flag',async()=>{
+ const previous=globalThis.fetch;
+ setNations({ESP:{name:'Espagne',display_code:'ESP',flag:'es'},FRA:{name:'France',display_code:'FRA',flag:'fr'}});
+ const spanish={id:1,name:'Home',nation:'ESP'},french={id:2,name:'Away',nation:'FRA'};
+ const tie={...match,home:spanish,away:french};
+ const first={...tie,id:41,round:9,round_label:'Barrages · aller',home:french,away:spanish,score:[2,1],aggregate:null,penalties:null,winner_id:null,first_leg_id:null};
+ const league={...tie,id:5,round:1,round_label:'Phase de ligue · Journée 1',aggregate:null,penalties:null,winner_id:1,first_leg_id:null};
+ const european={...data,winner:french,standings:data.standings.map(row=>({...row,club:{...row.club,nation:'ESP'}})),
+  rounds:data.rounds.map(round=>round.number===1?{...round,items:[league]}:round.number===9?{...round,label:'Barrages · aller',items:[first]}:round.number===10?{...round,items:[tie]}:round)};
+ const scorer={id:7,name:'Buteur',club:spanish};
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.includes('/statistiques')?{items:[{...scorer,value:5}],total:1,page:1,page_size:30}
+  :url.includes('/historique')?{items:[{season:2024,champion:french,nation:'FRA'}],total:1,page:1,page_size:30,leaders:{matches:[],goals:[]}}
+  :url.includes('/journee/')?{round:{number:10,label:'Barrages · retour',date:'2026-02-25'},groups:[{name:null,matches:[tie],standings:null,top_scorers:[{...scorer,goals:5}]}]}
+  :european});
+ // The flag of a country, which is no link: its name is in its tooltip.
+ const flag=(name,code)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${code}.svg"[^>]*></span>`;
+ const spain=flag('Espagne','es'),france=flag('France','fr');
+ try{
+  // The table and the tile of the winner: the club after its dot, then its flag.
+  const table=await europeScreen('C1','table',new URLSearchParams(),cups);
+  assert.match(table,new RegExp(`<span class="strong"><span class="club-flag"><a href="#/club/1" class="club-link">Club 1</a>${spain}</span></span>`));
+  assert.match(table,new RegExp(`<span>Vainqueur</span><strong><span class="club-flag"><a href="#/club/2" class="club-link">Away</a>${france}</span></strong>`));
+  // Face to face, the side at home has it before its name, so that its dot keeps touching the score.
+  const calendar=await europeScreen('C1','calendar',new URLSearchParams(),cups);
+  assert.match(calendar,new RegExp(`<div class="fixture-side home won"><span class="club-flag">${spain}<a href="#/club/1" class="club-link reversed"><span>Home</span></a></span></div>`));
+  assert.match(calendar,new RegExp(`<div class="fixture-side away lost"><span class="club-flag"><a href="#/club/2" class="club-link">Away</a>${france}</span></div>`));
+  // The draw, the latest round and its scorers, the season's scorers, the winners and the archived table.
+  assert.match(await europeScreen('C1','knockout',new URLSearchParams(),cups),new RegExp(`<span class="bracket-club"><span class="club-flag"><a href="#/club/2" class="club-link">Away</a>${france}</span></span>`));
+  const round=await europeScreen('C1','latest',new URLSearchParams(),cups);
+  assert.match(round,new RegExp(`<div class="fixture-side home[^"]*"><span class="club-flag">${spain}`));
+  assert.match(round,new RegExp(`<a href="#/player/7">Buteur</a></td><td[^>]*><span class="club-flag"><a href="#/club/1" class="club-link">Home</a>${spain}`));
+  assert.match(await europeScreen('C1','stats',new URLSearchParams(),cups),new RegExp(`<span class="club-flag"><a href="#/club/1" class="club-link">Home</a>${spain}`));
+  const history=await europeScreen('C1','history',new URLSearchParams(),cups);
+  assert.match(history,new RegExp(`2024 / 2025</a></td><td[^>]*><span class="club-flag"><a href="#/club/2" class="club-link">Away</a>${france}`));
+  assert.match(history,new RegExp(`<span class="club-flag"><a href="#/club/36" class="club-link">Club 36</a>${spain}`));
+  // Elsewhere, a club carries its country without writing it.
+  assert.doesNotMatch(standingsTable({items:european.standings})+fixtures({items:[tie]}),/club-flag|class="flag"/);
+ }finally{globalThis.fetch=previous;setNations({});}
 });

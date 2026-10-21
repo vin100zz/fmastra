@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {matchHero} from '../../web/club-hero.js';
 import {matchScreen} from '../../web/match.js';
-import {setNations,setFoldOpen} from '../../web/ui.js';
+import {setNations,setFoldOpen,setCompetitions} from '../../web/ui.js';
 
 const home={id:1,name:'Real <Madrid>',major_color:'#F8F8F8',minor_color:'#F8C028'},away={id:2,name:'Marseille',major_color:'#F8F8F8',minor_color:'#2098C8'};
 
@@ -65,6 +65,23 @@ test('the band has no bar: the match’s line, over the highlights, says which m
  assert.match(coming,/<strong class="big-score">VS<\/strong>/);
  assert.match(coming,/<\/header><div class="page-heading match-line"><div class="match-facts">[^]*?<\/div><\/div><section class="card">/);
  assert.doesNotMatch(coming,/class="tools"/);
+});
+
+test('in a European cup, each club’s country follows its name in the band, on the side of the score; the line does not repeat it',async()=>{
+ setNations({ESP:{name:'Espagne',display_code:'ESP',flag:'es'},FRA:{name:'France',display_code:'FRA',flag:'fr'}});
+ setCompetitions([{id:5,name:'Ligue des champions',kind:'europe',code:'C1'}]);
+ try{
+  const european={...report,home:{...home,nation:'ESP',nation_id:-1003},away:{...away,nation:'FRA',nation_id:null}};
+  const html=await screen(european);
+  // The flag leads to the selection of its country; the away side, drawn from the right, has it on the side of the score too.
+  assert.match(html,/<a class="match-hero-name" href="#\/club\/1">Real &lt;Madrid&gt;<\/a><a class="match-hero-flag" href="#\/international\/nation\/-1003"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"[^>]*><\/span><\/a><\/div>/);
+  // A country without a selection keeps its flag, which leads nowhere.
+  assert.match(html,/<a class="match-hero-name" href="#\/club\/2">Marseille<\/a><span class="match-hero-flag"><span class="nation" title="France"><img class="flag" src="\/flags\/fr\.svg"[^>]*><\/span><\/span><\/div>/);
+  assert.match(html,/<span>Vainqueur : <a href="#\/club\/1" class="club-link">[^]*?Real &lt;Madrid&gt;<\/a><\/span>/);
+  // Elsewhere, a club's country is not written.
+  setCompetitions([{id:5,name:'Ligue 1',kind:'league',nation:'FRA',level:1}]);
+  assert.doesNotMatch(await screen({...european,competition:'Ligue 1'}),/match-hero-flag|club-flag/);
+ }finally{setNations({});setCompetitions([]);}
 });
 
 test('each side is named once, in the band: the line-ups have no heading, nothing names the sides over the cards',async()=>{

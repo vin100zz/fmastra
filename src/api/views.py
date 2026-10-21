@@ -80,9 +80,10 @@ def season_steps(seasons, selected: int, current: int | None = None) -> dict:
 
 
 def club_ref(world: World, club_id: int | None) -> dict | None:
+    """A club where a page names it: its name, its colours, and its country, whose flag follows it in a European cup."""
     club = world.clubs.get(club_id)
     return {"id": club.id, "name": club.name, "major_color": club.home_kit_major_color,
-            "minor_color": club.home_kit_minor_color} if club else None
+            "minor_color": club.home_kit_minor_color, "nation": club.nation} if club else None
 
 
 def selection_id(world: World, nation: str | None) -> int | None:
@@ -741,6 +742,10 @@ def match_detail(world: World, match: Match) -> dict:
         from .nations import kit_colors
         for side in ("home", "away"):
             data[side] = {**data[side], **kit_colors(data[side]["name"])}
+    else:
+        # The flag that follows a club's name in the band leads to its country's selection.
+        for side in ("home", "away"):
+            if data[side]: data[side] = {**data[side], "nation_id": selection_id(world, data[side]["nation"])}
     result = match.result
     if result is None:
         data["result"] = None
