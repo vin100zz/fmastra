@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubHero,nationHero,competitionHero,heroColors} from '../../web/club-hero.js';
+import {clubHero,creationHero,nationHero,competitionHero,heroColors} from '../../web/club-hero.js';
 import {setNations} from '../../web/ui.js';
 
 const vars=style=>Object.fromEntries(style.split(';').filter(Boolean).map(item=>item.split(':')));
@@ -69,6 +69,21 @@ test('the steps of a band take its second colour where it reads on the band, els
 const club={id:7,name:'Lens <RC>',nation_code:'FRA',nation_id:-1001,competition_id:16,competition:'Ligue 1',capacity:38223,formation:'4-3-3',training_facilities:16,youth_recruitment:13,
  reputation:73.1,reputation_change:1.2,major_color:'#F8D000',minor_color:'#E00000'};
 const menu=[['squad','Effectif'],['calendar','Calendrier'],['history','Historique']];
+
+test('club headers show home and away outfits beside the crest, including before creation',()=>{
+ const dressed={...club,kit_url:'/kits/3/outfit.png?major=F8D000&minor=E00000',away_kit_url:'/kits/11/outfit.png?major=080808&minor=006030'};
+ for(const html of [clubHero(dressed,{menu,section:'squad'}),creationHero(dressed)]){
+  assert.equal((html.match(/class="club-hero-kit"/g)||[]).length,2);
+  assert.ok(html.indexOf('/kits/3/')<html.indexOf('/kits/11/'));
+  assert.match(html,/src="\/kits\/3\/outfit.png\?major=F8D000&amp;minor=E00000"/);
+  assert.match(html,/Lens &lt;RC&gt;" width="48" height="80"/);
+  assert.match(html,/target="_blank" rel="noopener" title="Domicile"/);
+  assert.match(html,/class="crest-logo"[^>]*><\/div><div class="club-hero-kits">/);
+ }
+ assert.equal((creationHero({...dressed,away_kit_url:null}).match(/class="club-hero-kit"/g)||[]).length,1);
+ assert.doesNotMatch(clubHero(club,{menu,section:'squad'}),/class="club-hero-kit"/);
+ assert.doesNotMatch(nationHero({...dressed,nation:'FRA'},{menu,section:'squad'}),/class="club-hero-kit"/);
+});
 
 test('the header names the club and its league after it, then its tactic, its training, its youth recruitment and its reputation',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'}});

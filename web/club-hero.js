@@ -36,6 +36,10 @@ const split=columns=>`<div class="club-hero-tile split">${columns}</div>`;
 const signed=value=>value>0?`+${n(value)}`:value<0?`−${n(-value)}`:'0';
 // What fills the disc of a club: its initials, under its crest when the game has one.
 const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()">`;
+const clubKit=club=>{
+ const outfits=[['Domicile',club.kit_url],['Extérieur',club.away_kit_url]].filter(([,url])=>url);
+ return outfits.length?`<div class="club-hero-kits">${outfits.map(([label,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}" aria-label="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}"><img class="club-hero-kit" src="${e(url)}" alt="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}" width="48" height="80"></a>`).join('')}</div>`:'';
+};
 // What fills the disc of a selection: its initials, under its flag when it has one.
 const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`;};
 
@@ -43,9 +47,9 @@ const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(
 // `lead` steps between peers, `crest` fills the disc (`mark` is what stands in the disc's place when it is not one),
 // `before` is what precedes the `name` on its line, as large (a player's number), `after` what follows it, smaller (nothing
 // stands over the name), `tiles` the figures on the right, `foot` what stands under the band.
-function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',name,before='',after='',tiles,foot}){
+function hero({colors,lead,crest,mark=crest?`<div class="crest club-hero-crest">${crest}</div>`:'',kit='',name,before='',after='',tiles,foot}){
  return `<header class="club-hero${colors?'':' plain'}"${colors?` style="${colors}"`:''}><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div>`
-  +`<div class="club-hero-main">${lead}${mark}`
+  +`<div class="club-hero-main">${lead}${mark}${kit}`
   +`<div class="club-hero-identity"><div class="club-hero-name">${before}<h1>${e(name)}</h1>${after}</div></div>`
   +`<div class="club-hero-tiles">${tiles}</div></div></div>${foot}</header>`;
 }
@@ -71,7 +75,7 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
  const after=club.competition_id==null?context(`${flag}${e(club.nation||'')}`,selection)
   :context(`${flag&&selection?`<a href="${selection}">${flag}</a>`:flag}<a href="#/league/${club.competition_id}">${e(club.competition)}</a>`);
  return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section,tools),
-  crest:clubCrest(club),after,
+  crest:clubCrest(club),kit:clubKit(club),after,
   tiles:`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities))}`
    +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes')}${tile('Réputation',club.reputation==null?'—':n(club.reputation),change)}`});
 }
@@ -79,7 +83,7 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
 // The band of a club before a game is made with it (« Nouvelle partie »): its colours, its crest, its name, its country's
 // flag and its league after it; no link, no tile, no tab: the screen sets its figures under it.
 export function creationHero(club){
- return hero({colors:heroColors(club.major_color,club.minor_color),lead:'',name:club.name,foot:'',crest:clubCrest(club),
+ return hero({colors:heroColors(club.major_color,club.minor_color),lead:'',name:club.name,foot:'',crest:clubCrest(club),kit:clubKit(club),
   after:context(`${nationFlag(club.nation_code,{link:false})}${e(club.competition)}`),tiles:''});
 }
 

@@ -430,6 +430,9 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
    next. A league or a national cup has the flag of its country on the disc, as its selection has. Its one tile names who
    won it or who holds its title, after the dot of its colours or its flag. */
 .hero-emblem{display:block;flex:none;width:72px;height:72px;object-fit:contain}
+.hero-kits{display:flex;align-items:center;gap:var(--s2);flex:none}
+.hero-kits>a{display:block}
+.hero-kit{display:block;flex:none;width:48px;height:80px;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 .hero .tile strong :is(.kit-dot,.flag){align-self:center}
 /* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
    of 16 with a line of 2.4 to the previous and to the next of the group, and between them three lines, of an icon's line,

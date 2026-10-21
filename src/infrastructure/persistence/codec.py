@@ -9,7 +9,7 @@ from typing import Any
 from core.config.model import Config
 from core.domain.date import Date
 from core.domain.players import Attributes, Contract, Discipline, Injury, Loan, Player, Position
-from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition
+from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition, KIT_COMPONENT_FIELDS
 from core.domain.matches import (Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats, SubmittedLineup,
                                  LiveOrder, LiveMatchRecord)
 from core.domain.world import World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot
@@ -77,6 +77,7 @@ def decode(value: Any) -> Any:
             for name in ("training_facilities", "youth_recruitment", "home_kit_id",
                         "home_kit_major_color", "home_kit_minor_color", "home_kit_third_color"):
                 value["fields"].setdefault(name, None)
+            for name in KIT_COMPONENT_FIELDS: value["fields"].setdefault(name, None)
             for name in ("loaned_ids", "borrowed_ids"): value["fields"].setdefault(name, [])
         if cls is Player:
             for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),

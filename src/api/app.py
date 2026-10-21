@@ -16,6 +16,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from infrastructure.persistence.store import SaveError
 from .service import GameService, CommandError
 from .routes import router
+from .kits import router as kit_router
 
 LOCAL_HOSTS = ["localhost", "127.0.0.1", "testserver", "[::1]"]
 
@@ -67,6 +68,7 @@ def create_app(root: Path | None = None, saves: Path | None = None, resume: bool
         return JSONResponse({"detail": str(exc)}, status_code=422)
 
     app.include_router(router(service))
+    app.include_router(kit_router)
     if (root / "web" / "clubs").exists(): app.mount("/crests", StaticFiles(directory=root / "web" / "clubs"), name="crests")
     if (root / "web").exists(): app.mount("/", StaticFiles(directory=root / "web", html=True), name="web")
     return app

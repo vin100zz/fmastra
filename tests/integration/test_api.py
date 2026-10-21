@@ -350,6 +350,13 @@ def test_views_pagination_and_no_rng_leak(client):
     club_rows = client.get('/api/clubs').json()['items']
     assert all({'training_facilities', 'youth_recruitment'} <= row.keys() for row in club_rows)
     psg = client.get('/api/clubs/868').json()
+    kit = world.clubs[868]
+    assert (psg['kit_id'], psg['major_color'], psg['minor_color'], psg['third_color']) == (
+        kit.home_kit_id, kit.home_kit_major_color, kit.home_kit_minor_color, kit.home_kit_third_color)
+    assert client.get(psg['kit_url']).headers['content-type'] == 'image/png'
+    assert client.get(psg['away_kit_url']).headers['content-type'] == 'image/png'
+    assert '/kits/38/outfit.png?' in psg['away_kit_url']
+    assert 'shorts_major=F8F8F8' in psg['away_kit_url']
     assert (psg['training_facilities'], psg['youth_recruitment']) == (20, 19)
     # The selection of its country, where the flag of its header leads.
     assert world.international.nations[psg['nation_id']].code == psg['nation_code'] == 'FRA'

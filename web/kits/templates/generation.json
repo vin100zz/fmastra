@@ -1,0 +1,364 @@
+{
+  "tool": "image_gen (built-in)",
+  "base_model": "codex-clipboard-195711a9-443a-4c60-8cb0-50996e27e178.png",
+  "common_instructions": "Use case: precise-object-edit. Produce ONE individual football jersey RGB template. IMAGE 1 IS THE EDIT TARGET: keep exactly this white shirt's front view, outer silhouette, shape, proportions, sleeve shape, collar, seams, fabric texture, folds, illumination and framing. IMAGE 2 IS THE COLOR-REGION MAP: transfer its red, green and blue areas faithfully onto the corresponding anatomical areas of the white shirt. Match stripe/band count, relative widths, positions, direction, sleeve panels, thin pinlines and trim to IMAGE 2. Use primary RED #FF0000, GREEN #00FF00 and BLUE #0000FF; preserve realistic shaded fabric by varying intensity within those primary channels. Do not use the small mask's shape or low-resolution pixelation. Do not add or swap color zones. Do not arbitrarily make cuff trim blue if the mask shows another color there. Actual transparent background. Remove ALL detached speckles around the shirt, including above collar and below hem; clean softly antialiased silhouette, no halo. One shirt only, no text, numbering, logos, watermark, border, collage or extra objects. Preserve the white model's design and geometry.",
+  "templates": [
+    {
+      "id": 1,
+      "label": "Plain (same mask as 0)",
+      "pattern_reference": "reference/KIT_1.png"
+    },
+    {
+      "id": 2,
+      "label": "Contrasting sleeves",
+      "pattern_reference": "reference/KIT_2.png"
+    },
+    {
+      "id": 3,
+      "label": "Vertical stripes",
+      "pattern_reference": "reference/KIT_3.png"
+    },
+    {
+      "id": 4,
+      "label": "Horizontal hoops",
+      "pattern_reference": "reference/KIT_4.png"
+    },
+    {
+      "id": 5,
+      "label": "Vertical halves",
+      "pattern_reference": "reference/KIT_5.png"
+    },
+    {
+      "id": 6,
+      "label": "Quartered",
+      "pattern_reference": "reference/KIT_6.png"
+    },
+    {
+      "id": 7,
+      "label": "Checkerboard",
+      "pattern_reference": "reference/KIT_7.png"
+    },
+    {
+      "id": 8,
+      "label": "Diagonal sash /",
+      "pattern_reference": "reference/KIT_8.png"
+    },
+    {
+      "id": 9,
+      "label": "Wide centre panel",
+      "pattern_reference": "reference/KIT_9.png"
+    },
+    {
+      "id": 10,
+      "label": "Side panels",
+      "pattern_reference": "reference/KIT_10.png"
+    },
+    {
+      "id": 11,
+      "label": "Centre panel with sleeve trim",
+      "pattern_reference": "reference/KIT_11.png"
+    },
+    {
+      "id": 12,
+      "label": "Fine vertical stripes",
+      "pattern_reference": "reference/KIT_12.png"
+    },
+    {
+      "id": 13,
+      "label": "Two broad hoops",
+      "pattern_reference": "reference/KIT_13.png"
+    },
+    {
+      "id": 14,
+      "label": "Fine horizontal stripes",
+      "pattern_reference": "reference/KIT_14.png"
+    },
+    {
+      "id": 15,
+      "label": "Chest band",
+      "pattern_reference": "reference/KIT_15.png"
+    },
+    {
+      "id": 16,
+      "label": "Centre stripe",
+      "pattern_reference": "reference/KIT_16.png"
+    },
+    {
+      "id": 17,
+      "label": "Offset stripe, right",
+      "pattern_reference": "reference/KIT_17.png"
+    },
+    {
+      "id": 18,
+      "label": "Offset stripe, left",
+      "mirrored_from": 17
+    },
+    {
+      "id": 19,
+      "label": "Contrasting lower half",
+      "pattern_reference": "reference/KIT_19.png"
+    },
+    {
+      "id": 20,
+      "label": "Diagonal sash \\",
+      "mirrored_from": 8
+    },
+    {
+      "id": 21,
+      "label": "Two-colour upper chest band",
+      "pattern_reference": "reference/KIT_21.png"
+    },
+    {
+      "id": 22,
+      "label": "Two-colour stripe, right",
+      "pattern_reference": "reference/KIT_22.png"
+    },
+    {
+      "id": 23,
+      "label": "Two-colour stripe, left",
+      "pattern_reference": "reference/KIT_23.png"
+    },
+    {
+      "id": 24,
+      "label": "Three vertical panels",
+      "pattern_reference": "reference/KIT_24.png"
+    },
+    {
+      "id": 25,
+      "label": "Shoulder and sleeve trim",
+      "pattern_reference": "reference/KIT_25.png"
+    },
+    {
+      "id": 26,
+      "label": "Contrasting right sleeve",
+      "pattern_reference": "reference/KIT_26.png"
+    },
+    {
+      "id": 27,
+      "label": "Contrasting left sleeve",
+      "mirrored_from": 26
+    },
+    {
+      "id": 28,
+      "label": "Diagonal halves /",
+      "pattern_reference": "reference/KIT_28.png"
+    },
+    {
+      "id": 29,
+      "label": "Chest chevron",
+      "pattern_reference": "reference/KIT_29.png"
+    },
+    {
+      "id": 30,
+      "label": "Two-colour chest band",
+      "pattern_reference": "reference/KIT_30.png"
+    },
+    {
+      "id": 31,
+      "label": "Two thin stripes, right",
+      "pattern_reference": "reference/KIT_31.png"
+    },
+    {
+      "id": 32,
+      "label": "Two thin stripes, left",
+      "mirrored_from": 31
+    },
+    {
+      "id": 33,
+      "label": "Three-colour centre panel",
+      "pattern_reference": "reference/KIT_33.png"
+    },
+    {
+      "id": 34,
+      "label": "Shoulder yoke",
+      "pattern_reference": "reference/KIT_34.png"
+    },
+    {
+      "id": 35,
+      "label": "Collar triangle",
+      "pattern_reference": "reference/KIT_35.png"
+    },
+    {
+      "id": 36,
+      "label": "Underarm panels",
+      "pattern_reference": "reference/KIT_36.png"
+    },
+    {
+      "id": 37,
+      "label": "Striped body and sleeves",
+      "pattern_reference": "reference/KIT_37.png"
+    },
+    {
+      "id": 38,
+      "label": "Two-colour sash /",
+      "pattern_reference": "reference/KIT_38.png"
+    },
+    {
+      "id": 39,
+      "label": "Two-colour sash \\",
+      "mirrored_from": 38
+    },
+    {
+      "id": 40,
+      "label": "Two fine chevrons",
+      "pattern_reference": "reference/KIT_40.png"
+    },
+    {
+      "id": 41,
+      "label": "Three-colour vertical stripes",
+      "pattern_reference": "reference/KIT_41.png"
+    },
+    {
+      "id": 42,
+      "label": "Different-colour sleeves",
+      "pattern_reference": "reference/KIT_42.png"
+    },
+    {
+      "id": 43,
+      "label": "Diagonal halves \\",
+      "mirrored_from": 28
+    },
+    {
+      "id": 44,
+      "label": "Three-colour hoops",
+      "pattern_reference": "reference/KIT_44.png"
+    },
+    {
+      "id": 45,
+      "label": "Central cross",
+      "pattern_reference": "reference/KIT_45.png"
+    },
+    {
+      "id": 46,
+      "label": "Offset cross, right",
+      "pattern_reference": "reference/KIT_46.png"
+    },
+    {
+      "id": 47,
+      "label": "Offset cross, left",
+      "mirrored_from": 46
+    },
+    {
+      "id": 48,
+      "label": "Broad stripes with pinlines",
+      "pattern_reference": "reference/KIT_48.png"
+    },
+    {
+      "id": 49,
+      "label": "Broad hoops with pinlines",
+      "pattern_reference": "reference/KIT_49.png"
+    },
+    {
+      "id": 50,
+      "label": "Contrasting sleeves and yoke",
+      "pattern_reference": "reference/KIT_50.png"
+    },
+    {
+      "id": 51,
+      "label": "Hoops with pinlines",
+      "pattern_reference": "reference/KIT_51.png"
+    },
+    {
+      "id": 52,
+      "label": "Two-colour chevron",
+      "pattern_reference": "reference/KIT_52.png"
+    },
+    {
+      "id": 53,
+      "label": "Two-colour centre panels",
+      "pattern_reference": "reference/KIT_53.png"
+    },
+    {
+      "id": 54,
+      "label": "Chest band and lower panel",
+      "pattern_reference": "reference/KIT_54.png"
+    },
+    {
+      "id": 55,
+      "label": "Tonal vertical stripes with pinlines",
+      "pattern_reference": "reference/KIT_55.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": 7,
+      "instruction": "Continue the red/green checkerboard over both sleeves; keep blue collar and cuffs."
+    },
+    {
+      "id": 11,
+      "instruction": "Add narrow green trim along the outer edges of both red sleeves, as in the source mask."
+    },
+    {
+      "id": 25,
+      "instruction": "Precise correction of KIT_25. Image 1 is the jersey to edit. Image 2 is the exact RGB colour layout. The reference is an almost entirely RED jersey, with only a VERY THIN GREEN edging along the external shoulder/sleeve outline, from collar to cuff on both sides. Replace the wide green shoulder panels and green sleeve surfaces with RED. Retain only a narrow green stripe at the very outer top edge (about 1/30 of sleeve width). Sleeves must be red, not green. Preserve blue collar and blue sleeve cuffs, red torso, exact geometry, fabric, folds, seams, lighting and framing. Actual transparent background, remove detached speckles around the silhouette. Single jersey without text or added elements."
+    },
+    {
+      "id": 30,
+      "instruction": "Precise correction of KIT_30. Image 1 is the generated jersey to edit, image 2 is the exact RGB pattern map. Keep red jersey, blue collar and blue sleeve cuffs, front view geometry, fabric, shading, seams. CHEST PATTERN: the GREEN horizontal chest band and BLUE horizontal band must NOT TOUCH. Separate them by a thin RED horizontal gap, about one quarter of the green band's thickness, matching image2. Keep green band above, blue band below, each similar thickness. No other changes. Actual transparent background, clean detached speckles, no labels or extra elements."
+    },
+    {
+      "id": 41,
+      "instruction": "Correct KIT_41 using IMAGE 2 as the exact colour-region map. IMAGE 1 is jersey to edit: preserve its original shape, fabric, seams, shading and framing. Pattern must be broad alternating GREEN and RED vertical stripes, separated at EVERY boundary by a much NARROWER BLUE pinstripe (blue width around one quarter the width of a red or green stripe). Across the torso from viewer-left to right: GREEN, thin blue, RED, thin blue, GREEN, thin blue, RED centred, thin blue, GREEN, thin blue, RED, thin blue, GREEN. Continue this striped pattern onto sleeves matching source. The current two wide blue panels are WRONG; replace them with correct alternating broad red/green stripes and six thin blue separators across torso. Blue collar and blue cuffs. Actual transparent background, remove detached speckles, no text or extras."
+    },
+    {
+      "id": 42,
+      "instruction": "Precise correction to KIT_42. Image1 is the jersey to edit. Image2 is the source colour map. Change the entire round neck COLLAR band from RED to pure BLUE #0000FF with fabric shading. Keep red torso, viewer-left sleeve blue, viewer-right sleeve green, with their cuffs same colour as their respective sleeves. Remove any thin green/blue leakage down torso sides: torso is red. Otherwise preserve exactly shape, geometry, fabric, shading, folds, framing. Transparent background. Single shirt, no text or extra elements."
+    },
+    {
+      "id": 48,
+      "instruction": "Correct KIT_48, image 1 is edit target, image 2 is the exact source colour-region map. The source has ONLY RED and GREEN on the torso, with BLUE restricted to neck collar and sleeve cuffs. Remove all invented BLUE thin pinlines between the vertical red/green stripes on the torso. Red and green regions must meet directly with clean edges. Preserve their current positions/count/proportions, red sleeves, blue collar/cuffs, exact jersey silhouette, fabric, shading, seams and framing. Ignore the pattern title suggesting pinlines; the visible reference map is authoritative. Transparent background, no detached speckles, no extras."
+    },
+    {
+      "id": 49,
+      "instruction": "Correct KIT_49, image 1 is edit target, image 2 is the exact source colour-region map. The source has ONLY RED and GREEN on the torso, with BLUE restricted to neck collar and sleeve cuffs. Remove all invented BLUE thin pinlines between the horizontal red/green hoops on the torso. Red and green regions must meet directly with clean edges. Preserve their current positions/count/proportions, red sleeves, blue collar/cuffs, exact jersey silhouette, fabric, shading, seams and framing. Ignore the pattern title suggesting pinlines; the visible reference map is authoritative. Transparent background, no detached speckles, no extras."
+    },
+    {
+      "id": 54,
+      "instruction": "Precise correction KIT_54. Image1 is jersey to edit, image2 is authoritative source colour-region map. Only recolour both sleeve cuff bands from red to BLUE #0000FF to match the source. Preserve red upper chest and sleeves, green middle chest band, blue lower body and blue collar. Preserve exact original jersey shape, framing, seams, fabric texture, shading and folds. True transparent background. Remove detached speckles around the shirt; no other objects, text or logos."
+    },
+    {
+      "id": 55,
+      "instruction": "Precise correction KIT_55. Image1 is jersey to edit, image2 is authoritative source colour-region map. Replace the broad green vertical torso stripes with SIX very THIN GREEN vertical pinstripes on an otherwise RED torso. No green line at the exact centre: two innermost thin lines symmetrically bracket the centre, then two more each side, with outermost lines near torso edges. Green pinstripes only about one tenth the width of the red spaces between them. Sleeves remain red, collar and cuff bands blue. Match the thin pinstripe layout of image2; ignore the current broad green stripe pattern. Preserve exact original jersey shape, framing, seams, fabric texture, shading and folds. True transparent background. Remove detached speckles around the shirt; no other objects, text or logos."
+    },
+    {
+      "id": 44,
+      "instruction": "Precise pattern-count correction KIT_44. Image1 is jersey edit target, Image2 exact map. Preserve the white model's silhouette, fabric texture, folds, lighting, seams, collar shape and framing. Correct the torso band count: NINE GREEN horizontal zones on torso: one partial green yoke just below collar, then EIGHT full green hoops separated by EIGHT red hoops, ending green at the bottom. Continue thin red/green hoops onto sleeves. Blue only collar and cuffs. Match source image2. Transparent background, remove disconnected speckles, no text or additional objects."
+    },
+    {
+      "id": 49,
+      "instruction": "Precise pattern-count correction KIT_49. Image1 is jersey edit target, Image2 exact map. Preserve the white model's silhouette, fabric texture, folds, lighting, seams, collar shape and framing. Correct the torso band count: FIVE GREEN horizontal zones: one partial green shoulder yoke below collar, then FOUR full green hoops separated by FOUR red hoops, ending with green at the bottom. Current image has only THREE full green hoops below the yoke; add the missing fourth by making all torso bands proportionally narrower. Sleeves are plain RED. BLUE only collar and cuffs; no blue torso separators. Match source image2. Transparent background, remove disconnected speckles, no text or additional objects."
+    },
+    {
+      "id": 51,
+      "instruction": "Precise pattern-count correction KIT_51. Image1 is jersey edit target, Image2 exact map. Preserve the white model's silhouette, fabric texture, folds, lighting, seams, collar shape and framing. Correct the torso band count: FIVE GREEN horizontal zones on torso: one partial green yoke below collar, then FOUR full green hoops separated by FOUR red hoops, ending GREEN at the bottom. Each red/green boundary has a THIN BLUE horizontal separator around one quarter band width. Current image has only four green zones and ends red, which is wrong. Continue band pattern onto sleeves, collar and cuffs blue. Match source image2. Transparent background, remove disconnected speckles, no text or additional objects."
+    },
+    {
+      "id": 44,
+      "instruction": "Create KIT_44 by recolouring IMAGE1 white jersey using IMAGE2 reference mask. Keep exact white jersey silhouette, sleeves, collar, seams, fabric, shading and framing. ONLY red/green HORIZONTAL HOOPS over torso and sleeves, blue neck collar and cuff bands. Crucial exact torso pattern: NINE green horizontal bands total, with EIGHT red bands separating them. Top green band is partial at shoulders/collar, plus EIGHT full green bands below. Last band at bottom hem GREEN. Use sufficiently narrow bands to fit ALL EIGHT full green bands below the yoke. Do not reduce count to seven. The green bands should be centred roughly at normalized torso heights 0%,12%,24%,36%,48%,60%,72%,84%,96%. Torso heights are from collar base to bottom hem. Smooth fabric realistic texture, actual transparent background, no speckles, no text/logos."
+    },
+    {
+      "id": 51,
+      "instruction": "Recolour IMAGE1 white jersey exactly according to IMAGE2 KIT_51. Retain white shirt's exact shape, seams, fabric texture, lighting, framing. Torso horizontal bands top to bottom MUST be this sequence: GREEN / thin BLUE / RED / thin BLUE / GREEN / thin BLUE / RED / thin BLUE / GREEN / thin BLUE / RED / thin BLUE / GREEN / thin BLUE / RED / thin BLUE / GREEN. Five green zones and FOUR red zones, alternating, no adjacent greens. Top green zone is a partial yoke around collar. Other eight zones occupy remaining torso evenly down to the GREEN hem. Blue separators are thin, around one quarter red-band width. Continue horizontal stripe design onto sleeves. Blue collar, blue cuffs. Never omit the fourth red band near bottom. Actual transparent background, no detached speckles, no text/logos."
+    },
+    {
+      "id": 44,
+      "instruction": "Recolour the WHITE jersey of IMAGE1 with the much FINER horizontal hoop pattern in IMAGE2. Keep exact model silhouette, fabric, seams, shading, collar and framing. The shirt body is covered in MANY VERY NARROW alternating pure RED and pure GREEN horizontal hoops. Approximately TWENTY thin horizontal colour rows across the whole shirt height, NOT large broad rugby bands. Each individual red or green row about 55 pixels tall in this 1254-pixel image. A partial green yoke below blue collar; narrow repeated red/green rows down to green hem. Aim for nine green rows in the visible torso; absolutely avoid just six or seven wide green bands. Continue onto sleeves. Neck ring and cuffs pure blue. Transparent background. No lettering, no extra objects.",
+      "selected": false
+    },
+    {
+      "id": 44,
+      "instruction": "Keep this exact jersey and its red/green horizontal stripe design, but increase the HEIGHT OF EACH RED AND GREEN STRIPE by 50 percent so there are fewer, moderately wider stripes. The current image has about thirteen green stripes; the desired image has NINE green stripes. Keep jersey geometry, fabric shading, blue collar and blue cuffs identical. Keep green at the lower hem. Image2 shows the desired stripe density: match its moderately narrow hoops. Transparent background. No other changes.",
+      "selected": false
+    },
+    {
+      "id": 44,
+      "instruction": "Transfer the RGB pattern of IMAGE2 onto white shirt IMAGE1. Keep white jersey geometry, fabric, texture, seams and lighting. Fill torso from just below collar to bottom hem with SEVENTEEN equally sized horizontal colour rows, alternating green red green red green red green red green red green red green red green red green. Each row about 60px high. Thus nine green rows and eight red rows. Not broad rugby stripes, not ultra-thin pinstripes. Continue the same horizontal pattern onto sleeves. Blue collar and blue sleeve cuffs. Transparent background, no speckles, no text or other elements.",
+      "selected": true
+    },
+    {
+      "id": 44,
+      "instruction": "Edit IMAGE1 white shirt to faithfully match the horizontal red/green hoops of IMAGE2 while preserving its silhouette, fabric, shading and seams. Moderately narrow hoops: every red band and every green band about 60 PIXELS HIGH at final1254px resolution. Use this precise physical stripe thickness across the torso, from neckline down to hem; this fits about nine green horizontal rows and eight red horizontal rows. Regular repeating green/red, green at top and bottom, blue collar and cuffs. Extend hoops over sleeves. Real transparent background, clean outline, no text or objects.",
+      "selected": false
+    }
+  ]
+}

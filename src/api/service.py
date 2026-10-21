@@ -20,6 +20,7 @@ from core.world.steps import day_results, step_over, step_target
 from core.world.validation import validate_world
 from infrastructure.config.loader import configure_world, load_config, load_pyramids
 from infrastructure.importation.loader import import_world
+from infrastructure.importation.readers import enrich_kit_components
 from infrastructure.persistence.store import SaveStore, original_slot
 from .creation import Catalogue
 
@@ -185,6 +186,7 @@ class GameService:
                     self.store.save(world, slot)
                 else:  # nothing to write: the file loaded is the game
                     world, slot = self.store.load(payload["slot"]), original_slot(payload["slot"])
+                    enrich_kit_components(world.clubs.values(), self.root / "data" / "clubs.csv")
                 with self.lock:
                     self.world = world
                     self.slot = slot

@@ -10,6 +10,7 @@ from infrastructure.config.loader import configure_world, load_config, load_pyra
 from infrastructure.importation.loader import import_world
 from . import views as v
 from .nations import build_nation_table
+from .kits import kit_url
 
 # The best players a club shows before it is picked: those its level is the mean of.
 SQUAD = v.TOP_SQUAD
@@ -48,6 +49,7 @@ def build(root: Path) -> dict:
                           "order": order[nation], "reputation": round(club.reputation, 1), "capacity": club.capacity,
                           "training_facilities": club.training_facilities, "youth_recruitment": club.youth_recruitment,
                           "wage_cap": club.wage_cap, "major_color": club.home_kit_major_color, "minor_color": club.home_kit_minor_color,
+                          "third_color": club.home_kit_third_color, "kit_id": club.home_kit_id, "kit_url": kit_url(club), "away_kit_url": kit_url(club, "away"),
                           **v.squad_strength(world, club.id),
                           "squad": [{"name": player.name, "position": player.position, "age": player.born.age_on(world.date),
                                      "rating": player.rating, "potential": player.potential} for player in players]}

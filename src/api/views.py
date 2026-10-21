@@ -14,6 +14,7 @@ from core.engine.abilities import weighted_rating
 from core.world.calendar import standings
 from core.world.finances import financial_season
 from core.world.cups import ROUND_NAMES
+from .kits import kit_url
 
 
 def normalized(value: str) -> str:
@@ -472,7 +473,7 @@ def club_detail(world: World, club_id: int, standings: dict | None = None, reser
             "available_budget": max(0, club.transfer_budget - reserved.get(club.id, 0)),
             "wage_bill": club.wage_bill, "wage_cap": club.wage_cap,
             "major_color": club.home_kit_major_color, "minor_color": club.home_kit_minor_color,
-            "third_color": club.home_kit_third_color}
+            "third_color": club.home_kit_third_color, "kit_id": club.home_kit_id, "kit_url": kit_url(club), "away_kit_url": kit_url(club, "away")}
 
 
 def finance_summary(world: World, club_id: int) -> dict:

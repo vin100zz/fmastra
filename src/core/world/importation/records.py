@@ -19,6 +19,26 @@ class SourceClub:
     home_kit_third_color: str | None
     reputation: int | None = None
     is_reserve: bool = False
+    away_kit_id: int | None = None
+    away_kit_major_color: str | None = None
+    away_kit_minor_color: str | None = None
+    away_kit_third_color: str | None = None
+    home_shorts_id: int | None = None
+    home_shorts_major_color: str | None = None
+    home_shorts_minor_color: str | None = None
+    home_shorts_third_color: str | None = None
+    home_socks_id: int | None = None
+    home_socks_major_color: str | None = None
+    home_socks_minor_color: str | None = None
+    home_socks_third_color: str | None = None
+    away_shorts_id: int | None = None
+    away_shorts_major_color: str | None = None
+    away_shorts_minor_color: str | None = None
+    away_shorts_third_color: str | None = None
+    away_socks_id: int | None = None
+    away_socks_major_color: str | None = None
+    away_socks_minor_color: str | None = None
+    away_socks_third_color: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

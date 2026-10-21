@@ -345,6 +345,22 @@ Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
 
 ### Bandeau
 
+Le bandeau d'un club et celui du choix d'un club montrent les tenues complètes
+à domicile puis à l'extérieur entre l'écusson et le nom (`.hero-kits`,
+`.club-hero-kits` dans l'application). Chaque image transparente tient dans
+48 × 80, sans déformation ; l'écart est de 8. Le bandeau reste haut de 88.
+Une infobulle distingue Domicile et Extérieur ; un clic ouvre le PNG agrandi.
+La tenue extérieure est omise quand ses données sont absentes.
+
+Les 55 motifs de maillot reprennent les zones rouge, verte et bleue des templates.
+Short et chaussettes emploient chacun leur propre palette du CSV, appliquée
+aux deux modèles fournis (bordure du short et revers des chaussettes en vert).
+Les différents IDs de short et de chaussettes restent conservés dans les données ;
+il n'y a pour le moment qu'un modèle graphique pour chacun.
+Le tissu, ses ombres et son alpha sont conservés. Un motif de maillot inconnu
+utilise l'uni ; une pièce sans couleurs reprend la couleur principale du maillot.
+Sans palette de maillot, la tenue domicile est grise.
+
 La fiche d'un club, d'une sélection, d'un joueur, d'une compétition s'ouvre sur
 le même bandeau (`.hero`) : 88 de haut, aux couleurs du club, de la sélection ou
 de la compétition, le disque à gauche, les tuiles à droite. Tout nouvel en-tête

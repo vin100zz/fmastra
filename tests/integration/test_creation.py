@@ -55,6 +55,9 @@ def test_a_club_shows_its_figures_and_its_best_players_before_it_is_chosen(clien
     rennes = client.get("/api/creation/clubs", params={"nations": "FRA:1", "recherche": "rennes"}).json()["items"][0]
     club = client.get(f"/api/creation/clubs/{rennes['id']}").json()
     assert club["name"] == "Rennes" and club["competition"] == "Ligue 1" and club["wage_cap"] > 0
+    assert club["kit_id"] is not None and club["third_color"]
+    assert client.get(club["kit_url"]).headers["content-type"] == "image/png"
+    assert client.get(club["away_kit_url"]).headers["content-type"] == "image/png"
     assert len(club["squad"]) == 16 and club["top_rating"] == pytest.approx(sum(p["rating"] for p in club["squad"]) / 16, abs=.1)
     assert client.get("/api/creation/clubs/1").status_code == 404
 

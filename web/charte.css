@@ -334,6 +334,9 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
    the band, at its height, in a box as wide whatever the emblem: the name keeps its place from one competition to the
    next. A league or a national cup has the flag of its country on the disc, as its selection has. */
 .club-hero-emblem{flex:none;width:72px;height:72px;object-fit:contain}
+.club-hero-kits{display:flex;align-items:center;gap:var(--s2);flex:none}
+.club-hero-kits>a{display:block}
+.club-hero-kit{display:block;flex:none;width:48px;height:80px;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 /* Its one tile names who won it or who holds its title: a name written as the tile's figure, after its dot or its flag. */
 .club-hero-tile strong .nation{font:inherit;letter-spacing:0;text-transform:none;color:inherit}
 /* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
