@@ -82,7 +82,10 @@ def test_missing_source_columns_fall_back_to_the_previous_random_draw(config, so
 
 
 def test_imported_traits_stay_within_bounds_and_keep_the_calibrated_means(config, sources):
-    players = [create_player(row, config, 1, Date(2025, 7, 1), Counter()) for row in sources.values()]  # the CSV is sorted by level: only the whole population is unbiased
+    # The players a new world keeps: the export's many lower-league players, whom it leaves out, are less ambitious.
+    from infrastructure.importation.loader import import_world
+    world = import_world(ROOT / "data", config, 1)
+    players = [create_player(sources[pid], config, 1, Date(2025, 7, 1), Counter()) for pid in world.players if pid in sources]
     injuries, contracts, cards = config.states.injuries, config.management.contracts, config.engine.cards
     assert all(injuries.fragility_min <= p.fragility <= injuries.fragility_max for p in players)
     assert all(cards.aggression_min <= p.aggression <= cards.aggression_max for p in players)

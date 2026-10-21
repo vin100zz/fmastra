@@ -22,6 +22,7 @@ from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
+from core.world.shirts import number_squads
 from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
 from infrastructure.config.loader import config_fingerprint, config_payload, decode_config
@@ -31,10 +32,21 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 33
+SCHEMA_VERSION = 35
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Who a new world keeps from the source, tier by tier; a game already created is not concerned.
+    (34, ("import", "selection_effectifs"), {"paliers": {
+         "clubs_simules": {"joueurs": 30, "gardiens": 3, "espoirs": 3, "age_max_espoir": 21},
+         "vivier": {"joueurs": 11},
+         "vedettes": {"reputation_min": 60.0, "potentiel_min_pepite": 150, "age_max_pepite": 21},
+         "agents_libres": {"joueurs": 300},
+         "clubs_etrangers": {"joueurs": 15, "joueurs_min": 11, "clubs_par_place_europe": 2, "clubs_europe_min": 4,
+                             "clubs_europe_max": 12, "reputation_min": 60.0},
+         "coupe": {"clubs_par_nation": 96},
+         "plancher_nation": {"joueurs_min": 23, "joueurs_max": 110, "force_min": 25.0, "force_max": 80.0},
+         "plafond_hors_simules": 8000}}),
     # A loaded series slows recovery and raises the injury risk; an older save's players start with no load.
     (32, ("etats", "fatigue"), {"charge_perte_par_jour": 0.05, "charge_seuil": 3.5, "charge_ralentissement": 0.5}),
     (32, ("etats", "blessures"), {"facteur_charge": 0.5}),
@@ -321,6 +333,7 @@ class SaveStore:
             if version < 30: _forget_small_demands(world)
             if version < 31: _upgrade_fatigue(world)
             if version < 33: _date_international_windows(world)
+            if version < 35: number_squads(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)

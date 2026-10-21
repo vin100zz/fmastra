@@ -72,8 +72,9 @@ def qualify_europe(world: World, season: int, tables: dict[int, list[Standing]] 
                        if c.kind == "league" and c.level == 1 and c.nation == nation), None)
         if tables is not None and league is not None:
             ranked = [row.club_id for row in tables[league.id] if row.club_id in eligible]
-            cup = next(c for c in world.competitions.values() if c.kind == "cup" and c.nation == nation)
-            cup_winner = next(cid for year, cid in world.champions[cup.id] if year == season - 1)
+            # A country without a cup gives its cup place to its league, next in its table.
+            cup = next((c for c in world.competitions.values() if c.kind == "cup" and c.nation == nation), None)
+            cup_winner = next(cid for year, cid in world.champions[cup.id] if year == season - 1) if cup else None
             for index, winners in enumerate(league_places(ranked, cup_winner, quotas)):
                 if len(winners) != quotas[index]:
                     raise ValueError(f"{nation}: league cannot fill European quota")

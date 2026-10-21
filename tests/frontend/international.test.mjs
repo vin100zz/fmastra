@@ -119,7 +119,7 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
   const rows=html.split(/<div class="calendar-row(?=[ "])/).slice(1);
   assert.equal(rows.length,4);
   // The day with its year, the edition's badge, a qualifying round by its number; the selection's goals and scorers first.
-  assert.match(rows[0],/<span class="calendar-date">1 sept\. 2028<\/span><span class="competition-code international" title="Coupe du monde 2030">CM<\/span><span class="calendar-round" title="Qualifications · J1">J1<\/span><span class="calendar-venue"><\/span>/);
+  assert.match(rows[0],/<span class="calendar-date">1 sept\. 2028<\/span><a class="competition-code international" href="#\/international\/coupe-du-monde\?edition=2030" title="Coupe du monde 2030">CM<\/a><span class="calendar-round" title="Qualifications · J1">J1<\/span><span class="calendar-venue"><\/span>/);
   assert.match(rows[0],/<a href="#\/international\/nation\/-1002" class="club-link"><span class="nation"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"/);
   assert.match(rows[0],/<a class="calendar-score V" href="#\/match\/11" title="Victoire · Coupe du monde 2030 · Qualifications · J1 · Domicile">4–0<\/a><span class="calendar-scorers"><a href="#\/player\/12" title="Kylian Titulaire">Titulaire<\/a> 12’ 67’ · Renfort 81’<\/span><span class="calendar-scorers theirs"><\/span>/);
   assert.match(rows[1],/<span class="calendar-venue"><svg class="away"/);
@@ -133,8 +133,8 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
   assert.match(side,/NATION<.*PTS<.*>J<.*>V<.*>N<.*>D<.*BP<.*BC<.*DIFF\.</s);assert.match(side,/<tr class="promoted own"/);
   assert.ok(side.indexOf('Groupe D')<side.indexOf('<h2>Bilan</h2>'));
   assert.match(side,/COMPÉTITION<.*PLACE<.*>J<.*>V<.*>N<.*>D<.*BP<.*BC</s);
-  assert.match(side,/<span class="competition-code international" title="Coupe du monde 2030">CM<\/span><a class="strong" href="#\/international\/coupe-du-monde\/finals\?edition=2030">Coupe du monde 2030<\/a><\/td><td[^>]*>1er du groupe D<\/td><td[^>]*>2<\/td><td[^>]*>1<\/td><td[^>]*>1<\/td><td[^>]*>0<\/td><td[^>]*>5<\/td><td[^>]*>1<\/td>/);
-  assert.match(side,/>EU<\/span><a class="strong" href="#\/international\/euro\/finals\?edition=2028">Euro 2028<\/a><\/td><td[^>]*><span class="strong">✦ Vainqueur<\/span><\/td><td[^>]*>16<\/td>/);
+  assert.match(side,/<a class="competition-code international" href="#\/international\/coupe-du-monde\?edition=2030" title="Coupe du monde 2030">CM<\/a><a class="strong" href="#\/international\/coupe-du-monde\/finals\?edition=2030">Coupe du monde 2030<\/a><\/td><td[^>]*>1er du groupe D<\/td><td[^>]*>2<\/td><td[^>]*>1<\/td><td[^>]*>1<\/td><td[^>]*>0<\/td><td[^>]*>5<\/td><td[^>]*>1<\/td>/);
+  assert.match(side,/href="#\/international\/euro\?edition=2028" title="Euro 2028">EU<\/a><a class="strong" href="#\/international\/euro\/finals\?edition=2028">Euro 2028<\/a><\/td><td[^>]*><span class="strong">✦ Vainqueur<\/span><\/td><td[^>]*>16<\/td>/);
   assert.doesNotMatch(html,/Calendrier et résultats|fixture-date|undefined|null/);
   // The edition of the address goes to the server; anything else than a year is left out.
   asked.length=0;
@@ -399,7 +399,7 @@ test('Sélections nationales sets a column for each competition, then the nation
   assert.match(nations,/^<div class="segmented small" role="group" aria-label="Fédérations"><a class="active" href="#\/international">Toutes · 2<\/a><a class="" href="#\/international\?federation=Asie">Asie · 1<\/a><a class="" href="#\/international\?federation=Europe">Europe · 1<\/a><\/div>/);
   assert.match(nations,/NATION<.*FÉDÉRATION<.*FORCE \/ 100<.*<span title="Titres · Coupe du monde">CM<\/span>.*<span title="Titres · Euro">EU<\/span>.*<span title="Titres · Ligue des nations">LN<\/span>.*DERNIÈRE ÉDITION</s);
   assert.match(nations,/<i class="gauge"><i style="width:80%"><\/i><\/i>80<\/span><\/td><td data-value="1"><b>1<\/b><\/td><td data-value="2"><b>2<\/b><\/td><td data-value="0"><span class="muted">—<\/span><\/td>/);
-  assert.match(nations,/<span class="competition-code international" title="Euro 2028">EU<\/span>2028 · ✦ Vainqueur/);
+  assert.match(nations,/<a class="competition-code international" href="#\/international\/euro\?edition=2028" title="Euro 2028">EU<\/a>2028 · ✦ Vainqueur/);
   assert.match(nations,/Japon/);
   const filtered=await internationalScreen(undefined,undefined,undefined,new URLSearchParams('federation=Asie'));
   assert.match(filtered,/Japon/);

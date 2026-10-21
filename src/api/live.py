@@ -59,11 +59,12 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
 
     def lineup(initial, team) -> list[dict]:
         return [{"id": slot.player.id, "name": slot.player.name, "short": shorts[team.club_id].get(slot.player.id),
-                 "position": slot.position.value, "temporary": slot.player.id < 0} for slot in initial.slots]
+                 "position": slot.position.value, "shirt": slot.player.shirt, "temporary": slot.player.id < 0,
+                 **v.play_style(slot.player)} for slot in initial.slots]
 
     def bench(initial, team) -> list[dict]:
-        return [{"id": player.id, "name": player.name, "short": shorts[team.club_id].get(player.id), "temporary": player.id < 0}
-                for player in initial.bench]
+        return [{"id": player.id, "name": player.name, "short": shorts[team.club_id].get(player.id), "shirt": player.shirt,
+                 "temporary": player.id < 0, **v.play_style(player)} for player in initial.bench]
 
     shown = stored_events(live.log.events[:live.delivered]) if events is None else events
     team = live.teams[side]
@@ -91,11 +92,12 @@ def manager_view(world: World, live: LiveMatch, side: int, shorts: dict[int, str
     replaced = {event.player_id for event in live.log.events if event.kind == "substitution" and event.team_id == team.club_id}
     vacancies = [pid for pid in sorted(team.injured) if pid not in replaced][:max(0, live.vacancies(team))]
     return {"active": [{"id": slot.player.id, "name": slot.player.name, "short": shorts.get(slot.player.id), "position": slot.position.value,
-                        "natural": slot.player.position.value, "fitness": round(team.fitness[slot.player.id], 3), "yellows": team.individual[slot.player.id].yellows}
+                        "shirt": slot.player.shirt, "natural": slot.player.position.value, "fitness": round(team.fitness[slot.player.id], 3), "yellows": team.individual[slot.player.id].yellows}
                        for slot in team.active],
             "bench": [{"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": player.position.value,
-                       "fitness": round(team.fitness[player.id], 3)} for player in team.bench],
-            "vacancies": [{"id": pid, "name": team.players[pid].name, "short": shorts.get(pid), "position": team.players[pid].position.value}
+                       "shirt": player.shirt, "fitness": round(team.fitness[player.id], 3)} for player in team.bench],
+            "vacancies": [{"id": pid, "name": team.players[pid].name, "short": shorts.get(pid), "position": team.players[pid].position.value,
+                           "shirt": team.players[pid].shirt}
                           for pid in vacancies],
             "substitutions_left": rules.max_substitutions - team.substituted,
             "windows_left": rules.substitution_windows - team.windows,
@@ -114,7 +116,8 @@ def squad_strip(live: LiveMatch, side: int, shorts: dict[int, str]) -> list[dict
     def row(player, starter: bool) -> dict:
         stats = team.individual.get(player.id)
         played = stats is not None and player.id not in waiting
-        return {"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": player.position.value, "starter": starter,
+        return {"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": player.position.value,
+                "shirt": player.shirt, "starter": starter,
                 "state": "on" if player.id in playing else "bench" if player.id in waiting else "off",
                 "fitness": round(team.fitness.get(player.id, player.fitness), 3),
                 "rating": round(player_rating(team, live.teams[1 - side], player.id, live.cfg), 1) if played else None,

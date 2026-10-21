@@ -27,8 +27,10 @@ def promotion_event(world: World, tables: dict[int, list[Standing]]) -> Division
             if any(world.matches[mid].result is None for mid in league.match_ids):
                 raise ValueError(f"{league.name}: season is not complete")
         for upper, lower in zip(leagues, leagues[1:]):
+            # A reserve team never goes up to the first division: the next club of its table does.
+            climbers = [row for row in tables[lower.id] if upper.level > 1 or not world.clubs[row.club_id].is_reserve]
             moves.extend(ClubDivisionChanged(row.club_id, lower.id, upper.id, upper.id)
-                         for row in tables[lower.id][:count])
+                         for row in climbers[:count])
             moves.extend(ClubDivisionChanged(row.club_id, upper.id, lower.id, lower.id)
                          for row in tables[upper.id][-count:])
         bottom = leagues[-1]

@@ -124,6 +124,8 @@ class Player:
     # The condition his recent matches cost him, counted in full matches of an average player and fading by the day
     # (see `core.engine.fitness`): beyond a threshold he recovers more slowly and gets injured more easily.
     load: float = 0.0
+    # The number he wears at the club he plays for, his own in its squad (see `core.world.shirts`); None without a club.
+    shirt: int | None = None
 
     @property
     def nation(self) -> str:

@@ -52,8 +52,8 @@ défile dans sa carte.
 **Code couleur constant.** Gardien, défense, milieu, attaque gardent la même
 teinte dans toutes les listes : une pastille pleine, hors de l'échelle rouge-jaune-vert
 des notes. Sur un terrain, quel qu'il soit (composition, dernier onze, compte rendu,
-aptitudes, direct), les maillots prennent les couleurs du club et le poste s'y lit
-sur le maillot.
+aptitudes, direct), les maillots prennent les couleurs du club et le numéro du joueur
+s'y lit (son poste quand il n'en a pas ; sur ses aptitudes, le poste que montre chaque maillot).
 
 **Une seule façon de changer de saison.** Ce qui se lit par saison (par édition,
 pour les sélections) se parcourt partout avec le pas de saison de la charte : une
@@ -214,7 +214,9 @@ convoqués, les fins de contrat, les jeunes promus. Un joueur seul tient dans le
 | Bilan du mercato (le lendemain de sa fermeture) | Les principaux transferts de la fenêtre, dans la division du club (un joueur arrivé dans un de ses clubs ou parti de l'un d'eux) puis dans le monde : les 5 plus grosses indemnités, puis les 3 joueurs libres du plus haut niveau. Par ligne : le joueur, le club quitté → le club rejoint, l'indemnité ; un joueur libre vient de « Libre » et porte sa pastille de niveau à la place du montant |
 | Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
 | Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
-| Les autres (transfert, prêt, offre refusée, promotion, trophée…) | Une phrase, ses noms en liens |
+| Changements de numéro (1er juillet) | « Lago change de numéro », « 3 changements de numéro » ; une ligne par joueur : le maillot du club au numéro qu'il quitte, voilé, → celui au numéro qu'il prend (charte, « Terrain et maillot ») |
+| Arrivée d'un joueur (transfert, prêt, retour de prêt, jeune promu au centre de formation) | La phrase, sans numéro (« Haaland rejoint Marseille ») ; dessous, « Numéro » et le maillot du club au numéro qu'il prend. Plusieurs jeunes promus : une ligne par joueur, avec son maillot |
+| Les autres (transfert sortant, offre refusée, promotion, trophée…) | Une phrase, ses noms en liens |
 
 Le fil ne raconte pas les résultats des matches : ils se lisent dans « Derniers matches » et le calendrier.
 
@@ -364,7 +366,7 @@ qu'il résume :
 | Widget | Contenu | Lien |
 |---|---|---|
 | Calendrier | le même bloc qu'Actualités : 5 derniers matches (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne), puis 3 prochains, sans intertitres | onglet Calendrier |
-| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur un terrain à l'horizontale qui attaque vers la droite (latéral gauche en haut), noms réduits au nom court (charte, « Joueurs ») sur un bloc d'une ligne, maillots au corps de la couleur principale et aux manches et au col de la seconde, le poste écrit dessus, sans note | compte rendu du match |
+| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur un terrain à l'horizontale qui attaque vers la droite (latéral gauche en haut), noms réduits au nom court (charte, « Joueurs ») sur un bloc d'une ligne, maillots au corps de la couleur principale et aux manches et au col de la seconde, le numéro que le joueur portait ce jour-là écrit dessus, sans note | compte rendu du match |
 | Championnat | « Ligue 1 – 18e journée » : cinq lignes du classement autour du club, avec les points puis la différence de buts | page de la compétition |
 | Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 
@@ -524,8 +526,8 @@ dans l'adresse) : par défaut celle de son prochain match, sinon la dernière qu
 
 | Onglet | Contenu |
 |---|---|
-| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche ; à droite, quatre tuiles : meilleure attaque, meilleure défense, meilleur buteur et meilleur passeur. Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
-| Calendrier | une journée à la fois : une pastille par journée au-dessus (la journée affichée allumée, une flèche de chaque côté), puis les matches de la journée en deux colonnes, chacun avec ses buteurs et leurs minutes, la date en tête ; à droite, le classement réduit (#, points, J, différence) et les 5 meilleurs buteurs |
+| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche, le rang d'une place européenne à la couleur de sa coupe et la légende des coupes dans l'en-tête de la carte (charte, « Classement ») ; à droite, quatre tuiles : meilleure attaque, meilleure défense, meilleur buteur et meilleur passeur. Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
+| Calendrier | une journée à la fois : une pastille par journée au-dessus (la journée affichée allumée, une flèche de chaque côté), puis les matches de la journée en deux colonnes, chacun avec ses buteurs et leurs minutes, la date en tête ; à droite, le classement réduit (#, points, J, différence), les codes des coupes d'Europe en légende, et les 5 meilleurs buteurs |
 | Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement et des 10 meilleurs buteurs |
 | Prochains matches | la prochaine journée ou le prochain tour, à côté du classement et des 10 meilleurs buteurs |
 | Statistiques | les cinq classements (meilleurs buteurs, passeurs, meilleures notes moyennes, cartons, clean sheets) côte à côte, 10 lignes chacun ; « Voir tout » ouvre la liste complète et paginée du classement, avec un menu pour passer de l'un à l'autre ou revenir aux cinq |
@@ -664,7 +666,8 @@ Le lien **Palmarès** du menu de gauche (`#/honours`) réunit sur une page les v
 de toutes les compétitions, sur toutes les saisons archivées, dans un seul tableau : une
 ligne par compétition, une colonne par saison. Les lignes vont par groupe, nommé une fois
 à leur gauche : d'abord les trois coupes d'Europe (C1, C3, C4), puis chaque pays dans
-l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne), ses divisions de la D1
+l'ordre du menu (France, Angleterre, Espagne, Italie, Allemagne, Pays-Bas, Portugal, Belgique,
+Turquie), ses divisions de la D1
 vers le bas puis sa coupe nationale. Une ligne donne la pastille de la compétition (celle de
 la charte : C1, L1, D2, CF), son nom, qui ouvre son historique, son meilleur buteur de tous les temps avec ses
 buts, puis la saison en cours, en gris : le leader d'un championnat et le nombre de
@@ -782,15 +785,15 @@ son nom, sa courbe et sa carrière.
 
 | Bloc | Contenu |
 |---|---|
-| En-tête · bandeau | aux couleurs du club du joueur, son écusson sur le disque (bandeau neutre, sans disque, pour un joueur libre). À gauche du disque, le bloc de navigation dans l'effectif. Le nom du joueur, puis son club à sa suite, plus petit, lien vers sa fiche (« Libre » sans club). Ni ligne au-dessus du nom, ni poste : les postes se lisent sur le terrain. À droite, six tuiles : âge (date de naissance en infobulle) ; sélection ; niveau et potentiel exacts sur 200, colorés comme les badges ; valeur de marché ; prix demandé (« N/A » pour un joueur intransférable ou libre, la raison en infobulle) |
-| En-tête · sélection | une tuile de trois colonnes : le drapeau de sa nation principale au-dessus de son code de trois lettres (celle de sa sélection, lien vers elle ; à défaut la première de ses nationalités), « Sél. » et son total, « Buts » dès qu'il a marqué. Le nom du pays n'est jamais écrit : il est en infobulle du drapeau |
+| En-tête · bandeau | aux couleurs du club du joueur, son écusson sur le disque (bandeau neutre, sans disque, pour un joueur libre). À gauche du disque, le bloc de navigation dans l'effectif. Son numéro de maillot, à la taille du nom et voilé (charte, « En-tête d'un joueur »), puis le nom du joueur, puis son club à sa suite, plus petit, lien vers sa fiche (« Libre » sans club). Ni ligne au-dessus du nom, ni poste : les postes se lisent sur le terrain. À droite, quatre tuiles : âge (date de naissance en infobulle) ; sélection ; niveau et potentiel exacts sur 200, deux colonnes d'une tuile colorées comme les badges ; valeur de marché et prix demandé, deux colonnes d'une tuile (prix « N/A » pour un joueur intransférable ou libre, la raison en infobulle) |
+| En-tête · sélection | une tuile de trois colonnes : le drapeau de sa nation principale au-dessus de son code de trois lettres (celle de sa sélection, à défaut la première de ses nationalités ; lien vers la sélection du pays quand le jeu en a une), « Sél. » et son total, « Buts » dès qu'il a marqué. Le nom du pays n'est jamais écrit : il est en infobulle du drapeau |
 | En-tête · barre | sous le bandeau, à la place des onglets d'un club : à gauche les pastilles, à droite les boutons, par groupes (voir plus bas). Absente sans club dirigé |
 | Colonne · État | condition, forme et moral, chacun avec une barre et sa valeur. La barre de la forme part de son milieu, entre les bornes de la configuration (`form_bounds` de la fiche) : verte vers la droite au-dessus de 1, rouge vers la gauche en dessous, vide entre −2 % et +2 % ; la valeur est l'effet signé, comme dans les listes (1,09 se lit « +9 % »). La barre du moral prend la couleur de son niveau ; devant elle, l'icône de ce qui le retient le plus (€ salaire, ◷ temps de jeu, ★ club en dessous de son niveau, ⊘ départ refusé), dès que le serveur nomme une cause (`morale_cause` de la fiche, même calcul que la liste de l'effectif), avec la cause en infobulle ; l'infobulle de la ligne donne la cible et la satisfaction pour le salaire et le temps de jeu. Puis la blessure (« Disponible » ou la date de retour), le total des cartons jaunes (détail par compétition en infobulle), une ligne par suspension en cours, avec sa compétition, et, pour un joueur qui en a, une ligne « Autre nationalité » (« Autres nationalités ») : le drapeau puis le code de trois lettres de chacune |
 | Colonne · Contrat | sous un bandeau de titre, dans la même carte : salaire mensuel, fin du contrat, et pour le joueur d'un autre club ses prétentions (le salaire qu'il demande pour rejoindre le club dirigé) |
 | Attributs | chaque section sous un bandeau de titre, ses attributs sur trois colonnes, moins quand la largeur du bloc ne suffit pas au nom le plus long de la section et à son badge (charte, « Attributs »). En tête, la section Jeu : les composites du moteur de match en badges sur 200, les six d'un joueur de champ (Progression, Création, Frappe, Jeu aérien, Défense au milieu, Défense de surface) ou les deux d'un gardien (Arrêts, Sorties aériennes), avec leurs poids en infobulle. Ceux que le poste demande sont marqués d'un point, les autres en gris ; le poste lu est celui choisi sur la carte des aptitudes, le poste principal par défaut, et son bandeau le nomme. Puis les 15 attributs en badges de 1 à 20. Quatre sections : Gardien (Réflexes, Sorties, Relance), Défense (Tacle, Placement), Attaque (Finition, Sang-froid, Technique, Vision, Jeu de tête, Centres, Coups arrêtés) et Général (Passe, Vitesse, Endurance, puis l'appât du gain de 1 à 20, en badge neutre : ni bon ni mauvais en soi). Un joueur de champ ne voit pas Gardien ; un gardien ne voit que Gardien (Placement s'y ajoute) et Général, ses autres attributs sont dans un repli « Autres attributs », fermé par défaut. Les sections et les attributs de chacune gardent toujours le même ordre, quel que soit le poste (Défense, Attaque, Général ; pour un gardien, Placement s'insère après Sorties). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
 | Aptitudes par poste | carte de terrain, avec le maillot de la charte (« Terrain et maillot ») : aux seuls postes où son affinité atteint 10, le maillot de son club avec le poste écrit dessus, le poste principal entouré ; sous chaque maillot, un bloc d'une ligne : la note au poste sur 200 dans sa couleur (voir Composition), puis l'affinité sous 20. Le terrain a 360 px de large au plus, sans liste à côté. Les lignes de l'axe sont espacées d'au moins 14 % de la hauteur et les ailiers placés entre l'avant-centre et le meneur, pour qu'aucun maillot ni bloc ne chevauche le suivant. Cliquer un poste fait lire la section Jeu des attributs pour lui : son maillot est cerclé de jaune et son bloc passe en jaune |
 | Évolution du niveau | courbe mensuelle du niveau, sur 200, avec axes gradués ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club où le joueur évoluait ce mois-là (celui où il le termine en cas de transfert dans le mois, neutre sans club) et son infobulle donne mois, club et niveau |
-| Carrière | un seul bloc et un seul tableau. D'abord les clubs, une ligne par saison et club : transfert, compétitions en pastilles (`competition_badges` : la division du championnat, précédée du drapeau de son pays quand ce n'est pas la France, puis la coupe d'Europe ; pas de coupe nationale), matches, buts, passes, note, puis le total. Chaque saison ouverte dans un club a sa ligne, de celle où le joueur est entré dans la partie à la saison en cours, même sans match ni mouvement (joueur jamais aligné, club hors des championnats simulés) ; le club quitté dans la première moitié de la saison (mercato d'été) n'a de ligne que si le joueur y a joué. La division a toujours sa pastille, même pour une saison sans match de championnat, et c'est celle du club cette saison-là, pas celle d'aujourd'hui : « L » et son niveau en France, « D » et son niveau ailleurs (L1 puis C1 ; un drapeau, D1 puis C3), le nom du championnat en infobulle ; un club hors des championnats simulés a la pastille du niveau de sa division. La source ne donne pas ce niveau : un vivier de réserve est un niveau sous sa pyramide (c'est là qu'était, une saison sans match de championnat, un club qui joue aujourd'hui un championnat simulé), toute autre division un niveau sous la plus basse connue de son pays, donc D1 dans un pays sans championnat simulé. Dessous, pour un joueur déjà sélectionné, la sélection : le nom de la nation en tête de colonne (lien vers elle), une ligne par édition, son année après sa pastille (EU, CM : `code` de `international_records`), la plus récente d'abord, une ligne « Historique importé » pour les sélections d'avant la partie, et le total (`international_caps`, `international_goals`). Une bande vide sépare les clubs de la sélection. Le nom de la nation et la première cellule de ses lignes couvrent les quatre premières colonnes : matches, buts, passes et note restent dans les colonnes qu'ils ont pour les clubs. La note d'une édition est la moyenne de ses matches notés (`average` de `international_records`), « — » pour une édition jouée avant que le jeu ne les garde. |
+| Carrière | un seul bloc et un seul tableau. D'abord les clubs, une ligne par saison et club : transfert, compétitions en pastilles (`competition_badges` : la division du championnat, précédée du drapeau de son pays, y compris la France, puis la coupe d'Europe ; pas de coupe nationale), matches, buts, passes, note, puis le total. Chaque saison ouverte dans un club a sa ligne, de celle où le joueur est entré dans la partie à la saison en cours, même sans match ni mouvement (joueur jamais aligné, club hors des championnats simulés) ; le club quitté dans la première moitié de la saison (mercato d'été) n'a de ligne que si le joueur y a joué. La division a toujours sa pastille, même pour une saison sans match de championnat, et c'est celle du club cette saison-là, pas celle d'aujourd'hui : « L » et son niveau en France, « D » et son niveau ailleurs (drapeau français, L1 puis C1 ; drapeau du pays, D1 puis C3), le nom du championnat en infobulle ; un club hors des championnats simulés a la pastille du niveau de sa division. La source ne donne pas ce niveau : un vivier de réserve est un niveau sous sa pyramide (c'est là qu'était, une saison sans match de championnat, un club qui joue aujourd'hui un championnat simulé), toute autre division un niveau sous la plus basse connue de son pays, donc D1 dans un pays sans championnat simulé. Dessous, pour un joueur déjà sélectionné, la sélection : le nom de la nation en tête de colonne (lien vers elle), une ligne par édition, son année après sa pastille (EU, CM : `code` de `international_records`), la plus récente d'abord, une ligne « Historique importé » pour les sélections d'avant la partie, et le total (`international_caps`, `international_goals`). Une bande vide sépare les clubs de la sélection. Le nom de la nation et la première cellule de ses lignes couvrent les quatre premières colonnes : matches, buts, passes et note restent dans les colonnes qu'ils ont pour les clubs. La note d'une édition est la moyenne de ses matches notés (`average` de `international_records`), « — » pour une édition jouée avant que le jeu ne les garde. |
 
 Les textes du graphe ont la même taille que le reste de l'interface. Les niveaux,
 potentiels, attributs et aptitudes par poste sont des badges dont la couleur va du
@@ -860,7 +863,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   la possession ; son en-tête entier montre les corners, les coups francs et les cartons (charte, « Carte
   repliable »), et le choix est gardé d'un match à l'autre
 - Compositions des deux équipes sur le terrain de la charte raccourci à 68 × 76 (l'attaque dans la surface
-  d'en face), sans titre : le poste sur le maillot, ses buts en haut à droite du maillot (un ballon par but, en
+  d'en face), sans titre : le numéro que le joueur portait ce jour-là sur son maillot (`shirt` de `match_detail`, le
+  poste pour un renfort temporaire ou le joueur d'une sélection), ses buts en haut à droite du maillot (un ballon par but, en
   grappe) ; dessous, le bloc du joueur, son nom, puis la note du match dans sa couleur et les autres faits du
   match (les cartons, la blessure, la sortie en blanc) ; sous le terrain, les remplaçants sur deux colonnes lues
   de haut en bas, par leur nom court (le nom entier en infobulle), avec leur entrée et leur note (les buts d'un
@@ -868,13 +872,56 @@ message (« il vient d'arriver ») reste dans son infobulle.
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
   de la ligne du match, l'ouvre et lance la lecture, puis le replie (la lecture se
   met en pause). Le terrain n'est construit qu'à la première ouverture.
+  Chaque occasion suit la trace du moteur (récupération, zones franchies, centre,
+  tir et issue) ; le résumé en choisit la manière, la même à chaque lecture. Le
+  ballon est un projectile (`replay-physics.js`) : frappé, il vole sous la
+  gravité, rebondit puis roule en ralentissant, et chaque touche est jouée là où
+  il sera, par un joueur envoyé à temps. Une passe va à ras de terre, tendue ou
+  par-dessus les lignes ; elle est jouée en une touche, contrôlée (du pied, de la
+  cuisse, de la poitrine) puis jouée, ou conduite touche après touche : en une
+  touche plus souvent en contre-attaque et pour un joueur technique, conduite plus
+  souvent par un joueur rapide (la technique et la vitesse de chacun viennent avec
+  les compositions du match, à défaut une valeur moyenne). Le ballon circule
+  parfois en retrait ou en travers avant de repartir ; un centre est lobé ou
+  fouetté, une frappe placée, puissante ou à ras de terre, et le coup franc
+  passe au-dessus d'un mur de quatre joueurs. Les joueurs courent à l'allure d'un
+  footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
+  la reprise et le défenseur qui contrera la frappe font leur course pendant
+  l'action.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
-  mêmes positions ; le choix est retenu, sans WebGL le bouton disparaît.
-  Le stade a des tribunes pleines (supporters aux couleurs des deux clubs, les
-  visiteurs dans un coin), des loges, des panneaux LED et des filets. Les joueurs
-  sont articulés : ils courent, frappent, reprennent de la tête les centres, le
-  gardien plonge et l'équipe qui marque célèbre avec ses supporters.
+  mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
+  le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
+  des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
+  filets. L'éclairage, les ombres et le cadrage rapproché rendent lisibles les
+  volumes des joueurs. Leur modèle articulé (`replay-player.js`) distingue le
+  buste, les épaules, les membres, le visage, les cheveux, les chaussures et les
+  gants ; le maillot porte le numéro du match (`shirt`) et les couleurs du camp.
+  La locomotion (`replay-locomotion.js`) fait avancer chaque foulée avec la
+  distance parcourue. Chaque joueur conserve sa phase, sa cadence et son
+  amplitude de bras propres. La marche garde un double appui ; la course et
+  le sprint alternent poussée, suspension et retour du talon, avec déroulé du
+  pied, opposition des bras et inclinaison dans les accélérations et virages.
+  Les cibles des pieds sont résolues par les articulations pour conserver le
+  contact avec la pelouse, y compris au départ et à l'arrêt. Le bassin prépare
+  l'atterrissage avant la pose du pied. Les gestes (`replay-motion.js`) se
+  superposent à ces foulées sans synchroniser les joueurs.
+  Passes, centres et frappes ont leur préparation, leur contact et leur
+  accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
+  poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
+  La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
+  Le gardien garde ses pas pendant le placement, se prépare à l'arrêt, plonge
+  à la hauteur de la frappe, retombe puis se relève ;
+  après un arrêt, le ballon tenu suit ses gants. L'équipe qui marque célèbre avec
+  ses supporters. Tous ces gestes utilisent le temps du résumé : la vitesse de
+  lecture les accélère ensemble et la pause fige joueurs, ballon, public et caméra.
+  La présentation conserve les trajectoires et le résultat du moteur. La page
+  `tests/fixtures/replay-3d.html` permet de revoir des scènes déterministes de
+  passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
+  de tir contré et de coup franc, avec ralenti et arrêt sur image.
+  `tests/fixtures/replay-locomotion.html` compare six joueurs en marche, course
+  et sprint, ou à allure identique, avec caméra de profil ou trois quarts,
+  ralenti et progression image par image sur le même squelette que le match.
 
 ### Composition
 
@@ -885,7 +932,7 @@ composition » et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
 ou le met sur la prochaine place libre, avant ses autres actions ; « Meilleure composition » reprend la suggestion de l'IA pour la
 tactique affichée, ses remplaçants rangés par poste (GB, DG, DD, DC, MDC…). Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
-seconde) marqué de son poste ; une place vide garde le contour d'un maillot.
+seconde) marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
 
 L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
 rang, ses points et sa forme en championnat, la tactique qu'il joue, son bilan de la saison en

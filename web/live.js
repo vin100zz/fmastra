@@ -1,6 +1,6 @@
 // The human club's match played live: the 2D pitch fed one segment at a time, the stats, the other matches of
 // the day with the table as it stands, and the Tactique panel. The screen is modal until the final whistle.
-import {api,escape as e,number as n,matchNote,card,roundTitle,kitDot,kitShirt,playerBlock,matchNoteBadge,matchBlockNote,PITCH_BOXES,position,group,shortName,toast} from './ui.js';
+import {api,escape as e,number as n,matchNote,card,roundTitle,kitDot,kitShirt,shirtLabel,playerBlock,matchNoteBadge,matchBlockNote,PITCH_BOXES,position,group,shortName,toast} from './ui.js';
 import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,highlightsCard} from './match.js';
 import {pitchLayout,changeFormation} from './composition.js';
@@ -64,7 +64,7 @@ function squadHtml(){
    ...Array.from({length:player.red?Math.min(1,player.yellows):player.yellows},()=>'<span class="match-mark booking yellow"></span>'),
    player.red?'<span class="match-mark booking red"></span>':'',player.injured?'<span class="match-mark injury"></span>':''].join('');
   const title=`${player.name} · ${player.position}${player.rating!=null?` · note ${matchNote(player.rating)}`:''} · fatigue ${tired} %`;
-  return `<div class="live-player ${player.state}" title="${e(title)}">${kitShirt(kit.major,kit.minor,player.position)}${matchNoteBadge(player.rating)}<span class="live-player-name">${e(shortName(player.name,player.short))}</span><span class="live-player-marks">${marks}</span><span class="fatigue-bar${tired>=30?' danger':''}"><i style="width:${Math.min(100,tired)}%"></i></span></div>`;
+  return `<div class="live-player ${player.state}" title="${e(title)}">${kitShirt(kit.major,kit.minor,shirtLabel(player))}${matchNoteBadge(player.rating)}<span class="live-player-name">${e(shortName(player.name,player.short))}</span><span class="live-player-marks">${marks}</span><span class="fatigue-bar${tired>=30?' danger':''}"><i style="width:${Math.min(100,tired)}%"></i></span></div>`;
  };
  const squad=view.shown.manager.squad;
  return `${squad.filter(player=>player.starter).map(item).join('')}<span class="live-squad-gap"></span>${squad.filter(player=>!player.starter).map(item).join('')}`;
@@ -145,11 +145,11 @@ const marks=(player,{goals=true}={})=>{
 // The block under a player of the pitch: his name, then his note and what else he did.
 const tacticsBlock=player=>playerBlock(e(shortName(player.name,player.short)),matchBlockNote(shownSheet(player.id)?.rating)+marks(player,{goals:false}));
 
-// The shirt of the user's side, with a position and the player's goals on it.
-const ownShirt=(role,goals=0)=>{const kit=replayTeams(view.state)[view.state.side];return kitShirt(kit.major,kit.minor,role,{goals});};
+// The shirt of the user's side, with the player's number (a position without one) and his goals on it.
+const ownShirt=(player,role,goals=0)=>{const kit=replayTeams(view.state)[view.state.side];return kitShirt(kit.major,kit.minor,shirtLabel(player,role),{goals});};
 function tacticsSlotHtml(slot,place,index,byId){
  const player=byId.get(slot.id);
- return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(slot.role,shownGoals(player))}${tacticsBlock(player)}</div>`;
+ return `<div class="pitch-player lineup-slot ${group(slot.role)}${hurt(player)?' invalid':''}" data-slot="${index}"${player.injured?'':` data-player="${player.id}" draggable="true"`} style="left:${place.x}%;top:${place.y}%" title="${e(player.name)}">${ownShirt(player,slot.role,shownGoals(player))}${tacticsBlock(player)}</div>`;
 }
 // Those on the pitch in the order of positions, then the substitutes, then the players taken off in the draft.
 function tacticsListHtml(byId){
@@ -313,7 +313,7 @@ if(globalThis.document){
   const player=squad().get(dragged),role=view.draft.slots.find(slot=>slot.id===dragged)?.role??player.natural??player.position;
   const token=document.createElement('div');
   token.className=`pitch-player lineup-slot drag-token ${group(role)}`;
-  token.innerHTML=`${ownShirt(role,shownGoals(player))}${tacticsBlock(player)}`;
+  token.innerHTML=`${ownShirt(player,role,shownGoals(player))}${tacticsBlock(player)}`;
   document.body.append(token);
   event.dataTransfer.setDragImage(token,token.offsetWidth/2,18);
   setTimeout(()=>token.remove());

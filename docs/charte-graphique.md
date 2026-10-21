@@ -52,6 +52,7 @@ la structure HTML des spécimens.
 | `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
 | `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
+| `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement ») |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
@@ -68,8 +69,8 @@ Trois familles de pastilles ne se ressemblent jamais :
 - **Compétition** : contour, ou noir plein pour une coupe d'Europe.
 
 Le rang d'une place marquée (voir « Classement ») prend le fond pâle d'un état,
-cerclé de sa couleur : il ne paraît que dans un classement, où aucune note ne
-se lit.
+ou de sa coupe d'Europe dans un championnat, cerclé de sa couleur : il ne paraît
+que dans un classement, où aucune note ne se lit.
 
 ### Typographie
 
@@ -79,13 +80,14 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 
 | Jeton | Taille / interligne | Graisse | Emploi |
 |---|---|---|---|
-| `--fs-hero` | 40 / 40 | 700 | Nom d'un club dans son bandeau, score |
+| `--fs-hero` | 40 / 40 | 700 | Nom d'un club dans son bandeau, numéro d'un joueur devant le sien, score |
 | `--fs-page` | 26 / 32 | 700 | Titre de page |
 | `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, ce qui suit un nom dans son bandeau |
 | `--fs-figure` | 16 / 20 | 700 | Action principale, délai, saison montrée par son pas |
 | `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
 | `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`) |
 | `--fs-body` | 13 / 18 | 400, 600 | Texte, cellule, onglet, bouton |
+| `--fs-body` | 13 / 13 | 700 | Numéro sur un maillot |
 | `--fs-small` | 11 / 14 | 400, 600 | En-tête de colonne, libellé, légende |
 | `--fs-micro` | 10 / 10 | 700 | Pastille, poste sur un maillot |
 
@@ -135,7 +137,7 @@ où le fond est déjà jaune.
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
-| En-tête d'un joueur | `.hero`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
+| En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent ; sans barre, la ligne du match au-dessus des temps forts. Voir « En-tête d'un match » |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
@@ -147,17 +149,17 @@ où le fond est déjà jaune.
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Carte repliable | `.card.fold`, `.card-head.toggle`, `.toggle-arrow`, `.fold-more` | L'en-tête entier montre ou cache ce qui est secondaire. Voir « Carte repliable » |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
-| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux |
+| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur |
-| Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque. Voir « Classement » |
+| Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation`, `.club-flag` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Cinq derniers matches | `.recent` | Une barre par match du club, à la hauteur des minutes jouées, jaune au-delà du seuil de charge. Voir « Graphiques » |
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
-| Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.player-block`, `.block-note` | Le maillot du club, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
+| Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
@@ -257,8 +259,11 @@ voile de son encre.
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
 | Joueur sur un terrain | Son nom | Son nom souligné |
 
-- Une pastille qui mène quelque part (le score d'un match) est un lien : son
-  texte se souligne, son fond ne change pas.
+- Une pastille qui mène quelque part (le score d'un match, la pastille d'une
+  compétition) est un lien : son texte se souligne, son fond ne change pas.
+- Un drapeau seul qui mène à sa sélection ne change pas sous le pointeur : la
+  main et son infobulle, qui nomme le pays, le disent. Suivi du nom ou du code
+  du pays, c'est ce texte qui se souligne.
 - Dans une carte dont l'en-tête entier ouvre une page, c'est son lien
   « Voir → » qui se souligne.
 - Un graphique garde ses propres réactions (repère, infobulle) : voir
@@ -415,18 +420,26 @@ La fiche d'un joueur s'ouvre sur le bandeau de son club (`.hero`) : ses
 couleurs, son écusson sur le disque. Un joueur sans club a un bandeau neutre,
 sans disque.
 
+- **Numéro** (`.hero-number`) : son numéro de maillot, devant son nom, sur la
+  même ligne de base, à 12 de lui : en 40 comme lui, dans l'encre du bandeau
+  voilée à 55 %. « Numéro de maillot » en infobulle. Un joueur sans club n'en
+  a pas.
+
 - **Nom** : celui du bandeau, son club à sa suite (voir « Bandeau »). Son
   poste n'y est pas : il se lit sur le terrain des aptitudes.
-- **Tuiles**, dans cet ordre : âge, sélection, niveau, potentiel, valeur, prix
-  demandé (« N/A » quand personne ne peut le demander, la raison en infobulle).
-  Niveau et potentiel sont gradués (`.tile.graded`) : le fond et l'encre de
-  leur pastille.
+- **Tuiles**, dans cet ordre : âge, sélection, niveau et potentiel, valeur et
+  prix demandé.
+- **Niveau et potentiel** : une tuile de deux colonnes graduées
+  (`.tile.split > .graded`), chacune sur le fond et dans l'encre de sa
+  pastille, un trait du panneau entre les deux.
+- **Valeur et prix demandé** : une tuile de deux colonnes (`.tile.split`) ; le
+  prix « N/A » quand personne ne peut le demander, la raison en infobulle.
 - **Sélection** (`.tile.split`) : une tuile de trois colonnes, un trait entre
   deux. Le drapeau au-dessus du code de trois lettres (jamais le nom du pays :
   la tuile garde sa largeur), « Sél. » et « Buts », la colonne des buts dès le
-  premier. C'est la sélection qui l'a appelé, lien vers elle ; à défaut la
-  première de ses nationalités, sans lien. Ses autres nationalités sont un fait
-  de la carte État, drapeau puis code.
+  premier. C'est la sélection qui l'a appelé, à défaut la première de ses
+  nationalités ; lien vers la sélection du pays quand le jeu en a une. Ses autres
+  nationalités sont un fait de la carte État, drapeau puis code.
 - **Barre** (`.hero-bar`) : 36, à la place des onglets d'un club, la page
   n'en ayant pas. À gauche, où il en est (`.pill` : « Sur la liste · 45 M€ »,
   « Prolongation en attente », « Prêté à Lorient · retour le 30 juin 2026 ») ;
@@ -711,9 +724,15 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   manches et le col dans la seconde. Le gazon n'est pas la page : la règle de la
   pastille, qui passe à la seconde couleur quand la première est proche du
   blanc, ne s'y applique pas. Chaque couleur arrondit son bord ; un contour noir
-  à 20 % et une ombre le détachent du gazon. Le poste est écrit dessus, dans
-  l'encre lisible sur le corps. La couleur de poste reste dans les listes, pas
+  à 20 % et une ombre le détachent du gazon. Le numéro du joueur est écrit
+  dessus (`.kit-shirt.number`), en 13, dans l'encre lisible sur le corps. À
+  défaut de numéro (une place vide, un renfort temporaire, le joueur d'une
+  sélection), son poste, en 10 ; sur les aptitudes d'un joueur, chaque maillot
+  porte le poste qu'il montre. La couleur de poste reste dans les listes, pas
   sur le terrain.
+- **Hors du terrain** : dans un message, le maillot du club, en 32, porte le
+  numéro qu'un joueur y prend ; celui qu'il quitte est voilé à 45 %
+  (`.kit-shirt.former`), une flèche atténuée entre les deux (`.shirt-change`).
 - **Buts** (`.kit-goals`) : en haut à droite du maillot, pas dans le bloc. Un
   ballon de 10 par but, celui du gazon (blanc cerné de `--strong`, son centre
   `--strong`) avec l'ombre du maillot. Le premier est posé sur le bout de la
@@ -746,6 +765,26 @@ Un seul terrain et un seul joueur, sur tous les écrans.
 
 Les aptitudes d'un joueur n'ont pas de liste à côté de leur terrain : le bloc de
 chaque poste en tient lieu, sur un terrain de 360 de large.
+
+### Match en 3D
+
+La vue du match reprend les couleurs et les numéros des maillots dans un stade
+éclairé, cadré depuis la tribune comme une retransmission télévisée. Les joueurs
+ont des volumes anatomiques lisibles, des articulations et des matières mates ;
+le tissu, la peau, les chaussures et les gants se distinguent par leur relief
+et leur réponse à la lumière. Les gestes suivent le ballon : appuis des courses,
+préparation et accompagnement des passes et des tirs, contrôles, têtes, plongeon
+bas ou haut puis reprise d'appui du gardien. Ces animations procédurales restent
+calées sur les contacts et le temps du résumé, sans changer les déplacements ni
+le résultat du match. La pause fige l'image, joueurs, ballon, public et caméra
+compris ; les commandes autour du terrain gardent les composants de la charte.
+Les joueurs ont des phases de foulée et des styles de course individuels,
+stables d'une scène à l'autre. La marche, la course et le sprint se distinguent
+par les appuis, la suspension, le retour du talon et le mouvement opposé des
+bras. Les pieds se déroulent au sol, le bassin absorbe l'atterrissage, le buste
+accompagne l'accélération et les virages. À l'arrêt, les mouvements restent
+discrets et décalés entre joueurs. Le spécimen rapproché de ces allures est
+`tests/fixtures/replay-locomotion.html`.
 
 ## Graphiques
 
@@ -955,6 +994,29 @@ centre, en `--muted` ; l'en-tête « # » est centré sur eux. Rien ne court le
 long de la ligne : seule la ligne du club dirigé est colorée. La légende des
 places (`.legend`) montre la même pastille, en carré de 12.
 
+**Coupes d'Europe.** Dans un championnat, une place européenne prend la couleur
+de sa coupe (`.rank.c1`, `.c3`, `.c4`) : le bleu de l'Europe (`--info`) pour la
+C1, le violet (`--c3`) pour la C3, la sarcelle (`--c4`) pour la C4, trois teintes
+tenues loin du rouge, du vert et du jaune des états. Une place du championnat
+(titre, montée, relégation) garde sa couleur : sa coupe n'est que dans l'infobulle.
+
+- **Vainqueur de la coupe nationale** : son rang prend la couleur de la C3 où
+  qu'il soit classé, en division inférieure aussi, hors d'une place de montée ou
+  de relégation.
+- **Sous réserve** : tant que la coupe nationale n'a pas de vainqueur, sa place
+  en C3 revient au championnat. Une place qu'un autre vainqueur changerait
+  (`.tentative`) a son cercle en pointillé ; elle redevient pleine dès que ceux
+  encore en lice ne la changent plus.
+- **Infobulle** : le nom de la coupe, puis la raison, sur une seconde ligne :
+  « Vainqueur de la Coupe de France », « Sous réserve : Conference League si la
+  Coupe de France est gagnée par un club moins bien classé ».
+- **Légende** : les coupes présentes, dans l'en-tête de la carte, chacune après
+  son carré : leur nom sur l'onglet Classement d'un championnat, leur code dans
+  une carte étroite (le classement réduit du calendrier, le classement archivé).
+  Un classement sans carte à lui (onglets Derniers et Prochains matches) ou un
+  extrait ailleurs (vue d'ensemble, actualités, page d'un pays) n'a que
+  l'infobulle.
+
 ### Compétitions
 
 Une pastille de deux caractères.
@@ -970,6 +1032,21 @@ Une pastille de deux caractères.
 Deux pays peuvent partager un code (CA pour l'Angleterre et l'Allemagne). Un
 pays ajouté suit la règle : CP pour le Portugal.
 
+Dans la carrière d'un joueur, le drapeau du pays précède toujours la pastille
+du championnat, y compris pour la France.
+
+La pastille est un lien vers la page de sa compétition : un championnat ou une
+coupe nationale, une coupe d'Europe, l'édition d'une compétition des sélections
+(Euro 2028). Son nom complet est dans son infobulle. Elle n'est pas un lien :
+
+- dans un filtre (les compétitions au-dessus du calendrier d'un club) ;
+- là où ce qui la porte en est déjà un : une ligne de la recherche globale, un
+  match de la Vue d'ensemble d'un club, la liste de la navigation d'un bandeau,
+  une compétition du palmarès ;
+- pour une compétition que le jeu ne simule pas (un championnat étranger dans
+  une carrière) ;
+- sur l'écran « Nouvelle partie », où le monde n'est pas encore tiré.
+
 ### Clubs et pays
 
 - Le nom d'un club suit toujours sa pastille (`.kit-dot`) : un carré de 14 au
@@ -980,10 +1057,11 @@ pays ajouté suit la règle : CP pour le Portugal.
   « Match dans une liste ».
 - Dans une coupe d'Europe, où se croisent les clubs de plusieurs pays, le nom
   d'un club est suivi du drapeau de son pays (`.club-flag`) : la pastille, le nom,
-  puis le drapeau, à 6. Ce drapeau n'est pas un lien ; son infobulle nomme le
-  pays. Face à face, celui qui reçoit l'a devant son nom : sa pastille garde le
-  contact du score. Un nom trop long est coupé, jamais son drapeau. Il s'écrit
-  sur toutes les vues d'une coupe d'Europe (classement, phase de ligue, phase
+  puis le drapeau, à 6. Ce drapeau est un lien à part, vers la sélection de son
+  pays ; son infobulle nomme le pays. Face à face, celui qui reçoit l'a devant
+  son nom : sa pastille garde le contact du score. Un nom trop long est coupé,
+  jamais son drapeau. Il s'écrit sur toutes les vues d'une coupe d'Europe
+  (classement, phase de ligue, phase
   finale, derniers et prochains matches, statistiques, historique, tuile du
   vainqueur) et dans le compte rendu de ses matches ; ailleurs, le pays d'un club
   se lit sur sa fiche.
@@ -992,6 +1070,14 @@ pays ajouté suit la règle : CP pour le Portugal.
   lettres. Un joueur n'y a qu'une
   nation, celle de sa sélection, à défaut la première de ses nationalités ; les
   autres ne sont ni comptées ni nommées : elles se lisent sur sa fiche.
+- Un drapeau mène toujours à la sélection de son pays : seul, ou avec le nom ou
+  le code qui le suit, en un seul lien ; devant autre chose (un championnat, un
+  club), il est un lien à part. Un pays sans sélection dans le jeu garde son
+  drapeau, sans lien. Il n'en est pas un dans un filtre (les pays au-dessus
+  d'une liste), dans le menu, sur l'écran « Nouvelle partie », ni là où ce qui
+  le porte est déjà un lien : une sélection dans une liste, dont le drapeau et
+  le nom mènent ensemble à sa fiche ; un pays du palmarès, qui mène à sa page ;
+  une ligne de la recherche globale ; un match de la Vue d'ensemble d'un club.
 - Une sélection a deux couleurs, celles de son maillot, comme un club : elles
   font son bandeau et ses maillots sur un terrain. Son en-tête est celui d'un
   club ; son drapeau remplit le disque où un club a son écusson. Dans une liste,
@@ -1051,8 +1137,11 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Match dans une liste | `fixtureRow` (`web/ui.js`) sur le tour d'une compétition, le calendrier d'un championnat, la Vue d'ensemble, les éditions des sélections et la page d'un pays, à la place de sa ligne propre : les pastilles contre le score, le score en chiffre clé, le nom du vainqueur en 700 à l'encre de l'accent et celui du battu à l'encre courante (`.won`, `.lost`), le match du club dirigé sur fond jaune (`setOwnClub`), l'étage du cumul ou des tirs au but à la place des deux lignes sous le score, les buteurs écrits « Mendes 12’ 58’ ». L'API dit sur les deux matches d'un aller-retour quel club s'est qualifié (`qualified_id`, `return_leg_id`). Dans le tableau d'une coupe, le qualifié et l'éliminé s'écrivent de même, et la case du match du club dirigé a le fond jaune (`web/bracket.js`). La ligne du club dirigé est colorée dans tous les classements, plus seulement sur la page d'un pays et dans Actualités (`standingsTable`) |
 | Drapeaux des clubs | Dans une coupe d'Europe, le drapeau du pays de chaque club après son nom, devant lui pour celui qui reçoit d'un match face à face (`clubLink`, option `flag`, `web/ui.js` ; `.club-flag`, `web/charte.css`) : son classement, sa phase de ligue et ses derniers et prochains matches (`flags` de `standingsTable`, `fixtures`, `fixtureRow`, `roundContent`), sa phase finale (`bracket`), ses buteurs, son historique et la tuile de son vainqueur (`competitionHero`). Dans le compte rendu d'un de ses matches, le drapeau de chaque club en 24 × 18 après son nom dans le bandeau, lien vers la sélection (`matchHero`, `web/club-hero.js`) ; la ligne du match ne le répète pas. L'API donne le pays de chaque club (`nation` de `club_ref`, `src/api/views.py`), et sa sélection dans le compte rendu (`nation_id`) |
 | Accueil et nouvelle partie | Les deux panneaux de l'accueil (`homeScreen`, `savesList`, `web/home.js`) sans partie et sur « Ma partie », à la place du texte d'accueil, du formulaire de création et de la liste des emplacements ; la liste des sauvegardes y dit le club et la date de chaque partie (`slots`, `src/infrastructure/persistence/store.py`). L'écran « Nouvelle partie » (`newGameScreen`, `web/new-game.js` ; `creationHero`, `web/club-hero.js`) à la place du choix du club après la création : nations, divisions et club choisis avant que la partie ne soit tirée, « Commencer » dans la barre du haut. `.doors`, `.door`, `.saves-list`, `.check`, `.nation-line` dans `web/charte.css` |
-| Compétitions des sélections | La Coupe du monde, l'Euro et la Ligue des nations ont chacune leur page (`#/international/coupe-du-monde`, `euro`, `ligue-des-nations` ; `competitionScreen`, `web/international.js`) à la place d'une page par édition : leur nom seul sur le bandeau, la navigation du bandeau entre les trois (`selectionNavigation`, `web/navigation.js`), leurs éditions au pas de saison (`edition` dans l'adresse), un onglet Historique (`competitionHistory` ; `/api/international/competitions/{slug}/historique`) avec les finales, les titres, les parcours des nations (`.run`, `.final-score`) et les joueurs de tous les temps avec leur nation. Sélections nationales en trois colonnes (`competitionColumn`, `competitionBand`, `web/club-hero.js` ; `.club-hero-band.narrow`, `web/charte.css`) et la liste des nations avec leurs titres par compétition, à la place des cartes des éditions en cours, du palmarès mêlé et de la rangée des éditions. Les adresses d'une édition par son année ouvrent sa compétition (`editionHref`, `web/ui.js`) |
+| Compétitions des sélections | La Coupe du monde, l'Euro et la Ligue des nations ont chacune leur page (`#/international/coupe-du-monde`, `euro`, `ligue-des-nations` ; `competitionScreen`, `web/international.js`) à la place d'une page par édition : leur nom seul sur le bandeau, la navigation du bandeau entre les trois (`selectionNavigation`, `web/navigation.js`), leurs éditions au pas de saison (`edition` dans l'adresse), un onglet Historique (`competitionHistory` ; `/api/international/competitions/{slug}/historique`) avec les finales, les titres, les parcours des nations (`.run`, `.final-score`) et les joueurs de tous les temps avec leur nation. Sélections nationales en trois colonnes (`competitionColumn`, `competitionBand`, `web/club-hero.js` ; `.club-hero-band.narrow`, `web/charte.css`) et la liste des nations avec leurs titres par compétition, à la place des cartes des éditions en cours, du palmarès mêlé et de la rangée des éditions. Les adresses d'une édition par son année ouvrent sa compétition, et la pastille d'une édition mène à la page de sa compétition, sur cette édition (`editionHref`, `competitionHref`, `web/ui.js`) |
+| Places européennes | Dans un championnat, le rang d'une place européenne à la couleur de sa coupe (C1 bleu, C3 violet, C4 sarcelle), en pointillé sous réserve de la coupe nationale, à la place du bleu unique de l'Europe ; son infobulle et la légende des coupes dans l'en-tête de la carte (`europePlace`, `europeTip`, `europeLegend`, `web/ui.js`), à la place de « 3 points pour une victoire ». L'API donne la coupe de chaque ligne (`europe`, `european_places`, `src/api/views.py`), le vainqueur de la coupe nationale compris |
+| Numéros de maillot | Sur les terrains de la composition, du compte rendu d'un match, du dernier onze et du direct, le numéro du joueur à la place de son poste, en 13 (`shirtLabel`, `kitShirt`, `.kit-shirt.number`, `web/ui.js`) : celui qu'il portait ce jour-là pour un match joué (`shirts` du résultat, `match_shirt`, `src/api/views.py`), le poste à défaut (place vide, renfort temporaire, sélection). Le bandeau d'un joueur porte son numéro devant son nom, en 40 et voilé (`playerHero`, `web/club-hero.js` ; `.club-hero-number`). Dans Actualités, le maillot du club sous le titre d'une arrivée, et les deux maillots d'un changement de numéro (`clubShirt`, `web/news.js` ; `.kit-shirt.former`, `.shirt-change`) |
 | Attributs | Sur la fiche et dans l'aperçu d'un joueur, une colonne à la mesure du plus long nom de sa section et de sa pastille (`--attribute-column`, `web/charte.css`), à la place des 165 de toutes les sections sur la fiche et des deux colonnes fixes de l'aperçu : dans l'aperçu, la section Jeu passe sur une colonne, ses lignes et celles des attributs à 26 |
+| Liens des pastilles et des drapeaux | La pastille d'une compétition mène à sa page, le drapeau d'un pays à sa sélection, sur tous les écrans (`competitionBadge`, `competitionHref`, `nationFlag`, `nationBadge`, `nationHref`, `web/ui.js`) : le drapeau d'un club dans une coupe d'Europe (`clubLink`, option `flag`), la nationalité d'une liste de joueurs, la tuile de sélection d'un joueur jamais appelé (`selectionTile`, `web/club-hero.js`), la carrière d'un joueur, le calendrier d'un club ou d'une sélection, la ligne d'un match. L'option `link` les garde sans lien dans un filtre et dans ce qui est déjà un lien. L'API donne la sélection de chaque pays (`selection_id` de `/api/nations`), table relue à chaque changement de partie (`web/app.js`) |
 
 Ce qui reste :
 
@@ -1112,3 +1201,8 @@ réduits et mis l'un sous l'autre depuis ; nouvelle partie : proposition C, « T
 <https://claude.ai/artifact/Vfd8w6dFsdBPiwZQb5R9xi>.
 Les compétitions des sélections ont la leur (page d'une compétition ; Sélections nationales :
 proposition A, « Une colonne par compétition ») : <https://claude.ai/artifact/N1DdjSU5sfTAv2w54A7NrB>.
+Les places européennes d'un classement ont la leur (proposition E1, « Bleu, violet,
+sarcelle ») : <https://claude.ai/artifact/8Q35koGuApLFLJ8HpByX4A>.
+Les numéros de maillot ont la leur (bandeau : proposition B, « Devant le nom » ; terrains :
+T2, le numéro en 13 ; actualités : le numéro dans le message, jamais dans le titre, et N2, les deux maillots) :
+<https://claude.ai/artifact/7nS7K76xDRutXa5D1VJTPB>.

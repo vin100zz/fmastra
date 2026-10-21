@@ -23,11 +23,15 @@ py -3.12 -m venv .venv
 
 Ouvrir **http://127.0.0.1:8011**, puis créer une partie ou reprendre une
 sauvegarde. Une nouvelle partie choisit ses nations (France, Italie, Espagne,
-Angleterre, Allemagne), la plus basse division simulée de chacune et le club
+Angleterre, Allemagne, Pays-Bas, Portugal, Belgique, Turquie), la plus basse division simulée de chacune et le club
 dirigé ; sa graine est tirée au hasard. Les divisions que chaque nation peut
 simuler, et le vivier de ses promus sous la plus basse, sont dans
 `config/creation.json`. Les CSV sont chargés à la création ; aucun service externe n'est
-nécessaire pendant le jeu. Pour un autre port : `./run.ps1 -Port 8012`.
+nécessaire pendant le jeu. La partie ne garde qu'une partie de leurs joueurs : l'effectif des
+clubs simulés et, ailleurs, ce dont elle a besoin (vivier des promus, vedettes et pépites,
+meilleurs joueurs libres, clubs étrangers qui peuvent jouer l'Europe, une liste par
+sélection), sous un plafond ; les paliers sont réglés dans `config/import.json`
+(`selection_effectifs.paliers`), et le chapitre « Le monde » du manuel les décrit. Pour un autre port : `./run.ps1 -Port 8012`.
 Conserver un seul processus serveur : l'état est en mémoire.
 
 ### En ligne (Render)
@@ -77,6 +81,11 @@ d'autres clubs. Un joueur en réserve ne joue aucun match mais progresse, tant q
 prêté joue pour un autre club jusqu'à la fin de la saison ou pour une demi-saison, son propriétaire payant son salaire. La
 liste des joueurs dit qui est listé et qui est intéressé, pour un transfert (T) ou pour un prêt (P). Le chapitre
 « Réserve et prêts » du manuel du jeu en donne les règles.
+
+Chaque joueur d'un effectif porte son numéro de maillot, celui de `players.csv` quand il le donne : il s'écrit sur les
+maillots des terrains (composition, compte rendu, dernier onze, direct) et dans le bandeau de sa fiche. Un joueur qui
+arrive prend un numéro libre selon son poste et sa place (titulaire de 1 à 11, remplaçant, jeune), que les actualités
+du club annoncent, comme les changements de numéro du 1er juillet ; le manuel (« Joueurs ») en donne les règles.
 
 La fiche d'un club s'ouvre sur un en-tête à ses couleurs (tactique, entraînement, recrutement des jeunes, réputation) et sur
 son effectif, avec à côté le calendrier, le dernier onze aligné, son championnat et ses finances. Le calendrier tient en une

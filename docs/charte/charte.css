@@ -10,6 +10,9 @@
  --accent:#f5c400;--accent-hover:#e6b800;--accent-ink:#111418;--accent-text:#7f6200;--own-row:#fff3c4;
  /* States, each with its wash. */
  --good:#1a7340;--good-soft:#e1f3e7;--warn:#8a6600;--warn-soft:#fdf4d8;--bad:#bf3329;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--info:#2166a8;--info-soft:#e3eefa;
+ /* The European cups a league's places lead to, each with its wash: the C1 takes the blue of Europe (--info), the C3 a
+    violet, the C4 a teal, all three kept clear of the red, green and yellow of the states. */
+ --c3:#7b46a4;--c3-soft:#f4edfc;--c4:#00646f;--c4-soft:#e0f5f8;
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in every list. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  /* Pitch. */
@@ -193,6 +196,13 @@
 .rank.info,.legend i.info{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .rank.warn,.legend i.warn{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 .rank.bad,.legend i.bad{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+/* In a league, a place in Europe takes the colour of its cup (the title keeps its green): C1 blue, C3 violet, C4 teal. One
+   that hangs on the winner of the national cup has its ring dashed. */
+.rank.c1,.legend i.c1{--cup:var(--info);--cup-soft:var(--info-soft)}
+.rank.c3,.legend i.c3{--cup:var(--c3);--cup-soft:var(--c3-soft)}
+.rank.c4,.legend i.c4{--cup:var(--c4);--cup-soft:var(--c4-soft)}
+.rank:is(.c1,.c3,.c4),.legend i:is(.c1,.c3,.c4){background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
+.rank.tentative,.legend i.tentative{box-shadow:none;border:1px dashed var(--cup)}
 .tr.head>.center{text-align:center}
 .cell{display:flex;align-items:center;gap:6px}
 /* A final, from its winner's side: its score a link to the match, a shoot-out's mark before it, as on the storey of a
@@ -266,13 +276,18 @@
 .tile em{font:600 var(--fs-small)/1 var(--text);font-style:normal}
 /* A tile grades its ground as the badge of its note does (a player's level, his potential). One tile holds several figures
    in columns, a line between two, each under its label: what a player did for his selection, its flag over its code, then
-   his caps and his goals. */
-.tile.graded{background:hsl(var(--hue) 62% 91%);border-color:hsl(var(--hue) 45% 80%)}
-.tile.graded :is(.label,strong){color:hsl(var(--hue) 65% 26%)}
+   his caps and his goals; his market value and the fee asked. Graded columns fill the tile, each on the ground of its own
+   badge, the line between two in the panel's colour: his level and his potential. */
+.tile.graded,.tile.split>.graded{background:hsl(var(--hue) 62% 91%)}
+.tile.graded{border-color:hsl(var(--hue) 45% 80%)}
+:is(.tile.graded,.tile.split>.graded) :is(.label,strong){color:hsl(var(--hue) 65% 26%)}
 .tile.split{flex-direction:row;align-items:stretch;justify-content:flex-start;gap:var(--s3)}
 .tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px}
 .tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
 .tile.split .label{display:flex;align-items:center;height:14px}
+.tile.split:has(>.graded){gap:0;padding:0;border:0;background:none;overflow:hidden}
+.tile.split:has(>.graded)>*{padding:6px var(--s3)}
+.tile.split:has(>.graded)>*+*{border-left-color:var(--panel)}
 
 /* Attributes: a line of 26 each, its name then its badge at the edge; a key one in 700, a dot of the accent after its name.
    A column holds the longest name of its section and its badge, the composites' out of 200 more than the attributes': a
@@ -324,11 +339,11 @@
 .flag{display:inline-block;flex:none;width:16px;height:12px;box-shadow:0 0 0 1px #0a141e1f}
 .nation{display:inline-flex;align-items:center;gap:6px}
 /* In a European cup, where clubs of several countries meet, a club's name is followed by the flag of its country, 6 apart: a
-   flag that is no link, its country in its tooltip. Face to face, the side at home has it before its name, so that its dot
-   keeps touching the score. A name too long is cut, never its marks. */
+   link of its own to its country's selection, its country in its tooltip. Face to face, the side at home has it before its
+   name, so that its dot keeps touching the score. A name too long is cut, never its marks. */
 .club-flag{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}
-.club-flag>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.club-flag>:is(.kit-dot,.flag){flex:none}
+.club-flag>a:not(.nation){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.club-flag>:is(.kit-dot,.flag,.nation){flex:none}
 /* What a pointer shows: never the browser's own title. Above its target, below when there is no room; the arrow points at it. */
 .tooltip{position:relative;display:inline-flex;flex-direction:column;max-width:320px;padding:var(--s1) var(--s2);border-radius:var(--radius);background:var(--strong);color:#fff;font:400 var(--fs-body)/18px var(--text);box-shadow:0 4px 12px #0a141e33}
 .tooltip::after{content:"";position:absolute;left:50%;top:100%;width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--strong);transform:rotate(45deg)}
@@ -421,6 +436,8 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .hero h1{font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
 .hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0;white-space:nowrap}
 .hero-context{display:flex;align-items:baseline;gap:var(--s2);font:700 semi-condensed var(--fs-title)/24px var(--display);opacity:.85}
+/* A player's number before his name, as large, veiled. */
+.hero-number{flex:none;font:700 semi-condensed var(--fs-hero)/1 var(--display);opacity:.55}
 .hero .tiles{margin-left:auto}
 .hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
 /* A competition's header is a club's too. The emblem of a European cup, of the Euro or of the World Cup stands alone on
@@ -503,6 +520,12 @@ span.entity-step svg{opacity:.3}
 .kit-shirt .kit-collar{fill:var(--kit-sleeves)}
 .kit-shirt .kit-outline{fill:none;stroke:#00000033;stroke-width:1;stroke-linejoin:round}
 .kit-shirt b{position:relative;margin-top:7px;font:700 semi-condensed var(--fs-micro)/1 var(--display);color:var(--kit-ink)}
+/* The number on a player's shirt, larger than a position. */
+.kit-shirt.number b{margin-top:6px;font-size:var(--fs-body)}
+/* Off the pitch, in a message: the number a player takes on his club's shirt; the one he leaves veiled, a muted arrow
+   between the two (« Terrain et maillot »). */
+.kit-shirt.former{opacity:.45}
+.shirt-change{display:inline-flex;align-items:center;gap:var(--s2);color:var(--muted)}
 .kit-shirt.plain{--kit-body:#8a9193;--kit-sleeves:#8a9193;--kit-ink:#fff}
 .kit-shirt.empty svg{filter:none}
 .kit-shirt.empty :is(.kit-sleeves,.kit-body){stroke:none}

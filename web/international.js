@@ -266,7 +266,7 @@ function nationsCard(nations,federation){
  const shown=federation?nations.filter(team=>team.federation===federation):nations;
  const titles=(team,kind)=>team.titles?.[kind]||0;
  const strength=team=>`<span class="force"><i class="gauge"><i style="width:${Math.max(0,Math.min(100,team.strength))}%"></i></i>${n(team.strength)}</span>`;
- const last=team=>{const run=team.last_edition;return run?`<span class="cell">${competitionBadge({kind:'international',code:run.code,name:run.name})}${run.year} · ${run.winner?'✦ ':''}${e(run.label)}</span>`:'—';};
+ const last=team=>{const run=team.last_edition;return run?`<span class="cell">${competitionBadge({kind:'international',code:run.code,name:run.name,year:run.year})}${run.year} · ${run.winner?'✦ ':''}${e(run.label)}</span>`:'—';};
  const headers=['NATION','FÉDÉRATION','FORCE / 100',...SELECTION_COMPETITIONS.map(item=>`<span title="${e(`Titres · ${item.name}`)}">${item.code}</span>`),'DERNIÈRE ÉDITION'];
  const rows=shown.map(team=>[`<span class="strong">${clubLink(team)}</span>`,e(team.federation),strength(team),
   ...SELECTION_COMPETITIONS.map(item=>titles(team,item.kind)?`<b>${titles(team,item.kind)}</b>`:'<span class="muted">—</span>'),last(team)]);

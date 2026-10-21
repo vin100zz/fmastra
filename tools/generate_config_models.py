@@ -653,6 +653,23 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "demographie.generation.noms_minimum_par_nation": 20,
             "formations.hauteur_bloc.mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}
 DEFAULTS.update({f"{section}.{key}": value for section, values in NEGOTIATION_DEFAULTS.items() for key, value in values.items()})
+# Who a new world keeps from the source, tier by tier: schema 34.
+WORDS.update({"paliers": "tiers", "clubs_simules": "simulated", "joueurs": "players", "gardiens": "goalkeepers",
+              "espoirs": "prospects", "age_max_espoir": "prospect_max_age", "vivier": "pool", "vedettes": "stars",
+              "reputation_min": "reputation", "potentiel_min_pepite": "wonderkid_potential", "age_max_pepite": "wonderkid_max_age",
+              "clubs_etrangers": "foreign", "joueurs_min": "min_players", "clubs_par_place_europe": "clubs_per_place",
+              "clubs_europe_min": "min_clubs", "clubs_europe_max": "max_clubs", "coupe": "cup", "clubs_par_nation": "clubs",
+              "plancher_nation": "floor", "joueurs_max": "max_players", "force_min": "min_strength", "force_max": "max_strength",
+              "plafond_hors_simules": "outside_budget"})
+TIER_DEFAULTS = {
+    "clubs_simules": {"joueurs": 30, "gardiens": 3, "espoirs": 3, "age_max_espoir": 21}, "vivier": {"joueurs": 11},
+    "vedettes": {"reputation_min": 60.0, "potentiel_min_pepite": 150, "age_max_pepite": 21}, "agents_libres": {"joueurs": 300},
+    "clubs_etrangers": {"joueurs": 15, "joueurs_min": 11, "clubs_par_place_europe": 2, "clubs_europe_min": 4, "clubs_europe_max": 12,
+                        "reputation_min": 60.0},
+    "coupe": {"clubs_par_nation": 96}, "plancher_nation": {"joueurs_min": 23, "joueurs_max": 110, "force_min": 25.0, "force_max": 80.0}}
+DEFAULTS.update({f"import.selection_effectifs.paliers.{section}.{key}": value
+                 for section, values in TIER_DEFAULTS.items() for key, value in values.items()})
+DEFAULTS["import.selection_effectifs.paliers.plafond_hors_simules"] = 8000
 
 
 def clean(value: object) -> object:

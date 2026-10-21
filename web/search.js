@@ -22,12 +22,12 @@ export function markedName(name,marks=[]){
 // What tells a line's kind, in the column that starts every line: a player's position, a club's colours, a competition's
 // badge, a national team's flag.
 const badge=item=>item.kind==='player'?(item.position?position(item.position):''):item.kind==='club'?kitDot(item)
- :item.kind==='nation'?nationFlag(item.nation):competitionBadge(item.competition);
+ :item.kind==='nation'?nationFlag(item.nation,{link:false}):competitionBadge(item.competition,{link:false});
 // What tells a line from its namesakes, at its end: a player's club, a club's country and division, a competition's country.
 function context(item){
  if(item.kind==='player')return item.retired?'Retraité':item.club?`${kitDot(item.club)}${e(item.club.name)}`:'Libre';
- if(item.kind==='club')return `${nationFlag(item.nation)}${item.competition?competitionBadge(item.competition):''}`;
- return item.kind==='competition'&&item.competition.kind!=='europe'?nationBadge(item.competition.nation,{full:true}):'';
+ if(item.kind==='club')return `${nationFlag(item.nation,{link:false})}${item.competition?competitionBadge(item.competition,{link:false}):''}`;
+ return item.kind==='competition'&&item.competition.kind!=='europe'?nationBadge(item.competition.nation,{full:true,link:false}):'';
 }
 // A line opens its page as a whole; `chosen` is the one Enter opens.
 export const resultRow=(item,chosen=false)=>`<a class="result${chosen?' chosen':''}" href="${resultHref(item)}"${chosen?' aria-current="true"':''}><span>${badge(item)}</span><span>${markedName(item.name,item.marks)}</span><span>${context(item)}</span></a>`;

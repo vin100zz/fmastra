@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {honoursScreen,pickClub} from '../../web/honours.js';
+import {setNations} from '../../web/ui.js';
 
 const club=(id,name)=>({id,name});
 const block=(id,name,kind,level,items,code=null,extra={})=>({id,name,kind,level,code,scorer:null,current:null,items:items.map(([season,champion,nation='FRA'])=>({season,champion,nation})),...extra});
@@ -85,6 +86,7 @@ test('the titled clubs stand beside the table, searched by name, and the picked 
 });
 
 test('three rankings stand under the table: the players by titles, by seasons ended as leading scorer, and the European cups by country',async()=>{
+ setNations({ITA:{name:'Italie',display_code:'ITA',flag:'it',selection_id:-1004},FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1001}});
  const {html}=await screen();
  const lists=part(html,'honours-lists','honours-board');
  assert.equal(count(lists,/class="card honours-table"/g),3);
@@ -100,6 +102,12 @@ test('three rankings stand under the table: the players by titles, by seasons en
  assert.match(lists,/<h2>Coupes d’Europe par pays<\/h2>/);
  assert.match(lists,/<th[^>]*><button class="sort-toggle" data-table-sort>PAYS<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>C1<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>C3<\/button><\/th><th class="count-column"[^>]*><button class="sort-toggle" data-table-sort>C4<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>TOTAL<\/button><\/th>/);
  assert.ok(lists.indexOf('Italie')<lists.indexOf('France'));
+ // A country is its flag and its name, one link to its selection; so is the flag before a titled club.
+ assert.match(lists,/<span class="strong"><a class="nation" href="#\/international\/nation\/-1004" title="Italie"><img class="flag" src="\/flags\/it\.svg"[^>]*>Italie<\/a><\/span>/);
+ assert.match(part(html,'honours-board'),/<a class="nation" href="#\/international\/nation\/-1001" title="France"><img class="flag"[^>]*><\/a><span class="strong"><a href="#\/club\/1" class="club-link">/);
+ // The flag of a country's group in the table stands inside the link to the country.
+ assert.match(html,/<a href="#\/country\/FRA"><span class="nation" title="France"><img class="flag"[^>]*><\/span>France<\/a>/);
+ setNations({});
 });
 
 test('before the first title, the table keeps every competition and the rankings are left out',async()=>{
