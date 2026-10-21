@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -358,7 +358,7 @@ function internationalCareer(player) {
  const records=[...(player.international_records||[])].sort((a,b)=>b.edition-a.edition),wide={lead:4};
  const nation=player.national_team?nationBadges([player.national_team],{full:true}):'Sélection';
  // An edition is named by its year, after the badge that tells the Euro from the World Cup.
- const edition=row=>{const link=`<a href="#/international/${row.edition}">${row.edition}</a>`;
+ const edition=row=>{const link=`<a href="${editionHref(row.code,row.edition,'finals')}">${row.edition}</a>`;
   return row.code?`<span class="competition">${competitionBadge({name:row.competition,kind:'international',code:row.code,year:row.edition})}${link}</span>`:link;};
  const rows=records.map(row=>careerRow([edition(row),n(row.matches),row.goals,row.assists,row.average?averageNote(row.average):'—'],wide));
  if(player.historical_caps||player.historical_goals)rows.push(careerRow(['Historique importé',n(player.historical_caps),n(player.historical_goals),'—','—'],wide));

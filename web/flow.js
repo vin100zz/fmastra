@@ -1,3 +1,5 @@
+import {editionHref} from './ui.js';
+
 // The screen flow of Continuer. Each step of the calendar lands on the round the human club follows (its next round
 // when its match awaits a lineup, else the round just played). Before the next step, Continuer opens Actualités on each
 // message still to read, newest first, then on those awaiting an answer; it advances once nothing is left. The rounds
@@ -10,7 +12,7 @@ function read(){try{return JSON.parse(sessionStorage.getItem(KEY))||memory;}catc
 function write(flow){memory=flow;try{sessionStorage.setItem(KEY,JSON.stringify(flow));}catch{}}
 
 // The tab of a round (section 'latest' or 'next') on the page of its competition.
-export const roundHash=(competition,section)=>competition.kind==='international'?`#/international/${competition.year}/${section}`
+export const roundHash=(competition,section)=>competition.kind==='international'?editionHref(competition.code,competition.year,section)
  :competition.kind==='europe'?`#/europe/${competition.code}/${section}`:`#/league/${competition.id}/${section}`;
 
 // Where a finished advance or live match lands, and the rounds the next clicks on Continuer show; `matchId` is the match

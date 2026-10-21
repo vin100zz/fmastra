@@ -136,6 +136,21 @@ test('a card that folds is drawn the same by the reference sheet and by the appl
  }
 });
 
+test('a final and the run of a nation are drawn the same by the reference sheet and by the application’s',async()=>{
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  // A shoot-out's mark before a final's score, as on the storey of a match in a list.
+  assert.match(body('.final-score small'),/var\(--fs-micro\).*color:var\(--muted\)/,sheet);
+  // The title in bold in the accent's ink, as a winner in a match list; the final in the strong ink; absent, muted.
+  assert.match(body('.run.won'),/^font-weight:700;color:var\(--accent-text\)$/,sheet);
+  assert.match(body('.run.final'),/^font-weight:600;color:var\(--strong\)$/,sheet);
+  assert.match(body('.run.none'),/^color:var\(--muted\)$/,sheet);
+  // Up a division in green, down one in red.
+  assert.match(body('.run i.up'),/^color:var\(--good\)$/,sheet);
+  assert.match(body('.run i.down'),/^color:var\(--bad\)$/,sheet);
+ }
+});
+
 test('an attribute’s column holds the longest name of its section and its badge, in both sheets',async()=>{
  for(const sheet of ['docs/charte/charte.css','web/charte.css']){
   const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';

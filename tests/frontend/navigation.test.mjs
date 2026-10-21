@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubNavigation,playerNavigation,competitionNavigation,europeNavigation,editionNavigation} from '../../web/navigation.js';
+import {clubNavigation,playerNavigation,competitionNavigation,europeNavigation,selectionNavigation} from '../../web/navigation.js';
 import {heading} from '../../web/ui.js';
 
 const group=(items,index,scope)=>({scope,index,total:items.length,items,previous:items[index-1]??null,next:items[index+1]??null});
@@ -92,15 +92,15 @@ test('the European cups step to one another, the open tab and the season kept',(
  assert.equal(europeNavigation(cups.slice(0,1),cups[0],'table'),'');
 });
 
-test('the editions of the selections step from the first to the latest, whatever the order they come in',()=>{
- const editions=[{year:2032,name:'Euro 2032',code:'EU'},{year:2030,name:'Coupe du monde 2030',code:'CM'},{year:2028,name:'Euro <2028>',code:'EU'}];
- const html=editionNavigation(editions,2030,'qualifications');
- assert.match(html,/href="#\/international\/2028\/qualifications" rel="prev" aria-label="Précédent : Euro &lt;2028&gt;"/);
- assert.match(html,/href="#\/international\/2032\/qualifications" rel="next" aria-label="Suivant : Euro 2032"/);
- assert.match(html,/<summary aria-label="Choisir une édition" title="Éditions · 2 \/ 3">/);
- assert.match(html,/<div class="menu" role="menu" aria-label="Choisir une édition"><a href="#\/international\/2028\/qualifications" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code international" title="Euro &lt;2028&gt;">EU<\/span>Euro &lt;2028&gt;<\/div><\/a>/);
- assert.match(html,/<a href="#\/international\/2030\/qualifications" role="menuitemradio" aria-checked="true"><div class="cell"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>/);
- assert.doesNotMatch(editionNavigation(editions,2032,'finals'),/rel="next"/);
+test('the competitions of the selections step from the World Cup to the Nations League, each by its badge',()=>{
+ const competitions=[{kind:'world',slug:'coupe-du-monde',code:'CM',name:'Coupe du monde'},{kind:'euro',slug:'euro',code:'EU',name:'Euro <test>'},{kind:'nations',slug:'ligue-des-nations',code:'LN',name:'Ligue des nations'}];
+ const href=item=>`#/international/${item.slug}/finals`;
+ const html=selectionNavigation(competitions,{kind:'euro'},href);
+ assert.match(html,/href="#\/international\/coupe-du-monde\/finals" rel="prev" aria-label="Précédent : Coupe du monde"/);
+ assert.match(html,/href="#\/international\/ligue-des-nations\/finals" rel="next" aria-label="Suivant : Ligue des nations"/);
+ assert.match(html,/<summary aria-label="Choisir une compétition" title="Compétitions des sélections · 2 \/ 3">/);
+ assert.match(html,/<a href="#\/international\/euro\/finals" role="menuitemradio" aria-checked="true"><div class="cell"><span class="competition-code international" title="Euro &lt;test&gt;">EU<\/span>Euro &lt;test&gt;<\/div><\/a>/);
+ assert.doesNotMatch(selectionNavigation(competitions,{kind:'nations'},href),/rel="next"/);
 });
 
 test('names are escaped wherever they appear',()=>{

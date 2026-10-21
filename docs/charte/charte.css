@@ -205,6 +205,21 @@
 .rank.tentative,.legend i.tentative{box-shadow:none;border:1px dashed var(--cup)}
 .tr.head>.center{text-align:center}
 .cell{display:flex;align-items:center;gap:6px}
+/* A final, from its winner's side: its score a link to the match, a shoot-out's mark before it, as on the storey of a
+   match in a list. */
+.final-score{white-space:nowrap}
+.final-score small{margin-right:var(--s1);font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);color:var(--muted)}
+/* How far a nation went in an edition of a competition, a column per edition, written short: ✦ the title, in bold in the
+   accent's ink as a winner in a match list; F the final, in the strong ink; 1/2, 1/4, 1/8, Gr.; — not there, muted. In a
+   Nations League, the division played, its run in the finals in place of the A, then an arrow where it went up (green)
+   or down (red). The full words are in the tooltip. */
+.run{text-align:center;color:var(--ink-2);white-space:nowrap}
+.run.won{font-weight:700;color:var(--accent-text)}
+.run.final{font-weight:600;color:var(--strong)}
+.run.none{color:var(--muted)}
+.run i{margin-left:3px;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
+.run i.up{color:var(--good)}
+.run i.down{color:var(--bad)}
 /* A match on one line: its day, the other side, its score. */
 .match-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
 .match-row.next{background:var(--own-row)}
@@ -430,6 +445,12 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
    next. A league or a national cup has the flag of its country on the disc, as its selection has. Its one tile names who
    won it or who holds its title, after the dot of its colours or its flag. */
 .hero-emblem{display:block;flex:none;width:72px;height:72px;object-fit:contain}
+/* A competition of the selections at the head of its column, on Sélections nationales: the band of its header, its
+   emblem and its name in the size of a page's title, in capitals, as on the doors of the home; its sash pushed to the
+   right of the column; no tile. It opens the competition's page as a whole (the veil of its ink under the pointer). */
+.hero.narrow h2{font:700 semi-condensed var(--fs-page)/32px var(--display);letter-spacing:var(--caps);text-transform:uppercase;white-space:nowrap}
+.hero.narrow .hero-sash{clip-path:polygon(86% 0,92% 0,85% 100%,79% 100%)}
+.hero.narrow .hero-sash.thin{clip-path:polygon(93.5% 0,95% 0,88% 100%,86.5% 100%)}
 .hero .tile strong :is(.kit-dot,.flag){align-self:center}
 /* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
    of 16 with a line of 2.4 to the previous and to the next of the group, and between them three lines, of an icon's line,
@@ -674,7 +695,9 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
-.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
+.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.hero,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
+/* A band that opens its page as a whole: the veil of its ink, its sash over it. */
+.app a.hero:is(:hover,.hover){box-shadow:inset 0 0 0 100vmax var(--hero-veil)}
 :is(.nav a,.segmented>a,.segmented>button,.button):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
    their colour. */

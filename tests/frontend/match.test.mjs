@@ -47,12 +47,12 @@ async function screen(data){
  try{return await matchScreen(data.id);}finally{globalThis.fetch=previous;}
 }
 
-test('the badge of the match’s line leads to its competition: a European cup, an edition of the selections by its year',async()=>{
+test('the badge of the match’s line leads to its competition: a European cup, an edition of the selections on its competition’s page',async()=>{
  setCompetitions([{id:30,name:'Ligue des champions',kind:'europe',code:'C1'}]);
  try{
   assert.match(await screen({...report,competition_id:30}),/<div class="match-facts"><a class="competition-code europe" href="#\/europe\/C1" title="Ligue des champions">C1<\/a><strong>/);
   const euro=await screen({...report,competition_id:-102028,competition:'Euro 2028',international:true,competition_code:'EU',season:2028});
-  assert.match(euro,/<div class="match-facts"><a class="competition-code international" href="#\/international\/2028" title="Euro 2028">EU<\/a><strong>/);
+  assert.match(euro,/<div class="match-facts"><a class="competition-code international" href="#\/international\/euro\?edition=2028" title="Euro 2028">EU<\/a><strong>/);
  }finally{setCompetitions([]);}
 });
 
