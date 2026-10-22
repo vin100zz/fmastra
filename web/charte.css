@@ -877,7 +877,7 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 /* Its kits, home first, on the raised ground: a white kit would melt into the card. */
 .kits{display:flex;justify-content:center;gap:var(--s6);padding:var(--s3);background:var(--panel-2)}
 .kits>a{display:block;min-width:0}
-.kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/600;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
+.kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/725;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 /* Its équipe-type on the upright pitch, as wide as its card. Under a name, the season: matches, goals, the ball after them,
    in the pale blue of a series, which no note takes. */
 .season-eleven .pitch{width:calc(100% - 2*var(--s2));margin:var(--s2) auto;overflow:visible}

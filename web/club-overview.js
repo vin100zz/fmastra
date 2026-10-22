@@ -90,7 +90,7 @@ export function standingsExtract(club,standings,rows=5){
 export function kitsCard(club){
  const outfits=[['Domicile','à domicile',club.kit_url],['Extérieur','extérieure',club.away_kit_url]].filter(([,,url])=>url);
  if(!outfits.length)return '';
- return card('Tenues',`<div class="kits">${outfits.map(([label,told,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}"><img class="kit-outfit" src="${e(url)}" alt="Tenue ${told} de ${e(club.name)}" width="165" height="309"></a>`).join('')}</div>`,'','kits-card');
+ return card('Tenues',`<div class="kits">${outfits.map(([label,told,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}"><img class="kit-outfit" src="${e(url)}" alt="Tenue ${told} de ${e(club.name)}" width="165" height="374"></a>`).join('')}</div>`,'','kits-card');
 }
 
 // The équipe-type on the upright pitch of the Composition, in the club's kit with each player's number. Under his name, his

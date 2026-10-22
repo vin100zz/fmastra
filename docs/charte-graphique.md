@@ -531,7 +531,14 @@ onglets, une rangée de tuiles, puis quatre colonnes (`.presentation`), deux sou
   arrivées d'abord. Le terrain de l'équipe-type se rétrécit à la hauteur qu'il a.
   Un changement de taille de la fenêtre redessine la page.
 - **Tenues** (`.kits`) : les deux tenues complètes, domicile d'abord, 165 de
-  large au plus, sur `--panel-2` (une tenue blanche se fondrait dans la carte).
+  large au plus, au ratio 320 × 725, sur `--panel-2` (une tenue blanche se
+  fondrait dans la carte). Le short et les chaussettes sont proportionnés au
+  maillot, sans déformation ; la hauteur accueille les trois pièces sans les réduire.
+  Un espace transparent d’environ 16 px à la largeur de 165 sépare le short des
+  chaussettes pour laisser la place aux genoux.
+  L’écusson du club est superposé côté cœur (à droite pour l’observateur), dans
+  ses couleurs d’origine, sur les deux tenues, dans une boîte de 19 × 23 px
+  à la largeur de 165. Il reste absent si le logo manque.
   Rien dessous : leur infobulle dit Domicile ou Extérieur ; un clic ouvre le PNG.
 - **Équipe-type** : le terrain debout de la Composition, ses lignes placées de
   même ; chaque joueur dans le maillot du club, son numéro dessus, son nom court

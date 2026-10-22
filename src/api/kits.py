@@ -43,6 +43,8 @@ def kit_url(club: Club, side: str = "home") -> str | None:
     query = "&".join(f"{prefix}{key}={value[1:]}"
                      for prefix, palette in (("", shirt), ("shorts_", shorts), ("socks_", socks))
                      for key, value in zip(("major", "minor", "third"), palette))
+    if (club_id := getattr(club, "id", None)) is not None:
+        query += f"&club_id={club_id}"
     return f"/kits/{kit_id if kit_id is not None else 0}/outfit.png?{query}"
 
 
@@ -55,8 +57,9 @@ def kit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor):
 @router.get("/kits/{kit_id}/outfit.png")
 def outfit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor,
                  shorts_major: HexColor, shorts_minor: HexColor, shorts_third: HexColor,
-                 socks_major: HexColor, socks_minor: HexColor, socks_third: HexColor):
+                 socks_major: HexColor, socks_minor: HexColor, socks_third: HexColor,
+                 club_id: Annotated[int | None, Query(gt=0)] = None):
     image = render_outfit(PATTERNS.get(kit_id, 1), (major, minor, third),
                           (shorts_major, shorts_minor, shorts_third),
-                          (socks_major, socks_minor, socks_third))
+                          (socks_major, socks_minor, socks_third), club_id=club_id)
     return Response(image, media_type="image/png")

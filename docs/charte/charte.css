@@ -742,7 +742,7 @@ span.entity-step svg{opacity:.3}
 /* Its kits, home first, on the raised ground (a white kit would melt into the card); each named by its tooltip only. */
 .kits{display:flex;justify-content:center;gap:var(--s6);padding:var(--s3);background:var(--panel-2)}
 .kits>a{display:block;min-width:0}
-.kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/600;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
+.kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/725;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 /* Under a name of its équipe-type, the season: his matches, his goals, the ball after them, in the pale blue of a series,
    which no note takes. */
 .block-season{display:inline-flex;align-items:center;gap:3px;color:var(--series-1-soft)}

@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from PIL import Image
+from PIL import Image, ImageChops
 import pytest
 
 from api.kit_images import (
@@ -108,12 +108,32 @@ def test_color_normalization_accepts_optional_hash_and_whitespace():
 def test_outfits_keep_three_independent_palettes_and_transparency():
     red, green, blue = ("FF0000",) * 3, ("00FF00",) * 3, ("0000FF",) * 3
     with Image.open(BytesIO(render_outfit(1, red, green, blue))) as image:
-        assert image.size == (320, 600) and image.mode == "RGBA"
+        assert image.size == (320, 725) and image.mode == "RGBA"
         assert image.getpixel((0, 0))[3] == 0
-        for point, channel in [((160, 180), 0), ((120, 370), 1), ((110, 510), 2)]:
+        for point, channel in [((160, 180), 0), ((120, 370), 1), ((110, 550), 2)]:
             pixel = image.getpixel(point)
             assert pixel[3] >= 250
             assert pixel[channel] > max(pixel[i] for i in range(3) if i != channel) + 50
     base = render_outfit(1, red, green, blue)
     assert render_outfit(1, red, green, blue) is base
     assert render_outfit(1, red, blue, green) != base
+
+
+def test_club_crest_changes_only_the_heart_area_and_is_cached_per_club():
+    plain = render_outfit(1, CLUB_COLORS, CLUB_COLORS, CLUB_COLORS)
+    marseille = render_outfit(1, CLUB_COLORS, CLUB_COLORS, CLUB_COLORS, club_id=866)
+    paris = render_outfit(1, CLUB_COLORS, CLUB_COLORS, CLUB_COLORS, club_id=868)
+    assert marseille != paris != plain
+    assert render_outfit(1, CLUB_COLORS, CLUB_COLORS, CLUB_COLORS, club_id=866) is marseille
+    assert render_outfit(1, CLUB_COLORS, CLUB_COLORS, CLUB_COLORS, club_id=999999999) == plain
+    with Image.open(BytesIO(plain)) as base, Image.open(BytesIO(marseille)) as crested:
+        for mode in ("RGB", "A"):
+            before = base.convert(mode) if mode == "RGB" else base.getchannel("A")
+            after = crested.convert(mode) if mode == "RGB" else crested.getchannel("A")
+            bounds = ImageChops.difference(before, after).getbbox()
+            if mode == "RGB":
+                assert bounds is not None
+            if bounds is not None:
+                left, top, right, bottom = bounds
+                assert 180 <= left < right <= 230
+                assert 70 <= top < bottom <= 130

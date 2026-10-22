@@ -5,12 +5,12 @@ from io import BytesIO
 from pathlib import Path
 import re
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 
 
 _ASSETS = Path(__file__).resolve().parents[2] / "web" / "kits"
 _OUTPUT_SIZE = (192, 192)
-_OUTFIT_SIZE = (320, 600)
+_OUTFIT_SIZE = (320, 725)
 PATTERN_COUNT = 55
 
 
@@ -60,6 +60,19 @@ def _load_component(name: str) -> Image.Image:
     return image.crop(image.getchannel("A").getbbox())
 
 
+@lru_cache(maxsize=128)
+def _load_crest(club_id: int) -> Image.Image | None:
+    try:
+        with Image.open(_ASSETS.parent / "clubs" / f"TCM1_{club_id}.png") as source:
+            image = source.convert("RGBA")
+    except FileNotFoundError:
+        return None
+    bounds = image.getchannel("A").getbbox()
+    if bounds is None:
+        return None
+    return ImageOps.contain(image.crop(bounds), (72, 88), Image.Resampling.LANCZOS)
+
+
 def recolor_pattern(
     source: Image.Image, colors: tuple[str, str, str]
 ) -> Image.Image:
@@ -104,17 +117,22 @@ def render_kit(pattern_index: int, colors: tuple[str, str, str]) -> bytes:
 
 
 @lru_cache(maxsize=128)
-def _render_outfit(pattern_index: int, shirt: tuple, shorts: tuple, socks: tuple) -> bytes:
-    canvas = Image.new("RGBA", (640, 1200))
-    # The shirt covers the waistband; the shorts cover the top edge of the socks.
+def _render_outfit(pattern_index: int, shirt: tuple, shorts: tuple, socks: tuple,
+                   club_id: int | None) -> bytes:
+    canvas = Image.new("RGBA", (640, 1450))
+    # The shirt covers the waistband; leave knee space below the shorts.
     for source, palette, bounds, top in (
-        (_load_component("socks"), socks, (300, 360), 835),
-        (_load_component("shorts"), shorts, (365, 290), 575),
+        (_load_component("socks"), socks, (375, 450), 990),
+        (_load_component("shorts"), shorts, (456, 365), 575),
         (_load_pattern(pattern_index), shirt, (600, 600), 8),
     ):
         garment = recolor_pattern(source, palette)
-        garment.thumbnail(bounds, Image.Resampling.LANCZOS)
+        # Components can be smaller than their display size; allow upscaling.
+        garment = ImageOps.contain(garment, bounds, Image.Resampling.LANCZOS)
         canvas.alpha_composite(garment, ((canvas.width - garment.width) // 2, top))
+    if club_id is not None and (crest := _load_crest(club_id)) is not None:
+        # Wearer's left chest is on the viewer's right; retain the crest's colors.
+        canvas.alpha_composite(crest, (410 - crest.width // 2, 200 - crest.height // 2))
     canvas.thumbnail(_OUTFIT_SIZE, Image.Resampling.LANCZOS)
     output = BytesIO()
     canvas.save(output, format="PNG")
@@ -122,7 +140,10 @@ def _render_outfit(pattern_index: int, shirt: tuple, shorts: tuple, socks: tuple
 
 
 def render_outfit(pattern_index: int, shirt: tuple[str, str, str],
-                  shorts: tuple[str, str, str], socks: tuple[str, str, str]) -> bytes:
+                  shorts: tuple[str, str, str], socks: tuple[str, str, str],
+                  club_id: int | None = None) -> bytes:
     """Assemble the three supplied garments with their independent CSV palettes."""
     _validate_pattern(pattern_index)
-    return _render_outfit(pattern_index, *(_normalize_palette(p) for p in (shirt, shorts, socks)))
+    if club_id is not None and (type(club_id) is not int or club_id <= 0):
+        raise ValueError("The club ID must be a positive integer.")
+    return _render_outfit(pattern_index, *(_normalize_palette(p) for p in (shirt, shorts, socks)), club_id)

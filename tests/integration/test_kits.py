@@ -69,7 +69,20 @@ def test_away_outfit_has_its_own_pattern_and_each_garments_colors(client):
     response = client.get(url)
     assert response.status_code == 200
     with Image.open(BytesIO(response.content)) as image:
-        assert image.size == (320, 600)
+        assert image.size == (320, 725)
     assert response.content != client.get(kit_url(club)).content
     assert client.get(url.replace("shorts_major=112233", "shorts_major=red")).status_code == 422
     assert kit_url(SimpleNamespace(), "away") is None
+
+
+@pytest.mark.parametrize("side", ["home", "away"])
+def test_club_identity_is_passed_to_the_crest_renderer(client, side):
+    club = SimpleNamespace(id=866, home_kit_id=1, away_kit_id=1)
+    url = kit_url(club, side)
+    assert parse_qs(urlsplit(url).query)["club_id"] == ["866"]
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content != client.get(url.replace("&club_id=866", "")).content
+    assert response.content != client.get(url.replace("club_id=866", "club_id=868")).content
+    for invalid in ("-1", "0", "../866", "abc"):
+        assert client.get(url.replace("club_id=866", f"club_id={invalid}")).status_code == 422
