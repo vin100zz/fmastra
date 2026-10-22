@@ -12,6 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from infrastructure.persistence.store import SaveError
 from .service import GameService, CommandError
@@ -45,6 +46,8 @@ def create_app(root: Path | None = None, saves: Path | None = None, resume: bool
             origin = request.headers.get("origin")
             if origin and origin != str(request.base_url).rstrip("/"):
                 return JSONResponse({"detail": "Origine de commande non autorisée."}, status_code=403)
+        if request.url.path.startswith("/api/"):
+            await run_in_threadpool(service.refresh_kit_appearance)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; frame-ancestors 'none'"

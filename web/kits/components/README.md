@@ -21,5 +21,6 @@ $env:PYTHONPATH='src'
 Le générateur de l'application produit chaque tenue à la demande :
 `/kits/{id}/outfit.png`, avec neuf couleurs hexadécimales (maillot, short, chaussettes).
 Une tenue extérieure sans données est omise ; les pièces sans palette reprennent
-la couleur principale du maillot. Les anciennes sauvegardes récupèrent les champs
-manquants depuis le CSV au chargement.
+la couleur principale du maillot. Les IDs et palettes du CSV sont appliqués aux
+parties existantes à la prochaine requête : actualiser la page après avoir modifié
+`data/clubs.csv` suffit, sans recréer la partie ni redémarrer le serveur.

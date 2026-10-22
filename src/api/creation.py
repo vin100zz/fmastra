@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from threading import Lock
+from types import SimpleNamespace
 
 from core.world.pyramids import Pyramid, default_levels
 from infrastructure.config.loader import configure_world, load_config, load_pyramids
 from infrastructure.importation.loader import import_world
+from infrastructure.importation.kit_catalogue import KitCatalogue
 from . import views as v
 from .nations import build_nation_table
 from .kits import kit_url
@@ -28,10 +30,26 @@ class Catalogue:
         self.root = root
         self.lock = Lock()
         self.built: dict | None = None
+        self.kits = KitCatalogue(root / "data" / "clubs.csv")
+        self.kit_revision = -1
 
     def data(self) -> dict:
         with self.lock:
             if self.built is None: self.built = build(self.root)
+            revision, rows = self.kits.snapshot()
+            if revision != self.kit_revision:
+                clubs = dict(self.built["clubs"])
+                for uid, club in clubs.items():
+                    if uid not in rows:
+                        continue
+                    appearance = SimpleNamespace(id=uid, **rows[uid])
+                    clubs[uid] = {**club, "major_color": appearance.home_kit_major_color,
+                                  "minor_color": appearance.home_kit_minor_color,
+                                  "third_color": appearance.home_kit_third_color,
+                                  "kit_id": appearance.home_kit_id, "kit_url": kit_url(appearance),
+                                  "away_kit_url": kit_url(appearance, "away")}
+                self.built = {**self.built, "clubs": clubs}
+                self.kit_revision = revision
             return self.built
 
 

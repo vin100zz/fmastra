@@ -34,6 +34,13 @@ sélection), sous un plafond ; les paliers sont réglés dans `config/import.jso
 (`selection_effectifs.paliers`), et le chapitre « Le monde » du manuel les décrit. Pour un autre port : `./run.ps1 -Port 8012`.
 Conserver un seul processus serveur : l'état est en mémoire.
 
+Les tenues font exception à l'import figé : les IDs et couleurs de maillot,
+short et chaussettes sont relus depuis `data/clubs.csv` quand le fichier change.
+Après modification et enregistrement du CSV, actualiser la page applique les
+nouvelles tenues à la partie en cours comme aux anciennes sauvegardes, sans
+redémarrage ni nouvelle partie. Les autres données du CSV restent celles importées
+à la création. Voir `web/kits/README.md` pour les colonnes et les couleurs de repli.
+
 ### En ligne (Render)
 
 Un *Web Service* Render, branché sur le dépôt :

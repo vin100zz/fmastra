@@ -58,12 +58,15 @@ def hex_color(row: dict, key: str) -> str | None:
     return row[key] or None
 
 
-def kit_components(row: dict) -> dict:
+def kit_components(row: dict, *, include_home: bool = False) -> dict:
     """Keep each garment's own CSV palette; absent data stays absent."""
     values = {}
-    for prefix, source in (("away_kit", "AwayKit"), ("home_shorts", "HomeShorts"),
-                           ("home_socks", "HomeSocks"), ("away_shorts", "AwayShorts"),
-                           ("away_socks", "AwaySocks")):
+    garments = (("away_kit", "AwayKit"), ("home_shorts", "HomeShorts"),
+                ("home_socks", "HomeSocks"), ("away_shorts", "AwayShorts"),
+                ("away_socks", "AwaySocks"))
+    if include_home:
+        garments = (("home_kit", "HomeKit"), *garments)
+    for prefix, source in garments:
         present = str(row.get(f"Has{source}Data", "True")).lower() not in ("false", "0")
         code = row.get(f"{source}ID") if present else None
         values[f"{prefix}_id"] = int(code) if code and code.lstrip("-").isdigit() else None
