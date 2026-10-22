@@ -756,26 +756,30 @@ def test_club_finances_give_the_cash_at_the_end_of_each_month(played):
     assert sum(month["expenses"] for month in history["months"]) == history["expenses"]
 
 
-def test_club_history_tells_its_honours_and_the_shape_of_its_league(played):
+def test_club_history_tells_its_honours_and_the_shape_of_its_league_and_answers_each_view(played):
     world = played.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
     club = next(iter(world.active_clubs()))
     data = played.get(f"/api/clubs/{club.id}/historique").json()
-    assert data["honours"] == {"league": [], "cup": 0, "europe": [], "best_rank": None, "best_europe": None}
+    # Nothing finished yet: no season, no title; the record already counts the season under way.
+    assert (data["items"], data["honours"]) == ([], [])
+    played_now = sum(1 for match in world.matches.values() if match.result and club.id in (match.home_id, match.away_id))
+    assert data["record"]["total"]["played"] == played_now
     table = v.table(world, club.competition_id)
     league = next(item for item in data["leagues"] if item["id"] == club.competition_id)
     assert len(data["leagues"]) == 1 and league["name"] == world.competitions[club.competition_id].name
     assert league["clubs"] == len(table) and league["level"] == world.competitions[club.competition_id].level
     assert 0 < league["relegation"] < league["clubs"] and 0 < league["europe"] + league["promotion"] < league["clubs"]
     assert played.get(f"/api/clubs/{club.id}").json()["reputation_change"] is None
-    from api.club_archive import honours
-    rows = [{"season": 2026, "rank": 2, "champion": False, "competition": "L", "level": 1, "cup": {"label": "Vainqueur", "level": 7, "winner": True},
-             "europe": {"code": "C3", "competition": "Ligue Europa", "label": "Vainqueur", "level": 6, "winner": True}},
-            {"season": 2025, "rank": 1, "champion": True, "competition": "L", "level": 1, "cup": None,
-             "europe": {"code": "C3", "competition": "Ligue Europa", "label": "Finale", "level": 5, "winner": False}},
-            {"season": 2024, "rank": 1, "champion": True, "competition": "L", "level": 1, "cup": None, "europe": None}]
-    assert honours(rows) == {"league": [{"competition": "L", "level": 1, "count": 2}], "cup": 1, "europe": [{"code": "C3", "competition": "Ligue Europa", "count": 1}],
-                             "best_rank": {"rank": 1, "season": 2024, "competition": "L"},
-                             "best_europe": {"code": "C3", "competition": "Ligue Europa", "label": "Vainqueur", "level": 6, "winner": True, "season": 2026}}
+    assert played.get(f"/api/clubs/{club.id}/historique?vue=saisons").json() == data
+    squad = played.get(f"/api/clubs/{club.id}/historique?vue=joueurs").json()
+    assert len(squad["eleven"]) == 11 and set(squad["transfers"]) == {"arrivals", "departures", "gains"}
+    feats = played.get(f"/api/clubs/{club.id}/historique?vue=records").json()
+    assert set(feats) == {"wins", "defeats", "runs", "opponents", "best", "ages"}
+    # Its age records were kept match after match.
+    assert [row["kind"] for row in feats["ages"]][:2] == ["youngest", "oldest"] and feats["ages"][0]["season"] == world.season
+    assert played.get(f"/api/clubs/{club.id}/historique?vue=palmares").status_code == 422
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
 def test_the_lineup_screen_scouts_the_next_opponent(played):

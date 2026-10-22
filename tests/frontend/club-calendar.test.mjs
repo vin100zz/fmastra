@@ -30,9 +30,11 @@ test('a competition reads in two characters: its code in Europe, L or D and its 
  assert.equal(competitionCode({name:'FA Cup',kind:'cup'}),'FAC');
  assert.equal(competitionCode({name:'Ligue Europa',kind:'europe',code:'C3'}),'C3');
  assert.equal(competitionBadge({name:'Ligue des champions',kind:'europe',code:'C1'}),'<a class="competition-code europe" href="#/europe/C1" title="Ligue des champions">C1</a>');
- // An edition of the selections leads to its page by its year; a competition the game does not know leads nowhere.
- assert.equal(competitionBadge({id:-102028,name:'Euro 2028',kind:'international',code:'EU',year:2028}),'<a class="competition-code international" href="#/international/2028" title="Euro 2028">EU</a>');
- assert.equal(competitionHref({name:'Euro 2028',kind:'international',code:'EU'}),'');
+ // An edition of the selections leads to its competition's page, on that edition; without a year, to the competition's
+ // page; a competition the game does not know leads nowhere.
+ assert.equal(competitionBadge({id:-102028,name:'Euro 2028',kind:'international',code:'EU',year:2028}),'<a class="competition-code international" href="#/international/euro?edition=2028" title="Euro 2028">EU</a>');
+ assert.equal(competitionHref({name:'Euro',kind:'international',code:'EU'}),'#/international/euro');
+ assert.equal(competitionHref({name:'Euro 2028',kind:'international'}),'');
  assert.equal(competitionBadge({name:'Premier League',kind:'league'}),'<span class="competition-code league" title="Premier League">PL</span>');
  assert.match(competitionBadge({name:'Coupe <de> France',kind:'cup'}),/class="competition-code cup" title="Coupe &lt;de&gt; France">C&lt;F</);
 });

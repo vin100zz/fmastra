@@ -2,7 +2,6 @@ import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,
  pitchLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {clubTiles} from './club-hero.js';
-import {leaderBars} from './club-history.js';
 
 const BEST_PLAYERS=8;
 export const shortDate=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
@@ -109,7 +108,7 @@ export function elevenCard(club,eleven,height=null){
   const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position} : ${note} sur 200`;
   return `<a class="pitch-player" href="#/player/${player.id}" title="${e(player.name)} · ${e(told)}" style="left:${x}%;top:${y}%">${kitShirt(club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</a>`;
  }).join('');
- return card('Équipe-type',`<div class="pitch eleven-pitch" aria-label="Équipe-type de ${e(club.name)}"${fit}>${PITCH_BOXES}${marks}</div>`,'','eleven-card');
+ return card('Équipe-type',`<div class="pitch eleven-pitch" aria-label="Équipe-type de ${e(club.name)}"${fit}>${PITCH_BOXES}${marks}</div>`,'','season-eleven');
 }
 
 // Each player of the squad who asks for a decision, with what he asks it for.
@@ -147,8 +146,16 @@ export function marketCard(club,data,rows=12){
  return card('Mercato',side('Arrivées',arrivals,shownIn,true)+side('Départs',departures,shownOut,false),`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir →</a>`,'season-market');
 }
 
-// The club's best scorers, providers and notes of the season, as the bars of its Historique, `rows` each. A note counts from
-// half as many matches as the most used player played, as in Actualités.
+// Players ranked on one figure, as bars against the first of them, its unit in the head of the card. `format` writes the
+// figure; `soft` draws the bars in the pale blue.
+export function leaderBars(title,rows,key,unit,{format=n,soft=false}={}){
+ const top=rows[0]?.[key]||1;
+ const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur pour l’instant.','Pas encore de statistiques');
+ return card(title,body,`<span class="card-hint">${unit}</span>`,`leaders-card ${key}${soft?' soft':''}`);
+}
+
+// The club's best scorers, providers and notes of the season, as bars, `rows` each. A note counts from half as many matches
+// as the most used player played, as in Actualités.
 export function leadersCards(squad,rows=8){
  const played=squad.filter(player=>player.appearances>0),most=Math.max(0,...played.map(player=>player.appearances));
  const top=(key,among=played)=>among.filter(player=>player[key]>0).sort((a,b)=>b[key]-a[key]||b.appearances-a.appearances||a.id-b.id).slice(0,rows)

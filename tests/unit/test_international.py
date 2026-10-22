@@ -5,6 +5,8 @@ from random import Random
 
 import pytest
 
+from api.international import competitions_view, competition_history, nation_summary
+from api.nation_archive import history as nation_history
 from api.views import international_records
 from benchmarks.fixtures import synthetic_lineup
 from core.domain.date import Date
@@ -15,7 +17,7 @@ from core.domain.matches import MatchResult, PlayerMatchStats, MatchEvent
 from core.world.international import (initialize_international, edition_matches, progress_international,
                                      prepare_international_day, play_international_day, best_seconds,
                                      apply_international_result, group_table)
-from core.world.international_calendar import create_edition, QUOTAS, windows, draw_final_groups
+from core.world.international_calendar import create_edition, QUOTAS, windows, draw_final_groups, campaign_draw
 from core.world.international_selection import preferences, fill_camp, camp_lineup, get_player
 from core.world.international_validation import validate_international
 from core.world.application import apply
@@ -209,6 +211,8 @@ def test_july_rollover_keeps_edition_and_discipline(world):
     world.date = Date(2028, 7, 1)
     apply(world, SeasonOpened(2028, [], {}))
     assert world.international.matches == matches
+    # Each selection's strength is kept as the season opens.
+    assert all(world.international.strength_history[nid][-1] == (2028, nation.strength) for nid, nation in world.international.nations.items())
     assert players[0].international_discipline[edition.competition_id].yellows == 1
     assert players[0].international_discipline[edition.competition_id].suspended_matches == 1
 
@@ -269,6 +273,26 @@ def test_two_complete_international_cycles_with_match_engine(world):
     assert not world.international.temporary
     assert len(world.international.records) > 0
     validate_international(world)
+    # The history of the Euro's winner: the four editions, the latest first, and its title.
+    winner = world.international.editions[2028].winner_id
+    data = nation_history(world, winner)
+    assert [(row['year'], row['code']) for row in data['items']] == [(2030, 'CM'), (2029, 'LN'), (2028, 'EU'), (2027, 'LN')]
+    euro = data['items'][2]
+    assert euro['stage'] == {'label': 'Vainqueur', 'level': 0} and euro['finals']['winner'] and euro['first_phase'].endswith(tuple('ABCDEFGHIJ'))
+    assert {'kind': 'euro', 'code': 'EU', 'competition': 'Euro', 'count': 1, 'years': [2028]} in data['honours'] and data['current'] is None
+    played = [m for m in world.international.matches.values() if winner in (m.home_id, m.away_id)]
+    assert data['record']['total']['played'] == sum(row['record']['played'] for row in data['items']) == len(played)
+    assert sum(row['played'] for row in data['record']['rows']) == len(played)
+    assert [row['phase'] for row in data['record']['rows'] if row['code'] == 'EU'] == ['finals', 'qualification']
+    # Its players and its records, the age ones kept match after match.
+    squad = nation_history(world, winner, 'joueurs')
+    assert len(squad['eleven']) == 11 and squad['matches'][0]['matches'] >= squad['matches'][-1]['matches']
+    feats = nation_history(world, winner, 'records')
+    held = world.international.age_records[winner]
+    assert {'youngest', 'oldest', 'youngest_scorer', 'oldest_scorer'} <= set(held) and held['youngest'].days <= held['oldest'].days
+    assert [row['kind'] for row in feats['ages']] == ['youngest', 'oldest', 'youngest_scorer', 'oldest_scorer']
+    assert all(row['year'] in (2027, 2028, 2029, 2030) for row in feats['ages']) and feats['wins'] and feats['runs']['longest']
+    assert feats['opponents']['played']['count'] >= 2
 
 
 def test_international_shootout_and_suspension(world):
@@ -555,3 +579,36 @@ def test_a_club_plays_up_to_the_day_before_a_camp_and_from_the_day_after_it(worl
     # The September window's camp runs from 31 August to 9 September.
     assert free(Date(2026, 8, 30)) and not free(Date(2026, 8, 31))
     assert not free(Date(2026, 9, 9)) and free(Date(2026, 9, 10))
+
+
+def test_each_competition_keeps_its_finals_titles_runs_and_players(world):
+    """A Nations League and a Euro played to the end: each competition's holder, its final from the winner's side, the
+    titles and the finals of each nation, how far each nation went, and the next edition with the day it is drawn."""
+    league, euro = world.international.editions[2027], world.international.editions[2028]
+    finish_rounds(world, league, 1, 6)
+    finish_rounds(world, league, 15, 15)
+    for match in edition_matches(world, league, 16, 16):
+        match.result = MatchResult(1, 1, "test", winner_id=match.away_id, penalties=(3, 4))
+    progress_international(world)
+    for low, high in ((1, 10), (11, 13), (14, 14), (15, 15), (16, 16)):
+        finish_rounds(world, euro, low, high)
+    assert league.winner_id is not None and euro.winner_id is not None
+    world_cup, euros, leagues = competitions_view(world)
+    assert world_cup["finals"] == [] and world_cup["next"] == {"year": 2030, "draw": "2028-08-01"}
+    assert euros["holder"]["id"] == euro.winner_id and euros["next"] == {"year": 2032, "draw": "2030-08-01"}
+    final = leagues["finals"][0]
+    # A shoot-out the side away won: the score and the shoot-out are written from the winner's side.
+    assert (final["winner"]["id"], final["runner_up"]["id"]) == (league.winner_id, league.runner_up_id)
+    assert (final["score"], final["penalties"]) == ([1, 1], [4, 3])
+    assert leagues["next"] == {"year": 2029, "draw": campaign_draw(world, 2029).iso()} and campaign_draw(world, 2029) == Date(2028, 8, 1)
+    history = competition_history(world, "euro")
+    assert history["editions"] == [2028] and len(history["runs"]) == 16
+    assert [row["runs"][0]["stage"] for row in history["runs"][:4]] == ["winner", "final", "semi", "semi"]
+    assert {row["runs"][0]["stage"] for row in history["runs"][4:]} == {"quarter", "groups"}
+    assert history["titles"][0] == {"nation": history["runs"][0]["nation"], "titles": 1, "finals": 1}
+    nations = competition_history(world, "nations")
+    moved = [row["runs"][0]["move"] for row in nations["runs"]]
+    assert nations["runs"][0]["runs"][0] == {"division": "A", "stage": "winner", "move": None}
+    assert moved.count("up") == moved.count("down") > 0
+    assert nation_summary(world, euro.winner_id)["titles"]["euro"] == 1
+    assert nation_summary(world, euro.winner_id)["last_edition"]["code"] == "EU"

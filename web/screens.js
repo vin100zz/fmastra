@@ -1,7 +1,8 @@
 import {monthlyAmount,salarySearchParams} from './salaries.js';
 import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
-import {movementsHistory,seasonsHistory} from './club-history.js';
+import {movementsHistory} from './club-history.js';
+import {CLUB_VIEWS,historyView,viewChoice,clubHistory} from './history.js';
 import {clubPreview,marketBlock,presentationContent} from './club-overview.js';
 import {clubHero,competitionHero} from './club-hero.js';
 import {calendarContent} from './club-calendar.js';
@@ -112,7 +113,7 @@ export async function clubScreen(id,section,params){
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${year}`);content=calendarContent(club,data,params);tools=seasonSteps(data);}
  else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${year}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market,{club,market:state.market}):'')+movementsHistory(data,params);tools=seasonSteps(data);}
  else if(section==='finances'){const [data,squad]=await Promise.all([api(`/clubs/${id}/finances?${year}`),api(`/clubs/${id}/effectif`)]);content=financesContent(club,data,squad);tools=seasonSteps(data.history);}
- else {const data=await api(`/clubs/${id}/historique?${query({page:params.get('page')})}`);content=seasonsHistory(data,club,state.season??null);}
+ else {const view=historyView(CLUB_VIEWS,params);const data=await api(`/clubs/${id}/historique?${query({vue:view})}`);content=clubHistory(view,data,club,state.season??null);tools=viewChoice(CLUB_VIEWS,view,`#/club/${id}/history`);}
  return clubHero(club,{lead,menu,section,tools})+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+content;
 }
 

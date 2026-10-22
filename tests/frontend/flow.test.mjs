@@ -2,13 +2,15 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {roundHash,landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage} from '../../web/flow.js';
 
-const league={kind:'league',id:16,code:null},cup={kind:'cup',id:-3,code:null},europe={kind:'europe',id:-101,code:'C1'},euro={kind:'international',year:2028};
+const league={kind:'league',id:16,code:null},cup={kind:'cup',id:-3,code:null},europe={kind:'europe',id:-101,code:'C1'},euro={kind:'international',year:2028,code:'EU'};
 
 test('a round opens on the tab of its competition’s page',()=>{
  assert.equal(roundHash(league,'latest'),'#/league/16/latest');
  assert.equal(roundHash(cup,'next'),'#/league/-3/next');
  assert.equal(roundHash(europe,'latest'),'#/europe/C1/latest');
- assert.equal(roundHash(euro,'latest'),'#/international/2028/latest');
+ assert.equal(roundHash(euro,'latest'),'#/international/euro/latest?edition=2028');
+ // An edition the game no longer knows by its badge keeps its year.
+ assert.equal(roundHash({kind:'international',year:2028},'latest'),'#/international/2028/latest');
 });
 
 test('a step lands on the next round when the club’s match awaits its lineup, on the round played otherwise',()=>{

@@ -16,12 +16,13 @@ from core.domain.world import World, JournalEntry, SeasonRecord, TransferRecord,
 from core.domain.offers import RenewalProposal, TransferOffer
 from core.domain.finance import FinanceSeason, MonthlyFinance
 from core.domain.international import NationalTeam, InternationalEdition, NationalCamp, InternationalRecord, InternationalState, InternationalCareer
+from core.domain.records import AgeRecord
 from infrastructure.config.loader import config_payload, decode_config
 
 ENTITIES = {cls.__name__: cls for cls in (Date, Attributes, Contract, Discipline, Injury, Loan, Player,
             Club, ClubPersonality, Competition, Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats,
             World, JournalEntry, SeasonRecord, TransferRecord, MovementSnapshot, TransferOffer, FinanceSeason, MonthlyFinance,
-            SubmittedLineup, RenewalProposal, LiveOrder, LiveMatchRecord)}
+            SubmittedLineup, RenewalProposal, LiveOrder, LiveMatchRecord, AgeRecord)}
 ENUMS = {cls.__name__: cls for cls in (Position, ClubStatus)}
 ENTITIES.update({cls.__name__: cls for cls in (NationalTeam, InternationalEdition, NationalCamp, InternationalRecord, InternationalState, InternationalCareer)})
 

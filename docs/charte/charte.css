@@ -127,6 +127,8 @@
 .segmented.steps>*{padding:0}
 .segmented.steps>:is(:first-child,:last-child){font-size:var(--fs-figure)}
 .segmented>:is(:disabled,[aria-disabled="true"]){color:var(--muted);opacity:.6}
+/* The views of a tab, at the end of its row of tabs: the open one marked in the colour of the open tab. */
+.segmented.views>.active{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--club,var(--accent))}
 /* The steps through the seasons, or the editions of the selections: an arrow to each side of the one shown, which opens
    the list of them all. No border: a ground shows under the pointer only, and under the season while its list is open.
    The arrows take the colour of the club or the selection on its page (`--club`: the one under its open tab), the ink
@@ -203,8 +205,43 @@
 .rank.c4,.legend i.c4{--cup:var(--c4);--cup-soft:var(--c4-soft)}
 .rank:is(.c1,.c3,.c4),.legend i:is(.c1,.c3,.c4){background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
 .rank.tentative,.legend i.tentative{box-shadow:none;border:1px dashed var(--cup)}
+/* A title in a league, in the history of a club: its rank on the accent. */
+.rank.title{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text);color:var(--accent-ink)}
+/* A run in a cup, a selection's finals: a chip of 18 with the round reached, plain; a semi-final ringed in blue, a final in
+   green, a title on the accent with its star. */
+.reached{display:inline-flex;align-items:center;gap:var(--s1);flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);color:var(--ink-2);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
+.reached.semi{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
+.reached.final{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+.reached.won{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text);color:var(--accent-ink)}
+.reached svg{width:10px;height:10px;fill:currentColor}
+/* A change, signed, after the value it moved: green up, red down, muted when nothing moved. */
+.delta{display:inline-grid;place-items:center;flex:none;min-width:40px;height:var(--h-chip);padding:0 5px;border-radius:var(--radius);background:var(--panel-2);color:var(--muted);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
+.delta.up{background:var(--good-soft);color:var(--good)}
+.delta.down{background:var(--bad-soft);color:var(--bad)}
+.with-delta{display:flex;align-items:center;justify-content:flex-end;gap:var(--s2)}
+/* The titles, a line each: the competition's badge, the title, when it was won, the count. */
+.honour-line{display:grid;grid-template-columns:32px minmax(0,1fr) auto 24px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.honour-line:last-child{border-bottom:0}
+.honour-line>b{font-weight:600;color:var(--strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.honour-line>small{font-size:var(--fs-small);color:var(--muted);white-space:nowrap}
+.honour-line>strong{text-align:right;color:var(--strong)}
 .tr.head>.center{text-align:center}
 .cell{display:flex;align-items:center;gap:6px}
+/* A final, from its winner's side: its score a link to the match, a shoot-out's mark before it, as on the storey of a
+   match in a list. */
+.final-score{white-space:nowrap}
+.final-score small{margin-right:var(--s1);font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);color:var(--muted)}
+/* How far a nation went in an edition of a competition, a column per edition, written short: ✦ the title, in bold in the
+   accent's ink as a winner in a match list; F the final, in the strong ink; 1/2, 1/4, 1/8, Gr.; — not there, muted. In a
+   Nations League, the division played, its run in the finals in place of the A, then an arrow where it went up (green)
+   or down (red). The full words are in the tooltip. */
+.run{text-align:center;color:var(--ink-2);white-space:nowrap}
+.run.won{font-weight:700;color:var(--accent-text)}
+.run.final{font-weight:600;color:var(--strong)}
+.run.none{color:var(--muted)}
+.run i{margin-left:3px;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
+.run i.up{color:var(--good)}
+.run i.down{color:var(--bad)}
 /* A match on one line: its day, the other side, its score. */
 .match-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
 .match-row.next{background:var(--own-row)}
@@ -433,6 +470,12 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .hero-kits{display:flex;align-items:center;gap:var(--s2);flex:none}
 .hero-kits>a{display:block}
 .hero-kit{display:block;flex:none;width:48px;height:80px;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
+/* A competition of the selections at the head of its column, on Sélections nationales: the band of its header, its
+   emblem and its name in the size of a page's title, in capitals, as on the doors of the home; its sash pushed to the
+   right of the column; no tile. It opens the competition's page as a whole (the veil of its ink under the pointer). */
+.hero.narrow h2{font:700 semi-condensed var(--fs-page)/32px var(--display);letter-spacing:var(--caps);text-transform:uppercase;white-space:nowrap}
+.hero.narrow .hero-sash{clip-path:polygon(86% 0,92% 0,85% 100%,79% 100%)}
+.hero.narrow .hero-sash.thin{clip-path:polygon(93.5% 0,95% 0,88% 100%,86.5% 100%)}
 .hero .tile strong :is(.kit-dot,.flag){align-self:center}
 /* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
    of 16 with a line of 2.4 to the previous and to the next of the group, and between them three lines, of an icon's line,
@@ -578,10 +621,8 @@ span.entity-step svg{opacity:.3}
 .comparison-bar>i:first-child{border-radius:4px 0 0 4px}
 .comparison-bar>i:last-child{border-radius:0 4px 4px 0}
 .comparison-bar.none>i{background:var(--panel-3)}
-/* A league rank season after season, drawn to the width of its card: a line of 2 through a point for each season, the one
-   under way an open point at the end of a dashed line, the rank written by its point. A storey for each division the club
-   has played in, the highest on top, a line between two storeys; in each, the places that lead somewhere are tinted as a
-   table marks them (Europe, promotion, relegation), and named on the right in the muted ink. */
+/* A chart drawn to the width of its card (the treasury of a club): a line of 2 in the first series, its points ringed with
+   the ground, the grid and the ticks in the muted ink, a value as a figure. */
 .club-chart{display:block;width:100%;height:auto;overflow:visible;font-family:var(--text)}
 .cc-grid{stroke:var(--row-line);stroke-width:1}
 .cc-tick{font-size:var(--fs-body);fill:var(--muted)}
@@ -590,10 +631,39 @@ span.entity-step svg{opacity:.3}
 .cc-line.dashed{stroke-dasharray:5 5}
 .cc-point{fill:var(--series-1);stroke:var(--panel);stroke-width:2}
 .cc-point.open{fill:var(--panel);stroke:var(--series-1)}
-.rank-zone.europe{fill:var(--info-soft)}
-.rank-zone.promotion{fill:var(--good-soft)}
-.rank-zone.relegation{fill:var(--bad-soft)}
-.rank-zone-label{font-size:var(--fs-small);font-weight:600;fill:var(--muted)}
+/* A league rank season after season, or the stage of each edition of a selection: a column of 44 at least for each, a chart
+   wider than its card scrolls, opened on its latest columns; the names of the storeys on the left and of their places or
+   levels on the right stay put. The rank is written in its point, a disc of 22, a title on the accent, the season under
+   way open at the end of a dashed line. A storey for each division, the highest on top, a line between two; in each, the
+   places that lead somewhere are tinted as a table marks them. Under the storeys, the second series (the reputation, the
+   strength) on the same columns, its value written at both ends. */
+.cc-body{padding:var(--s2) var(--s3)}
+.cc{display:grid;grid-template-columns:112px minmax(0,1fr) 96px;padding-bottom:var(--s1)}
+.cc.wide{grid-template-columns:136px minmax(0,1fr) 96px}
+.cc-side{position:relative}
+.cc-side>span{position:absolute;transform:translateY(-50%);white-space:nowrap;color:var(--muted)}
+.cc-side.left>span{right:var(--s3)}
+.cc-side.right>span{left:var(--s3);font-size:var(--fs-small);font-weight:600}
+.cc-scroll{overflow-x:auto;overflow-y:hidden;direction:rtl;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.cc-plot{position:relative;direction:ltr}
+.cc-plot>*{position:absolute}
+.cc-zone,.cc-rule{left:0;right:0}
+.cc-zone.europe{background:var(--info-soft)}
+.cc-zone.promotion{background:var(--good-soft)}
+.cc-zone.relegation{background:var(--bad-soft)}
+.cc-rule{height:1px;background:var(--row-line)}
+.cc-lines{left:0;top:0;width:100%;overflow:visible}
+.cc-line.second{stroke:var(--series-2)}
+.cc-plot>.cc-dot{width:8px;height:8px;border-radius:50%;background:var(--series-2);box-shadow:0 0 0 2px var(--panel);transform:translate(-50%,-50%)}
+.cc-label{font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong);white-space:nowrap}
+.cc-label.first{transform:translate(calc(-1*var(--s1)),calc(-100% - var(--s2)))}
+.cc-label.last{transform:translate(calc(-100% + var(--s1)),calc(-100% - var(--s2)))}
+.cc-rank{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--series-1);box-shadow:0 0 0 2px var(--panel);color:#fff;font:700 var(--fs-small)/1 var(--text);transform:translate(-50%,-50%)}
+.cc-rank.title{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text),0 0 0 2px var(--panel);color:var(--accent-ink)}
+.cc-rank.code{font-size:var(--fs-micro)}
+.cc-rank.open{background:var(--panel);box-shadow:inset 0 0 0 2px var(--series-1),0 0 0 2px var(--panel);color:var(--strong)}
+.cc-year{transform:translateX(-50%);color:var(--muted);white-space:nowrap}
+.cc-year.now{font-weight:600;color:var(--strong)}
 /* A level month after month, drawn to the size of its card: the line of a series, 2 px; a dot in the club's colours where
    a season opens and on the latest month; the level written at both ends as a figure; the ordinate and the dates in the
    muted ink, as HTML text over the stretched drawing. */
@@ -688,8 +758,8 @@ span.entity-step svg{opacity:.3}
 .watch-facts{display:flex;align-items:center;gap:var(--s3)}
 .section-title>b{margin-left:auto;font-weight:600;color:var(--strong)}
 /* Players ranked on one figure: a line of 26 each, his rank, his name, a bar of 8 against the first of the list (its end
-   rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) for the
-   matches of the Historique and the lists of the Présentation. */
+   rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) on the
+   lists of the Présentation. */
 .leader-bars{display:flex;flex-direction:column;margin:0;padding:var(--s1) var(--s3) var(--s2);list-style:none}
 .leader-bars>li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row)}
 .leader-bars>li>:first-child{font-weight:600;text-align:right;color:var(--muted)}
@@ -714,7 +784,9 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
-.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
+.app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.hero,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
+/* A band that opens its page as a whole: the veil of its ink, its sash over it. */
+.app a.hero:is(:hover,.hover){box-shadow:inset 0 0 0 100vmax var(--hero-veil)}
 :is(.nav a,.segmented>a,.segmented>button,.button):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
    their colour. */

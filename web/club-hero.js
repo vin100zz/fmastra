@@ -131,6 +131,15 @@ export function competitionHero(competition,{lead='',base,menu,section,tools=''}
   tiles:named?tile(won?competition.kind==='league'?'Champion':'Vainqueur':'Tenant du titre',clubLink(named,{flag:competition.kind==='europe'})):''});
 }
 
+// A competition's band at the head of its column, on Sélections nationales: the band of its header, its emblem and its name,
+// no tile; it opens the competition's page as a whole (`href`).
+export function competitionBand(competition,href){
+ const emblem=EMBLEMS[competition.code];
+ return `<a class="club-hero-band narrow" href="${e(href)}" style="${heroColors(competition.major_color,competition.minor_color,competition.ground_color)}">`
+  +`<div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i></div><div class="club-hero-main">`
+  +`${emblem?`<img class="club-hero-emblem" src="/emblems/${emblem}.png" alt="">`:''}<div class="club-hero-identity"><h2>${e(competition.name)}</h2></div></div></a>`;
+}
+
 // A side of a match without colours keeps the panel's, whatever the other side wears.
 const PLAIN_SIDE='--hero-field:var(--panel-2);--hero-ink:var(--ink);--hero-sash:transparent;--crest-major:var(--panel-3);--crest-minor:var(--panel-3);--crest-ink:var(--ink)';
 const sideColors=team=>heroColors(team.major_color,team.minor_color)||PLAIN_SIDE;

@@ -233,6 +233,21 @@ Conserver les transferts, palmarès, retraites et l'historique mensuel du niveau
 (entier sur 200, par suites de mois consécutifs ; un point par saison avant la v23). Archiver les retraités sous forme compacte ; ils ne restent pas dans
 les boucles de progression ou de recherche des joueurs disponibles.
 
+Les records d'âge de chaque club et de chaque sélection (`World.age_records`,
+`InternationalState.age_records` : plus jeune et plus âgé joueur, plus jeune et plus
+âgé buteur, chacun `AgeRecord` : joueur, jour, date de naissance) sont tenus match
+après match, puisque l'archivage abandonne les compositions. La force de chaque
+sélection est gardée à l'ouverture de chaque saison
+(`InternationalState.strength_history`), comme la réputation d'un club. Quatre
+records par camp et un nombre par sélection et par saison : quelques kilo-octets,
+quand une saison en ajoute environ 2,5 Mo. Une sauvegarde antérieure au schéma 36
+les reconstruit au chargement (`initialize_age_records`, `initialize_strengths`) :
+exacts pour les matches dont le détail est gardé (la saison en cours, toutes les
+rencontres des sélections), approchés pour les saisons archivées, où l'âge d'un
+joueur est lu au premier jour où son club a joué la compétition cette saison-là
+pour un record de jeunesse, au dernier pour un record de longévité ; la force de
+chaque sélection commence à la saison en cours.
+
 JSON gzippé avec `schema_version`, sérialisation explicite, migrations testées,
 configuration complète et états RNG. Autosauvegarde après chaque journée de jeu
 validée, slots multiples. Les sauvegardes atomiques et la reprise déterministe

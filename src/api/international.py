@@ -2,8 +2,9 @@
 from dataclasses import asdict
 from typing import Literal
 from fastapi import APIRouter
+from core.domain.international import EDITION_NAMES
 from core.world.international import group_table, best_seconds, edition_matches, next_divisions
-from core.world.international_calendar import LEAGUE_ROUNDS, SEMI_FINALS
+from core.world.international_calendar import LEAGUE_ROUNDS, SEMI_FINALS, FINAL, campaign_draw, edition_kind, nations_league
 from . import navigation as nav
 from . import views as v
 from .nations import competition_colors, kit_colors
@@ -16,6 +17,11 @@ FINALS_LABELS = {"euro": {14: "Quarts de finale", 15: "Demi-finales", 16: "Final
                   "nations": {15: "Demi-finales", 16: "Finale"}}
 DIVISIONS = "ABCD"
 MOVED = {"promotion": "Promu", "relegation": "Relégué"}
+# The three competitions of the selections, in the order their pages step through them, each by the word of its address.
+COMPETITIONS = {"world": "coupe-du-monde", "euro": "euro", "nations": "ligue-des-nations"}
+KINDS = {slug: kind for kind, slug in COMPETITIONS.items()}
+# How far a nation went in an edition, the furthest first: a history ranks its nations by it.
+STAGES = ("winner", "final", "semi", "quarter", "eighth", "groups")
 
 
 def league_groups(edition):
@@ -166,16 +172,142 @@ def nation_editions(world, nid, moves=None):
         qualification, finals = first, finals_run(world, edition, nid)
         if qualification is None and finals is None:
             continue
-        rows.append({"year": edition.year, "name": edition.name, "qualification": qualification, "finals": finals})
+        rows.append({"year": edition.year, "name": edition.name, "code": EDITION_CODES[edition.kind], "qualification": qualification,
+                     "finals": finals})
     return rows
 
 
 def nation_summary(world, nid, moves=None):
-    """What the nations list shows beside a nation's strength: its titles and how its latest finished edition went."""
-    titles = sum(1 for edition in world.international.editions.values() if edition.winner_id == nid)
+    """What the nations list shows beside a nation's strength: its titles in each competition and how its latest finished
+    edition went."""
+    titles = dict.fromkeys(COMPETITIONS, 0)
+    for edition in world.international.editions.values():
+        if edition.winner_id == nid:
+            titles[edition.kind] += 1
     rows = nation_editions(world, nid, moves)
     run = rows[0]["finals"] or rows[0]["qualification"] if rows else None
-    return {"titles": titles, "last_edition": {"name": rows[0]["name"], "label": run["label"], "winner": run["winner"]} if run else None}
+    last = {key: rows[0][key] for key in ("year", "name", "code")} if run else None
+    return {"titles": titles, "last_edition": {**last, "label": run["label"], "winner": run["winner"]} if run else None}
+
+
+def competition_ref(kind):
+    """A competition of the selections as its pages show it: its name, its badge and its colours."""
+    code = EDITION_CODES[kind]
+    return {"kind": kind, "slug": COMPETITIONS[kind], "name": EDITION_NAMES[kind], "code": code, **competition_colors(code)}
+
+
+def final_view(world, edition):
+    """How a finished edition ended: its winner, its finalist and its final's score from the winner's side, with the
+    shoot-out's when there was one; none before its final is played."""
+    number = max(FINALS_LABELS[edition.kind])
+    final = next((m for m in edition_matches(world, edition, number, number) if m.result), None)
+    if edition.winner_id is None or final is None:
+        return None
+    result = final.result
+    side = (lambda pair: list(pair)) if final.home_id == edition.winner_id else (lambda pair: [pair[1], pair[0]])
+    return {"year": edition.year, "match_id": final.id, "winner": nation_ref(world, edition.winner_id),
+            "runner_up": nation_ref(world, edition.runner_up_id), "score": side((result.home_goals, result.away_goals)),
+            "penalties": side(result.penalties) if result.penalties else None}
+
+
+def edition_stage(edition, number):
+    """The stage a round belongs to: a tournament's qualifiers, groups or knockout rounds, a Nations League's groups or
+    its finals."""
+    if edition.kind == "nations":
+        return "Phase de ligue" if number <= LEAGUE_ROUNDS else "Phase finale"
+    return "Qualifications" if number <= 10 else "Phase de groupes" if number <= 13 else "Phase finale"
+
+
+def current_view(world, edition):
+    """Where an edition under way stands: its stage, and its next match day, the round written short (J4, Demi-finales)."""
+    matches = edition_matches(world, edition)
+    coming = min((m for m in matches if m.result is None), key=lambda m: (m.date, m.id), default=None)
+    number = coming.round_number if coming else max((m.round_number for m in matches), default=1)
+    return {"year": edition.year, "stage": edition_stage(edition, number),
+            "next": {"date": coming.date.iso(), "round": round_label(edition, number).split(" · ")[-1]} if coming else None}
+
+
+def next_edition(world, kind):
+    """The next edition of a competition none of whose editions is under way: its year and the day it is drawn."""
+    start = max((e.year for e in world.international.editions.values() if e.kind == kind), default=world.date.year - 1) + 1
+    for year in range(start, start + 12):
+        if year not in world.international.editions and (edition_kind(world, year) or nations_league(world, year) and "nations") == kind:
+            return {"year": year, "draw": campaign_draw(world, year).iso()}
+    return None
+
+
+def kind_editions(world, kind):
+    return sorted((e for e in world.international.editions.values() if e.kind == kind), key=lambda e: e.year)
+
+
+def competitions_view(world):
+    """The three competitions as the page Sélections nationales shows them: who holds each title, the edition under way
+    and its next match day (else the next edition and the day it is drawn), and every final played, the latest first."""
+    rows = []
+    for kind in COMPETITIONS:
+        editions = kind_editions(world, kind)
+        won = [e for e in editions if e.winner_id is not None]
+        playing = next((e for e in editions if e.winner_id is None), None)
+        rows.append({**competition_ref(kind), "holder": nation_ref(world, won[-1].winner_id) if won else None,
+                     "current": current_view(world, playing) if playing else None,
+                     "next": None if playing else next_edition(world, kind),
+                     "finals": [view for e in reversed(won) if (view := final_view(world, e))]})
+    return rows
+
+
+def edition_runs(world, edition, moves):
+    """How far each nation went in an edition. In a tournament, each finalist: the title, the final, the round it went out
+    in or the groups. In a Nations League, each nation: its division, its run in the finals, and where it went once the
+    groups are over (`move`, up or down)."""
+    knockouts = edition_matches(world, edition, 14)
+    reached = {}
+    for match in knockouts:
+        for nid in (match.home_id, match.away_id):
+            reached[nid] = max(reached.get(nid, 0), match.round_number)
+    def stage(nid):
+        if nid == edition.winner_id:
+            return "winner"
+        last = max(FINALS_LABELS[edition.kind])
+        return {last: "final", last - 1: "semi", last - 2: "quarter", last - 3: "eighth"}.get(reached.get(nid), "groups")
+    if edition.kind != "nations":
+        return {nid: {"stage": stage(nid)} for nid in edition.qualifiers}
+    if edition.qualifiers and edition.year not in moves:
+        moves[edition.year] = league_movements(world, edition)
+    went = {"promotion": "up", "relegation": "down"}
+    return {nid: {"division": DIVISIONS[index], "stage": stage(nid) if nid in edition.qualifiers else None,
+                  "move": went.get(moves.get(edition.year, {}).get(nid))}
+            for index, division in enumerate(edition.divisions) for group in division for nid in group}
+
+
+def competition_history(world, kind):
+    """The history of a competition: its finals, the titles and the finals of each nation, how far each nation went in each
+    edition, the best first, and the players with the most matches and goals in it, its qualifiers included. A tournament
+    counts its finished editions; a Nations League also the one under way, whose divisions are known from its draw."""
+    editions = kind_editions(world, kind)
+    league = kind == "nations"
+    shown = editions if league else [e for e in editions if e.winner_id is not None]
+    moves, runs = {}, {}
+    for edition in shown:
+        for nid, run in edition_runs(world, edition, moves).items():
+            runs.setdefault(nid, {})[edition.year] = run
+    finals = [view for e in reversed(editions) if e.winner_id is not None and (view := final_view(world, e))]
+    titles = {}
+    for view in finals:
+        for side, won in ((view["winner"], 1), (view["runner_up"], 0)):
+            row = titles.setdefault(side["id"], {"nation": side, "titles": 0, "finals": 0})
+            row["titles"] += won
+            row["finals"] += 1
+    def rank(nid):
+        cells = runs[nid].values()
+        stages = [sum(cell["stage"] == stage for cell in cells) for stage in (STAGES[:3] if league else STAGES)]
+        played = [sum(cell["division"] == letter for cell in cells) for letter in DIVISIONS] if league else [len(cells)]
+        return (*(-count for count in stages + played), v.normalized(world.international.nations[nid].name), nid)
+    years = {e.year for e in editions}
+    return {**competition_ref(kind), "editions": [e.year for e in shown], "finals": finals,
+            "titles": sorted(titles.values(), key=lambda row: (-row["titles"], -row["finals"], v.normalized(row["nation"]["name"]))),
+            "runs": [{"nation": nation_ref(world, nid), "played": len(runs[nid]), "runs": [runs[nid].get(e.year) for e in shown]}
+                     for nid in sorted(runs, key=rank)],
+            "leaders": international_leaders(world, (r for r in world.international.records.values() if r.edition in years))}
 
 
 def edition_group(world, edition, nid):
@@ -184,13 +316,15 @@ def edition_group(world, edition, nid):
     if edition.kind == "nations":
         for name, group in league_groups(edition):
             if nid in group:
-                return {"year": edition.year, "edition": edition.name, "stage": "Phase de ligue", "finals": False, "name": name,
-                        "places": 0, "rows": league_rows(world, edition, group, league_movements(world, edition))}
+                return {"year": edition.year, "edition": edition.name, "code": EDITION_CODES[edition.kind], "stage": "Phase de ligue",
+                        "finals": False, "name": name, "places": 0,
+                        "rows": league_rows(world, edition, group, league_movements(world, edition))}
         return None
     for finals, groups in ((True, edition.final_groups), (False, edition.qualification_groups)):
         for index, group in enumerate(groups):
             if nid in group:
-                return {"year": edition.year, "edition": edition.name, "stage": "Phase finale" if finals else "Qualifications",
+                return {"year": edition.year, "edition": edition.name, "code": EDITION_CODES[edition.kind],
+                        "stage": "Phase finale" if finals else "Qualifications",
                         "finals": finals, "name": chr(65 + index),
                         # The places that qualify: the first of a qualifying group, the first two of a group of the finals.
                         "places": 2 if finals else 1,
@@ -316,18 +450,26 @@ def sorted_rows(world, rows, column, descending):
     return known + [row for row in rows if key(row) is None]
 
 
-def international_leaders(records):
-    """The players with the most caps and the most goals for a nation, every edition included; names come from the
-    record itself since a campaign-only reinforcement never enters the player registry."""
+def international_leaders(world, records):
+    """The players with the most caps and the most goals among some records (a nation's, a competition's), every edition
+    included, each with the nation of his latest; names come from the record itself since a campaign-only reinforcement
+    never enters the player registry."""
     totals: dict[int, dict] = {}
     for record in records:
-        total = totals.setdefault(record.player_id, {"matches": 0, "goals": 0, "name": record.name})
+        total = totals.setdefault(record.player_id, {"matches": 0, "goals": 0, "name": record.name, "edition": record.edition,
+                                                     "nation_id": record.nation_id})
         total["matches"] += record.matches
         total["goals"] += record.goals
+        if record.edition > total["edition"]:
+            total.update(edition=record.edition, nation_id=record.nation_id)
+    def nation(pid):
+        team = world.international.nations.get(totals[pid]["nation_id"])
+        return team.code if team else None
     def top(key, order):
         ranked = sorted((pid for pid, total in totals.items() if total[key] > 0),
                         key=lambda pid: (*order(totals[pid]), v.normalized(totals[pid]["name"] or ""), pid))
-        return [{"player_id": pid, "player": totals[pid]["name"], "matches": totals[pid]["matches"], "goals": totals[pid]["goals"]}
+        return [{"player_id": pid, "player": totals[pid]["name"], "nation": nation(pid), "matches": totals[pid]["matches"],
+                 "goals": totals[pid]["goals"]}
                 for pid in ranked[:LISTED_PLAYERS]]
     return {"matches": top("matches", lambda t: (-t["matches"], -t["goals"])),
             "goals": top("goals", lambda t: (-t["goals"], t["matches"]))}
@@ -349,7 +491,13 @@ def international_router(service):
                     "editions": [{"year": e.year, "name": e.name, "kind": e.kind, "code": EDITION_CODES[e.kind],
                                   "winner": nation_ref(world, e.winner_id) if e.winner_id is not None else None}
                                  for e in sorted(world.international.editions.values(), key=lambda e: -e.year)],
+                    "competitions": competitions_view(world),
                     "nations": [{**nation_ref(world, n.id), **nation_summary(world, n.id, moves)} for n in sorted(world.international.nations.values(), key=lambda n: (-n.strength, n.name))]}
+
+    @api.get("/competitions/{slug}/historique")
+    def competition(slug: Literal["coupe-du-monde", "euro", "ligue-des-nations"]):
+        with service.reading() as world:
+            return competition_history(world, KINDS[slug])
 
     @api.get("/editions/{year}")
     def edition(year: int):
@@ -382,9 +530,13 @@ def international_router(service):
                     "calendar": {"last": [{**international_match_row(world, m), "outcome": outcome(nation_id, m)} for m in reversed(played[-LAST_MATCHES:])],
                                  "next": [international_match_row(world, m) for m in coming[:NEXT_MATCHES]]},
                     "lineup": last_lineup(world, nation_id, played),
-                    "group": group,
-                    "editions": nation_editions(world, nation_id),
-                    "leaders": international_leaders(r for r in world.international.records.values() if r.nation_id == nation_id)}
+                    "group": group}
+
+    @api.get("/nations/{nation_id}/historique")
+    def nation_history(nation_id: int, vue: Literal["ensemble", "editions", "joueurs", "records"] = "ensemble"):
+        from .nation_archive import history
+        with service.reading() as world:
+            return history(world, nation_id, vue)
 
     @api.get("/nations/{nation_id}/calendrier")
     def nation_matches(nation_id: int, edition: int | None = None):

@@ -140,9 +140,9 @@ test('every competition gets both tabs just before its statistics, each asking i
 test('an international edition gets both tabs, before its statistics',async()=>{
  const edition={year:2028,name:'Euro 2028',qualification_groups:[],final_groups:[],best_seconds:[],second_places:6,qualifiers:[],matches:[],records:[],winner:null};
  assert.match(editionContent(edition,'next',{round:null,groups:[]}),/Pas de match à venir/);
- const {html,urls}=await withApi(url=>url.endsWith('/international')?{enabled:true,editions:[{year:2028,name:'Euro 2028'}],nations:[]}:url.includes('/journee/')?league:edition,
-  ()=>internationalScreen('2028','latest'));
- assert.match(html,/Qualifications<\/a><a class="active" href="#\/international\/2028\/latest" aria-current="page">Derniers matches<\/a><a class="" href="#\/international\/2028\/next">Prochains matches<\/a><a class="" href="#\/international\/2028\/statistics">Statistiques/);
+ const {html,urls}=await withApi(url=>url.endsWith('/international')?{enabled:true,editions:[{year:2028,name:'Euro 2028',kind:'euro',code:'EU'}],competitions:[],nations:[]}:url.includes('/journee/')?league:edition,
+  ()=>internationalScreen('euro','latest',undefined,new URLSearchParams('edition=2028')));
+ assert.match(html,/Qualifications<\/a><a class="active" href="#\/international\/euro\/latest\?edition=2028" aria-current="page">Derniers matches<\/a><a class="" href="#\/international\/euro\/next\?edition=2028">Prochains matches<\/a><a class="" href="#\/international\/euro\/statistics\?edition=2028">Statistiques/);
  assert.ok(urls.includes('/api/international/editions/2028/journee/derniere'));
 });
 
