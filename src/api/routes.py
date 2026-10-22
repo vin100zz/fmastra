@@ -896,11 +896,11 @@ def router(service: GameService) -> APIRouter:
             return movements(world, club_id, saison, page)
 
     @api.get("/clubs/{club_id}/historique")
-    def club_history(club_id: int, page: int = Query(1, ge=1)) -> dict:
+    def club_history(club_id: int, vue: Literal["ensemble", "saisons", "joueurs", "records"] = "ensemble") -> dict:
         from .club_archive import history
         with service.reading() as world:
             world.clubs[club_id]
-            return history(world, club_id, page)
+            return history(world, club_id, vue)
 
     @api.get("/competitions/{competition_id}/classement")
     def standings(competition_id: int, page: int = Query(1, ge=1)) -> dict:

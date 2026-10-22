@@ -20,6 +20,14 @@ from .international_calendar import (QUOTAS, DIVISION_GROUPS, GROUP_SIZE, LEAGUE
                                      league_windows, league_finals, finals_camp, edition_groups, european, add_match,
                                      group_fixtures, draw_final_groups)
 from .international_selection import (get_player, preferences, fill_camp, camp_lineup, revise_strengths)
+from .age_records import note_international_match
+
+
+def initialize_strengths(world: World) -> None:
+    """The strength history of a world that lacks it, at import and for a save older than it: each selection's strength
+    today, for the season under way. Existing histories are never replaced."""
+    for team in world.international.nations.values():
+        world.international.strength_history.setdefault(team.id, [(world.season, team.strength)])
 
 
 def initialize_international(world: World) -> None:
@@ -293,6 +301,7 @@ def apply_international_result(world, edition, match, result, lineups):
                     discipline.suspended_matches -= 1
         state.camps[nid].first_match_played = True
     team_of = {p.id: lineup.club_id for lineup in lineups for p in [*(s.player for s in lineup.slots), *lineup.bench]}
+    note_international_match(world, match, result, team_of)
     for pid, stats in result.player_stats.items():
         player = get_player(world, pid)
         if stats.minutes <= 0:

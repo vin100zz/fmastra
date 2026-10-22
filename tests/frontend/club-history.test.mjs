@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {movementsHistory,seasonsHistory} from '../../web/club-history.js';
+import {movementsHistory} from '../../web/club-history.js';
 
 const ref=(id,name)=>({id,name,major_color:'#aa0000',minor_color:'#ffcc00'});
 const lens=ref(7,'Lens');
@@ -53,100 +53,4 @@ test('buttons keep one kind of movement on a side, from the address',()=>{
  assert.doesNotMatch(movements({arrivals:[],academy:[],loans_in:[]}).split('aria-label="Départs"')[0],/movement-filters/);
  assert.match(movements({},new URLSearchParams('departs=bogus')),/data-param="departs" data-param-value="" aria-pressed="true"/);
  assert.match(movements({arrivals:[],academy:[]}).split('aria-label="Départs"')[0],/Aucun mouvement enregistré pour cette saison/);
-});
-
-const move=(player_id,player,fee,other,side,season)=>({date:'2026-07-01',player_id,player,fee,season,[side]:other});
-const seasonsData=(extra={})=>({total:2,page:1,page_size:30,items:[
- {season:2026,rank:3,champion:false,competition:'Ligue 1',competition_id:16,cup:{label:'Quarts de finale',level:4,winner:false},europe:{code:'C1',competition:'Ligue des champions',label:'Phase de ligue',level:1,winner:false},reputation:{value:88.4,change:-3.1}},
- {season:2025,rank:1,champion:true,competition:'Ligue 1',competition_id:16,cup:{label:'Vainqueur',level:7,winner:true},europe:null,reputation:{value:91.5,change:null}}],
- honours:{league:[{competition:'Ligue 1',level:1,count:1}],cup:1,europe:[],best_rank:{rank:1,season:2025,competition:'Ligue 1'},best_europe:{code:'C1',competition:'Ligue des champions',label:'Phase de ligue',season:2026}},
- leagues:[{id:16,name:'Ligue 1',level:1,clubs:18,europe:5,promotion:0,relegation:3}],
- leaders:{matches:[{player_id:1,player:'Buteur <b>',matches:80,goals:12},{player_id:3,player:'Second',matches:40,goals:2}],goals:[{player_id:2,player:'Renard',matches:40,goals:30}]},
- transfers:{arrivals:[move(3,'Recrue',25e6,ref(5,'Lyon'),'source',2026)],departures:[move(4,'Vendu',40e6,ref(6,'Milan'),'target',2025)]},...extra});
-const club={id:7,name:'Lens',competition:'Ligue 1',competition_id:16,reputation:90,standing:{rank:2,points:30}};
-
-test('the seasons table shows the rank, the reputation, the national cup and the European cup reached, sorted by depth',()=>{
- const html=seasonsHistory(seasonsData(),club,2027);
- for(const label of ['COUPE NATIONALE','COUPE D’EUROPE','CLASSEMENT','PALMARÈS','RÉPUTATION'])assert.ok(html.includes(label),label);
- assert.match(html,/<span class="run-chip">Quarts de finale<\/span>/);assert.match(html,/<span class="run-chip won">✦ Vainqueur<\/span>/);
- assert.match(html,/<a class="competition-code europe" href="#\/europe\/C1" title="Ligue des champions">C1<\/a><span class="run-chip">Phase de ligue<\/span>/);
- assert.match(html,/<span class="rank-chip europe">3e<\/span>/);assert.match(html,/<span class="rank-chip first">1er<\/span>/);
- assert.match(html,/88\.4 <span class="bad">−3\.1<\/span>/);assert.match(html,/91\.5<\/td>/);
- assert.match(html,/data-value="4"/);assert.match(html,/data-value="7"/);assert.match(html,/data-value="88.4"/);
- assert.doesNotMatch(html,/undefined|null|NaN/);
- assert.doesNotMatch(html,/Classement complet|season-archive|class="pager"/);
- assert.match(seasonsHistory(seasonsData({total:45,page:1}),club,2027),/1–30 sur 45/);
-});
-
-test('the league rank of each season is drawn against the places of the league, the season under way dashed',()=>{
- const html=seasonsHistory(seasonsData(),club,2027);
- assert.match(html,/<h2>Classement en championnat<\/h2>/);
- const chart=html.match(/<svg class="club-chart" viewBox="0 0 1000 254"[^]*?<\/svg>/)[0];
- assert.match(chart,/<rect class="rank-zone europe"/);assert.match(chart,/<rect class="rank-zone relegation"/);
- assert.match(chart,/<text class="cc-tick"[^>]*text-anchor="end">Ligue 1<\/text>/);
- assert.equal((chart.match(/<circle class="cc-point"/g)||[]).length,2);
- assert.match(chart,/<circle class="cc-point open"[^>]*><title>2027 \/ 2028 · Ligue 1 : 2e \(en cours\)<\/title>/);
- assert.equal((chart.match(/class="cc-line dashed"/g)||[]).length,1);
- // Seasons read from the oldest: the title of 2025 first.
- assert.ok(chart.indexOf('2025 / 2026 · Ligue 1 : 1er')<chart.indexOf('2026 / 2027 · Ligue 1 : 3e'));
- // Without a finished league season nor a standing, the chart says so.
- assert.match(seasonsHistory(seasonsData({items:[],total:0}),{...club,standing:null},2027),/Aucune saison de championnat terminée/);
-});
-
-const leagueRow=(season,rank,id,name)=>({season,rank,champion:rank===1,competition:name,competition_id:id,cup:null,europe:null,reputation:null});
-const pyramid=[{id:16,name:'Ligue 1',level:1,clubs:18,europe:5,promotion:0,relegation:3},{id:17,name:'Ligue 2',level:2,clubs:18,europe:0,promotion:3,relegation:3}];
-const height=(chart,title)=>Number(chart.match(new RegExp(`cy="([\\d.]+)" r="6"><title>${title}`))[1]);
-
-test('a season in another division is drawn on the storey of that division, under the one above it',()=>{
- const items=[leagueRow(2029,3,17,'Ligue 2'),leagueRow(2028,6,17,'Ligue 2'),leagueRow(2027,18,16,'Ligue 1'),leagueRow(2026,2,16,'Ligue 1')];
- const html=seasonsHistory(seasonsData({items,leagues:pyramid}),club,2030);
- // A second division makes the chart taller, and names each storey.
- const chart=html.match(/<svg class="club-chart" viewBox="0 0 1000 318"[^]*?<\/svg>/)[0];
- assert.ok(chart.indexOf('text-anchor="end">Ligue 1<')<chart.indexOf('text-anchor="end">Ligue 2<'));
- assert.equal((chart.match(/<line class="cc-grid"/g)||[]).length,1);
- // The sixth place of Ligue 2 lies under the last one of Ligue 1, and the third of Ligue 2 above the sixth.
- const last=height(chart,'2027 / 2028 · Ligue 1 : 18e'),sixth=height(chart,'2028 / 2029 · Ligue 2 : 6e'),third=height(chart,'2029 / 2030 · Ligue 2 : 3e');
- assert.ok(height(chart,'2026 / 2027 · Ligue 1 : 2e')<last&&last<third&&third<sixth);
- // Each storey has its own places: Europe on top of the first division, promotion on top of the second.
- assert.equal((chart.match(/<rect class="rank-zone europe"/g)||[]).length,1);assert.equal((chart.match(/<rect class="rank-zone promotion"/g)||[]).length,1);
- assert.equal((chart.match(/<rect class="rank-zone relegation"/g)||[]).length,2);
- assert.match(chart,/class="rank-zone-label"[^>]*>Montée</);
- // In the table too, a rank is read against the places of its own division.
- assert.match(html,/>Ligue 2<\/td><td[^>]*><span class="rank-chip promotion">3e<\/span>/);assert.match(html,/>Ligue 2<\/td><td[^>]*><span class="rank-chip">6e<\/span>/);
- assert.match(html,/>Ligue 1<\/td><td[^>]*><span class="rank-chip relegation">18e<\/span>/);
-});
-
-test('a season out of the simulated leagues keeps its place on the axis and breaks the line',()=>{
- const items=[leagueRow(2028,20,17,'Ligue 2'),leagueRow(2026,12,17,'Ligue 2')];
- const chart=seasonsHistory(seasonsData({items,leagues:[pyramid[1]]}),{...club,competition:null,competition_id:null,standing:null},2031).match(/<svg class="club-chart"[^]*?<\/svg>/)[0];
- assert.doesNotMatch(chart,/class="cc-line/);
- const ticks=[...chart.matchAll(/<text class="cc-tick" x="([\d.]+)" y="244" text-anchor="middle">([^<]+)</g)].map(match=>[Number(match[1]),match[2]]);
- assert.deepEqual(ticks.map(tick=>tick[1]),['2026 / 2027','2027 / 2028','2028 / 2029']);
- assert.equal(ticks[1][0],(ticks[0][0]+ticks[2][0])/2);
- assert.equal((chart.match(/<circle class="cc-point"/g)||[]).length,2);
-});
-
-test('the honours tell the titles and the best the club has done; the reputation is drawn season after season',()=>{
- const html=seasonsHistory(seasonsData(),club,2027);
- assert.match(html,/<b>Champion de Ligue 1<\/b><\/div><strong>×1<\/strong>/);assert.match(html,/<b>Coupe nationale<\/b><\/div><strong>×1<\/strong>/);
- // A title is told with its division, a row for each, the highest first.
- const two=seasonsHistory(seasonsData({honours:{league:[{competition:'Ligue 1',level:1,count:2},{competition:'Ligue 2 <b>',level:2,count:1}],cup:0,europe:[],best_rank:null,best_europe:null}}),club,2027);
- assert.match(two,/<b>Champion de Ligue 1<\/b><\/div><strong>×2<\/strong><\/li><li>[^]*?<b>Champion de Ligue 2 &lt;b&gt;<\/b><\/div><strong>×1<\/strong>/);
- assert.match(html,/<b>Meilleur classement<\/b><small>Ligue 1 2025 \/ 2026<\/small><\/div><strong>1er<\/strong>/);
- assert.match(html,/<b>Meilleur parcours européen<\/b>.*<span class="honour-text">Phase de ligue<\/span>/);
- assert.match(html,/aria-label="Réputation à l’ouverture de chaque saison"/);
- assert.match(html,/<title>2027 \/ 2028 : 90<\/title>/);
- assert.match(seasonsHistory(seasonsData({honours:{league:[],cup:0,europe:[],best_rank:null,best_europe:null}}),club,2027),/Aucun titre pour l’instant/);
-});
-
-test('the leaders are bars against the first of them, and the biggest transfers name their season',()=>{
- const html=seasonsHistory(seasonsData(),club,2027);
- for(const label of ['Plus utilisés','Meilleurs buteurs','Plus gros transferts'])assert.ok(html.includes(`<h2>${label}</h2>`),label);
- assert.match(html,/href="#\/player\/1">Buteur &lt;b&gt;<\/a><\/span><i style="width:100%"><\/i><b>80<\/b>/);
- assert.match(html,/href="#\/player\/3">Second<\/a><\/span><i style="width:50%"><\/i><b>40<\/b>/);
- assert.doesNotMatch(html,/Buteur <b>/);
- assert.match(html,/Recrue<\/a> <small>← Lyon<\/small><\/span><small>26-27<\/small><b>25\sM€<\/b>/);
- assert.match(html,/Vendu<\/a> <small>→ Milan<\/small><\/span><small>25-26<\/small><b>40\sM€<\/b>/);
- const none=seasonsHistory(seasonsData({total:0,items:[],leaders:{matches:[],goals:[]},transfers:{arrivals:[],departures:[]}}),club,2027);
- assert.match(none,/Pas encore de statistiques/);assert.match(none,/Aucun transfert payant enregistré/);assert.match(none,/Pas encore de saison terminée/);
 });

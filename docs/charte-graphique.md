@@ -129,6 +129,7 @@ où le fond est déjà jaune.
 | Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
 | Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Pas de saison ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes |
+| Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte est marquée de la couleur de l'onglet ouvert. Voir « Historique » |
 | Pas d'une série | `.segmented.steps` | Journées : une flèche à chaque bout, toutes écrites entre elles |
 | Pas de saison | `.season`, `.season-pick` | Saisons, éditions des sélections : une flèche de chaque côté de celle montrée, qui ouvre la liste de toutes. Voir « Pas de saison » |
 | Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Carré, 28 ; 22 dans une carte ou une ligne |
@@ -151,12 +152,13 @@ où le fond est déjà jaune.
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
-| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur |
+| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank`, `.reached`, `.delta` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur ; `.reached` le tour atteint dans une coupe, `.delta` un écart signé. Voir « Historique » |
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation`, `.club-flag` | Voir « Clubs et pays » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Cinq derniers matches | `.recent` | Une barre par match du club, à la hauteur des minutes jouées, jaune au-delà du seuil de charge. Voir « Graphiques » |
-| Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
+| Classement au fil des saisons | `.cc`, `.cc-rank`, `.cc-zone` | Le rang de chaque saison, le parcours de chaque édition d'une sélection. Voir « Graphiques » |
+| Palmarès | `.honour-line` | Une ligne par titre. Voir « Historique » |
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
 | Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
@@ -833,23 +835,37 @@ disparaît, un bleu nuit s'y lit comme du noir. La couleur d'un camp se calcule 
 
 ### Classement au fil des saisons
 
-`.club-chart` : le rang d'un club en championnat, saison après saison, dessiné à
-la largeur de sa carte.
+`.cc` : le rang d'un club en championnat, saison après saison ; le parcours
+d'une sélection, édition après édition. Écrit en HTML sur ses colonnes, le
+trait seul est dessiné.
 
-- Un trait de 2 en `--series-1` relie les saisons qui se suivent ; un point de 6
-  de rayon, cerné du fond, marque chacune. La saison en cours est un point
-  ouvert, au bout d'un trait pointillé.
-- Le rang s'écrit à son point, en 16 `--display` : dessous pour les deux
-  premières places, dessus sinon.
-- Un étage par division où le club a joué, la plus haute en haut, son nom à
-  gauche : une saison de Ligue 2 se lit sous celles de Ligue 1. Une seule
-  division occupe 192 de haut, chaque division de plus en ajoute 64 ; 24
-  séparent deux étages, un trait `--row-line` en leur milieu.
-- Dans chaque étage, les places de la division sont teintées comme un
+- **Colonnes** : une par saison, ou par année pour une sélection, de 44 au
+  moins. Peu de saisons remplissent la carte ; plus qu'elle n'en tient, le
+  graphique défile, ouvert sur les dernières. Le nom des étages à gauche (112 ;
+  136 pour une sélection) et celui des places à droite (96) ne défilent pas.
+  Sous les colonnes, la saison en deux années courtes (« 27-28 »), l'année
+  d'une sélection ; celle en cours en 600 à l'encre forte.
+- **Rang** : écrit dans son point, un disque de 22 en `--series-1`, le chiffre
+  en 11 / 700 blanc, cerné du fond. Un titre est sur l'accent, cerclé de
+  `--accent-text`. La saison en cours est un disque ouvert, cerclé de
+  `--series-1`, au bout d'un trait pointillé. L'infobulle dit la saison, le
+  championnat et la place.
+- **Trait** : 2, en `--series-1`, entre deux saisons qui se suivent. Une
+  saison hors des championnats simulés laisse sa colonne vide et interrompt le
+  trait.
+- **Étages** : un par division où le club a joué, la plus haute en haut, son
+  nom à gauche. Une seule division occupe 192 de haut, chaque division de plus
+  en ajoute 64 ; 24 séparent deux étages, un trait `--row-line` en leur milieu.
+  Dans chaque étage, les places de la division sont teintées comme un
   classement les marque : Europe en `--info-soft`, montée en `--good-soft`,
   relégation en `--bad-soft`. Leur nom est à droite, en `--muted`.
-- Une saison hors des championnats simulés garde sa place sur l'axe et
-  interrompt le trait.
+- **Seconde série** : la réputation à l'ouverture de chaque saison, sous les
+  étages, sur les mêmes colonnes : 72 de haut, un trait de 2 en `--series-2`,
+  sa valeur en chiffre clé à chaque bout, sur un point de 8.
+- **Sélection** : deux étages, les tournois (Euro, Coupe du monde) puis la
+  Ligue des nations, chacun en sept niveaux nommés à droite (du titre aux
+  qualifications ; du titre à la Division D). Le disque porte le code de
+  l'édition (EU, CM, LN) en 10 ; la seconde série est la force de la sélection.
 
 ### Niveau au fil des mois
 
@@ -989,7 +1005,8 @@ Une place se marque par son rang, écrit dans une pastille (`.rank`) : 24 de
 large quel que soit le chiffre, le fond pâle de la place (`-soft`) cerclé de sa
 couleur (1), le chiffre en 11 / 700 à son encre (vert : titre, promotion,
 qualification directe ; bleu : Europe ; jaune, `--warn` : barrage ; rouge :
-relégation, élimination). Les autres rangs s'écrivent sans pastille, au même
+relégation, élimination). Dans l'historique d'un club, la place d'un titre est
+sur l'accent (`.rank.title`), comme son point dans le graphique. Les autres rangs s'écrivent sans pastille, au même
 centre, en `--muted` ; l'en-tête « # » est centré sur eux. Rien ne court le
 long de la ligne : seule la ligne du club dirigé est colorée. La légende des
 places (`.legend`) montre la même pastille, en carré de 12.
@@ -1016,6 +1033,37 @@ tenues loin du rouge, du vert et du jaune des états. Une place du championnat
   Un classement sans carte à lui (onglets Derniers et Prochains matches) ou un
   extrait ailleurs (vue d'ensemble, actualités, page d'un pays) n'a que
   l'infobulle.
+
+### Historique
+
+L'onglet Historique d'un club ou d'une sélection se lit en vues, choisies au
+bout de sa rangée d'onglets (`.segmented.views`) : vue d'ensemble, saisons (ou
+éditions), joueurs, records. La vue d'ensemble est l'adresse de l'onglet, une
+autre s'y ajoute (`?vue=`) ; l'option ouverte est marquée de la couleur de
+l'onglet ouvert.
+
+- **Vue d'ensemble** : le graphique sur deux tiers de la largeur, le palmarès
+  et le bilan dans le dernier.
+- **Parcours** (`.reached`) : le tour atteint dans une coupe ou en phase finale, en
+  pastille de 18 sur `--panel-2` ; une demi-finale cerclée de bleu, une finale
+  de vert, un titre sur l'accent précédé de son étoile.
+- **Écart** (`.delta`) : ce qui a bougé depuis la saison d'avant (la
+  réputation, la force), signé, après la valeur : vert en hausse, rouge en
+  baisse, atténué sans changement. La colonne qui le porte est la dernière.
+- **Palmarès** (`.honour-line`) : une ligne de 26 par titre, la pastille de la
+  compétition, le titre, les saisons où il a été gagné, le compte ; les
+  championnats du plus haut, la coupe nationale, l'Europe ; pour une
+  sélection, Coupe du monde, Euro, Ligue des nations.
+- **Listes de joueurs** : le chiffre qui classe vient d'abord après le joueur
+  (MATCHES, BUTS, SAISONS ; BUTS, MATCHES, SAISONS ; NOTE, MATCHES, SAISONS),
+  en gras ; une sélection compte ses sélections (SÉL.) et ses éditions.
+- **Onze type** : le terrain raccourci de la charte, aux couleurs du club,
+  chaque joueur avec ses matches sous son nom ; la tactique dans l'en-tête de
+  la carte.
+- **Records** : un score se lit du côté du club (`.calendar-score`, lien vers
+  son match), l'adversaire après sa pastille, la croix d'un match à
+  l'extérieur ; un âge en années et mois (« 16 ans 3 mois »), après le poste et
+  le nom.
 
 ### Compétitions
 
@@ -1094,6 +1142,10 @@ coupe nationale, une coupe d'Europe, l'édition d'une compétition des sélectio
   affichent : un chiffre, un montant dans son unité, une date, sinon le texte.
 - En-têtes et lignes de 26 ; chiffres alignés à droite, sous un en-tête aligné
   de même.
+- Une colonne a la largeur de ce qu'elle tient, quelle que soit la valeur : rang
+  36, poste 48, pastille 56, chiffre 52 (68 sous un en-tête long : MATCHES,
+  SAISONS), score 76, montant 84, saison 96, date 108 ; ce qui reste va au nom.
+  Un texte trop long est coupé d'une ellipse, jamais la colonne voisine.
 
 ### Infobulles
 
@@ -1123,7 +1175,8 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
 | Sous le pointeur | Une seule règle pour les liens, les lignes et les commandes, dans `web/charte.css` ; les autres feuilles n'en disent plus rien (`tests/frontend/charte.test.mjs`) |
 | Palmarès | Pastilles de compétition de la charte (`competitionBadge`), filtres de poste aux couleurs des postes |
-| Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre (`rankChart`, `web/club-history.js`) |
+| Classement au fil des saisons | Un étage par division, places aux couleurs du classement, libellés à l'encre ; le rang écrit dans son point, une colonne de 44 au moins par saison, défilant sur un long historique et ouvert sur les dernières, toutes les saisons (plus de page) ; la réputation dessous, sur les mêmes colonnes (`rankChart`, `web/history.js`) |
+| Historique d'un club, d'une sélection | En vues au bout de la rangée d'onglets (`viewChoice`, `clubHistory`, `nationHistory`, `web/history.js` ; `history` de `src/api/club_archive.py` et `src/api/nation_archive.py`) : vue d'ensemble, saisons ou éditions, joueurs, records. Parcours en `.reached`, titre en `.rank.title`, écart en `.delta`, palmarès en `.honour-line`, colonnes de largeur fixe. Le parcours d'une sélection dans le même graphique qu'un club (`stageChart`), sa force dessous |
 | Menu d'un joueur | `.menu` au clic droit, sur tous les écrans (`web/player-menu.js`) ; sur Composition, il remplace le clic droit qui sortait ou alignait un joueur |
 | Répartition des budgets | `.balance` sur l'onglet Finances d'un club, à la place des chiffres « Budget transferts » et « Masse salariale » (`shareContent`, `web/club-finances.js` ; la poignée, `web/budget-share.js`) |
 | Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club, sur Calendrier d'une sélection, sur le tableau d'une coupe nationale et sur une coupe d'Europe (`tools` de `clubHero`, `nationHero` et `competitionHero`), au bout de la ligne du titre sur Mercato mondial, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
@@ -1206,3 +1259,6 @@ sarcelle ») : <https://claude.ai/artifact/8Q35koGuApLFLJ8HpByX4A>.
 Les numéros de maillot ont la leur (bandeau : proposition B, « Devant le nom » ; terrains :
 T2, le numéro en 13 ; actualités : le numéro dans le message, jamais dans le titre, et N2, les deux maillots) :
 <https://claude.ai/artifact/7nS7K76xDRutXa5D1VJTPB>.
+L'historique d'un club et d'une sélection a la sienne (étiquettes B, le rang dans
+son point ; le graphique sur deux tiers de la vue d'ensemble) :
+<https://claude.ai/artifact/LQomCAjbWUWmmfZgHLCtQc>.

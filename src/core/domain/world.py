@@ -12,6 +12,7 @@ from .players import Player, Position
 from .offers import RenewalProposal, TransferOffer
 from .finance import FinanceSeason
 from .international import InternationalState
+from .records import AgeRecord
 
 
 @dataclass(slots=True)
@@ -139,6 +140,8 @@ class World:
     reputation_ceilings: dict[str, dict[int, float]] = field(default_factory=dict)
     # Reputation held when each season opened: club -> [(season, reputation)], oldest first.
     reputation_history: dict[int, list[tuple[int, float]]] = field(default_factory=dict)
+    # The age records of each club: club -> kind (youngest, oldest, youngest_scorer, oldest_scorer) -> record.
+    age_records: dict[int, dict[str, AgeRecord]] = field(default_factory=dict)
     international: InternationalState = field(default_factory=InternationalState)
     controlled_club_id: int | None = None
     pending_match_day: Date | None = None

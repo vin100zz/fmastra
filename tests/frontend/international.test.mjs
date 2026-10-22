@@ -21,8 +21,13 @@ test('international tables give the full record, rank the seconds and escape nat
 });
 
 const navigation={scope:{name:'Europe'},index:0,total:2,items:[{id:-1001,name:'France <test>'},{id:-1002,name:'Espagne'}],previous:null,next:{id:-1002,name:'Espagne'}};
-const editions=[{year:2028,name:'Euro 2028',qualification:{label:'Qualifié',winner:false},finals:{label:'Vainqueur',winner:true}}];
-const leaders={matches:[{player_id:5,player:'Cap <test>',matches:10,goals:2}],goals:[{player_id:6,player:'Buteur',matches:8,goals:6}]};
+const tally={played:6,won:5,drawn:1,lost:0,goals_for:14,goals_against:3};
+// What the API says of its history, its overview and its players.
+const archive={items:[{year:2028,name:'Euro 2028',kind:'euro',code:'EU',first_phase:'Qualifié',finals:{label:'Vainqueur',level:7,winner:true},stage:{label:'Vainqueur',level:0},
+ record:tally,scorer:{player_id:6,player:'Buteur',goals:6},strength:{value:84,change:2}}],current:null,honours:[{kind:'euro',code:'EU',competition:'Euro',count:1,years:[2028]}],
+ record:{rows:[{kind:'euro',code:'EU',phase:'finals',competition:'Euro',editions:1,...tally}],total:{editions:1,...tally}},strength:[{season:2027,value:82},{season:2028,value:84}]};
+const squadArchive={formation:'4-3-3',eleven:[{position:'GB',player_id:5,player:'Cap <test>',matches:10}],matches:[{player_id:5,player:'Cap <test>',position:'GB',editions:2,matches:10,goals:0,assists:0,note:6.8}],
+ goals:[],notes:[],note_matches:5};
 
 const spain={id:-1002,name:'Espagne',nation:'ESP',national:true,federation:'Europe',strength:84};
 const starter={id:12,name:'Titulaire',position:'MC',age:25,rating:80,potential:84,club:{id:7,name:'Lens',major_color:'#cc0000',minor_color:'#ffd700'},value:1e6,wage:1000,contract_end:'2030-06-30',
@@ -33,7 +38,7 @@ const fixture=(id,home,away,extra={})=>({id,date:'2026-09-04',competition:'Euro 
 const page=(over={})=>({...nation,major_color:'#1f3f94',minor_color:'#ffffff',competition:{year:2028,name:'Euro 2028',stage:'Qualifications'},
  camp:{start:'2026-08-31',end:'2026-09-09',upcoming:true},squad:[starter,reinforcement],matches:[],
  calendar:{last:[fixture(1,nation,spain,{score:[2,1],outcome:'V'}),fixture(2,spain,nation,{competition:'Coupe du monde 2026',competition_code:'CM',round_label:'Demi-finales',neutral:true,score:[1,1],penalties:[4,5],outcome:'V'})],next:[fixture(3,spain,nation)]},
- lineup:null,group:{year:2028,edition:'Euro 2028',code:'EU',finals:false,name:'D',places:1,rows:[row,{...row,nation:spain,points:12,difference:-3}]},editions,leaders,...over});
+ lineup:null,group:{year:2028,edition:'Euro 2028',code:'EU',finals:false,name:'D',places:1,rows:[row,{...row,nation:spain,points:12,difference:-3}]},...over});
 const scorer=(id,name,...minutes)=>({id,name,minutes});
 const qualifier=(id,date,round,home,away,extra={})=>fixture(id,home,away,{date,competition:'Coupe du monde 2030',competition_id:-102030,competition_code:'CM',round_label:`Qualifications · J${round}`,outcome:null,scorers:null,...extra});
 // What the API says of its calendar: the matches of one edition, its group there, its record in each edition it played.
@@ -44,7 +49,7 @@ const seasons=(over={})=>({edition:2030,editions:[{year:2030,name:'Coupe du mond
  group:{year:2030,edition:'Coupe du monde 2030',code:'CM',finals:false,name:'D',places:1,rows:[row,{...row,nation:spain,points:12,difference:-3}]},
  competitions:[{id:-102030,year:2030,name:'Coupe du monde 2030',kind:'international',code:'CM',place:'1er du groupe D',winner:false,played:2,won:1,drawn:1,lost:0,goals_for:5,goals_against:1},
   {id:-102028,year:2028,name:'Euro 2028',kind:'international',code:'EU',place:'Vainqueur',winner:true,played:16,won:12,drawn:3,lost:1,goals_for:34,goals_against:9}],...over});
-const serving=(answer,calendar=seasons())=>async url=>({ok:true,json:async()=>url.includes('/navigation')?navigation:url.includes('/calendrier')?calendar:url.includes('/nations/')?answer:{enabled:true,nations:[nation],editions:[{year:2028,name:'Euro 2028',winner:null}]}});
+const serving=(answer,calendar=seasons())=>async url=>({ok:true,json:async()=>url.includes('/navigation')?navigation:url.includes('/calendrier')?calendar:url.includes('/historique')?(url.includes('vue=joueurs')?squadArchive:archive):url.includes('/nations/')?answer:{enabled:true,nations:[nation],editions:[{year:2028,name:'Euro 2028',winner:null}]}});
 
 test('a selection’s page wears a club’s header: its colours, its flag on the disc, the edition it plays, its strength, the tabs',async()=>{
  const previous=globalThis.fetch;
@@ -69,12 +74,16 @@ test('a selection’s page wears a club’s header: its colours, its flag on the
   assert.doesNotMatch(plain,/standings-extract/);
   const history=await internationalScreen('nation','-1001','history');
   assert.match(history,/<a class="active" href="#\/international\/nation\/-1001\/history" aria-current="page">Historique<\/a>/);
-  assert.match(history,/Bilan par compétition/);
-  assert.match(history,/Qualifié/);
-  assert.match(history,/✦ Vainqueur/);
-  assert.match(history,/Cap &lt;test&gt;/);
-  assert.match(history,/Buteur/);
-  assert.doesNotMatch(history,/club-squad-layout/);
+  // Its overview, and the choice of the views at the end of the row of tabs.
+  assert.match(history,/<div class="tools"><nav class="segmented views" aria-label="Vues de l’historique"><a class="active" aria-current="page" href="#\/international\/nation\/-1001\/history">Vue d’ensemble<\/a><a href="#\/international\/nation\/-1001\/history\?vue=editions">Éditions<\/a>/);
+  assert.match(history,/<h2>Parcours et force<\/h2>/);assert.match(history,/<h2>Palmarès<\/h2>/);assert.match(history,/<h2>Bilan<\/h2>/);
+  assert.match(history,/title="Euro 2028 : Vainqueur"/);
+  assert.doesNotMatch(history,/club-squad-layout|undefined|NaN/);
+  const editionsView=await internationalScreen('nation','-1001','history',new URLSearchParams('vue=editions'));
+  assert.match(editionsView,/<a class="active" aria-current="page" href="#\/international\/nation\/-1001\/history\?vue=editions">Éditions<\/a>/);
+  assert.match(editionsView,/Qualifié/);assert.match(editionsView,/<span class="reached won"><svg[^]*?<\/svg>Vainqueur<\/span>/);assert.match(editionsView,/Buteur/);
+  const players=await internationalScreen('nation','-1001','history',new URLSearchParams('vue=joueurs'));
+  assert.match(players,/Cap &lt;test&gt;/);assert.match(players,/<h2>Plus de sélections<\/h2>/);
  }finally{globalThis.fetch=previous;setNations({});}
 });
 

@@ -131,14 +131,14 @@
 .finance-figure small{font-size:13px;color:var(--muted)}
 .finance-figure small b{color:var(--ink)}.finance-figure small b.good{color:var(--good)}.finance-figure small b.bad{color:var(--bad)}
 .split-bar i{border-radius:0}.split-bar i:first-child{border-radius:var(--radius) 0 0 var(--radius)}.split-bar i:last-child{border-radius:0 var(--radius) var(--radius) 0}.split-bar i:only-child{border-radius:var(--radius)}
-.finance-row,.history-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:12px;margin-bottom:12px;align-items:stretch}
-.finance-row>.card,.history-row>.card{margin:0}
-.salary-bars,.leader-bars,.biggest-transfers,.honours-list{list-style:none;margin:0;padding:0}
-.salary-bars li,.leader-bars li{display:grid;grid-template-columns:150px minmax(0,1fr) 84px;gap:10px;align-items:center;height:25px}
-.salary-bars li>span,.leader-bars li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.salary-bars i,.leader-bars i{height:10px;border-radius:0 var(--radius) var(--radius) 0}
-.salary-bars i{background:var(--series-2)}.leader-bars i{background:var(--series-1)}.leaders-card.matches .leader-bars i{background:var(--series-1-soft)}
-.salary-bars b,.leader-bars b{text-align:right;font-variant-numeric:tabular-nums;color:var(--strong)}
+.finance-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:12px;margin-bottom:12px;align-items:stretch}
+.finance-row>.card{margin:0}
+.salary-bars{list-style:none;margin:0;padding:0}
+.salary-bars li{display:grid;grid-template-columns:150px minmax(0,1fr) 84px;gap:10px;align-items:center;height:25px}
+.salary-bars li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salary-bars i{height:10px;border-radius:0 var(--radius) var(--radius) 0}
+.salary-bars i{background:var(--series-2)}
+.salary-bars b{text-align:right;font-variant-numeric:tabular-nums;color:var(--strong)}
 .salaries-card .muted{margin:8px 0 0;font-size:13px}
 .finance-split{margin-bottom:18px}.finance-split:last-child{margin-bottom:4px}
 .finance-split p{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px}
@@ -152,7 +152,7 @@
 .finance-journal>summary{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;cursor:pointer}
 .finance-journal>summary span{font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 .finance-journal>summary small{font-size:13px;color:var(--muted)}
-@media(max-width:1250px){.finance-figures{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-row,.history-row{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:1250px){.finance-figures{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-row{grid-template-columns:minmax(0,1fr)}}
 
 /* Transferts: the market under way, the season in figures, then both sides of it. */
 .market-card .card-head{flex-wrap:wrap;gap:6px 14px}
@@ -204,33 +204,6 @@
 .movement-fee{text-align:right;white-space:nowrap}
 @media(max-width:1250px){.market-columns,.movement-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-/* Historique: the charts and the honours, the seasons, the leaders. */
-.history-side{display:flex;flex-direction:column;gap:12px;min-width:0}
-.history-side>.card{margin:0}
-.honours-list li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:46px;padding:0 16px;border-bottom:1px solid var(--row-line)}
-.honours-list li:last-child{border-bottom:0}
-.honours-list b{display:block;font-size:13px}.honours-list small{font-size:13px;color:var(--muted)}
-.honours-list strong{font-family:var(--display);font-stretch:semi-condensed;font-size:26px;color:var(--strong)}
-.honour-icon{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--panel-2);color:var(--muted);font-size:13px}
-.honour-icon.trophy{background:var(--gold-soft);color:var(--gold-bright)}
-.rank-chip,.run-chip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--radius);background:var(--panel-2);color:var(--ink-2);font-size:13px;font-weight:600;white-space:nowrap}
-.rank-chip{min-width:36px;justify-content:center;font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:700}
-.rank-chip.first,.run-chip.won{background:var(--gold-soft);color:var(--gold-bright)}
-.rank-chip.europe{background:var(--info-soft);color:var(--info)}.rank-chip.promotion{background:var(--good-soft);color:var(--good)}.rank-chip.relegation{background:var(--bad-soft);color:var(--bad)}
-.run-europe{display:inline-flex;align-items:center;gap:8px}
-.seasons-card{margin-bottom:12px}
-.club-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
-.club-leaders>.card{margin:0}
-.leader-bars{padding:6px 14px 10px!important;counter-reset:leader}
-.leader-bars li{grid-template-columns:22px 150px minmax(0,1fr) 40px;height:26px;counter-increment:leader}
-.leader-bars li:before{content:counter(leader);text-align:right;font-weight:600;color:var(--muted)}
-.biggest-card h3{margin:8px 0 2px;font-size:11px;font-weight:700;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-.biggest-transfers li{display:grid;grid-template-columns:minmax(0,1fr) 44px 64px;gap:10px;align-items:center;min-height:26px;border-top:1px solid var(--row-line)}
-.biggest-transfers li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.biggest-transfers small{font-weight:400;color:var(--muted)}
-.biggest-transfers b{text-align:right;color:var(--strong)}
-@media(max-width:1250px){.club-leaders{grid-template-columns:minmax(0,1fr)}}
-
 /* Composition: the tactics over the pitch, the substitutes on one line, the list with its controls, the opponent on the right. */
 .composition-card .lineup-layout{grid-template-columns:auto minmax(0,1fr);align-items:start}
 .composition-card .lineup-layout.with-scout{grid-template-columns:auto minmax(0,1fr) minmax(280px,320px)}
@@ -270,5 +243,4 @@
 .status.ban{color:var(--warn)}
 .scout-meeting{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--row-line);font-size:13px;color:var(--ink-2)}
 @media(max-width:1400px){.composition-card .lineup-layout.with-scout{grid-template-columns:auto minmax(0,1fr)}.composition-card .scout-card{grid-column:1/-1}}
-.honours-list strong .honour-text{font-size:16px}
 .movement-record p,.finance-split p,.calendar-record p{color:var(--ink)}

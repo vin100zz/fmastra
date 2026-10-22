@@ -167,6 +167,12 @@
 <div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
 </div>
 </div>
+<div class="spec-group"><span class="label">Vues d’un onglet · .segmented.views · au bout de la rangée d’onglets, marquées de la couleur de l’onglet ouvert</span>
+<div class="spec-line">
+<nav class="segmented views" aria-label="Vues de l’historique"><a class="active" href="#">Vue d’ensemble</a><a href="#">Saisons</a><a class="hover" href="#">Joueurs</a><a href="#">Records</a></nav>
+<nav class="segmented views" aria-label="Vues de l’historique" style="--club: #e30613"><a href="#">Vue d’ensemble</a><a class="active" href="#">Éditions</a><a href="#">Joueurs</a><a href="#">Records</a></nav>
+</div>
+</div>
 <div class="spec-row">
 <div class="spec-group"><span class="label">Pas d’une série · .segmented.steps</span>
 <nav class="segmented steps" aria-label="Journées"><a href="#" aria-label="Journée précédente">‹</a><a href="#">1</a><a href="#">2</a><a href="#">3</a><a href="#">4</a><a href="#">5</a><a href="#">6</a><a href="#">7</a><a href="#">8</a><a class="hover" href="#">9</a><a href="#">10</a><a class="active" href="#">11</a><a href="#">12</a><a href="#">13</a><a href="#">14</a><a href="#" aria-label="Journée suivante">›</a></nav>
@@ -267,6 +273,8 @@
 <div class="spec-group"><span class="label">Note · fond pâle gradué</span><div class="spec-line gap"><span class="rating graded h0">62</span><span class="rating graded h30">90</span><span class="rating graded h60">110</span><span class="rating graded h90">130</span><span class="rating graded h120">168</span><span class="rating graded h120">8.4</span></div></div>
 <div class="spec-group"><span class="label">Compétition · contour · lien vers sa page (C1 sous le pointeur)</span><div class="spec-line gap"><a class="comp europe hover" href="#">C1</a><a class="comp europe" href="#">C3</a><a class="comp" href="#">L1</a><a class="comp" href="#">D2</a><a class="comp cup" href="#">CF</a><a class="comp cup" href="#">CA</a></div></div>
 <div class="spec-group"><span class="label">Forme, score</span><div class="spec-line gap"><span class="form"><i class="V">V</i><i class="N">N</i><i class="D">D</i></span><span class="score V">3 – 1</span><span class="score N">2 – 2</span><span class="score D">0 – 1</span><span class="score pending">À venir</span></div></div>
+<div class="spec-group"><span class="label">Parcours · tour atteint</span><div class="spec-line gap"><span class="reached">Quarts de finale</span><span class="reached semi">Demi-finales</span><span class="reached final">Finale</span><span class="reached won"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3 9.6 3.7 7.3 5.9 7.8 9.1 5 7.6 2.2 9.1 2.7 5.9.4 3.7 3.6 3.3z"/></svg>Vainqueur</span></div></div>
+<div class="spec-group"><span class="label">Rang du titre, écart</span><div class="spec-line gap"><span class="rank title">1</span><span class="rank info">3</span><span class="with-delta">88.4<span class="delta down">−3.1</span></span><span class="with-delta">63.3<span class="delta up">+3.2</span></span><span class="delta">0</span></div></div>
 <div class="spec-group"><span class="label">Statut</span><div class="spec-line gap"><span class="tag info">Prêt</span><span class="tag open">Mercato ouvert</span><span class="tag alert">Marquinhos est blessé</span><span class="count">3</span></div></div>
 <div class="spec-group"><span class="label">Club, pays</span><div class="spec-line gap"><span class="cell strong"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 64%, #da291c 64%)"></i><a href="#">Paris SG</a></span><a class="nation" href="#"><img class="flag" src="../../web/flags/fr.svg" alt="">France</a><span class="crest" style="background: linear-gradient(155deg, #004170 55%, #da291c 55%); color: #fff">PSG</span><svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></div></div>
 <div class="spec-group"><span class="label">Faits de match</span><div class="spec-line gap"><span class="marks"><i class="mark goal"></i><i class="mark yellow"></i><i class="mark red"></i><i class="mark injury"></i><i class="mark on">▲ 70′</i><i class="mark off">▼ 70′</i></span></div></div>
@@ -1159,55 +1167,28 @@
 </div>
 
 <section class="spec" style="grid-column: span 7">
-<h2>Classement au fil des saisons · .club-chart</h2>
+<h2>Classement au fil des saisons · .cc</h2>
 <section class="card" style="width: 1024px">
-<div class="card-head"><h2>Classement en championnat</h2></div>
-<div class="card-body">
-<svg class="club-chart" viewBox="0 0 1000 318" role="img" aria-label="Classement en championnat par saison">
-<rect class="rank-zone europe" x="112" y="18.0" width="788" height="39.3"/>
-<text class="rank-zone-label" x="912" y="41.6">Europe</text>
-<rect class="rank-zone relegation" x="112" y="120.4" width="788" height="25.6"/>
-<text class="rank-zone-label" x="912" y="137.2">Relégation</text>
-<text class="cc-tick" x="100" y="86.0" text-anchor="end">Ligue 1</text>
-<line class="cc-grid" x1="112" x2="900" y1="152.0" y2="152.0"/>
-<rect class="rank-zone promotion" x="112" y="158.0" width="788" height="25.6"/>
-<text class="rank-zone-label" x="912" y="174.8">Montée</text>
-<rect class="rank-zone relegation" x="112" y="260.4" width="788" height="25.6"/>
-<text class="rank-zone-label" x="912" y="277.2">Relégation</text>
-<text class="cc-tick" x="100" y="226.0" text-anchor="end">Ligue 2</text>
-<text class="cc-tick" x="112.0" y="308" text-anchor="middle">26-27</text>
-<text class="cc-tick" x="269.6" y="308" text-anchor="middle">27-28</text>
-<text class="cc-tick" x="427.2" y="308" text-anchor="middle">28-29</text>
-<text class="cc-tick" x="584.8" y="308" text-anchor="middle">29-30</text>
-<text class="cc-tick" x="742.4" y="308" text-anchor="middle">30-31</text>
-<text class="cc-tick" x="900.0" y="308" text-anchor="middle">31-32 · en cours</text>
-<polyline class="cc-line" points="112.0,30.8 269.6,140.0"/>
-<polyline class="cc-line" points="269.6,140.0 427.2,198.1"/>
-<polyline class="cc-line" points="427.2,198.1 584.8,177.6"/>
-<polyline class="cc-line" points="584.8,177.6 742.4,24.0"/>
-<polyline class="cc-line dashed" points="742.4,24.0 900.0,24.0"/>
-<circle class="cc-point" cx="112.0" cy="30.8" r="6"/>
-<text class="cc-value" x="112.0" y="54.8" text-anchor="middle">2e</text>
-<circle class="cc-point" cx="269.6" cy="140.0" r="6"/>
-<text class="cc-value" x="269.6" y="128.0" text-anchor="middle">18e</text>
-<circle class="cc-point" cx="427.2" cy="198.1" r="6"/>
-<text class="cc-value" x="427.2" y="186.1" text-anchor="middle">6e</text>
-<circle class="cc-point" cx="584.8" cy="177.6" r="6"/>
-<text class="cc-value" x="584.8" y="165.6" text-anchor="middle">3e</text>
-<circle class="cc-point" cx="742.4" cy="24.0" r="6"/>
-<text class="cc-value" x="742.4" y="48.0" text-anchor="middle">1er</text>
-<circle class="cc-point open" cx="900.0" cy="24.0" r="6"/>
-<text class="cc-value" x="900.0" y="48.0" text-anchor="middle">1er</text>
-</svg>
+<div class="card-head"><h2>Classement et réputation</h2></div>
+<div class="cc-body">
+<div class="cc"><div class="cc-side left" style="height:406px"><span style="top:78.0px">Ligue 1</span><span style="top:218.0px">Ligue 2</span><span style="top:336.0px">Réputation</span></div><div class="cc-scroll"><div class="cc-plot" role="img" aria-label="Classement en championnat par saison" style="width:max(100%,264px);height:406px"><i class="cc-zone europe" style="top:14.0px;height:39.3px"></i><i class="cc-zone relegation" style="top:116.4px;height:25.6px"></i><i class="cc-zone promotion" style="top:154.0px;height:25.6px"></i><i class="cc-zone relegation" style="top:256.4px;height:25.6px"></i><i class="cc-rule" style="top:148.0px"></i><i class="cc-rule" style="top:288.0px"></i><svg class="cc-lines" viewBox="0 0 6 406" preserveAspectRatio="none" style="height:406px" aria-hidden="true"><path class="cc-line" d="M0.5 26.8L1.5 136.0M1.5 136.0L2.5 194.1M2.5 194.1L3.5 173.6M3.5 173.6L4.5 20.0" vector-effect="non-scaling-stroke"/><path class="cc-line dashed" d="M4.5 20.0L5.5 20.0" vector-effect="non-scaling-stroke"/><path class="cc-line second" d="M0.5 322.5L1.5 346.8L2.5 365.0L3.5 351.8L4.5 315.8L5.5 307.0" vector-effect="non-scaling-stroke"/></svg><span class="cc-rank" style="left:8.333%;top:26.8px" title="2026 / 2027 · Ligue 1 : 2e">2</span><span class="cc-rank" style="left:25.000%;top:136.0px" title="2027 / 2028 · Ligue 1 : 18e">18</span><span class="cc-rank" style="left:41.667%;top:194.1px" title="2028 / 2029 · Ligue 2 : 6e">6</span><span class="cc-rank" style="left:58.333%;top:173.6px" title="2029 / 2030 · Ligue 2 : 3e">3</span><span class="cc-rank title" style="left:75.000%;top:20.0px" title="2030 / 2031 · Ligue 1 : 1er">1</span><span class="cc-rank open" style="left:91.667%;top:20.0px" title="2031 / 2032 · Ligue 1 : 1er (en cours)">1</span><i class="cc-dot second" style="left:8.333%;top:322.5px"></i><span class="cc-label first" style="left:8.333%;top:322.5px">71.2</span><i class="cc-dot second" style="left:91.667%;top:307.0px"></i><span class="cc-label last" style="left:91.667%;top:307.0px">74</span><span class="cc-year" style="left:8.333%;top:384.0px">26-27</span><span class="cc-year" style="left:25.000%;top:384.0px">27-28</span><span class="cc-year" style="left:41.667%;top:384.0px">28-29</span><span class="cc-year" style="left:58.333%;top:384.0px">29-30</span><span class="cc-year" style="left:75.000%;top:384.0px">30-31</span><span class="cc-year now" style="left:91.667%;top:384.0px">31-32</span></div></div><div class="cc-side right" style="height:406px"><span style="top:33.6px">Europe</span><span style="top:129.2px">Relégation</span><span style="top:166.8px">Montée</span><span style="top:269.2px">Relégation</span></div></div>
+</div>
+</section>
+<section class="card" style="width: 1024px; margin-top: 16px">
+<div class="card-head"><h2>Parcours et force</h2></div>
+<div class="cc-body">
+<div class="cc wide"><div class="cc-side left" style="height:406px"><span style="top:78.0px">Tournois</span><span style="top:218.0px">Ligue des nations</span><span style="top:336.0px">Force</span></div><div class="cc-scroll"><div class="cc-plot" role="img" aria-label="Parcours de la sélection par édition" style="width:max(100%,264px);height:406px"><i class="cc-rule" style="top:20.0px"></i><i class="cc-rule" style="top:39.3px"></i><i class="cc-rule" style="top:58.7px"></i><i class="cc-rule" style="top:78.0px"></i><i class="cc-rule" style="top:97.3px"></i><i class="cc-rule" style="top:116.7px"></i><i class="cc-rule" style="top:136.0px"></i><i class="cc-rule" style="top:160.0px"></i><i class="cc-rule" style="top:179.3px"></i><i class="cc-rule" style="top:198.7px"></i><i class="cc-rule" style="top:218.0px"></i><i class="cc-rule" style="top:237.3px"></i><i class="cc-rule" style="top:256.7px"></i><i class="cc-rule" style="top:276.0px"></i><svg class="cc-lines" viewBox="0 0 6 406" preserveAspectRatio="none" style="height:406px" aria-hidden="true"><path class="cc-line" d="M2.5 20.0L4.5 78.0" vector-effect="non-scaling-stroke"/><path class="cc-line" d="M1.5 218.0L3.5 179.3" vector-effect="non-scaling-stroke"/><path class="cc-line dashed" d="M3.5 179.3L5.5 218.0" vector-effect="non-scaling-stroke"/><path class="cc-line second" d="M0.5 365.0L1.5 357.5L2.5 317.1L3.5 331.0L4.5 307.0L5.5 312.0" vector-effect="non-scaling-stroke"/></svg><span class="cc-rank code" style="left:25.000%;top:218.0px" title="Ligue des nations 2027 : Division A">LN</span><span class="cc-rank code title" style="left:41.667%;top:20.0px" title="Euro 2028 : Vainqueur">EU</span><span class="cc-rank code" style="left:58.333%;top:179.3px" title="Ligue des nations 2029 : Finale">LN</span><span class="cc-rank code" style="left:75.000%;top:78.0px" title="Coupe du monde 2030 : Quarts de finale">CM</span><span class="cc-rank code open" style="left:91.667%;top:218.0px" title="Ligue des nations 2031 : Division A (en cours)">LN</span><i class="cc-dot second" style="left:8.333%;top:365.0px"></i><span class="cc-label first" style="left:8.333%;top:365.0px">80.4</span><i class="cc-dot second" style="left:91.667%;top:312.0px"></i><span class="cc-label last" style="left:91.667%;top:312.0px">84.6</span><span class="cc-year" style="left:8.333%;top:384.0px">2026</span><span class="cc-year" style="left:25.000%;top:384.0px">2027</span><span class="cc-year" style="left:41.667%;top:384.0px">2028</span><span class="cc-year" style="left:58.333%;top:384.0px">2029</span><span class="cc-year" style="left:75.000%;top:384.0px">2030</span><span class="cc-year now" style="left:91.667%;top:384.0px">2031</span></div></div><div class="cc-side right" style="height:406px"><span style="top:20.0px">Vainqueur</span><span style="top:39.3px">Finale</span><span style="top:58.7px">Demies</span><span style="top:78.0px">Quarts</span><span style="top:97.3px">8es</span><span style="top:116.7px">Groupes</span><span style="top:136.0px">Qualifications</span><span style="top:160.0px">Vainqueur</span><span style="top:179.3px">Finale</span><span style="top:198.7px">Demies</span><span style="top:218.0px">Division A</span><span style="top:237.3px">Division B</span><span style="top:256.7px">Division C</span><span style="top:276.0px">Division D</span></div></div>
 </div>
 </section>
 <div class="spec-group" style="gap: 4px">
-<span><span class="token">Trait</span> <span class="value">2, en --series-1, entre deux saisons qui se suivent ; pointillé vers la saison en cours</span></span>
-<span><span class="token">Point</span> <span class="value">6 de rayon, cerné du fond ; ouvert pour la saison en cours</span></span>
-<span><span class="token">Rang</span> <span class="value">16 en --display : sous son point pour les deux premières places, dessus sinon</span></span>
-<span><span class="token">Étage</span> <span class="value">un par division, la plus haute en haut, son nom à gauche ; 192 pour une division, 64 de plus par division, 24 entre deux</span></span>
+<span><span class="token">Colonne</span> <span class="value">une par saison ou par année, 44 au moins ; plus large que sa carte, le graphique défile, ouvert sur les dernières ; les noms des étages à gauche et des places à droite ne bougent pas</span></span>
+<span><span class="token">Rang</span> <span class="value">écrit dans son point, un disque de 22 en --series-1, 11 / 700 blanc ; le titre sur l’accent ; la saison en cours, un disque ouvert au bout d’un trait pointillé</span></span>
+<span><span class="token">Trait</span> <span class="value">2, en --series-1, entre deux saisons qui se suivent</span></span>
+<span><span class="token">Étage</span> <span class="value">un par division, la plus haute en haut, son nom à gauche ; 192 pour une division, 64 de plus par division, 24 entre deux, un trait --row-line au milieu</span></span>
 <span><span class="token">Places</span> <span class="value">Europe en --info-soft · montée en --good-soft · relégation en --bad-soft ; leur nom à droite, en --muted</span></span>
-<span><span class="token">Saison hors championnat</span> <span class="value">sa place reste vide sur l’axe, le trait s’interrompt</span></span>
+<span><span class="token">Seconde série</span> <span class="value">la réputation, la force, sous les étages sur les mêmes colonnes : 72 de haut, en --series-2, sa valeur en chiffre clé aux deux bouts</span></span>
+<span><span class="token">Sélection</span> <span class="value">les tournois (Euro, Coupe du monde) sur un étage, la Ligue des nations sur l’autre, chaque niveau nommé à droite ; le code de l’édition dans le disque, en 10</span></span>
+<span><span class="token">Saison hors championnat</span> <span class="value">sa colonne reste vide, le trait s’interrompt</span></span>
 </div>
 </section>
 
@@ -1268,6 +1249,22 @@
 <span><span class="token">Trait</span> <span class="value">2, --series-1, un point par mois ; l’abscisse est le temps</span></span>
 <span><span class="token">Point</span> <span class="value">12, aux couleurs du club de ce mois-là, cerné du fond : à l’ouverture de chaque saison et au dernier mois</span></span>
 <span><span class="token">Niveau</span> <span class="value">écrit au premier et au dernier point, en 16 --display ; l’ordonnée et les dates en --muted</span></span>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 5">
+<h2>Palmarès · .honour-line</h2>
+<section class="card" style="width: 420px">
+<div class="card-head"><h2>Palmarès</h2></div>
+<div class="honour-lines">
+<div class="honour-line"><span class="comp">L1</span><b>Champion de Ligue 1</b><small>2030 / 2031 · 2033 / 2034</small><strong>2</strong></div>
+<div class="honour-line"><span class="comp cup">CF</span><b>Coupe de France</b><small>2026 / 2027</small><strong>1</strong></div>
+<div class="honour-line"><span class="comp europe">C3</span><b>Ligue Europa</b><small>2032 / 2033</small><strong>1</strong></div>
+</div>
+</section>
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Ligne</span> <span class="value">26, une par titre : la pastille de la compétition, le titre en 600, les saisons ou les années en --muted, le compte</span></span>
+<span><span class="token">Ordre</span> <span class="value">les championnats du plus haut, puis la coupe nationale, puis l’Europe ; pour une sélection, Coupe du monde, Euro, Ligue des nations</span></span>
 </div>
 </section>
 

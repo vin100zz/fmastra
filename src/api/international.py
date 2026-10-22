@@ -530,9 +530,13 @@ def international_router(service):
                     "calendar": {"last": [{**international_match_row(world, m), "outcome": outcome(nation_id, m)} for m in reversed(played[-LAST_MATCHES:])],
                                  "next": [international_match_row(world, m) for m in coming[:NEXT_MATCHES]]},
                     "lineup": last_lineup(world, nation_id, played),
-                    "group": group,
-                    "editions": nation_editions(world, nation_id),
-                    "leaders": international_leaders(world, (r for r in world.international.records.values() if r.nation_id == nation_id))}
+                    "group": group}
+
+    @api.get("/nations/{nation_id}/historique")
+    def nation_history(nation_id: int, vue: Literal["ensemble", "editions", "joueurs", "records"] = "ensemble"):
+        from .nation_archive import history
+        with service.reading() as world:
+            return history(world, nation_id, vue)
 
     @api.get("/nations/{nation_id}/calendrier")
     def nation_matches(nation_id: int, edition: int | None = None):

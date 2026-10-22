@@ -138,12 +138,14 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
             row = body['items'][0]
             assert row['season'] == first and row['cup' if kind == 'cup' else 'europe']['winner'] is True
             assert row['cup' if kind == 'cup' else 'europe']['level'] == 7
-            # The honours count the title.
-            if kind == 'cup': assert body['honours']['cup'] >= 1
-            else: assert {'code': 'C1', 'competition': competition.name, 'count': 1} in body['honours']['europe']
+            # The honours count the title, with the season it was won in.
+            assert {'kind': kind, 'competition_id': competition.id, 'competition': competition.name, 'code': code, 'count': 1, 'seasons': [first]} in body['honours']
         body = client.get(f'/api/clubs/{promoted}/historique').json()
-        assert set(body) == {'items', 'total', 'page', 'page_size', 'leaders', 'transfers', 'honours', 'leagues'}
-        assert body['honours']['best_rank'] == {'rank': body['items'][0]['rank'], 'season': first, 'competition': body['items'][0]['competition']}
+        assert set(body) == {'items', 'leagues', 'honours', 'record', 'reputation'}
+        # Its league season in figures, and its record in every competition, the season under way too.
+        standing = body['items'][0]['standing']
+        assert standing['played'] > 0 and standing['won'] + standing['drawn'] + standing['lost'] == standing['played']
+        assert body['record']['total']['played'] >= standing['played']
         response = client.get('/api/competitions/18/historique')
         assert response.status_code == 200
         # The table of a finished season is archived apart from the champions, with the seasons to step to.
