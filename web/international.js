@@ -1,10 +1,11 @@
-import {api,escape as e,number as n,averageNote,date,card,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,leadersCards,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,card,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,playerTable,playerViewSwitch,query,competitionBadge} from './ui.js';
 import {nationNavigation,editionNavigation} from './navigation.js';
 import {nationHero,competitionHero} from './club-hero.js';
 import {calendarBlock,lineupBlock} from './club-overview.js';
 import {calendarRows} from './club-calendar.js';
 import {bracket} from './bracket.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
+import {NATION_VIEWS,historyView,viewChoice,nationHistory} from './history.js';
 
 const GROUP_ROUNDS=10,FINAL_GROUP_ROUNDS=13,LEAGUE_ROUNDS=6;
 
@@ -124,8 +125,6 @@ export function editionContent(data,section='qualifications',round=null,day=null
  return section==='finals'?finalsContent(data):qualificationsContent(data,day);
 }
 const NATION_TABS=[['squad','Effectif'],['calendar','Calendrier'],['history','Historique']];
-// A run in a competition, in the same style as a club's cup and European runs: the label alone, or starred when it was won.
-const editionRun=run=>run?(run.winner?`✦ ${e(run.label)}`:e(run.label)):'—';
 
 // The days of a camp, "du 9 au 17 novembre 2028": the month and the year are written once when its two ends share them.
 const DAY={day:'numeric'},MONTH={month:'long'},YEAR={year:'numeric'};
@@ -177,21 +176,17 @@ function calendarContent(nation,data){
  return `<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2></div>`
   +`${calendarRows(data.items,nation,competitions,{written:date,round:editionRound})}</section><aside class="calendar-side">${groupCard(data.group,nation.id)}${recordCard(data.competitions)}</aside></div>`;
 }
-function historyContent(data){
- // The first phase is a tournament's qualifiers or a Nations League's groups, and the division they left the nation in.
- const editions=card('Bilan par compétition',data.editions.length?table(['ÉDITION','PREMIÈRE PHASE','PHASE FINALE'],data.editions.map(row=>[e(row.name),editionRun(row.qualification),editionRun(row.finals)])):empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));
- return editions+leadersCards(data.leaders);
-}
 // A selection's page: a club's header in its colours with the tabs, then the open tab. Only the list of the Effectif tab
 // reads the sort of the address, only the Calendrier tab its edition.
 async function nationScreen(id,tab,params=new URLSearchParams()){
  tab=NATION_TABS.some(([key])=>key===tab)?tab:'squad';
  const sort=tab==='squad'?query({tri:params.get('tri'),ordre:params.get('ordre')}):'';
  const edition=/^\d+$/.test(params.get('edition')||'')?`?edition=${params.get('edition')}`:'';
- const [data,nav,calendar]=await Promise.all([api(`/international/nations/${id}${sort?`?${sort}`:''}`),api(`/international/nations/${id}/navigation`),
-  tab==='calendar'?api(`/international/nations/${id}/calendrier${edition}`):null]);
- const content=tab==='calendar'?calendarContent(data,calendar):tab==='history'?historyContent(data):squadContent(data,params);
- const tools=calendar?.items.length?editionSteps(calendar.editions,calendar.edition,{param:'edition'}):'';
+ const view=historyView(NATION_VIEWS,params);
+ const [data,nav,calendar,history]=await Promise.all([api(`/international/nations/${id}${sort?`?${sort}`:''}`),api(`/international/nations/${id}/navigation`),
+  tab==='calendar'?api(`/international/nations/${id}/calendrier${edition}`):null,tab==='history'?api(`/international/nations/${id}/historique?${query({vue:view})}`):null]);
+ const content=tab==='calendar'?calendarContent(data,calendar):tab==='history'?nationHistory(view,history,data):squadContent(data,params);
+ const tools=calendar?.items.length?editionSteps(calendar.editions,calendar.edition,{param:'edition'}):history?viewChoice(NATION_VIEWS,view,`#/international/nation/${id}/history`):'';
  return nationHero(data,{lead:nationNavigation(nav,tab),menu:NATION_TABS,section:tab,tools})+content;
 }
 

@@ -175,8 +175,9 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     world.european_quota_ranges = european_quota_ranges or {}
     initialize_europe(world)
     qualify_europe(world, season)
-    from core.world.international import initialize_international
+    from core.world.international import initialize_international, initialize_strengths
     initialize_international(world)
+    initialize_strengths(world)
     for match in season_fixtures(world, season):
         world.matches[match.id] = match
         world.competitions[match.competition_id].match_ids.append(match.id)

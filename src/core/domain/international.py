@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from .date import Date
 from .matches import Match
 from .players import Player
+from .records import AgeRecord
 
 
 @dataclass(slots=True)
@@ -94,3 +95,7 @@ class InternationalState:
     retired_careers: dict[int, InternationalCareer] = field(default_factory=dict)
     deferred_retirements: list[int] = field(default_factory=list)
     next_temporary_id: int = -1
+    # The age records of each selection, as a club keeps its own (`World.age_records`).
+    age_records: dict[int, dict[str, AgeRecord]] = field(default_factory=dict)
+    # Each selection's strength when each season opened: nation -> [(season, strength)], oldest first.
+    strength_history: dict[int, list[tuple[int, float]]] = field(default_factory=dict)

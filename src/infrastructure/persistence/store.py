@@ -22,6 +22,8 @@ from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
+from core.world.age_records import initialize_age_records
+from core.world.international import initialize_strengths
 from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
 from infrastructure.config.loader import config_fingerprint, config_payload, decode_config
@@ -31,7 +33,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 33
+SCHEMA_VERSION = 34
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -321,6 +323,9 @@ class SaveStore:
             if version < 30: _forget_small_demands(world)
             if version < 31: _upgrade_fatigue(world)
             if version < 33: _date_international_windows(world)
+            if version < 34:
+                initialize_age_records(world)
+                initialize_strengths(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)

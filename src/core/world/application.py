@@ -5,6 +5,7 @@ from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, NewsLine, TransferRecord, SeasonRecord, MovementSnapshot
 from core.domain.matches import MatchResult, stored_events
 from core.engine.fitness import match_load
+from .age_records import note_club_match
 from .finances import book_cash, book_daily_cash
 from .human import record as add_news, report
 from .transfer_rules import recent_arrival_ids
@@ -185,6 +186,8 @@ def apply(world: World, event: WorldEvent) -> bool:
                 match.result = _archived(match.result)
         for club in world.clubs.values():
             world.reputation_history.setdefault(club.id, []).append((event.year, club.reputation))
+        for team in world.international.nations.values():
+            world.international.strength_history.setdefault(team.id, []).append((event.year, team.strength))
         # What the season made of each player's value outlives it, until the next one says enough.
         from core.ai.market import season_performance
         busiest = {club.id: max((world.players[pid].season_minutes for pid in club.player_ids), default=0)
@@ -376,5 +379,6 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         if stats.rating is not None:
             record.rating_sum += stats.rating
             record.rating_count += 1
+    note_club_match(world, match, event.result)
     result_text = f"{world.clubs[match.home_id].name} {event.result.home_goals}–{event.result.away_goals} {world.clubs[match.away_id].name}"
     world.journal.append(JournalEntry(world.date, "result", result_text, match.home_id, match_id=match.id))

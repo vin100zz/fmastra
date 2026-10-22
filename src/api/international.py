@@ -7,7 +7,6 @@ from core.world.international_calendar import LEAGUE_ROUNDS, SEMI_FINALS
 from . import navigation as nav
 from . import views as v
 from .nations import competition_colors, kit_colors
-from .statistics import LISTED_PLAYERS
 
 # The two characters on an edition's badge (docs/charte-graphique.md, « Compétitions »).
 EDITION_CODES = {"euro": "EU", "world": "CM", "nations": "LN"}
@@ -316,23 +315,6 @@ def sorted_rows(world, rows, column, descending):
     return known + [row for row in rows if key(row) is None]
 
 
-def international_leaders(records):
-    """The players with the most caps and the most goals for a nation, every edition included; names come from the
-    record itself since a campaign-only reinforcement never enters the player registry."""
-    totals: dict[int, dict] = {}
-    for record in records:
-        total = totals.setdefault(record.player_id, {"matches": 0, "goals": 0, "name": record.name})
-        total["matches"] += record.matches
-        total["goals"] += record.goals
-    def top(key, order):
-        ranked = sorted((pid for pid, total in totals.items() if total[key] > 0),
-                        key=lambda pid: (*order(totals[pid]), v.normalized(totals[pid]["name"] or ""), pid))
-        return [{"player_id": pid, "player": totals[pid]["name"], "matches": totals[pid]["matches"], "goals": totals[pid]["goals"]}
-                for pid in ranked[:LISTED_PLAYERS]]
-    return {"matches": top("matches", lambda t: (-t["matches"], -t["goals"])),
-            "goals": top("goals", lambda t: (-t["goals"], t["matches"]))}
-
-
 NationSquadSort = Literal["position", "name", "club", "age", "rating", "potential", "value", "wage", "contract_end", "fitness",
                           "form", "caps", "international_goals", "appearances", "goals", "assists", "average"]
 
@@ -382,9 +364,13 @@ def international_router(service):
                     "calendar": {"last": [{**international_match_row(world, m), "outcome": outcome(nation_id, m)} for m in reversed(played[-LAST_MATCHES:])],
                                  "next": [international_match_row(world, m) for m in coming[:NEXT_MATCHES]]},
                     "lineup": last_lineup(world, nation_id, played),
-                    "group": group,
-                    "editions": nation_editions(world, nation_id),
-                    "leaders": international_leaders(r for r in world.international.records.values() if r.nation_id == nation_id)}
+                    "group": group}
+
+    @api.get("/nations/{nation_id}/historique")
+    def nation_history(nation_id: int, vue: Literal["ensemble", "editions", "joueurs", "records"] = "ensemble"):
+        from .nation_archive import history
+        with service.reading() as world:
+            return history(world, nation_id, vue)
 
     @api.get("/nations/{nation_id}/calendrier")
     def nation_matches(nation_id: int, edition: int | None = None):
