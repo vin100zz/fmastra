@@ -9,7 +9,7 @@ export const NATION_VIEWS=[['ensemble','Vue d’ensemble'],['editions','Édition
 // The view the address asks for (`vue`), the overview by default.
 export const historyView=(views,params)=>views.some(([key])=>key===params.get('vue'))?params.get('vue'):views[0][0];
 // The choice of the views, where a tab read by season has its steps; `base` is the tab's address, the overview's own.
-export const viewChoice=(views,shown,base)=>`<nav class="segmented history-views" aria-label="Vues de l’historique">${views.map(([key,label],index)=>
+export const viewChoice=(views,shown,base)=>`<nav class="segmented views" aria-label="Vues de l’historique">${views.map(([key,label],index)=>
  `<a${key===shown?' class="active" aria-current="page"':''} href="${base}${index?`?vue=${key}`:''}">${e(label)}</a>`).join('')}</nav>`;
 
 // A season in two short years, under the axis of a chart: 2027 reads 27-28.

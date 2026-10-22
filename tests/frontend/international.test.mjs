@@ -75,7 +75,7 @@ test('a selection’s page wears a club’s header: its colours, its flag on the
   const history=await internationalScreen('nation','-1001','history');
   assert.match(history,/<a class="active" href="#\/international\/nation\/-1001\/history" aria-current="page">Historique<\/a>/);
   // Its overview, and the choice of the views at the end of the row of tabs.
-  assert.match(history,/<div class="tools"><nav class="segmented history-views" aria-label="Vues de l’historique"><a class="active" aria-current="page" href="#\/international\/nation\/-1001\/history">Vue d’ensemble<\/a><a href="#\/international\/nation\/-1001\/history\?vue=editions">Éditions<\/a>/);
+  assert.match(history,/<div class="tools"><nav class="segmented views" aria-label="Vues de l’historique"><a class="active" aria-current="page" href="#\/international\/nation\/-1001\/history">Vue d’ensemble<\/a><a href="#\/international\/nation\/-1001\/history\?vue=editions">Éditions<\/a>/);
   assert.match(history,/<h2>Parcours et force<\/h2>/);assert.match(history,/<h2>Palmarès<\/h2>/);assert.match(history,/<h2>Bilan<\/h2>/);
   assert.match(history,/title="Euro 2028 : Vainqueur"/);
   assert.doesNotMatch(history,/club-squad-layout|undefined|NaN/);

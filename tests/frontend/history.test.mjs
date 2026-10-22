@@ -20,7 +20,7 @@ test('the views are chosen at the end of the row of tabs, the overview by defaul
  assert.equal(historyView(CLUB_VIEWS,new URLSearchParams('vue=editions')),'ensemble');
  assert.equal(historyView(NATION_VIEWS,new URLSearchParams('vue=editions')),'editions');
  const nav=viewChoice(CLUB_VIEWS,'joueurs','#/club/7/history');
- assert.match(nav,/^<nav class="segmented history-views" aria-label="Vues de l’historique"><a href="#\/club\/7\/history">Vue d’ensemble<\/a><a href="#\/club\/7\/history\?vue=saisons">Saisons<\/a><a class="active" aria-current="page" href="#\/club\/7\/history\?vue=joueurs">Joueurs<\/a>/);
+ assert.match(nav,/^<nav class="segmented views" aria-label="Vues de l’historique"><a href="#\/club\/7\/history">Vue d’ensemble<\/a><a href="#\/club\/7\/history\?vue=saisons">Saisons<\/a><a class="active" aria-current="page" href="#\/club\/7\/history\?vue=joueurs">Joueurs<\/a>/);
 });
 
 test('a run reads its round: a semi-final, a final, and a title with its star',()=>{

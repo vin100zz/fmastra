@@ -69,7 +69,7 @@ test('the seasons are stepped through with one control, the charter’s: no scre
   assert.ok(!said.some(([selector,rule])=>/^\.season\b/.test(selector)&&/border:1px/.test(rule)),sheet);
  }
  // On a club's or a selection's page, that colour is the one under its open tab.
- assert.match(rules(await read('web/charte.css')).find(([selector])=>selector==='.club-hero .season')[1],/--club:var\(--hero-accent\)/);
+ assert.match(rules(await read('web/charte.css')).find(([selector])=>selector==='.club-hero :is(.season,.views)')[1],/--club:var\(--hero-accent\)/);
 });
 
 test('a band steps between peers with one control, the charter’s: a season’s steps in a column, in the band’s colours',async()=>{
@@ -151,3 +151,16 @@ test('an attribute’s column holds the longest name of its section and its badg
  const older=rules(await read('web/theme.css'));
  assert.ok(!older.some(([selector,rule])=>/^\.(attributes-card|preview) \.attributes-grid$/.test(selector)&&/grid-template-columns/.test(rule)));
 });
+
+test('the history’s chart, runs, changes and views are drawn the same by the reference sheet and by the application’s',async()=>{
+ const [reference,app]=await Promise.all(['docs/charte/charte.css','web/charte.css'].map(async sheet=>rules(await read(sheet))));
+ const body=(said,selector)=>said.find(([found])=>found===selector)?.[1];
+ for(const selector of ['.segmented.views>.active','.cc','.cc-scroll','.cc-rank','.cc-rank.title','.cc-rank.open','.cc-zone.europe','.cc-line.second','.cc-body',
+  '.run','.run.semi','.run.final','.run.won','.rank.title','.delta','.delta.up','.delta.down','.honour-line']){
+  assert.ok(body(reference,selector),selector);
+  assert.equal(body(app,selector),body(reference,selector),selector);
+ }
+ // A column of 44 at least for each season, opened on the latest.
+ assert.match(body(reference,'.cc-scroll'),/overflow-x:auto;.*direction:rtl/);
+});
+

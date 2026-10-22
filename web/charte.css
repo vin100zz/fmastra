@@ -98,7 +98,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .season-pick>.menu{position:absolute;top:calc(100% + var(--s1));right:0;z-index:5;max-height:calc(12*var(--h-row) + 2*var(--s1));overflow-y:auto}
 .card-head .season>:is(button,a){width:var(--h-control-small);height:var(--h-control-small)}
 .card-head .season-pick>summary{height:var(--h-control-small);font-size:var(--fs-body)}
-.club-hero .season{--club:var(--hero-accent)}
+.club-hero :is(.season,.views){--club:var(--hero-accent)}
 /* The commands on the right of a title's line; on a club's or a selection's page, the season steps close the row of tabs,
    under the last tile of the band. */
 .tools{display:flex;align-items:center;gap:var(--s2);margin-left:auto}
@@ -579,16 +579,9 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .comparison-bar>i:first-child{border-radius:4px 0 0 4px}
 .comparison-bar>i:last-child{border-radius:0 4px 4px 0}
 .comparison-bar.none>i{background:var(--panel-3)}
-/* A league rank season after season: a storey for each division the club has played in. In each, the places that lead
-   somewhere are tinted as a table marks them (Europe, promotion, relegation), and named on the right in the muted ink. */
-.rank-zone.europe{fill:var(--info-soft)}
-.rank-zone.promotion{fill:var(--good-soft)}
-.rank-zone.relegation{fill:var(--bad-soft)}
-.rank-zone-label{font-size:var(--fs-small);font-weight:600;fill:var(--muted)}
-
-/* The Historique tab of a club or a selection (docs/charte-graphique.md, « Historique »). Its views are a choice at the end
-   of the row of tabs, the open one marked in the colour of the open tab. */
-.club-hero-foot .history-views>.active{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--hero-accent,var(--accent))}
+/* The views of a tab, a choice at the end of its row of tabs: the open one marked in the colour of the open tab. */
+.segmented.views>.active{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--club,var(--accent))}
+/* The Historique tab of a club or a selection (docs/charte-graphique.md, « Historique »). */
 .history-overview{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--s2);align-items:start}
 .history-players{display:grid;grid-template-columns:440px repeat(3,minmax(0,1fr));gap:var(--s2);align-items:start}
 .history-records{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);align-items:start}
@@ -649,6 +642,7 @@ th.rank-col{text-align:center}
    card scrolls, opened on its latest columns; the names of the storeys on the left and of their places or levels on the
    right stay put. The rank is written in its point, a disc of 22, a title on the accent, the season under way open. Under
    the storeys, the second series (the reputation, the strength) on the same columns. */
+.cc-body{padding:var(--s2) var(--s3)}
 .cc{display:grid;grid-template-columns:112px minmax(0,1fr) 96px;padding-bottom:var(--s1)}
 .cc.wide{grid-template-columns:136px minmax(0,1fr) 96px}
 .cc-side{position:relative}
