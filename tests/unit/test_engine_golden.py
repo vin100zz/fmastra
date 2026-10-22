@@ -1,4 +1,5 @@
-"""Frozen fingerprints of full match results: any engine refactor must reproduce them bit for bit.
+"""Frozen fingerprints of full match results: any engine refactor must reproduce them, every event and every figure to its
+eighth significant digit.
 
 Set TOUCHLINE_REGEN_GOLDEN=1 to rewrite the reference, only after an intended change of the match rules."""
 import json
@@ -49,11 +50,25 @@ def cases(config):
     return result
 
 
+# The significant digits a figure is compared on. The draws of a match go through the logarithm and the exponential of the
+# platform's maths library, whose last bit may differ from one machine to another: a reference frozen on one would fail on
+# another for a figure off by 1e-16. Eight digits are far finer than anything the game shows, and far coarser than that.
+DIGITS = 8
+
+
+def settled(value):
+    """A result's figures rounded to `DIGITS` significant digits, the rest as it is."""
+    if isinstance(value, float): return float(f"{value:.{DIGITS}g}")
+    if isinstance(value, dict): return {key: settled(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)): return [settled(item) for item in value]
+    return value
+
+
 def fingerprint(result) -> str:
     # The numbers of the match sheet are written by the world once the match is played, not by the engine.
     data = asdict(result)
     del data["shirts"]
-    return sha256(json.dumps(data, sort_keys=True, default=repr).encode()).hexdigest()
+    return sha256(json.dumps(settled(data), sort_keys=True, default=repr).encode()).hexdigest()
 
 
 def play(config):

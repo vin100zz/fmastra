@@ -49,7 +49,9 @@ Les seuls tests « club de l'utilisateur » sont regroupés dans `core/world/hum
 `LiveMatch` (`core/engine/live.py`) joue un match une possession à la fois ;
 `PossessionEngine.simulate` le déroule jusqu'au bout, une seule implémentation
 pour l'IA, les benchmarks et le direct (un test d'empreintes, `test_engine_golden`,
-fige les résultats). `advance_segment` avance jusqu'au prochain événement à montrer :
+fige les résultats : chaque événement, et chaque chiffre à son huitième chiffre
+significatif, le dernier bit d'un logarithme ou d'une exponentielle pouvant varier
+d'une plateforme à l'autre). `advance_segment` avance jusqu'au prochain événement à montrer :
 occasion, but, carton, blessure, changement, coup de sifflet.
 
 Chaque côté a son contrôleur : `AIController` décide les changements et la montée
