@@ -118,6 +118,17 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.import_settings.squad_selection.max_players == guard.max_squad, "Import and squad caps disagree")
     require(cfg.import_settings.squad_selection.reserved_goalkeepers == guard.min_goalkeepers, "Goalkeeper minima disagree")
     require(cfg.world.match_rules.players_on_pitch <= guard.min_squad <= guard.max_squad, "Invalid squad bounds")
+    # An older save keeps every free agent it was created with; a new world keeps the best.
+    require(cfg.import_settings.squad_selection.free_agents in ("tous_conserves", "meilleurs"), "Unsupported free agent policy")
+    tiers = cfg.import_settings.squad_selection.tiers
+    simulated, foreign, floor = tiers.simulated, tiers.foreign, tiers.floor
+    require(guard.min_squad <= simulated.players <= guard.max_squad and guard.min_goalkeepers <= simulated.goalkeepers
+            and simulated.goalkeepers + simulated.prospects <= simulated.players, "Invalid squad of a simulated club at import")
+    require(0 <= foreign.min_players <= foreign.players <= guard.max_squad and 0 <= foreign.min_clubs <= foreign.max_clubs
+            and foreign.clubs_per_place >= 0, "Invalid foreign clubs at import")
+    require(0 <= floor.min_players <= floor.max_players and floor.min_strength < floor.max_strength, "Invalid national floor at import")
+    require(min(tiers.pool.players, tiers.free_agents.players, tiers.cup.clubs, tiers.outside_budget) >= 0
+            and tiers.pool.players <= guard.max_squad, "Invalid import tiers")
     for curve in (cfg.demography.progression.age_curve, cfg.demography.progression.decline.age_curve,
                   cfg.management.valuation.age_curve):
         for left, right in zip(curve, curve[1:]):
@@ -239,7 +250,6 @@ def validate_consistency(cfg: Config) -> None:
     policies = ((cfg.import_settings.source_format.wage_unit, "euros_par_semaine"),
                 (cfg.import_settings.squad_selection.tiebreaker, "identifiant_croissant"),
                 (cfg.import_settings.squad_selection.excluded_players, "non_importes"),
-                (cfg.import_settings.squad_selection.free_agents, "tous_conserves"),
                 (cfg.demography.progression.evaluation, "mensuelle"),
                 (cfg.demography.potential_estimate.refresh, "annuelle"),
                 (cfg.management.budgets.accounting.frequency, "quotidienne_prorata_annee_de_jeu"),

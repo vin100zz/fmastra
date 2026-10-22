@@ -139,6 +139,8 @@ class MatchResult:
     penalties: tuple[int, int] | None = None
     winner_id: int | None = None
     temporary_players: dict[int, str] = field(default_factory=dict)
+    # The number each player of the match sheet wore, the starters and the bench of both clubs.
+    shirts: dict[int, int] = field(default_factory=dict)
 
 
 @dataclass(slots=True)

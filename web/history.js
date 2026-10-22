@@ -1,4 +1,4 @@
-import {escape as e,number as n,money,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,noteHue,averageNote,pitch} from './ui.js';
+import {escape as e,number as n,money,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,editionHref,noteHue,averageNote,pitch} from './ui.js';
 import {awayIcon} from './club-overview.js';
 
 // The Historique tab of a club or of a selection (docs/ui.md, « Historique »), in four views chosen at the end of its row of
@@ -19,7 +19,7 @@ const signed=(value,format=n)=>`${value>0?'+':value<0?'−':''}${format(Math.abs
 const delta=(value,format=n)=>value==null?'':`<span class="delta${value>0?' up':value<0?' down':''}">${signed(value,format)}</span>`;
 const STAR='<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3 9.6 3.7 7.3 5.9 7.8 9.1 5 7.6 2.2 9.1 2.7 5.9.4 3.7 3.6 3.3z"/></svg>';
 // A run in a cup, or a selection's finals: the round reached; a semi-final in blue, a final in green, a title on the accent with its star.
-export const runChip=run=>run?`<span class="run${run.winner?' won':run.label==='Finale'?' final':run.label==='Demi-finales'?' semi':''}">${run.winner?STAR:''}${e(run.label)}</span>`:'<span class="muted">—</span>';
+export const runChip=run=>run?`<span class="reached${run.winner?' won':run.label==='Finale'?' final':run.label==='Demi-finales'?' semi':''}">${run.winner?STAR:''}${e(run.label)}</span>`:'<span class="muted">—</span>';
 const noteBadge=value=>value==null?'—':`<span class="num"><span class="rating graded" style="--hue:${noteHue(value)}">${averageNote(value)}</span></span>`;
 // A figure, on the right of its column, as wide as its heading: a long one (MATCHES, SAISONS) widens it.
 const num=value=>`<span class="num">${value}</span>`;
@@ -181,7 +181,7 @@ function agesCard(rows,when){
 
 // A club's competition badge, by its id; a selection's edition, by its code.
 const clubBadge=row=>competitionBadge({id:row.competition_id,name:row.competition});
-const editionBadge=row=>competitionBadge({kind:'international',code:row.code,name:row.competition||row.name});
+const editionBadge=row=>competitionBadge({kind:'international',code:row.code,year:row.year,name:row.competition||row.name});
 
 // A rank against the places of the league it was reached in (`shape`, as the league stands today): the title on the
 // accent, Europe in blue, promotion in green, relegation in red.
@@ -240,7 +240,7 @@ function nationEditions(data){
  const rows=data.items;
  if(!rows.length)return card('Les éditions',empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));
  return card(`Les éditions · ${rows.length}`,table(['ÉDITION','PREMIÈRE PHASE','PHASE FINALE','J','V','N','D','BP','BC','DIFF.','MEILLEUR BUTEUR','BUTS','FORCE'],
-  rows.map(row=>[`<span class="cell">${editionBadge(row)}<a class="strong" href="#/international/${row.year}/finals">${e(row.name)}</a></span>`,firstPhase(row.first_phase),row.finals?runChip(row.finals):'<span class="muted">—</span>',
+  rows.map(row=>[`<span class="cell">${editionBadge(row)}<a class="strong" href="${editionHref(row.code,row.year,'finals')}">${e(row.name)}</a></span>`,firstPhase(row.first_phase),row.finals?runChip(row.finals):'<span class="muted">—</span>',
    ...standingCells({...row.record,points:0}).slice(1),row.scorer?player(row.scorer):'—',num(row.scorer?`<b>${n(row.scorer.goals)}</b>`:'—'),
    row.strength?`<span class="with-delta">${n(row.strength.value)}${delta(row.strength.change)}</span>`:num('—')]),
   undefined,undefined,sorted(rows,row=>[row.year,row.first_phase??'',row.stage.level,...standingValues({...row.record,points:0}).slice(1),row.scorer?.player??'',row.scorer?.goals??'',row.strength?.value??''],[2]),

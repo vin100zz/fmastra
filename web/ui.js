@@ -100,18 +100,22 @@ const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(in
 export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
 // The one shirt of every pitch (docs/charte-graphique.md): square, its sleeves level, the club's kit, the body in its first
 // colour (white included) and the sleeves and the collar in its second, each fill drawing its own round edge, a light outline
-// around the whole; `label` (a position) is written on it in the ink that reads on the body. Grey without colours, a dashed
-// outline for an `empty` place. His `goals` stand at its top right, a ball for each; the rest of what he did goes in his block
-// (`playerBlock`).
+// around the whole; `label` (his number, else a position: see `shirtLabel`) is written on it in the ink that reads on the
+// body, a number larger than a position. Grey without colours, a dashed outline for an `empty` place. His `goals` stand at
+// its top right, a ball for each; the rest of what he did goes in his block (`playerBlock`). A `former` one, veiled, shows
+// the number a player leaves.
 const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_BODY='M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
 export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
 // The custom properties a kit drawing reads its colours from; empty without a primary colour.
 export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='', {empty=false,goals=0}={}) => {
- const style=empty?'':kitStyle(major,minor);
+export const kitShirt = (major, minor, label='', {empty=false,goals=0,former=false}={}) => {
+ const style=empty?'':kitStyle(major,minor),number=/^\d+$/.test(String(label));
  const balls=goals>0?`<span class="kit-goals" title="${goals} but${goals>1?'s':''}">${'<i></i>'.repeat(goals)}</span>`:'';
- return `<span class="kit-shirt${empty?' empty':style?'':' plain'}"${style?` style="${style}"`:''}>${KIT_SVG}${label?`<b>${escape(label)}</b>`:''}${balls}</span>`;
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}${number?' number':''}${former?' former':''}"${style?` style="${style}"`:''}>${KIT_SVG}${label!==''&&label!=null?`<b>${escape(label)}</b>`:''}${balls}</span>`;
 };
+// What a player's shirt says on a pitch: his number, or `position` (his own by default) when he has none: a selection's
+// player, a temporary reinforcement.
+export const shirtLabel = (player, position=player?.position) => player?.shirt!=null?String(player.shirt):position;
 // The block under a shirt: lines of 16 on the dark of the label, as many for every player of a pitch. His name first (`name`,
 // HTML), then his note and what he did (`facts`, HTML); a line given as '' keeps its height, one left out (null) is not drawn.
 export const playerBlock = (name, facts=null) => `<span class="player-block">${name==null?'':`<span class="block-name">${name}</span>`}${facts==null?'':`<span>${facts}</span>`}</span>`;
@@ -167,9 +171,17 @@ export const nationName = code => nations[code]?.name || code || '—';
 // The three letters a nation is written with after its flag.
 export const nationCode = code => nations[code]?.display_code || code || '—';
 const flagImage = info => info?.flag?`<img class="flag" src="/flags/${info.flag}.svg" alt="" width="16" height="12" loading="lazy">`:'';
-export const nationBadge = (code, {full=false}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return `<span class="nation" title="${escape(info?.name||code||'')}">${flagImage(info)}${escape(label)}</span>`;};
+// Where a nation's flag leads: the page of its selection; nothing for a country the game has no selection for.
+export const nationHref = code => nations[code]?.selection_id==null ? '' : `#/international/nation/${nations[code].selection_id}`;
+// A flag and what follows it, named in its tooltip: a link to its selection, unless `link` is false (a filter, or a flag
+// standing inside another link).
+const nationTag = (code, content, link) => {
+ const href=link?nationHref(code):'',title=`title="${escape(nations[code]?.name||code||'')}"`;
+ return href?`<a class="nation" href="${escape(href)}" ${title}>${content}</a>`:`<span class="nation" ${title}>${content}</span>`;
+};
+export const nationBadge = (code, {full=false,link=true}={}) => {const info=nations[code]; const label=full?(info?.name||code||'—'):(info?.display_code||code||'—'); return nationTag(code,`${flagImage(info)}${escape(label)}`,link);};
 // The flag alone, named in its tooltip, for compact cells; empty when the nation or its flag is unknown.
-export const nationFlag = code => nations[code]?.flag ? `<span class="nation" title="${escape(nations[code].name||code)}">${flagImage(nations[code])}</span>` : '';
+export const nationFlag = (code, {link=true}={}) => nations[code]?.flag ? nationTag(code,flagImage(nations[code]),link) : '';
 // Where a nation's flag is served from, for a flag drawn larger than in a line of text; empty when it has none.
 export const flagUrl = code => nations[code]?.flag ? `/flags/${nations[code].flag}.svg` : '';
 let competitions=new Map();
@@ -191,19 +203,43 @@ export function competitionCode(competition){
  const kept=number>=0?words.slice(0,number+1):words;
  return kept.map(word=>/^\d+$/.test(word)||/^[A-Z]{2,}$/.test(word)?word:SMALL.has(word.toLowerCase())?word[0].toLowerCase():word[0].toUpperCase()).join('').slice(0,4)||'—';
 }
+// The competitions of the selections, in the order the band of their pages steps through them. Each has its page,
+// `#/international/euro`: the edition shown rides in the address (`edition`), the open tab and the day picked in its path.
+export const SELECTION_COMPETITIONS=[{kind:'world',slug:'coupe-du-monde',code:'CM',name:'Coupe du monde'},{kind:'euro',slug:'euro',code:'EU',name:'Euro'},
+ {kind:'nations',slug:'ligue-des-nations',code:'LN',name:'Ligue des nations'}];
+// The page of an edition, by the badge of its competition (EU, CM, LN). An edition the game no longer knows by its badge
+// keeps its year alone: its page finds it, or Sélections nationales opens.
+export function editionHref(code,year,section='',day=''){
+ const competition=SELECTION_COMPETITIONS.find(item=>item.code===code);
+ if(!competition)return `#/international/${year}${section?`/${section}`:''}`;
+ return `#/international/${competition.slug}${section?`/${section}`:''}${section&&day?`/${day}`:''}${year?`?edition=${year}`:''}`;
+}
 // What a competition is (league, cup, europe, international), as the game lists it.
 export const competitionKind = competition => known(competition).kind;
+// Where a competition's badge leads: the page of a league or a national cup, of a European cup, of an edition of the
+// selections (by its `year`); nothing for one the game does not know.
+export function competitionHref(competition){
+ const {id,kind,code,year}=known(competition);
+ // A competition of the selections opens on its page, on the edition of the badge when it has one.
+ if(kind==='international')return code||year!=null?editionHref(code,year):'';
+ if(kind==='europe')return code?`#/europe/${code}`:'';
+ return ['league','cup'].includes(kind)&&id!=null?`#/league/${id}`:'';
+}
 // The badge of a competition: an outline for a league, a blue one for a national cup, a solid one for a European cup; its
-// full name in the tooltip.
-export const competitionBadge = competition => {const {name,kind}=known(competition);return `<span class="competition-code${kind?` ${kind}`:''}" title="${escape(name)}">${escape(competitionCode(competition))}</span>`;};
+// full name in the tooltip. A link to its page, unless `link` is false (a filter, or a badge standing inside another link).
+export const competitionBadge = (competition, {link=true}={}) => {
+ const {name,kind}=known(competition),href=link?competitionHref(competition):'';
+ const attributes=`class="competition-code${kind?` ${kind}`:''}"${href?` href="${escape(href)}"`:''} title="${escape(name)}"`;
+ return href?`<a ${attributes}>${escape(competitionCode(competition))}</a>`:`<span ${attributes}>${escape(competitionCode(competition))}</span>`;
+};
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 // A club's name after its dot, a selection's after its flag; `reversed` writes the name first, for the side at home of a
 // match face to face, whose mark stands against the score (the name in an element of its own, cut when too long). `flag`
-// follows a club's name with the flag of its country, which is no link (a European cup, where clubs of several countries
-// meet): before the name when `reversed`, so that the dot keeps touching the score.
+// follows a club's name with the flag of its country, a link to its selection (a European cup, where clubs of several
+// countries meet): before the name when `reversed`, so that the dot keeps touching the score.
 export const clubLink = (club, {reversed=false,flag=false}={}) => {
  if(!club)return '<span class="muted">Libre</span>';
- const mark=club.national?nationFlag(club.nation):kitDot(club),name=escape(club.name),named=reversed?`${club.national?name:`<span>${name}</span>`}${mark}`:`${mark}${name}`;
+ const mark=club.national?nationFlag(club.nation,{link:false}):kitDot(club),name=escape(club.name),named=reversed?`${club.national?name:`<span>${name}</span>`}${mark}`:`${mark}${name}`;
  const link=`<a href="#/${club.national?'international/nation':'club'}/${club.id}" class="club-link${reversed?' reversed':''}">${club.national?`<span class="nation">${named}</span>`:named}</a>`;
  const country=flag&&!club.national?nationFlag(club.nation):'';
  return country?`<span class="club-flag">${reversed?`${country}${link}`:`${link}${country}`}</span>`:link;
@@ -383,6 +419,23 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
 // Every standings column but the club's has a set width by its header (see .standings in theme.css), so that the tables of a screen line up.
 const STANDINGS_COLUMNS={'#':'rank-column',PTS:'total-column',J:'count-column',V:'count-column',N:'count-column',D:'count-column',P:'count-column',BP:'total-column',BC:'total-column','DIFF.':'difference-column',FORME:'form-column'};
 export const standings = (headers, rows, rowClasses, sort) => `<div class="standings">${table(headers,rows,undefined,rowClasses,sort,headers.map(header=>STANDINGS_COLUMNS[header]||''))}</div>`;
+// A place in Europe, which its rank tells in the colour of its cup (C1, C3, C4): a place in the league (the title, a
+// promotion, a relegation) keeps its own. One that hangs on the winner of the national cup is dashed (`tentative`).
+const europePlace = row => row.europe&&!['champion','promotion','relegation'].includes(row.movement)?`europe-${row.europe.code.toLowerCase()}${row.europe.tentative?' tentative':''}`:'';
+// Its tooltip names the cup, then why: the national cup won, or what another winner of it would leave.
+const europeTip = row => {
+ const place=row.europe;
+ if(!place)return '';
+ const why=place.winner?`Vainqueur de la ${place.cup}`:place.tentative?`Sous réserve : ${place.fallback?place.fallback.name:'aucune coupe d’Europe'} si la ${place.cup} est gagnée par un club moins bien classé`:'';
+ return ` title="${escape(why?`${place.name}\n${why}`:place.name)}"`;
+};
+// The cups a table's places lead to, each after the square of its colour, for the head of its card: their names, or their
+// codes in a narrow card (`short`). Nothing when no place leads to Europe.
+export function europeLegend(items, short=false) {
+ const names=new Map(items.filter(europePlace).map(row=>[row.europe.code,row.europe.name]));
+ const codes=['C1','C3','C4'].filter(code=>names.has(code));
+ return codes.length?`<span class="europe-legend">${codes.map(code=>`<span class="europe-${code.toLowerCase()}">${escape(short?code:names.get(code))}</span>`).join('')}</span>`:'';
+}
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
@@ -390,12 +443,12 @@ export function roundTitle(title,items){const round=Math.max(0,...items.map(row=
 // difference only, for an extract beside the squad. `own` is the club whose row is washed: the user's, unless told otherwise.
 // `flags` (on `data`) follows each club with the flag of its country, in a European cup.
 export function standingsTable(data, compact=false, sortable=false, own=ownClub) {
- const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'';
+ const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':europePlace(row)||(row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'');
  const rowClasses=data.items.map(row=>`${zone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
  // A row's class names its place, which its rank's badge tells (web/charte.css); the icons below are hidden there.
  const icon=row=>row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
  const record=row=>[row.won,row.drawn,row.lost,row.goals_for,row.goals_against];
- const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}">${row.rank}</span>`,`<span class="strong">${clubLink(row.club,{flag:data.flags})}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:compact==='points'?[]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
+ const cells=data.items.map(row=>[`<span class="rank ${row.rank===1?'first':''}"${europeTip(row)}>${row.rank}</span>`,`<span class="strong">${clubLink(row.club,{flag:data.flags})}</span>${icon(row)}`,`<b>${row.points}</b>`,...(compact==='record'?record(row):compact==='figures'?[row.played,...record(row)]:compact==='points'?[]:[row.played]),...(compact?[]:record(row)),row.difference>0?`+${row.difference}`:row.difference,...(compact?[]:[form(row.form)])]);
  const headers=compact==='record'?['#','CLUB','PTS','V','N','D','BP','BC','DIFF.']:compact==='figures'?['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.']:compact==='points'?['#','CLUB','PTS','DIFF.']:compact?['#','CLUB','PTS','J','DIFF.']:['#','CLUB','PTS','J','V','N','D','BP','BC','DIFF.','FORME'];
  // Form sorts by the points of the last five matches.
  const points=row=>[...row.form].reduce((sum,letter)=>sum+(letter==='V'?3:letter==='N'?1:0),0);
@@ -461,7 +514,7 @@ export function pitch(lineup,label='Composition initiale',{compact=false,kit=nul
   const row=rows[line(player)],y=bands[player.position]??40;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
   const tag=player.temporary?'span':'a',name=`${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}`;
-  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,player.position,{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,shirtLabel(player),{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
  }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};
@@ -501,14 +554,19 @@ export function seasonSteps(data){
  return steps(years.map(year=>({value:year,label:season(year),note:year===data.current_season?'en cours':''})),data.season);
 }
 
-// The full table of a finished season of a league, the latest by default; its head steps through the others.
+// The full table of a finished season of a league, the latest by default; its head names the cups of its places and steps
+// through the other seasons.
 export function seasonArchive(archive){
- return archive?card('Classement',standingsTable({items:archive.standings},false,true),seasonSteps(archive)):'';
+ if(!archive)return '';
+ const legend=europeLegend(archive.standings,true);
+ return card('Classement',standingsTable({items:archive.standings},false,true),legend?`<div class="card-tools">${legend}${seasonSteps(archive)}</div>`:seasonSteps(archive));
 }
 
 // The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).
-export function leadersCards(leaders,note=''){
- const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR','MATCHS','BUTS'],rows.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,number(row.matches),number(row.goals)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
+// `nations` gives each player the nation he plays for, his flag then its code, in a competition of the selections.
+export function leadersCards(leaders,note='',{nations=false}={}){
+ const columns=row=>[`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,...(nations?[row.nation?nationBadge(row.nation):'—']:[]),number(row.matches),number(row.goals)];
+ const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR',...(nations?['NATION']:[]),'MATCHS','BUTS'],rows.map((row,index)=>[index+1,...columns(row)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
  return `${note?`<p class="muted">${escape(note)}</p>`:''}<div class="transfer-columns">${list('Joueurs les plus utilisés',leaders.matches)}${list('Meilleurs buteurs',leaders.goals)}</div>`;
 }
 

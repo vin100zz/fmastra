@@ -24,10 +24,10 @@ test('the views are chosen at the end of the row of tabs, the overview by defaul
 });
 
 test('a run reads its round: a semi-final, a final, and a title with its star',()=>{
- assert.equal(runChip(cup('Quarts de finale',4)),'<span class="run">Quarts de finale</span>');
- assert.equal(runChip(cup('Demi-finales',5)),'<span class="run semi">Demi-finales</span>');
- assert.equal(runChip(cup('Finale',6)),'<span class="run final">Finale</span>');
- assert.match(runChip(cup('Vainqueur',7,true)),/^<span class="run won"><svg viewBox="0 0 10 10" aria-hidden="true">[^]*<\/svg>Vainqueur<\/span>$/);
+ assert.equal(runChip(cup('Quarts de finale',4)),'<span class="reached">Quarts de finale</span>');
+ assert.equal(runChip(cup('Demi-finales',5)),'<span class="reached semi">Demi-finales</span>');
+ assert.equal(runChip(cup('Finale',6)),'<span class="reached final">Finale</span>');
+ assert.match(runChip(cup('Vainqueur',7,true)),/^<span class="reached won"><svg viewBox="0 0 10 10" aria-hidden="true">[^]*<\/svg>Vainqueur<\/span>$/);
  assert.equal(runChip(null),'<span class="muted">—</span>');
 });
 
@@ -79,7 +79,7 @@ test('the seasons give the league line, the cups with their runs, the top scorer
  assert.match(html,/<h2>Les saisons du club · 2<\/h2>/);
  assert.match(html,/<span class="rank info">3<\/span>/);assert.match(html,/<span class="rank title">1<\/span>/);
  assert.match(html,/<span class="num">\+10<\/span>/);
- assert.match(html,/<span class="run semi">Demi-finales<\/span>/);assert.match(html,/<span class="run final">Finale<\/span>/);
+ assert.match(html,/<span class="reached semi">Demi-finales<\/span>/);assert.match(html,/<span class="reached final">Finale<\/span>/);
  assert.match(html,/<a href="#\/player\/9">Buteur &lt;b&gt;<\/a><\/td><td[^>]*><span class="num"><b>21<\/b><\/span>/);
  assert.match(html,/<span class="with-delta">88\.4<span class="delta down">−3\.1<\/span><\/span>/);
  // A season without its league line, its scorer or its European run keeps dashes.
@@ -140,8 +140,8 @@ test('a selection’s chart sets the tournaments and the Nations League on their
 test('a selection’s history reads as a club’s: its editions, its players by caps, its records',()=>{
  const html=nationHistory('editions',{items:[edition,league]});
  assert.match(html,/<h2>Les éditions · 2<\/h2>/);
- assert.match(html,/<span class="competition-code international"[^>]*>EU<\/span><a class="strong" href="#\/international\/2028\/finals">Euro 2028<\/a>/);
- assert.match(html,/<span class="bad">Relégué en Division B<\/span>/);assert.match(html,/<span class="run won">/);
+ assert.match(html,/<a class="competition-code international" href="#\/international\/euro\?edition=2028"[^>]*>EU<\/a><a class="strong" href="#\/international\/euro\/finals\?edition=2028">Euro 2028<\/a>/);
+ assert.match(html,/<span class="bad">Relégué en Division B<\/span>/);assert.match(html,/<span class="reached won">/);
  assert.match(html,/<span class="with-delta">84\.2<span class="delta up">\+1\.5<\/span><\/span>/);
  assert.doesNotMatch(html,/undefined|NaN/);
  const players=nationHistory('joueurs',{formation:'4-3-3',eleven:[],matches:[{player_id:5,player:'Cap',position:'DC',editions:3,matches:40,goals:2,assists:0,note:null}],goals:[],notes:[],note_matches:20},{});

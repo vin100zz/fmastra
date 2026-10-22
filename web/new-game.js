@@ -40,11 +40,11 @@ function nationLine(nation,levels,nations){
  const only=depth&&!Object.keys(without).length;
  const box=`<button type="button" class="check" aria-pressed="${depth>0}" aria-label="${e(nation.name)}" data-param="nations" data-param-value="${e(levelsText(depth?without:{...levels,[nation.code]:nation.default||nation.divisions.length},nations))}"${only?' disabled':''}>${TICK}</button>`;
  const division=item=>`<button type="button"${item.level<=depth?' class="active"':''} title="${e(`${item.name} · ${item.clubs} clubs`)}" data-param="nations" data-param-value="${e(levelsText({...levels,[nation.code]:item.level},nations))}">${e(code(nation.code,item.level))}</button>`;
- return `<div class="nation-line${depth?'':' off'}">${box}<span class="nation">${nationFlag(nation.code)}${e(nation.name)}</span>`
+ return `<div class="nation-line${depth?'':' off'}">${box}<span class="nation">${nationFlag(nation.code,{link:false})}${e(nation.name)}</span>`
   +`<div class="segmented small range" role="group" aria-label="Divisions">${nation.divisions.map(division).join('')}</div><span class="num">${depth?n(clubs):'—'}</span></div>`;
 }
 const code=(nation,depth)=>`${nation==='FRA'?'L':'D'}${depth}`;
-const league=club=>`<span class="cell">${club.nation_code==='FRA'?'':nationFlag(club.nation_code)}${competitionBadge({name:club.competition,kind:'league',nation:club.nation_code,level:club.level})}${e(club.competition)}</span>`;
+const league=club=>`<span class="cell">${club.nation_code==='FRA'?'':nationFlag(club.nation_code,{link:false})}${competitionBadge({name:club.competition,kind:'league',nation:club.nation_code,level:club.level},{link:false})}${e(club.competition)}</span>`;
 
 // The club picked: its band, then its figures, its facts and the players its level is the mean of.
 function clubCards(club){

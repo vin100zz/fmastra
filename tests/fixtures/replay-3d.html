@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Match 3D — scènes de vérification</title>
+  <link rel="stylesheet" href="../../web/theme.css">
+  <link rel="stylesheet" href="../../web/match-replay.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: var(--s2) var(--s4) var(--s3); font-family: var(--text); }
+    header { display: flex; gap: var(--s6); align-items: center; justify-content: space-between; }
+    h1 { margin: 0; }
+    header p { margin: var(--s1) 0 0; font-size: var(--fs-small); }
+    .scenarios { margin-bottom: var(--s2); max-width: 100%; overflow-x: auto; }
+    button, select { font-family: var(--text); }
+    .tools button, .tools select { border: 1px solid var(--line); cursor: pointer; }
+    .tools { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+    .tools label { font-size: var(--fs-small); color: var(--muted); }
+    .mount-toggle { display: none; }
+    #mount { padding: 0; }
+    match-replay { padding: 0; }
+    .match-replay-card { margin: 0; }
+    .replay-pitch { width: 100%; height: max(420px, calc(100vh - 245px)); max-height: none; }
+    .status { display: flex; justify-content: space-between; gap: var(--s4); margin-top: var(--s2); color: var(--muted); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+    #error { color: var(--bad); white-space: pre-wrap; }
+    @media (max-width: 800px) { body { padding: var(--s2); } header { align-items: flex-start; flex-direction: column; gap: var(--s2); } .replay-pitch { height: 55vh; min-height: 360px; } }
+  </style>
+  <link rel="stylesheet" href="../../web/charte.css">
+</head>
+<body>
+  <header class="page-heading">
+    <div><h1>Match 3D · Nice — Paris</h1><p>22 joueurs · données synthétiques déterministes · moteur et rendu de l’application</p></div>
+    <div class="tools">
+      <button type="button" id="restart">Rejouer la scène</button>
+      <label>Vitesse <select id="pace"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+      <label><input type="checkbox" id="pause-shot"> Pause au tir</label>
+    </div>
+  </header>
+  <nav class="segmented scenarios" aria-label="Scènes de vérification"></nav>
+  <main id="mount"></main>
+  <div class="status"><output id="status">Chargement…</output><span>Les commandes sous le terrain sont celles du match.</span></div>
+  <pre id="error" role="alert"></pre>
+  <script type="module">
+    import { replayCard } from '../../web/match-replay.js';
+
+    // A fixture uses the public card and its delegated mount listener. No renderer,
+    // animation, ball physics or plan methods are replaced here.
+    const positions = ['GB', 'DG', 'DC', 'DC', 'DD', 'MDC', 'MC', 'MC', 'AILG', 'BU', 'AILD'];
+    const homeNames = ['Marco Carnesecchi', 'Melvin Bard', 'Dante Costa', 'Moïse Bombito', 'Jonathan Clauss', 'Hicham Boudaoui', 'Morgan Sanson', 'Tanguy Ndombele', 'Jérémie Boga', 'Terem Moffi', 'Evann Guessand'];
+    const awayNames = ['Gianluigi Donnarumma', 'Nuno Mendes', 'Willian Pacho', 'Marquinhos Silva', 'Achraf Hakimi', 'Vitinha Ferreira', 'João Neves', 'Warren Zaïre-Emery', 'Bradley Barcola', 'Endrick Felipe', 'Ousmane Dembélé'];
+    const roster = (names, offset) => names.map((name, index) => ({
+      id: offset + index + 1, name, short: name.split(' ').at(-1), position: positions[index],
+      shirt: [1, 26, 4, 5, 2, 6, 8, 17, 7, 9, 11][index], technique: 72 + index % 4 * 4, vitesse: 70 + index % 5 * 5,
+    }));
+    const home = roster(homeNames, 0), away = roster(awayNames, 100);
+    const players = new Map([...home, ...away].map(player => [player.id, player]));
+    const named = id => ({ player_id: id, player: players.get(id).name });
+    const secondary = id => ({ secondary_id: id, secondary: players.get(id).name });
+    const scenes = [
+      { id: 1, second: 480, team: 1, label: '1 · Passes, dribble et arrêt bas', shot: 10, keeper: 101, outcome: 'save',
+        start: [1, 1], progress: [[7, 1, 1], [8, 2, 1], [8, 3, 1, 106]] },
+      { id: 31, second: 1230, team: 2, label: '2 · Contre-attaque et but', shot: 110, keeper: 1, outcome: 'goal', counter: true,
+        start: [1, 1], progress: [[108, 2, 1], [110, 3, 1]] },
+      { id: 46, second: 2100, team: 1, label: '3 · Centre et tête', shot: 10, keeper: 101, outcome: 'goal', kind: 'cross', delivery: 9,
+        start: [1, 0], progress: [[7, 2, 0], [9, 3, 0]] },
+      { id: 6, second: 3180, team: 2, label: '4 · Frappe et arrêt haut', shot: 110, keeper: 1, outcome: 'save',
+        start: [2, 1], progress: [[108, 3, 1]] },
+      { id: 82, second: 3810, team: 1, label: '5 · Tir contré', shot: 11, keeper: 101, outcome: 'off_target', blocker: 103,
+        start: [2, 1], progress: [[8, 3, 1]] },
+      { id: 97, second: 4560, team: 2, label: '6 · Coup franc et mur', shot: 111, keeper: 1, outcome: 'goal', kind: 'free_kick',
+        start: [3, 1], progress: [] },
+    ];
+    const events = [{ kind: 'kickoff', period: 1, second: 0, team_id: 1 }];
+    for (const scene of scenes) {
+      let second = scene.second;
+      const common = { period: second > 2700 ? 2 : 1, team_id: scene.team, possession_id: scene.id };
+      const add = (kind, detail = {}) => events.push({ ...common, kind, second: second++, ...detail });
+      add('possession', { zone: scene.start[0], lane: scene.start[1], detail: scene.counter ? 'counter' : 'recovery' });
+      for (const [id, zone, lane, defender] of scene.progress) add('progress', { ...named(id), zone, lane, detail: defender ? 'dribble' : 'pass', ...(defender ? secondary(defender) : {}) });
+      if (scene.kind === 'free_kick') add('free_kick', { ...named(scene.shot), zone: 3, lane: 1 });
+      if (scene.delivery) add('delivery', { ...named(scene.delivery), zone: 3, lane: 0, detail: 'cross' });
+      add('shot', { ...named(scene.shot), ...secondary(scene.keeper), shot_id: scene.id, detail: scene.kind || 'shot', zone: 3, lane: 1, xg: 0.26 });
+      add(scene.outcome, { ...named(scene.shot), shot_id: scene.id, ...(scene.blocker ? { ...secondary(scene.blocker), detail: 'blocked' } : scene.delivery ? secondary(scene.delivery) : {}) });
+    }
+    events.push({ kind: 'period_end', period: 1, second: 2700, team_id: 1 });
+    events.sort((a, b) => a.second - b.second);
+    const match = { home: { id: 1, name: 'Nice' }, away: { id: 2, name: 'Paris' }, result: {
+      events, duration: 5400, home_lineup: home, away_lineup: away, home_bench: [], away_bench: [],
+    } };
+    const teams = {
+      home: { name: 'Nice', major: '#d22c37', minor: '#151b22', keeper: '#efc444' },
+      away: { name: 'Paris', major: '#155c91', minor: '#f1f1e9', keeper: '#8dcf43' },
+    };
+    const card = replayCard(match, teams);
+    document.querySelector('#mount').innerHTML = `<div class="mount-toggle">${card.toggle}</div>${card.panel}`;
+    document.querySelector('[data-replay-toggle]').click();
+    const replay = document.querySelector('match-replay');
+    replay.filter = '0';
+    replay.querySelector('[data-replay="filter"]').value = '0';
+    replay.applyFilter();
+    replay.setView(true);
+
+    const params = new URLSearchParams(location.search);
+    let selected = Math.min(scenes.length - 1, Math.max(0, Number(params.get('scenario') || 1) - 1));
+    let pauseOnce = false, scheduledPause = null;
+    const phase = Math.min(.98, Math.max(0, Number(params.get('phase') || .6)));
+    const pauseKind = params.get('pose') || 'shot';
+    const pauseShot = document.querySelector('#pause-shot');
+    pauseShot.checked = params.has('pose');
+    const nav = document.querySelector('.scenarios');
+    scenes.forEach((scene, index) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.textContent = scene.label;
+      button.addEventListener('click', () => playScene(index));
+      nav.append(button);
+    });
+    function playScene(index) {
+      selected = index; pauseOnce = false; scheduledPause = null;
+      [...nav.children].forEach((button, n) => {
+        button.setAttribute('aria-current', String(n === index));
+        button.classList.toggle('active', n === index);
+      });
+      replay.jump(index);
+    }
+    document.querySelector('#restart').addEventListener('click', () => playScene(selected));
+    document.querySelector('#pace').addEventListener('change', event => {
+      replay.speed = Number(event.target.value);
+      replay.querySelectorAll('[data-speed]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === replay.speed)));
+    });
+    pauseShot.addEventListener('change', () => { pauseOnce = false; });
+    if (params.has('speed')) {
+      replay.speed = Math.min(4, Math.max(.1, Number(params.get('speed')) || 1));
+      document.querySelector('#pace').value = String(replay.speed);
+      replay.querySelectorAll('[data-speed]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === replay.speed)));
+    }
+    playScene(selected);
+    if (params.get('autoplay') === '0') replay.pause();
+    const status = document.querySelector('#status');
+    function observe() {
+      const action = replay.action;
+      const k = action ? Math.min(1, Math.max(0, (replay.time - action.t0) / action.duration)) : 0;
+      if (pauseShot.checked && !pauseOnce && replay.current === selected && action?.kind === pauseKind && scheduledPause !== action) {
+        scheduledPause = action;
+        const stop = () => { if (pauseShot.checked && replay.current === selected && scheduledPause === action) { replay.pause(); pauseOnce = true; } };
+        // A short shot can finish between two observation frames at 4×. Queue
+        // the pause on the replay clock so the fixture stays on this scene.
+        if (k >= phase) stop(); else replay.cue(action.t0 + action.duration * phase, stop);
+      }
+      status.textContent = `${replay.view3d ? '3D' : '2D'} · ${replay.paused ? 'Pause' : 'Lecture'} · scène ${replay.current + 1}/${scenes.length} · ${action?.kind || 'repos'} ${Math.round(k * 100)} % · ballon ${(replay.ballZ || 0).toFixed(2)} m`;
+      requestAnimationFrame(observe);
+    }
+    requestAnimationFrame(observe);
+    window.addEventListener('error', event => { document.querySelector('#error').textContent += `${event.message}\n`; });
+    window.addEventListener('unhandledrejection', event => { document.querySelector('#error').textContent += `${event.reason}\n`; });
+  </script>
+</body>
+</html>

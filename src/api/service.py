@@ -66,7 +66,8 @@ def round_competition(world: World, results: tuple[str, int] | None) -> dict | N
         return None
     kind, key = results
     if kind == "international":
-        return {"kind": "international", "year": key}
+        from .international import EDITION_CODES
+        return {"kind": "international", "year": key, "code": EDITION_CODES[world.international.editions[key].kind]}
     competition = world.competitions[key]
     return {"kind": competition.kind, "id": competition.id, "code": competition.code}
 

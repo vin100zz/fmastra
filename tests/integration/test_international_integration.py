@@ -50,6 +50,20 @@ def test_national_api_and_player_history(imported, tmp_path):
         assert data['enabled'] and len(data['nations']) == 211
         assert [(e['year'], e['code']) for e in data['editions']] == [(2028, 'EU'), (2027, 'LN')]
         assert {'titles', 'last_edition'} <= set(data['nations'][0])
+        assert data['nations'][0]['titles'] == {'world': 0, 'euro': 0, 'nations': 0}
+        # The three competitions, the World Cup first: none drawn yet waits for its draw, the others are under way.
+        world_cup, euro, league = data['competitions']
+        assert [c['slug'] for c in data['competitions']] == ['coupe-du-monde', 'euro', 'ligue-des-nations']
+        assert (world_cup['name'], world_cup['current'], world_cup['next']) == ('Coupe du monde', None, {'year': 2030, 'draw': '2028-08-01'})
+        assert euro['current'] == {'year': 2028, 'stage': 'Qualifications', 'next': {'date': '2027-03-18', 'round': 'J1'}}
+        assert (league['current']['year'], league['current']['stage'], league['current']['next']['round']) == (2027, 'Phase de ligue', 'J1')
+        assert all(c['holder'] is None and c['finals'] == [] for c in data['competitions'])
+        history = client.get('/api/international/competitions/ligue-des-nations/historique').json()
+        assert history['editions'] == [2027] and history['finals'] == [] and history['titles'] == []
+        # A Nations League's divisions are known from its draw: every European nation has its row, none moved yet.
+        assert len(history['runs']) == 54 and history['runs'][0]['runs'] == [{'division': 'A', 'stage': None, 'move': None}]
+        assert client.get('/api/international/competitions/euro/historique').json()['runs'] == []
+        assert client.get('/api/international/competitions/x/historique').status_code == 422
         edition = client.get('/api/international/editions/2028').json()
         assert len(edition['qualification_groups']) == 10 and len(edition['matches']) == 240
         # What its header shows: its badge, the Euro's blue crossed by its yellow, and nobody to hold a first title.
@@ -73,7 +87,7 @@ def test_national_api_and_player_history(imported, tmp_path):
         assert all(m['competition_code'] == 'LN' and france['id'] in (m['home']['id'], m['away']['id']) for m in nation['calendar']['next'])
         assert nation['calendar']['next'][0]['round_label'] == 'Division A · J1'
         group = nation['group']
-        assert (group['year'], group['finals'], group['places'], group['name'][0]) == (2027, False, 0, 'A')
+        assert (group['year'], group['code'], group['finals'], group['places'], group['name'][0]) == (2027, 'LN', False, 0, 'A')
         assert france['id'] in [row['nation']['id'] for row in group['rows']] and len(group['rows']) == 4
         # The list is sorted by the server as a club's squad is, on the position by default; what a player did in the edition goes with it.
         assert {'caps', 'international_goals', 'appearances', 'goals', 'assists', 'average', 'form'} <= set(nation['squad'][0])

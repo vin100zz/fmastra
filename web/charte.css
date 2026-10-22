@@ -70,10 +70,10 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .club-hero-tabs a.active{border-bottom-color:var(--hero-accent)}
 .toolbar .tabs{height:var(--h-control);margin:0!important;border:0}
 .toolbar .tabs a{padding:0 var(--s3)!important}
-.segmented,.tactics,.edition-switch{display:inline-flex;flex-wrap:nowrap;flex:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
-.segmented>*,.tactics button,.edition-switch a{display:flex;align-items:center;justify-content:center;height:calc(var(--h-control) - 2px);padding:0 var(--s3);border:0;border-right:1px solid var(--line);border-radius:0;background:none;font-family:var(--text);font-size:var(--fs-body);font-weight:600;color:var(--muted);white-space:nowrap}
-.segmented>*:last-child,.tactics button:last-child,.edition-switch a:last-child{border-right:0}
-.segmented>.active,.tactics button.active,.tactics button[aria-pressed="true"],.edition-switch a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+.segmented,.tactics{display:inline-flex;flex-wrap:nowrap;flex:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+.segmented>*,.tactics button{display:flex;align-items:center;justify-content:center;height:calc(var(--h-control) - 2px);padding:0 var(--s3);border:0;border-right:1px solid var(--line);border-radius:0;background:none;font-family:var(--text);font-size:var(--fs-body);font-weight:600;color:var(--muted);white-space:nowrap}
+.segmented>*:last-child,.tactics button:last-child{border-right:0}
+.segmented>.active,.tactics button.active,.tactics button[aria-pressed="true"]{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
 .card-head .segmented>*,.segmented.small>*{height:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
 /* A choice made of links measures what one made of buttons does: 28 px with its border, 22 px in a card's head. */
 .segmented:not(.country-rounds)>a{height:calc(var(--h-control) - 2px)}
@@ -105,8 +105,6 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .club-hero-foot{display:flex;align-items:center}
 .club-hero-foot>.club-hero-tabs{flex:1;min-width:0}
 .club-hero-foot>.tools{padding-right:var(--s4)}
-.edition-switch a{flex-direction:row;gap:var(--s2);border-left:0}
-.edition-switch small{font-size:var(--fs-small);font-weight:400}
 .round-stepper{gap:0;margin-bottom:var(--s2)}
 .round-pills{gap:0}
 .round-pills a,.round-step{height:var(--h-control);margin-right:-1px;border-radius:0;font-size:var(--fs-body);font-weight:600;color:var(--muted)}
@@ -162,6 +160,13 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .standings tr.qualified-europe .rank{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .standings tr.europe-playoff .rank{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 .standings tr.relegated .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+/* In a league, a place in Europe takes the colour of its cup (C1 blue, C3 violet, C4 teal), the title keeping its green;
+   one that hangs on the winner of the national cup has its ring dashed. The legend of the cups shows the same square. */
+.standings tr.europe-c1 .rank,.europe-legend>.europe-c1::before{--cup:var(--info);--cup-soft:var(--info-soft)}
+.standings tr.europe-c3 .rank,.europe-legend>.europe-c3::before{--cup:var(--c3);--cup-soft:var(--c3-soft)}
+.standings tr.europe-c4 .rank,.europe-legend>.europe-c4::before{--cup:var(--c4);--cup-soft:var(--c4-soft)}
+.standings tr:is(.europe-c1,.europe-c3,.europe-c4) .rank,.europe-legend>:is(.europe-c1,.europe-c3,.europe-c4)::before{background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
+.standings tr.tentative .rank{box-shadow:none;border:1px dashed var(--cup)}
 .standings th.rank-column{text-align:center}
 .standings tbody tr.own,.standings tbody tr.own:hover,.standings-card tr:has(.own){background:var(--own-row)!important}
 .standings .movement-icon{display:none}
@@ -312,6 +317,8 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-hero-identity h1{font-size:var(--fs-hero);line-height:1}
 .club-hero-name{display:flex;align-items:baseline;gap:var(--s3);min-width:0}
 .club-hero-name h1{min-width:0}
+/* A player's number before his name, as large, veiled (« En-tête d'un joueur »). */
+.club-hero-number{flex:none;font:700 var(--fs-hero)/1 var(--display);font-stretch:semi-condensed;opacity:.55}
 .club-hero-context{display:flex;align-items:baseline;gap:var(--s2);flex:none;font:700 var(--fs-title)/24px var(--display);font-stretch:semi-condensed;white-space:nowrap;opacity:.85}
 .club-hero-identity p{font-size:var(--fs-body);font-weight:400}
 .club-hero-tiles{gap:var(--s2)}
@@ -341,18 +348,22 @@ span.entity-step svg{opacity:.3}
 .entity-menu[open]>summary{background:var(--hero-veil,var(--panel-2));box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--step)}
 .entity-menu>.menu{position:absolute;top:calc(100% + var(--s1));left:0;z-index:5;max-height:calc(12*var(--h-row) + 2*var(--s1));overflow-y:auto}
 .menu .cell{display:flex;align-items:center;gap:6px}
-/* A player's header is his club's. A tile grades its ground as the badge of its note does (level, potential); what he did
-   for his selection is one tile of three columns: its flag over its code, his caps, his goals. Under the band, where a
-   club has its tabs: what stands on the left, then what the user can do with him in the groups of his menu, the main
+/* A player's header is his club's. What he did for his selection is one tile of three columns: its flag over its code, his
+   caps, his goals; his level and his potential one tile of two graded columns, each on the ground of its badge, the line
+   between them in the panel's colour; his market value and the fee asked one tile of two columns. Under the band, where
+   a club has its tabs: what stands on the left, then what the user can do with him in the groups of his menu, the main
    action last. */
-.club-hero-tile.graded{background:hsl(var(--hue) 40% 16%)}
-.club-hero-tile.graded :is(span,strong){color:hsl(var(--hue) 75% 68%)}
-:root[data-theme="light"] .club-hero-tile.graded{background:hsl(var(--hue) 62% 91%)}
-:root[data-theme="light"] .club-hero-tile.graded :is(span,strong){color:hsl(var(--hue) 65% 26%)}
+:is(.club-hero-tile.graded,.club-hero-tile.split>.graded){background:hsl(var(--hue) 40% 16%)}
+:is(.club-hero-tile.graded,.club-hero-tile.split>.graded) :is(span,strong){color:hsl(var(--hue) 75% 68%)}
+:root[data-theme="light"] :is(.club-hero-tile.graded,.club-hero-tile.split>.graded){background:hsl(var(--hue) 62% 91%)}
+:root[data-theme="light"] :is(.club-hero-tile.graded,.club-hero-tile.split>.graded) :is(span,strong){color:hsl(var(--hue) 65% 26%)}
 .club-hero-tile.split{flex-direction:row;align-items:stretch;gap:var(--s3)}
 .club-hero-tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px;color:inherit}
 .club-hero-tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
 .club-hero-tile.split>*>span{display:flex;align-items:center;height:14px}
+.club-hero-tile.split:has(>.graded){gap:0;padding:0;overflow:hidden}
+.club-hero-tile.split:has(>.graded)>*{padding:6px var(--s3)}
+.club-hero-tile.split:has(>.graded)>*+*{border-left-color:var(--panel)}
 .club-hero-bar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s4);min-height:var(--h-tabs);padding:var(--s1) var(--s3)}
 .hero-pills{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-right:auto}
 .hero-commands{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1)}
@@ -488,6 +499,12 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .kit-shirt .kit-collar{fill:var(--kit-sleeves);stroke:none}
 .kit-shirt .kit-outline{fill:none;stroke:#00000033;stroke-width:1;stroke-linejoin:round}
 .kit-shirt b{position:relative;margin-top:7px;font:700 var(--fs-micro)/1 var(--display);font-stretch:semi-condensed;color:var(--kit-ink)}
+/* The number on a player's shirt, larger than a position. */
+.kit-shirt.number b{margin-top:6px;font-size:var(--fs-body)}
+/* Off the pitch, in a message: the number a player takes on his club's shirt; the one he leaves veiled, a muted arrow
+   between the two (« Terrain et maillot »). */
+.kit-shirt.former{opacity:.45}
+.shirt-change{display:inline-flex;align-items:center;gap:var(--s2);color:var(--muted)}
 .kit-shirt.plain{--kit-body:#8a9193;--kit-sleeves:#8a9193;--kit-ink:#fff}
 .kit-shirt.empty svg{filter:none}
 .kit-shirt.empty :is(.kit-sleeves,.kit-body){stroke:none}
@@ -619,11 +636,11 @@ th.rank-col{text-align:center}
 .history-scores svg.away{flex:none;width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 /* A run in a cup, a chip of 18: the round reached, plain; a semi-final ringed in blue, a final in green, a title on the
    accent with its star. A title in a league reads the same: its rank on the accent. */
-.run{display:inline-flex;align-items:center;gap:var(--s1);flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);color:var(--ink-2);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
-.run.semi{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
-.run.final{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
-.run.won{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text);color:var(--accent-ink)}
-.run svg{width:10px;height:10px;fill:currentColor}
+.reached{display:inline-flex;align-items:center;gap:var(--s1);flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);color:var(--ink-2);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
+.reached.semi{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
+.reached.final{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+.reached.won{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text);color:var(--accent-ink)}
+.reached svg{width:10px;height:10px;fill:currentColor}
 .rank.good{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .rank.info{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .rank.warn{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
@@ -683,7 +700,7 @@ a{text-decoration-thickness:1px;text-underline-offset:2px}
 a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:underline}
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
-:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.current-edition,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
+:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.club-hero-band,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
 :is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) .block-name{text-decoration:underline 1px;text-underline-offset:2px}
 /* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
    line on the ground. */
@@ -694,14 +711,14 @@ a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}
 tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted){background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
 .player-table tbody tr:where(:not(.selected,.chosen)):is(:hover,.targeted) td:nth-child(2){background:var(--panel-3)}
-:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.current-edition,.result):hover{background:var(--panel-3)}
+:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */
 button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
-:is(.chips,.presets,.round-pills,.manual-menu,.segmented,.edition-switch,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
+:is(.chips,.presets,.round-pills,.manual-menu,.segmented,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
 :is(.tactics,.segmented,.calendar-filters,.movement-filters) button:where(:not(.active,[aria-pressed="true"],:disabled)):hover{background:var(--panel-3);color:var(--strong)}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
    their colour. */
@@ -753,8 +770,41 @@ small{font-size:var(--fs-small)}
 .selection-calendar{grid-template-columns:minmax(0,1fr) 560px}
 .selection-calendar .calendar-row{grid-template-columns:92px 44px 104px 18px minmax(170px,210px) 58px minmax(0,1.4fr) minmax(0,.8fr)}
 .selection-calendar .calendar-side{gap:var(--s2)}
-.edition-records .competition-code{margin-right:6px}
+.edition-records .competition-code,.nations-table .competition-code{margin-right:6px}
 @media(max-width:1329px){.selection-calendar{grid-template-columns:minmax(0,1fr)}}
+/* Sélections nationales (docs/charte-graphique.md, « Compétitions des sélections »): a column per competition, its band at
+   the head, which opens its page as a whole: its emblem and its name in the size of a page's title, its sash to the right
+   of the column, the veil of its ink under the pointer. Under it, who holds the title, the edition under way and its next
+   match day, then its finals. */
+.selection-competitions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s2)}
+.selection-competition{margin:0}
+.club-hero-band.narrow .club-hero-main{flex-wrap:nowrap}
+.club-hero-band.narrow h2{margin:0;font:700 var(--fs-page)/32px var(--display);font-stretch:semi-condensed;letter-spacing:var(--caps);text-transform:uppercase;color:inherit;white-space:nowrap}
+.club-hero-band.narrow .club-hero-art i{clip-path:polygon(86% 0,92% 0,85% 100%,79% 100%)}
+.club-hero-band.narrow .club-hero-art i.thin{clip-path:polygon(93.5% 0,95% 0,88% 100%,86.5% 100%)}
+a.club-hero-band:is(:hover,:focus-visible){box-shadow:inset 0 0 0 100vmax var(--hero-veil)}
+.selection-competition .card-body{padding:var(--s1) var(--s3)}
+.selection-competition .fact{min-height:var(--h-row);padding:0}
+.selection-competition .fact:last-child{border-bottom:0}
+.card>.section-title{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel-2)}
+.nations-table .force{justify-content:flex-end}
+.nations-table :is(th,td):nth-child(n+3):nth-child(-n+6),.titles-table :is(th,td):not(:first-child){text-align:right}
+.finals-table :is(th,td):nth-child(3){text-align:center}
+/* A final's score from its winner's side, a link to the match; a shoot-out's mark before it, as on the storey of a match
+   in a list. */
+.final-score{white-space:nowrap}
+.final-score small{margin-right:var(--s1);font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);color:var(--muted)}
+/* How far each nation went in each edition (docs/charte-graphique.md, « Finales et parcours »), a column per edition:
+   the title in bold in the accent's ink, the final in the strong ink, the rest written short; in a Nations League, the
+   division, and an arrow where it went up (green) or down (red). */
+.runs-table :is(th,td):not(:first-child){text-align:center}
+.run{color:var(--ink-2);white-space:nowrap}
+.run.won{font-weight:700;color:var(--accent-text)}
+.run.final{font-weight:600;color:var(--strong)}
+.run.none{color:var(--muted)}
+.run i{margin-left:3px;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
+.run i.up{color:var(--good)}
+.run i.down{color:var(--bad)}
 .card-head h2 .nation{margin-right:6px;vertical-align:-1px}
 .preview .position-row{height:var(--h-row)}
 .honours-matrix .competition-code{margin-right:6px}

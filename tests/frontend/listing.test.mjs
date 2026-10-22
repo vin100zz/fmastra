@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {listHref,positionChips,nationChips,choiceLinks,toggleLink,rangeMenu,choiceSelect,sidePanel,fittedRows,wideScreen} from '../../web/listing.js';
-import {headPager,mainNation,setNations} from '../../web/ui.js';
+import {headPager,mainNation,setNations,nationFlag,nationBadge,clubLink} from '../../web/ui.js';
 
 const params=query=>new URLSearchParams(query);
 // The addresses are written into attributes, escaped.
@@ -26,7 +26,8 @@ test('each position chip adds its position to the list or takes it off, in the o
 });
 
 test('a nation chip sets its country and the chosen one takes it off',()=>{
- setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ITA:{name:'Italie',display_code:'ITA',flag:'it'}});
+ // A filter's flag is no link of its own, even for a country with a selection.
+ setNations({FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1},ITA:{name:'Italie',display_code:'ITA',flag:'it',selection_id:-4}});
  const html=nationChips('#/clubs',params('pays=ITA&statut=actif'),['FRA','ITA'],false);
  assert.deepEqual(hrefs(html),['#/clubs?pays=FRA&statut=actif','#/clubs?statut=actif']);
  assert.match(html,/class="chip nation-chip on"[^>]*aria-current="true"><span class="nation" title="Italie">/);
@@ -83,8 +84,22 @@ test('the pages of a list step from the head of its card, and a single page show
 });
 
 test('a list names the main nation alone: his selection, else his first nationality',()=>{
- setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'},MAR:{name:'Maroc',display_code:'MAR',flag:'ma'}});
- assert.match(mainNation({nationalities:['FRA','ESP','MAR']}),/^<span class="nation" title="France"><img class="flag" src="\/flags\/fr\.svg"[^>]*>FRA<\/span>$/);
+ setNations({FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1},ESP:{name:'Espagne',display_code:'ESP',flag:'es',selection_id:-2},MAR:{name:'Maroc',display_code:'MAR',flag:'ma'}});
+ // Its flag and its code are one link to its selection; a country the game has no selection for leads nowhere.
+ assert.match(mainNation({nationalities:['FRA','ESP','MAR']}),/^<a class="nation" href="#\/international\/nation\/-1" title="France"><img class="flag" src="\/flags\/fr\.svg"[^>]*>FRA<\/a>$/);
  assert.match(mainNation({nationalities:['FRA','ESP','MAR'],national_team:'MAR'}),/^<span class="nation" title="Maroc"><img class="flag" src="\/flags\/ma\.svg"[^>]*>MAR<\/span>$/);
  assert.equal(mainNation({nationalities:[]}),'—');
+ setNations({});
+});
+
+test('a flag leads to its selection, alone or before its country, unless it stands in a filter or inside another link',()=>{
+ setNations({FRA:{name:'France',display_code:'FRA',flag:'fr',selection_id:-1},MAR:{name:'Maroc',display_code:'MAR',flag:'ma'}});
+ assert.match(nationFlag('FRA'),/^<a class="nation" href="#\/international\/nation\/-1" title="France"><img class="flag" src="\/flags\/fr\.svg"[^>]*><\/a>$/);
+ assert.match(nationBadge('FRA',{full:true}),/^<a class="nation" href="#\/international\/nation\/-1" title="France"><img[^>]*>France<\/a>$/);
+ assert.match(nationFlag('FRA',{link:false}),/^<span class="nation" title="France"><img[^>]*><\/span>$/);
+ assert.match(nationFlag('MAR'),/^<span class="nation" title="Maroc"><img[^>]*><\/span>$/);
+ // A selection's flag stands inside the link to it; a club's country, after its name in a European cup, is a link of its own.
+ assert.doesNotMatch(clubLink({id:-1,name:'France',nation:'FRA',national:true}),/<a [^>]*><a /);
+ assert.match(clubLink({id:5,name:'Lens',nation:'FRA'},{flag:true}),/^<span class="club-flag"><a href="#\/club\/5" class="club-link">Lens<\/a><a class="nation" href="#\/international\/nation\/-1" title="France"><img[^>]*><\/a><\/span>$/);
+ setNations({});
 });

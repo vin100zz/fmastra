@@ -13,7 +13,7 @@ from core.domain.world import NewsItem, World
 from core.world.news import PENDING, awaits_answer
 from . import views as v
 
-AGGREGATED = {"injury", "injury_end", "suspension", "academy", "release", "retirement", "call_up", "morale", "contract_expiry"}
+AGGREGATED = {"injury", "injury_end", "suspension", "academy", "release", "retirement", "call_up", "morale", "contract_expiry", "shirt_numbers"}
 WINDOWS = {"summer": "d’été", "winter": "d’hiver"}
 MORALE = {"temps_de_jeu": "est mécontent de son temps de jeu", "reserve": "ne veut plus être en réserve",
           "salaire": "est mécontent de son salaire", "ambition": "vise un club plus prestigieux",
@@ -110,6 +110,8 @@ def title(world: World, item: NewsItem) -> list[dict]:
         return sentence(f"{count} joueurs suspendus", *against)
     if kind == "academy" and lines:
         return sentence(one, " rejoint le centre de formation") if one else sentence(f"{count} joueurs rejoignent le centre de formation")
+    if kind == "shirt_numbers" and lines:
+        return sentence(one, " change de numéro") if one else sentence(f"{count} changements de numéro")
     if kind in ("release", "retirement") and lines:
         end = "contrat" if kind == "release" else "carrière"
         return sentence(one, f" : fin de {end}") if one else sentence(f"{count} fins de {end}")
@@ -292,7 +294,11 @@ def message(world: World, index: int) -> dict:
     elif kind == "market_recap": data["recap"] = recap_body(world, item)
     elif kind == "cup_draw" and lines: data["draw"] = draw_body(world, item)
     elif kind == "season_review": data["review"] = review_body(world, item)
+    # A player who comes to the club: the number he takes there, which the message shows on the club's shirt.
+    elif kind in ("transfer", "loan", "loan_return"):
+        data["shirt"] = next((line.amount for line in lines if line.amount is not None), None)
     elif kind in AGGREGATED and lines:
+        if kind == "academy" and len(lines) == 1: data["shirt"] = lines[0].amount
         rival = opponent(world, item)
         data["match"] = {"id": item.match_id, "opponent": rival} if rival else None
         data["players"] = [squad_line(world, line.player_id,
@@ -300,5 +306,7 @@ def message(world: World, index: int) -> dict:
                                       matches=line.amount if kind == "suspension" else None,
                                       team={"id": int(line.key), "name": line.text} if kind == "call_up" else None,
                                       cause=line.text if kind == "morale" else None,
-                                      morale=line.amount if kind == "morale" else None) for line in lines]
+                                      morale=line.amount if kind == "morale" else None,
+                                      shirt=line.amount if kind in ("academy", "shirt_numbers") else None,
+                                      before=int(line.text) if kind == "shirt_numbers" and line.text else None) for line in lines]
     return data

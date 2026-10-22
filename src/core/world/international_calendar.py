@@ -13,6 +13,9 @@ LEAGUE_ROUNDS = 6
 SEMI_FINALS, FINAL = 15, 16
 # A camp gathers three days before a window's first match and lets its players go two days after its last.
 CAMP_BEFORE, CAMP_AFTER = 3, 2
+# A tournament's campaign, the tournament and the Nations League before it, is drawn on the 1st of August two years before
+# its finals.
+CAMPAIGN_DRAW = (8, 1)
 
 
 def edition_kind(world: World, year: int) -> str | None:
@@ -27,6 +30,12 @@ def edition_kind(world: World, year: int) -> str | None:
 def nations_league(world: World, year: int) -> bool:
     """A Nations League ends in the odd year before each tournament."""
     return edition_kind(world, year) is None and edition_kind(world, year + 1) is not None
+
+
+def campaign_draw(world: World, year: int) -> Date:
+    """The day the edition ending in `year` is drawn: with its campaign, a Nations League with the tournament after it."""
+    tournament = year if edition_kind(world, year) else year + 1
+    return Date(tournament - 2, *CAMPAIGN_DRAW)
 
 
 def windows(year: int) -> list[tuple[Date, Date]]:

@@ -276,7 +276,7 @@ def test_save_from_before_the_age_records_rebuilds_them_and_keeps_the_strength_o
     store = SaveStore(tmp_path)
     store.save(world, "modern")
     legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
-    legacy["schema_version"] = 33
+    legacy["schema_version"] = 35
     legacy["world"].pop("age_records")
     legacy["world"]["international"].pop("age_records")
     legacy["world"]["international"].pop("strength_history")
@@ -353,3 +353,27 @@ def test_save_from_before_the_regen_targets_measures_them_on_the_players_the_sou
     assert migrated.external_nation_targets == world.external_nation_targets
     store.save(migrated, "upgraded")
     assert store.load("upgraded").potential_targets == world.potential_targets
+
+
+def test_save_from_before_the_shirt_numbers_numbers_every_squad_by_the_rules_of_a_new_game(config, tmp_path):
+    import gzip
+    import json
+    from core.world.shirts import number_squads
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 34
+    for player in legacy["world"]["players"].values(): del player["shirt"]
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    for club in migrated.clubs.values():
+        numbers = [migrated.players[pid].shirt for pid in club.player_ids]
+        assert None not in numbers and len(set(numbers)) == len(numbers)
+    assert all(player.shirt is None for player in migrated.players.values() if player.club_id is None)
+    # The numbers a new game without source numbers would give the squads as they stand.
+    for player in world.players.values(): player.shirt = None
+    number_squads(world)
+    assert {pid: player.shirt for pid, player in migrated.players.items()} == {pid: player.shirt for pid, player in world.players.items()}
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").players == migrated.players

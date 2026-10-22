@@ -1,7 +1,7 @@
 import {monthlySalary} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle,kitShirt} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -10,7 +10,7 @@ const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert',
  release:['Contrat','contract'],retirement:['Retraite','contract'],morale:['Moral','morale'],injury:['Blessure','injury'],injury_end:['Blessure','injury'],
  suspension:['Suspension','ban'],suspension_end:['Suspension','ban'],call_up:['Sélection','call-up'],academy:['Formation','call-up'],
  market_open:['Mercato','market'],market_close:['Mercato','market'],market_recap:['Mercato','market'],season:['Saison','season'],season_review:['Saison','season'],
- promotion:['Saison','season'],relegation:['Saison','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
+ promotion:['Saison','season'],relegation:['Saison','season'],shirt_numbers:['Saison','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
 const tag=kind=>{const [label,family]=TAGS[kind]||['Actualité','season'];return `<span class="news-tag ${family}">${label}</span>`;};
 // The kinds that ask for an answer: once it is given, their row says so.
 const ANSWERED=new Set(['offer_received','renewal_proposed','talks_open']);
@@ -82,15 +82,24 @@ function talksBody(data){
 }
 const talksStatus=data=>data.state==='agreed'?`Arrivée le ${date(data.arrival)}`:'Négociation terminée';
 
-// Several players in one message: who, and what the message says of each. A single one is all in the title.
-function playersBody(message){
+// A number on the club's shirt, as on its pitches; the one a player leaves, veiled (`former`).
+const clubShirt=(club,number,former=false)=>kitShirt(club?.major_color,club?.minor_color,number,{former});
+// The number a player takes at the club: his shirt, under the title that tells his arrival.
+const shirtBody=(number,club)=>lines([[`<span class="muted">Numéro</span>`,clubShirt(club,number)]],'shirts');
+
+// Several players in one message: who, and what the message says of each. A single one is all in the title, but for a
+// change of number: the shirt he leaves and the one he takes.
+function playersBody(message,club){
  const {kind,players}=message;
+ if(kind==='shirt_numbers')return lines(players.map(row=>[`<span>${named(row.player)}</span>`,
+  `<span class="shirt-change">${row.before==null?'':`${clubShirt(club,row.before,true)}<small>→</small>`}${clubShirt(club,row.shirt)}</span>`]),'shirts');
  if(kind==='morale')return players.length>1?lines(players.map(row=>[`<span>${named(row.player)}</span>`,`<span>${MORALE[row.cause]||'Mécontent'}</span>`,moraleBadge(row.morale)]),'morale')
   :lines([[`<span>Moral</span>`,moraleBadge(players[0].morale)]]);
  if(players.length<2)return '';
  const detail=row=>kind==='injury'?`<span>${absence(row.days)}</span>`:kind==='suspension'?`<span>${row.matches} match${row.matches>1?'s':''}</span>`
-  :kind==='call_up'?`<span><a href="#/international/nation/${row.team.id}">${e(row.team.name)}</a></span>`:'';
- return lines(players.map(row=>[`<span>${named(row.player)}</span>`,detail(row)]));
+  :kind==='call_up'?`<span><a href="#/international/nation/${row.team.id}">${e(row.team.name)}</a></span>`
+  :kind==='academy'&&row.shirt?clubShirt(club,row.shirt):'';
+ return lines(players.map(row=>[`<span>${named(row.player)}</span>`,detail(row)]),kind==='academy'?'shirts':'');
 }
 
 // Contracts running out: each player with his wage and, when he would extend, the contract he asks for, ready to sign.
@@ -149,7 +158,7 @@ function messagePane(message,club){
  const value=offers?.value!=null?`<div class="tile fee-value"><span>Valeur</span><strong>${price(offers.value)}</strong></div>`:'';
  const body=offers?offersBody(offers):renewal?renewalBody(renewal):talks?talksBody(talks):message.expiry?expiryBody(message.expiry)
   :message.market?marketBody(message.market,club):message.recap?recapBody(message.recap):message.draw?drawBody(message.draw)
-  :message.review?reviewBody(message.review,club):message.players?playersBody(message):'';
+  :message.review?reviewBody(message.review,club):message.shirt!=null?shirtBody(message.shirt,club):message.players?playersBody(message,club):'';
  return `<header class="news-message-head"><div class="news-message-meta">${tag(message.kind)}<small>${date(message.date,true)}</small>${status}</div><div class="news-title"><h2>${linked(message.segments)}</h2>${value}</div></header>${body?`<div class="news-body">${body}</div>`:''}`;
 }
 

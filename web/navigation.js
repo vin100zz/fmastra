@@ -45,7 +45,7 @@ export function playerNavigation(nav){
 }
 
 // A competition in a list: its badge, then its name.
-const competitionRow=competition=>badged(competitionBadge(competition),competition.name);
+const competitionRow=competition=>badged(competitionBadge(competition,{link:false}),competition.name);
 
 // The divisions of a country from the top down, then its cup. A competition page has no tab in common with the next one, so it opens on its default.
 export function competitionNavigation(nav){
@@ -61,9 +61,8 @@ export function europeNavigation(cups,cup,section,query=''){
  return neighbours(group(cups,cups.indexOf(cup)),{href:item=>`#/europe/${item.code}/${section}${query?`?${query}`:''}`,scope:'Coupes d’Europe',listLabel:'Choisir une coupe d’Europe',row:competitionRow});
 }
 
-// The editions of the selections, the Euro and the World Cup in turn, from the first to the latest. Moving keeps the open tab.
-export function editionNavigation(editions,year,section){
- const items=[...editions].sort((a,b)=>a.year-b.year);
- return neighbours(group(items,items.findIndex(item=>item.year===year)),{href:item=>`#/international/${item.year}/${section}`,scope:'Éditions',listLabel:'Choisir une édition',
-  row:item=>competitionRow({...item,kind:'international'})});
+// The competitions of the selections, the World Cup on top. `href` builds the address of each, from the open tab.
+export function selectionNavigation(competitions,competition,href){
+ return neighbours(group(competitions,competitions.findIndex(item=>item.kind===competition.kind)),{href,scope:'Compétitions des sélections',
+  listLabel:'Choisir une compétition',row:item=>competitionRow({...item,kind:'international'})});
 }

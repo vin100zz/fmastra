@@ -112,7 +112,7 @@ def loan_ref(world: World, player: Player) -> dict | None:
 
 def player_row(world: World, player: Player) -> dict:
     contract = player.contract
-    return {"id": player.id, "name": player.name, "position": player.position.value,
+    return {"id": player.id, "name": player.name, "position": player.position.value, "shirt": player.shirt,
             "loan": loan_ref(world, player), "reserve": player.reserve_since is not None,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
             "potential": round(player.potential, 1),
@@ -350,17 +350,67 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
                  "movement": "direct" if index < rules.direct_places else
                              "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
                 for index, row in enumerate(standings(competition, matches, world.config))]
-    european_places = 0
-    if competition.level == 1:
-        from core.world.europe import resolve_european_quotas
-        quotas = resolve_european_quotas(world, season if season is not None else world.season)
-        european_places = sum(quotas.get(competition.nation, (0, 0, 0)))
+    rows = standings(competition, matches, world.config)
+    europe, by_rank = european_places(world, competition, [row.club_id for row in rows], season if season is not None else world.season)
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
              "movement": ("champion" if competition.level == 1 and index == 0 else
-                          "europe" if competition.level == 1 and index < european_places else
+                          "europe" if row.club_id in by_rank else
                           "promotion" if competition.level > 1 and index < count else
-                          "relegation" if index >= len(competition.club_ids) - count else None)}
-            for index, row in enumerate(standings(competition, matches, world.config))]
+                          "relegation" if index >= len(competition.club_ids) - count else None),
+             "europe": europe.get(row.club_id)}
+            for index, row in enumerate(rows)]
+
+
+def cup_contenders(world: World, cup: Competition, season: int) -> list[int | None]:
+    """Who may win a national cup's season: its winner once it has one; while it is played, every club its last round
+    leaves in; none known (an archive without it) leaves its place to the league."""
+    winner = next((cid for year, cid in world.champions.get(cup.id, []) if year == season), None)
+    if winner is not None:
+        return [winner]
+    matches = [world.matches[mid] for mid in cup.match_ids] if season == world.season else []
+    if not matches:
+        return [None]
+    last = max(match.round_number for match in matches)
+    return sorted({cid for match in matches if match.round_number == last
+                   for cid in ((match.result.winner_id,) if match.result else (match.home_id, match.away_id))})
+
+
+def european_places(world: World, competition: Competition, ranked: list[int], season: int) -> tuple[dict[int, dict], set[int]]:
+    """The European cup each club of a league's table goes to as it stands (docs/europe.md, « Qualifications »), with the
+    quotas of the season it qualifies for, and the clubs whose rank alone takes them there.
+
+    Before the national cup has a winner, its place in C3 falls to the league, as when an already qualified club wins it:
+    a club whose cup another winner would change is `tentative`, `fallback` naming what it would keep (None: nothing). The
+    cup's winner is marked (`winner`), in a lower division too."""
+    from core.world.europe import COMPETITIONS, league_places, resolve_european_quotas
+    quotas = resolve_european_quotas(world, season + 1).get(competition.nation)
+    cup = next((c for c in world.competitions.values() if c.kind == "cup" and c.nation == competition.nation), None)
+    if not quotas or competition.kind != "league":
+        return {}, set()
+    contenders = cup_contenders(world, cup, season) if cup is not None else [None]
+    winner = contenders[0] if len(contenders) == 1 else None
+    cups = [world.competitions[cid] for cid, _, _ in COMPETITIONS]
+    cup_name = cup.name if cup is not None else None
+    reference = lambda tier: {"code": cups[tier].code, "name": cups[tier].name} if tier is not None else None
+    if competition.level > 1:
+        # A lower division's club goes to Europe only as the cup's winner, in C3.
+        if winner in ranked and quotas[1]:
+            return {winner: {**reference(1), "tentative": False, "fallback": None, "cup": cup_name, "winner": True}}, set()
+        return {}, set()
+    eligible = [cid for cid in ranked if cid in world.clubs and not world.clubs[cid].is_reserve]
+    tier = lambda places, cid: next((index for index, clubs in enumerate(places) if cid in clubs), None)
+    order = lambda index: 3 if index is None else index
+    places = league_places(eligible, winner, quotas)
+    by_rank = {cid for clubs in league_places(eligible, None, quotas) for cid in clubs}
+    # While the cup is played, what each of its possible winners would leave to the others.
+    outcomes = [(other, league_places(eligible, other, quotas)) for other in contenders if other is not None] if winner is None else []
+    europe = {}
+    for index, clubs in enumerate(places):
+        for cid in clubs:
+            worst = max((tier(other_places, cid) for other, other_places in outcomes if other != cid), key=order, default=index)
+            europe[cid] = {**reference(index), "tentative": order(worst) > index, "fallback": reference(worst) if order(worst) > index else None,
+                           "cup": cup_name, "winner": cid == winner}
+    return europe, by_rank & set(europe)
 
 
 TOP_SQUAD = 16
@@ -725,13 +775,31 @@ def side_short_names(world: World, match: Match, side: str) -> dict[int, str]:
     return squad_short_names(world, team_id, {pid: match_player_name(world, result, pid) for pid in sheet})
 
 
+def match_shirt(world: World, match: Match, side: str, pid: int) -> int | None:
+    """The number a player wore in a club match: the one its sheet keeps, else (a match played before the game had
+    numbers) his own, while he still plays for that club. A selection's players have none."""
+    if pid in match.result.shirts: return match.result.shirts[pid]
+    player = world.players.get(pid)
+    if match.id in world.international.matches or player is None: return None
+    return player.shirt if player.club_id == getattr(match, f"{side}_id") else None
+
+
+def play_style(player: Player | None) -> dict:
+    """What the 2D replay animates a player by: how sure his touch is and how fast he carries the ball. Nothing for a
+    player no longer in the world (a call-up, a retired player); the replay then gives him an average touch."""
+    if player is None:
+        return {}
+    return {"technique": round(player.attributes.get("technique")), "vitesse": round(player.attributes.get("vitesse"))}
+
+
 def lineup_rows(world: World, match: Match, side: str, shorts: dict[int, str] | None = None) -> list[dict]:
-    """The starting eleven of one side, with the positions and ratings of that match and each player's short name."""
+    """The starting eleven of one side, with the positions, numbers and ratings of that match and each player's short name."""
     result = match.result
     shorts = side_short_names(world, match, side) if shorts is None else shorts
     return [{"id": pid, "name": match_player_name(world, result, pid), "short": shorts.get(pid), "position": position,
-             "temporary": pid in result.temporary_players,
-             "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None}
+             "shirt": match_shirt(world, match, side, pid), "temporary": pid in result.temporary_players,
+             "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None,
+             **play_style(world.players.get(pid))}
             for pid, position in getattr(result, f"{side}_lineup")]
 
 
@@ -765,7 +833,8 @@ def match_detail(world: World, match: Match) -> dict:
         bench, side_shorts = getattr(result, f"{side}_bench"), shorts[getattr(match, f"{side}_id")]
         detail[f"{side}_lineup"] = lineup_rows(world, match, side, side_shorts)
         detail[f"{side}_bench"] = [{"id": pid, "name": match_player_name(world, result, pid), "short": side_shorts.get(pid),
-                                      "temporary": pid in result.temporary_players,
-                                      "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None} for pid in bench]
+                                      "shirt": match_shirt(world, match, side, pid), "temporary": pid in result.temporary_players,
+                                      "stats": asdict(result.player_stats[pid]) if pid in result.player_stats else None,
+                                      **play_style(world.players.get(pid))} for pid in bench]
     data["result"] = detail
     return data

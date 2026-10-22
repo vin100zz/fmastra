@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 
 const BEST_PLAYERS=8;
@@ -9,7 +9,7 @@ export const outcomeLabels={V:'Victoire',N:'Match nul',D:'Défaite'};
 export const awayIcon='<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Match à l’extérieur"><title>Match à l’extérieur</title><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
 
 // A side by its name: a selection's after its flag, a club's after the dot of its colours.
-const sideName=side=>side.national?`<span class="nation">${nationFlag(side.nation)}${e(side.name)}</span>`:`${kitDot(side)}${e(side.name)}`;
+const sideName=side=>side.national?`<span class="nation">${nationFlag(side.nation,{link:false})}${e(side.name)}</span>`:`${kitDot(side)}${e(side.name)}`;
 
 // One line per match: opponent, plane if away, then a badge naming the competition when it is not the club's championship
 // (for a selection, the edition it plays). A selection's match on neutral ground is not an away game.
@@ -17,7 +17,7 @@ function matchRow(match,club){
  const home=match.home.id===club.id,opponent=home?match.away:match.home,neutral=match.international&&match.neutral;
  const score=match.score?`<span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span>`:'<span class="club-match-score pending">À venir</span>';
  const shootout=match.penalties?`t.a.b. ${match.penalties.join(' – ')}`:'';
- const badge=match.competition!==club.competition?competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})}):'';
+ const badge=match.competition!==club.competition?competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code}:{})},{link:false}):'';
  const detail=`${match.competition} · ${match.round_label} · ${neutral?'Terrain neutre':home?'Domicile':'Extérieur'}${shootout?` · ${shootout}`:''}`;
  return `<a class="club-match" href="#/match/${match.id}" title="${e(detail)}"><span class="club-match-date">${shortDate(match.date)}</span><span class="club-match-who"><b>${sideName(opponent)}</b>${home||neutral?'':awayIcon}${badge}${shootout?`<small>${e(shootout)}</small>`:''}</span>${score}</a>`;
 }
@@ -57,7 +57,7 @@ export function sidePitch(players,club,label){
   const row=rows[line(player)];
   let across=aside.get(player)??50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));
   if(player.position==='AILG')across=15;if(player.position==='AILD')across=85;
-  const shirt=kitShirt(player.temporary?null:club.major_color,club.minor_color,player.position);
+  const shirt=kitShirt(player.temporary?null:club.major_color,club.minor_color,shirtLabel(player));
   const tag=player.temporary?'span':'a',link=player.temporary?' title="Joueur temporaire"':` href="#/player/${player.id}" title="${e(player.name)}"`;
   return `<${tag} class="pitch-player"${link} style="left:${DEPTH[player.position]??55}%;top:${across}%">${shirt}${playerBlock(e(shortName(player.name,player.short)))}</${tag}>`;
  }).join('');

@@ -81,3 +81,31 @@ Quatre traits stables, fixés à la création du joueur, pèsent sur sa carrièr
 | Appât du gain | 0 à 1 (1 à 20 sur la fiche) | Gonfle le salaire demandé |
 
 Pour un joueur du fichier de départ, ces traits viennent de ses notes d'origine (propension aux blessures, agressivité, ambition, loyauté : moins il est loyal, plus il regarde le salaire). Pour un regen, ils sont tirés au hasard.
+
+## Le numéro de maillot
+
+Chaque joueur d'un effectif porte son propre numéro, de 1 à 99 : celui du fichier de départ quand il le donne, sinon un numéro choisi comme ci-dessous. Il le garde tant qu'il reste au club ; un joueur libre n'en a pas.
+
+Un joueur qui arrive (transfert, prêt, retour de prêt, jeune promu au centre de formation) prend le premier numéro libre parmi ceux que demande sa place dans l'effectif :
+
+| Poste | Titulaire | Remplaçant | Jeune |
+|---|---|---|---|
+| GB | 1 | 16 | 30 |
+| DG | 3 | 13, 23 | 23, 33 |
+| DD | 2 | 12, 22 | 22, 32 |
+| DC | 4, 5, sinon 6 | 14, 15, 24, 25 | 24, 25, 34, 35 |
+| MDC | 6, sinon 8 | 26, 28, 20 | 26, 36 |
+| MC | 8, sinon 6, 7, 11 | 28, 20, 26 | 28, 38 |
+| MOC | 10, sinon 8, 7, 11 | 20, 28, 26 | 20 |
+| AILG | 11, sinon 7, 10 | 21 | 21, 31 |
+| AILD | 7, sinon 11, 10 | 17, 27 | 27, 37 |
+| BU | 9, sinon 10, 11 | 18, 19, 29 | 29, 39 |
+
+- **Titulaire** : un joueur du onze type de son club, celui que sa tactique aligne quand tout le monde est disponible, la réserve mise à part. Les numéros de 1 à 11, les plus prestigieux, sont les siens ; s'ils sont pris, il passe à ceux d'un remplaçant.
+- **Jeune** : un joueur de moins de 21 ans qui n'est pas titulaire.
+- **Remplaçant** : tous les autres ; s'ils sont pris, il passe à ceux d'un jeune.
+- À partir de 30, un numéro ne va plus avec un poste : faute de mieux, le joueur prend le premier libre.
+
+Recruté par un club dont le 9 est libre, un avant-centre titulaire le prend ; un attaquant de 16 ans prend le 29, ou le 39.
+
+Le 1er juillet, une fois partis les joueurs en fin de contrat, chaque club revoit ses numéros avant l'arrivée des jeunes du centre de formation : un titulaire sans numéro de 1 à 11 prend un de ceux de son poste resté libre, un remplaçant qui porte un numéro de 30 ou plus en prend un de 12 à 29. Personne ne cède le sien, mais celui qu'un joueur quitte peut servir au suivant. Les actualités de votre club disent le numéro de chaque arrivée et les changements du 1er juillet.
