@@ -21,8 +21,9 @@ const STAR='<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3 9
 // A run in a cup, or a selection's finals: the round reached; a semi-final in blue, a final in green, a title on the accent with its star.
 export const runChip=run=>run?`<span class="run${run.winner?' won':run.label==='Finale'?' final':run.label==='Demi-finales'?' semi':''}">${run.winner?STAR:''}${e(run.label)}</span>`:'<span class="muted">—</span>';
 const noteBadge=value=>value==null?'—':`<span class="num"><span class="rating graded" style="--hue:${noteHue(value)}">${averageNote(value)}</span></span>`;
-// A figure, on the right of its column.
+// A figure, on the right of its column, as wide as its heading: a long one (MATCHES, SAISONS) widens it.
 const num=value=>`<span class="num">${value}</span>`;
+const figureCol=heading=>heading.length>4?'figure-col wide':'figure-col';
 const ageText=row=>`${row.years} ans${row.months?` ${row.months} mois`:''}`;
 const player=row=>playerLink(row.player_id,row.player);
 const positionCell=row=>row.position?position(row.position):'—';
@@ -125,13 +126,13 @@ function recordCard(record,unit,badge){
  const line=row=>[row[unit],row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against].map(value=>num(n(value))).concat(num(difference(row)));
  return card('Bilan',table(['COMPÉTITION',unit==='seasons'?'SAISONS':'ÉDITIONS','J','V','N','D','BP','BC','DIFF.'],record.rows.map(row=>[`<span class="cell">${badge(row)}${e(row.competition)}</span>`,...line(row)]),
   ['Toutes compétitions',...line(record.total)],undefined,sorted(record.rows,row=>[row.competition,row[unit],row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,row.goals_for-row.goals_against]),
-  ['','figure-col','figure-col','figure-col','figure-col','figure-col','figure-col','figure-col','figure-col']),'','history-record');
+  ['','figure-col wide',...Array(7).fill('figure-col')]),'','history-record');
 }
 
 // A list of players ranked on one figure, that figure first after them: `figures` are [heading, raw value, cell].
 function leaders(title,rows,figures,none='Pas encore de statistiques'){
  const body=rows.length?table(['#','POSTE','JOUEUR',...figures.map(figure=>figure[0])],rows.map((row,index)=>[index+1,positionCell(row),player(row),...figures.map(figure=>figure[2](row))]),
-  undefined,undefined,sorted(rows,(row,index)=>[index+1,row.position||'',row.player||'',...figures.map(figure=>figure[1](row))],[0]),['rank-col','position-col','',...figures.map(()=>'figure-col')])
+  undefined,undefined,sorted(rows,(row,index)=>[index+1,row.position||'',row.player||'',...figures.map(figure=>figure[1](row))],[0]),['rank-col','position-col','',...figures.map(figure=>figureCol(figure[0]))])
   :empty('Aucun joueur pour l’instant.',none);
  return card(title,body,'','history-leaders');
 }
@@ -156,9 +157,9 @@ const RUNS={wins:'Victoires',unbeaten:'Sans défaite',defeats:'Défaites',winles
 function runsCard(runs){
  if(!runs.longest.length)return card('Séries',empty('Aucun match pour l’instant.','Pas encore de série'));
  const going=runs.ongoing.length?`<div class="section-title">En cours</div>${table(['SÉRIE','MATCHES','DEPUIS'],runs.ongoing.map(run=>[RUNS[run.kind],num(`<b>${n(run.count)}</b>`),date(run.first)]),undefined,undefined,
-  sorted(runs.ongoing,run=>[RUNS[run.kind],run.count,run.first]),['','figure-col','date-col'])}`:'';
+  sorted(runs.ongoing,run=>[RUNS[run.kind],run.count,run.first]),['',figureCol('MATCHES'),'date-col'])}`:'';
  return card('Séries',table(['SÉRIE','MATCHES','DU','AU'],runs.longest.map(run=>[RUNS[run.kind],num(`<b>${n(run.count)}</b>`),date(run.first),date(run.last)]),undefined,undefined,
-  sorted(runs.longest,run=>[RUNS[run.kind],run.count,run.first,run.last]),['','figure-col','date-col','date-col'])+going,'','history-runs');
+  sorted(runs.longest,run=>[RUNS[run.kind],run.count,run.first,run.last]),['',figureCol('MATCHES'),'date-col','date-col'])+going,'','history-runs');
 }
 function opponentsCard(opponents,key){
  const line=(label,found,unit)=>found?fact(label,`${clubLink(found[key])} · ${n(found.count)} ${unit}`):'';
@@ -168,7 +169,7 @@ function opponentsCard(opponents,key){
 // The best seasons or editions of the side's players on one figure: the player, the figure, when.
 function bestCard(title,rows,figure,when){
  const body=rows.length?table(['#','JOUEUR',figure[0],when[0]],rows.map((row,index)=>[index+1,who(row),figure[2](row),when[2](row)]),undefined,undefined,
-  sorted(rows,(row,index)=>[index+1,row.player||'',figure[1](row),when[1](row)],[0]),['rank-col','','figure-col','when-col'])
+  sorted(rows,(row,index)=>[index+1,row.player||'',figure[1](row),when[1](row)],[0]),['rank-col','',figureCol(figure[0]),'when-col'])
   :empty('Aucun joueur pour l’instant.','Pas encore de statistiques');
  return card(title,body,'','history-best');
 }

@@ -583,7 +583,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .segmented.views>.active{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--club,var(--accent))}
 /* The Historique tab of a club or a selection (docs/charte-graphique.md, « Historique »). */
 .history-overview{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--s2);align-items:start}
-.history-players{display:grid;grid-template-columns:440px repeat(3,minmax(0,1fr));gap:var(--s2);align-items:start}
+.history-players{display:grid;grid-template-columns:400px repeat(3,minmax(0,1fr));gap:var(--s2);align-items:start}
 .history-records{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);align-items:start}
 :is(.history-overview,.history-players,.history-records)>div{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
 :is(.history-overview,.history-players,.history-records) .card{margin:0}
@@ -600,13 +600,17 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 th.rank-col{width:36px}
 th.badge-col{width:56px}
 th.position-col{width:48px}
-th:is(.figure-col,.score-col){width:76px}
+th.figure-col{width:52px}
+th.figure-col.wide{width:68px}
+th.score-col{width:76px}
 th:is(.fee-col,.gain-col){width:84px}
-th:is(.season-col,.date-col,.when-col){width:96px}
+th:is(.season-col,.when-col){width:96px}
+th.date-col{width:108px}
 .history-record th:first-child{width:auto}
 :is(.history-seasons,.history-editions,.history-leaders,.history-transfers,.history-gains,.history-scores,.history-runs,.history-best,.history-record) td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-record th.figure-col{width:36px}
-.history-record th.figure-col:nth-child(2){width:56px}
+.history-record th.figure-col.wide{width:68px}
+.history-record th.figure-col:last-child{width:44px}
 :is(.history-seasons,.history-editions,.history-leaders,.history-transfers,.history-gains,.history-runs,.history-best,.history-record) th:is(.figure-col,.fee-col,.gain-col,.reputation-col){text-align:right}
 th.rank-col{text-align:center}
 :is(.history-leaders,.history-best) td:first-child{text-align:center;color:var(--muted)}

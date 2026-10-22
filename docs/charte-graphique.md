@@ -1007,9 +1007,9 @@ pays ajouté suit la règle : CP pour le Portugal.
 - En-têtes et lignes de 26 ; chiffres alignés à droite, sous un en-tête aligné
   de même.
 - Une colonne a la largeur de ce qu'elle tient, quelle que soit la valeur : rang
-  36, pastille 56, poste 48, chiffre et score 76, montant 84, saison, date et
-  édition courte 96 ; ce qui reste va au nom. Un texte trop long est coupé
-  d'une ellipse, jamais la colonne voisine.
+  36, poste 48, pastille 56, chiffre 52 (68 sous un en-tête long : MATCHES,
+  SAISONS), score 76, montant 84, saison 96, date 108 ; ce qui reste va au nom.
+  Un texte trop long est coupé d'une ellipse, jamais la colonne voisine.
 
 ### Infobulles
 
