@@ -119,7 +119,6 @@
 .cc-legend{display:flex;gap:16px;font-size:13px;color:var(--ink-2)}
 .cc-legend span{display:inline-flex;align-items:center;gap:6px}
 .cc-legend i{width:10px;height:10px;border-radius:var(--radius)}
-.card-hint{font-size:13px;color:var(--muted)}
 
 /* Finances: key figures, then charts in rows. */
 .finance-figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
@@ -133,12 +132,12 @@
 .split-bar i{border-radius:0}.split-bar i:first-child{border-radius:var(--radius) 0 0 var(--radius)}.split-bar i:last-child{border-radius:0 var(--radius) var(--radius) 0}.split-bar i:only-child{border-radius:var(--radius)}
 .finance-row,.history-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:12px;margin-bottom:12px;align-items:stretch}
 .finance-row>.card,.history-row>.card{margin:0}
-.salary-bars,.leader-bars,.biggest-transfers,.honours-list{list-style:none;margin:0;padding:0}
-.salary-bars li,.leader-bars li{display:grid;grid-template-columns:150px minmax(0,1fr) 84px;gap:10px;align-items:center;height:25px}
-.salary-bars li>span,.leader-bars li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.salary-bars i,.leader-bars i{height:10px;border-radius:0 var(--radius) var(--radius) 0}
-.salary-bars i{background:var(--series-2)}.leader-bars i{background:var(--series-1)}.leaders-card.matches .leader-bars i{background:var(--series-1-soft)}
-.salary-bars b,.leader-bars b{text-align:right;font-variant-numeric:tabular-nums;color:var(--strong)}
+.salary-bars,.biggest-transfers,.honours-list{list-style:none;margin:0;padding:0}
+.salary-bars li{display:grid;grid-template-columns:150px minmax(0,1fr) 84px;gap:10px;align-items:center;height:25px}
+.salary-bars li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salary-bars i{height:10px;border-radius:0 var(--radius) var(--radius) 0}
+.salary-bars i{background:var(--series-2)}
+.salary-bars b{text-align:right;font-variant-numeric:tabular-nums;color:var(--strong)}
 .salaries-card .muted{margin:8px 0 0;font-size:13px}
 .finance-split{margin-bottom:18px}.finance-split:last-child{margin-bottom:4px}
 .finance-split p{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px}
@@ -221,9 +220,6 @@
 .seasons-card{margin-bottom:12px}
 .club-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
 .club-leaders>.card{margin:0}
-.leader-bars{padding:6px 14px 10px!important;counter-reset:leader}
-.leader-bars li{grid-template-columns:22px 150px minmax(0,1fr) 40px;height:26px;counter-increment:leader}
-.leader-bars li:before{content:counter(leader);text-align:right;font-weight:600;color:var(--muted)}
 .biggest-card h3{margin:8px 0 2px;font-size:11px;font-weight:700;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 .biggest-transfers li{display:grid;grid-template-columns:minmax(0,1fr) 44px 64px;gap:10px;align-items:center;min-height:26px;border-top:1px solid var(--row-line)}
 .biggest-transfers li>span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

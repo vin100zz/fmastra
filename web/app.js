@@ -479,9 +479,9 @@ main.addEventListener('click',event=>{
  if(picked)params.set('sel',picked);else params.delete('sel');
  history.replaceState(history.state,'',`${location.hash.split('?')[0]}${params.size?`?${params}`:''}`);
 });
-// A new window size changes the rows that fit and whether the side panel has room.
+// A new window size changes the rows that fit (a list, the columns of a club's Présentation) and whether the side panel has room.
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit]'))render();},250);});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit],[data-fill]'))render();},250);});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.menu'),current=panel.querySelector('[aria-checked="true"]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
 // A new page opens at the top; a new sort, filter or page of the same list keeps the scroll where it was.
 window.addEventListener('hashchange',event=>{const path=url=>new URL(url).hash.split('?')[0];render();if(path(event.oldURL)!==path(event.newURL))window.scrollTo({top:0});});

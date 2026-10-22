@@ -121,6 +121,37 @@ export const shirtLabel = (player, position=player?.position) => player?.shirt!=
 export const playerBlock = (name, facts=null) => `<span class="player-block">${name==null?'':`<span class="block-name">${name}</span>`}${facts==null?'':`<span>${facts}</span>`}</span>`;
 // The lines of a pitch's two penalty areas; the rest is drawn by the style sheet.
 export const PITCH_BOXES = '<i class="pitch-box" aria-hidden="true"></i><i class="pitch-box far" aria-hidden="true"></i>';
+// The lines of an upright pitch from the goal forward (Composition, équipe-type of the Présentation), in percent from its top.
+export const LINE_Y={gk:90,def:74,dm:60,cm:46,am:31,att:14};
+const LATERAL={DG:0,AILG:0,DD:2,AILD:2};
+// Each position sits on a line of the pitch; wingers join the forwards, the attacking midfielder or the midfield,
+// depending on what the rest of the formation leaves in front of them. Without a central midfield to join, they stand
+// in front of the holding midfielders.
+export function pitchLine(role,roles){
+ if(role==='GB')return 'gk';
+ if(['DG','DC','DD'].includes(role))return 'def';
+ if(role==='MDC')return 'dm';
+ if(role==='MC')return 'cm';
+ if(role==='MOC')return 'am';
+ if(role==='BU')return 'att';
+ const count=value=>roles.filter(item=>item===value).length;
+ if(roles.includes('MOC')||!roles.includes('MC'))return 'am';
+ return count('BU')<2&&count('MC')+count('MDC')>=3?'att':'cm';
+}
+// Pitch coordinates (percentages) of each slot of a formation, attack at the top.
+export function pitchLayout(roles){
+ const lines={};roles.forEach((role,index)=>(lines[pitchLine(role,roles)]??=[]).push(index));
+ const places=[];
+ Object.entries(lines).forEach(([key,indexes])=>{
+  indexes.sort((a,b)=>(LATERAL[roles[a]]??1)-(LATERAL[roles[b]]??1)||a-b);
+  const wide=indexes.some(index=>roles[index] in LATERAL),count=indexes.length;
+  indexes.forEach((slot,rank)=>{
+   const x=count===1?50:wide?14+rank*72/(count-1):50+(rank-(count-1)/2)*Math.min(26,72/(count-1));
+   places[slot]={x,y:LINE_Y[key]};
+  });
+ });
+ return places;
+}
 // The two colours of a club's band, its ground then what crosses it: its first colour and its second, or the other way round
 // when the first is close to white and would melt into the page.
 export const bandColours = (major, minor) => minor!==major&&contrastRatio(major,'#ffffff')<1.3?[minor,major]:[major,minor];

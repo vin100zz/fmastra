@@ -2,7 +2,7 @@ import {monthlyAmount,salarySearchParams} from './salaries.js';
 import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {movementsHistory,seasonsHistory} from './club-history.js';
-import {clubPreview,marketBlock,squadWidgets} from './club-overview.js';
+import {clubPreview,marketBlock,presentationContent} from './club-overview.js';
 import {clubHero,competitionHero} from './club-hero.js';
 import {calendarContent} from './club-calendar.js';
 import {financesContent} from './club-finances.js';
@@ -88,19 +88,25 @@ function squadCards(data,params,human){
 // picked on one is kept on the way to another.
 const SEASON_TABS=['calendar','finances','transfers'];
 
-// A club page: its header in its colours with the tabs, then the open tab. The squad stands beside the club's widgets.
+// A club page: its header in its colours with the tabs, then the open tab. It opens on its Présentation; its squad has a tab
+// of its own, the lists alone across the page.
 export async function clubScreen(id,section,params){
- const [club,neighbours,state]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/navigation`),api('/monde/etat')]); section=section||'squad';
+ const [club,neighbours,state]=await Promise.all([api(`/clubs/${id}`),api(`/clubs/${id}/navigation`),api('/monde/etat')]); section=section||'overview';
  // The club run by the user also gets its lineup form.
  const human=state.controlled_club_id===club.id;
  const year=query({saison:params.get('saison')}),kept=SEASON_TABS.includes(section)?year:'';
- const menu=[['squad','Effectif'],...(human?[['composition','Composition']]:[]),['calendar','Calendrier'],['finances','Finances'],['transfers','Transferts'],['history','Historique']]
+ const menu=[['overview','Présentation'],['squad','Effectif'],...(human?[['composition','Composition']]:[]),['calendar','Calendrier'],['finances','Finances'],['transfers','Transferts'],['history','Historique']]
   .map(([key,label])=>[key,label,SEASON_TABS.includes(key)?kept:'']);
  const lead=clubNavigation(neighbours,section,section==='squad'&&params.get('vue')?query({vue:params.get('vue')}):'');
  let content='',tools='';
- if(section==='squad'){
-  const [data,overview,standings]=await Promise.all([api(`/clubs/${id}/effectif?${params}`),api(`/clubs/${id}/apercu`),club.competition_id?api(`/competitions/${club.competition_id}/classement`):null]);
-  content=`<div class="club-squad-layout"><div class="club-squad">${squadCards(data,params,human)}</div>${squadWidgets(club,overview,standings)}</div>`;
+ if(section==='overview'){
+  const [overview,season,squad,transfers,standings]=await Promise.all([api(`/clubs/${id}/apercu`),api(`/clubs/${id}/calendrier`),api(`/clubs/${id}/effectif`),api(`/clubs/${id}/transferts`),
+   club.competition_id?api(`/competitions/${club.competition_id}/classement`):null]);
+  content=presentationContent(club,{overview,season,squad,transfers,standings,human});
+ }
+ else if(section==='squad'){
+  const data=await api(`/clubs/${id}/effectif?${params}`);
+  content=`<div class="club-squad">${squadCards(data,params,human)}</div>`;
  }
  else if(section==='composition'&&human)content=await compositionContent(params,state);
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${year}`);content=calendarContent(club,data,params);tools=seasonSteps(data);}

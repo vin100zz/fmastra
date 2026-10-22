@@ -1,5 +1,8 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,
+ pitchLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
+import {clubTiles} from './club-hero.js';
+import {leaderBars} from './club-history.js';
 
 const BEST_PLAYERS=8;
 export const shortDate=value=>new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short'}).format(new Date(`${value}T12:00:00`));
@@ -72,19 +75,117 @@ export function lineupBlock(club,lineup,none='Le club n’a pas encore de compos
  return card('Dernier onze aligné',result+sidePitch(lineup.players,club,`Onze aligné par ${club.name}`),`<a href="#/match/${match.id}" aria-label="Voir le match">Voir →</a>`,'lineup-card');
 }
 
-// Five rows of the club's league around its own, titled with the competition and the last round counted.
-export function standingsExtract(club,standings){
+// `rows` of the club's league around its own (five by default, the whole league when it has room), titled with the
+// competition and the last round counted.
+export function standingsExtract(club,standings,rows=5){
  const items=standings?.items||[];
  if(!items.length)return '';
- const at=items.findIndex(row=>row.club?.id===club.id),start=Math.max(0,Math.min(at-2,items.length-5));
+ const shown=Math.min(rows,items.length),at=items.findIndex(row=>row.club?.id===club.id),start=Math.max(0,Math.min(at-Math.floor((shown-1)/2),items.length-shown));
  const round=Math.max(0,...items.map(row=>row.played));
  const title=`${e(club.competition)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
- return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir →</a></div>${standingsTable({items:items.slice(start,start+5)},'points',false,club.id)}</section>`;
+ return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir →</a></div>${standingsTable({items:items.slice(start,start+shown)},'points',false,club.id)}</section>`;
 }
 
-// Beside the squad: the calendar, the last eleven, the league around the club and its money, each opening its page.
-export function squadWidgets(club,overview,standings){
- return `<aside class="club-widgets" aria-label="Le club en bref">${calendarBlock(club,overview.calendar)}${lineupBlock(club,overview.lineup)}${standingsExtract(club,standings)}${financesBlock(club,overview.finances,{balance:true})}</aside>`;
+// The club's two outfits, home first, on the raised ground (a white kit would melt into the card); each opens its
+// picture, its side in its tooltip.
+export function kitsCard(club){
+ const outfits=[['Domicile','à domicile',club.kit_url],['Extérieur','extérieure',club.away_kit_url]].filter(([,,url])=>url);
+ if(!outfits.length)return '';
+ return card('Tenues',`<div class="kits">${outfits.map(([label,told,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}"><img class="kit-outfit" src="${e(url)}" alt="Tenue ${told} de ${e(club.name)}" width="165" height="309"></a>`).join('')}</div>`,'','kits-card');
+}
+
+// The équipe-type on the upright pitch of the Composition, in the club's kit with each player's number. Under his name, his
+// matches of the season (starts and appearances off the bench) and his goals, the ball after them; for an eleven picked
+// before any match, his note at his place.
+export function elevenCard(club,eleven,height=null){
+ if(!eleven?.players?.length)return '';
+ // A column too short for the pitch at its width narrows it to the height it has, down to what keeps its blocks apart.
+ const fit=height?` style="max-width:${Math.floor(Math.max(PITCH_MIN,height)*68/88)}px"`:'';
+ const places=pitchLayout(eleven.players.map(player=>player.position));
+ const marks=eleven.players.map((player,index)=>{
+  const {x,y}=places[index],note=level(player.note);
+  const facts=eleven.basis==='starts'?`<span class="block-season">${n(player.appearances)} m${player.goals?` / ${n(player.goals)}<span class="match-mark goal"></span>`:''}</span>`
+   :blockNote(note,levelHue(note),`Note au poste ${player.position} : ${note} sur 200`);
+  const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position} : ${note} sur 200`;
+  return `<a class="pitch-player" href="#/player/${player.id}" title="${e(player.name)} · ${e(told)}" style="left:${x}%;top:${y}%">${kitShirt(club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</a>`;
+ }).join('');
+ return card('Équipe-type',`<div class="pitch eleven-pitch" aria-label="Équipe-type de ${e(club.name)}"${fit}>${PITCH_BOXES}${marks}</div>`,'','eleven-card');
+}
+
+// Each player of the squad who asks for a decision, with what he asks it for.
+const watched=squad=>squad.filter(player=>!player.away).map(player=>[player,[player.expiring?`<b class="danger">Contrat · ${date(player.contract_end)}</b>`:'',
+ player.injured_until?`<b class="danger">Blessé · ${shortDate(player.injured_until)}</b>`:'',
+ player.suspension?`<b class="news-ban">Suspendu · ${player.suspension} match${player.suspension>1?'s':''}</b>`:'',
+ player.morale!=null&&Math.round(player.morale*100)<70?moraleCell(player):''].filter(Boolean)]).filter(([,shown])=>shown.length);
+
+// The players of the club run by the user who ask for a decision: a contract ending within the year, an injury, a
+// suspension, a morale under 70 % (its cause after it), `rows` of them at most. Nothing when nobody does.
+export function watchCard(squad,rows=6){
+ const listed=watched(squad).slice(0,rows);
+ if(!listed.length)return '';
+ return card('À surveiller',`<ul class="watch-list">${listed.map(([player,shown])=>`<li>${position(player.position)}<span>${playerLink(player.id,player.name)}</span><span class="watch-facts">${shown.join('')}</span></li>`).join('')}</ul>`,'','watch-card');
+}
+
+// The season's movements, arrivals then departures, the biggest fees first, `rows` of them at most; each side tells how many
+// it holds and what its fees came to. A loan says so where a fee stands, a youth promoted comes from the academy.
+export function marketCard(club,data,rows=12){
+ const groups=data?.sections;
+ if(!groups)return '';
+ const arrivals=[...groups.arrivals,...(groups.loans_in||[]),...groups.academy];
+ const departures=[...groups.departures,...(groups.loans_out||[]),...groups.release,...groups.retirement,...groups.departure_unknown];
+ if(!arrivals.length&&!departures.length)return '';
+ const order=items=>[...items].sort((a,b)=>(b.fee||0)-(a.fee||0)||a.date.localeCompare(b.date)||a.player_id-b.player_id);
+ const line=(row,incoming)=>{
+  const other=incoming?row.source:row.target;
+  const where=row.kind==='academy'?'<span class="muted">Centre de formation</span>':row.kind==='retirement'?'<span class="muted">—</span>':other?clubLink(other):'<span class="muted">Libre</span>';
+  const fee=row.kind==='transfer'?(row.fee?`<b>${money(row.fee)}</b>`:'<span class="muted">Libre</span>'):`<span class="muted">${row.kind==='loan'?'Prêt':'—'}</span>`;
+  return `<li>${row.position?position(row.position):'<span class="position">—</span>'}<span>${playerLink(row.player_id,row.player)}</span><span class="market-club">${where}</span>${fee}</li>`;
+ };
+ const fees=items=>items.reduce((sum,row)=>sum+(row.kind==='transfer'&&row.fee||0),0);
+ const shownIn=order(arrivals).slice(0,rows),shownOut=order(departures).slice(0,Math.max(0,rows-shownIn.length));
+ const side=(title,items,shown,incoming)=>items.length?`<h3 class="section-title"><span>${title} · ${items.length}</span>${fees(items)?`<b>${money(fees(items))}</b>`:''}</h3><ul class="season-moves">${shown.map(row=>line(row,incoming)).join('')}</ul>`:'';
+ return card('Mercato',side('Arrivées',arrivals,shownIn,true)+side('Départs',departures,shownOut,false),`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir →</a>`,'season-market');
+}
+
+// The club's best scorers, providers and notes of the season, as the bars of its Historique, `rows` each. A note counts from
+// half as many matches as the most used player played, as in Actualités.
+export function leadersCards(squad,rows=8){
+ const played=squad.filter(player=>player.appearances>0),most=Math.max(0,...played.map(player=>player.appearances));
+ const top=(key,among=played)=>among.filter(player=>player[key]>0).sort((a,b)=>b[key]-a[key]||b.appearances-a.appearances||a.id-b.id).slice(0,rows)
+  .map(player=>({player_id:player.id,player:player.name,[key]:player[key]}));
+ const lists=[['Buteurs',top('goals'),'goals','buts',{}],['Passeurs',top('assists'),'assists','passes',{}],
+  ['Notes',top('average',played.filter(player=>player.appearances*2>=most)),'average','note moyenne',{format:averageNote}]];
+ return lists.filter(([,items])=>items.length).map(([title,items,key,unit,options])=>leaderBars(title,items,key,unit,{soft:true,...options})).join('');
+}
+
+// The height of a column of the Présentation: the window's under the band, the tabs and the row of tiles, less the page's
+// bottom margin; a short window keeps what a laptop shows. Its lists take the rows of 26 it holds once the rest is drawn:
+// a card's head (34), the padding of a list (16), the gap between two cards (8), a heading (26); a table of the league has
+// rows of 27 under 68 of head.
+const PRESENTATION_TOP=265,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=367,FINANCES=139,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
+export const presentationHeight=()=>Math.max(600,(typeof window==='undefined'?1080:window.innerHeight)-PRESENTATION_TOP);
+const rowsIn=height=>Math.max(3,Math.floor(height/ROW));
+
+// A club's Présentation: the row of its tiles, then four columns that fill the window. Its kits and its season's movements;
+// its équipe-type, what asks for a decision (the club run by the user) and its money; its calendar beside its league, which
+// share their rows (the next three matches at most, the latest played before them; the whole league when it has room);
+// its best scorers, providers and notes. `season` is its calendar of the season, `squad` its list, `transfers` its season's
+// movements, `standings` its league's table, `human` whether the user runs it.
+export function presentationContent(club,{overview,season,squad,transfers,standings,human}){
+ const height=presentationHeight(),league=standings?.items?.length||0,players=squad?.items||[];
+ const played=(season?.items||[]).filter(match=>match.score),upcoming=(season?.items||[]).filter(match=>!match.score).slice(0,3);
+ // The league whole when five matches still fit beside it, else around the club; the calendar takes what is left.
+ const table=league?Math.max(5,Math.min(league,Math.floor((height-HEAD-PADDING-5*ROW-GAP-TABLE_HEAD)/TABLE_ROW))):0;
+ const matches=rowsIn(height-HEAD-PADDING-(table?GAP+TABLE_HEAD+table*TABLE_ROW:0));
+ const calendar=played.length||upcoming.length?calendarBlock(club,{last:played.slice(-Math.max(0,matches-upcoming.length)).reverse(),next:upcoming}):'';
+ const watching=human?Math.min(WATCH_ROWS,watched(players).length):0;
+ const pitch=height-HEAD-PADDING-GAP-FINANCES-(watching?GAP+HEAD+watching*ROW:0);
+ const column=cards=>`<div class="presentation-column">${cards.filter(Boolean).join('')}</div>`;
+ return clubTiles(club,season?.competitions||[])+`<div class="club-presentation" data-fill>`
+  +column([kitsCard(club),marketCard(club,transfers,rowsIn(height-KITS-GAP-HEAD-2*ROW))])
+  +column([elevenCard(club,overview.eleven,pitch),watching?watchCard(players,watching):'',financesBlock(club,overview.finances,{balance:true})])
+  +column([calendar,standingsExtract(club,standings,table)])
+  +column([leadersCards(players,rowsIn((height-3*(HEAD+PADDING)-2*GAP)/3))])+'</div>';
 }
 
 // Beside the list of clubs, the one picked in it: its standing, its matches, its money and its best players, with a way

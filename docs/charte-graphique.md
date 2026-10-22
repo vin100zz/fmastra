@@ -157,7 +157,9 @@ où le fond est déjà jaune.
 | Classement au fil des saisons | `.club-chart`, `.rank-zone` | Voir « Graphiques » |
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
-| Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
+| Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note`, `.block-season` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
+| Présentation d'un club | `.tiles.row`, `.presentation`, `.kits`, `.kit-outfit`, `.watch-list`, `.watch-facts`, `.season-moves` | La fiche d'un club s'ouvre sur elle : une rangée de tuiles, quatre colonnes qui remplissent la fenêtre. Voir « Présentation d'un club » |
+| Classement de joueurs | `.leader-bars`, `.leader-bars.soft`, `.card-hint` | Rang, nom, barre contre le premier, chiffre ; l'unité dans l'en-tête de la carte. Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
@@ -345,12 +347,14 @@ Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
 
 ### Bandeau
 
-Le bandeau d'un club et celui du choix d'un club montrent les tenues complètes
+Le bandeau du choix d'un club (« Nouvelle partie ») montre les tenues complètes
 à domicile puis à l'extérieur entre l'écusson et le nom (`.hero-kits`,
 `.club-hero-kits` dans l'application). Chaque image transparente tient dans
 48 × 80, sans déformation ; l'écart est de 8. Le bandeau reste haut de 88.
 Une infobulle distingue Domicile et Extérieur ; un clic ouvre le PNG agrandi.
-La tenue extérieure est omise quand ses données sont absentes.
+La tenue extérieure est omise quand ses données sont absentes. La fiche d'un
+club ne les porte pas sur son bandeau : elles sont, en grand, dans sa
+Présentation (voir « Présentation d'un club »).
 
 Les 55 motifs de maillot reprennent les zones rouge, verte et bleue des templates.
 Short et chaussettes emploient chacun leur propre palette du CSV, appliquée
@@ -373,6 +377,12 @@ le reprend.
   une.
 - **Tuiles** : ce que le bandeau chiffre va sur une tuile, jamais dans une ligne
   de texte. La capacité du stade n'y est pas.
+- **Tuiles d'un club** : le niveau et le potentiel de ses 16 meilleurs joueurs,
+  sur une tuile de deux colonnes graduées (`.tile.split > .graded`, comme ceux
+  d'un joueur), titrées « Niveau » et « Potentiel » sans le 16, que leur
+  infobulle précise ; puis sa réputation et l'écart de sa dernière révision. Sa
+  tactique, son entraînement et son recrutement des jeunes sont dans sa
+  Présentation.
 
 | Bandeau | À la suite du nom |
 |---|---|
@@ -489,6 +499,67 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
 - **Les noms ne sont écrits qu'ici.** Sur le reste de l'écran, rien ne nomme un
   camp : celui qui reçoit est à gauche (sa composition, ses temps forts, sa part
   des barres). Les compositions n'ont pas de titre.
+
+### Présentation d'un club
+
+La fiche d'un club s'ouvre sur son premier onglet, « Présentation » ; l'onglet
+« Effectif » ne garde que ses deux listes, sur toute la largeur. Sous les
+onglets, une rangée de tuiles, puis quatre colonnes (`.presentation`), deux sous
+1500 de large, une sous 900.
+
+- **Rangée de tuiles** (`.tiles.row`, chaque tuile à la largeur de son contenu) :
+  la place du club dans chaque compétition de la saison, sur une tuile à colonnes
+  (la pastille de la compétition puis son nom, à 8 ; le rang en championnat,
+  ses points à sa suite, atténués ; sinon le tour atteint ou perdu en coupe) ;
+  ses joueurs et leur âge moyen, sur une tuile de deux colonnes ; sa tactique ;
+  son entraînement et son recrutement des jeunes, sur 20 sans le dire (leur
+  infobulle le dit) ; en dernier, la valeur de l'effectif. Un club qui ne joue
+  aucune compétition n'a pas la première tuile.
+- **Colonnes**, dans cet ordre : les tenues et le mercato ; l'équipe-type, « À
+  surveiller » (club dirigé seulement) et les finances ; le calendrier et le
+  classement ; les buteurs, les passeurs et les notes.
+- **Elles remplissent la fenêtre.** Leurs listes prennent les lignes que la
+  hauteur laisse, sans défilement : le classement entier tant que cinq matches
+  tiennent encore à côté de lui, sinon les lignes autour du club ; le calendrier
+  le reste, les trois prochains matches au plus, les derniers joués avant eux ;
+  les trois classements de joueurs, autant de lignes chacun ; le mercato, ses
+  arrivées d'abord. Le terrain de l'équipe-type se rétrécit à la hauteur qu'il a.
+  Un changement de taille de la fenêtre redessine la page.
+- **Tenues** (`.kits`) : les deux tenues complètes, domicile d'abord, 165 de
+  large au plus, sur `--panel-2` (une tenue blanche se fondrait dans la carte).
+  Rien dessous : leur infobulle dit Domicile ou Extérieur ; un clic ouvre le PNG.
+- **Équipe-type** : le terrain debout de la Composition, ses lignes placées de
+  même ; chaque joueur dans le maillot du club, son numéro dessus, son nom court
+  dans le bloc. La seconde ligne du bloc est sa saison (`.block-season`) : ses
+  matches, titularisations et entrées comprises, une barre oblique, ses buts,
+  puis le ballon des faits de match (« 52 m / 24 » et le ballon) ; « 54 m » seul
+  sans but. Elle est en bleu pâle (`--series-1-soft`), hors de l'échelle des
+  notes : rien ne s'y lit comme une note. Avant le premier match du club dans
+  la saison, ou pour un club qui n'en joue pas, la seconde ligne est la note au
+  poste, sur 200, dans sa couleur. L'infobulle donne le nom entier et la saison
+  en toutes lettres (« 52 matches dont 41 titularisations, 24 buts »). Le choix
+  des joueurs est dans le manuel (« L'entraîneur IA »).
+- **À surveiller** (`.watch-list`) : une ligne de 26 par joueur du club dirigé
+  qui attend une décision, sa pastille de poste, son nom, puis à droite
+  (`.watch-facts`, à 12 l'un de l'autre) : le contrat qui finit dans l'année et
+  la blessure en rouge (« Contrat · 30 juin 2034 », « Blessé · 12 juil. »), la
+  suspension, le moral sous 70 % et sa cause, comme dans la liste. Six au plus ;
+  pas de carte quand personne n'attend rien.
+- **Mercato** (`.season-moves`) : tous les mouvements de la saison, les arrivées
+  puis les départs, chaque sens sous un intertitre (`.section-title`) qui le
+  compte (« Départs · 9 ») et donne à droite le total de ses indemnités, absent
+  sans indemnité. Une ligne de 26 par mouvement : poste, joueur, l'autre club
+  après sa pastille (« Centre de formation » pour un jeune promu, « Libre »),
+  l'indemnité à droite (« Prêt » pour un prêt, « — » sans), la plus grosse
+  d'abord. « Voir → » ouvre l'onglet Transferts.
+- **Calendrier, classement, finances** : les blocs d'Actualités et de l'ancien
+  Effectif (le score du côté du club coloré V, N ou D ; le classement réduit à
+  PTS et DIFF ; la trésorerie sous le budget de transferts).
+- **Buteurs, passeurs, notes** : trois classements de joueurs (voir
+  « Graphiques »), leur unité dans l'en-tête (buts, passes, note moyenne), en
+  bleu pâle. Une note compte à partir de la moitié des matches du joueur le plus
+  utilisé, comme dans Actualités ; elle s'écrit avec deux chiffres après le
+  point.
 
 ### Compte rendu d'un match
 
@@ -727,7 +798,8 @@ Un seul terrain et un seul joueur, sur tous les écrans.
 | Match | Debout | Nom | Note du match, faits du match |
 | Direct · tactique | Debout | Nom | Note du match, faits du match |
 | Joueur · aptitudes | Debout | Note au poste sur 200, affinité | — |
-| Effectif, Actualités · dernier onze | Couché | Nom | — |
+| Présentation d'un club · équipe-type | Debout | Nom | Matches / buts et le ballon, en bleu pâle ; avant le premier match, note au poste sur 200 |
+| Sélection · dernier onze | Couché | Nom | — |
 
 Les aptitudes d'un joueur n'ont pas de liste à côté de leur terrain : le bloc de
 chaque poste en tient lieu, sur un terrain de 360 de large.
@@ -828,6 +900,21 @@ taille de sa carte.
 - Le niveau s'écrit au premier et au dernier point, en 16 `--display`.
 - L'ordonnée, une ligne `--row-line` par graduation, et les dates sont en
   `--muted`, en 13 : du texte, pas du dessin étiré.
+
+### Classement de joueurs
+
+`.leader-bars` : des joueurs classés sur un chiffre (les plus utilisés et les
+meilleurs buteurs de l'Historique d'un club, les buteurs, passeurs et notes de
+sa Présentation).
+
+- Une ligne de 26 par joueur : son rang, atténué, aligné à droite ; son nom, lien
+  vers sa fiche ; une barre ; le chiffre, à droite, à l'encre forte.
+- La barre a 8 de haut, son bout arrondi (4) ; sa longueur est la part du
+  chiffre du premier de la liste, qui la remplit.
+- L'unité est dans l'en-tête de la carte, à droite, en 11 atténué (`.card-hint`) :
+  matches, buts, passes, note moyenne.
+- La barre est en `--series-1` ; en pâle (`.soft`, `--series-1-soft`) pour les
+  matches de l'Historique, à côté des buteurs, et sur la Présentation.
 
 ### Jauge, anneau
 
@@ -1082,7 +1169,8 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
-| En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`) |
+| En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
+| Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`), le mercato de la saison (`marketCard`, lu dans `/clubs/{id}/transferts`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars`, `leaderBars` exporté de `web/club-history.js`), retirée de `web/club.css` |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
@@ -1169,3 +1257,5 @@ sarcelle ») : <https://claude.ai/artifact/8Q35koGuApLFLJ8HpByX4A>.
 Les numéros de maillot ont la leur (bandeau : proposition B, « Devant le nom » ; terrains :
 T2, le numéro en 13 ; actualités : le numéro dans le message, jamais dans le titre, et N2, les deux maillots) :
 <https://claude.ai/artifact/7nS7K76xDRutXa5D1VJTPB>.
+La Présentation d'un club a la sienne (proposition C, « La saison d'abord », et ses versions suivantes) :
+<https://claude.ai/artifact/V9bTNBNEmjtxw9NA7VkDkh>.

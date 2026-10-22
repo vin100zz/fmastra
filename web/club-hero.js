@@ -1,4 +1,4 @@
-import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price,competitionBadge} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -64,8 +64,12 @@ function tabs(base,menu,section,tools=''){
  return tools?`<div class="club-hero-foot">${nav}<div class="tools">${tools}</div></div>`:nav;
 }
 
-// The header of a club page: its colours, its crest, its name and its league after it, then its tactic, its training, its
-// youth recruitment and its reputation (with how far the last review moved it); the tabs of the page close it. `lead` steps
+// A level or a potential out of 200 on a column graded as its badge; a dash without one.
+const grade=(label,value,title)=>value==null?column(label,'—'):column(label,level(value),title,levelHue(level(value)));
+
+// The header of a club page: its colours, its crest, its name and its league after it, then the level and the potential of
+// its 16 best players on one tile of two graded columns, and its reputation (with how far the last review moved it); the
+// tabs of the page close it. Its kits, its tactic and its facilities are on its Présentation (`clubTiles`). `lead` steps
 // between the clubs of the division; `menu` is the tabs, `section` the open one, `tools` what closes their row.
 export function clubHero(club,{lead='',menu,section,tools=''}){
  const change=club.reputation_change==null?'':`<em class="${club.reputation_change<0?'down':'up'}">${signed(club.reputation_change)}</em>`;
@@ -75,9 +79,23 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
  const after=club.competition_id==null?context(`${flag}${e(club.nation||'')}`,selection)
   :context(`${flag&&selection?`<a href="${selection}">${flag}</a>`:flag}<a href="#/league/${club.competition_id}">${e(club.competition)}</a>`);
  return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section,tools),
-  crest:clubCrest(club),kit:clubKit(club),after,
-  tiles:`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities))}`
-   +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes')}${tile('Réputation',club.reputation==null?'—':n(club.reputation),change)}`});
+  crest:clubCrest(club),after,
+  tiles:split(grade('Niveau',club.top_rating,'Niveau moyen des 16 meilleurs sur 200')+grade('Potentiel',club.top_potential,'Potentiel moyen des 16 meilleurs sur 200'))
+   +tile('Réputation',club.reputation==null?'—':n(club.reputation),change)});
+}
+
+// The row of tiles that opens a club's Présentation: its place in each competition of the season on one tile (`competitions`,
+// the record of its calendar: the rank in its league, else how far it went), its players and their mean age on another, its
+// tactic, its training, its youth recruitment, and last its squad's value. A competition is written after its badge.
+export function clubTiles(club,competitions=[]){
+ const place=row=>{
+  const standing=row.kind==='league'?club.standing:null;
+  return standing?`${standing.rank}${standing.rank===1?'er':'e'}<em>${n(standing.points)} pts</em>`:e(String(row.place||'—').replace(/^Éliminé · /,''));
+ };
+ const seasons=competitions.length?split(competitions.map(row=>`<div><span>${competitionBadge(row,{link:false})}${e(row.name)}</span><strong>${place(row)}</strong></div>`).join('')):'';
+ return `<div class="club-tiles">${seasons}${split(column('Joueurs',club.squad_size==null?'—':n(club.squad_size))+column('Âge moyen',club.average_age==null?'—':n(club.average_age)))}`
+  +`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'','Entraînement sur 20')}`
+  +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes sur 20')}${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;
 }
 
 // The band of a club before a game is made with it (« Nouvelle partie »): its colours, its crest, its name, its country's
@@ -153,7 +171,6 @@ function selectionTile(player){
 // do with him, where a club has its tabs.
 export function playerHero(player,{lead='',foot=''}){
  const club=player.club;
- const grade=(label,value,title)=>value==null?column(label,'—'):column(label,level(value),title,levelHue(level(value)));
  const unasked=player.transferable===false?'Intransférable : son club refuse de le vendre':club?'':'Sans club : aucun prix demandé';
  const number=club&&player.shirt!=null?`<span class="club-hero-number" title="Numéro de maillot">${n(player.shirt)}</span>`:'';
  return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',before:number,

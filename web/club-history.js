@@ -130,11 +130,12 @@ function honoursCard(honours){
  return card('Palmarès',rows.length?`<ul class="honours-list">${rows.join('')}</ul>`:empty('Aucun titre pour l’instant.','Palmarès vierge'),'','honours-card');
 }
 
-// Players ranked on one figure, as bars against the first of them.
-function leaderBars(title,rows,key,unit){
+// Players ranked on one figure, as bars against the first of them, its unit in the head of the card (Historique, and the
+// buteurs, passeurs and notes of the Présentation). `format` writes the figure; `soft` draws the bars in the pale blue.
+export function leaderBars(title,rows,key,unit,{format=number,soft=key==='matches'}={}){
  const top=rows[0]?.[key]||1;
- const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${number(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur pour l’instant.','Pas encore de statistiques');
- return card(title,body,`<span class="card-hint">${unit}</span>`,`leaders-card ${key}`);
+ const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur pour l’instant.','Pas encore de statistiques');
+ return card(title,body,`<span class="card-hint">${unit}</span>`,`leaders-card ${key}${soft?' soft':''}`);
 }
 
 function biggestCard(transfers){

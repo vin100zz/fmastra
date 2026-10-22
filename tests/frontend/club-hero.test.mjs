@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubHero,creationHero,nationHero,competitionHero,heroColors} from '../../web/club-hero.js';
+import {clubHero,clubTiles,creationHero,nationHero,competitionHero,heroColors} from '../../web/club-hero.js';
 import {setNations} from '../../web/ui.js';
 
 const vars=style=>Object.fromEntries(style.split(';').filter(Boolean).map(item=>item.split(':')));
@@ -70,22 +70,37 @@ const club={id:7,name:'Lens <RC>',nation_code:'FRA',nation_id:-1001,competition_
  reputation:73.1,reputation_change:1.2,major_color:'#F8D000',minor_color:'#E00000'};
 const menu=[['squad','Effectif'],['calendar','Calendrier'],['history','Historique']];
 
-test('club headers show home and away outfits beside the crest, including before creation',()=>{
+test('the band of a club picked before a game shows its home and away outfits beside the crest; a club page shows them on its Présentation',()=>{
  const dressed={...club,kit_url:'/kits/3/outfit.png?major=F8D000&minor=E00000',away_kit_url:'/kits/11/outfit.png?major=080808&minor=006030'};
- for(const html of [clubHero(dressed,{menu,section:'squad'}),creationHero(dressed)]){
-  assert.equal((html.match(/class="club-hero-kit"/g)||[]).length,2);
-  assert.ok(html.indexOf('/kits/3/')<html.indexOf('/kits/11/'));
-  assert.match(html,/src="\/kits\/3\/outfit.png\?major=F8D000&amp;minor=E00000"/);
-  assert.match(html,/Lens &lt;RC&gt;" width="48" height="80"/);
-  assert.match(html,/target="_blank" rel="noopener" title="Domicile"/);
-  assert.match(html,/class="crest-logo"[^>]*><\/div><div class="club-hero-kits">/);
- }
+ const html=creationHero(dressed);
+ assert.equal((html.match(/class="club-hero-kit"/g)||[]).length,2);
+ assert.ok(html.indexOf('/kits/3/')<html.indexOf('/kits/11/'));
+ assert.match(html,/src="\/kits\/3\/outfit.png\?major=F8D000&amp;minor=E00000"/);
+ assert.match(html,/Lens &lt;RC&gt;" width="48" height="80"/);
+ assert.match(html,/target="_blank" rel="noopener" title="Domicile"/);
+ assert.match(html,/class="crest-logo"[^>]*><\/div><div class="club-hero-kits">/);
  assert.equal((creationHero({...dressed,away_kit_url:null}).match(/class="club-hero-kit"/g)||[]).length,1);
- assert.doesNotMatch(clubHero(club,{menu,section:'squad'}),/class="club-hero-kit"/);
+ assert.doesNotMatch(clubHero(dressed,{menu,section:'squad'}),/class="club-hero-kit"/);
  assert.doesNotMatch(nationHero({...dressed,nation:'FRA'},{menu,section:'squad'}),/class="club-hero-kit"/);
 });
 
-test('the header names the club and its league after it, then its tactic, its training, its youth recruitment and its reputation',()=>{
+test('the Présentation opens on the club\'s tiles: its competitions, its players and their age, its tactic, its facilities, its value last',()=>{
+ const competitions=[{id:16,name:'Ligue 1',kind:'league',place:'1er'},{id:-3,name:'Coupe de France',kind:'cup',place:'Éliminé · Finale'}];
+ const html=clubTiles({...club,standing:{rank:1,points:77},squad_size:23,average_age:24.6,squad_value:1312e6},competitions);
+ const tiles=html.replace(/^<div class="club-tiles">/,'').split('<div class="club-hero-tile');
+ // The competitions on one tile of columns, each after its badge: the rank and the points in the league, how far it went in a cup.
+ assert.match(tiles[1],/^ split"><div><span><span class="competition-code league" title="Ligue 1">[^<]*<\/span>Ligue 1<\/span><strong>1er<em>77 pts<\/em><\/strong><\/div><div><span><span class="competition-code cup"[^>]*>[^<]*<\/span>Coupe de France<\/span><strong>Finale<\/strong><\/div><\/div>$/);
+ assert.match(tiles[2],/^ split"><div><span>Joueurs<\/span><strong>23<\/strong><\/div><div><span>Âge moyen<\/span><strong>24\.6<\/strong><\/div><\/div>$/);
+ assert.match(tiles[3],/<span>Tactique<\/span><strong>4-3-3<\/strong>/);
+ assert.match(tiles[4],/title="Entraînement sur 20"><span>Entraînement<\/span><strong>16<\/strong>/);
+ assert.match(tiles[5],/title="Recrutement des jeunes sur 20"><span>Recrutement<\/span><strong>13<\/strong>/);
+ assert.match(tiles[6],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
+ assert.equal(tiles.length,7);
+ // A club playing nowhere has no tile of competitions.
+ assert.doesNotMatch(clubTiles(club,[]),/competition-code/);
+});
+
+test('the header names the club and its league after it, then the level and the potential of its 16 best, and its reputation',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'}});
  const html=clubHero(club,{lead:'<div class="entity-nav"></div>',menu,section:'calendar'});
  const unselected=clubHero({...club,nation_id:null},{menu,section:'calendar'});
@@ -99,10 +114,12 @@ test('the header names the club and its league after it, then its tactic, its tr
  assert.match(unselected,/<span class="club-hero-context"><span class="nation" title="France"><img[^>]*><\/span><a href="#\/league\/16">Ligue 1<\/a><\/span>/);
  // The ground's capacity is not in the header.
  assert.doesNotMatch(html,/places|club-hero-league/);
- assert.match(html,/<span>Tactique<\/span><strong>4-3-3<\/strong>/);
- // The facilities are out of 20 without saying so; no league standing nor form in the header.
- assert.match(html,/<span>Entraînement<\/span><strong>16<\/strong>/);assert.match(html,/title="Recrutement des jeunes"><span>Recrutement<\/span><strong>13<\/strong>/);
- assert.doesNotMatch(html,/\/ 20|Classement|class="form"/);
+ // The level and the potential of its 16 best on one tile of two graded columns, then its reputation; its tactic and its
+ // facilities are on its Présentation, no league standing nor form in the header.
+ const rated=clubHero({...club,top_rating:75.7,top_potential:92.5},{menu,section:'calendar'});
+ assert.match(rated,/<div class="club-hero-tiles"><div class="club-hero-tile split"><div class="graded" style="--hue:120" title="Niveau moyen des 16 meilleurs sur 200"><span>Niveau<\/span><strong>151<\/strong><\/div><div class="graded" style="--hue:120" title="Potentiel moyen des 16 meilleurs sur 200"><span>Potentiel<\/span><strong>185<\/strong><\/div><\/div><div class="club-hero-tile"><span>Réputation<\/span>/);
+ assert.match(html,/<span>Niveau<\/span><strong>—<\/strong>/);
+ assert.doesNotMatch(html,/Tactique|Entraînement|Recrutement|\/ 20|Classement|class="form"/);
  assert.match(html,/<span>Réputation<\/span><strong>73\.1<em class="up">\+1\.2<\/em><\/strong>/);
  assert.match(clubHero({...club,reputation_change:-0.5},{menu,section:'squad'}),/<em class="down">−0\.5<\/em>/);
  assert.doesNotMatch(clubHero({...club,reputation_change:null},{menu,section:'squad'}),/<em/);
