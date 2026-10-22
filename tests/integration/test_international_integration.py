@@ -99,7 +99,17 @@ def test_national_api_and_player_history(imported, tmp_path):
         # A year it played nothing in opens the default edition; the matches no longer travel with the squad.
         assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=2030").json()['edition'] == 2027
         assert client.get(f"/api/international/nations/{france['id']}/calendrier?edition=x").status_code == 422
-        assert 'matches' not in nation
+        assert 'matches' not in nation and 'editions' not in nation
+        # Its history: nothing finished yet, the Nations League under way in its division, the strength it opened the season with.
+        history = client.get(f"/api/international/nations/{france['id']}/historique").json()
+        assert (history['items'], history['honours'], history['record']['total']['played']) == ([], [], 0)
+        assert history['current'] == {'year': 2027, 'name': 'Ligue des nations 2027', 'code': 'LN', 'stage': {'label': 'Division A', 'level': 3}}
+        assert history['strength'] == [{'season': 2026, 'value': round(world.international.nations[france['id']].strength, 1)}]
+        assert client.get(f"/api/international/nations/{france['id']}/historique?vue=editions").json() == history
+        squad = client.get(f"/api/international/nations/{france['id']}/historique?vue=joueurs").json()
+        assert len(squad['eleven']) == 11 and squad['matches'] == []
+        assert client.get(f"/api/international/nations/{france['id']}/historique?vue=records").json()['runs'] == {'longest': [], 'ongoing': []}
+        assert client.get(f"/api/international/nations/{france['id']}/historique?vue=saisons").status_code == 422
         match = client.get(f"/api/matches/{edition['matches'][0]['id']}").json()
         assert match['international'] and match['home']['national']
         # A selection's report carries its kit under the keys of a club's.

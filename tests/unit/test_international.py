@@ -5,6 +5,7 @@ from random import Random
 
 import pytest
 
+from api.nation_archive import history as nation_history
 from api.views import international_records
 from benchmarks.fixtures import synthetic_lineup
 from core.domain.date import Date
@@ -209,6 +210,8 @@ def test_july_rollover_keeps_edition_and_discipline(world):
     world.date = Date(2028, 7, 1)
     apply(world, SeasonOpened(2028, [], {}))
     assert world.international.matches == matches
+    # Each selection's strength is kept as the season opens.
+    assert all(world.international.strength_history[nid][-1] == (2028, nation.strength) for nid, nation in world.international.nations.items())
     assert players[0].international_discipline[edition.competition_id].yellows == 1
     assert players[0].international_discipline[edition.competition_id].suspended_matches == 1
 
@@ -269,6 +272,26 @@ def test_two_complete_international_cycles_with_match_engine(world):
     assert not world.international.temporary
     assert len(world.international.records) > 0
     validate_international(world)
+    # The history of the Euro's winner: the four editions, the latest first, and its title.
+    winner = world.international.editions[2028].winner_id
+    data = nation_history(world, winner)
+    assert [(row['year'], row['code']) for row in data['items']] == [(2030, 'CM'), (2029, 'LN'), (2028, 'EU'), (2027, 'LN')]
+    euro = data['items'][2]
+    assert euro['stage'] == {'label': 'Vainqueur', 'level': 0} and euro['finals']['winner'] and euro['first_phase'].endswith(tuple('ABCDEFGHIJ'))
+    assert {'kind': 'euro', 'code': 'EU', 'competition': 'Euro', 'count': 1, 'years': [2028]} in data['honours'] and data['current'] is None
+    played = [m for m in world.international.matches.values() if winner in (m.home_id, m.away_id)]
+    assert data['record']['total']['played'] == sum(row['record']['played'] for row in data['items']) == len(played)
+    assert sum(row['played'] for row in data['record']['rows']) == len(played)
+    assert [row['phase'] for row in data['record']['rows'] if row['code'] == 'EU'] == ['finals', 'qualification']
+    # Its players and its records, the age ones kept match after match.
+    squad = nation_history(world, winner, 'joueurs')
+    assert len(squad['eleven']) == 11 and squad['matches'][0]['matches'] >= squad['matches'][-1]['matches']
+    feats = nation_history(world, winner, 'records')
+    held = world.international.age_records[winner]
+    assert {'youngest', 'oldest', 'youngest_scorer', 'oldest_scorer'} <= set(held) and held['youngest'].days <= held['oldest'].days
+    assert [row['kind'] for row in feats['ages']] == ['youngest', 'oldest', 'youngest_scorer', 'oldest_scorer']
+    assert all(row['year'] in (2027, 2028, 2029, 2030) for row in feats['ages']) and feats['wins'] and feats['runs']['longest']
+    assert feats['opponents']['played']['count'] >= 2
 
 
 def test_international_shootout_and_suspension(world):

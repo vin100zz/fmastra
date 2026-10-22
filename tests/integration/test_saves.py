@@ -269,6 +269,27 @@ def test_save_from_before_the_monthly_level_history_keeps_its_season_points_and_
     assert store.load("upgraded").trajectories == migrated.trajectories
 
 
+def test_save_from_before_the_age_records_rebuilds_them_and_keeps_the_strength_of_each_selection(config, tmp_path):
+    import gzip
+    import json
+    world = import_world(ROOT / "data", config, 15)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 33
+    legacy["world"].pop("age_records")
+    legacy["world"]["international"].pop("age_records")
+    legacy["world"]["international"].pop("strength_history")
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    # Nothing played yet: no record; each selection starts its history with the strength it holds.
+    assert migrated.age_records == {} and migrated.international.age_records == {}
+    assert migrated.international.strength_history == {nid: [(world.season, nation.strength)] for nid, nation in world.international.nations.items()}
+    assert migrated.international.strength_history == world.international.strength_history
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").international.strength_history == migrated.international.strength_history
+
+
 def test_save_from_before_the_generated_ratings_rates_its_regens_and_keeps_their_secondary_positions(config, tmp_path):
     import gzip
     import hashlib
