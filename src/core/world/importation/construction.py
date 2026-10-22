@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 
 from core.config.model import Config
-from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition
+from core.domain.clubs import Club, ClubPersonality, ClubStatus, Competition, KIT_COMPONENT_FIELDS
 from core.domain.date import Date, next_annual_date
 from core.domain.players import Contract, Player, Position
 from core.domain.world import World
@@ -122,6 +122,7 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
                              training_facilities=row.training_facilities, youth_recruitment=row.youth_recruitment,
                              home_kit_id=row.home_kit_id, home_kit_major_color=row.home_kit_major_color,
                              home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color,
+                             **{name: getattr(row, name) for name in KIT_COMPONENT_FIELDS},
                              division_id=row.division_id, is_reserve=row.is_reserve,
                              cup_nation=row.nation if row.nation in without_league and not active
                              else affiliations.get(row.division_id, row.nation))

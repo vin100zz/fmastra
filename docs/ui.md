@@ -51,7 +51,7 @@ défile dans sa carte.
 
 **Code couleur constant.** Gardien, défense, milieu, attaque gardent la même
 teinte dans toutes les listes : une pastille pleine, hors de l'échelle rouge-jaune-vert
-des notes. Sur un terrain, quel qu'il soit (composition, dernier onze, compte rendu,
+des notes. Sur un terrain, quel qu'il soit (composition, équipe-type, dernier onze, compte rendu,
 aptitudes, direct), les maillots prennent les couleurs du club et le numéro du joueur
 s'y lit (son poste quand il n'en a pas ; sur ses aptitudes, le poste que montre chaque maillot).
 
@@ -323,7 +323,8 @@ ou `negociation`) : le menu dit toujours l'état du jour.
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | la liste triable à gauche (poste, nom, nationalité, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200), les widgets du club à droite |
+| Présentation | le club en un écran : ses tuiles, ses tenues, son mercato de la saison, son équipe-type, ses finances, son calendrier, son classement, ses buteurs, passeurs et notes (voir « Présentation ») |
+| Effectif | la liste triable, sur toute la largeur (poste, nom, nationalité, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200) |
 | Composition | le terrain du club dirigé, la liste de l'effectif et l'adversaire (voir « Composition ») |
 | Calendrier | une ligne par match d'une saison, buteurs compris, et le bilan de chaque compétition |
 | Finances | la répartition des budgets et deux chiffres clés, la trésorerie et les flux du mois en graphiques, les salaires, la répartition, le journal replié |
@@ -343,13 +344,32 @@ couleurs trop proches ne laissent qu'une bande pâle de l'encre. Le texte du ban
 (claire ou foncée) qui se lit sur son fond. À gauche, le bloc de navigation entre pairs, l'écusson
 sur un disque blanc, puis le nom et, à sa suite sur la même ligne, deux liens : le drapeau, vers la
 sélection de son pays (`nation_id`), et le championnat, vers sa fiche (hors championnat, le drapeau
-et le pays en un seul lien, vers la sélection ; charte, « Bandeau »). À droite, quatre cases : Tactique, Entraînement, Recrutement (des
-jeunes, en infobulle) — ces deux-là sur 20 sans le dire — et Réputation, avec l'écart de la dernière
-révision annuelle en vert ou en rouge (`reputation_change`, absent la première saison). Ni classement
-ni forme : les widgets de l'Effectif les donnent. Les onglets ferment l'en-tête ; l'onglet ouvert est
-souligné de la couleur du club la mieux lisible sur le panneau du thème.
+et le pays en un seul lien, vers la sélection ; charte, « Bandeau »). À droite, deux cases : le niveau et le
+potentiel moyens des 16 meilleurs joueurs sur une case de deux colonnes graduées (« Niveau », « Potentiel »,
+les 16 en infobulle), puis la Réputation, avec l'écart de la dernière révision annuelle en vert ou en rouge
+(`reputation_change`, absent la première saison). Ni tenues, ni tactique, ni installations, ni classement, ni
+forme : la Présentation les donne. Les onglets ferment l'en-tête ; l'onglet ouvert est souligné de la couleur
+du club la mieux lisible sur le panneau du thème.
 
-**Effectif.** L'onglet est le point d'entrée du club. Il tient en deux listes, aux mêmes colonnes, au
+**Présentation.** L'onglet est le point d'entrée du club (`#/club/{id}` l'ouvre). Tout tient dans la fenêtre,
+sans défiler : ses listes prennent les lignes que la hauteur laisse et se redessinent quand elle change (charte,
+« Présentation d'un club »). En tête, une rangée de cases : la place dans chaque compétition de la saison (le
+rang et les points en championnat, le tour atteint en coupe ; `competitions` du calendrier de la saison), les
+joueurs et leur âge moyen, la tactique, l'entraînement et le recrutement des jeunes (sur 20), la valeur de
+l'effectif. Puis quatre colonnes, chaque carte avec « Voir → » vers ce qu'elle résume quand elle a une page :
+
+| Carte | Contenu | Lien |
+|---|---|---|
+| Tenues | les deux tenues complètes, domicile d'abord, en grand ; leur nom en infobulle | le PNG |
+| Mercato | tous les mouvements de la saison (transferts, prêts, jeunes promus, fins de contrat), arrivées puis départs, chaque sens compté et le total de ses indemnités, la plus grosse indemnité d'abord | onglet Transferts |
+| Équipe-type | sur le terrain debout de la Composition, à chaque place de la forme que le club a le plus alignée dans la saison, le joueur de son équipe première qui y a été le plus souvent titulaire ; sous son nom ses matches et ses buts (« 52 m / 24 » et le ballon). Avant le premier match de la saison, ou pour un club qui n'en joue pas, ses meilleurs joueurs aux places de sa formation, chacun avec sa note au poste (`eleven` de l'aperçu) | — |
+| À surveiller | club dirigé seulement : les joueurs qui attendent une décision (contrat qui finit dans l'année, blessure et date de retour, suspension, moral sous 70 % et sa cause), six au plus | — |
+| Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
+| Calendrier | les trois prochains matches au plus et les derniers joués avant eux, autant que la colonne en laisse (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne) | onglet Calendrier |
+| Championnat | « Ligue 1 – 18e journée » : le classement entier tant que cinq matches tiennent à côté, sinon les lignes autour du club, avec les points puis la différence de buts | page de la compétition |
+| Buteurs, Passeurs, Notes | les meilleurs du club dans la saison, toutes compétitions, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |
+
+**Effectif.** Il tient en deux listes, sur toute la largeur de la page, aux mêmes colonnes, au
 même tri et à la même vue : « Équipe première · n joueurs », puis « Réserve · n joueurs · n prêtés », qui
 réunit les joueurs placés en réserve et ceux que le club a prêtés (`away` de l'effectif). Un joueur en
 prêt porte la pastille « Prêt » après son nom (les deux clubs et la date de retour en infobulle) et sa
@@ -358,18 +378,8 @@ d'un autre club n'apparaît que si elle n'est pas vide ; celle du club de l'util
 même vide. Aucune ligne ne porte de bouton : dans son club, un joueur passe d'une liste à l'autre
 par son menu (clic droit) ou par sa fiche. La colonne NAT donne le drapeau et le code de la
 nation principale : celle de sa sélection, à défaut la première de ses nationalités. Les colonnes
-sont larges comme leur en-tête ou leur plus longue valeur : sur un écran de 1920, la liste tient à
-côté des widgets sans défiler de côté.
-
-À droite des listes (dessous sous 1250 px), une colonne de widgets, chacun avec « Voir → » vers ce
-qu'il résume :
-
-| Widget | Contenu | Lien |
-|---|---|---|
-| Calendrier | le même bloc qu'Actualités : 5 derniers matches (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne), puis 3 prochains, sans intertitres | onglet Calendrier |
-| Dernier onze aligné | le onze du dernier match dont la composition est conservée, sur un terrain à l'horizontale qui attaque vers la droite (latéral gauche en haut), noms réduits au nom court (charte, « Joueurs ») sur un bloc d'une ligne, maillots au corps de la couleur principale et aux manches et au col de la seconde, le numéro que le joueur portait ce jour-là écrit dessus, sans note | compte rendu du match |
-| Championnat | « Ligue 1 – 18e journée » : cinq lignes du classement autour du club, avec les points puis la différence de buts | page de la compétition |
-| Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
+sont larges comme leur en-tête ou leur plus longue valeur : sur un écran de 1920, la liste tient sans
+défiler de côté. Rien ne se tient à côté d'elle : les widgets du club sont dans sa Présentation.
 
 **Calendrier.** Une ligne par match de la saison, du premier au dernier, sans intertitre de mois :
 le jour, la pastille de la compétition (deux caractères, voir la charte : C1, L1, D2, CF ; le
@@ -1286,7 +1296,7 @@ GET  /api/manuel[/{chapitre}]             manuel : {pages: [{slug, title}], page
 GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&taille=&tri=&ordre=   tri : toute colonne (classement, forme, age, valeur, budget, masse_salariale ; niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
                                           chaque club : standing, average_age, squad_value, available_budget, wage_bill et wage_cap (hebdomadaires)
 GET  /api/clubs/{id}                      en-tête + résumé ; reputation_change : écart de la dernière révision annuelle (null la première saison) ; nation_id : la sélection de son pays (null si le jeu n'en a pas)
-GET  /api/clubs/{id}/apercu               widgets de l'effectif : calendrier, finances, dernier onze
+GET  /api/clubs/{id}/apercu               cartes de la Présentation et d'Actualités : calendrier, finances, dernier onze ; eleven : l'équipe-type (basis starts|notes ; chaque joueur : position, shirt, short, note au poste, appearances, starts, goals)
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
 GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, un attribut (passe, reflexes…) ou un composite (tir, occasion_attaque…)
                                           chaque joueur : reserve, loan ({parent, club, end} | null), away (prêté par ce club) ; 100 lignes par page

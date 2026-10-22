@@ -1,0 +1,222 @@
+[
+  {
+    "code": 1,
+    "label": "Plain (same mask as 0)"
+  },
+  {
+    "code": 2,
+    "label": "Contrasting sleeves"
+  },
+  {
+    "code": 3,
+    "label": "Vertical stripes"
+  },
+  {
+    "code": 4,
+    "label": "Horizontal hoops"
+  },
+  {
+    "code": 5,
+    "label": "Vertical halves"
+  },
+  {
+    "code": 6,
+    "label": "Quartered"
+  },
+  {
+    "code": 7,
+    "label": "Checkerboard"
+  },
+  {
+    "code": 8,
+    "label": "Diagonal sash /"
+  },
+  {
+    "code": 9,
+    "label": "Wide centre panel"
+  },
+  {
+    "code": 10,
+    "label": "Side panels"
+  },
+  {
+    "code": 11,
+    "label": "Centre panel with sleeve trim"
+  },
+  {
+    "code": 12,
+    "label": "Fine vertical stripes"
+  },
+  {
+    "code": 13,
+    "label": "Two broad hoops"
+  },
+  {
+    "code": 14,
+    "label": "Fine horizontal stripes"
+  },
+  {
+    "code": 15,
+    "label": "Chest band"
+  },
+  {
+    "code": 16,
+    "label": "Centre stripe"
+  },
+  {
+    "code": 17,
+    "label": "Offset stripe, right"
+  },
+  {
+    "code": 18,
+    "label": "Offset stripe, left"
+  },
+  {
+    "code": 19,
+    "label": "Contrasting lower half"
+  },
+  {
+    "code": 20,
+    "label": "Diagonal sash \\"
+  },
+  {
+    "code": 21,
+    "label": "Two-colour upper chest band"
+  },
+  {
+    "code": 22,
+    "label": "Two-colour stripe, right"
+  },
+  {
+    "code": 23,
+    "label": "Two-colour stripe, left"
+  },
+  {
+    "code": 24,
+    "label": "Three vertical panels"
+  },
+  {
+    "code": 25,
+    "label": "Shoulder and sleeve trim"
+  },
+  {
+    "code": 26,
+    "label": "Contrasting right sleeve"
+  },
+  {
+    "code": 27,
+    "label": "Contrasting left sleeve"
+  },
+  {
+    "code": 28,
+    "label": "Diagonal halves /"
+  },
+  {
+    "code": 29,
+    "label": "Chest chevron"
+  },
+  {
+    "code": 30,
+    "label": "Two-colour chest band"
+  },
+  {
+    "code": 31,
+    "label": "Two thin stripes, right"
+  },
+  {
+    "code": 32,
+    "label": "Two thin stripes, left"
+  },
+  {
+    "code": 33,
+    "label": "Three-colour centre panel"
+  },
+  {
+    "code": 34,
+    "label": "Shoulder yoke"
+  },
+  {
+    "code": 35,
+    "label": "Collar triangle"
+  },
+  {
+    "code": 36,
+    "label": "Underarm panels"
+  },
+  {
+    "code": 37,
+    "label": "Striped body and sleeves"
+  },
+  {
+    "code": 38,
+    "label": "Two-colour sash /"
+  },
+  {
+    "code": 39,
+    "label": "Two-colour sash \\"
+  },
+  {
+    "code": 40,
+    "label": "Two fine chevrons"
+  },
+  {
+    "code": 41,
+    "label": "Three-colour vertical stripes"
+  },
+  {
+    "code": 42,
+    "label": "Different-colour sleeves"
+  },
+  {
+    "code": 43,
+    "label": "Diagonal halves \\"
+  },
+  {
+    "code": 44,
+    "label": "Three-colour hoops"
+  },
+  {
+    "code": 45,
+    "label": "Central cross"
+  },
+  {
+    "code": 46,
+    "label": "Offset cross, right"
+  },
+  {
+    "code": 47,
+    "label": "Offset cross, left"
+  },
+  {
+    "code": 48,
+    "label": "Broad stripes with pinlines"
+  },
+  {
+    "code": 49,
+    "label": "Broad hoops with pinlines"
+  },
+  {
+    "code": 50,
+    "label": "Contrasting sleeves and yoke"
+  },
+  {
+    "code": 51,
+    "label": "Hoops with pinlines"
+  },
+  {
+    "code": 52,
+    "label": "Two-colour chevron"
+  },
+  {
+    "code": 53,
+    "label": "Two-colour centre panels"
+  },
+  {
+    "code": 54,
+    "label": "Chest band and lower panel"
+  },
+  {
+    "code": 55,
+    "label": "Tonal vertical stripes with pinlines"
+  }
+]

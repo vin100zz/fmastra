@@ -20,6 +20,7 @@ from core.world.steps import day_results, step_over, step_target
 from core.world.validation import validate_world
 from infrastructure.config.loader import configure_world, load_config, load_pyramids
 from infrastructure.importation.loader import import_world
+from infrastructure.importation.kit_catalogue import KitCatalogue
 from infrastructure.persistence.store import SaveStore, original_slot
 from .creation import Catalogue
 
@@ -78,6 +79,9 @@ class GameService:
         self.store = SaveStore(saves or root / "saves", rolling=True)
         # The nations, divisions and clubs a new game can be made of.
         self.catalogue = Catalogue(root)
+        self.kits = KitCatalogue(root / "data" / "clubs.csv")
+        self.kit_world = None
+        self.kit_revision = -1
         self.world: World | None = None
         # Where the game is saved, automatically too: the slot it was last saved in or loaded from (a dated copy
         # resumes its own slot), `autosave` for a new game.
@@ -101,6 +105,23 @@ class GameService:
         self.auto_delay = 0.8
         # The human club's match being played, kept in memory; the world only records how to rebuild it.
         self.live: LiveMatch | None = None
+
+    def refresh_kit_appearance(self) -> None:
+        """Update appearance only, including worlds restored from older saves."""
+        with self.lock:
+            revision, rows = self.kits.snapshot()
+            if self.world is self.kit_world and revision == self.kit_revision:
+                return
+            if self.active and self.jobs[self.active].command == "save":
+                return
+            # The asynchronous save reads the same clubs; let it finish first.
+            while self.pending_save is not None:
+                self.saved.wait()
+            if self.world is not None:
+                for club in self.world.clubs.values():
+                    for name, value in rows.get(club.id, {}).items():
+                        setattr(club, name, value)
+            self.kit_world, self.kit_revision = self.world, revision
 
     def live_match(self, world: World) -> LiveMatch:
         """The match being played live, rebuilt from its record after a load or a restart. Call under the lock."""
@@ -191,6 +212,7 @@ class GameService:
                     self.slot = slot
                     self.live = None
                     self.recovery_required = False
+                    self.refresh_kit_appearance()
             elif job.command == "save":
                 self.store.save(self.world, payload["slot"])
                 with self.lock: self.slot = payload["slot"]

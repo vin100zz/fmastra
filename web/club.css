@@ -119,7 +119,6 @@
 .cc-legend{display:flex;gap:16px;font-size:13px;color:var(--ink-2)}
 .cc-legend span{display:inline-flex;align-items:center;gap:6px}
 .cc-legend i{width:10px;height:10px;border-radius:var(--radius)}
-.card-hint{font-size:13px;color:var(--muted)}
 
 /* Finances: key figures, then charts in rows. */
 .finance-figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}

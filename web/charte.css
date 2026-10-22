@@ -331,6 +331,9 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
    the band, at its height, in a box as wide whatever the emblem: the name keeps its place from one competition to the
    next. A league or a national cup has the flag of its country on the disc, as its selection has. */
 .club-hero-emblem{flex:none;width:72px;height:72px;object-fit:contain}
+.club-hero-kits{display:flex;align-items:center;gap:var(--s2);flex:none}
+.club-hero-kits>a{display:block}
+.club-hero-kit{display:block;flex:none;width:48px;height:80px;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 /* Its one tile names who won it or who holds its title: a name written as the tile's figure, after its dot or its flag. */
 .club-hero-tile strong .nation{font:inherit;letter-spacing:0;text-transform:none;color:inherit}
 /* The steps of a band, at its left, between peers: a season's steps in a column. Neither border nor ground: drawn chevrons
@@ -711,7 +714,7 @@ a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}
 tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted){background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
 .player-table tbody tr:where(:not(.selected,.chosen)):is(:hover,.targeted) td:nth-child(2){background:var(--panel-3)}
-:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
+:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.watch-list li,.season-moves li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
@@ -858,3 +861,51 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .nation-line>.num{color:var(--muted)}
 .nation-line.off>.nation{color:var(--muted)}
 .nation-line.off .flag{filter:grayscale(1);opacity:.5}
+/* A club's Présentation (« Présentation d'un club »): a row of tiles, then four columns whose lists fill the window (two
+   columns, then one, on a narrower one). The tiles are the band's, bordered on the page; a competition's badge stands 8
+   before its name, its points after its rank, muted. */
+.club-tiles{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.club-tiles>.club-hero-tile{flex:1 1 auto;border:1px solid var(--line);background:var(--panel);box-shadow:none}
+.club-tiles>.club-hero-tile.split{justify-content:flex-start}
+.club-tiles .club-hero-tile.split>*>span{gap:var(--s2)}
+.club-tiles .club-hero-tile strong em{color:var(--muted)}
+.club-presentation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:start}
+.presentation-column{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.presentation-column>.card{margin:0}
+@media (max-width:1499px){.club-presentation{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:899px){.club-presentation{grid-template-columns:minmax(0,1fr)}}
+/* Its kits, home first, on the raised ground: a white kit would melt into the card. */
+.kits{display:flex;justify-content:center;gap:var(--s6);padding:var(--s3);background:var(--panel-2)}
+.kits>a{display:block;min-width:0}
+.kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/725;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
+/* Its équipe-type on the upright pitch, as wide as its card. Under a name, the season: matches, goals, the ball after them,
+   in the pale blue of a series, which no note takes. */
+.season-eleven .pitch{width:calc(100% - 2*var(--s2));margin:var(--s2) auto;overflow:visible}
+.block-season{display:inline-flex;align-items:center;gap:3px;color:var(--series-1-soft)}
+/* What asks for a decision, and the season's movements: a line of 26 each; a side of the movements under a heading that
+   counts it and gives its fees. */
+.watch-list,.season-moves{margin:0;padding:0;list-style:none}
+.watch-list li,.season-moves li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.watch-list li{grid-template-columns:32px minmax(0,1fr) auto}
+.season-moves li{grid-template-columns:32px minmax(0,1fr) minmax(0,120px) 56px}
+:is(.watch-list,.season-moves) li:last-child{border-bottom:0}
+:is(.watch-list,.season-moves) li>span:nth-child(2),.market-club{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:is(.watch-list,.season-moves) li>span:nth-child(2) a{font-weight:600;color:var(--strong)}
+.season-moves li>:last-child{text-align:right;white-space:nowrap}
+.season-moves b{font-weight:600;color:var(--strong)}
+.watch-facts{display:flex;align-items:center;gap:var(--s3);white-space:nowrap}
+.watch-facts b{font-weight:600}
+.season-market .section-title{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);height:var(--h-row);margin:0;padding:0 var(--s3);border-bottom:1px solid var(--line);background:var(--panel-2)}
+.season-market .section-title b{font-weight:600;letter-spacing:0;text-transform:none;color:var(--strong)}
+.season-market ul+.section-title{border-top:1px solid var(--line)}
+/* Players ranked on one figure (« Classement de joueurs »): a line of 26 each, his rank, his name, a bar of 8 against the first
+   of the list (its end rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one
+   (.soft) on the lists of the Présentation. */
+.leader-bars{margin:0;padding:var(--s1) var(--s3) var(--s2);list-style:none;counter-reset:leader}
+.leader-bars li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);counter-increment:leader}
+.leader-bars li::before{content:counter(leader);text-align:right;font-weight:600;color:var(--muted)}
+.leader-bars li>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.leader-bars i{display:block;height:8px;border-radius:0 4px 4px 0;background:var(--series-1)}
+.leaders-card.soft .leader-bars i{background:var(--series-1-soft)}
+.leader-bars b{font-weight:700;text-align:right;color:var(--strong)}
+.card-hint{font-size:var(--fs-small);color:var(--muted)}

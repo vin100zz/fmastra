@@ -7,6 +7,7 @@ from pathlib import Path
 
 from core.config.model import Config
 from core.domain.date import Date
+from core.domain.clubs import KIT_COMPONENT_FIELDS
 from core.domain.players import Attributes, ATTRIBUTE_NAMES
 from core.world.importation.records import SourceClub, SourcePlayer
 from core.world.importation.source_positions import POSITION_COLUMNS
@@ -57,6 +58,38 @@ def hex_color(row: dict, key: str) -> str | None:
     return row[key] or None
 
 
+def kit_components(row: dict, *, include_home: bool = False) -> dict:
+    """Keep each garment's own CSV palette; absent data stays absent."""
+    values = {}
+    garments = (("away_kit", "AwayKit"), ("home_shorts", "HomeShorts"),
+                ("home_socks", "HomeSocks"), ("away_shorts", "AwayShorts"),
+                ("away_socks", "AwaySocks"))
+    if include_home:
+        garments = (("home_kit", "HomeKit"), *garments)
+    for prefix, source in garments:
+        present = str(row.get(f"Has{source}Data", "True")).lower() not in ("false", "0")
+        code = row.get(f"{source}ID") if present else None
+        values[f"{prefix}_id"] = int(code) if code and code.lstrip("-").isdigit() else None
+        for color in ("major", "minor", "third"):
+            value = row.get(f"{source}{color.title()}ColorRGB") if present else None
+            values[f"{prefix}_{color}_color"] = value or None
+    return values
+
+
+def enrich_kit_components(clubs, path: Path) -> None:
+    """Fill appearance fields absent from old saves, without overwriting stored palettes."""
+    missing = {club.id: club for club in clubs
+               if all(getattr(club, name) is None for name in KIT_COMPONENT_FIELDS)}
+    if not missing or not path.is_file():
+        return
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle, delimiter=";"):
+            club = missing.get(int(row["UID"]))
+            if club is not None:
+                for name, value in kit_components(row).items():
+                    setattr(club, name, value)
+
+
 def reserve_team(row: dict) -> bool:
     """Some standalone B-team exports incorrectly point MainTeamUID at themselves."""
     if (row.get("MainTeamUID", "") not in ("", "0", "-1", row["UID"])
@@ -89,7 +122,7 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
                         hex_color(row, "HomeKitMajorColorRGB"), hex_color(row, "HomeKitMinorColorRGB"),
                         hex_color(row, "HomeKitThirdColorRGB"),
                         bounded(row, "Reputation", 0, 10000) if row.get("Reputation") else None,
-                        reserve_team(row))
+                        reserve_team(row), **kit_components(row))
              # The export lists placeholders without a nation ("Club inconnu", empty rows); no player belongs to them.
              for row in rows("clubs.csv") if row["Nation"]]
     players = []

@@ -4,6 +4,14 @@ from enum import StrEnum
 from .date import Date
 
 
+# Additional appearance data, optional in older exports and saves.
+KIT_COMPONENT_FIELDS = tuple(
+    f"{garment}_{field}"
+    for garment in ("away_kit", "home_shorts", "home_socks", "away_shorts", "away_socks")
+    for field in ("id", "major_color", "minor_color", "third_color")
+)
+
+
 class ClubStatus(StrEnum):
     ACTIVE = "actif"
     DORMANT = "dormant"
@@ -61,6 +69,27 @@ class Club:
     wage_shift: int = 0
     # The part of `income` its competitions pay this season, by "league", "europe" and "cup": what last season earned.
     prize_income: dict[str, int] = field(default_factory=dict)
+
+    away_kit_id: int | None = None
+    away_kit_major_color: str | None = None
+    away_kit_minor_color: str | None = None
+    away_kit_third_color: str | None = None
+    home_shorts_id: int | None = None
+    home_shorts_major_color: str | None = None
+    home_shorts_minor_color: str | None = None
+    home_shorts_third_color: str | None = None
+    home_socks_id: int | None = None
+    home_socks_major_color: str | None = None
+    home_socks_minor_color: str | None = None
+    home_socks_third_color: str | None = None
+    away_shorts_id: int | None = None
+    away_shorts_major_color: str | None = None
+    away_shorts_minor_color: str | None = None
+    away_shorts_third_color: str | None = None
+    away_socks_id: int | None = None
+    away_socks_major_color: str | None = None
+    away_socks_minor_color: str | None = None
+    away_socks_third_color: str | None = None
 
     @property
     def squad_size(self) -> int:

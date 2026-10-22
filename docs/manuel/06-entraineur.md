@@ -24,6 +24,8 @@ Si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement
 
 **La rotation.** Un titulaire dont la condition est passée sous {{pct(ia_gestion.selection.seuil_rotation_fatigue, 0)}} cède sa place à un joueur plus frais, si celui-ci vaut à ce poste au moins son niveau moins {{ia_gestion.selection.ecart_niveau_acceptable_rotation * 2}} points. Quand le match suivant du club est européen, l'IA ménage aussi le titulaire qu'un match complet laisserait sous ce seuil le jour de ce match (voir [La condition physique](#/aide/etats/la-condition-physique)).
 
+**L'équipe-type.** La Présentation d'un club montre son équipe-type : la forme qu'il a le plus souvent alignée dans la saison, toutes compétitions confondues, et à chaque place le joueur de son équipe première qui y a été le plus souvent titulaire. Un joueur parti ou placé en réserve n'y figure plus ; une place où aucun joueur restant n'a été titulaire revient au meilleur à ce poste. Avant son premier match de la saison, ou pour un club qui n'en joue pas, ce sont ses meilleurs joueurs aux places de sa formation, retenus comme le onze de départ, sur leur seule note au poste : sans forme, ni condition, ni moral.
+
 ## Le banc
 
 Le banc compte {{monde.regles_match.taille_banc}} joueurs : un gardien, puis des joueurs de champ choisis pour couvrir les postes du onze. Pour couvrir un poste, il faut une affinité d'au moins {{etats.remplacements.affinite_minimum_rotation * 20}} sur 20. L'IA prend d'abord de quoi couvrir chaque poste, en préférant, à valeur proche, les joueurs qui ont besoin de temps de jeu.

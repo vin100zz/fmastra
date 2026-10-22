@@ -1,4 +1,7 @@
 """Landing view of a club and the calendar of one of its seasons; read-only projections."""
+from collections import Counter
+
+from core.ai.assignment import maximize_assignment
 from core.domain.matches import Match
 from core.domain.world import World
 from core.world.cups import ROUND_NAMES
@@ -8,6 +11,10 @@ from .club_history import navigation
 from .rounds import scorers
 
 LAST_MATCHES, NEXT_MATCHES = 5, 3
+# The places of an eleven from the goal forward, as the pitch of the Composition lists them.
+ROLE_ORDER = ("GB", "DG", "DC", "DD", "MDC", "MC", "AILG", "AILD", "MOC", "BU")
+# A start at a place outweighs any note: the note only settles a place nobody started at.
+START_WEIGHT = 1000
 
 
 def outcome(club_id: int, match: Match) -> str:
@@ -38,13 +45,41 @@ def last_lineup(world: World, club_id: int, played: list[Match]) -> dict | None:
     return None
 
 
+def typical_eleven(world: World, club_id: int, played: list[Match]) -> dict | None:
+    """The club's équipe-type among its first-team players: at each place of the shape it fielded most this season, who
+    started there most. Before its first match of the season, or for a club that plays none, its best eleven at the places
+    of its formation, by note at each. None without enough players."""
+    club = world.clubs[club_id]
+    squad = [world.players[pid] for pid in club.player_ids if pid in world.players and world.players[pid].reserve_since is None]
+    sides = [getattr(match.result, f"{'home' if match.home_id == club_id else 'away'}_lineup") for match in played if match.season == world.season]
+    lineups = [lineup for lineup in sides if lineup]
+    if lineups:
+        shape = Counter(tuple(sorted(role for _, role in lineup)) for lineup in lineups).most_common(1)[0][0]
+        starts = Counter(start for lineup in lineups for start in lineup)
+    else:
+        # The human club's own tactic plays the places of its pitch.
+        own = [role for role, _, _ in world.custom_formation] if club_id == world.controlled_club_id and world.custom_formation else None
+        shape, starts = tuple(world.config.formations.formations.get(club.formation) or own or next(iter(world.config.formations.formations.values()))), Counter()
+    roles = sorted(shape, key=ROLE_ORDER.index)
+    if len(squad) < len(roles): return None
+    notes = {player.id: v.position_notes(player, world.config) for player in squad}
+    assigned = maximize_assignment([[starts[(player.id, role)] * START_WEIGHT + notes[player.id][role] for player in squad] for role in roles])
+    stats = v.club_season_stats(world, club_id, [player.id for player in squad])
+    shorts = v.squad_short_names(world, club_id, {})
+    return {"basis": "starts" if lineups else "notes",
+            "players": [{"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": role, "shirt": player.shirt,
+                         "note": notes[player.id][role], "appearances": stats[player.id]["appearances"],
+                         "starts": stats[player.id]["appearances"] - stats[player.id]["substitutes"], "goals": stats[player.id]["goals"]}
+                        for role, player in ((role, squad[index]) for role, index in zip(roles, assigned))]}
+
+
 def overview(world: World, club_id: int) -> dict:
     world.clubs[club_id]
     matches = sorted((match for match in world.matches.values() if club_id in (match.home_id, match.away_id)), key=lambda match: (match.date, match.id))
     played = [match for match in matches if match.result]
     upcoming = [match for match in matches if not match.result]
     return {"calendar": calendar(world, club_id, played, upcoming), "finances": v.finance_summary(world, club_id),
-            "lineup": last_lineup(world, club_id, played)}
+            "lineup": last_lineup(world, club_id, played), "eleven": typical_eleven(world, club_id, played)}
 
 
 def record(club_id: int, matches: list[Match]) -> dict:

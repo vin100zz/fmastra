@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -7,36 +7,8 @@ let editor=null;
 let squadView='infos';
 
 const POSITION_ORDER=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
-const LINE_Y={gk:90,def:74,dm:60,cm:46,am:31,att:14};
-const LATERAL={DG:0,AILG:0,DD:2,AILD:2};
-// Each position sits on a line of the pitch; wingers join the forwards, the attacking midfielder or the midfield,
-// depending on what the rest of the formation leaves in front of them. Without a central midfield to join, they stand
-// in front of the holding midfielders.
-function line(role,roles){
- if(role==='GB')return 'gk';
- if(['DG','DC','DD'].includes(role))return 'def';
- if(role==='MDC')return 'dm';
- if(role==='MC')return 'cm';
- if(role==='MOC')return 'am';
- if(role==='BU')return 'att';
- const count=value=>roles.filter(item=>item===value).length;
- if(roles.includes('MOC')||!roles.includes('MC'))return 'am';
- return count('BU')<2&&count('MC')+count('MDC')>=3?'att':'cm';
-}
-// Pitch coordinates (percentages) of each slot of a formation, attack at the top.
-export function pitchLayout(roles){
- const lines={};roles.forEach((role,index)=>(lines[line(role,roles)]??=[]).push(index));
- const places=[];
- Object.entries(lines).forEach(([key,indexes])=>{
-  indexes.sort((a,b)=>(LATERAL[roles[a]]??1)-(LATERAL[roles[b]]??1)||a-b);
-  const wide=indexes.some(index=>roles[index] in LATERAL),count=indexes.length;
-  indexes.forEach((slot,rank)=>{
-   const x=count===1?50:wide?14+rank*72/(count-1):50+(rank-(count-1)/2)*Math.min(26,72/(count-1));
-   places[slot]={x,y:LINE_Y[key]};
-  });
- });
- return places;
-}
+// The upright pitch of a formation is the one the Présentation draws its eleven on (web/ui.js).
+export {pitchLayout};
 
 // The club's own tactic is built on a grid of the Composition pitch: five columns on each line from the goal forward.
 export const CUSTOM='Perso';
@@ -49,7 +21,7 @@ export const cellRole=(key,column)=>key==='gk'?'GB':LINE_ROLES[key][column===0?0
 // A formation on the grid: each position on its line of `pitchLayout`, in the column nearest its place there.
 export function gridPlaces(roles){
  const layout=pitchLayout(roles),lines={};
- roles.forEach((role,index)=>(lines[line(role,roles)]??=[]).push(index));
+ roles.forEach((role,index)=>(lines[pitchLine(role,roles)]??=[]).push(index));
  const places=[];
  Object.entries(lines).forEach(([key,indexes])=>{
   indexes.sort((a,b)=>layout[a].x-layout[b].x);

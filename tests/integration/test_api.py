@@ -350,6 +350,13 @@ def test_views_pagination_and_no_rng_leak(client):
     club_rows = client.get('/api/clubs').json()['items']
     assert all({'training_facilities', 'youth_recruitment'} <= row.keys() for row in club_rows)
     psg = client.get('/api/clubs/868').json()
+    kit = world.clubs[868]
+    assert (psg['kit_id'], psg['major_color'], psg['minor_color'], psg['third_color']) == (
+        kit.home_kit_id, kit.home_kit_major_color, kit.home_kit_minor_color, kit.home_kit_third_color)
+    assert client.get(psg['kit_url']).headers['content-type'] == 'image/png'
+    assert client.get(psg['away_kit_url']).headers['content-type'] == 'image/png'
+    assert '/kits/38/outfit.png?' in psg['away_kit_url']
+    assert 'shorts_major=F8F8F8' in psg['away_kit_url']
     assert (psg['training_facilities'], psg['youth_recruitment']) == (20, 19)
     # The selection of its country, where the flag of its header leads.
     assert world.international.nations[psg['nation_id']].code == psg['nation_code'] == 'FRA'
@@ -691,7 +698,7 @@ def test_club_overview_summarises_calendar_finances_transfers_and_last_lineup(pl
     assert overview["finances"] == {key: finances[key] for key in overview["finances"]}
     assert {"transfer_budget", "reserved_transfer_budget", "wage_bill", "wage_cap"} <= overview["finances"].keys()
     # The transfers have their own tab; the landing view no longer summarises them.
-    assert set(overview) == {"calendar", "finances", "lineup"}
+    assert set(overview) == {"calendar", "finances", "lineup", "eleven"}
     lineup = overview["lineup"]
     assert lineup["match"]["id"] == last[0]["id"] and len(lineup["players"]) == 11
     detail = played.get(f"/api/matches/{lineup['match']['id']}").json()["result"]
@@ -825,6 +832,48 @@ def test_club_overview_before_any_match_has_no_lineup(client):
     overview = client.get(f"/api/clubs/{club.id}/apercu").json()
     assert overview["calendar"]["last"] == [] and len(overview["calendar"]["next"]) == 3
     assert overview["lineup"] is None
+
+
+def test_the_eleven_of_a_club_is_who_started_most_at_each_place_of_the_shape_it_fielded_most(played):
+    from collections import Counter
+    world = played.app.state.game.world
+    states = {key: rng.getstate() for key, rng in world.rngs.items()}
+    club = next(iter(world.active_clubs()))
+    eleven = played.get(f"/api/clubs/{club.id}/apercu").json()["eleven"]
+    sides = [getattr(match.result, "home_lineup" if match.home_id == club.id else "away_lineup") for match in world.matches.values()
+             if match.result and match.season == world.season and club.id in (match.home_id, match.away_id)]
+    lineups = [lineup for lineup in sides if lineup]
+    assert eleven["basis"] == "starts" and len(eleven["players"]) == 11
+    # The places of the shape fielded most, from the goal forward; eleven players of the first team, each once.
+    shape = Counter(tuple(sorted(role for _, role in lineup)) for lineup in lineups).most_common(1)[0][0]
+    assert sorted(player["position"] for player in eleven["players"]) == sorted(shape)
+    assert eleven["players"][0]["position"] == "GB"
+    ids = [player["id"] for player in eleven["players"]]
+    assert len(set(ids)) == 11 and all(pid in club.player_ids and world.players[pid].reserve_since is None for pid in ids)
+    # Nobody of the first team started more often at a place than the one it went to, unless he stands elsewhere.
+    starts = Counter(start for lineup in lineups for start in lineup)
+    for player in eleven["players"]:
+        best = max(starts[(pid, player["position"])] for pid in club.player_ids if world.players[pid].reserve_since is None and pid not in ids or pid == player["id"])
+        assert starts[(player["id"], player["position"])] >= best
+    # His season is the squad list's: his matches, his starts, his goals.
+    rows = {row["id"]: row for row in played.get(f"/api/clubs/{club.id}/effectif").json()["items"]}
+    for player in eleven["players"]:
+        row = rows[player["id"]]
+        assert (player["appearances"], player["starts"], player["goals"]) == (row["appearances"], row["appearances"] - row["substitutes"], row["goals"])
+        assert player["shirt"] == row["shirt"] and player["note"] > 0
+    assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_before_any_match_the_eleven_is_the_best_at_the_places_of_the_club_formation(client):
+    from api.views import position_notes
+    world = client.app.state.game.world
+    club = next(iter(world.active_clubs()))
+    eleven = client.get(f"/api/clubs/{club.id}/apercu").json()["eleven"]
+    assert eleven["basis"] == "notes"
+    assert sorted(player["position"] for player in eleven["players"]) == sorted(world.config.formations.formations[club.formation])
+    for player in eleven["players"]:
+        assert player["note"] == position_notes(world.players[player["id"]], world.config)[player["position"]]
+        assert player["appearances"] == player["starts"] == player["goals"] == 0
 
 
 def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(played):

@@ -467,6 +467,9 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
    next. A league or a national cup has the flag of its country on the disc, as its selection has. Its one tile names who
    won it or who holds its title, after the dot of its colours or its flag. */
 .hero-emblem{display:block;flex:none;width:72px;height:72px;object-fit:contain}
+.hero-kits{display:flex;align-items:center;gap:var(--s2);flex:none}
+.hero-kits>a{display:block}
+.hero-kit{display:block;flex:none;width:48px;height:80px;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 /* A competition of the selections at the head of its column, on Sélections nationales: the band of its header, its
    emblem and its name in the size of a page's title, in capitals, as on the doors of the home; its sash pushed to the
    right of the column; no tile. It opens the competition's page as a whole (the veil of its ink under the pointer). */
@@ -729,6 +732,43 @@ span.entity-step svg{opacity:.3}
 .result b{font-weight:600;color:var(--strong)}
 .result.chosen{background:var(--own-row)}
 
+/* A club's Présentation: a row of tiles, then four columns whose lists take the rows the window leaves. On a tile, a
+   competition's badge stands 8 before its name. */
+.tile .label:has(.comp){display:flex;align-items:center;gap:var(--s2)}
+.tiles.row{flex-wrap:wrap}
+.tiles.row>.tile{flex:1 1 auto}
+.tiles.row .label{white-space:nowrap}
+.presentation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:start}
+/* Its kits, home first, on the raised ground (a white kit would melt into the card); each named by its tooltip only. */
+.kits{display:flex;justify-content:center;gap:var(--s6);padding:var(--s3);background:var(--panel-2)}
+.kits>a{display:block;min-width:0}
+.kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/725;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
+/* Under a name of its équipe-type, the season: his matches, his goals, the ball after them, in the pale blue of a series,
+   which no note takes. */
+.block-season{display:inline-flex;align-items:center;gap:3px;color:var(--series-1-soft)}
+/* What asks for a decision and the season's movements: a line of 26 each; a side of the movements under a heading that
+   counts it and gives its fees on its right. */
+.watch-list,.season-moves{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.watch-list>li,.season-moves>li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.watch-list>li{grid-template-columns:32px minmax(0,1fr) auto}
+.season-moves>li{grid-template-columns:32px minmax(0,1fr) minmax(0,120px) 56px}
+:is(.watch-list,.season-moves)>li:last-child{border-bottom:0}
+:is(.watch-list,.season-moves)>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.season-moves>li>:last-child{text-align:right}
+.watch-facts{display:flex;align-items:center;gap:var(--s3)}
+.section-title>b{margin-left:auto;font-weight:600;color:var(--strong)}
+/* Players ranked on one figure: a line of 26 each, his rank, his name, a bar of 8 against the first of the list (its end
+   rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) on the
+   lists of the Présentation. */
+.leader-bars{display:flex;flex-direction:column;margin:0;padding:var(--s1) var(--s3) var(--s2);list-style:none}
+.leader-bars>li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row)}
+.leader-bars>li>:first-child{font-weight:600;text-align:right;color:var(--muted)}
+.leader-bars>li>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--strong)}
+.leader-bars i{display:block;height:8px;border-radius:0 4px 4px 0;background:var(--series-1)}
+.leader-bars.soft i{background:var(--series-1-soft)}
+.leader-bars b{text-align:right;color:var(--strong)}
+.card-hint{font-size:var(--fs-small);color:var(--muted)}
+
 /* Under the pointer (.hover shows the state on a board). One ground for whatever is under it, --panel-3; what is open,
    picked or tinted keeps its own. Nothing else moves: no colour, no border, no shadow.
    A link — a name that leads to its page, a score to its match, « Voir → » — has the colour of the text that carries it
@@ -738,7 +778,7 @@ span.entity-step svg{opacity:.3}
 .prose a{color:var(--accent-text)}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
-:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen)):is(:hover,.hover){background:var(--panel-3)}
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.season-moves>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
 a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
