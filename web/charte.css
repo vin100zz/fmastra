@@ -862,9 +862,9 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .nation-line.off>.nation{color:var(--muted)}
 .nation-line.off .flag{filter:grayscale(1);opacity:.5}
 /* A club's Présentation (« Présentation d'un club »): a row of tiles, then four columns whose lists fill the window (two
-   columns, then one, on a narrower one). The tiles are the band's, bordered on the page; a competition's badge stands 8
-   before its name, its points after its rank, muted. */
-.club-tiles{display:flex;flex-wrap:wrap;gap:var(--s2)}
+   columns, then one, on a narrower one), 8 under the row. The tiles are the band's, bordered on the page; a competition's
+   badge stands 8 before its name, its points after its rank, muted. */
+.club-tiles{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s2)}
 .club-tiles>.club-hero-tile{flex:1 1 auto;border:1px solid var(--line);background:var(--panel);box-shadow:none}
 .club-tiles>.club-hero-tile.split{justify-content:flex-start}
 .club-tiles .club-hero-tile.split>*>span{gap:var(--s2)}

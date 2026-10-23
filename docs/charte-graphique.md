@@ -509,8 +509,8 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
 
 La fiche d'un club s'ouvre sur son premier onglet, « Présentation » ; l'onglet
 « Effectif » ne garde que ses deux listes, sur toute la largeur. Sous les
-onglets, une rangée de tuiles, puis quatre colonnes (`.presentation`), deux sous
-1500 de large, une sous 900.
+onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
+(`.presentation`), deux sous 1500 de large, une sous 900.
 
 - **Rangée de tuiles** (`.tiles.row`, chaque tuile à la largeur de son contenu) :
   la place du club dans chaque compétition de la saison, sur une tuile à colonnes

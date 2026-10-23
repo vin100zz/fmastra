@@ -165,11 +165,11 @@ export function leadersCards(squad,rows=8){
  return lists.filter(([,items])=>items.length).map(([title,items,key,unit,options])=>leaderBars(title,items,key,unit,{soft:true,...options})).join('');
 }
 
-// The height of a column of the Présentation: the window's under the band, the tabs and the row of tiles, less the page's
-// bottom margin; a short window keeps what a laptop shows. Its lists take the rows of 26 it holds once the rest is drawn:
+// The height of a column of the Présentation: the window's under the band, the tabs, the row of tiles and the 8 under it,
+// less the page's bottom margin; a short window keeps what a laptop shows. Its lists take the rows of 26 it holds once the rest is drawn:
 // a card's head (34), the padding of a list (16), the gap between two cards (8), a heading (26); a table of the league has
 // rows of 27 under 68 of head.
-const PRESENTATION_TOP=265,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=367,FINANCES=139,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
+const PRESENTATION_TOP=273,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=367,FINANCES=139,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
 export const presentationHeight=()=>Math.max(600,(typeof window==='undefined'?1080:window.innerHeight)-PRESENTATION_TOP);
 const rowsIn=height=>Math.max(3,Math.floor(height/ROW));
 
