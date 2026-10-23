@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "web/charte.css"
+        ],
+        "createdAt": "2026-10-23T19:13:33.710Z",
+        "reason": "Claude: false positive, the flagged rules draw CSS triangles (sort arrows, form arrows) with transparent borders, not an accent border on a card; predates this session (commit c421a809)"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "docs/charte/charte.css"
+        ],
+        "createdAt": "2026-10-23T19:13:33.950Z",
+        "reason": "Claude: false positive, the flagged rules draw CSS triangles (sort arrows, form arrows) with transparent borders, not an accent border on a card; predates this session (commit c421a809)"
+      }
+    ]
+  }
+}

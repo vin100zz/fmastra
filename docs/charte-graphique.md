@@ -155,6 +155,7 @@ où le fond est déjà jaune.
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank`, `.reached`, `.delta` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur ; `.reached` le tour atteint dans une coupe, `.delta` un écart signé. Voir « Historique » |
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation`, `.club-flag` | Voir « Clubs et pays » |
+| Compétition après sa pastille | `.comp-link` | La pastille puis le nom, un seul lien vers sa page ; le nom se souligne. Voir « Compétitions » |
 | Deux camps comparés, jauge, anneau | `.comparison`, `.gauge`, `.ring` | Voir « Graphiques » |
 | Cinq derniers matches | `.recent` | Une barre par match du club, à la hauteur des minutes jouées, jaune au-delà du seuil de charge. Voir « Graphiques » |
 | Classement au fil des saisons | `.cc`, `.cc-rank`, `.cc-zone` | Le rang de chaque saison, le parcours de chaque édition d'une sélection. Voir « Graphiques » |
@@ -265,6 +266,8 @@ voile de son encre.
 
 - Une pastille qui mène quelque part (le score d'un match, la pastille d'une
   compétition) est un lien : son texte se souligne, son fond ne change pas.
+  Suivie du nom de sa compétition, les deux forment un seul lien : c'est le nom
+  qui se souligne, pas la pastille.
 - Un drapeau seul qui mène à sa sélection ne change pas sous le pointeur : la
   main et son infobulle, qui nomme le pays, le disent. Suivi du nom ou du code
   du pays, c'est ce texte qui se souligne.
@@ -514,7 +517,8 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
 
 - **Rangée de tuiles** (`.tiles.row`, chaque tuile à la largeur de son contenu) :
   la place du club dans chaque compétition de la saison, sur une tuile à colonnes
-  (la pastille de la compétition puis son nom, à 8 ; le rang en championnat,
+  (la pastille de la compétition puis son nom, à 8, un seul lien vers sa page ;
+  le rang en championnat,
   ses points à sa suite, atténués ; sinon le tour atteint ou perdu en coupe) ;
   ses joueurs et leur âge moyen, sur une tuile de deux colonnes ; sa tactique ;
   son entraînement et son recrutement des jeunes, sur 20 sans le dire (leur
@@ -540,9 +544,10 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
   ses couleurs d’origine, sur les deux tenues, dans une boîte de 19 × 23 px
   à la largeur de 165. Il reste absent si le logo manque.
   Rien dessous : leur infobulle dit Domicile ou Extérieur ; un clic ouvre le PNG.
-- **Équipe-type** : le terrain debout de la Composition, ses lignes placées de
-  même ; chaque joueur dans le maillot du club, son numéro dessus, son nom court
-  dans le bloc. La seconde ligne du bloc est sa saison (`.block-season`) : ses
+- **Équipe-type** : le terrain réparti (voir « Terrain et maillot »), les
+  lignes de la Composition que sa formation occupe ; chaque joueur dans le
+  maillot du club, son numéro dessus, son nom court dans le bloc. La seconde
+  ligne du bloc est sa saison (`.block-season`) : ses
   matches, titularisations et entrées comprises, une barre oblique, ses buts,
   puis le ballon des faits de match (« 52 m / 24 » et le ballon) ; « 54 m » seul
   sans but. Elle est en bleu pâle (`--series-1-soft`), hors de l'échelle des
@@ -815,6 +820,11 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   match. Mêmes bandes et lignes, resserrées ; l'attaque se tient dans la surface
   d'en face, sans gazon vide au-dessus d'elle, le bloc du gardien finit à 12 de
   sa ligne.
+- **Terrain réparti** (`.pitch.spread`) : 68 × 88, celui de l'équipe-type.
+  Seules les lignes de sa formation, sur toute la hauteur : les maillots de
+  l'attaque à 12 de la ligne de but d'en face, le bloc du gardien à 12 de la
+  sienne, les lignes entre elles à égale distance, quelle que soit la hauteur
+  du terrain.
 - **Maillot** (`.kit-shirt`) : 32, carré, les manches à l'horizontale. Le corps
   dans la première couleur du club ou de la sélection, blanc compris, les
   manches et le col dans la seconde. Le gazon n'est pas la page : la règle de la
@@ -1204,6 +1214,18 @@ coupe nationale, une coupe d'Europe, l'édition d'une compétition des sélectio
   une carrière) ;
 - sur l'écran « Nouvelle partie », où le monde n'est pas encore tiré.
 
+Le nom d'une compétition est lui aussi un lien vers sa page, partout où il
+s'écrit : le titre d'une tuile, une colonne CHAMPIONNAT, le bilan et les saisons
+d'un historique, une suspension. Après sa pastille, les deux forment un seul
+lien (`.comp-link`), à 6 l'un de l'autre (à 8 sur une tuile) ; sous le pointeur,
+le nom se souligne, la pastille ne change pas. Le nom n'est pas un lien là où
+sa pastille n'en est pas un (ci-dessus), ni :
+
+- dans le titre d'une carte dont le « Voir → » mène déjà à sa page ;
+- sur sa propre page ;
+- pendant le match en direct, qui tient l'écran jusqu'à la fin de la journée ;
+- dans une infobulle ou une liste déroulante.
+
 ### Clubs et pays
 
 - Le nom d'un club suit toujours sa pastille (`.kit-dot`) : un carré de 14 au
@@ -1278,7 +1300,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
-| Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`), le mercato de la saison (`marketCard`, lu dans `/clubs/{id}/transferts`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
+| Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`), le mercato de la saison (`marketCard`, lu dans `/clubs/{id}/transferts`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son drapeau sur le disque ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |

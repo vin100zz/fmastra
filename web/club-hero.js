@@ -1,4 +1,4 @@
-import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price,competitionBadge} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price,competitionLink} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -86,13 +86,14 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
 
 // The row of tiles that opens a club's Présentation: its place in each competition of the season on one tile (`competitions`,
 // the record of its calendar: the rank in its league, else how far it went), its players and their mean age on another, its
-// tactic, its training, its youth recruitment, and last its squad's value. A competition is written after its badge.
+// tactic, its training, its youth recruitment, and last its squad's value. A competition is written after its badge, the
+// two one link to its page.
 export function clubTiles(club,competitions=[]){
  const place=row=>{
   const standing=row.kind==='league'?club.standing:null;
   return standing?`${standing.rank}${standing.rank===1?'er':'e'}<em>${n(standing.points)} pts</em>`:e(String(row.place||'—').replace(/^Éliminé · /,''));
  };
- const seasons=competitions.length?split(competitions.map(row=>`<div><span>${competitionBadge(row,{link:false})}${e(row.name)}</span><strong>${place(row)}</strong></div>`).join('')):'';
+ const seasons=competitions.length?split(competitions.map(row=>`<div><span>${competitionLink(row,{badge:true})}</span><strong>${place(row)}</strong></div>`).join('')):'';
  return `<div class="club-tiles">${seasons}${split(column('Joueurs',club.squad_size==null?'—':n(club.squad_size))+column('Âge moyen',club.average_age==null?'—':n(club.average_age)))}`
   +`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'','Entraînement sur 20')}`
   +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes sur 20')}${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;

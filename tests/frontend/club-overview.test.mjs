@@ -72,22 +72,26 @@ test('the Présentation shares a column\'s rows between the calendar and the lea
  assert.equal(rows(short,'Calendrier')>=3,true);
 });
 
-test('the équipe-type stands on the Composition\'s pitch: matches and goals under each name, the ball after them',()=>{
+test('the équipe-type stands on a pitch spread over its height: matches and goals under each name, the ball after them',()=>{
  const html=elevenCard(club,eleven);
  assert.match(html,/<h2>Équipe-type<\/h2>/);assert.equal((html.match(/class="pitch-player"/g)||[]).length,11);
  // His number on his shirt, his short name, then « 52 m / 24 » and the ball; no ball for a player who did not score.
  assert.match(html,/<b>9<\/b><\/span><span class="player-block"><span class="block-name">Camarda<\/span><span><span class="block-season">52 m \/ 24<span class="match-mark goal"><\/span><\/span><\/span><\/span>/);
  assert.match(html,/<span class="block-name">Longoni<\/span><span><span class="block-season">54 m<\/span><\/span>/);
  assert.match(html,/title="Prénom Camarda · 52 matches dont 41 titularisations, 24 buts"/);
- // The keeper at the back, the forwards in front, as on the Composition.
- const at=name=>Number(html.match(new RegExp(`title="Prénom ${name}[^"]*" style="left:[\\d.]+%;top:([\\d.]+)%"`))[1]);
- assert.equal(at('Longoni'),90);assert.equal(at('Madjo'),14);
+ // The lines its formation has, counted from the front: the forwards first, the keeper last.
+ const row=(markup,name)=>Number(markup.match(new RegExp(`title="Prénom ${name}[^"]*" style="left:[\\d.]+%;--row:(\\d+)"`))[1]);
+ assert.match(html,/class="pitch spread eleven-pitch"[^>]* style="--rows:6"/);
+ assert.deepEqual(['Madjo','Verhoeven','Sullivan','Tounkara','Lung','Longoni'].map(name=>row(html,name)),[0,1,2,3,4,5]);
+ // A line it does not have leaves no room: without its attacking midfielders, five lines.
+ const flat=elevenCard(club,{...eleven,players:eleven.players.map(player=>player.position==='MOC'?{...player,position:'MC'}:player)});
+ assert.match(flat,/style="--rows:5"/);assert.deepEqual(['Madjo','Verhoeven','Tounkara','Longoni'].map(name=>row(flat,name)),[0,1,2,4]);
  // Picked before any match, each player shows his note at his place; a short column narrows the pitch.
  const best=elevenCard(club,{...eleven,basis:'notes'},500);
  assert.match(best,/<b class="block-note" style="--hue:\d+" title="Note au poste GB : 150 sur 200">150<\/b>/);assert.doesNotMatch(best,/block-season/);
- assert.match(best,/class="pitch eleven-pitch"[^>]* style="max-width:386px"/);
+ assert.match(best,/class="pitch spread eleven-pitch"[^>]* style="--rows:\d;max-width:386px"/);
  // Never so narrow that the blocks of a line run into each other: the page scrolls a little instead.
- assert.match(elevenCard(club,eleven,200),/style="max-width:340px"/);
+ assert.match(elevenCard(club,eleven,200),/style="--rows:\d;max-width:340px"/);
  assert.equal(elevenCard(club,null),'');assert.equal(elevenCard(club,{basis:'notes',players:[]}),'');
 });
 

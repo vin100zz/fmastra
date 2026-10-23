@@ -1,5 +1,5 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,
- pitchLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
+import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
+ spreadLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
@@ -93,22 +93,22 @@ export function kitsCard(club){
  return card('Tenues',`<div class="kits">${outfits.map(([label,told,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}"><img class="kit-outfit" src="${e(url)}" alt="Tenue ${told} de ${e(club.name)}" width="165" height="374"></a>`).join('')}</div>`,'','kits-card');
 }
 
-// The équipe-type on the upright pitch of the Composition, in the club's kit with each player's number. Under his name, his
-// matches of the season (starts and appearances off the bench) and his goals, the ball after them; for an eleven picked
-// before any match, his note at his place.
+// The équipe-type on a pitch spread over its height, the lines of the Composition that its formation has, in the club's kit
+// with each player's number. Under his name, his matches of the season (starts and appearances off the bench) and his goals,
+// the ball after them; for an eleven picked before any match, his note at his place.
 export function elevenCard(club,eleven,height=null){
  if(!eleven?.players?.length)return '';
  // A column too short for the pitch at its width narrows it to the height it has, down to what keeps its blocks apart.
- const fit=height?` style="max-width:${Math.floor(Math.max(PITCH_MIN,height)*68/88)}px"`:'';
- const places=pitchLayout(eleven.players.map(player=>player.position));
+ const fit=height?`;max-width:${Math.floor(Math.max(PITCH_MIN,height)*68/88)}px`:'';
+ const {rows,places}=spreadLayout(eleven.players.map(player=>player.position));
  const marks=eleven.players.map((player,index)=>{
-  const {x,y}=places[index],note=level(player.note);
+  const {x,row}=places[index],note=level(player.note);
   const facts=eleven.basis==='starts'?`<span class="block-season">${n(player.appearances)} m${player.goals?` / ${n(player.goals)}<span class="match-mark goal"></span>`:''}</span>`
    :blockNote(note,levelHue(note),`Note au poste ${player.position} : ${note} sur 200`);
   const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position} : ${note} sur 200`;
-  return `<a class="pitch-player" href="#/player/${player.id}" title="${e(player.name)} · ${e(told)}" style="left:${x}%;top:${y}%">${kitShirt(club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</a>`;
+  return `<a class="pitch-player" href="#/player/${player.id}" title="${e(player.name)} · ${e(told)}" style="left:${x}%;--row:${row}">${kitShirt(club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</a>`;
  }).join('');
- return card('Équipe-type',`<div class="pitch eleven-pitch" aria-label="Équipe-type de ${e(club.name)}"${fit}>${PITCH_BOXES}${marks}</div>`,'','season-eleven');
+ return card('Équipe-type',`<div class="pitch spread eleven-pitch" aria-label="Équipe-type de ${e(club.name)}" style="--rows:${rows}${fit}">${PITCH_BOXES}${marks}</div>`,'','season-eleven');
 }
 
 // Each player of the squad who asks for a decision, with what he asks it for.
@@ -213,7 +213,7 @@ export async function clubPreview(id){
  const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential),figure(money(player.value))]))}</div>`:'';
  const tab=(key,label)=>`<a class="button" href="#/club/${club.id}/${key}">${label}</a>`;
  return `<div class="card preview"><div class="preview-head">${crest}<h2><a href="#/club/${club.id}">${e(club.name)}</a></h2></div>`
-  +`<div class="preview-line"><span>${nationBadge(club.nation_code,{full:true})}</span><span class="muted">${e(club.competition||'Marché extérieur')} · ${n(club.capacity)} places</span></div>`
+  +`<div class="preview-line"><span>${nationBadge(club.nation_code,{full:true})}</span><span class="muted">${club.competition?competitionLink({id:club.competition_id,name:club.competition}):'Marché extérieur'} · ${n(club.capacity)} places</span></div>`
   +tiles+fact('Tactique',e(club.formation))+fact('Entraînement',facilityRating(club.training_facilities))+fact('Recrutement des jeunes',facilityRating(club.youth_recruitment))
   +(club.active?`<h3>Matches</h3>${matchList([...[...data.calendar.last].reverse(),...data.calendar.next],club,'Aucun match programmé.')}`:'')
   +finances+players

@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -298,7 +298,7 @@ function moraleFact(player) {
 // Yellow cards add up over his competitions, each named in the tooltip; a suspension names the competition it holds in.
 function disciplineFacts(player) {
  const cards=player.discipline||[];
- const bans=cards.filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${e(item.competition)} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`));
+ const bans=cards.filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${competitionLink({name:item.competition})} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`));
  return told('Cartons',cards.reduce((sum,item)=>sum+item.yellows,0),cards.map(item=>`${item.competition} ${item.yellows}`).join(' · '))+bans.join('');
 }
 
@@ -398,7 +398,7 @@ export async function playerPreview(id, state) {
  const tile=(label,value,hue)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}><span>${label}</span><strong>${value}</strong></div>`;
  const grade=(label,value)=>value==null?tile(label,'—'):tile(label,level(value),levelHue(level(value)));
  const flags=nationFlags(player);
- const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${e(item.competition)} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
+ const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${competitionLink({name:item.competition})} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
  const shape=`<h3>État</h3>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),

@@ -13,7 +13,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge} from './ui.js';
+import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -62,7 +62,7 @@ export async function clubsScreen(params,leagues=[]){
  const rank=row=>`<span class="strong">${row.rank}${row.rank===1?'er':'e'}</span>${row.movement==='champion'?' <span class="movement-icon promotion" title="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation">↓</span>':''}`;
  // The monthly wage bill, with the share of its cap it takes: the bar turns red from 95 %.
  const wages=club=>club.wage_cap?`<span class="bar-figure">${miniBar(club.wage_bill/club.wage_cap,club.wage_bill>=.95*club.wage_cap?'full':'')}<b>${money(monthlyAmount(club.wage_bill))}</b></span>`:figure('—');
- const cells=(club,index)=>[figure((data.page-1)*data.page_size+index+1),`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),club.competition?e(club.competition):'<span class="muted">Marché extérieur</span>',
+ const cells=(club,index)=>[figure((data.page-1)*data.page_size+index+1),`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),club.competition?competitionLink({id:club.competition_id,name:club.competition}):'<span class="muted">Marché extérieur</span>',
   club.standing?rank(club.standing):'—',club.standing?form(club.standing.form):'—',`<span class="bar-figure">${miniBar(club.reputation/100)}<b>${n(club.reputation)}</b></span>`,
   scoreBadge(club.training_facilities,'Entraînement sur 20'),scoreBadge(club.youth_recruitment,'Recrutement des jeunes sur 20'),figure(club.squad_size),figure(club.average_age==null?'—':n(club.average_age)),
   levelBadge(club.top_rating,'Moyenne des 16 meilleurs niveaux sur 200'),levelBadge(club.top_potential,'Moyenne des 16 meilleurs potentiels sur 200'),

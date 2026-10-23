@@ -333,6 +333,10 @@
 .comp{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text)}
 .comp.cup{border-color:var(--info);color:var(--info)}
 .comp.europe{border-color:var(--strong);background:var(--strong);color:#fff}
+/* A competition's name after its badge: one link to its page, the badge 6 before the name (8 on a tile). The badge stands
+   inline, so the underline under the pointer reaches the name only. */
+.comp-link>.comp{margin-right:6px}
+.tile .label .comp-link>.comp{margin-right:var(--s2)}
 .rating{min-width:30px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font:600 var(--fs-small)/1 var(--text)}
 .rating.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
 .rating.neutral{color:var(--muted)}
@@ -529,6 +533,12 @@ span.entity-step svg{opacity:.3}
 .pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
 /* The match report's pitch, cut short at 68 × 76: the same bands and lines, closer; its attack stands in the far box. */
 .pitch.short{aspect-ratio:68/76}
+/* The pitch spread over its height, that of the équipe-type: only the lines of its formation, the forwards' shirts 12 under
+   the far goal line, the goalkeeper's block of two lines 12 above his own, the lines between at even distances, whatever
+   its height. Each player gives the rank of his line from the front (`--row`, 0 for the attack), the pitch how many it has
+   (`--rows`). */
+.pitch.spread{--spread-front:calc(var(--s2) + var(--s3) + var(--s4));--spread-back:calc(var(--spread-front) + 1px + 2*var(--s4))}
+.pitch.spread .pitch-player{top:calc(var(--spread-front) + (100% - var(--spread-front) - var(--spread-back))*var(--row)/(var(--rows) - 1))}
 
 /* A player on a pitch: the shirt of his club, his goals at its top right, the block under it. One size, 32 px, on every pitch.
    He is held by his shirt: whatever hangs under it, the shirts of a line stay level. */

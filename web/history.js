@@ -1,4 +1,4 @@
-import {escape as e,number as n,money,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,editionHref,noteHue,averageNote,pitch} from './ui.js';
+import {escape as e,number as n,money,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,competitionLink,editionHref,noteHue,averageNote,pitch} from './ui.js';
 import {awayIcon} from './club-overview.js';
 
 // The Historique tab of a club or of a selection (docs/ui.md, « Historique »), in four views chosen at the end of its row of
@@ -120,11 +120,11 @@ function honoursCard(rows,badge,title,when){
   :empty('Aucun titre pour l’instant.','Palmarès vierge');
  return card('Palmarès',body,'','honours-card');
 }
-// The record in each competition, then all together.
-function recordCard(record,unit,badge){
+// The record in each competition, after its badge, then all together; `competition` finds a row's competition.
+function recordCard(record,unit,competition){
  if(!record.rows.length)return card('Bilan',empty('Le bilan apparaîtra avec le premier match joué.','Pas encore de match'));
  const line=row=>[row[unit],row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against].map(value=>num(n(value))).concat(num(difference(row)));
- return card('Bilan',table(['COMPÉTITION',unit==='seasons'?'SAISONS':'ÉDITIONS','J','V','N','D','BP','BC','DIFF.'],record.rows.map(row=>[`<span class="cell">${badge(row)}${e(row.competition)}</span>`,...line(row)]),
+ return card('Bilan',table(['COMPÉTITION',unit==='seasons'?'SAISONS':'ÉDITIONS','J','V','N','D','BP','BC','DIFF.'],record.rows.map(row=>[`<span class="cell">${competitionLink(competition(row),{badge:true})}</span>`,...line(row)]),
   ['Toutes compétitions',...line(record.total)],undefined,sorted(record.rows,row=>[row.competition,row[unit],row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,row.goals_for-row.goals_against]),
   ['','figure-col wide',...Array(7).fill('figure-col')]),'','history-record');
 }
@@ -179,9 +179,11 @@ function agesCard(rows,when){
   :empty('Aucun match pour l’instant.','Pas encore de record'));
 }
 
-// A club's competition badge, by its id; a selection's edition, by its code.
-const clubBadge=row=>competitionBadge({id:row.competition_id,name:row.competition});
-const editionBadge=row=>competitionBadge({kind:'international',code:row.code,year:row.year,name:row.competition||row.name});
+// A club's competition, by its id; a selection's edition, by its code; and their badges.
+const clubCompetition=row=>({id:row.competition_id,name:row.competition});
+const editionCompetition=row=>({kind:'international',code:row.code,year:row.year,name:row.competition||row.name});
+const clubBadge=row=>competitionBadge(clubCompetition(row));
+const editionBadge=row=>competitionBadge(editionCompetition(row));
 
 // A rank against the places of the league it was reached in (`shape`, as the league stands today): the title on the
 // accent, Europe in blue, promotion in green, relegation in red.
@@ -198,7 +200,7 @@ function clubSeasons(data){
  const shapes=new Map(data.leagues.map(league=>[league.id,league])),rows=data.items;
  if(!rows.length)return card('Les saisons du club',empty('La première saison du club est en cours.','Pas encore de saison terminée'));
  return card(`Les saisons du club · ${rows.length}`,table(['SAISON','CHAMPIONNAT','CL.','PTS','J','V','N','D','BP','BC','DIFF.','COUPE NATIONALE','COUPE D’EUROPE','MEILLEUR BUTEUR','BUTS','RÉPUTATION'],
-  rows.map(row=>[`<b>${season(row.season)}</b>`,row.competition?`<span class="cell">${clubBadge(row)}${e(row.competition)}</span>`:'—',rankCell(row,shapes.get(row.competition_id)),...standingCells(row.standing),
+  rows.map(row=>[`<b>${season(row.season)}</b>`,row.competition?`<span class="cell">${competitionLink(clubCompetition(row),{badge:true})}</span>`:'—',rankCell(row,shapes.get(row.competition_id)),...standingCells(row.standing),
    runChip(row.cup),row.europe?`<span class="cell">${competitionBadge({id:row.europe.competition_id,name:row.europe.competition})}${runChip(row.europe)}</span>`:'<span class="muted">—</span>',
    row.scorer?player(row.scorer):'—',num(row.scorer?`<b>${n(row.scorer.goals)}</b>`:'—'),row.reputation?`<span class="with-delta">${n(row.reputation.value)}${delta(row.reputation.change)}</span>`:num('—')]),
   undefined,undefined,sorted(rows,row=>[row.season,row.competition??'',row.rank??'',...standingValues(row.standing),row.cup?.level??'',row.europe?.level??'',row.scorer?.player??'',row.scorer?.goals??'',row.reputation?.value??''],[2]),
@@ -232,7 +234,7 @@ export function clubHistory(view,data,club={},today=null){
  }
  const chart=rankChart(data.items,data.leagues,{standing:club.standing,today,home:club.competition_id,reputation:data.reputation});
  return `<div class="history-overview">${card('Classement et réputation',`<div class="cc-body">${chart}</div>`,'','history-chart')}<div>`
-  +`${honoursCard(data.honours,clubBadge,row=>row.kind==='league'?`Champion de ${row.competition}`:row.competition,row=>row.seasons.map(season).join(' · '))}${recordCard(data.record,'seasons',clubBadge)}</div></div>`;
+  +`${honoursCard(data.honours,clubBadge,row=>row.kind==='league'?`Champion de ${row.competition}`:row.competition,row=>row.seasons.map(season).join(' · '))}${recordCard(data.record,'seasons',clubCompetition)}</div></div>`;
 }
 
 const firstPhase=label=>label?`<span${/Relégué/.test(label)?' class="bad"':/Promu/.test(label)?' class="good"':''}>${e(label)}</span>`:'—';
@@ -263,5 +265,5 @@ export function nationHistory(view,data,nation={}){
    +`<div>${bestCard('Buts sur une édition',best.goals,GOALS,when)}${bestCard('Passes sur une édition',best.assists,['PASSES',row=>row.assists,row=>num(`<b>${n(row.assists)}</b>`)],when)}${bestCard('Note sur une édition',best.notes,NOTE,when)}</div></div>`;
  }
  return `<div class="history-overview">${card('Parcours et force',`<div class="cc-body">${stageChart(data.items,data.current,data.strength)}</div>`,'','history-chart')}<div>`
-  +`${honoursCard(data.honours,editionBadge,row=>row.competition,row=>row.years.join(' · '))}${recordCard(data.record,'editions',editionBadge)}</div></div>`;
+  +`${honoursCard(data.honours,editionBadge,row=>row.competition,row=>row.years.join(' · '))}${recordCard(data.record,'editions',editionCompetition)}</div></div>`;
 }

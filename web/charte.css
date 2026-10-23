@@ -250,6 +250,10 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .competition-code,.competition-badge{min-width:24px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text);letter-spacing:0}
 .competition-code.cup,.competition-badge.cup{border-color:var(--info);background:var(--panel);color:var(--info)}
 .competition-code.europe,.competition-code.europe:is(.c1,.c3,.c4),.competition-code.international,.competition-badge.europe{border-color:var(--strong);background:var(--strong);color:var(--panel)}
+/* A competition's name after its badge: one link to its page, the badge 6 before the name (8 on a tile). The badge stands
+   inline, so the underline under the pointer reaches the name only. */
+.competition-link>.competition-code{margin-right:6px}
+.club-hero-tile .competition-link>.competition-code{margin-right:var(--s2)}
 .club-match-score,.calendar-score{min-width:40px;background:var(--panel-2);color:var(--ink);font:700 var(--fs-small)/1 var(--text)}
 .club-match-score.V,.calendar-score.V{background:var(--good-soft);color:var(--good)}
 .club-match-score.N,.calendar-score.N{background:var(--warn-soft);color:var(--warn)}
@@ -483,6 +487,12 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .lineup-pitch{margin:0}
 /* The match report's pitch is cut short at 68 × 76: its attack stands in the far box, no grass is left empty over it. */
 .pitch.short{aspect-ratio:68/76}
+/* A pitch spread over its height (the équipe-type): only the lines of its formation, the forwards' shirts 12 under the far
+   goal line, the goalkeeper's block of two lines 12 above his own, the lines between at even distances, whatever its
+   height. Each player gives the rank of his line from the front (`--row`, 0 for the attack), the pitch how many it has
+   (`--rows`). */
+.pitch.spread{--spread-front:calc(var(--s2) + var(--s3) + var(--s4));--spread-back:calc(var(--spread-front) + 1px + 2*var(--s4))}
+.pitch.spread .pitch-player{top:calc(var(--spread-front) + (100% - var(--spread-front) - var(--spread-back))*var(--row)/(var(--rows) - 1))}
 .match-lineup .pitch{margin:var(--s3)}
 .positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,360px);min-width:0;margin:var(--s2) auto}
 

@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query,competitionLink} from './ui.js';
 import {monthlySalary} from './salaries.js';
 import {resetButton} from './filters.js';
 import {wideScreen,fittedRows,sidePanel,searchField,positionChips,choiceLinks,toggleLink,rangeMenu,choiceSelect} from './listing.js';
@@ -76,7 +76,7 @@ export function retirementSummary(summary){
  const figures=(entry,list)=>[counted(entry.count,most(list)),figure(entry.average_age==null?'—':n(entry.average_age)),figure(n(entry.matches))];
  const raw=entry=>[entry.count,entry.average_age??'',entry.matches];
  const clubs=card('Clubs',summaryTable('figures text-second',['CLUB','CHAMPIONNAT','RETRAITES','ÂGE MOY.','<span title="Matches joués dans la partie par ces joueurs">MJ</span>'],
-  summary.clubs.map(entry=>[`<span class="strong">${clubLink(entry.club)}</span>`,entry.league?e(entry.league.name):external,...figures(entry,summary.clubs)]),
+  summary.clubs.map(entry=>[`<span class="strong">${clubLink(entry.club)}</span>`,entry.league?competitionLink(entry.league):external,...figures(entry,summary.clubs)]),
   summary.clubs.map(entry=>[entry.club.name,entry.league?.name??'',...raw(entry)])),'','clubs-summary');
  const leagues=card('Championnats',summaryTable('figures',['CHAMPIONNAT','RETRAITES','ÂGE MOY.','MJ'],summary.leagues.map(entry=>[league(entry),...figures(entry,summary.leagues.filter(item=>item.id!=null))]),
   summary.leagues.map(entry=>[entry.name??'',...raw(entry)])),'','leagues-summary');
@@ -129,7 +129,7 @@ function retirementsTable(data){
   ['caps','SÉL.','Sélections','Sélection'],['caps_goals','BUTS','Buts en sélection','Sélection']];
  const count=value=>figure(n(value??0));
  return movementsTable(columns,data,data.items.map(row=>[row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),clubLink(row.source),
-  row.league?e(row.league.name):row.source?external:'—',levelBadge(row.rating,'Niveau à la retraite sur 200'),levelBadge(row.peak,'Meilleur niveau sur 200'),
+  row.league?competitionLink(row.league):row.source?external:'—',levelBadge(row.rating,'Niveau à la retraite sur 200'),levelBadge(row.peak,'Meilleur niveau sur 200'),
   count(row.matches),count(row.goals),count(row.assists),figure(row.average?averageNote(row.average):'—'),figure(row.caps?n(row.caps):'—'),figure(row.caps?n(row.caps_goals):'—')]));
 }
 

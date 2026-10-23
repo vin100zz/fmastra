@@ -147,10 +147,16 @@ export function pitchLayout(roles){
   const wide=indexes.some(index=>roles[index] in LATERAL),count=indexes.length;
   indexes.forEach((slot,rank)=>{
    const x=count===1?50:wide?14+rank*72/(count-1):50+(rank-(count-1)/2)*Math.min(26,72/(count-1));
-   places[slot]={x,y:LINE_Y[key]};
+   places[slot]={x,y:LINE_Y[key],line:key};
   });
  });
  return places;
+}
+// A formation on a pitch spread over its height (`.pitch.spread`): only the lines it has, each place with the rank of its
+// line from the front (`row`, 0 for the attack), and how many lines there are (`rows`).
+export function spreadLayout(roles){
+ const places=pitchLayout(roles),lines=Object.keys(LINE_Y).reverse().filter(line=>places.some(place=>place.line===line));
+ return {rows:lines.length,places:places.map(place=>({...place,row:lines.indexOf(place.line)}))};
 }
 // The two colours of a club's band, its ground then what crosses it: its first colour and its second, or the other way round
 // when the first is close to white and would melt into the page.
@@ -262,6 +268,12 @@ export const competitionBadge = (competition, {link=true}={}) => {
  const {name,kind}=known(competition),href=link?competitionHref(competition):'';
  const attributes=`class="competition-code${kind?` ${kind}`:''}"${href?` href="${escape(href)}"`:''} title="${escape(name)}"`;
  return href?`<a ${attributes}>${escape(competitionCode(competition))}</a>`:`<span ${attributes}>${escape(competitionCode(competition))}</span>`;
+};
+// A competition's name, a link to its page; after its badge when `badge`, the two in one link, of which only the name is
+// underlined. A competition without a page (one the game does not simulate) keeps its name as text.
+export const competitionLink = (competition, {badge=false}={}) => {
+ const href=competitionHref(competition),mark=badge?competitionBadge(competition,{link:false}):'',name=escape(competition.name??known(competition).name);
+ return href?`<a class="competition-link" href="${escape(href)}">${mark}${name}</a>`:`${mark}${name}`;
 };
 export const nationBadges = (codes, options) => (codes&&codes.length?codes:['—']).map(code=>nationBadge(code,options)).join(' · ');
 // A club's name after its dot, a selection's after its flag; `reversed` writes the name first, for the side at home of a
