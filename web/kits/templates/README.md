@@ -1,12 +1,14 @@
-# Templates RGB — KIT_1 à KIT_55
+# Templates RGB — KIT_1 à KIT_57
 
 Chaque `KIT_n.png` reprend le modèle blanc fourni et les zones du motif
-`KIT_n.png` de `C:\V\fmdata\context\kit_patterns`.
+`KIT_n.png` conservé dans `reference/`. Les motifs 1 à 55 proviennent de
+`C:\V\fmdata\context\kit_patterns` ; les références 56 et 57 ont été ajoutées
+directement dans le projet.
 
 - Rouge : couleur principale du kit.
 - Vert : couleur secondaire.
 - Bleu : troisième couleur.
-- 55 PNG RGBA de 1 254 × 1 254 pixels, fond transparent.
+- 57 PNG RGBA de 1 254 × 1 254 pixels, fond transparent.
 - Détails et ombres du tissu conservés.
 
 Ouvrir `index.html` pour comparer les templates avec les petits masques

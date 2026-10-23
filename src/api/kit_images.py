@@ -11,7 +11,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 _ASSETS = Path(__file__).resolve().parents[2] / "web" / "kits"
 _OUTPUT_SIZE = (192, 192)
 _OUTFIT_SIZE = (320, 725)
-PATTERN_COUNT = 55
+PATTERN_COUNT = 57
 
 
 def normalize_color(value: str) -> str:
@@ -107,11 +107,11 @@ def _render_kit(pattern_index: int, colors: tuple[str, str, str]) -> bytes:
 
 def _validate_pattern(pattern_index: int) -> None:
     if type(pattern_index) is not int or not 1 <= pattern_index <= PATTERN_COUNT:
-        raise ValueError("The kit pattern index must be between 1 and 55.")
+        raise ValueError(f"The kit pattern index must be between 1 and {PATTERN_COUNT}.")
 
 
 def render_kit(pattern_index: int, colors: tuple[str, str, str]) -> bytes:
-    """Transparent shirt PNG for its native CSV code (1–55)."""
+    """Transparent shirt PNG for its native CSV code."""
     _validate_pattern(pattern_index)
     return _render_kit(pattern_index, _normalize_palette(colors))
 

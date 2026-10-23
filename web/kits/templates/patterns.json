@@ -218,5 +218,13 @@
   {
     "code": 55,
     "label": "Tonal vertical stripes with pinlines"
+  },
+  {
+    "code": 56,
+    "label": "Alternating vertical panels with contrasting sleeves"
+  },
+  {
+    "code": 57,
+    "label": "Centre panel with fine blue borders"
   }
 ]

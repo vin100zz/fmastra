@@ -277,6 +277,20 @@
       "id": 55,
       "label": "Tonal vertical stripes with pinlines",
       "pattern_reference": "reference/KIT_55.png"
+    },
+    {
+      "id": 56,
+      "label": "Alternating vertical panels with contrasting sleeves",
+      "pattern_reference": "reference/KIT_56.png",
+      "edit_target": "reference/source-white.png",
+      "prompt": "Use case: precise-object-edit. Produce ONE individual football jersey RGB template at 1254 x 1254 pixels. IMAGE 1 IS THE EDIT TARGET: keep exactly this white shirt's front view, outer silhouette, shape, proportions, sleeve shape, collar, seams, fabric texture, folds, illumination and framing. IMAGE 2 IS THE COLOR-REGION MAP: transfer its red, green and blue areas faithfully onto corresponding anatomical areas of the white shirt. Match stripe/band count, relative widths, positions, direction, sleeve panels, thin pinlines and trim to IMAGE 2. Use primary RED #FF0000, GREEN #00FF00 and BLUE #0000FF; preserve realistic shaded fabric by varying intensity within those primary channels. Do not use the small mask's shape or low-resolution pixelation. Do not add or swap color zones. Actual transparent background. Remove ALL detached speckles around the shirt, including above collar and below hem; clean softly antialiased silhouette, no halo. One shirt only, no text, numbering, logos, watermark, border, collage or extra objects. Preserve white model's design and geometry. KIT_56: Follow the map exactly. Alternating broad vertical red and green panels; across the torso from viewer-left to viewer-right: red outer partial panel, broad green panel, broad red panel, green outer partial panel. The central dividing line separates green on viewer-left from red on viewer-right. Viewer-left sleeve is green; viewer-right sleeve is red. Blue narrow sleeve cuff edging. The collar follows the reference's split green/red sections with blue neckline edging. Do not mirror the map."
+    },
+    {
+      "id": 57,
+      "label": "Centre panel with fine blue borders",
+      "pattern_reference": "reference/KIT_57.png",
+      "edit_target": "reference/source-white.png",
+      "prompt": "Use case: precise-object-edit. Produce ONE individual football jersey RGB template at 1254 x 1254 pixels. IMAGE 1 IS THE EDIT TARGET: keep exactly this white shirt's front view, outer silhouette, shape, proportions, sleeve shape, collar, seams, fabric texture, folds, illumination and framing. IMAGE 2 IS THE COLOR-REGION MAP: transfer its red, green and blue areas faithfully onto corresponding anatomical areas of the white shirt. Match stripe/band count, relative widths, positions, direction, sleeve panels, thin pinlines and trim to IMAGE 2. Use primary RED #FF0000, GREEN #00FF00 and BLUE #0000FF; preserve realistic shaded fabric by varying intensity within those primary channels. Do not use the small mask's shape or low-resolution pixelation. Do not add or swap color zones. Actual transparent background. Remove ALL detached speckles around the shirt, including above collar and below hem; clean softly antialiased silhouette, no halo. One shirt only, no text, numbering, logos, watermark, border, collage or extra objects. Preserve white model's design and geometry. KIT_57: Follow the map exactly. Red torso and both red sleeves. ONE broad green central vertical panel from neckline to bottom hem, bounded on BOTH sides by very thin BLUE vertical pinstripes. The central green panel is approximately one third of the torso width; pinstripes are very narrow. Blue collar and blue thin sleeve cuff trim exactly as map. No additional stripes, no logos."
     }
   ],
   "corrections": [

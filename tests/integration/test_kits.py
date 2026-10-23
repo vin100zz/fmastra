@@ -19,7 +19,7 @@ def client(tmp_path_factory):
         yield client
 
 
-@pytest.mark.parametrize("kit_id,atlas", [(0, 1), (1, 1), (16, 16), (28, 28), (5, 5), (55, 55), (999, 1)])
+@pytest.mark.parametrize("kit_id,atlas", [(0, 1), (1, 1), (16, 16), (28, 28), (5, 5), (55, 55), (56, 56), (57, 57), (999, 1)])
 def test_csv_codes_select_the_correct_image_without_a_running_game(client, kit_id, atlas):
     response = client.get(f"/kits/{kit_id}.png", params={"major": "FFFFFF", "minor": "004170", "third": "DA291C"})
     assert response.status_code == 200

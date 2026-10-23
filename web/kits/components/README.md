@@ -9,7 +9,7 @@ Les tenues domicile et extérieur utilisent indépendamment les colonnes `HomeKi
 Les IDs de short et de chaussettes sont conservés ; seul le modèle fourni de chaque
 pièce est disponible actuellement. Leurs deux zones n'utilisent pas de troisième couleur.
 
-Les 55 maillots sont composés avec ces pièces dans `../outfits/`. Les exemples
+Les 57 maillots sont composés avec ces pièces dans `../outfits/`. Les exemples
 `example-home.png` et `example-away.png` montrent les palettes du PSG et servent
 au spécimen de la charte. Pour régénérer les exports, depuis la racine :
 

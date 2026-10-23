@@ -57,7 +57,7 @@ def test_isolation_removes_detached_speckles_and_preserves_soft_edges():
     assert result.getpixel((0, 5)) == (100, 20, 10, 80)
 
 
-@pytest.mark.parametrize("pattern_index", [1, 16, 28, 55])
+@pytest.mark.parametrize("pattern_index", [1, 16, 28, 55, 56, 57])
 def test_rendered_png_has_bounded_size_and_source_proportions(pattern_index):
     source = _load_pattern(pattern_index)
     expected = recolor_pattern(source, CLUB_COLORS)
@@ -83,7 +83,7 @@ def test_equivalent_palettes_share_bounded_render_cache():
     assert _load_pattern.cache_info().maxsize == 8
 
 
-@pytest.mark.parametrize("pattern_index", [0, 56, -1, 1.0, "1", True, None])
+@pytest.mark.parametrize("pattern_index", [0, 58, -1, 1.0, "1", True, None])
 def test_invalid_pattern_indices_are_rejected(pattern_index):
     with pytest.raises(ValueError, match="pattern index"):
         render_kit(pattern_index, PRIMARIES)

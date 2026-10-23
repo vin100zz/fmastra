@@ -1,6 +1,6 @@
 # Tenues des clubs
 
-Les 55 maillots RGB de `templates/KIT_1.png` à `KIT_55.png` sont associés directement
+Les 57 maillots RGB de `templates/KIT_1.png` à `KIT_57.png` sont associés directement
 aux IDs du CSV. Les codes inconnus utilisent le modèle uni (1). `patterns.png`
 conserve la planche historique de six motifs ; elle n'est plus utilisée au rendu.
 
@@ -38,7 +38,7 @@ concernée ou activent les couleurs de repli décrites ci-dessus. Les PNG d’ex
 de la galerie restent des exports à régénérer avec `tools/export_outfits.py`.
 
 La galerie `outfits/index.html` et `reports/kit-outfits-rgb.zip` sont produits par
-`tools/export_outfits.py`. Les 55 tenues RGB et six exemples domicile/extérieur
+`tools/export_outfits.py`. Les 57 tenues RGB et six exemples domicile/extérieur
 (PSG, OM et Lens) sont inclus. Voir `components/README.md` pour les pièces fournies.
 
 Pour étendre la collection, ajouter un fichier `templates/KIT_{id}.png`, mettre à
