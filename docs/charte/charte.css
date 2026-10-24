@@ -391,7 +391,7 @@
 .menu>p{display:flex;align-items:center;flex:none;height:var(--h-row);padding:0 var(--s3)}
 .crest{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;font:700 semi-condensed var(--fs-small)/1 var(--display)}
 .crest.large{width:64px;height:64px;border:3px solid #fff;box-shadow:0 1px 4px #0a141e38;font-size:var(--fs-title)}
-/* A selection's local logo uses the club's white disc and inset; its flag is the fallback. */
+/* A crest in a disc, where a band keeps one (a match's): on white, within its inset. A flag fills the disc. */
 .crest.large:has(>.crest-logo){background:#fff}
 .crest.large>img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .crest.large>.crest-logo{width:calc(100% - 14px);height:calc(100% - 14px);border-radius:0;object-fit:contain}
@@ -456,7 +456,7 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .mark.on{color:var(--good)}.mark.off{color:var(--bad)}
 
 /* A club's header: the band in its colours, its tabs under it. Nothing stands over the name: what places it follows it
-   on its line, smaller (a club's league after its flag, a player's club; nothing after a selection's). */
+   on its line, smaller (a club's league after its flag, a player's club; a selection's flag, as high as its capitals). */
 .hero{position:relative;display:flex;align-items:center;gap:var(--s4);flex:none;height:88px;padding:0 var(--s4) 0 var(--s3);overflow:hidden}
 .hero-sash{position:absolute;inset:0;clip-path:polygon(54% 0,61% 0,53% 100%,46% 100%)}
 .hero-sash.thin{clip-path:polygon(62.5% 0,64% 0,56% 100%,54.5% 100%)}
@@ -466,6 +466,11 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .hero-context{display:flex;align-items:baseline;gap:var(--s2);font:700 semi-condensed var(--fs-title)/24px var(--display);opacity:.85}
 /* A player's number before his name, as large, veiled. */
 .hero-number{flex:none;font:700 semi-condensed var(--fs-hero)/1 var(--display);opacity:.55}
+/* The crest of a club or a selection alone on the band, without a disc, under the kits' shadow: whatever its shape, the
+   area of a square of 64, 72 high and 128 wide at most. `--r` is its width over its height (the PNG cut to its drawing). */
+.hero-logo{--r:1;display:block;flex:none;width:64px;width:min(64px*sqrt(var(--r)),72px*var(--r),128px);height:auto;aspect-ratio:var(--r);filter:drop-shadow(0 1px 2px #0a141e59)}
+/* A selection's flag follows its name: as high as its capitals (28 of its 40), on its baseline, 16 after it. */
+.hero-name>.hero-flag{flex:none;width:37px;height:28px;margin-left:var(--s1);object-fit:cover;box-shadow:0 0 0 1px #0a141e1f,0 1px 2px #0a141e59}
 .hero .tiles{margin-left:auto}
 .hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
 /* A competition's header is a club's too. The emblem of a European cup, of the Euro or of the World Cup stands alone on

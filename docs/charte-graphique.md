@@ -137,7 +137,7 @@ où le fond est déjà jaune.
 | Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut |
 | Champ | `.field` | Recherche, liste déroulante |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
-| En-tête de club, de sélection | `.hero`, `.hero-name`, `.hero-context` | Bandeau de 88 aux couleurs du club ou de la sélection, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
+| En-tête de club, de sélection | `.hero`, `.hero-logo`, `.hero-name`, `.hero-context`, `.hero-flag` | Bandeau de 88 aux couleurs du club ou de la sélection, son écusson seul, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent ; sans barre, la ligne du match au-dessus des temps forts. Voir « En-tête d'un match » |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
@@ -375,9 +375,19 @@ Sans palette de maillot, la tenue domicile est grise.
 
 La fiche d'un club, d'une sélection, d'un joueur, d'une compétition s'ouvre sur
 le même bandeau (`.hero`) : 88 de haut, aux couleurs du club, de la sélection ou
-de la compétition, le disque à gauche, les tuiles à droite. Tout nouvel en-tête
+de la compétition, l'écusson à gauche, les tuiles à droite. Tout nouvel en-tête
 le reprend.
 
+- **Écusson** (`.hero-logo`) : celui d'un club, le logo d'une sélection, seul
+  sur le bandeau, sans disque, sous l'ombre des tenues (`0 1px 2px`, encre à
+  35 %). Quelle que soit sa forme, il a l'aire d'un carré de 64, sans dépasser
+  72 de haut ni 128 de large : un écusson rond fait 64 × 64, celui de Brann,
+  trois fois et demie plus large que haut, 118 × 34, celui de Tottenham, deux
+  fois plus haut que large, 31 × 72. Les PNG sont rognés à ce qu'ils dessinent
+  (`tools/trim_logos.py`) : leur rapport est celui de l'écusson. Sans écusson, ou
+  s'il ne se charge pas, le disque de 64 cerclé de blanc garde les initiales sur
+  les couleurs du club. Le bandeau d'un match garde ses disques (voir « En-tête
+  d'un match ») ; un championnat, le drapeau de son pays sur le disque.
 - **Nom** (`.hero-name`) : en 40, sur une seule ligne. Rien n'est écrit
   au-dessus de lui, ni dessous.
 - **À sa suite** (`.hero-context`) : là où il joue, sur la même ligne et la
@@ -395,7 +405,7 @@ le reprend.
 | Bandeau | À la suite du nom |
 |---|---|
 | Club | Le drapeau de son pays, puis son championnat : deux liens, le drapeau vers la sélection du pays, le championnat vers sa fiche. Hors championnat, son pays après son drapeau : un seul lien, l'ensemble vers la sélection |
-| Sélection | Rien : son nom seul |
+| Sélection | Son drapeau (`.hero-flag`), 37 × 28, la hauteur des capitales du nom, sur sa ligne de base, à 16 de lui, sous l'ombre de l'écusson ; sans lien ni infobulle, sur sa propre page |
 | Joueur | Son club, lien vers sa fiche ; « Libre » sans club |
 | Compétition | Rien : son nom seul ; l'édition d'une compétition des sélections est au pas de saison |
 
@@ -415,8 +425,8 @@ ses pairs par un seul contrôle, à gauche de son bandeau (`.entity-nav`) : le p
 de saison, en colonne. Une flèche vers le pair d'avant, trois traits qui ouvrent
 la liste de tous, une flèche vers le suivant. Un groupe d'un seul n'en a pas.
 
-- **Sans bordure ni fond** : une colonne de trois cases de 28 sur 22, devant le
-  disque ou l'emblème.
+- **Sans bordure ni fond** : une colonne de trois cases de 28 sur 22, devant
+  l'écusson, le disque ou l'emblème.
 - **Flèches** : les chevrons du pas de saison (16, trait de 2.4), vers le haut et
   vers le bas, dans le sens de la liste. Celle qui n'a plus rien au-delà reste à
   sa place, estompée (30 %).
@@ -448,8 +458,8 @@ la liste de tous, une flèche vers le suivant. Un groupe d'un seul n'en a pas.
 ### En-tête d'un joueur
 
 La fiche d'un joueur s'ouvre sur le bandeau de son club (`.hero`) : ses
-couleurs, son écusson sur le disque. Un joueur sans club a un bandeau neutre,
-sans disque.
+couleurs, son écusson seul (voir « Bandeau »). Un joueur sans club a un bandeau
+neutre, sans écusson.
 
 - **Numéro** (`.hero-number`) : son numéro de maillot, devant son nom, sur la
   même ligne de base, à 12 de lui : en 40 comme lui, dans l'encre du bandeau
@@ -1245,7 +1255,8 @@ sa pastille n'en est pas un (ci-dessus), ni :
   vainqueur) et dans le compte rendu de ses matches ; ailleurs, le pays d'un club
   se lit sur sa fiche.
 - Le nom d'un pays suit toujours son drapeau (16 × 12 ; 24 × 18 dans le bandeau
-  d'un match). Une nationalité en colonne : le drapeau, puis le code de trois
+  d'un match), sauf dans le bandeau de sa sélection, où le drapeau suit le nom, à
+  la hauteur de ses capitales (voir « Bandeau »). Une nationalité en colonne : le drapeau, puis le code de trois
   lettres. Un joueur n'y a qu'une
   nation, celle de sa sélection, à défaut la première de ses nationalités ; les
   autres ne sont ni comptées ni nommées : elles se lisent sur sa fiche.
@@ -1259,9 +1270,9 @@ sa pastille n'en est pas un (ci-dessus), ni :
   une ligne de la recherche globale ; un match de la Vue d'ensemble d'un club.
 - Une sélection a deux couleurs, celles de son maillot, comme un club : elles
   font son bandeau et ses maillots sur un terrain. Son en-tête est celui d'un
-  club ; sur sa fiche, son logo PNG transparent occupe le disque blanc avec la même
-  marge et sans déformation que l’écusson d’un club. Sans logo ou si son chargement
-  échoue, le drapeau remplit le disque ; sans drapeau, les initiales restent visibles. Dans une liste,
+  club ; sur sa fiche, son logo PNG transparent se tient seul sur le bandeau,
+  comme l’écusson d’un club, et son drapeau suit son nom. Sans logo ou si son
+  chargement échoue, ses initiales restent sur le disque. Dans une liste,
   son nom suit son drapeau, jamais une pastille de couleurs.
 - Une liste de joueurs d'une sélection donne le club de chacun là où celle d'un
   club donne sa nationalité.
@@ -1303,7 +1314,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
 | Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`), le mercato de la saison (`marketCard`, lu dans `/clubs/{id}/transferts`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
-| Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son logo sur le disque (drapeau de secours) ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
+| Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son logo seul, son drapeau après son nom (initiales sur le disque sans logo) ; la liste d'un club et ses widgets (calendrier, dernier onze, groupe) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
@@ -1328,6 +1339,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Places européennes | Dans un championnat, le rang d'une place européenne à la couleur de sa coupe (C1 bleu, C3 violet, C4 sarcelle), en pointillé sous réserve de la coupe nationale, à la place du bleu unique de l'Europe ; son infobulle et la légende des coupes dans l'en-tête de la carte (`europePlace`, `europeTip`, `europeLegend`, `web/ui.js`), à la place de « 3 points pour une victoire ». L'API donne la coupe de chaque ligne (`europe`, `european_places`, `src/api/views.py`), le vainqueur de la coupe nationale compris |
 | Numéros de maillot | Sur les terrains de la composition, du compte rendu d'un match, du dernier onze et du direct, le numéro du joueur à la place de son poste, en 13 (`shirtLabel`, `kitShirt`, `.kit-shirt.number`, `web/ui.js`) : celui qu'il portait ce jour-là pour un match joué (`shirts` du résultat, `match_shirt`, `src/api/views.py`), le poste à défaut (place vide, renfort temporaire, sélection). Le bandeau d'un joueur porte son numéro devant son nom, en 40 et voilé (`playerHero`, `web/club-hero.js` ; `.club-hero-number`). Dans Actualités, le maillot du club sous le titre d'une arrivée, et les deux maillots d'un changement de numéro (`clubShirt`, `web/news.js` ; `.kit-shirt.former`, `.shirt-change`) |
 | Attributs | Sur la fiche et dans l'aperçu d'un joueur, une colonne à la mesure du plus long nom de sa section et de sa pastille (`--attribute-column`, `web/charte.css`), à la place des 165 de toutes les sections sur la fiche et des deux colonnes fixes de l'aperçu : dans l'aperçu, la section Jeu passe sur une colonne, ses lignes et celles des attributs à 26 |
+| Écusson sans disque | Sur le bandeau d'un club, d'une sélection, d'un joueur et de « Nouvelle partie », l'écusson seul, à l'aire d'un carré de 64 (72 de haut, 128 de large au plus), à la place du disque blanc : son rapport lu sur l'image une fois chargée (`initHeroCrests`, `web/club-hero.js` ; `--r`, `web/charte.css`), le disque et ses initiales revenant pour un écusson absent ou qui ne se charge pas (le `onerror` en ligne, bloqué par la CSP, est retiré). Les PNG de `web/clubs` et `web/nations` rognés à ce qu'ils dessinent (`tools/trim_logos.py`, empreintes de `web/nations/sources.json`). Le drapeau d'une sélection après son nom, 37 × 28, à 16 (`.club-hero-flag`), plus dans le disque. Le bandeau d'un match et le disque d'un championnat ne changent pas |
 | Liens des pastilles et des drapeaux | La pastille d'une compétition mène à sa page, le drapeau d'un pays à sa sélection, sur tous les écrans (`competitionBadge`, `competitionHref`, `nationFlag`, `nationBadge`, `nationHref`, `web/ui.js`) : le drapeau d'un club dans une coupe d'Europe (`clubLink`, option `flag`), la nationalité d'une liste de joueurs, la tuile de sélection d'un joueur jamais appelé (`selectionTile`, `web/club-hero.js`), la carrière d'un joueur, le calendrier d'un club ou d'une sélection, la ligne d'un match. L'option `link` les garde sans lien dans un filtre et dans ce qui est déjà un lien. L'API donne la sélection de chaque pays (`selection_id` de `/api/nations`), table relue à chaque changement de partie (`web/app.js`) |
 
 Ce qui reste :
@@ -1360,6 +1372,10 @@ proposition J) : <https://claude.ai/artifact/5vwPBqcKJkDe99jEWJZZwv>.
 L'en-tête d'une compétition aussi (proposition B, le drapeau sur le disque pour
 un championnat ou une coupe nationale, une seule tuile) : <https://claude.ai/artifact/G4otUdvsW2uTSohRKR7AUk> ;
 sur son écran `/europe`, il remplace celui du premier canevas.
+L'écusson sans disque a la sienne (écusson A, « Ombre », aire de 64 ; drapeau
+d'une sélection 2, « À la hauteur des capitales », écart porté à 16 à
+l'intégration) : <https://claude.ai/artifact/NssfUamcpRBg6QrstRdPKS>, la version 1
+pour l'écusson, la version 2 pour le drapeau.
 La navigation d'un bandeau a la sienne (proposition A, « Colonne », l'encre sous
 un contraste de 3) : <https://claude.ai/artifact/8489MjUnN55vhza5VESzc3> ; les
 bandeaux des canevas antérieurs montrent l'ancien bloc.

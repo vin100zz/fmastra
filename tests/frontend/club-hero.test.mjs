@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubHero,clubTiles,creationHero,nationHero,competitionHero,heroColors} from '../../web/club-hero.js';
+import {clubHero,clubTiles,creationHero,nationHero,competitionHero,heroColors,initHeroCrests} from '../../web/club-hero.js';
 import {setNations} from '../../web/ui.js';
 
 const vars=style=>Object.fromEntries(style.split(';').filter(Boolean).map(item=>item.split(':')));
@@ -145,23 +145,43 @@ test('the tabs close the header, the open one marked',()=>{
  assert.match(unselected,/<h1>Lens &lt;RC&gt;<\/h1><span class="club-hero-context"><span class="nation" title="France"><img[^>]*><\/span>France<\/span><\/div>/);
 });
 
-test('a selection wears the same header: its kit on the band, its logo on the disc, its strength alone on the right',()=>{
+test('a selection wears the same header: its kit on the band, its logo alone, its flag after its name, its strength alone on the right',()=>{
  const england={id:-1007,name:'Angleterre',nation:'ENG',federation:'Europe',strength:83.14,major_color:'#ffffff',minor_color:'#0b1f4b',competition:{year:2032,name:'Euro 2032',stage:'Phase finale'}};
  setNations({ENG:{name:'Angleterre',display_code:'ENG',flag:'gb-eng'}});
  const html=nationHero(england,{lead:'<div class="entity-nav"></div>',menu,section:'squad'});
  setNations({});
  // A white shirt would melt into the page: the second colour fills the band, as for a club.
  assert.match(html,/^<header class="club-hero" style="--hero-field:#0b1f4b;--hero-ink:#ffffff;--hero-sash:#ffffff;/);
- assert.match(html,/<div class="club-hero-main"><div class="entity-nav"><\/div><div class="crest club-hero-crest">A<img class="crest-flag" src="\/flags\/gb-eng\.svg" alt=""><img class="crest-logo" src="\/nations\/england\.png" alt="" data-nation-logo><\/div>/);
- // Its name alone: neither its confederation nor the edition it plays follows it.
- assert.match(html,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Angleterre<\/h1><\/div><\/div>/);assert.doesNotMatch(html,/club-hero-context|Europe|Euro 2032|Phase finale/);
+ // Its logo stands where a club's crest does, its initial under it for when it fails; the flag is no longer in the disc.
+ assert.match(html,/<div class="club-hero-main"><div class="entity-nav"><\/div><div class="crest club-hero-crest">A<img class="crest-logo" src="\/nations\/england\.png" alt="" data-nation-logo><\/div>/);
+ // Its flag follows its name: neither its confederation nor the edition it plays.
+ assert.match(html,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Angleterre<\/h1><img class="club-hero-flag" src="\/flags\/gb-eng\.svg" alt=""><\/div><\/div>/);
+ assert.doesNotMatch(html,/club-hero-context|crest-flag|Europe|Euro 2032|Phase finale/);
  assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Force<\/span><strong>83\.1<\/strong><\/div><\/div>/);
  assert.match(html,/<a class="active" href="#\/international\/nation\/-1007\/squad" aria-current="page">Effectif<\/a><a class="" href="#\/international\/nation\/-1007\/calendar">Calendrier<\/a>/);
  // What steps through its editions closes its row of tabs, as a club's seasons do.
  assert.match(nationHero(england,{menu,section:'calendar',tools:'<b>pas</b>'}),/<\/nav><div class="tools"><b>pas<\/b><\/div><\/div><\/header>$/);
- // A nation absent from the logo collection and without a flag keeps its initial.
+ // A nation absent from the logo collection and without a flag keeps its initial, and nothing follows its name.
  const bare=nationHero({...england,nation:'UNKNOWN',major_color:null,minor_color:null,competition:null},{menu,section:'history'});
  assert.match(bare,/^<header class="club-hero plain">/);assert.match(bare,/<div class="crest club-hero-crest">A<\/div>/);
+ assert.match(bare,/<h1>Angleterre<\/h1><\/div>/);
+});
+
+test('a crest on a band gives the sheet its ratio once loaded; one that fails leaves the disc and its initials',()=>{
+ const listeners={};
+ initHeroCrests({addEventListener(type,callback,capture){assert.equal(capture,true);listeners[type]=callback;}});
+ const crest=(matching,size={})=>{
+  const img={...size,removed:false,style:{props:{},setProperty(name,value){this.props[name]=value;}},
+   matches:selector=>matching&&selector==='.club-hero-crest>.crest-logo',remove(){img.removed=true;}};
+  return img;
+ };
+ // Brann's crest, three times and a half as wide as high; a picture elsewhere on the page is left alone.
+ const wide=crest(true,{naturalWidth:372,naturalHeight:108}),other=crest(false,{naturalWidth:10,naturalHeight:10});
+ listeners.load({target:wide});listeners.load({target:other});
+ assert.equal(wide.style.props['--r'],'3.444');assert.deepEqual(other.style.props,{});
+ const broken=crest(true),elsewhere=crest(false);
+ listeners.error({target:broken});listeners.error({target:elsewhere});
+ assert.equal(broken.removed,true);assert.equal(elsewhere.removed,false);
 });
 
 const sections=[['table','Classement'],['history','Historique']];

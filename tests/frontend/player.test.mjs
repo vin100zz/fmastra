@@ -173,11 +173,11 @@ test('player page is one screen without tabs or stat cards: the header of his cl
  assert.match(html,/Serie A · C1/);
 });
 
-test('the header takes the colours of his club, its crest on the disc, and writes the club after his name',async()=>{
+test('the header takes the colours of his club, its crest, and writes the club after his name',async()=>{
  const club={id:7,name:'Lens',major_color:'#F8D000',minor_color:'#E00000'};
  const head=header((await render({...detail,club})).html);
  assert.match(head,/^<header class="club-hero" style="--hero-field:#F8D000;--hero-ink:#111418;--hero-sash:#E00000;/);
- assert.match(head,/<div class="crest club-hero-crest">L<img class="crest-logo" src="\/crests\/TCM1_7\.png" alt="" loading="lazy" onerror="this\.remove\(\)"><\/div>/);
+ assert.match(head,/<div class="crest club-hero-crest">L<img class="crest-logo" src="\/crests\/TCM1_7\.png" alt="" loading="lazy"><\/div>/);
  assert.match(head,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Test Joueur<\/h1><a class="club-hero-context" href="#\/club\/7">Lens<\/a><\/div><\/div>/);
  // Without a club: a plain band, no disc, « Libre » where the club stands.
  const free=header((await render({...detail,club:null})).html);

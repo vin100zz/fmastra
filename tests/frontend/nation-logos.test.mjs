@@ -6,7 +6,7 @@ import {nationLogoUrl,initNationLogos} from '../../web/nation-logos.js';
 import {nationHero} from '../../web/club-hero.js';
 import {setNations} from '../../web/ui.js';
 
-test('every source logo is a local 400px PNG and each mapped nation resolves to it',()=>{
+test('every source logo is a local PNG cut to what it draws, 400 at most, and each mapped nation resolves to it',()=>{
  const manifest=JSON.parse(readFileSync(new URL('../../web/nations/sources.json',import.meta.url)));
  assert.equal(manifest.logos.length,228);
  assert.equal(new Set(manifest.logos.map(row=>row.file)).size,228);
@@ -14,7 +14,9 @@ test('every source logo is a local 400px PNG and each mapped nation resolves to 
  for(const row of manifest.logos){
   const png=readFileSync(new URL(`../../web/nations/${row.file}`,import.meta.url));
   assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
-  assert.equal(png.readUInt32BE(16),400);assert.equal(png.readUInt32BE(20),400);
+  // Cut to its drawing by tools/trim_logos.py: its own ratio, the 400 of the source square at most.
+  const [width,height]=[png.readUInt32BE(16),png.readUInt32BE(20)];
+  assert.ok(Math.max(width,height)<=400&&Math.min(width,height)>0,row.file);
   assert.equal(png[25],6); // RGBA, matching club crests.
   assert.equal(createHash('sha256').update(png).digest('hex'),row.sha256);
   for(const code of row.codes){
@@ -32,14 +34,16 @@ test('Mali, Myanmar and the two Saint Martins have distinct logos; unknown codes
  for(const code of [null,undefined,'UNKNOWN','../france','toString'])assert.equal(nationLogoUrl(code),'');
 });
 
-test('a selection without a collected logo keeps its flag, or initials without a flag',()=>{
+test('a selection without a collected logo keeps its initials on the disc, its flag after its name',()=>{
  setNations({X2L:{name:'Monaco',flag:'mc'}});
  try{
   const render=nation=>nationHero({id:-1,name:'Monaco',nation,strength:32},{menu:[],section:'squad'});
   const flag=render('X2L');
-  assert.match(flag,/class="crest-flag" src="\/flags\/mc.svg"/);
-  assert.doesNotMatch(flag,/class="crest-logo"/);
+  assert.match(flag,/<div class="crest club-hero-crest">M<\/div>/);
+  assert.match(flag,/<h1>Monaco<\/h1><img class="club-hero-flag" src="\/flags\/mc.svg" alt="">/);
+  assert.doesNotMatch(flag,/class="crest-logo"|class="crest-flag"/);
   assert.match(render('UNKNOWN'),/<div class="crest club-hero-crest">M<\/div>/);
+  assert.doesNotMatch(render('UNKNOWN'),/club-hero-flag/);
  }finally{setNations({});}
 });
 

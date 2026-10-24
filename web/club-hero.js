@@ -35,17 +35,30 @@ const tile=(label,value,extra='',title='')=>`<div class="club-hero-tile"${title?
 const column=(label,value,title='',hue=null)=>`<div${hue==null?'':` class="graded" style="--hue:${hue}"`}${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
 const split=columns=>`<div class="club-hero-tile split">${columns}</div>`;
 const signed=value=>value>0?`+${n(value)}`:value<0?`−${n(-value)}`:'0';
-// What fills the disc of a club: its initials, under its crest when the game has one.
-const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()">`;
+// What fills the disc of a club: its initials, under its crest when the game has one. On a band the crest stands alone, the
+// disc gone (web/charte.css); a crest that fails to load is taken away and the disc comes back (`initHeroCrests`).
+const clubCrest=club=>`${initials(club.name)}<img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy">`;
+
+// A crest on a band takes the area of a square of 64 whatever its shape: the sheet reads its ratio (`--r`) off the picture
+// once it is loaded; one that fails is removed, which brings the disc and its initials back. Captured on `root`: the
+// application's CSP blocks inline handlers.
+export function initHeroCrests(root){
+ root.addEventListener('load',event=>{
+  const img=event.target;
+  if(img.matches?.('.club-hero-crest>.crest-logo')&&img.naturalHeight)img.style.setProperty('--r',(img.naturalWidth/img.naturalHeight).toFixed(3));
+ },true);
+ root.addEventListener('error',event=>{
+  if(event.target.matches?.('.club-hero-crest>.crest-logo'))event.target.remove();
+ },true);
+}
 const clubKit=club=>{
  const outfits=[['Domicile',club.kit_url],['Extérieur',club.away_kit_url]].filter(([,url])=>url);
  return outfits.length?`<div class="club-hero-kits">${outfits.map(([label,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}" aria-label="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}"><img class="club-hero-kit" src="${e(url)}" alt="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}" width="48" height="80"></a>`).join('')}</div>`:'';
 };
-// A selection uses its local logo on its own page, with its flag (then initials) underneath as fallback.
-const nationCrest=(nation,{logo=false}={})=>{
- const flag=flagUrl(nation.nation),crest=logo?nationLogoUrl(nation.nation):'';
- return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`
-  +`${crest?`<img class="crest-logo" src="${e(crest)}" alt="" data-nation-logo>`:''}`;
+// The disc of a country, in a match or a competition: its flag over its initials.
+const nationCrest=nation=>{
+ const flag=flagUrl(nation.nation);
+ return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`;
 };
 
 // The band and what closes it, a club's, a selection's, a player's or a competition's: `colors` is what heroColors gives,
@@ -111,11 +124,14 @@ export function creationHero(club){
   after:context(`${nationFlag(club.nation_code,{link:false})}${e(club.competition)}`),tiles:''});
 }
 
-// The header of a selection's page, a club's: the band in the colours of its kit, its logo on the disc, its name alone,
-// then its strength. `lead` steps between the selections of the confederation, `tools` close the row of tabs.
+// The header of a selection's page, a club's: the band in the colours of its kit, its logo alone (its initials on the disc
+// without one), its name then its flag, as high as its capitals, then its strength. `lead` steps between the selections of
+// the confederation, `tools` close the row of tabs.
 export function nationHero(nation,{lead='',menu,section,tools=''}){
+ const flag=flagUrl(nation.nation),logo=nationLogoUrl(nation.nation);
  return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section,tools),
-  crest:nationCrest(nation,{logo:true}),tiles:tile('Force',n(nation.strength))});
+  crest:`${initials(nation.name)}${logo?`<img class="crest-logo" src="${e(logo)}" alt="" data-nation-logo>`:''}`,
+  after:flag?`<img class="club-hero-flag" src="${e(flag)}" alt="">`:'',tiles:tile('Force',n(nation.strength))});
 }
 
 // The emblem of a competition that has one, by the two characters of its badge.
