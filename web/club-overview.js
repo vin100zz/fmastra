@@ -44,36 +44,6 @@ export function financesBlock(club,data,{balance=false}={}){
   `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
 }
 
-// The depth of each position on a pitch attacking to the right (0 the club's own goal line, 100 the other one), as the match
-// pitch places them from its bottom; full-backs and centre-backs form one line, spread from the left wing (top) to the right one.
-const DEPTH={GB:10,DC:25,DG:31,DD:31,MDC:41,MC:53,MOC:67,AILG:78,AILD:78,BU:86};
-const LATERAL={DG:0,DC:1,DD:2};
-export function sidePitch(players,club,label){
- const line=player=>['DG','DC','DD'].includes(player.position)?'defence':DEPTH[player.position]??55;
- const rows={};players.forEach(player=>(rows[line(player)]??=[]).push(player));
- Object.values(rows).forEach(row=>row.sort((a,b)=>(LATERAL[a.position]??1)-(LATERAL[b.position]??1)));
- // Two lines of one player each in the middle would write their names over each other: they step aside, one up, one down.
- const alone=Object.values(rows).filter(row=>row.length===1&&['MDC','MC','MOC'].includes(row[0].position)).sort((a,b)=>DEPTH[a[0].position]-DEPTH[b[0].position]);
- const aside=new Map(alone.length>1?alone.map((row,index)=>[row[0],index%2?62:38]):[]);
- const marks=players.map(player=>{
-  const row=rows[line(player)];
-  let across=aside.get(player)??50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));
-  if(player.position==='AILG')across=15;if(player.position==='AILD')across=85;
-  const shirt=kitShirt(player.temporary?null:club.major_color,club.minor_color,shirtLabel(player));
-  const tag=player.temporary?'span':'a',link=player.temporary?' title="Joueur temporaire"':` href="#/player/${player.id}" title="${e(player.name)}"`;
-  return `<${tag} class="pitch-player"${link} style="left:${DEPTH[player.position]??55}%;top:${across}%">${shirt}${playerBlock(e(shortName(player.name,player.short)))}</${tag}>`;
- }).join('');
- return `<div class="pitch lying" aria-label="${e(label)}">${PITCH_BOXES}${marks}</div>`;
-}
-
-// `none` says that no eleven is kept yet, in the words of the page: a club's by default.
-export function lineupBlock(club,lineup,none='Le club n’a pas encore de composition enregistrée.'){
- if(!lineup)return card('Dernier onze aligné',empty(none,'Aucun match joué'),'','lineup-card');
- const {match}=lineup,home=match.home.id===club.id,opponent=home?match.away:match.home;
- const result=`<a class="lineup-match" href="#/match/${match.id}"><span class="club-match-score ${match.outcome}" title="${outcomeLabels[match.outcome]}">${match.score.join(' – ')}</span><span>${home||match.international&&match.neutral?'contre':'à'} ${sideName(opponent)}<small>${shortDate(match.date)} · ${e(match.competition)} · ${e(match.round_label)}</small></span></a>`;
- return card('Dernier onze aligné',result+sidePitch(lineup.players,club,`Onze aligné par ${club.name}`),`<a href="#/match/${match.id}" aria-label="Voir le match">Voir →</a>`,'lineup-card');
-}
-
 // `rows` of the club's league around its own (five by default, the whole league when it has room), titled with the
 // competition and the last round counted.
 export function standingsExtract(club,standings,rows=5){

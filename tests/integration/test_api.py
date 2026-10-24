@@ -680,7 +680,7 @@ def played(config, tmp_path_factory):
         yield client
 
 
-def test_club_overview_summarises_calendar_finances_transfers_and_last_lineup(played):
+def test_club_overview_summarises_calendar_and_finances(played):
     world = played.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}
     club = next(iter(world.active_clubs()))
@@ -698,12 +698,8 @@ def test_club_overview_summarises_calendar_finances_transfers_and_last_lineup(pl
     finances = played.get(f"/api/clubs/{club.id}/finances").json()
     assert overview["finances"] == {key: finances[key] for key in overview["finances"]}
     assert {"transfer_budget", "reserved_transfer_budget", "wage_bill", "wage_cap"} <= overview["finances"].keys()
-    # The transfers have their own tab; the landing view no longer summarises them.
-    assert set(overview) == {"calendar", "finances", "lineup", "eleven"}
-    lineup = overview["lineup"]
-    assert lineup["match"]["id"] == last[0]["id"] and len(lineup["players"]) == 11
-    detail = played.get(f"/api/matches/{lineup['match']['id']}").json()["result"]
-    assert lineup["players"] == detail[f"{lineup['side']}_lineup"]
+    # The transfers have their own tab and the last eleven its match; the landing view summarises neither.
+    assert set(overview) == {"calendar", "finances", "eleven"}
     assert played.get("/api/clubs/999999999/apercu").status_code == 404
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
@@ -827,12 +823,11 @@ def test_the_lineup_screen_scouts_the_next_opponent(played):
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
-def test_club_overview_before_any_match_has_no_lineup(client):
+def test_club_overview_before_any_match_has_only_matches_to_come(client):
     world = client.app.state.game.world
     club = next(iter(world.active_clubs()))
     overview = client.get(f"/api/clubs/{club.id}/apercu").json()
     assert overview["calendar"]["last"] == [] and len(overview["calendar"]["next"]) == 3
-    assert overview["lineup"] is None
 
 
 def test_the_eleven_of_a_club_is_who_started_most_at_each_place_of_the_shape_it_fielded_most(played):

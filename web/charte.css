@@ -177,9 +177,9 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .europe-legend>.qualification-playoff::before{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
 
 /* Lines of a list: a match, a move, a fact. */
-.club-match,.moves li,.club-overview .fact,.fact,.fixture,.league-summary-grid .fixture,.lineup-match,.bench-slot,.timeline-row,.highlight-row,.journal-row p,.news-widgets .moves li,.calendar-row,.movement-row{font-size:var(--fs-body)}
+.club-match,.moves li,.club-overview .fact,.fact,.fixture,.league-summary-grid .fixture,.bench-slot,.timeline-row,.highlight-row,.journal-row p,.news-widgets .moves li,.calendar-row,.movement-row{font-size:var(--fs-body)}
 .club-match{min-height:var(--h-row);padding:0;grid-template-columns:48px minmax(0,1fr) auto;gap:var(--s2)}
-.club-match-date,.club-match-who small,.moves small,.lineup-match small,.fixture-scorers,.fixture-date,.journal-row small,.highlight small,.timeline-row small,.calendar-round,.calendar-opponent small,.status{font-size:var(--fs-small)}
+.club-match-date,.club-match-who small,.moves small,.fixture-scorers,.fixture-date,.journal-row small,.highlight small,.timeline-row small,.calendar-round,.calendar-opponent small,.status{font-size:var(--fs-small)}
 .status{font-size:var(--fs-body)}
 .fact{min-height:var(--h-row);padding:0}
 /* A match on a line of a list: the side at home, the score, the other side, each mark against the score; under each side its
@@ -481,17 +481,12 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .result b{font-weight:600;color:var(--strong)}
 .result.chosen{background:var(--own-row)}
 
-/* The pitch: one grass, one set of lines, upright (the side attacks upwards) or lying (to the right, the left-back on top). */
-.pitch,.lineup-card .pitch,.pitch.ratings{position:relative;flex:none;min-height:0;height:auto;aspect-ratio:68/88;margin:var(--s3);border:0;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
+/* The pitch: one grass, one set of lines, the side attacking upwards. */
+.pitch,.pitch.ratings{position:relative;flex:none;min-height:0;height:auto;aspect-ratio:68/88;margin:var(--s3);border:0;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
 .pitch::before{content:"";position:absolute;inset:8px;border:1.5px solid var(--pitch-line);background:linear-gradient(0deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px));pointer-events:none}
 .pitch::after{content:"";position:absolute;left:50%;top:50%;width:22%;height:auto;aspect-ratio:1;transform:translate(-50%,-50%);border:1.5px solid var(--pitch-line);border-radius:50%;pointer-events:none}
 .pitch-box{position:absolute;left:50%;bottom:8px;width:56%;height:15%;transform:translateX(-50%);border:1.5px solid var(--pitch-line);border-bottom:0;pointer-events:none}
 .pitch-box.far{bottom:auto;top:8px;border-bottom:1.5px solid var(--pitch-line);border-top:0}
-.pitch.lying,.lineup-card .pitch.lying{aspect-ratio:auto;height:216px;margin:var(--s2) var(--s3) var(--s3);background:repeating-linear-gradient(90deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
-.pitch.lying::before{background:linear-gradient(90deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px))}
-.pitch.lying::after{width:auto;height:30%}
-.pitch.lying .pitch-box{left:8px;bottom:auto;top:50%;width:13%;height:56%;transform:translateY(-50%);border:1.5px solid var(--pitch-line);border-left:0}
-.pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
 .lineup-pitch{margin:0}
 /* The match report's pitch is cut short at 68 × 76: its attack stands in the far box, no grass is left empty over it. */
 .pitch.short{aspect-ratio:68/76}
@@ -505,10 +500,8 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,360px);min-width:0;margin:var(--s2) auto}
 
 /* A player on a pitch: the shirt of his club, his goals at its top right, the block under it. One size, 32 px, on every pitch. He
-   is held by his shirt: whatever hangs under it, the shirts of a line stay level. On the lying pitch, where every block has
-   one line, the shirt and its block are centred together. */
+   is held by his shirt: whatever hangs under it, the shirts of a line stay level. */
 .pitch-player,.lineup-slot,.pitch.ratings button.pitch-player{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:84px;padding:0;border:0;border-radius:0;background:none;transform:translate(-50%,calc(-1*var(--s4)));color:#fff;text-align:center;text-decoration:none}
-.pitch.lying .pitch-player{transform:translate(-50%,-50%)}
 /* The shirt, square, its sleeves level: the body in the club's first colour, white included, the sleeves and the collar in
    its second. Each fill draws its own edge in its colour, with round joins; a light outline and a shadow lift it from the
    grass. The position on it in the ink that reads on the body. */
@@ -721,7 +714,7 @@ a{text-decoration-thickness:1px;text-underline-offset:2px}
 a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:underline}
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
-:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.lineup-match,.pitch-player,.bracket-match,.club-hero-band,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
+:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.pitch-player,.bracket-match,.club-hero-band,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
 :is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) .block-name{text-decoration:underline 1px;text-underline-offset:2px}
 /* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
    line on the ground. */
@@ -732,7 +725,7 @@ a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}
 tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted){background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
 .player-table tbody tr:where(:not(.selected,.chosen)):is(:hover,.targeted) td:nth-child(2){background:var(--panel-3)}
-:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.lineup-match,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.watch-list li,.season-moves li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
+:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.watch-list li,.season-moves li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that

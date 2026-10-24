@@ -387,8 +387,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 #theme-toggle .to-dark,:root[data-theme="light"] #theme-toggle .to-light,#autoplay .to-pause,#autoplay[aria-pressed="true"] .to-play{display:none}
 :root[data-theme="light"] #theme-toggle .to-dark,#autoplay[aria-pressed="true"] .to-pause{display:block}
 
-/* Club landing: the last line-up's pitch no longer sets a tall row above the squad. */
-.club-overview .lineup-card .pitch{flex:none;min-height:0;height:310px;margin:6px 8px 8px}
 .club-overview .card-head{min-height:30px}
 .club-overview .card-body{padding:6px 10px}
 

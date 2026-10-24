@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {calendarBlock,financesBlock,standingsExtract,lineupBlock,clubPreview,marketBlock,presentationContent,elevenCard,kitsCard,marketCard,watchCard,leadersCards} from '../../web/club-overview.js';
+import {calendarBlock,financesBlock,standingsExtract,clubPreview,marketBlock,presentationContent,elevenCard,kitsCard,marketCard,watchCard,leadersCards} from '../../web/club-overview.js';
 import {pitch,contrastRatio} from '../../web/ui.js';
 
 const club={id:7,name:'Lens',competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
@@ -12,8 +12,8 @@ const data=(over={})=>({
  calendar:{last:[match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V'}),match(2,[4,'Lille'],[7,'Lens'],{score:[1,1],outcome:'N'}),match(3,[7,'Lens'],[5,'Brest'],{score:[0,2],outcome:'D'})],
   next:[match(4,[6,'Nantes'],[7,'Lens'],{date:'2030-01-06'})]},
  finances:{transfer_budget:50e6,reserved_transfer_budget:12e6,wage_bill:400000,wage_cap:500000,reserved_wages:0,balance:1e6},
- lineup:null,...over});
-const clubOverview=(club,overview)=>calendarBlock(club,overview.calendar)+lineupBlock(club,overview.lineup)+financesBlock(club,overview.finances,{balance:true});
+ ...over});
+const clubOverview=(club,overview)=>calendarBlock(club,overview.calendar)+financesBlock(club,overview.finances,{balance:true});
 
 // A club's Présentation: a squad, its season, its movements, its league.
 const member=(id,name,position,extra={})=>({id,name,position,shirt:id,appearances:0,substitutes:0,goals:0,assists:0,average:0,morale:.9,expiring:false,
@@ -171,26 +171,6 @@ test('the league widget shows five rows around the club, with the points then th
  assert.equal(standingsExtract(club,null),'');assert.equal(standingsExtract(club,{items:[]}),'');
 });
 
-test('the last eleven lies on the charter\'s pitch attacking to the right, in the club kit with each position on its shirt, without notes',()=>{
- assert.match(clubOverview(club,data()),/Aucun match joué/);
- const positions=['GB','DG','DC','DC','DD','MC','MC','MC','AILG','BU','AILD'];
- const players=positions.map((position,index)=>({id:100+index,name:`Prénom Nom<${index}>`,position,temporary:false,stats:{rating:6.5}}));
- const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players};
- const html=lineupBlock(club,lineup);
- assert.match(html,/<div class="pitch lying" aria-label="Onze aligné par Lens">/);assert.equal((html.match(/class="pitch-player"/g)||[]).length,11);
- assert.match(html,/aria-label="Onze aligné par Lens"/);assert.match(html,/href="#\/match\/1"/);
- assert.match(html,/contre[^<]*<i class="kit-dot"[^>]*><\/i>Metz/);
- // The body in the primary colour, the sleeves in the secondary one; the position on the shirt, under it the name alone.
- assert.equal((html.match(/<span class="kit-shirt" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff">/g)||[]).length,11);
- assert.equal((html.match(/<b>(GB|DG|DC|DD|MC|AILG|BU|AILD)<\/b><\/span><span class="player-block"><span class="block-name">Nom&lt;\d+&gt;<\/span><\/span>/g)||[]).length,11);
- assert.doesNotMatch(html,/block-note|>6\.5</);
- // The keeper on the left, the forward on the right; the left-back above the right-back.
- const at=name=>{const found=html.match(new RegExp(`title="${name}" style="left:([\\d.]+)%;top:([\\d.]+)%"`));return [Number(found[1]),Number(found[2])];};
- assert.ok(at('Prénom Nom&lt;0&gt;')[0]<at('Prénom Nom&lt;9&gt;')[0]);
- assert.ok(at('Prénom Nom&lt;1&gt;')[1]<at('Prénom Nom&lt;4&gt;')[1]);
- assert.match(html,/<span class="block-name">Nom&lt;1&gt;<\/span>/);assert.doesNotMatch(html,/<script>|Nom<1>/);
-});
-
 test('the market under way stands in four columns: offers by player with his value, own offers, the list and the loans',()=>{
  const html=marketBlock({entrantes:[{joueur_id:5,joueur:'Baidoo',poste:'DC',valeur:41e6,offres:[{offre_id:'a',acheteur:ref(30,'Chelsea'),indemnite:38e6,salaire_propose:1000},{offre_id:'b',acheteur:ref(31,'Spurs'),indemnite:34e6,salaire_propose:1000}]}],
   sortantes:[{offre_id:'c',joueur_id:6,joueur:'Meïté',poste:'BU',vendeur:ref(32,'Rennes'),indemnite:12e6,salaire_propose:2000,etape:'salaire',date_prevue:null}],
@@ -232,7 +212,7 @@ test('the calendar widget lists results with their outcome and the fixtures stil
  // played matches read oldest first, like the upcoming ones
  assert.ok(cup.indexOf('Nice')<cup.indexOf('Rennes'));
  const empty=clubOverview(club,data({calendar:{last:[],next:[]}}));
- assert.match(empty,/Aucun match joué/);assert.match(empty,/Aucun match programmé/);
+ assert.match(empty,/Aucun match programmé/);
 });
 
 test('the pitch spreads full-backs and centre-backs on one line, from left to right',()=>{
@@ -290,13 +270,11 @@ test('beside the list of clubs, the picked one is previewed: standing, matches, 
  assert.doesNotMatch(html,/NaN|undefined/);
 });
 
-test('on a compact pitch and in the last eleven, a player goes by his short name; his whole name is in the tooltip',()=>{
+test('on a compact pitch, a player goes by his short name; his whole name is in the tooltip',()=>{
  const players=[{id:1,name:'Lucas Hernandez',short:'L. Hernandez',position:'DC'},{id:2,name:'Kylian Mbappé',position:'BU'}];
  const compact=pitch(players,'x',{compact:true});
  assert.match(compact,/title="Lucas Hernandez"[^>]*>[^]*?<span class="block-name">L\. Hernandez<\/span>/);
  // Without a short name from the API, his surname; a full pitch writes the whole name.
  assert.match(compact,/title="Kylian Mbappé"[^>]*>[^]*?<span class="block-name">Mbappé<\/span>/);
  assert.match(pitch(players),/<span class="block-name">Lucas Hernandez<\/span>/);
- const lineup={match:match(1,[7,'Lens'],[3,'Metz'],{score:[2,1],outcome:'V',penalties:null}),side:'home',players:players.map(player=>({...player,temporary:false}))};
- assert.match(lineupBlock(club,lineup),/<span class="block-name">L\. Hernandez<\/span>/);
 });

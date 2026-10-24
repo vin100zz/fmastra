@@ -51,7 +51,7 @@ défile dans sa carte.
 
 **Code couleur constant.** Gardien, défense, milieu, attaque gardent la même
 teinte dans toutes les listes : une pastille pleine, hors de l'échelle rouge-jaune-vert
-des notes. Sur un terrain, quel qu'il soit (composition, équipe-type, dernier onze, compte rendu,
+des notes. Sur un terrain, quel qu'il soit (composition, équipe-type, compte rendu,
 aptitudes, direct), les maillots prennent les couleurs du club et le numéro du joueur
 s'y lit (son poste quand il n'en a pas ; sur ses aptitudes, le poste que montre chaque maillot).
 
@@ -1303,7 +1303,7 @@ GET  /api/manuel[/{chapitre}]             manuel : {pages: [{slug, title}], page
 GET  /api/clubs?competition=&statut=actif|dormant&pays=&recherche=&page=&taille=&tri=&ordre=   tri : toute colonne (classement, forme, age, valeur, budget, masse_salariale ; niveau et potentiel : moyenne des 16 meilleurs) ; nations : pays ayant des clubs
                                           chaque club : standing, average_age, squad_value, available_budget, wage_bill et wage_cap (hebdomadaires)
 GET  /api/clubs/{id}                      en-tête + résumé ; reputation_change : écart de la dernière révision annuelle (null la première saison) ; nation_id : la sélection de son pays (null si le jeu n'en a pas)
-GET  /api/clubs/{id}/apercu               cartes de la Présentation et d'Actualités : calendrier, finances, dernier onze ; eleven : l'équipe-type (basis starts|notes ; chaque joueur : position, shirt, short, note au poste, appearances, starts, goals)
+GET  /api/clubs/{id}/apercu               cartes de la Présentation et d'Actualités : calendrier, finances ; eleven : l'équipe-type (basis starts|notes ; chaque joueur : position, shirt, short, note au poste, appearances, starts, goals)
 GET  /api/clubs/{id}/navigation           pairs de la division (ou du pays) : précédent, suivant, liste
 GET  /api/clubs/{id}/effectif?tri=&ordre=&page=   tri : une colonne de la liste, un attribut (passe, reflexes…) ou un composite (tir, occasion_attaque…)
                                           chaque joueur : reserve, loan ({parent, club, end} | null), away (prêté par ce club) ; 100 lignes par page

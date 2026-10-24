@@ -36,16 +36,6 @@ def calendar(world: World, club_id: int, played: list[Match], upcoming: list[Mat
             "next": [v.match_row(world, match) for match in upcoming[:NEXT_MATCHES]]}
 
 
-def last_lineup(world: World, club_id: int, played: list[Match]) -> dict | None:
-    """The eleven of the latest match that kept one; archived results carry none."""
-    for match in reversed(played):
-        side = "home" if match.home_id == club_id else "away"
-        if getattr(match.result, f"{side}_lineup"):
-            return {"match": {**v.match_row(world, match), "outcome": outcome(club_id, match)}, "side": side,
-                    "players": v.lineup_rows(world, match, side)}
-    return None
-
-
 def eleven(world: World, squad: list[Player], lineups: list, formation, stats: dict[int, dict], shorts: dict[int, str]) -> dict | None:
     """An équipe-type among `squad`: at each place of the shape fielded most in `lineups`, who started there most. Without
     a lineup, the best eleven at the places of `formation`, by note at each. Each player with his matches, starts and
@@ -85,7 +75,7 @@ def overview(world: World, club_id: int) -> dict:
     played = [match for match in matches if match.result]
     upcoming = [match for match in matches if not match.result]
     return {"calendar": calendar(world, club_id, played, upcoming), "finances": v.finance_summary(world, club_id),
-            "lineup": last_lineup(world, club_id, played), "eleven": typical_eleven(world, club_id, played)}
+            "eleven": typical_eleven(world, club_id, played)}
 
 
 def record(club_id: int, matches: list[Match]) -> dict:

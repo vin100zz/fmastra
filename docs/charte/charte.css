@@ -527,17 +527,12 @@ span.entity-step svg{opacity:.3}
 .big-score{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong);white-space:nowrap}
 .match-facts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
 
-/* The pitch: one grass, one set of lines, upright (attacking upwards) or lying (attacking to the right). */
+/* The pitch: one grass, one set of lines, the side attacking upwards. */
 .pitch{position:relative;flex:none;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
 .pitch::before{content:"";position:absolute;inset:8px;border:1.5px solid var(--pitch-line);background:linear-gradient(0deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px));pointer-events:none}
 .pitch::after{content:"";position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border:1.5px solid var(--pitch-line);border-radius:50%;pointer-events:none}
 .pitch-box{position:absolute;left:50%;bottom:8px;width:56%;height:15%;transform:translateX(-50%);border:1.5px solid var(--pitch-line);border-bottom:0;pointer-events:none}
 .pitch-box.far{bottom:auto;top:8px;border-bottom:1.5px solid var(--pitch-line);border-top:0}
-.pitch.lying{background:repeating-linear-gradient(90deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
-.pitch.lying::before{background:linear-gradient(90deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px))}
-.pitch.lying::after{width:auto;height:30%}
-.pitch.lying .pitch-box{left:8px;bottom:auto;top:50%;width:13%;height:56%;transform:translateY(-50%);border:1.5px solid var(--pitch-line);border-left:0}
-.pitch.lying .pitch-box.far{left:auto;right:8px;border-left:1.5px solid var(--pitch-line);border-right:0}
 /* The match report's pitch, cut short at 68 × 76: the same bands and lines, closer; its attack stands in the far box. */
 .pitch.short{aspect-ratio:68/76}
 /* The pitch spread over its height, that of the équipe-type: only the lines of its formation, the forwards' shirts 12 under
