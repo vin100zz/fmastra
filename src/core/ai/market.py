@@ -248,11 +248,33 @@ def squad_status(player: Player, club: Club, world: World) -> float:
     return max(role, played, prospect)
 
 
+def contract_hold(player: Player, seller: Club, world: World) -> float:
+    """How firmly a club of the AI holds a player for the years left on his contract, from 0 to 1.
+
+    Nothing below `min_years`, all from `full_years`, in a straight line between; nothing for a player who wants to
+    leave the club, who forces his way out, nor at the human club, which sets its own prices."""
+    rules = world.config.management.market.long_contracts
+    if player.contract is None or seller.competition_id is None or is_human_club(world, seller.id) or wants_to_leave(player, world):
+        return 0.0
+    years = world.date.months_until(player.contract.end) / 12
+    return clamp((years - rules.min_years) / (rules.full_years - rules.min_years), 0, 1)
+
+
+def keeps(player: Player, seller: Club, world: World) -> bool:
+    """A rich club of the AI does not sell a starter or a regular it holds fully (see `contract_hold`): it does not need
+    the money."""
+    rules = world.config.management.market.long_contracts
+    return (seller.income >= rules.rich_income and contract_hold(player, seller, world) >= 1
+            and squad_status(player, seller, world) >= ROTATION_STATUS)
+
+
 def asking_price(player: Player, seller: Club, world: World) -> int:
     """One quoted price for buyers and sellers: the lowest fee the seller accepts.
 
     A starter or a regular costs well above his value, a backup about his value, and a
     player outside the useful squad with no prospect goes cheap (see `squad_status`).
+    The years left on his contract raise the price of a player the club relies on further, from nothing for a backup
+    to the whole premium for a starter (see `contract_hold`).
     """
     cfg = world.config
     if seller.competition_id is None:
@@ -261,16 +283,20 @@ def asking_price(player: Player, seller: Club, world: World) -> int:
     rules = cfg.management.market
     threshold = market_value(player, world, seller) * (rules.seller_multiplier - rules.surplus_discount * surplus)
     threshold *= 1 + rules.patience_weight * seller.personality.negotiation_patience
+    reliance = squad_status(player, seller, world)
     status = interpolate(((0.0, rules.surplus_price_factor), (BACKUP_STATUS, rules.backup_price_factor),
                           (ROTATION_STATUS, rules.rotation_price_factor), (STARTER_STATUS, rules.starter_price_factor)),
-                         squad_status(player, seller, world))
-    return round(threshold * status)
+                         reliance)
+    relied = clamp((reliance - BACKUP_STATUS) / (STARTER_STATUS - BACKUP_STATUS), 0, 1)
+    held = 1 + rules.long_contracts.premium * relied * contract_hold(player, seller, world)
+    return round(threshold * status * held)
 
 
 def can_sell(player: Player, seller: Club, world: World) -> bool:
-    """Only a loan, the hard minimums and the human club's word stop a sale; any other player has his price (see `asking_price`)."""
+    """Only a loan, the hard minimums, the human club's word and a rich club keeping a regular (see `keeps`) stop a sale;
+    any other player has his price (see `asking_price`)."""
     if player.loan is not None or untouchable(world, player.id): return False
-    return seller.competition_id is None or can_spare(player, seller, world)
+    return seller.competition_id is None or (can_spare(player, seller, world) and not keeps(player, seller, world))
 
 
 def can_spare(player: Player, seller: Club, world: World) -> bool:
@@ -307,7 +333,8 @@ def wage_demand(player: Player, club: Club, world: World) -> int:
     From the wage his level commands at that club, and a share of what he earns above it: a raise to join a more reputed
     club, a limited cut for a less reputed one. The greedier he is, the bigger the raise and
     the smaller the cut he concedes, and the higher the premium on top (see `greed_trait`).
-    A player who wants to leave a club beneath him asks his market wage, whatever he earns there.
+    A player who wants to leave a club beneath him asks his market wage, whatever he earns there. A free agent lowers
+    his demands the longer he goes without a contract (see `months_free`).
     """
     cfg = world.config
     rules = cfg.management.contracts
@@ -319,7 +346,18 @@ def wage_demand(player: Player, club: Club, world: World) -> int:
     if step >= 0: move = min(rules.max_raise, rules.raise_per_point * step) * (0.5 + player.greed)
     else: move = -min(rules.max_cut, rules.cut_per_point * -step) * (1.5 - player.greed)
     wage = base * (1 + move) * (1 + rules.greed_premium * player.greed)
+    if player.club_id is None:
+        free = cfg.management.market.free_agents
+        wage *= max(free.wage_floor, 1 - free.monthly_wage_cut * months_free(player, world))
     return max(cfg.management.budgets.wages.weekly_minimum, round(wage))
+
+
+def months_free(player: Player, world: World) -> float:
+    """Months a player without a club has gone without a contract: since he was released, or since the world began for a
+    player who never had one."""
+    start = world.config.world.start_date
+    since = player.free_since or Date(start.year, start.month, start.day)
+    return since.months_until(world.date)
 
 
 def window_stamp(world: World) -> str:
@@ -379,17 +417,6 @@ def reinforced_positions(world: World) -> dict[int, set[Position]]:
                 completed[move.target_id].add(player.position)
         break
     return completed
-
-
-def sales_today(world: World) -> Counter[int]:
-    """Players each club sold today: the settlement of the day's offers comes before the clubs' reviews."""
-    sold: Counter[int] = Counter()
-    # Movements are appended chronologically: today's are the tail.
-    for move in reversed(world.transfers):
-        if move.date < world.date: break
-        if move.date == world.date and move.kind == "transfer" and move.source_id is not None:
-            sold[move.source_id] += 1
-    return sold
 
 
 def short_of_players(squad: list[Player], cfg: Config) -> bool:
@@ -521,13 +548,9 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         """The human club turned this club's offer down for good in this window; listed since, he is offered to all."""
         return player.id not in listed and club.id in world.turned_away.get(player.id, ())
     proposals = []
-    # Every club plans on the day a window opens, and again on the day the annual review renews its budgets, which
-    # falls in the summer window: the season's money is not left to chance reviews.
-    review = cfg.world.key_dates.population_review
-    planning_day = (world.date.month, world.date.day) in {
-        *((window.start_month, window.start_day) for window in (cfg.world.market.summer, cfg.world.market.winter)),
-        (review.month, review.day)}
-    sold = sales_today(world)
+    # Every club plans on each round of the windows (see `planning_rounds`): the day a window opens, then at intervals,
+    # so that a new budget, a departure or a free agent is not left to chance reviews.
+    planning_day = (world.date.month, world.date.day) in {(day.month, day.day) for day in cfg.management.market.planning_rounds}
     completed_positions = reinforced_positions(world)
     # Quotes are valid for this snapshot; settlement checks the seller again.
     quotes: dict[int, int] = {}
@@ -565,6 +588,17 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             restless = (player for player in ranked[position] if wants_to_leave(player, world) and available(player))
             leavers[position] = [player for _, player in zip(range(scouting.visible_leavers), restless)]
         return leavers[position]
+
+    free_agents: dict[Position, list[Player]] = {}
+    def known_free_agents(position: Position) -> list[Player]:
+        """Best players of a position without a club: every club knows who is free."""
+        if position not in free_agents:
+            if position not in ranked:
+                ranked[position] = sorted((player for player in candidates if player.position == position),
+                                          key=lambda player: (-player.rating, player.id))
+            free = (player for player in ranked[position] if player.club_id is None)
+            free_agents[position] = [player for _, player in zip(range(cfg.management.market.free_agents.visible), free)]
+        return free_agents[position]
 
     def price(player: Player) -> int:
         if player.id not in quotes:
@@ -610,8 +644,8 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
         urgent = short_of_players([world.players[pid] for pid in club.player_ids], cfg)
         if emergency and not urgent: continue
         slots = open_slots(club, pending, cfg)
-        # A failed offer or a sale sends a club back to the market at once, for one player in place of each.
-        prompted = len(rejected.get(club.id, ())) + sold[club.id]
+        # A failed offer sends a club back to the market at once, for one player in place of each.
+        prompted = len(rejected.get(club.id, ()))
         if prompted and not planning_day: slots = min(slots, prompted)
         if slots <= 0: continue
         # Planning days cover several positions. Later batch reviews
@@ -637,7 +671,8 @@ def propose_transfers(world: World, rng: Random, emergency: bool = False,
             pool = rng.sample(pool, min(len(pool), cfg.management.market.max_candidates_scanned))
             if not emergency:
                 scanned = {player.id for player in pool}
-                known = {player.id: player for player in known_talents(need.position) + known_leavers(need.position)}
+                known = {player.id: player for player in
+                         known_talents(need.position) + known_leavers(need.position) + known_free_agents(need.position)}
                 pool += [player for player in known.values()
                          if player.id not in scanned and player.club_id != club.id and player.id not in rejected.get(club.id, ())]
                 scanned.update(player.id for player in pool)

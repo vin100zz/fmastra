@@ -135,6 +135,7 @@
     }
   },
   "mercato": {
+    "_note": "tours_planification : jours ou chaque club de l'IA fait le point sur son effectif pendant un mercato, dans une fenetre. daily_proposal_probability : chance qu'il le fasse aussi un autre jour, divisee par le nombre de dossiers qu'il peut encore ouvrir (0 : seulement aux tours, en urgence ou apres une offre echouee).",
     "stabilite_apres_arrivee_jours": 250,
     "gain_qualite_min_recrutement": 3.0,
     "profondeur_effectif_min": 16,
@@ -190,13 +191,30 @@
       "tolerance_vendeur": 0.05,
       "malus_moral_intransferable": 0.2
     },
+    "tours_planification": [
+      {"mois": 6, "jour": 10}, {"mois": 7, "jour": 10}, {"mois": 8, "jour": 10},
+      {"mois": 1, "jour": 1}, {"mois": 1, "jour": 16}
+    ],
+    "agents_libres": {
+      "_note": "Chaque club voit, a chaque poste, les visibles meilleurs joueurs sans club. Un agent libre baisse ses pretentions salariales de baisse_salaire_mensuelle par mois sans contrat, jusqu'a salaire_plancher de ce qu'il demanderait sous contrat.",
+      "visibles": 10,
+      "baisse_salaire_mensuelle": 0.1,
+      "salaire_plancher": 0.5
+    },
+    "contrats_longs": {
+      "_note": "Tenue d'un joueur par les annees de contrat qui lui restent : 0 a annees_min, 1 a partir de annees_pleines, lineaire entre ; aucune s'il veut partir. Le prix demande est majore de prime_max x tenue pour un titulaire, de moins pour un joueur de rotation, de rien pour une doublure. Un club de l'IA dont le revenu annuel atteint revenu_club_riche ne vend pas un titulaire ou un joueur de rotation qu'il tient pleinement.",
+      "annees_min": 1.0,
+      "annees_pleines": 3.0,
+      "prime_max": 0.6,
+      "revenu_club_riche": 100000000
+    },
     "marge_depassement_club": 10.0,
     "ambition_base": 0.6,
     "ambition_poids_ego": 0.4,
     "ecart_frustration_maximale": 15.0,
     "seuil_depart_souhaite": 0.3,
     "poids_frustration_moral": 0.6,
-    "daily_proposal_probability": 0.06,
+    "daily_proposal_probability": 0.0,
     "max_candidates_scanned": 120,
     "weekly_review_days": 7,
     "negociations_actives_max": 3,
@@ -241,6 +259,11 @@
     "part_surpaye_conservee": 0.5,
     "depassement_revenus_sans_prolongation": 1.2,
     "hausse_min_prolongation": 0.10,
+    "refus_prolongation": {
+      "_note": "Dans ses mois_avant_fin_declenchant derniers mois de contrat, un joueur d'un club de l'IA laisse courir son contrat au lieu de prolonger, une semaine donnee, si un tirage fait une fois par contrat passe sous poids_appat_gain x appat du gain + poids_mecontentement x (1 - satisfaction).",
+      "poids_appat_gain": 0.05,
+      "poids_mecontentement": 0.1
+    },
     "duree_proposee_par_age": [
       {"age_max": 23, "annees": 5},
       {"age_max": 28, "annees": 4},

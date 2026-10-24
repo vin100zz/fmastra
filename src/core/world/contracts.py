@@ -6,6 +6,7 @@ from core.domain.offers import RenewalProposal
 from core.domain.players import Contract, Player
 from core.domain.world import World
 from core.math import clamp
+from core.randomness import stream
 from collections import Counter
 from core.ai.market import market_wage, contract_for, nominal_size, squad_quality, wage_room
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
@@ -112,6 +113,14 @@ def brings_something(asked: Contract, current: Contract | None, cfg) -> bool:
     return current is not None and (asked.end > current.end or worth_asking(asked.weekly_wage, current.weekly_wage, cfg))
 
 
+def lets_contract_run(world: World, player: Player, satisfaction: float) -> bool:
+    """Whether a player lets his contract run out to choose his next club rather than extend it: his greed and his
+    discontent make the risk (see `free_agency`), against a chance drawn once for the contract."""
+    rules = world.config.management.contracts.free_agency
+    risk = rules.greed_weight * player.greed + rules.discontent_weight * (1 - satisfaction)
+    return stream(world.seed, "free-agency", player.id, player.contract.end.iso()).random() < risk
+
+
 def extension(world: World, player: Player, wage: int) -> Contract:
     """The contract a player signs to stay at this wage: as long as his age allows, never ending before the one he has."""
     contract = contract_for(player, world, wage)
@@ -141,6 +150,8 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
         if remaining >= rules.renewal_months and satisfaction >= rules.satisfaction_threshold: continue
         # A player who wants a bigger club does not extend; he plays out his contract or is sold.
         if wants_to_leave(player, world): continue
+        # As its end nears, a player of the AI may let his contract run out (see `lets_contract_run`).
+        if remaining < rules.renewal_months and not is_human_club(world, club.id) and lets_contract_run(world, player, satisfaction): continue
         # A player who has just arrived does not reopen the contract he signed.
         if player.id in settling: continue
         # Keep useful squad members, including backups; surplus expiry creates a market.

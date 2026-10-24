@@ -18,6 +18,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from core.config.model import Config
+from core.config.models.management import PLANNING_ROUNDS
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
@@ -34,10 +35,18 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 36
+SCHEMA_VERSION = 37
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # Rounds of planning through each window instead of chance reviews, long contracts holding a club's regulars, free
+    # agents every club sees and who lower their demands with time, and players letting their contract run out
+    # (see `_upgrade_market`).
+    (37, ("ia_gestion", "mercato"), {
+         "tours_planification": [{"mois": month, "jour": day} for month, day in PLANNING_ROUNDS],
+         "agents_libres": {"visibles": 10, "baisse_salaire_mensuelle": 0.1, "salaire_plancher": 0.5},
+         "contrats_longs": {"annees_min": 1.0, "annees_pleines": 3.0, "prime_max": 0.6, "revenu_club_riche": 100000000}}),
+    (37, ("ia_gestion", "contrats"), {"refus_prolongation": {"poids_appat_gain": 0.05, "poids_mecontentement": 0.1}}),
     # Who a new world keeps from the source, tier by tier; a game already created is not concerned.
     (34, ("import", "selection_effectifs"), {"paliers": {
          "clubs_simules": {"joueurs": 30, "gardiens": 3, "espoirs": 3, "age_max_espoir": 21},
@@ -339,6 +348,7 @@ class SaveStore:
             if version < 36:
                 initialize_age_records(world)
                 initialize_strengths(world)
+            if version < 37: _upgrade_market(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -477,6 +487,16 @@ def _upgrade_news(world: World) -> None:
                   for item in world.news if item.kind != "result"]
 
 
+def _upgrade_market(world: World) -> None:
+    """Schema 37: clubs plan their windows in rounds rather than by chance (see `MARKET_RECALIBRATED_RULES`), and a free
+    agent lowers his demands with the time he goes without a contract. A player without a club is dated by his last
+    release; one who never had a contract stays undated (see `core.ai.market.months_free`)."""
+    world.config = _recalibrated(world.config, MARKET_RECALIBRATED_RULES)
+    for move in world.transfers:
+        player = world.players.get(move.player_id)
+        if player is not None and player.club_id is None and move.kind == "release": player.free_since = move.date
+
+
 def _forget_small_demands(world: World) -> None:
     """Schema 30: a demand for a raise too small to ask for, without more years, is no longer made; one still awaiting an
     answer lapses, and the player asks again when he has something to ask for. So does a demand left behind by a
@@ -538,6 +558,8 @@ RECALIBRATED_FATIGUE_RULES = (("states", "fitness", None, "daily_recovery", 0.10
                               ("states", "injuries", None, "possession_probability", 0.0025, 0.0065),
                               ("management", "selection", None, "rotation_fitness", 0.65, 0.90),
                               ("engine", "player_ratings", None, "saving", 0.10, 0.08))
+# Rules recalibrated by schema 37, in the same form: the planning rounds replace chance reviews.
+MARKET_RECALIBRATED_RULES = (("management", "market", None, "daily_proposal_probability", 0.06, 0.0),)
 
 
 def _recalibrated(cfg: Config, recalibrated: tuple) -> Config:

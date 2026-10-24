@@ -73,6 +73,7 @@ def apply(world: World, event: WorldEvent) -> bool:
             club.wage_bill -= player.contract.weekly_wage
             if player.loan is not None: club.loaned_ids.remove(player.id)
         player.club_id, player.contract, player.loan, player.shirt = None, None, None, None
+        player.free_since = world.date
         _leave_reserve(player)
         if event.retirement:
             from core.domain.international import InternationalCareer
@@ -253,7 +254,7 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         seller.balance += event.fee
         seller.transfer_budget += event.fee
         seller.season_sales += event.fee
-    player.club_id, player.contract = club.id, event.contract
+    player.club_id, player.contract, player.free_since = club.id, event.contract, None
     _leave_reserve(player)
     club.player_ids.append(player.id)
     player.shirt = assign(world, player)

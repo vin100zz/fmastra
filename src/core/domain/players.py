@@ -126,6 +126,8 @@ class Player:
     load: float = 0.0
     # The number he wears at the club he plays for, his own in its squad (see `core.world.shirts`); None without a club.
     shirt: int | None = None
+    # The day his last contract ended, while he has no club; None under contract, or for a player who never had one.
+    free_since: Date | None = None
 
     @property
     def nation(self) -> str:

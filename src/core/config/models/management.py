@@ -252,6 +252,37 @@ class ManagementConfigMarketOffers:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketLongContracts:
+    """What the years left on a player's contract do to his sale: the hold grows from `min_years` to `full_years`; the
+    asking price of a starter rises up to `premium` with it (less for a regular, nothing for a backup), and a club
+    earning `rich_income` a year keeps a starter or a regular it holds fully. The defaults are what a save made before
+    receives."""
+    min_years: float = Field(default=1.0, alias="annees_min")
+    full_years: float = Field(default=3.0, alias="annees_pleines")
+    premium: float = Field(default=0.6, alias="prime_max")
+    rich_income: int = Field(default=100000000, alias="revenu_club_riche")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketPlanningRound:
+    month: int = Field(alias="mois")
+    day: int = Field(alias="jour")
+
+
+# The days every club of the AI plans its window; what a save made before receives.
+PLANNING_ROUNDS = ((6, 10), (7, 10), (8, 10), (1, 1), (1, 16))
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketFreeAgents:
+    """The free agents every club sees at each position, and how a free agent lowers his wage demands month after month
+    without a contract, down to a floor; the defaults are what a save made before receives."""
+    visible: int = Field(default=10, alias="visibles")
+    monthly_wage_cut: float = Field(default=0.1, alias="baisse_salaire_mensuelle")
+    wage_floor: float = Field(default=0.5, alias="salaire_plancher")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigMarket:
     daily_proposal_probability: float = Field(alias="daily_proposal_probability")
     max_candidates_scanned: int = Field(alias="max_candidates_scanned")
@@ -301,6 +332,19 @@ class ManagementConfigMarket:
     scouting: ManagementConfigMarketScouting = Field(default_factory=ManagementConfigMarketScouting, alias="reperage")
     loans: ManagementConfigMarketLoans = Field(default_factory=ManagementConfigMarketLoans, alias="prets")
     offers: ManagementConfigMarketOffers = Field(default_factory=ManagementConfigMarketOffers, alias="offres")
+    long_contracts: ManagementConfigMarketLongContracts = Field(default_factory=ManagementConfigMarketLongContracts, alias="contrats_longs")
+    planning_rounds: tuple[ManagementConfigMarketPlanningRound, ...] = Field(
+        default_factory=lambda: tuple(ManagementConfigMarketPlanningRound(month, day) for month, day in PLANNING_ROUNDS),
+        alias="tours_planification")
+    free_agents: ManagementConfigMarketFreeAgents = Field(default_factory=ManagementConfigMarketFreeAgents, alias="agents_libres")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigContractsFreeAgency:
+    """The chance a player of the AI lets his contract run out instead of extending it: his greed and his discontent
+    (one minus his satisfaction) each weighted. The defaults are what a save made before receives."""
+    greed_weight: float = Field(default=0.05, alias="poids_appat_gain")
+    discontent_weight: float = Field(default=0.1, alias="poids_mecontentement")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -338,6 +382,7 @@ class ManagementConfigContracts:
     renewal_stop_ratio: float = Field(default=1.2, alias="depassement_revenus_sans_prolongation")
     # The least raise, as a share of his wage, a player asks a new contract for when it brings him no more years.
     min_raise: float = Field(default=0.1, alias="hausse_min_prolongation")
+    free_agency: ManagementConfigContractsFreeAgency = Field(default_factory=ManagementConfigContractsFreeAgency, alias="refus_prolongation")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

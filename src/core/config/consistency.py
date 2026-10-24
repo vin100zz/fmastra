@@ -77,7 +77,19 @@ def validate_consistency(cfg: Config) -> None:
     require(0 <= offers.min_raises <= offers.max_raises and offers.outbid_step >= 0 and 0 <= offers.seller_tolerance < 1,
             "Raises must be ordered, the outbidding step nonnegative and the seller's tolerance within [0, 1)")
     require(0 <= offers.untouchable_morale_loss <= 1, "The morale loss of a player held back must be within [0, 1]")
+    windows = [((window.start_month, window.start_day), (window.end_month, window.end_day))
+               for window in (cfg.world.market.summer, cfg.world.market.winter)]
+    require(all(any(start <= (day.month, day.day) <= end for start, end in windows) for day in market.planning_rounds),
+            "Every planning round must fall inside a transfer window")
+    free = market.free_agents
+    require(free.visible >= 0 and free.monthly_wage_cut >= 0 and 0 < free.wage_floor <= 1,
+            "Free agents need a nonnegative visible count and wage cut, and a wage floor within (0, 1]")
+    held = market.long_contracts
+    require(0 <= held.min_years < held.full_years and held.premium >= 0 and held.rich_income >= 0,
+            "A long contract's hold needs ordered years, a nonnegative premium and a nonnegative rich income")
     wages = cfg.management.contracts
+    require(wages.free_agency.greed_weight >= 0 and wages.free_agency.discontent_weight >= 0,
+            "The weights of a player's refusal to extend must be nonnegative")
     require(wages.greed_source_low < wages.greed_source_reference < wages.greed_source_high,
             "Appetite for money source notes must be increasing")
     require(wages.greed_premium >= 0 and wages.raise_per_point >= 0 and wages.max_raise >= 0 and wages.cut_per_point >= 0
