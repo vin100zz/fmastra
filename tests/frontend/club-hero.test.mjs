@@ -145,22 +145,22 @@ test('the tabs close the header, the open one marked',()=>{
  assert.match(unselected,/<h1>Lens &lt;RC&gt;<\/h1><span class="club-hero-context"><span class="nation" title="France"><img[^>]*><\/span>France<\/span><\/div>/);
 });
 
-test('a selection wears the same header: its kit on the band, its flag on the disc, its strength alone on the right',()=>{
+test('a selection wears the same header: its kit on the band, its logo on the disc, its strength alone on the right',()=>{
  const england={id:-1007,name:'Angleterre',nation:'ENG',federation:'Europe',strength:83.14,major_color:'#ffffff',minor_color:'#0b1f4b',competition:{year:2032,name:'Euro 2032',stage:'Phase finale'}};
  setNations({ENG:{name:'Angleterre',display_code:'ENG',flag:'gb-eng'}});
  const html=nationHero(england,{lead:'<div class="entity-nav"></div>',menu,section:'squad'});
  setNations({});
  // A white shirt would melt into the page: the second colour fills the band, as for a club.
  assert.match(html,/^<header class="club-hero" style="--hero-field:#0b1f4b;--hero-ink:#ffffff;--hero-sash:#ffffff;/);
- assert.match(html,/<div class="club-hero-main"><div class="entity-nav"><\/div><div class="crest club-hero-crest">A<img class="crest-flag" src="\/flags\/gb-eng\.svg" alt=""><\/div>/);
+ assert.match(html,/<div class="club-hero-main"><div class="entity-nav"><\/div><div class="crest club-hero-crest">A<img class="crest-flag" src="\/flags\/gb-eng\.svg" alt=""><img class="crest-logo" src="\/nations\/england\.png" alt="" data-nation-logo><\/div>/);
  // Its name alone: neither its confederation nor the edition it plays follows it.
  assert.match(html,/<div class="club-hero-identity"><div class="club-hero-name"><h1>Angleterre<\/h1><\/div><\/div>/);assert.doesNotMatch(html,/club-hero-context|Europe|Euro 2032|Phase finale/);
  assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Force<\/span><strong>83\.1<\/strong><\/div><\/div>/);
  assert.match(html,/<a class="active" href="#\/international\/nation\/-1007\/squad" aria-current="page">Effectif<\/a><a class="" href="#\/international\/nation\/-1007\/calendar">Calendrier<\/a>/);
  // What steps through its editions closes its row of tabs, as a club's seasons do.
  assert.match(nationHero(england,{menu,section:'calendar',tools:'<b>pas</b>'}),/<\/nav><div class="tools"><b>pas<\/b><\/div><\/div><\/header>$/);
- // Without colours, without a flag: a plain band, its initial on the disc.
- const bare=nationHero({...england,major_color:null,minor_color:null,competition:null},{menu,section:'history'});
+ // A nation absent from the logo collection and without a flag keeps its initial.
+ const bare=nationHero({...england,nation:'UNKNOWN',major_color:null,minor_color:null,competition:null},{menu,section:'history'});
  assert.match(bare,/^<header class="club-hero plain">/);assert.match(bare,/<div class="crest club-hero-crest">A<\/div>/);
 });
 

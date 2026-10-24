@@ -517,7 +517,8 @@ club : le même en-tête, les mêmes onglets dessous, la même mise en page de l
 **En-tête.** Le bandeau d'un club (`nationHero`, `club-hero.js`), aux deux couleurs du maillot de la
 sélection (`KIT_COLORS`, `api/nations.py` : une donnée d'affichage, par nom de nation ; une nation
 qui n'y figure pas garde un bandeau neutre). À gauche, le bloc de navigation entre les sélections
-de la confédération, le drapeau sur le disque, puis le nom, seul : ni confédération, ni édition
+de la confédération, le logo national sur le disque (PNG local dans `web/nations`, même
+format et affichage que les écussons de clubs ; drapeau de secours), puis le nom, seul : ni confédération, ni édition
 disputée, ni phase (charte, « Bandeau »). À droite, une seule case : Force, sur 100 sans le dire. Ni
 titres ni dernier parcours : l'Historique les donne.
 

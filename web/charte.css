@@ -316,6 +316,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-hero-band{min-height:88px;border-radius:var(--radius) var(--radius) 0 0}
 .club-hero-main{gap:var(--s2) var(--s4);padding:0 var(--s4) 0 var(--s3)}
 .club-hero .crest.club-hero-crest{width:64px;height:64px;border-width:3px;font-size:var(--fs-title)}
+.club-hero-crest:has(.crest-logo) .crest-flag{display:none}
 .club-hero-crest .crest-logo{inset:7px;width:calc(100% - 14px);height:calc(100% - 14px)}
 .club-hero-identity{gap:var(--s1)}
 .club-hero-identity h1{font-size:var(--fs-hero);line-height:1}

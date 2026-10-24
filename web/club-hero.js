@@ -1,3 +1,4 @@
+import {nationLogoUrl} from './nation-logos.js';
 import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price,competitionLink} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
@@ -40,8 +41,12 @@ const clubKit=club=>{
  const outfits=[['Domicile',club.kit_url],['Extérieur',club.away_kit_url]].filter(([,url])=>url);
  return outfits.length?`<div class="club-hero-kits">${outfits.map(([label,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}" aria-label="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}"><img class="club-hero-kit" src="${e(url)}" alt="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}" width="48" height="80"></a>`).join('')}</div>`:'';
 };
-// What fills the disc of a selection: its initials, under its flag when it has one.
-const nationCrest=nation=>{const flag=flagUrl(nation.nation);return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`;};
+// A selection uses its local logo on its own page, with its flag (then initials) underneath as fallback.
+const nationCrest=(nation,{logo=false}={})=>{
+ const flag=flagUrl(nation.nation),crest=logo?nationLogoUrl(nation.nation):'';
+ return `${initials(nation.name)}${flag?`<img class="crest-flag" src="${e(flag)}" alt="">`:''}`
+  +`${crest?`<img class="crest-logo" src="${e(crest)}" alt="" data-nation-logo>`:''}`;
+};
 
 // The band and what closes it, a club's, a selection's, a player's or a competition's: `colors` is what heroColors gives,
 // `lead` steps between peers, `crest` fills the disc (`mark` is what stands in the disc's place when it is not one),
@@ -106,11 +111,11 @@ export function creationHero(club){
   after:context(`${nationFlag(club.nation_code,{link:false})}${e(club.competition)}`),tiles:''});
 }
 
-// The header of a selection's page, a club's: the band in the colours of its kit, its flag on the disc, its name alone,
+// The header of a selection's page, a club's: the band in the colours of its kit, its logo on the disc, its name alone,
 // then its strength. `lead` steps between the selections of the confederation, `tools` close the row of tabs.
 export function nationHero(nation,{lead='',menu,section,tools=''}){
  return hero({colors:heroColors(nation.major_color,nation.minor_color),lead,name:nation.name,foot:tabs(`#/international/nation/${nation.id}`,menu,section,tools),
-  crest:nationCrest(nation),tiles:tile('Force',n(nation.strength))});
+  crest:nationCrest(nation,{logo:true}),tiles:tile('Force',n(nation.strength))});
 }
 
 // The emblem of a competition that has one, by the two characters of its badge.

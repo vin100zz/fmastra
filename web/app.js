@@ -1,3 +1,4 @@
+import {initNationLogos} from './nation-logos.js';
 import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
@@ -29,6 +30,7 @@ let renderedPath=null,state={},leagues=[],nationsOf=null,renderVersion=0,polling
 // A list fitted to the window is drawn again once it has measured the rows that fit (`refitted`: that second pass is under way).
 let refitted=false,previewVersion=0;
 const main=document.querySelector('#main');
+initNationLogos(main);
 // The search of the whole game leads to pages: it needs a game and its club, and waits while a live match holds the screen.
 const showSearch=initSearch(()=>Boolean(state.exists)&&!state.recovery_required&&state.controlled_club_id!=null&&!state.live_match_id);
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the round's results).
