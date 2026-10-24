@@ -794,7 +794,7 @@ def router(service: GameService) -> APIRouter:
                      # A league's rounds are those of its calendar; a cup's are dated before they are drawn.
                      "rounds": max(len(item.round_dates), max((world.matches[mid].round_number for mid in item.match_ids if mid in world.matches), default=0)),
                      # What its header shows: its colours, the selection its flag leads to, its title this season.
-                     **competition_colors(item.code, world.nation_names.get(item.nation)),
+                     **competition_colors(item.code, item.nation),
                      "nation_id": v.selection_id(world, item.nation), **v.title(world, item.id, world.season)}
                     for item in world.competitions.values()]
 

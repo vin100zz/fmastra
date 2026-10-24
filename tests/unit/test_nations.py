@@ -1,20 +1,42 @@
+import csv
 from pathlib import Path
 import re
-from api.nations import COMPETITION_COLORS, ISO_ALPHA2, KIT_COLORS, competition_colors, flag_code, kit_colors
+from urllib.parse import parse_qs, urlsplit
 
-FLAGS = Path(__file__).resolve().parents[2] / "web" / "flags"
+from api.nations import COMPETITION_COLORS, ISO_ALPHA2, NATION_KITS, competition_colors, flag_code, kit_colors, kit_outfits
+from infrastructure.importation.nations import ALIASES
+
+ROOT = Path(__file__).resolve().parents[2]
+FLAGS = ROOT / "web" / "flags"
 
 
-def test_every_active_nation_has_the_two_colours_of_its_kit(config):
+def nation_rows() -> dict[str, dict]:
+    with (ROOT / "data" / "nations.csv").open(encoding="utf-8-sig", newline="") as handle:
+        return {row["code"]: row for row in csv.DictReader(handle, delimiter=";")}
+
+
+def test_every_active_nation_wears_the_kits_of_the_nations_file(config):
+    rows = nation_rows()
+    codes = {row["name"]: code for code, row in rows.items()}
     active = {name for name, rule in config.nations.items() if rule.active}
-    assert sorted(active - set(KIT_COLORS)) == []
-    # No entry for a nation the configuration does not know: a renamed nation would silently lose its colours.
-    assert sorted(set(KIT_COLORS) - set(config.nations)) == []
-    for name, (major, minor) in KIT_COLORS.items():
-        assert re.fullmatch(r"#[0-9a-f]{6}", major) and re.fullmatch(r"#[0-9a-f]{6}", minor), name
-        assert major != minor, name
-    assert kit_colors("France") == {"major_color": "#1f3f94", "minor_color": "#ffffff"}
-    assert kit_colors("Atlantide") == {"major_color": None, "minor_color": None}
+    # The configuration names some nations as the game shows them, the file as the export writes them.
+    assert sorted(name for name in active if ALIASES.get(name, name) not in codes) == []
+    for name in active:
+        colors = kit_colors(codes[ALIASES.get(name, name)])
+        assert all(re.fullmatch(r"#[0-9A-Fa-f]{6}", colour) for colour in colors.values()), name
+    # By the nation's code, as the file has them: the home shirt's two colours, then the two outfits with its logo.
+    france = rows["FRA"]
+    assert kit_colors("FRA") == {"major_color": france["HomeKitMajorColorRGB"], "minor_color": france["HomeKitMinorColorRGB"]}
+    outfits = kit_outfits("FRA")
+    home, away = (parse_qs(urlsplit(outfits[key]).query) for key in ("kit_url", "away_kit_url"))
+    assert outfits["kit_url"].startswith(f"/kits/{france['HomeKitID']}/outfit.png?")
+    assert outfits["away_kit_url"].startswith(f"/kits/{france['AwayKitID']}/outfit.png?")
+    assert home["major"] == [france["HomeKitMajorColorRGB"][1:]] and home["shorts_major"] == [france["HomeShortsMajorColorRGB"][1:]]
+    assert away["socks_major"] == [france["AwaySocksMajorColorRGB"][1:]]
+    assert home["nation"] == away["nation"] == ["FRA"] and "club_id" not in home
+    assert kit_colors("ZZZ") == kit_colors(None) == {"major_color": None, "minor_color": None}
+    assert kit_outfits("ZZZ") == {"kit_url": None, "away_kit_url": None}
+    assert NATION_KITS.key == "code"
 
 
 def test_a_competition_wears_its_own_colours_or_the_kit_of_its_country():
@@ -26,11 +48,11 @@ def test_a_competition_wears_its_own_colours_or_the_kit_of_its_country():
     assert len({COMPETITION_COLORS[code][0] for code in ("C1", "C3", "C4")}) == 3
     assert competition_colors("C3") == {"major_color": "#f26522", "minor_color": None, "ground_color": "#0a0b5c"}
     assert competition_colors("EU") == {"major_color": "#003399", "minor_color": "#ffcc00", "ground_color": None}
-    # A league or a national cup has no colours of its own: its selection's kit, and no ground.
-    assert competition_colors(None, "France") == {"major_color": "#1f3f94", "minor_color": "#ffffff", "ground_color": None}
-    assert competition_colors("", "Atlantide") == competition_colors(None) == {"major_color": None, "minor_color": None, "ground_color": None}
+    # A league or a national cup has no colours of its own: its selection's kit, by its country's code, and no ground.
+    assert competition_colors(None, "FRA") == {**kit_colors("FRA"), "ground_color": None}
+    assert competition_colors("", "ZZZ") == competition_colors(None) == {"major_color": None, "minor_color": None, "ground_color": None}
     # Its own colours come first: a European cup is no country's.
-    assert competition_colors("C1", "France")["ground_color"] == "#0a0b5c"
+    assert competition_colors("C1", "FRA")["ground_color"] == "#0a0b5c"
 
 
 def test_home_nations_have_their_own_flag_not_the_uk_one():

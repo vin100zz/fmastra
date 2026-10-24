@@ -5,7 +5,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
 from core.domain.clubs import Club
-from .kit_images import PATTERN_COUNT, normalize_color, render_kit, render_outfit
+from .kit_images import NATION_CODE, PATTERN_COUNT, normalize_color, render_kit, render_outfit
 
 
 PATTERNS = {0: 1, **{code: code for code in range(1, PATTERN_COUNT + 1)}}
@@ -28,7 +28,8 @@ def _palette(club: Club, prefix: str, fallback: str) -> tuple[str, str, str]:
     return major, minor, third
 
 
-def kit_url(club: Club, side: str = "home") -> str | None:
+def kit_url(club: Club, side: str = "home", nation: str | None = None) -> str | None:
+    """The picture of a club's outfit, its crest on the chest; a selection's (`nation`, its code) wears its logo there."""
     if side not in ("home", "away"):
         raise ValueError("Unknown kit side")
     prefix = f"{side}_kit"
@@ -43,7 +44,9 @@ def kit_url(club: Club, side: str = "home") -> str | None:
     query = "&".join(f"{prefix}{key}={value[1:]}"
                      for prefix, palette in (("", shirt), ("shorts_", shorts), ("socks_", socks))
                      for key, value in zip(("major", "minor", "third"), palette))
-    if (club_id := getattr(club, "id", None)) is not None:
+    if nation is not None:
+        query += f"&nation={nation}"
+    elif (club_id := getattr(club, "id", None)) is not None:
         query += f"&club_id={club_id}"
     return f"/kits/{kit_id if kit_id is not None else 0}/outfit.png?{query}"
 
@@ -58,8 +61,9 @@ def kit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor):
 def outfit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor,
                  shorts_major: HexColor, shorts_minor: HexColor, shorts_third: HexColor,
                  socks_major: HexColor, socks_minor: HexColor, socks_third: HexColor,
-                 club_id: Annotated[int | None, Query(gt=0)] = None):
+                 club_id: Annotated[int | None, Query(gt=0)] = None,
+                 nation: Annotated[str | None, Query(pattern=NATION_CODE)] = None):
     image = render_outfit(PATTERNS.get(kit_id, 1), (major, minor, third),
                           (shorts_major, shorts_minor, shorts_third),
-                          (socks_major, socks_minor, socks_third), club_id=club_id)
+                          (socks_major, socks_minor, socks_third), club_id=club_id, nation=nation)
     return Response(image, media_type="image/png")

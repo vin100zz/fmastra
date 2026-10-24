@@ -506,43 +506,49 @@ et Jeu). La vue suit le passage d'un club à l'autre.
 ### Sélection
 
 La fiche d'une sélection (`#/international/nation/<id>`, `web/international.js`) reprend celle d'un
-club : le même en-tête, les mêmes onglets dessous, la même mise en page de l'Effectif.
+club : le même en-tête, les mêmes onglets dessous, sa Présentation et son Effectif.
 
 | Onglet | Contenu |
 |---|---|
-| Effectif | la liste du rassemblement à gauche, les widgets de la sélection à droite |
+| Présentation | la sélection en un écran : ses tuiles, ses tenues, son parcours, son équipe-type, son groupe, son calendrier, ses buteurs, passeurs et notes (voir « Présentation ») |
+| Effectif | la liste du rassemblement, sur toute la largeur |
 | Calendrier | une ligne par match d'une édition, buteurs compris, le groupe de cette édition et le bilan de chaque édition |
 | Historique | en quatre vues, celles d'un club : vue d'ensemble (parcours et force, palmarès, bilan), éditions, joueurs, records |
 
-**En-tête.** Le bandeau d'un club (`nationHero`, `club-hero.js`), aux deux couleurs du maillot de la
-sélection (`KIT_COLORS`, `api/nations.py` : une donnée d'affichage, par nom de nation ; une nation
-qui n'y figure pas garde un bandeau neutre). À gauche, le bloc de navigation entre les sélections
-de la confédération, le logo national sur le disque (PNG local dans `web/nations`, même
-format et affichage que les écussons de clubs ; drapeau de secours), puis le nom, seul : ni confédération, ni édition
-disputée, ni phase (charte, « Bandeau »). À droite, une seule case : Force, sur 100 sans le dire. Ni
-titres ni dernier parcours : l'Historique les donne.
+**En-tête.** Le bandeau d'un club (`nationHero`, `club-hero.js`), aux deux couleurs du maillot
+domicile de la sélection. Ses tenues viennent de `data/nations.csv`, comme celles d'un club de
+`clubs.csv` : mêmes colonnes (HomeKit…, AwayKit…, shorts et chaussettes), lues par le code de la
+nation (`NATION_KITS`, `api/nations.py`). Le fichier est relu dès qu'il change, partie en cours
+comprise : une donnée d'affichage que la sauvegarde ne garde pas. Une nation sans tenue
+(`HasHomeKitData=False`) garde un bandeau neutre et n'a pas de carte Tenues. À gauche, le bloc de
+navigation entre les sélections de la confédération, le logo national sur le disque (PNG local dans
+`web/nations`, même format et affichage que les écussons de clubs ; drapeau de secours), puis le
+nom, seul : ni confédération, ni édition disputée, ni phase (charte, « Bandeau »). À droite, une
+seule case : Force, sur 100 sans le dire. Ni titres ni dernier parcours : l'Historique les donne.
 
-**Effectif.** Une seule liste, celle du rassemblement en cours, à défaut du dernier : « Rassemblement
-du 9 au 17 novembre 2028 · 23 joueurs » ou « Dernier rassemblement… ». C'est la liste d'un club, avec
-ses trois vues (Infos, Attributs, Jeu) et son tri par le serveur (`tri`, `ordre`), le poste par
-défaut. Le club du joueur tient la place de sa nationalité ; il n'y a ni moral ni cartons. Après la
-forme viennent ses sélections et ses buts en sélection (SÉL., BUTS), puis ce qu'il a fait dans
-l'édition du rassemblement : matches, buts, passes, note moyenne (MJ, B, PD, NOTE). Un renfort
-temporaire n'a ni club, ni valeur, ni contrat ; ce qui manque se range en fin de tri.
+**Présentation.** L'onglet est le point d'entrée de la sélection (`#/international/nation/<id>`
+l'ouvre). Comme celle d'un club, elle tient dans la fenêtre et ses listes prennent les lignes que la
+hauteur laisse (charte, « Présentation d'une sélection »). En tête, une rangée de cases : la place
+dans l'édition où elle en est (celle de son prochain match, à défaut de son dernier ; la place du
+Bilan), les joueurs du dernier rassemblement et leur âge moyen, leur valeur. Puis quatre colonnes :
 
-À droite, comme pour un club, chaque widget ouvre sa page par « Voir → » :
+| Carte | Contenu | Lien |
+|---|---|---|
+| Tenues | les deux tenues complètes, domicile d'abord, le logo de la sélection sur la poitrine ; leur nom en infobulle | le PNG |
+| Parcours | la place dans chaque édition jouée, la plus récente d'abord (celle du Bilan : « 1er du groupe D », « Éliminé · Quarts de finale », « ✦ Vainqueur »…) | chaque édition vers sa phase finale |
+| Équipe-type | celle d'un club pour l'édition où elle en est : à chaque place de la forme qu'elle y a le plus alignée, le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires dans l'édition ; ses matches et ses buts de l'édition sous son nom. Avant son premier match de l'édition, ses meilleurs joueurs du rassemblement à leur note au poste, aux places des sélectionneurs. Le poste sur le maillot ; un renfort temporaire en gris, sans lien | — |
+| Groupe | sous l'équipe-type : le groupe de l'édition (celui de sa Ligue des nations, de ses qualifications, ou de la phase finale une fois tiré), en entier : rang, nation, points, différence. Les places qualificatives sont marquées (la première en qualifications, les deux premières en phase finale ; en Ligue des nations, en vert la place qui monte d'une division ou mène à la phase finale, en rouge celle qui descend) et la ligne de la sélection est teintée. Absent pour une nation que l'édition ne concerne pas | page de l'édition |
+| Calendrier | toute la colonne, toutes éditions confondues : les trois prochains matches au plus et les derniers joués avant eux. L'adversaire suit son drapeau ; un match d'une autre édition porte sa pastille (EU, CM, LN) ; un match sur terrain neutre n'a pas d'avion | onglet Calendrier |
+| Buteurs, Passeurs, Notes | les meilleurs de la sélection dans l'édition, joueurs partis compris, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |
 
-- **Calendrier** : les cinq derniers matches et les trois prochains, toutes éditions confondues.
-  L'adversaire suit son drapeau ; un match d'une autre édition que celle en cours porte sa pastille
-  (EU, CM, LN) ; un match sur terrain neutre n'a pas d'avion.
-- **Dernier onze aligné** : le dernier match joué et ses onze titulaires sur le terrain couché, aux
-  couleurs de la sélection.
-- **Groupe** : le groupe de la sélection dans l'édition de son prochain match (à défaut de son
-  dernier) : celui de sa Ligue des nations, de ses qualifications, ou de la phase finale une fois
-  tiré, en entier : rang, nation, points, différence. Les places qualificatives sont marquées (la
-  première en qualifications, les deux premières en phase finale ; en Ligue des nations, en vert la
-  place qui monte d'une division ou mène à la phase finale, en rouge celle qui descend) et la ligne
-  de la sélection est teintée. Absent pour une nation que l'édition ne concerne pas.
+**Effectif.** Une seule liste, sur toute la largeur, celle du rassemblement en cours, à défaut du
+dernier : « Rassemblement du 9 au 17 novembre 2028 · 23 joueurs » ou « Dernier rassemblement… ».
+C'est la liste d'un club, avec ses trois vues (Infos, Attributs, Jeu) et son tri par le serveur
+(`tri`, `ordre`), le poste par défaut. Le club du joueur tient la place de sa nationalité ; il n'y a
+ni moral ni cartons. Après la forme viennent ses sélections et ses buts en sélection (SÉL., BUTS),
+puis ce qu'il a fait dans l'édition du rassemblement : matches, buts, passes, note moyenne (MJ, B,
+PD, NOTE). Un renfort temporaire n'a ni club, ni valeur, ni contrat ; ce qui manque se range en fin
+de tri. Rien ne se tient à côté d'elle : les widgets de la sélection sont dans sa Présentation.
 
 **Calendrier.** Le calendrier d'un club, pour une édition : une ligne par match, du premier au dernier,
 avec le jour et son année (une édition court sur deux ans), la pastille de l'édition (EU, CM, LN), le
@@ -1329,14 +1335,16 @@ GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (ave
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison)}]}
 GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification, de phase finale
                                           ou de Ligue des nations (chaque ligne de son classement avec movement)
-GET  /api/international/nations/{id}?tri=&ordre=   fiche d'une sélection : major_color, minor_color, competition {year, name, stage} | null, camp,
-                                          squad (trié comme un effectif ; chaque joueur : caps, international_goals, et pour l'édition du rassemblement
-                                          appearances, goals, assists, average), calendar {last, next}, lineup, group {year, edition, code, stage,
-                                          finals, name, places, rows} | null (le groupe de l'édition de son prochain match ; en Ligue des
-                                          nations, chaque ligne avec movement)
+GET  /api/international/nations/{id}?tri=&ordre=   fiche d'une sélection : major_color, minor_color, kit_url, away_kit_url (lus dans
+                                          data/nations.csv à chaque requête ; null sans tenue), camp, squad (trié comme un effectif ; chaque joueur :
+                                          caps, international_goals, et pour l'édition du rassemblement appearances, goals, assists, average)
+GET  /api/international/nations/{id}/apercu   cartes de la Présentation : calendar {last (les 40 derniers joués au plus, le plus récent
+                                          d'abord, avec outcome), next (les 3 prochains)}, toutes éditions ; de l'édition où elle en est : eleven
+                                          (celui d'un club, chaque joueur avec shirt null et temporary) | null, players [{id, name, appearances,
+                                          goals, assists, average}]
 GET  /api/international/nations/{id}/calendrier?edition=   les matches d'une édition (celle de son prochain match par défaut, sinon la dernière jouée), chacun avec
                                           scorers et outcome (V/N/D du côté de la sélection, null à venir) ; edition, editions [{year, name}], group
-                                          (celui de l'édition), competitions : {id, year, name, kind, code, place, winner, played, won, drawn, lost,
+                                          (celui de l'édition ; en Ligue des nations, chaque ligne avec movement), competitions : {id, year, name, kind, code, place, winner, played, won, drawn, lost,
                                           goals_for, goals_against} pour chaque édition jouée
 GET  /api/international/nations/{id}/navigation   sélections de la confédération : précédent, suivant, liste
 GET  /api/international/nations/{id}/historique?vue=ensemble|editions|joueurs|records   les vues d'un club : items (chaque édition terminée :

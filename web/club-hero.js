@@ -117,6 +117,17 @@ export function clubTiles(club,competitions=[]){
   +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes sur 20')}${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;
 }
 
+// The row of tiles that opens a selection's Présentation, a club's where they apply: where it stands in the edition it is at
+// (`edition`, the record of its calendar), the players of its latest camp and their mean age, and their value, which a
+// campaign-only reinforcement has none of.
+export function nationTiles(nation,edition=null){
+ const squad=nation.squad||[],valued=squad.filter(player=>player.value!=null);
+ const age=squad.length?Math.round(10*squad.reduce((sum,player)=>sum+player.age,0)/squad.length)/10:null;
+ const place=edition?split(`<div><span>${competitionLink(edition,{badge:true})}</span><strong>${e(String(edition.place||'—').replace(/^Éliminé · /,''))}</strong></div>`):'';
+ return `<div class="club-tiles">${place}${split(column('Joueurs',squad.length?n(squad.length):'—')+column('Âge moyen',age==null?'—':n(age)))}`
+  +`${tile('Valeur',valued.length?money(valued.reduce((sum,player)=>sum+player.value,0)):'—','','Valeur de la liste')}</div>`;
+}
+
 // The band of a club before a game is made with it (« Nouvelle partie »): its colours, its crest, its name, its country's
 // flag and its league after it; no link, no tile, no tab: the screen sets its figures under it.
 export function creationHero(club){

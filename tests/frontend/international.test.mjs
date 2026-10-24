@@ -34,11 +34,9 @@ const starter={id:12,name:'Titulaire',position:'MC',age:25,rating:80,potential:8
  fitness:.9,form:1.05,caps:12,international_goals:3,appearances:2,substitutes:0,goals:1,assists:1,average:7.25};
 const reinforcement={id:-1,name:'Renfort',position:'GB',age:28,rating:60,potential:60,club:null,value:null,wage:null,contract_end:null,fitness:.9,form:1,caps:0,international_goals:0,appearances:0,substitutes:0,goals:0,assists:0,average:null};
 const fixture=(id,home,away,extra={})=>({id,date:'2026-09-04',competition:'Euro 2028',competition_id:-102028,competition_code:'EU',international:true,round_label:'Qualifications · J1',home,away,score:null,penalties:null,neutral:false,...extra});
-// What the API says of a selection: its kit, the edition it plays, its camp, then the widgets beside the list.
-const page=(over={})=>({...nation,major_color:'#1f3f94',minor_color:'#ffffff',competition:{year:2028,name:'Euro 2028',stage:'Qualifications'},
- camp:{start:'2026-08-31',end:'2026-09-09',upcoming:true},squad:[starter,reinforcement],matches:[],
- calendar:{last:[fixture(1,nation,spain,{score:[2,1],outcome:'V'}),fixture(2,spain,nation,{competition:'Coupe du monde 2026',competition_code:'CM',round_label:'Demi-finales',neutral:true,score:[1,1],penalties:[4,5],outcome:'V'})],next:[fixture(3,spain,nation)]},
- lineup:null,group:{year:2028,edition:'Euro 2028',code:'EU',finals:false,name:'D',places:1,rows:[row,{...row,nation:spain,points:12,difference:-3}]},...over});
+// What the API says of a selection: its kit, its two outfits, its camp.
+const page=(over={})=>({...nation,major_color:'#1f3f94',minor_color:'#ffffff',kit_url:'/kits/1/outfit.png?major=1F3F94&nation=FRA',away_kit_url:'/kits/12/outfit.png?major=FFFFFF&nation=FRA',
+ camp:{start:'2026-08-31',end:'2026-09-09',upcoming:true},squad:[starter,reinforcement],...over});
 const scorer=(id,name,...minutes)=>({id,name,minutes});
 const qualifier=(id,date,round,home,away,extra={})=>fixture(id,home,away,{date,competition:'Coupe du monde 2030',competition_id:-102030,competition_code:'CM',round_label:`Qualifications · J${round}`,outcome:null,scorers:null,...extra});
 // What the API says of its calendar: the matches of one edition, its group there, its record in each edition it played.
@@ -49,7 +47,13 @@ const seasons=(over={})=>({edition:2030,editions:[{year:2030,name:'Coupe du mond
  group:{year:2030,edition:'Coupe du monde 2030',code:'CM',finals:false,name:'D',places:1,rows:[row,{...row,nation:spain,points:12,difference:-3}]},
  competitions:[{id:-102030,year:2030,name:'Coupe du monde 2030',kind:'international',code:'CM',place:'1er du groupe D',winner:false,played:2,won:1,drawn:1,lost:0,goals_for:5,goals_against:1},
   {id:-102028,year:2028,name:'Euro 2028',kind:'international',code:'EU',place:'Vainqueur',winner:true,played:16,won:12,drawn:3,lost:1,goals_for:34,goals_against:9}],...over});
-const serving=(answer,calendar=seasons())=>async url=>({ok:true,json:async()=>url.includes('/navigation')?navigation:url.includes('/calendrier')?calendar:url.includes('/historique')?(url.includes('vue=joueurs')?squadArchive:archive):url.includes('/nations/')?answer:{enabled:true,nations:[nation],editions:[{year:2028,name:'Euro 2028',winner:null}]}});
+// What the API says of its Présentation: its matches, every edition included, the latest first; its équipe-type in the
+// edition, a reinforcement in goal; what each player did there.
+const typical=['GB','DG','DC','DC','DD','MDC','MC','MC','AILG','BU','AILD'].map((position,index)=>({id:index?100+index:-9,name:`Joueur ${index}`,short:null,position,shirt:null,note:150,
+ appearances:2,starts:2,goals:index===9?3:0,temporary:!index}));
+const preview=(over={})=>({calendar:{last:[fixture(1,nation,spain,{score:[2,1],outcome:'V'}),fixture(2,spain,nation,{competition:'Coupe du monde 2026',competition_code:'CM',round_label:'Demi-finales',neutral:true,score:[1,1],penalties:[4,5],outcome:'V'})],next:[fixture(3,spain,nation)]},
+ eleven:{basis:'starts',players:typical},players:[{id:12,name:'Titulaire',appearances:2,goals:3,assists:1,average:7.25},{id:-4,name:'Un Renfort',appearances:2,goals:1,assists:0,average:6.5}],...over});
+const serving=(answer,calendar=seasons(),overview=preview())=>async url=>({ok:true,json:async()=>url.includes('/navigation')?navigation:url.includes('/calendrier')?calendar:url.includes('/apercu')?overview:url.includes('/historique')?(url.includes('vue=joueurs')?squadArchive:archive):url.includes('/nations/')?answer:{enabled:true,nations:[nation],editions:[{year:2028,name:'Euro 2028',winner:null}]}});
 
 test('a selection’s page wears a club’s header: its colours, its logo alone, its flag after its name, its strength, the tabs',async()=>{
  const previous=globalThis.fetch;
@@ -65,10 +69,11 @@ test('a selection’s page wears a club’s header: its colours, its logo alone,
   assert.match(html,/<div class="club-hero-name"><h1>France &lt;test&gt;<\/h1><img class="club-hero-flag" src="\/flags\/fr\.svg" alt=""><\/div>/);assert.doesNotMatch(html,/club-hero-context|crest-flag/);
   // One figure only: no title count, no last edition, no rank in the group.
   assert.match(html,/<div class="club-hero-tiles"><div class="club-hero-tile"><span>Force<\/span><strong>80<\/strong><\/div><\/div>/);
-  assert.match(html,/<nav class="club-hero-tabs" aria-label="Sections"><a class="active" href="#\/international\/nation\/-1001\/squad" aria-current="page">Effectif<\/a><a class="" href="#\/international\/nation\/-1001\/calendar">Calendrier<\/a><a class="" href="#\/international\/nation\/-1001\/history">Historique<\/a><\/nav>/);
+  // A club's tabs where they apply, its Présentation open by default.
+  assert.match(html,/<nav class="club-hero-tabs" aria-label="Sections"><a class="active" href="#\/international\/nation\/-1001\/overview" aria-current="page">Présentation<\/a><a class="" href="#\/international\/nation\/-1001\/squad">Effectif<\/a><a class="" href="#\/international\/nation\/-1001\/calendar">Calendrier<\/a><a class="" href="#\/international\/nation\/-1001\/history">Historique<\/a><\/nav>/);
   assert.doesNotMatch(html,/class="page-heading"|class="eyebrow"|\/ 100|Joueurs éligibles/);
   // A nation without colours keeps a plain band.
-  globalThis.fetch=serving(page({major_color:null,minor_color:null,competition:null,group:null}));
+  globalThis.fetch=serving(page({major_color:null,minor_color:null}),seasons({group:null}));
   const plain=await internationalScreen('nation','-1001');
   assert.match(plain,/^<header class="club-hero plain">/);
   assert.doesNotMatch(plain,/standings-extract/);
@@ -91,8 +96,10 @@ test('the list of a camp is a club’s squad list, with each player’s club, hi
  const previous=globalThis.fetch,asked=[];
  globalThis.fetch=async url=>{asked.push(url);return serving(page())(url);};
  try{
-  const html=await internationalScreen('nation','-1001');
-  assert.match(html,/<div class="club-squad-layout"><div class="club-squad"><section class="card"><div class="card-head"><h2>Rassemblement du 31 août au 9 septembre 2026 · 2 joueurs<\/h2><div class="card-tools"><div class="segmented" role="group" aria-label="Colonnes">/);
+  const html=await internationalScreen('nation','-1001','squad');
+  // The list alone across the page, as a club's.
+  assert.match(html,/<\/header><div class="club-squad"><section class="card"><div class="card-head"><h2>Rassemblement du 31 août au 9 septembre 2026 · 2 joueurs<\/h2><div class="card-tools"><div class="segmented" role="group" aria-label="Colonnes">/);
+  assert.doesNotMatch(html,/club-widgets|<h2>Calendrier/);
   assert.match(html,/POSTE.*JOUEUR.*CLUB.*ÂGE.*NIV\..*POT\..*VALEUR.*SALAIRE.*CONTRAT.*ÉTAT.*FORME.*SÉL\..*BUTS.*MJ.*>B<.*PD.*NOTE/s);
   assert.doesNotMatch(html,/NAT\.|MORAL/);
   // The server sorts it, on the position by default; a reinforcement has neither a club nor a value.
@@ -277,37 +284,62 @@ test('a competition’s history: its finals, the titles of each nation, how far 
  }finally{globalThis.fetch=previous;setNations({});}
 });
 
-test('beside the list, the calendar, the last eleven and the group stand as a club’s widgets do',async()=>{
- const previous=globalThis.fetch;
- globalThis.fetch=serving(page());
+test('a selection opens on its Présentation, a club’s: its tiles, its kits and its places, its équipe-type over its group, its matches, its best players',async()=>{
+ const previous=globalThis.fetch,asked=[];
+ globalThis.fetch=async url=>{asked.push(url);return serving(page())(url);};
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'}});
  try{
   const html=await internationalScreen('nation','-1001');
-  const widgets=html.split('<aside class="club-widgets" aria-label="La sélection en bref">')[1];
-  assert.ok(widgets.indexOf('<h2>Calendrier</h2>')<widgets.indexOf('<h2>Dernier onze aligné</h2>')&&widgets.indexOf('<h2>Dernier onze aligné</h2>')<widgets.indexOf('<h2>Groupe D'));
-  assert.match(widgets,/<a href="#\/international\/nation\/-1001\/calendar" aria-label="Voir le calendrier">Voir →<\/a>/);
-  // The other side follows its flag; a match of another edition carries its badge; neutral ground is not an away game.
-  const rows=widgets.split('<a class="club-match"').slice(1);
+  // Its calendar of the edition under way gives its place, its group and its record; its Présentation the rest.
+  assert.deepEqual(asked,['/api/international/nations/-1001','/api/international/nations/-1001/navigation','/api/international/nations/-1001/calendrier','/api/international/nations/-1001/apercu']);
+  // Its tiles: where it stands in the edition it is at, the players of its camp and their mean age, then their value.
+  const tiles=html.split('<div class="club-tiles">')[1].split('<div class="club-presentation"')[0];
+  assert.match(tiles,/^<div class="club-hero-tile split"><div><span><a class="competition-link" href="#\/international\/coupe-du-monde\?edition=2030"><span class="competition-code international" title="Coupe du monde 2030">CM<\/span>Coupe du monde 2030<\/a><\/span><strong>1er du groupe D<\/strong><\/div><\/div>/);
+  assert.match(tiles,/<span>Joueurs<\/span><strong>2<\/strong><\/div><div><span>Âge moyen<\/span><strong>26\.5<\/strong>/);
+  assert.match(tiles,/<div class="club-hero-tile" title="Valeur de la liste"><span>Valeur<\/span><strong>1\sM€<\/strong><\/div><\/div>$/);
+  assert.doesNotMatch(tiles,/Tactique|Entraînement|Recrutement/);
+  // Four columns that fill the window, as a club's.
+  const columns=html.split('<div class="presentation-column">').slice(1);
+  const titles=part=>[...part.matchAll(/<h2>([^<]+)/g)].map(found=>found[1]);
+  assert.match(html,/<div class="club-presentation" data-fill>/);assert.equal(columns.length,4);
+  assert.deepEqual(titles(columns[0]),['Tenues','Parcours']);
+  assert.deepEqual(titles(columns[1]),['Équipe-type','Groupe D – 8']);
+  assert.deepEqual(titles(columns[2]),['Calendrier']);
+  assert.deepEqual(titles(columns[3]),['Buteurs','Passeurs','Notes']);
+  // Its two outfits, home first, named by their tooltip.
+  assert.match(columns[0],/<a href="\/kits\/1\/outfit\.png\?major=1F3F94&amp;nation=FRA" target="_blank" rel="noopener" title="Domicile"><img class="kit-outfit"[^>]*alt="Tenue à domicile de France &lt;test&gt;"/);
+  assert.match(columns[0],/title="Extérieur"><img class="kit-outfit" src="\/kits\/12\/outfit\.png/);
+  // Its place in each edition, the latest first, a title after its star; its record is the Calendrier's.
+  assert.match(columns[0],/COMPÉTITION<.*PLACE</s);assert.doesNotMatch(columns[0],/>BP<|>J</);
+  assert.ok(columns[0].indexOf('>Coupe du monde 2030<')<columns[0].indexOf('>Euro 2028<'));
+  assert.match(columns[0],/<span class="strong">✦ Vainqueur<\/span>/);
+  // Its équipe-type in its kit, each player's position on his shirt; a reinforcement in no kit and without a page.
+  const eleven=columns[1].split('<h2>Groupe')[0];
+  assert.equal((eleven.match(/<span class="kit-shirt" style="--kit-body:#1f3f94;--kit-sleeves:#ffffff;--kit-ink:#ffffff">/g)||[]).length,10);
+  assert.equal((eleven.match(/<span class="kit-shirt plain">/g)||[]).length,1);
+  assert.match(eleven,/<span class="pitch-player" title="Joueur 0 · 2 matches dont 2 titularisations, 0 but"/);
+  assert.match(eleven,/<a class="pitch-player" href="#\/player\/109" title="Joueur 9 · 2 matches dont 2 titularisations, 3 buts"/);
+  assert.match(eleven,/<span class="block-season">2 m \/ 3<span class="match-mark goal"><\/span><\/span>/);
+  assert.doesNotMatch(eleven,/>null<|undefined/);
+  // Under it, its group: the place that qualifies and its own row marked, the points and the difference.
+  assert.match(columns[1],/<section class="card standings-card standings-extract"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir →<\/a>/);
+  assert.match(columns[1],/NATION<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th><th class="difference-column"[^>]*><button class="sort-toggle" data-table-sort>DIFF\.<\/button><\/th><\/tr>/);
+  assert.match(columns[1],/<tr class="promoted own"[^>]*><td[^>]*><span class="rank first">1<\/span>/);
+  // Its matches, every edition included, oldest first: the other side after its flag, another edition's badge, no plane
+  // on neutral ground; « Voir → » opens its Calendrier.
+  assert.match(columns[2],/<a href="#\/international\/nation\/-1001\/calendar" aria-label="Voir le calendrier">Voir →<\/a>/);
+  const rows=columns[2].split('<a class="club-match"').slice(1);
   assert.equal(rows.length,3);
   assert.match(rows[0],/t\.a\.b\. 4 – 5/);assert.match(rows[0],/<b><span class="nation"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"[^>]*><\/span>Espagne<\/span><\/b><span class="competition-code international" title="Coupe du monde 2026">CM<\/span>/);
   assert.match(rows[0],/title="Coupe du monde 2026 · Demi-finales · Terrain neutre · t\.a\.b\. 4 – 5"/);assert.doesNotMatch(rows[0],/<svg class="away"/);
-  assert.match(rows[1],/class="club-match-score V"/);assert.doesNotMatch(rows[1],/competition-code|<svg class="away"/);
+  assert.match(rows[1],/class="club-match-score V"/);assert.match(rows[1],/<span class="competition-code international" title="Euro 2028">EU<\/span>/);
   assert.match(rows[2],/<svg class="away"/);assert.match(rows[2],/À venir/);
-  assert.match(widgets,/La sélection n’a pas encore joué\./);
-  // The whole group, the place that qualifies and the selection's own row marked.
-  assert.match(widgets,/<h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/euro\/qualifications\?edition=2028" aria-label="Voir le groupe">Voir →<\/a>/);
-  assert.match(widgets,/NATION<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th><th class="difference-column"[^>]*><button class="sort-toggle" data-table-sort>DIFF\.<\/button><\/th><\/tr>/);
-  assert.match(widgets,/<tr class="promoted own"[^>]*><td[^>]*><span class="rank first">1<\/span>/);assert.match(widgets,/>\+10<\/td>/);assert.match(widgets,/>-3<\/td>/);
-  // The eleven of the last match, in the selection's kit.
-  const eleven=['GB','DG','DC','DC','DD','MDC','MC','MC','AILG','BU','AILD'].map((position,index)=>({id:index?100+index:-9,name:`Joueur ${index}`,position,temporary:!index,stats:null}));
-  globalThis.fetch=serving(page({group:{year:2028,edition:'Euro 2028',code:'EU',finals:true,name:'B',places:2,rows:[row,{...row,nation:spain}]},
-   lineup:{match:fixture(2,spain,nation,{neutral:true,score:[0,1],outcome:'V'}),side:'away',players:eleven}}));
-  const played=await internationalScreen('nation','-1001');
-  assert.match(played,/<div class="pitch lying" aria-label="Onze aligné par France &lt;test&gt;">/);
-  assert.equal((played.match(/<span class="kit-shirt" style="--kit-body:#1f3f94;--kit-sleeves:#ffffff;--kit-ink:#ffffff">/g)||[]).length,10);
-  assert.equal((played.match(/<span class="kit-shirt plain">/g)||[]).length,1);
-  assert.match(played,/contre <span class="nation"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"[^>]*><\/span>Espagne<\/span><small>/);
-  assert.match(played,/href="#\/international\/euro\/finals\?edition=2028"/);assert.equal((played.match(/<tr class="promoted/g)||[]).length,2);
+  // Its best scorers, providers and notes in the edition, as bars; a reinforcement says so.
+  assert.match(columns[3],/<h2>Buteurs<\/h2><span class="card-hint">buts<\/span>/);
+  assert.match(columns[3],/<a href="#\/player\/12">Titulaire<\/a><\/span><i style="width:100%"><\/i><b>3<\/b>/);
+  assert.match(columns[3],/Un Renfort <small>\(temp\.\)<\/small><\/span><\/span><i style="width:33%"><\/i><b>1<\/b>/);
+  assert.match(columns[3],/<b>7\.25<\/b>/);assert.match(columns[3],/<b>6\.50<\/b>/);
+  assert.doesNotMatch(html,/club-widgets|Dernier onze|undefined|NaN/);
  }finally{globalThis.fetch=previous;setNations({});}
 });
 
@@ -315,10 +347,13 @@ test('a nation without a current camp falls back to its last one, and one never 
  const previous=globalThis.fetch;
  globalThis.fetch=serving(page({camp:{start:'2026-11-09',end:'2026-11-17',upcoming:false},squad:[starter]}));
  try{
-  assert.match(await internationalScreen('nation','-1001'),/<h2>Dernier rassemblement du 9 au 17 novembre 2026 · 1 joueur<\/h2>/);
-  globalThis.fetch=serving(page({camp:null,squad:[],calendar:{last:[],next:[]}}));
+  assert.match(await internationalScreen('nation','-1001','squad'),/<h2>Dernier rassemblement du 9 au 17 novembre 2026 · 1 joueur<\/h2>/);
+  globalThis.fetch=serving(page({camp:null,squad:[],kit_url:null,away_kit_url:null}),{edition:null,editions:[],items:[],group:null,competitions:[]},{calendar:{last:[],next:[]},eleven:null,players:[]});
+  assert.match(await internationalScreen('nation','-1001','squad'),/Aucun rassemblement en cours/);
+  // Its Présentation keeps its tiles, without an edition, and no card that would be empty.
   const idle=await internationalScreen('nation','-1001');
-  assert.match(idle,/Aucun rassemblement en cours/);assert.match(idle,/Aucun match programmé/);
+  assert.match(idle,/<div class="club-tiles"><div class="club-hero-tile split"><div><span>Joueurs<\/span><strong>—<\/strong><\/div><div><span>Âge moyen<\/span><strong>—<\/strong><\/div><\/div><div class="club-hero-tile" title="Valeur de la liste"><span>Valeur<\/span><strong>—<\/strong><\/div><\/div>/);
+  assert.equal((idle.match(/<div class="presentation-column"><\/div>/g)||[]).length,4);assert.doesNotMatch(idle,/undefined|NaN/);
  }finally{globalThis.fetch=previous;}
 });
 

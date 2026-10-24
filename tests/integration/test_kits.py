@@ -86,3 +86,16 @@ def test_club_identity_is_passed_to_the_crest_renderer(client, side):
     assert response.content != client.get(url.replace("club_id=866", "club_id=868")).content
     for invalid in ("-1", "0", "../866", "abc"):
         assert client.get(url.replace("club_id=866", f"club_id={invalid}")).status_code == 422
+
+
+def test_a_selection_wears_its_logo_on_the_chest(client):
+    url = kit_url(SimpleNamespace(home_kit_id=1), nation="FRA")
+    assert parse_qs(urlsplit(url).query)["nation"] == ["FRA"] and "club_id" not in url
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content != client.get(url.replace("&nation=FRA", "")).content
+    assert response.content != client.get(url.replace("nation=FRA", "nation=ESP")).content
+    # A nation without a logo wears none.
+    assert client.get(url.replace("nation=FRA", "nation=ZZZ")).content == client.get(url.replace("&nation=FRA", "")).content
+    for invalid in ("fr", "FRAN", "../FR", "F-A"):
+        assert client.get(url.replace("nation=FRA", f"nation={invalid}")).status_code == 422

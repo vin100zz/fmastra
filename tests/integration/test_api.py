@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from api import views as v
 from api.app import create_app
-from api.nations import build_nation_table
+from api.nations import build_nation_table, kit_colors
 from core.domain.players import ATTRIBUTE_NAMES, Discipline, Injury
 from core.world.simulation import advance_day, target_date
 from infrastructure.importation.loader import import_world
@@ -441,8 +441,9 @@ def test_competitions_carry_what_their_header_shows(client, monkeypatch):
     colours = lambda item: (item['major_color'], item['minor_color'], item['ground_color'])
     # A league and a national cup wear the kit of their country's selection, whose page their flag opens.
     france = next(team.id for team in world.international.nations.values() if team.code == 'FRA')
-    assert colours(data['Ligue 1']) == colours(data['Coupe de France']) == ('#1f3f94', '#ffffff', None)
-    assert colours(data['Premier League']) == ('#ffffff', '#0b1f4b', None) and colours(data['La Liga']) == ('#c60b1e', '#ffc400', None)
+    kit = lambda code: (*kit_colors(code).values(), None)
+    assert colours(data['Ligue 1']) == colours(data['Coupe de France']) == kit('FRA') and kit('FRA')[0]
+    assert colours(data['Premier League']) == kit('ENG') and colours(data['La Liga']) == kit('ESP')
     assert data['Ligue 1']['nation_id'] == data['National']['nation_id'] == france
     # A European cup has its own colour, on the ground the three share, and no country.
     assert colours(data['Ligue des champions']) == ('#2447e6', None, '#0a0b5c') and data['Ligue des champions']['nation_id'] is None

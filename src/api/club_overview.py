@@ -3,6 +3,7 @@ from collections import Counter
 
 from core.ai.assignment import maximize_assignment
 from core.domain.matches import Match
+from core.domain.players import Player
 from core.domain.world import World
 from core.world.cups import ROUND_NAMES
 from . import views as v
@@ -45,32 +46,37 @@ def last_lineup(world: World, club_id: int, played: list[Match]) -> dict | None:
     return None
 
 
-def typical_eleven(world: World, club_id: int, played: list[Match]) -> dict | None:
-    """The club's équipe-type among its first-team players: at each place of the shape it fielded most this season, who
-    started there most. Before its first match of the season, or for a club that plays none, its best eleven at the places
-    of its formation, by note at each. None without enough players."""
-    club = world.clubs[club_id]
-    squad = [world.players[pid] for pid in club.player_ids if pid in world.players and world.players[pid].reserve_since is None]
-    sides = [getattr(match.result, f"{'home' if match.home_id == club_id else 'away'}_lineup") for match in played if match.season == world.season]
-    lineups = [lineup for lineup in sides if lineup]
+def eleven(world: World, squad: list[Player], lineups: list, formation, stats: dict[int, dict], shorts: dict[int, str]) -> dict | None:
+    """An équipe-type among `squad`: at each place of the shape fielded most in `lineups`, who started there most. Without
+    a lineup, the best eleven at the places of `formation`, by note at each. Each player with his matches, starts and
+    goals (`stats`) and his short name (`shorts`). None without enough players."""
     if lineups:
         shape = Counter(tuple(sorted(role for _, role in lineup)) for lineup in lineups).most_common(1)[0][0]
         starts = Counter(start for lineup in lineups for start in lineup)
     else:
-        # The human club's own tactic plays the places of its pitch.
-        own = [role for role, _, _ in world.custom_formation] if club_id == world.controlled_club_id and world.custom_formation else None
-        shape, starts = tuple(world.config.formations.formations.get(club.formation) or own or next(iter(world.config.formations.formations.values()))), Counter()
+        shape, starts = tuple(formation), Counter()
     roles = sorted(shape, key=ROLE_ORDER.index)
     if len(squad) < len(roles): return None
     notes = {player.id: v.position_notes(player, world.config) for player in squad}
     assigned = maximize_assignment([[starts[(player.id, role)] * START_WEIGHT + notes[player.id][role] for player in squad] for role in roles])
-    stats = v.club_season_stats(world, club_id, [player.id for player in squad])
-    shorts = v.squad_short_names(world, club_id, {})
     return {"basis": "starts" if lineups else "notes",
             "players": [{"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": role, "shirt": player.shirt,
-                         "note": notes[player.id][role], "appearances": stats[player.id]["appearances"],
-                         "starts": stats[player.id]["appearances"] - stats[player.id]["substitutes"], "goals": stats[player.id]["goals"]}
+                         "note": notes[player.id][role], **{key: stats[player.id][key] for key in ("appearances", "starts", "goals")}}
                         for role, player in ((role, squad[index]) for role, index in zip(roles, assigned))]}
+
+
+def typical_eleven(world: World, club_id: int, played: list[Match]) -> dict | None:
+    """The club's équipe-type among its first-team players (`eleven`), from its matches of the season; before its first
+    one, or for a club that plays none, at the places of its formation."""
+    club = world.clubs[club_id]
+    squad = [world.players[pid] for pid in club.player_ids if pid in world.players and world.players[pid].reserve_since is None]
+    sides = [getattr(match.result, f"{'home' if match.home_id == club_id else 'away'}_lineup") for match in played if match.season == world.season]
+    # The human club's own tactic plays the places of its pitch.
+    own = [role for role, _, _ in world.custom_formation] if club_id == world.controlled_club_id and world.custom_formation else None
+    formation = world.config.formations.formations.get(club.formation) or own or next(iter(world.config.formations.formations.values()))
+    stats = {pid: {"appearances": row["appearances"], "starts": row["appearances"] - row["substitutes"], "goals": row["goals"]}
+             for pid, row in v.club_season_stats(world, club_id, [player.id for player in squad]).items()}
+    return eleven(world, squad, [lineup for lineup in sides if lineup], formation, stats, v.squad_short_names(world, club_id, {}))
 
 
 def overview(world: World, club_id: int) -> dict:

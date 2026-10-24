@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from io import BytesIO
+import json
 from pathlib import Path
 import re
 
@@ -12,6 +13,8 @@ _ASSETS = Path(__file__).resolve().parents[2] / "web" / "kits"
 _OUTPUT_SIZE = (192, 192)
 _OUTFIT_SIZE = (320, 725)
 PATTERN_COUNT = 57
+# A nation's code, as ``data/nations.csv`` writes it: FRA, X2Z.
+NATION_CODE = r"^[A-Z0-9]{3}$"
 
 
 def normalize_color(value: str) -> str:
@@ -60,10 +63,10 @@ def _load_component(name: str) -> Image.Image:
     return image.crop(image.getchannel("A").getbbox())
 
 
-@lru_cache(maxsize=128)
-def _load_crest(club_id: int) -> Image.Image | None:
+def _load_badge(path: Path) -> Image.Image | None:
+    """A crest or a logo cut to what it draws, in the box it takes on the chest; none without one."""
     try:
-        with Image.open(_ASSETS.parent / "clubs" / f"TCM1_{club_id}.png") as source:
+        with Image.open(path) as source:
             image = source.convert("RGBA")
     except FileNotFoundError:
         return None
@@ -71,6 +74,27 @@ def _load_crest(club_id: int) -> Image.Image | None:
     if bounds is None:
         return None
     return ImageOps.contain(image.crop(bounds), (72, 88), Image.Resampling.LANCZOS)
+
+
+@lru_cache(maxsize=128)
+def _load_crest(club_id: int) -> Image.Image | None:
+    return _load_badge(_ASSETS.parent / "clubs" / f"TCM1_{club_id}.png")
+
+
+@lru_cache(maxsize=1)
+def _nation_logos() -> dict[str, str]:
+    """The file of each selection's logo in ``web/nations``, by nation code, as its ``sources.json`` lists them."""
+    try:
+        logos = json.loads((_ASSETS.parent / "nations" / "sources.json").read_text(encoding="utf-8"))["logos"]
+    except FileNotFoundError:
+        return {}
+    return {code: logo["file"] for logo in logos for code in logo["codes"]}
+
+
+@lru_cache(maxsize=128)
+def _load_nation_logo(code: str) -> Image.Image | None:
+    file = _nation_logos().get(code)
+    return _load_badge(_ASSETS.parent / "nations" / file) if file else None
 
 
 def recolor_pattern(
@@ -118,7 +142,7 @@ def render_kit(pattern_index: int, colors: tuple[str, str, str]) -> bytes:
 
 @lru_cache(maxsize=128)
 def _render_outfit(pattern_index: int, shirt: tuple, shorts: tuple, socks: tuple,
-                   club_id: int | None) -> bytes:
+                   club_id: int | None, nation: str | None = None) -> bytes:
     canvas = Image.new("RGBA", (640, 1450))
     # The shirt covers the waistband; leave knee space below the shorts.
     for source, palette, bounds, top in (
@@ -130,7 +154,8 @@ def _render_outfit(pattern_index: int, shirt: tuple, shorts: tuple, socks: tuple
         # Components can be smaller than their display size; allow upscaling.
         garment = ImageOps.contain(garment, bounds, Image.Resampling.LANCZOS)
         canvas.alpha_composite(garment, ((canvas.width - garment.width) // 2, top))
-    if club_id is not None and (crest := _load_crest(club_id)) is not None:
+    crest = _load_nation_logo(nation) if nation is not None else _load_crest(club_id) if club_id is not None else None
+    if crest is not None:
         # Wearer's left chest is on the viewer's right; retain the crest's colors.
         canvas.alpha_composite(crest, (410 - crest.width // 2, 200 - crest.height // 2))
     canvas.thumbnail(_OUTFIT_SIZE, Image.Resampling.LANCZOS)
@@ -141,9 +166,12 @@ def _render_outfit(pattern_index: int, shirt: tuple, shorts: tuple, socks: tuple
 
 def render_outfit(pattern_index: int, shirt: tuple[str, str, str],
                   shorts: tuple[str, str, str], socks: tuple[str, str, str],
-                  club_id: int | None = None) -> bytes:
-    """Assemble the three supplied garments with their independent CSV palettes."""
+                  club_id: int | None = None, nation: str | None = None) -> bytes:
+    """Assemble the three supplied garments with their independent CSV palettes, the club's crest or the selection's
+    logo (`nation`, its code) on the chest."""
     _validate_pattern(pattern_index)
     if club_id is not None and (type(club_id) is not int or club_id <= 0):
         raise ValueError("The club ID must be a positive integer.")
-    return _render_outfit(pattern_index, *(_normalize_palette(p) for p in (shirt, shorts, socks)), club_id)
+    if nation is not None and (type(nation) is not str or not re.fullmatch(NATION_CODE, nation)):
+        raise ValueError("A nation code has three capital letters or digits.")
+    return _render_outfit(pattern_index, *(_normalize_palette(p) for p in (shirt, shorts, socks)), club_id, nation)

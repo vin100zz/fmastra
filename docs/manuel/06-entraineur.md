@@ -26,6 +26,8 @@ Si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement
 
 **L'équipe-type.** La Présentation d'un club montre son équipe-type : la forme qu'il a le plus souvent alignée dans la saison, toutes compétitions confondues, et à chaque place le joueur de son équipe première qui y a été le plus souvent titulaire. Un joueur parti ou placé en réserve n'y figure plus ; une place où aucun joueur restant n'a été titulaire revient au meilleur à ce poste. Avant son premier match de la saison, ou pour un club qui n'en joue pas, ce sont ses meilleurs joueurs aux places de sa formation, retenus comme le onze de départ, sur leur seule note au poste : sans forme, ni condition, ni moral.
 
+La Présentation d'une sélection montre la sienne de la même façon, pour l'édition où elle en est (celle de son prochain match, à défaut de son dernier) : la forme qu'elle y a le plus souvent alignée, et à chaque place le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires pour elle dans l'édition. Un joueur retiré depuis n'y figure plus. Avant son premier match de l'édition, ce sont les meilleurs joueurs de son dernier rassemblement à leur note au poste, aux places que jouent tous les sélectionneurs.
+
 ## Le banc
 
 Le banc compte {{monde.regles_match.taille_banc}} joueurs : un gardien, puis des joueurs de champ choisis pour couvrir les postes du onze. Pour couvrir un poste, il faut une affinité d'au moins {{etats.remplacements.affinite_minimum_rotation * 20}} sur 20. L'IA prend d'abord de quoi couvrir chaque poste, en préférant, à valeur proche, les joueurs qui ont besoin de temps de jeu.

@@ -316,6 +316,40 @@ def test_international_shootout_and_suspension(world):
     assert player.id not in [p.id for p in next_lineup.bench]
 
 
+def test_a_selections_presentation_has_its_matches_its_equipe_type_and_what_its_players_did_in_the_edition(world):
+    from api.international import nation_overview
+    team, players = real_players(world)
+    world.date = Date(2026, 8, 31)
+    prepare_international_day(world)
+    # Before its first match: its next three, and its best eleven by note among its camp, at the places national coaches play.
+    before = nation_overview(world, team.id)
+    assert before["calendar"]["last"] == [] and len(before["calendar"]["next"]) == 3
+    assert before["eleven"]["basis"] == "notes" and before["players"] == []
+    assert {p["id"] for p in before["eleven"]["players"]} <= set(world.international.camps[team.id].player_ids)
+    # A selection's players wear no number of their own; a campaign-only reinforcement has no page.
+    assert all(p["shirt"] is None and p["temporary"] == (p["id"] < 0) for p in before["eleven"]["players"])
+    match = min((m for m in world.international.matches.values() if team.id in (m.home_id, m.away_id)), key=lambda m: (m.date, m.id))
+    edition = world.international.editions[match.season]
+    world.date = match.date
+    lineups = [camp_lineup(world, edition, nid) for nid in (match.home_id, match.away_id)]
+    own = lineups[0] if match.home_id == team.id else lineups[1]
+    sides = [[(slot.player.id, slot.position.value) for slot in lineup.slots] for lineup in lineups]
+    scorer = own.slots[-1].player
+    stats = {slot.player.id: PlayerMatchStats(minutes=90, goals=int(slot.player is scorer), rating=7) for lineup in lineups for slot in lineup.slots}
+    home = match.home_id == team.id
+    match.result = MatchResult(1 if home else 0, 0 if home else 1, "test", player_stats=stats, winner_id=team.id, home_lineup=sides[0], away_lineup=sides[1])
+    apply_international_result(world, edition, match, match.result, lineups)
+    # Its first match played: its eleven is the one it fielded, each with his match; what each did in the edition.
+    after = nation_overview(world, team.id)
+    assert [m["id"] for m in after["calendar"]["last"]] == [match.id] and after["calendar"]["last"][0]["outcome"] == "V"
+    eleven = after["eleven"]
+    assert eleven["basis"] == "starts"
+    assert sorted((p["id"], p["position"]) for p in eleven["players"]) == sorted((slot.player.id, slot.position.value) for slot in own.slots)
+    assert all(p["appearances"] == p["starts"] == 1 and p["goals"] == int(p["id"] == scorer.id) for p in eleven["players"])
+    assert sorted(p["id"] for p in after["players"]) == sorted(slot.player.id for slot in own.slots)
+    assert next(p for p in after["players"] if p["id"] == scorer.id)["goals"] == 1 and all(p["average"] == 7 for p in after["players"])
+
+
 def test_a_nations_group_follows_it_from_its_qualifiers_to_its_finals(world):
     from api.international import nation_group
     league, edition = world.international.editions[2027], world.international.editions[2028]

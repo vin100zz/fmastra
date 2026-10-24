@@ -810,7 +810,7 @@ def match_detail(world: World, match: Match) -> dict:
         # A selection wears its kit as a club does: the report's band and its shirts read the same keys.
         from .nations import kit_colors
         for side in ("home", "away"):
-            data[side] = {**data[side], **kit_colors(data[side]["name"])}
+            data[side] = {**data[side], **kit_colors(data[side]["nation"])}
     else:
         # The flag that follows a club's name in the band leads to its country's selection.
         for side in ("home", "away"):

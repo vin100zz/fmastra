@@ -1,4 +1,5 @@
 """Read-only international screens, with no dependency on club seasons."""
+from collections import Counter
 from dataclasses import asdict
 from typing import Literal
 from fastapi import APIRouter
@@ -7,7 +8,7 @@ from core.world.international import group_table, best_seconds, edition_matches,
 from core.world.international_calendar import LEAGUE_ROUNDS, SEMI_FINALS, FINAL, campaign_draw, edition_kind, nations_league
 from . import navigation as nav
 from . import views as v
-from .nations import competition_colors, kit_colors
+from .nations import competition_colors, kit_colors, kit_outfits
 from .statistics import LISTED_PLAYERS
 
 # The two characters on an edition's badge (docs/charte-graphique.md, « Compétitions »).
@@ -22,6 +23,8 @@ COMPETITIONS = {"world": "coupe-du-monde", "euro": "euro", "nations": "ligue-des
 KINDS = {slug: kind for kind, slug in COMPETITIONS.items()}
 # How far a nation went in an edition, the furthest first: a history ranks its nations by it.
 STAGES = ("winner", "final", "semi", "quarter", "eighth", "groups")
+# The latest matches a selection's Présentation is given, more than its column holds at full HD.
+PRESENTATION_MATCHES = 40
 
 
 def league_groups(edition):
@@ -442,6 +445,38 @@ def camp_rows(world, camp):
     return rows
 
 
+def nation_overview(world, nid):
+    """What a selection's Présentation shows: its latest matches, newest first, more than a column holds, and its next
+    three, every edition included; then, of the edition it is at, its équipe-type, a club's (`eleven`) among the players of
+    its latest camp and those who started for it there, from its matches of the edition, before the first at the places
+    national coaches play; and what each player did for it in the edition, as a squad's rows give it, for its best
+    scorers, providers and notes."""
+    from .club_overview import NEXT_MATCHES, eleven, outcome
+    matches = sorted((m for m in world.international.matches.values() if nid in (m.home_id, m.away_id)), key=lambda m: (m.date, m.id))
+    calendar = {"last": [{**international_match_row(world, m), "outcome": outcome(nid, m)} for m in reversed([m for m in matches if m.result][-PRESENTATION_MATCHES:])],
+                "next": [international_match_row(world, m) for m in [m for m in matches if not m.result][:NEXT_MATCHES]]}
+    edition = nation_edition(world, nid)
+    if edition is None:
+        return {"calendar": calendar, "eleven": None, "players": []}
+    played = [m for m in matches if m.season == edition.year and m.result]
+    lineups = [lineup for m in played if (lineup := getattr(m.result, f"{'home' if m.home_id == nid else 'away'}_lineup"))]
+    records = {r.player_id: r for r in world.international.records.values() if r.nation_id == nid and r.edition == edition.year}
+    camp = world.international.camps.get(nid) or world.international.last_camps.get(nid)
+    ids = dict.fromkeys([*(camp.player_ids if camp else ()), *(pid for lineup in lineups for pid, _ in lineup)])
+    squad = [player for pid in ids if (player := get_player_or_none(world, pid)) is not None]
+    starts = Counter(pid for lineup in lineups for pid, _ in lineup)
+    stats = {player.id: {"appearances": records[player.id].matches if player.id in records else 0, "starts": starts[player.id],
+                         "goals": records[player.id].goals if player.id in records else 0} for player in squad}
+    team = eleven(world, squad, lineups, next(iter(world.config.formations.formations.values())), stats,
+                  v.short_names({player.id: player.name for player in squad}))
+    # A selection's players wear no number of their own; a campaign-only reinforcement has no page.
+    for row in team["players"] if team else ():
+        row.update(shirt=None, temporary=row["id"] < 0)
+    return {"calendar": calendar, "eleven": team,
+            "players": [{"id": pid, "name": r.name, "appearances": r.matches, "goals": r.goals, "assists": r.assists,
+                         "average": round(r.rating_sum / r.rating_count, 2) if r.rating_count else None} for pid, r in records.items()]}
+
+
 def sorted_rows(world, rows, column, descending):
     """A camp's list in the order of one of its columns; a figure a player lacks (a reinforcement's value) stays last."""
     from .routes import squad_sort_key
@@ -512,25 +547,21 @@ def international_router(service):
 
     @api.get("/nations/{nation_id}")
     def nation(nation_id: int, tri: NationSquadSort | AttributeSort | CompositeSort = "position", ordre: Literal["asc", "desc"] = "asc"):
-        from .club_overview import LAST_MATCHES, NEXT_MATCHES, last_lineup, outcome
         with service.reading() as world:
             team = world.international.nations[nation_id]
             camp, upcoming = world.international.camps.get(nation_id), True
             if camp is None:
                 camp, upcoming = world.international.last_camps.get(nation_id), False
-            matches = [m for m in sorted(world.international.matches.values(), key=lambda m: (m.date, m.id)) if nation_id in (m.home_id, m.away_id)]
-            played, coming = [m for m in matches if m.result], [m for m in matches if not m.result]
-            group = nation_group(world, nation_id)
-            return {**nation_ref(world, nation_id), **kit_colors(team.name), "reference_strength": team.reference_strength,
-                    # The edition the nation plays and how far it stands in it.
-                    "competition": {"year": group["year"], "name": group["edition"], "stage": group["stage"]} if group else None,
+            # Its kits as a club's: the colours of its band and its shirts, then its two outfits.
+            return {**nation_ref(world, nation_id), **kit_colors(team.code), **kit_outfits(team.code), "reference_strength": team.reference_strength,
                     "camp": {"start": camp.start.iso(), "end": camp.end.iso(), "finals": camp.finals, "upcoming": upcoming} if camp else None,
-                    "squad": sorted_rows(world, camp_rows(world, camp), tri, ordre == "desc") if camp else [],
-                    # Beside the squad, as on a club's page: the latest and the next matches, the last eleven, the group.
-                    "calendar": {"last": [{**international_match_row(world, m), "outcome": outcome(nation_id, m)} for m in reversed(played[-LAST_MATCHES:])],
-                                 "next": [international_match_row(world, m) for m in coming[:NEXT_MATCHES]]},
-                    "lineup": last_lineup(world, nation_id, played),
-                    "group": group}
+                    "squad": sorted_rows(world, camp_rows(world, camp), tri, ordre == "desc") if camp else []}
+
+    @api.get("/nations/{nation_id}/apercu")
+    def nation_preview(nation_id: int):
+        with service.reading() as world:
+            world.international.nations[nation_id]
+            return nation_overview(world, nation_id)
 
     @api.get("/nations/{nation_id}/historique")
     def nation_history(nation_id: int, vue: Literal["ensemble", "editions", "joueurs", "records"] = "ensemble"):

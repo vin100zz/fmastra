@@ -94,8 +94,9 @@ export function kitsCard(club){
 }
 
 // The équipe-type on a pitch spread over its height, the lines of the Composition that its formation has, in the club's kit
-// with each player's number. Under his name, his matches of the season (starts and appearances off the bench) and his goals,
-// the ball after them; for an eleven picked before any match, his note at his place.
+// with each player's number (his position for a selection's, who wear none). Under his name, his matches of the season (starts
+// and appearances off the bench) and his goals, the ball after them; for an eleven picked before any match, his note at his
+// place. A selection's campaign-only reinforcement has no page, nor its kit, as on a match's pitch.
 export function elevenCard(club,eleven,height=null){
  if(!eleven?.players?.length)return '';
  // A column too short for the pitch at its width narrows it to the height it has, down to what keeps its blocks apart.
@@ -106,7 +107,8 @@ export function elevenCard(club,eleven,height=null){
   const facts=eleven.basis==='starts'?`<span class="block-season">${n(player.appearances)} m${player.goals?` / ${n(player.goals)}<span class="match-mark goal"></span>`:''}</span>`
    :blockNote(note,levelHue(note),`Note au poste ${player.position} : ${note} sur 200`);
   const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position} : ${note} sur 200`;
-  return `<a class="pitch-player" href="#/player/${player.id}" title="${e(player.name)} · ${e(told)}" style="left:${x}%;--row:${row}">${kitShirt(club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</a>`;
+  const tag=player.temporary?'span':'a',link=player.temporary?'':` href="#/player/${player.id}"`;
+  return `<${tag} class="pitch-player"${link} title="${e(player.name)} · ${e(told)}" style="left:${x}%;--row:${row}">${kitShirt(player.temporary?null:club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</${tag}>`;
  }).join('');
  return card('Équipe-type',`<div class="pitch spread eleven-pitch" aria-label="Équipe-type de ${e(club.name)}" style="--rows:${rows}${fit}">${PITCH_BOXES}${marks}</div>`,'','season-eleven');
 }
@@ -168,10 +170,14 @@ export function leadersCards(squad,rows=8){
 // The height of a column of the Présentation: the window's under the band, the tabs, the row of tiles and the 8 under it,
 // less the page's bottom margin; a short window keeps what a laptop shows. Its lists take the rows of 26 it holds once the rest is drawn:
 // a card's head (34), the padding of a list (16), the gap between two cards (8), a heading (26); a table of the league has
-// rows of 27 under 68 of head.
-const PRESENTATION_TOP=273,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=367,FINANCES=139,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
+// rows of 27 under 68 of head; the kits stand 374 high in 12 of padding under their head.
+const PRESENTATION_TOP=273,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=432,FINANCES=139,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
 export const presentationHeight=()=>Math.max(600,(typeof window==='undefined'?1080:window.innerHeight)-PRESENTATION_TOP);
-const rowsIn=height=>Math.max(3,Math.floor(height/ROW));
+export const rowsIn=height=>Math.max(3,Math.floor(height/ROW));
+// The measures a selection's Présentation lays out its columns with too (web/international.js).
+export const PRESENTATION={HEAD,PADDING,GAP,KITS,TABLE_HEAD,TABLE_ROW};
+// The columns of a Présentation under the row of its tiles, each a list of cards; a card left empty takes no room.
+export const presentationColumns=columns=>`<div class="club-presentation" data-fill>${columns.map(cards=>`<div class="presentation-column">${cards.filter(Boolean).join('')}</div>`).join('')}</div>`;
 
 // A club's Présentation: the row of its tiles, then four columns that fill the window. Its kits and its season's movements;
 // its équipe-type, what asks for a decision (the club run by the user) and its money; its calendar beside its league, which
@@ -187,12 +193,11 @@ export function presentationContent(club,{overview,season,squad,transfers,standi
  const calendar=played.length||upcoming.length?calendarBlock(club,{last:played.slice(-Math.max(0,matches-upcoming.length)).reverse(),next:upcoming}):'';
  const watching=human?Math.min(WATCH_ROWS,watched(players).length):0;
  const pitch=height-HEAD-PADDING-GAP-FINANCES-(watching?GAP+HEAD+watching*ROW:0);
- const column=cards=>`<div class="presentation-column">${cards.filter(Boolean).join('')}</div>`;
- return clubTiles(club,season?.competitions||[])+`<div class="club-presentation" data-fill>`
-  +column([kitsCard(club),marketCard(club,transfers,rowsIn(height-KITS-GAP-HEAD-2*ROW))])
-  +column([elevenCard(club,overview.eleven,pitch),watching?watchCard(players,watching):'',financesBlock(club,overview.finances,{balance:true})])
-  +column([calendar,standingsExtract(club,standings,table)])
-  +column([leadersCards(players,rowsIn((height-3*(HEAD+PADDING)-2*GAP)/3))])+'</div>';
+ return clubTiles(club,season?.competitions||[])+presentationColumns([
+  [kitsCard(club),marketCard(club,transfers,rowsIn(height-KITS-GAP-HEAD-2*ROW))],
+  [elevenCard(club,overview.eleven,pitch),watching?watchCard(players,watching):'',financesBlock(club,overview.finances,{balance:true})],
+  [calendar,standingsExtract(club,standings,table)],
+  [leadersCards(players,rowsIn((height-3*(HEAD+PADDING)-2*GAP)/3))]]);
 }
 
 // Beside the list of clubs, the one picked in it: its standing, its matches, its money and its best players, with a way

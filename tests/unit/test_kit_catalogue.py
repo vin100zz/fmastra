@@ -30,3 +30,13 @@ def test_catalogue_reloads_same_size_edits_and_keeps_last_complete_snapshot(tmp_
     assert cleared[866]["home_kit_id"] is None
     assert cleared[866]["away_kit_id"] is None
     assert cleared[866]["away_kit_major_color"] is None
+
+
+def test_a_nations_file_is_read_by_the_code_of_each_nation(tmp_path):
+    path = tmp_path / "nations.csv"
+    path.write_text("code;name;HomeKitID;HomeKitMajorColorRGB;HasAwayKitData\nFRA;France;1;#0058C0;False\n", encoding="utf-8-sig")
+    _, rows = KitCatalogue(path, key="code", parse=str).snapshot()
+    assert rows["FRA"]["home_kit_id"] == 1 and rows["FRA"]["home_kit_major_color"] == "#0058C0"
+    assert rows["FRA"]["away_kit_id"] is None
+    # Without its key column, a file is no catalogue: a clubs' one is read by UID.
+    assert KitCatalogue(path).snapshot() == (0, {})

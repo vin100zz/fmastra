@@ -111,6 +111,15 @@ HomeKitMinorColorRGB, HomeKitThirdColorRGB) sont conservés tels quels pour
 l'affichage ; ce sont des couleurs hexadécimales (`#RRGGBB`), sans effet sur
 la simulation. Absents pour certains clubs (colonnes vides dans l'export,
 soit `HasHomeKitData=False`), ils restent alors None plutôt que devinés.
+Les tenues (maillot, short et chaussettes, domicile et extérieur) sont relues
+dans `clubs.csv` dès que le fichier change, partie en cours comprise
+(`KitCatalogue`, `infrastructure/importation/kit_catalogue.py`).
+
+`nations.csv` porte les mêmes colonnes de tenues pour chaque sélection, après
+code, name, weight, internal_code et NationUID. Lues par le code de la nation,
+elles ne sont jamais copiées dans la sauvegarde : l'en-tête, les maillots et les
+tenues d'une sélection les relisent dès que le fichier change (`NATION_KITS`,
+`api/nations.py`).
 
 Un regen est tiré sans club (nation, âge, classe de potentiel), puis placé : les meilleurs
 regens choisissent en premier, de préférence un club de leur pays et un centre à fort

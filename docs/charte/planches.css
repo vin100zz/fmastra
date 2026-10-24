@@ -52,3 +52,5 @@ body{margin:0;background:var(--bg)}
 .t-finals .tr{grid-template-columns:64px minmax(0,1fr) 84px minmax(0,1fr)}
 .t-runs .tr{grid-template-columns:minmax(0,1fr) repeat(5,56px)}
 .t-runs .tr:has(>:nth-child(5):last-child){grid-template-columns:minmax(0,1fr) repeat(4,56px)}
+/* A selection's place in each edition, on its Présentation. */
+.t-places .tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
