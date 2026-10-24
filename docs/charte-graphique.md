@@ -150,7 +150,7 @@ où le fond est déjà jaune.
 | Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
 | Carte repliable | `.card.fold`, `.card-head.toggle`, `.toggle-arrow`, `.fold-more` | L'en-tête entier montre ou cache ce qui est secondaire. Voir « Carte repliable » |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
-| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau |
+| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau. Sur un bandeau et dans une rangée de tuiles, le contenu de chaque tuile est centré horizontalement, celui de chaque colonne dans la sienne |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank`, `.reached`, `.delta` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur ; `.reached` le tour atteint dans une coupe, `.delta` un écart signé. Voir « Historique » |
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
@@ -395,6 +395,9 @@ le reprend.
   une.
 - **Tuiles** : ce que le bandeau chiffre va sur une tuile, jamais dans une ligne
   de texte. La capacité du stade n'y est pas.
+- **Centrées** : le libellé et la valeur d'une tuile sont centrés
+  horizontalement dans sa largeur ; sur une tuile à colonnes, chacun dans sa
+  colonne.
 - **Tuiles d'un club** : le niveau et le potentiel de ses 16 meilleurs joueurs,
   sur une tuile de deux colonnes graduées (`.tile.split > .graded`, comme ceux
   d'un joueur), titrées « Niveau » et « Potentiel » sans le 16, que leur
@@ -533,7 +536,9 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
   ses joueurs et leur âge moyen, sur une tuile de deux colonnes ; sa tactique ;
   son entraînement et son recrutement des jeunes, sur 20 sans le dire (leur
   infobulle le dit) ; en dernier, la valeur de l'effectif. Un club qui ne joue
-  aucune compétition n'a pas la première tuile.
+  aucune compétition n'a pas la première tuile. Les tuiles se partagent la
+  largeur de la rangée, les colonnes d'une tuile la sienne ; le contenu de
+  chacune y est centré horizontalement, comme sur le bandeau.
 - **Colonnes**, dans cet ordre : les tenues et le mercato ; l'équipe-type, « À
   surveiller » (club dirigé seulement) et les finances ; le calendrier et le
   classement ; les buteurs, les passeurs et les notes.

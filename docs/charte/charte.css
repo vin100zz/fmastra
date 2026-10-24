@@ -310,6 +310,9 @@
 .tile.split:has(>.graded){gap:0;padding:0;border:0;background:none;overflow:hidden}
 .tile.split:has(>.graded)>*{padding:6px var(--s3)}
 .tile.split:has(>.graded)>*+*{border-left-color:var(--panel)}
+/* On a band and in a row of tiles, what a tile holds is centred across it: its label and its figure, or each column's in
+   the column. */
+:is(.hero,.tiles.row) :is(.tile:not(.split),.tile.split>*){align-items:center;text-align:center}
 
 /* Attributes: a line of 26 each, its name then its badge at the edge; a key one in 700, a dot of the accent after its name.
    A column holds the longest name of its section and its badge, the composites' out of 200 more than the attributes': a
@@ -744,11 +747,11 @@ span.entity-step svg{opacity:.3}
 .result b{font-weight:600;color:var(--strong)}
 .result.chosen{background:var(--own-row)}
 
-/* A club's Présentation: a row of tiles, then four columns whose lists take the rows the window leaves. On a tile, a
-   competition's badge stands 8 before its name. */
+/* A club's Présentation: a row of tiles, then four columns whose lists take the rows the window leaves. The tiles share
+   the row's width, the columns of a tile its own. On a tile, a competition's badge stands 8 before its name. */
 .tile .label:has(.comp){display:flex;align-items:center;gap:var(--s2)}
 .tiles.row{flex-wrap:wrap}
-.tiles.row>.tile{flex:1 1 auto}
+.tiles.row>.tile,.tiles.row>.tile.split>*{flex:1 1 auto}
 .tiles.row .label{white-space:nowrap}
 .presentation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:start}
 /* Its kits, home first, on the raised ground (a white kit would melt into the card); each named by its tooltip only. */

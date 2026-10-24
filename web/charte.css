@@ -334,7 +334,9 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .club-hero-context{display:flex;align-items:baseline;gap:var(--s2);flex:none;font:700 var(--fs-title)/24px var(--display);font-stretch:semi-condensed;white-space:nowrap;opacity:.85}
 .club-hero-identity p{font-size:var(--fs-body);font-weight:400}
 .club-hero-tiles{gap:var(--s2)}
-.club-hero-tile{min-width:96px;gap:2px;padding:6px var(--s3);border-radius:var(--radius)}
+/* What a tile holds is centred across it, on the band as in the row of a Présentation: its label and its figure, or
+   each column's in the column. */
+.club-hero-tile{align-items:center;min-width:96px;gap:2px;padding:6px var(--s3);border-radius:var(--radius);text-align:center}
 .club-hero-tile em{font:600 var(--fs-small)/1 var(--text)}
 /* A selection's header is a club's: its flag fills the disc where a crest stands. */
 .club-hero-crest .crest-flag{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
@@ -373,7 +375,7 @@ span.entity-step svg{opacity:.3}
 :root[data-theme="light"] :is(.club-hero-tile.graded,.club-hero-tile.split>.graded){background:hsl(var(--hue) 62% 91%)}
 :root[data-theme="light"] :is(.club-hero-tile.graded,.club-hero-tile.split>.graded) :is(span,strong){color:hsl(var(--hue) 65% 26%)}
 .club-hero-tile.split{flex-direction:row;align-items:stretch;gap:var(--s3)}
-.club-hero-tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px;color:inherit}
+.club-hero-tile.split>*{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;color:inherit}
 .club-hero-tile.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
 .club-hero-tile.split>*>span{display:flex;align-items:center;height:14px}
 .club-hero-tile.split:has(>.graded){gap:0;padding:0;overflow:hidden}
@@ -873,11 +875,12 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .nation-line.off>.nation{color:var(--muted)}
 .nation-line.off .flag{filter:grayscale(1);opacity:.5}
 /* A club's Présentation (« Présentation d'un club »): a row of tiles, then four columns whose lists fill the window (two
-   columns, then one, on a narrower one), 8 under the row. The tiles are the band's, bordered on the page; a competition's
-   badge stands 8 before its name, its points after its rank, muted. */
+   columns, then one, on a narrower one), 8 under the row. The tiles are the band's, bordered on the page; they share the
+   row's width, the columns of a tile its own; a competition's badge stands 8 before its name, its points after its rank,
+   muted. */
 .club-tiles{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s2)}
-.club-tiles>.club-hero-tile{flex:1 1 auto;border:1px solid var(--line);background:var(--panel);box-shadow:none}
-.club-tiles>.club-hero-tile.split{justify-content:flex-start}
+.club-tiles>.club-hero-tile,.club-tiles>.club-hero-tile.split>*{flex:1 1 auto}
+.club-tiles>.club-hero-tile{border:1px solid var(--line);background:var(--panel);box-shadow:none}
 .club-tiles .club-hero-tile.split>*>span{gap:var(--s2)}
 .club-tiles .club-hero-tile strong em{color:var(--muted)}
 .club-presentation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:start}
