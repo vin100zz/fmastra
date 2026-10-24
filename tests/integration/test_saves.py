@@ -307,6 +307,7 @@ def test_save_from_before_the_generated_ratings_rates_its_regens_and_keeps_their
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if introduced > 23:
             for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]  # A section introduced whole is absent, not empty.
     legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     # A regen of that time had no rating by position, and at most secondary positions at one fixed affinity.
     for player in generated:
@@ -343,6 +344,7 @@ def test_save_from_before_the_regen_targets_measures_them_on_the_players_the_sou
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if introduced > 13:
             for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]  # A section introduced whole is absent, not empty.
     legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
@@ -377,3 +379,46 @@ def test_save_from_before_the_shirt_numbers_numbers_every_squad_by_the_rules_of_
     assert {pid: player.shirt for pid, player in migrated.players.items()} == {pid: player.shirt for pid, player in world.players.items()}
     store.save(migrated, "upgraded")
     assert store.load("upgraded").players == migrated.players
+
+
+def test_save_from_before_the_built_possessions_drops_the_retired_rules_and_takes_the_recalibrated_ones(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 37
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 37:
+            for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]
+    engine = rules["moteur_match"]
+    # As schema 37 shipped them, but for one rule the player had chosen.
+    engine["chronologie"].update(duree_possession_moyenne=26.0, duree_possession_forme_gamma=2.5)
+    engine["turnover"].update(zone_declenchant_contre="MILIEU_HAUT", probabilite_contre_depuis_zone_basse=0.15)
+    engine["transitions"].update(progression_bias=0.0, creation_bias=-1.7, bonus_domicile=0.3)
+    engine["cartons"]["probabilite_jaune_par_turnover_defensif"] = 0.018
+    rules["benchmarks"]["stats_match"]["part_buts_coups_arretes"] = {"min": 0.25, "max": 0.30}
+    raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    engine_rules = migrated.config.engine
+    assert engine_rules.actions == config.engine.actions
+    assert engine_rules.turnover.counter_probability_by_zone == config.engine.turnover.counter_probability_by_zone
+    shipped = config.engine.transitions
+    assert (engine_rules.transitions.progression_bias, engine_rules.transitions.home_bonus) == (shipped.progression_bias, shipped.home_bonus)
+    assert engine_rules.transitions.creation_bias == -1.7
+    assert engine_rules.cards.yellow_probability == config.engine.cards.yellow_probability
+    assert migrated.config.benchmarks.stats_match.set_piece_goal_share == config.benchmarks.stats_match.set_piece_goal_share
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").config == migrated.config
+    # A rule changed by hand in the file is not taken for one the save shipped with.
+    engine["turnover"]["probabilite_contre_depuis_zone_basse"] = 0.5
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    with pytest.raises(SaveError, match="configuration"):
+        store.load("old")

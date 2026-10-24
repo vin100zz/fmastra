@@ -239,6 +239,7 @@ def test_an_older_save_takes_the_recalibrated_rules_and_the_income_they_give(con
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 28:
             for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     rules["ia_gestion"]["budgets"]["comptabilite"]["part_revenus_autres_charges"] = 0.15
     rules["ia_gestion"]["garde_fous"]["solde_minimal_autorise"] = -5000000
     rules["demographie"]["estimation_potentiel"]["bruit_max"] = 22.0

@@ -11,6 +11,11 @@ from .local_state import MatchLog, TeamState
 from .zones import credited, involved_player, mirror
 
 
+# Headers: a cross met in the air, a corner. Open play: every chance made by a move, as opposed to a set piece.
+HEADERS = frozenset({"cross", "corner"})
+OPEN_PLAY = frozenset({"shot", "long_shot", "dribble", "through_ball", "cross", "cutback"})
+
+
 def set_piece_taker(team: TeamState) -> LineupSlot:
     """The team's dead-ball specialist: best `cpa` on the pitch, goalkeeper excluded; ties go to the lowest id."""
     candidates = [slot for slot in team.active if slot.position != Position.GOALKEEPER] or team.active
@@ -28,11 +33,14 @@ def delivered_xg(xg: float, quality: float, reference: float, cfg: Config) -> fl
 
 
 def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int, counter: bool,
-                 kind: str, passer: int | None, log: MatchLog, cfg: Config, rng: Random, carriers: Sequence[int] = ()) -> bool:
-    """`carriers` took the ball up the pitch in this possession; `passer` is the last of them, None on a set piece."""
+                 kind: str, passer: int | None, log: MatchLog, cfg: Config, rng: Random, carriers: Sequence[int] = (),
+                 carrier: LineupSlot | None = None) -> bool:
+    """`carriers` took the ball up the pitch in this possession; `passer` is the last one named before the chance, None on
+    a set piece; `carrier` made the chance: he crosses, plays the ball in, takes his man on or strikes from distance."""
     rules = cfg.engine.chance
-    header = kind in ("cross", "corner")
-    free_kick_edge = 0.0
+    header = kind in HEADERS
+    centre = len(cfg.involvement.lanes) // 2
+    free_kick_edge, server = 0.0, None
     if kind == "corner":
         taker = set_piece_taker(attacker)
         # The specialist is at the flag: he cannot also be the man rising at the far post.
@@ -40,18 +48,30 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
         candidates = [slot for slot in outfield if slot is not taker] or outfield
         shooter = weighted_choice(candidates, [slot.player.attributes.get("jeu_tete") for slot in candidates], rng)
         xg = delivered_xg(cfg.engine.set_pieces.corner_xg, delivery_quality(taker, "cpa", attacker, cfg), rules.set_piece_reference, cfg)
-        passer = None
+        passer, server = None, taker
     elif kind == "free_kick":
         shooter = set_piece_taker(attacker)
         free_kick_edge = delivery_quality(shooter, "cpa", attacker, cfg) - rules.free_kick_reference
         xg, passer = cfg.engine.set_pieces.free_kick_xg, None
-    elif header:
-        crosser = involved_player(attacker, zone, lane, True, rng)
-        passer = crosser.player.id
-        shooter = involved_player(attacker, zone, len(cfg.involvement.lanes) // 2, True, rng, passer)
-        xg = delivered_xg(rules.cross_xg, delivery_quality(crosser, "centre", attacker, cfg), rules.cross_reference, cfg)
+    elif kind in ("cross", "cutback"):
+        # From the wing to a team-mate in the middle, in the air or along the ground; the service makes the chance.
+        server = carrier or involved_player(attacker, zone, lane, True, rng)
+        passer = server.player.id
+        shooter = involved_player(attacker, zone, centre, True, rng, passer)
+        xg = delivered_xg(rules.cross_xg if kind == "cross" else rules.cutback_xg,
+                          delivery_quality(server, "centre", attacker, cfg), rules.cross_reference, cfg)
+    elif kind == "through_ball":
+        server = carrier or involved_player(attacker, zone, lane, True, rng)
+        passer = server.player.id
+        shooter = involved_player(attacker, zone, centre, True, rng, passer)
+        xg = rules.through_ball_xg * (rules.counter_multiplier if counter else 1)
+    elif kind in ("dribble", "long_shot"):
+        shooter = carrier or involved_player(attacker, zone, lane, True, rng)
+        xg = rules.dribble_xg if kind == "dribble" else rules.long_shot_xg
     else:
         shooter = involved_player(attacker, zone, lane, True, rng)
+        if carrier is not None and carrier.player.id != shooter.player.id:
+            passer, server = carrier.player.id, carrier
         xg = rules.shot_xg * (rules.counter_multiplier if counter else 1)
     keeper = defender.goalkeeper()
     shooting_weights = cfg.attributes.composites.heading if header else cfg.attributes.composites.shooting
@@ -61,28 +81,29 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
     shot_quality = (weighted_rating(shooter.player.attributes, shooting_weights)
                     * state_multiplier(shooter.player, shooter.position, cfg, 1.0) + free_kick_edge)
     keeper_quality = weighted_rating(keeper.player.attributes, cfg.attributes.composites.saving)
-    if header:
-        weights = rules.header_keeper_weights
+    if header or kind == "through_ball":
+        # In the air or one on one, the keeper first has to come for the ball.
+        weights = rules.header_keeper_weights if header else rules.one_on_one_keeper_weights
         keeper_quality = (weights.saving * keeper_quality + weights.claiming * weighted_rating(keeper.player.attributes, cfg.attributes.composites.claiming))
     keeper_quality *= state_multiplier(keeper.player, keeper.position, cfg, defender.fitness[keeper.player.id])
     xg = clamp(xg, rules.probability_min, rules.probability_max)
     p_goal = sigmoid(logit(xg) + rules.finishing_sensitivity * soften(shot_quality - keeper_quality, cfg.engine.transitions.max_gap))
     p_target = max(p_goal, sigmoid(logit(rules.on_target_probability) + rules.on_target_sensitivity * (shot_quality - rules.on_target_reference)))
-    if header:
+    if server is not None:
         # Who put the ball in, for the replay; a corner taker gets no assist, so no other event names him.
-        log.emit("delivery", attacker, (taker if kind == "corner" else crosser).player.id, zone=zone, lane=lane, detail=kind)
+        log.emit("delivery", attacker, server.player.id, zone=zone, lane=lane, detail=kind)
     log.shots += 1
     shot_id = log.shots
     attacker.stats.shots += 1
     attacker.stats.xg += xg
     log.emit("shot", attacker, shooter.player.id, keeper.player.id, zone, lane, shot_id, xg, kind)
     ratings, credit_rng = cfg.engine.player_ratings, log.attribution
-    if kind in ("shot", "cross"):
+    if kind in OPEN_PLAY:
         # The pass or cross that made an open-play chance, and the rest of the move that led to it.
         if passer is not None and passer != shooter.player.id: attacker.credit(passer, ratings.key_pass)
         for carrier in set(carriers) - {passer, shooter.player.id}: attacker.credit(carrier, ratings.build_up)
-    # Where the defence stood: in the middle for a header, since the cross comes in from the wing.
-    marking = mirror(zone, len(cfg.involvement.lanes) // 2 if header else lane, cfg)
+    # Where the defence stood: in the middle when the ball comes in from the wing.
+    marking = mirror(zone, centre if header or kind == "cutback" else lane, cfg)
     value = rng.random()
     if value < p_goal:
         attacker.stats.on_target += 1
@@ -105,7 +126,7 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
     attacker.credit(shooter.player.id, ratings.off_target)
     # A strike, unlike a header, often misses because a defender threw himself in front of it.
     blocker = None
-    if not header and credit_rng.random() < ratings.blocked_share:
+    if not header and credit_rng.random() < (ratings.long_shot_blocked_share if kind == "long_shot" else ratings.blocked_share):
         blocker = credited(defender, "creation_defense", *marking, True, credit_rng, outfield=True)
         defender.credit(blocker, ratings.block)
     log.emit("off_target", attacker, shooter.player.id, blocker, zone, lane, shot_id, detail="blocked" if blocker else "")

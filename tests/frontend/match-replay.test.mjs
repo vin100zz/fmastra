@@ -26,6 +26,25 @@ test('only possessions ending in a shot become chances, with their whole build-u
  assert.ok(!shot.goal);
 });
 
+test('a chance follows its runs of passes and moves forward in order, from the loss of the ball that gave it',()=>{
+ const events=[
+  event('possession',1,{zone:1,lane:1,team_id:2}),event('circulation',1,{zone:1,lane:2,detail:'3',team_id:2}),
+  event('turnover',1,{zone:1,lane:0,player_id:5,secondary_id:21,detail:'interception'}),
+  event('possession',2,{zone:2,lane:0,detail:'counter'}),event('progress',2,{zone:3,lane:0,player_id:8,detail:'carry'}),
+  event('circulation',2,{zone:3,lane:1,detail:'2'}),event('delivery',2,{player_id:9,detail:'through_ball'}),
+  event('shot',2,{shot_id:1,player_id:10,detail:'through_ball'}),event('save',2,{shot_id:1}),
+  event('possession',3,{zone:0,lane:1,team_id:2}),event('progress',3,{zone:2,lane:1,player_id:22,detail:'long',team_id:2}),
+  event('shot',3,{shot_id:2,player_id:23,detail:'long_shot',team_id:2}),event('off_target',3,{shot_id:2,detail:'blocked'}),
+ ];
+ const [through,distance]=chanceSequences(events);
+ assert.deepEqual(through.trail.map(item=>[item.kind,item.zone,item.detail]),[['progress',3,'carry'],['circulation',3,'2']]);
+ assert.equal(through.recovery.player_id,5);
+ assert.equal(through.delivery.detail,'through_ball');
+ // A possession that the previous one did not give away by a turnover has no recovery to show.
+ assert.equal(distance.recovery,undefined);
+ assert.deepEqual(distance.trail.map(item=>item.detail),['long']);
+});
+
 test('a played match page carries the replay card',async()=>{
  const stats={xg:1,shots:2,on_target:1,possession_seconds:2700,corners:0,free_kicks:0,yellows:0,reds:0};
  const lineup=[{id:1,name:'Gardien Un',position:'GB'}];

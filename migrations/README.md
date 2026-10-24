@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 37` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 38` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -193,6 +193,19 @@ hasard : une sauvegarde dont `ia_gestion.mercato.daily_proposal_probability` vau
 à 0 ; une autre valeur, choisie, est gardée (`_upgrade_market`). `Player.free_since` date le dernier contrat d'un joueur
 sans club : à la lecture d'une sauvegarde antérieure, chaque agent libre reçoit la date de sa dernière fin de contrat ;
 un joueur qui n'a jamais eu de contrat reste sans date et compte depuis le début de la partie.
+
+La v38 construit les possessions action après action (`docs/moteur-match.md`, `docs/manuel/03-match.md`). Elle ajoute
+la section `moteur_match.actions`, des clés à `occasion` (types d'occasions et gardien face à face), `coups_arretes`
+(`part_corners_frappe`), `turnover` (contres selon la zone et la façon dont le ballon est perdu) et `notes_joueurs`
+(`part_non_cadres_contres_de_loin`), reçues après vérification de l'empreinte d'origine. Elle **retire** quatre clés
+dont le sens disparaît : `chronologie.duree_possession_moyenne` et `duree_possession_forme_gamma` (la durée d'une
+possession est la somme de ses actions), `turnover.zone_declenchant_contre` et `probabilite_contre_depuis_zone_basse`.
+`RETIRED_RULES` les ôte de la configuration embarquée avant son typage, et les lui rend, avec les valeurs qu'elle
+portait, pour vérifier son empreinte : une sauvegarde modifiée à la main reste refusée. Les règles recalibrées avec les
+possessions (`POSSESSION_RECALIBRATED_RULES`) prennent leur nouvelle valeur si la sauvegarde porte encore celle de la
+v37, et sont gardées sinon (`_upgrade_possessions`). Les matchs déjà joués gardent leurs événements : le résumé lit un
+`progress` sans détail comme une passe, et le compte rendu n'affiche les passes que d'un match où elles sont comptées
+(`TeamStats.passes`, `None` avant).
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

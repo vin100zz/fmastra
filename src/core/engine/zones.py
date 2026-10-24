@@ -1,5 +1,9 @@
 """Local coordinates, cached quality-density aggregation and lane choices."""
+from bisect import bisect_right
+from dataclasses import dataclass, field
+from itertools import accumulate, count
 from math import exp
+from operator import mul
 from random import Random
 
 from core.config.model import Config
@@ -10,48 +14,88 @@ from .abilities import weighted_rating, state_multiplier
 from .local_state import TeamState
 
 PHASES = ("progression_attack", "progression_defense", "creation_attack", "creation_defense")
+# Every refresh of every side gets its own number, so a cached gap can tell which ratings it was read from.
+REVISIONS = count(1)
 
 
 def mirror(zone: int, lane: int, cfg: Config) -> tuple[int, int]:
     return len(cfg.involvement.zones) - 1 - zone, len(cfg.involvement.lanes) - 1 - lane
 
 
+@dataclass(slots=True)
+class Layout:
+    """What holds while the same players keep the same positions: their ratings in each phase and their state without
+    fitness, each cell's involvement weights with its density factor, and the cumulative weights who is involved is drawn
+    from, by attacking or defending side, zone and lane."""
+    slots: list[LineupSlot]
+    ratings: dict[str, list[float]]
+    rested: list[float]
+    cells: dict[bool, list[tuple[tuple[float, ...], float | None]]]
+    involvement: dict[bool, list[list[list[float]]]]
+    pace: float
+    credit: dict[tuple, tuple[list[int], list[float]]] = field(default_factory=dict)
+
+
+def _layout(team: TeamState, cfg: Config) -> Layout:
+    involvement, density = cfg.involvement, cfg.engine.density
+    slots = list(team.active)
+    ratings = {phase: [weighted_rating(slot.player.attributes, getattr(cfg.attributes.composites, phase)) for slot in slots]
+               for phase in PHASES}
+    # The same state without fitness, not divided by it: an exhausted player's fitness reaches zero.
+    rested = [state_multiplier(slot.player, slot.position, cfg, 1.0) for slot in slots]
+    cells, draws = {}, {}
+    for attack in (True, False):
+        vertical = involvement.attack if attack else involvement.defense
+        cells[attack], draws[attack] = [], []
+        for zone in range(len(involvement.zones)):
+            row = []
+            for lane in range(len(involvement.lanes)):
+                weights = tuple(vertical[slot.position][zone] * involvement.lateral[slot.position][lane] for slot in slots)
+                total = sum(weights)
+                cells[attack].append((weights, (total / density.reference) ** density.exponent / total if total else None))
+                row.append(list(accumulate(weights)))
+            draws[attack].append(row)
+    pace = sum(slot.player.attributes.get("vitesse") for slot in slots) / len(slots) if slots else 0.0
+    return Layout(slots, ratings, rested, cells, draws, pace)
+
+
 def refresh(team: TeamState, cfg: Config) -> None:
     """Zone ratings and player profiles for the current eleven: due after every change on the pitch."""
-    z_count, c_count = len(cfg.involvement.zones), len(cfg.involvement.lanes)
-    density_reference, exponent = cfg.engine.density.reference, cfg.engine.density.exponent
-    sensitivity = cfg.engine.player_ratings.quality_sensitivity
-    multipliers = [state_multiplier(slot.player, slot.position, cfg, team.fitness[slot.player.id]) for slot in team.active]
-    # The same state without fitness, not divided by it: an exhausted player's fitness reaches zero.
-    rested = [state_multiplier(slot.player, slot.position, cfg, 1.0) for slot in team.active]
-    team.roles.update((slot.player.id, slot.position) for slot in team.active)
+    lineup = tuple((slot.player.id, slot.position) for slot in team.active)
+    if lineup != team.lineup_key or team.layout is None:
+        team.lineup_key, team.layout = lineup, _layout(team, cfg)
+        layout = team.layout
+        sensitivity = cfg.engine.player_ratings.quality_sensitivity
+        for phase in PHASES:
+            vertical = cfg.involvement.attack if phase.endswith("attack") else cfg.involvement.defense
+            # Credit follows the player's own level, not his freshness: the zones already make a tired side lose the ball.
+            team.profiles[phase] = [(slot, vertical[slot.position], cfg.involvement.lateral[slot.position], exp(sensitivity * rating * level))
+                                    for slot, rating, level in zip(layout.slots, layout.ratings[phase], layout.rested)]
+    layout = team.layout
+    team.roles.update(lineup)
+    team.revision = next(REVISIONS)
+    states = [level * team.fitness[slot.player.id] for slot, level in zip(layout.slots, layout.rested)]
+    lanes, empty = len(cfg.involvement.lanes), cfg.engine.density.empty_rating
     for phase in PHASES:
-        attack = phase.endswith("attack")
-        weights = getattr(cfg.attributes.composites, phase)
-        ratings = [weighted_rating(slot.player.attributes, weights) for slot in team.active]
-        qualities = [rating * multiplier for rating, multiplier in zip(ratings, multipliers)]
-        vertical = cfg.involvement.attack if attack else cfg.involvement.defense
-        profiles = [(slot, vertical[slot.position], cfg.involvement.lateral[slot.position], quality)
-                    for slot, quality in zip(team.active, qualities)]
-        table = []
-        for zone in range(z_count):
-            row = []
-            for lane in range(c_count):
-                density, total = 0.0, 0.0
-                for _, heights, sides, quality in profiles:
-                    weight = heights[zone] * sides[lane]
-                    density += weight
-                    total += weight * quality
-                row.append(total / density * (density / density_reference) ** exponent
-                           if density else cfg.engine.density.empty_rating)
-            table.append(row)
-        team.zones[phase] = table
-        # Credit follows the player's own level, not his freshness: the zones already make a tired side lose the ball.
-        team.profiles[phase] = [(slot, heights, sides, exp(sensitivity * rating * level))
-                                for (slot, heights, sides, _), rating, level in zip(profiles, ratings, rested)]
+        qualities = list(map(mul, layout.ratings[phase], states))
+        cells = layout.cells[phase.endswith("attack")]
+        values = [factor * sum(map(mul, weights, qualities)) if factor is not None else empty for weights, factor in cells]
+        team.zones[phase] = [values[start:start + lanes] for start in range(0, len(values), lanes)]
 
 
 def gap(attacker: TeamState, defender: TeamState, zone: int, lane: int, creation: bool, cfg: Config, counter: bool = False) -> float:
+    """The attacker's edge where the ball is; read again only after either side's ratings were refreshed."""
+    if attacker.gaps_stamp[0] != attacker.revision or attacker.gaps_stamp[1] != defender.revision:
+        attacker.gaps.clear()
+        attacker.gaps_stamp = (attacker.revision, defender.revision)
+    key = (creation, counter, zone, lane)
+    value = attacker.gaps.get(key)
+    if value is None:
+        value = attacker.gaps[key] = _gap(attacker, defender, zone, lane, creation, cfg, counter)
+    return value
+
+
+def _gap(attacker: TeamState, defender: TeamState, zone: int, lane: int, creation: bool, cfg: Config, counter: bool) -> float:
     other_zone, other_lane = mirror(zone, lane, cfg)
     attack_key, defense_key = ("creation_attack", "creation_defense") if creation else ("progression_attack", "progression_defense")
     defense = defender.zones[defense_key][other_zone][other_lane]
@@ -71,6 +115,11 @@ def choose_lane(attacker: TeamState, defender: TeamState, zone: int, cfg: Config
 
 def involved_player(team: TeamState, zone: int, lane: int, attack: bool, rng: Random,
                     exclude: int | None = None) -> LineupSlot:
+    if exclude is None:
+        layout = team.layout
+        cumulative = layout.involvement[attack][zone][lane]
+        total = cumulative[-1]
+        return layout.slots[bisect_right(cumulative, rng.random() * total) if total > 0 else rng.randrange(len(cumulative))]
     profiles = team.profiles["progression_attack" if attack else "progression_defense"]
     choices = [profile for profile in profiles if profile[0].player.id != exclude] or profiles
     return weighted_choice(choices, [heights[zone] * sides[lane] for _, heights, sides, _ in choices], rng)[0]
@@ -88,8 +137,15 @@ def foul_committer(team: TeamState, zone: int, lane: int, cfg: Config, rng: Rand
 def credited(team: TeamState, phase: str, zone: int, lane: int, success: bool, rng: Random, outfield: bool = False) -> int:
     """Who an action is put down to: those involved where it happens, the better players more often
     for a success and the weaker ones for a failure. The action itself was already decided by the zones."""
-    profiles = team.profiles[phase]
-    if outfield:
-        profiles = [profile for profile in profiles if profile[0].position != Position.GOALKEEPER] or profiles
-    return weighted_choice(profiles, [heights[zone] * sides[lane] * (factor if success else 1 / factor)
-                                      for _, heights, sides, factor in profiles], rng)[0].player.id
+    key = (phase, zone, lane, success, outfield)
+    entry = team.layout.credit.get(key)
+    if entry is None:
+        profiles = team.profiles[phase]
+        if outfield:
+            profiles = [profile for profile in profiles if profile[0].position != Position.GOALKEEPER] or profiles
+        entry = team.layout.credit[key] = ([slot.player.id for slot, *_ in profiles],
+                                           list(accumulate(heights[zone] * sides[lane] * (factor if success else 1 / factor)
+                                                           for _, heights, sides, factor in profiles)))
+    ids, cumulative = entry
+    total = cumulative[-1]
+    return ids[bisect_right(cumulative, rng.random() * total) if total > 0 else rng.randrange(len(ids))]

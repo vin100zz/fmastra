@@ -165,6 +165,14 @@ test('the figures of a match fold on their first four lines; the whole head open
  finally{setFoldOpen('match-stats',false);}
 });
 
+test('a match played since passes are counted shows them and their accuracy under the possession',async()=>{
+ const counted={...stats,passes:380,passes_attempted:440};
+ const html=await screen({...report,result:{...report.result,home_stats:counted,away_stats:{...counted,passes:300,passes_attempted:400}}});
+ const lines=[...html.matchAll(/<div class="comparison( fold-more)?">.*?<div>([^<]+)</g)].map(([,more,label])=>label);
+ assert.deepEqual(lines.slice(3,6),['Possession','Passes','Précision des passes']);
+ assert.match(html,/<span class="lead">86\.4 %<\/span><div>Précision des passes<[^]*?<\/div><span class="">75 %<\/span>/);
+});
+
 test('expected goals keep one figure after the point, even round ones',async()=>{
  const html=await screen({...report,result:{...report.result,home_stats:{...stats,xg:2},away_stats:{...stats,xg:0.95}}});
  assert.match(html,/<div class="comparison"><span class="lead">2\.0<\/span><div>Buts attendus \(xG\)<[^]*?<\/div><span class="">1\.0<\/span><\/div>/);

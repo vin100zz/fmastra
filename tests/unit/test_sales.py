@@ -385,6 +385,7 @@ def test_the_transfer_list_survives_a_save_and_an_older_save_has_none(config, tm
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 27:
             for key in defaults: del payload["world"]["config"][config_path[0]][config_path[1]][key]
+            if not payload["world"]["config"][config_path[0]][config_path[1]]: del payload["world"]["config"][config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     payload["config_hash"] = hashlib.sha256(json.dumps(payload["world"]["config"], sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     (tmp_path / "before.json.gz").write_bytes(gzip.compress(json.dumps(payload).encode()))
     before = store.load("before")
@@ -397,6 +398,7 @@ def test_the_transfer_list_survives_a_save_and_an_older_save_has_none(config, tm
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 19:
             for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     older = store.load("sale")

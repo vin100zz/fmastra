@@ -183,34 +183,36 @@ class LiveMatch:
         self.end = log.second + self.cfg.world.match_rules.half_seconds + self.base_stoppage / 2
         self.owner = self.first_kickoff if period == 1 else 1 - self.first_kickoff
         self.zone, self.lane, self.counter = 1, len(self.cfg.involvement.lanes) // 2, False
+        # The dead ball the next possession waits for beyond the ordinary pause: a goal celebrated, a goal kick.
+        self.restart = 0.0
         log.emit("kickoff", self.teams[self.owner])
 
     def _possession(self) -> None:
         cfg, rng, log, teams = self.cfg, self.rng, self.log, self.teams
-        rules = cfg.engine.timing
+        rules, dead = cfg.engine.timing, cfg.engine.actions.dead_time
         owner = self.owner
         attacker, defender = teams[owner], teams[1 - owner]
-        dt = min(rng.gammavariate(rules.possession_gamma_shape, rules.possession_mean / rules.possession_gamma_shape), self.end - log.second)
+        start = log.second
+        # The ball is dead before it is played again: a throw-in, a free kick, a goal kick, a goal celebrated.
+        pause = rng.gammavariate(dead.gamma_shape, dead.mean / dead.gamma_shape) + self.restart
+        if start + pause >= self.end:
+            # No possession starts once the time is up.
+            log.second = self.end
+            self._run_clock(start)
+            return
+        log.second = start + pause
         event_start = len(log.events)
-        # Split fitness integration at refresh boundaries without adding possessions.
-        remaining = dt
-        while remaining > 0:
-            boundary = min(team.next_refresh for team in teams)
-            if boundary <= log.second:
-                for team in teams:
-                    refresh(team, cfg)
-                    team.next_refresh = log.second + cfg.engine.rating_refresh.fitness_interval * 60
-                boundary = min(team.next_refresh for team in teams)
-            chunk = min(remaining, boundary - log.second)
-            for team in teams: consume(team, chunk, cfg)
-            log.second += chunk
-            remaining -= chunk
         log.possession += 1
         attacker.stats.possessions += 1
-        attacker.stats.possession_seconds += dt
         attacker.stats.lane_attacks[self.lane] += 1
         log.emit("possession", attacker, zone=self.zone, lane=self.lane, detail="counter" if self.counter else "")
-        outcome = play_possession(attacker, defender, self.zone, self.lane, self.counter, owner == 0 and not self.neutral, log, cfg, rng)
+        outcome = play_possession(attacker, defender, self.zone, self.lane, self.counter, owner == 0 and not self.neutral, log, cfg,
+                                  rng, self.end)
+        # Possession counts the play, not the dead ball: its share is that of the time the ball was in play.
+        attacker.stats.possession_seconds += outcome.seconds
+        self._run_clock(start)
+        if outcome.whistle:
+            return
         if self._short_handed():
             self._forfeit()
             return
@@ -235,7 +237,26 @@ class LiveMatch:
             team.block_height = self.controllers[side].late_block(team, teams[1 - side].goals, log.second)
         self.end += sum(event.kind in ("goal", "injury", "substitution") for event in log.events[event_start:]) * rules.seconds_per_stoppage
         self.zone, self.lane, self.counter = next_possession(outcome, defender, attacker, cfg, rng)
+        self.restart = dead.after_goal if outcome.goal else dead.after_shot if outcome.shot else 0.0
         self.owner = 1 - owner
+
+    def _run_clock(self, start: float) -> None:
+        """Both sides tire from `start` to now, in steps cut at each refresh of the zone ratings: the ratings a possession
+        is played with date from the last refresh before it."""
+        cfg, teams, now = self.cfg, self.teams, self.log.second
+        cursor = start
+        while True:
+            boundary = min(team.next_refresh for team in teams)
+            if boundary <= cursor:
+                for team in teams:
+                    refresh(team, cfg)
+                    team.next_refresh = cursor + cfg.engine.rating_refresh.fitness_interval * 60
+                continue
+            if cursor >= now:
+                return
+            chunk = min(now, boundary) - cursor
+            for team in teams: consume(team, chunk, cfg)
+            cursor += chunk
 
     def _forfeit(self) -> None:
         rule = self.cfg.world.match_rules

@@ -35,10 +35,31 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 37
+SCHEMA_VERSION = 38
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A possession is a run of actions: what a side tries in each zone, how a defence opens, long balls, strikes from distance
+    # and the chances made in the last zone, how long an action and the dead ball last; corners cleared, and counters that
+    # follow where and how the ball was won (see `_upgrade_possessions`).
+    (38, ("moteur_match", "actions"), {
+         "tempo_par_zone": [0.06, 0.08, 0.12, 0.20], "tempo_contre": 0.92, "attrait_ouverture": 0.8, "part_conduites": 0.15,
+         "patience": 0.08,
+         "conservation": {"biais_par_zone": [3.6, 3.2, 2.6, 2.0], "sensibilite": 0.08, "part_laterale": 0.35,
+                          "part_recul_par_zone": [0.0, 0.10, 0.10, 0.18]},
+         "ouverture": {"gain_par_passe": 0.10, "max": 0.6, "part_conservee_apres_progression": 0.5},
+         "jeu_long": {"part_par_zone": [0.40, 0.15], "biais": -0.65, "sensibilite_passe": 0.03, "reference_passe": 60.0},
+         "tir_de_loin": {"part": 0.23, "sensibilite_finition": 0.03, "reference_finition": 60.0, "effet_ouverture": -1.0},
+         "creation": {"parts_axe": {"frappe": 0.55, "dribble": 0.20, "profondeur": 0.25}, "attrait_profondeur_ouverture": 1.5,
+                      "facteur_profondeur_contre": 2.0, "parts_aile": {"centre": 0.30, "retrait": 0.70}, "sensibilite_centre": 0.03},
+         "durees_secondes": {"passe": 3.2, "progression": 4.2, "jeu_long": 4.0, "occasion": 3.0},
+         "temps_mort": {"moyen": 7.6, "forme_gamma": 2.0, "apres_but": 45.0, "apres_tir": 14.0, "corner": 25.0, "coup_franc": 30.0}}),
+    (38, ("moteur_match", "occasion"), {"xg_base_dribble": 0.14, "xg_base_profondeur": 0.26, "xg_base_retrait": 0.16,
+                                       "xg_base_tir_de_loin": 0.035, "poids_gardien_face_a_face": {"sortie": 0.6, "arret": 0.4}}),
+    (38, ("moteur_match", "coups_arretes"), {"part_corners_frappe": 0.33}),
+    (38, ("moteur_match", "turnover"), {"probabilite_contre_par_zone": [0.03, 0.06, 0.15, 0.31], "bonus_contre_attaque_engagee": 0.5,
+                                        "malus_contre_jeu_long": -1.0}),
+    (38, ("moteur_match", "notes_joueurs"), {"part_non_cadres_contres_de_loin": 0.55}),
     # Rounds of planning through each window instead of chance reviews, long contracts holding a club's regulars, free
     # agents every club sees and who lower their demands with time, and players letting their contract run out
     # (see `_upgrade_market`).
@@ -315,19 +336,20 @@ class SaveStore:
             # Version 1 used tagged entities; it remains readable during migration.
             if b'"schema_version":1,' in raw[:100] or b'"schema_version": 1,' in raw[:100]:
                 payload = json.loads(raw)
+                retired = _retire_rules(payload["world"]["fields"]["config"]["$config"], 1)
                 world, fingerprint = decode(_rename_positions(payload["world"], skip="config")), payload["config_hash"]
                 world.trajectories = _monthly_trajectories(world.trajectories, world.config.world.key_dates.population_review.month)
                 version = 1
             else:
-                found = re.search(rb'"schema_version":\s*(\d+)', raw[:100])
+                found, retired = re.search(rb'"schema_version":\s*(\d+)', raw[:100]), {}
                 if found and int(found.group(1)) < SCHEMA_VERSION:
-                    raw = _upgrade_document(raw, int(found.group(1)), self.directory.parent / "data" / "players.csv")
+                    raw, retired = _upgrade_document(raw, int(found.group(1)), self.directory.parent / "data" / "players.csv")
                 payload = ADAPTER.validate_json(raw)
                 if not 2 <= payload.schema_version <= SCHEMA_VERSION:
                     raise SaveError("Version de sauvegarde incompatible ; une migration est nécessaire.")
                 world, fingerprint = payload.world, payload.config_hash
                 version = payload.schema_version
-            if not isinstance(world, World) or not _config_matches(world, fingerprint, version):
+            if not isinstance(world, World) or not _config_matches(world, fingerprint, version, retired):
                 raise SaveError("Sauvegarde incohérente : configuration ou racine invalide.")
             if version < 21: _upgrade_formations(world)
             if version < 22: _upgrade_configured_positions(world)
@@ -349,6 +371,7 @@ class SaveStore:
                 initialize_age_records(world)
                 initialize_strengths(world)
             if version < 37: _upgrade_market(world)
+            if version < 38: _upgrade_possessions(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -417,15 +440,37 @@ def _source_delivery(world: dict, source_path: Path, wanted: set[int]) -> dict[i
             for row in reader if int(row["UID"]) in wanted}
 
 
-def _upgrade_document(raw: bytes, version: int, source_path: Path) -> bytes:
-    """What an older save's JSON must receive before it is typed; its configuration is upgraded once verified."""
+# Rules each schema version took out, by section: an older embedded configuration drops them before it is typed, and gets
+# them back, with the values it held, to have its fingerprint checked (see `_config_matches`).
+RETIRED_RULES = (
+    # The length of a possession is the sum of its actions; a counter follows where and how the ball was won.
+    (38, ("moteur_match", "chronologie"), ("duree_possession_moyenne", "duree_possession_forme_gamma")),
+    (38, ("moteur_match", "turnover"), ("zone_declenchant_contre", "probabilite_contre_depuis_zone_basse")),
+)
+
+
+def _retire_rules(config: dict, version: int) -> dict:
+    """Takes out of a configuration of `version` the rules retired since; returns them by section, as they were."""
+    retired = {}
+    for since, (top, section), keys in RETIRED_RULES:
+        rules = config.get(top, {}).get(section)
+        if version >= since or rules is None: continue
+        for key in keys:
+            if key in rules: retired.setdefault((top, section), {})[key] = rules.pop(key)
+    return retired
+
+
+def _upgrade_document(raw: bytes, version: int, source_path: Path) -> tuple[bytes, dict]:
+    """What an older save's JSON must receive before it is typed, and the rules taken out of its configuration; the
+    configuration is upgraded once verified."""
     document = json.loads(raw)
+    retired = _retire_rules(document["world"]["config"], version)
     if version < 22: document["world"] = _rename_positions(document["world"], skip="config")
     if version < 23:
         world = document["world"]
         world["trajectories"] = _monthly_trajectories(world["trajectories"], world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
     _extend_attribute_vectors(document["world"], source_path)
-    return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8"), retired
 
 
 def _monthly_trajectories(trajectories: dict, opening_month: int) -> dict:
@@ -485,6 +530,13 @@ def _upgrade_news(world: World) -> None:
     world.news = [item if isinstance(item, NewsItem) else
                   NewsItem(item.date, item.kind, item.text, item.club_id, item.player_id, item.match_id, item.read)
                   for item in world.news if item.kind != "result"]
+
+
+def _upgrade_possessions(world: World) -> None:
+    """Schema 38: possessions are built action after action, and an older save takes the rules recalibrated with them (see
+    `POSSESSION_RECALIBRATED_RULES`). Its matches keep their events: the replay reads a move forward without a label as a
+    pass, and a match without passes counted shows none."""
+    world.config = _recalibrated(world.config, POSSESSION_RECALIBRATED_RULES)
 
 
 def _upgrade_market(world: World) -> None:
@@ -560,6 +612,22 @@ RECALIBRATED_FATIGUE_RULES = (("states", "fitness", None, "daily_recovery", 0.10
                               ("engine", "player_ratings", None, "saving", 0.10, 0.08))
 # Rules recalibrated by schema 37, in the same form: the planning rounds replace chance reviews.
 MARKET_RECALIBRATED_RULES = (("management", "market", None, "daily_proposal_probability", 0.06, 0.0),)
+# Rules recalibrated by schema 38, in the same form: the duels of a possession built action after action, which weigh the
+# gaps less since a possession holds more of them, cards given on the duels a side loses, more corners of which a third ends in a header, and the target for set-piece goals until
+# penalties and indirect free kicks exist.
+POSSESSION_RECALIBRATED_RULES = (("engine", "transitions", None, "progression_bias", 0.0, -0.07),
+                                 ("engine", "transitions", None, "creation_bias", -1.9, -1.575),
+                                 ("engine", "transitions", None, "progression_sensitivity", 0.04, 0.02),
+                                 ("engine", "transitions", None, "creation_sensitivity", 0.03, 0.012),
+                                 ("engine", "transitions", None, "home_bonus", 0.3, 0.38),
+                                 ("engine", "chance", None, "shot_xg", 0.15, 0.13),
+                                 ("engine", "set_pieces", None, "corner_probability", 0.075, 0.12),
+                                 ("engine", "set_pieces", None, "free_kick_probability", 0.025, 0.012),
+                                 ("engine", "set_pieces", None, "corner_xg", 0.05, 0.09),
+                                 ("engine", "cards", None, "yellow_probability", 0.018, 0.03),
+                                 ("engine", "cards", None, "red_probability", 0.0003, 0.00055),
+                                 ("benchmarks", "stats_match", "set_piece_goal_share", "min", 0.25, 0.1),
+                                 ("benchmarks", "stats_match", "set_piece_goal_share", "max", 0.3, 0.16))
 
 
 def _recalibrated(cfg: Config, recalibrated: tuple) -> Config:
@@ -635,12 +703,13 @@ def _upgrade_economy(world: World) -> None:
         club.wage_cap = max(club.wage_bill + reserved, round(club.income * budgets.wage_income_share / budgets.weeks_per_year) + club.wage_shift)
 
 
-def _config_matches(world: World, fingerprint: str, version: int) -> bool:
+def _config_matches(world: World, fingerprint: str, version: int, retired: dict | None = None) -> bool:
     if config_fingerprint(world.config) == fingerprint: return True
     # Verify each historical configuration before accepting only its explicit
     # migration defaults. Existing/custom rules must retain their fingerprint.
     if version >= SCHEMA_VERSION: return False
     previous = config_payload(world.config)
+    for (top, section), rules in (retired or {}).items(): previous[top][section].update(rules)
     if version < 15:
         from core.config.models.international import InternationalConfig
         from dataclasses import asdict

@@ -70,9 +70,23 @@ L'avantage domicile est la différence moyenne de buts domicile - extérieur
 sur les confrontations avec inversion des domiciles.
 
 Le xG est la qualité préalable de chaque tentative, sans qualité du tireur ou
-du gardien. Un but compte dans les tirs et tirs cadrés. Le total des possessions
-et leurs durées doivent être cohérents avec la durée effective du match.
-Mesurer aussi la dangerosité par attaque axiale ou latérale, séparément du volume.
+du gardien. Un but compte dans les tirs et tirs cadrés. La possession compte le
+temps de jeu effectif : le ballon arrêté entre deux possessions n'appartient à
+personne. Mesurer aussi la dangerosité par attaque axiale ou latérale, séparément
+du volume.
+
+`part_buts_coups_arretes` vaut 10 à 16 % tant que le moteur n'a ni penaltys ni
+coups francs indirects, qui font à eux seuls une bonne part des buts sur coups de
+pied arrêtés en vrai ; un corner n'y aboutit à une tête qu'une fois sur trois.
+
+Avec les possessions construites, les diagnostics suivants accompagnent la suite,
+sur le même scénario symétrique (mesurés hors suite, non bloquants) : 320 à 450
+passes réussies par équipe, 2,8 à 4 passes par possession, 55 à 70 % de
+possessions de trois passes ou moins et 2 à 8 % de dix ou plus, 10 à 20 % de
+possessions lancées en contre et 15 à 30 % des tirs en contre, 4,5 à 5,5 corners
+par équipe, 52 à 60 minutes de jeu effectif, 28 à 38 % de frappes de loin et 15 à
+25 % de têtes. Dans les affiches déséquilibrées de la suite `match`, le favori a
+56 à 65 % de possession.
 
 La note moyenne des titulaires de chaque poste du 4-3-3 symétrique (`rating_GB`,
 `rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`.

@@ -74,10 +74,13 @@ export function statsCard(match){
  const result=match.result,home=result.home_stats,away=result.away_stats,totalPoss=home.possession_seconds+away.possession_seconds;
  const [homeColor,awayColor]=chartColours(match.home,match.away);
  const stats=[['Buts attendus (xG)',home.xg,away.xg],['Tirs',home.shots,away.shots],['Tirs cadrés',home.on_target,away.on_target],['Possession',100*home.possession_seconds/Math.max(1,totalPoss),100*away.possession_seconds/Math.max(1,totalPoss)],['Corners',home.corners,away.corners],['Coups francs',home.free_kicks,away.free_kicks],['Cartons jaunes',home.yellows,away.yellows],['Cartons rouges',home.reds,away.reds]];
+ // Passes are counted since the possessions are built pass by pass: an older match has none.
+ if(home.passes!=null&&away.passes!=null)stats.splice(4,0,['Passes',home.passes,away.passes],
+  ['Précision des passes',100*home.passes/Math.max(1,home.passes_attempted),100*away.passes/Math.max(1,away.passes_attempted)]);
  // One bar a line, shared between the two sides by their part of the two figures, the home side's on the left; the larger
  // figure is the strong one. The card folds on its first four lines, the same on the report and in the live match.
  const rows=stats.map(([label,a=0,b=0],index)=>{
-  const unit=label==='Possession'?'\u00a0%':'',figure=label==='Buts attendus (xG)'?expectedGoals:n,total=a+b;
+  const unit=label==='Possession'||label==='Précision des passes'?'\u00a0%':'',figure=label==='Buts attendus (xG)'?expectedGoals:n,total=a+b;
   return `<div class="comparison${index>=4?' fold-more':''}"><span class="${a>b?'lead':''}">${figure(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${figure(b)}${unit}</span></div>`;
  }).join('');
  return foldCard('match-stats','Le match en chiffres',`<div class="comparisons">${rows}</div>`,'match-stats');

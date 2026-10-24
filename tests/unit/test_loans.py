@@ -308,6 +308,7 @@ def test_loans_and_the_reserve_survive_a_save_and_an_older_save_has_none(config,
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 24:
             for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     older = store.load("loan")

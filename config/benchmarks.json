@@ -36,7 +36,7 @@
     "buts_par_equipe": {"cible": 1.35, "tolerance": 0.10},
     "possession_pct": {"min": 45, "max": 55},
     "avantage_domicile_buts": {"cible": 0.30, "tolerance": 0.08},
-    "part_buts_coups_arretes": {"min": 0.25, "max": 0.30},
+    "part_buts_coups_arretes": {"min": 0.10, "max": 0.16},
     "jaunes_par_equipe": {"min": 1.75, "max": 2.25},
     "rouges_par_equipe": {"min": 0.05, "max": 0.08},
     "repartition_couloirs": {"cible": 0.333, "tolerance": 0.05},

@@ -40,7 +40,8 @@ def cases(config):
         home = synthetic_lineup(config, 1, home_formation, level_home, AVERAGE_DELIVERY)
         away = synthetic_lineup(config, 2, away_formation, level_away)
         result[f"plain-{index}"] = (home, away, 1000 + index, index % 4 == 3)
-    for index in range(6):
+    # The last rough case is one whose seed brings a sending-off, so the reference covers it.
+    for index in (0, 1, 2, 3, 4, 5, 17):
         home = roughened(synthetic_lineup(config, 1, formations[index % len(formations)]), 0.55, 1.8, 3.0)
         away = roughened(synthetic_lineup(config, 2), 0.6, 1.6, 2.5)
         result[f"rough-{index}"] = (home, away, 2000 + index, False)
@@ -89,3 +90,8 @@ def test_match_results_match_the_frozen_reference(config):
 def test_reference_covers_every_engine_path(config):
     kinds = {event.kind for result in play(config).values() for event in result.events}
     assert {"goal", "save", "off_target", "yellow", "red", "injury", "substitution", "forfeit", "double_forfeit"} <= kinds
+    details = {(event.kind, event.detail) for result in play(config).values() for event in result.events}
+    assert {("progress", label) for label in ("pass", "carry", "dribble", "long")} <= details
+    assert {("turnover", loss) for loss in ("interception", "tackle", "aerial", "clearance")} <= details
+    assert {("shot", kind) for kind in ("shot", "long_shot", "dribble", "through_ball", "cross", "cutback", "corner", "free_kick")} <= details
+    assert "circulation" in kinds

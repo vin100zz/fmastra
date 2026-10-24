@@ -16,7 +16,7 @@ class TeamState:
     bench: list[Player]
     fitness: dict[int, float]
     players: dict[int, Player]
-    stats: TeamStats = field(default_factory=TeamStats)
+    stats: TeamStats = field(default_factory=lambda: TeamStats(passes=0, passes_attempted=0))
     individual: dict[int, PlayerMatchStats] = field(default_factory=dict)
     substituted: int = 0
     windows: int = 0
@@ -32,6 +32,15 @@ class TeamState:
     roles: dict[int, Position] = field(default_factory=dict)
     credits: dict[int, float] = field(default_factory=dict)
     next_refresh: float = 0
+    # Stamped by every refresh of the zone ratings, unique across sides: the gaps this side meets, cached by
+    # (creation, counter, zone, lane), hold while neither its revision nor its opponent's changes.
+    revision: int = 0
+    gaps: dict[tuple[bool, bool, int, int], float] = field(default_factory=dict)
+    gaps_stamp: tuple[int, int] = (-1, -1)
+    # What holds while the same players keep the same positions (see `zones.Layout`), and what a minute costs each of them.
+    lineup_key: tuple = ()
+    layout: object = None
+    costs: dict[tuple[int, Position], float] = field(default_factory=dict)
     next_substitution: float = 0
     next_rotation: float = 0
     starters: set[int] = field(default_factory=set)

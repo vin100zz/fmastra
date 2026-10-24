@@ -282,3 +282,16 @@ def test_a_typical_rating_is_out_of_twenty_at_another_known_position(config, pos
     raw["demographie"]["generation"]["aptitudes_postes"]["notes_types"][position][other] = value
     with pytest.raises(ConfigError):
         decode_config(raw)
+
+
+def test_rules_the_current_schema_introduces_default_to_the_values_they_ship_with(config):
+    """An older save receives the model's defaults for them: they must be the rules of a new game."""
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, SCHEMA_VERSION
+    payload = config_payload(config)
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced != SCHEMA_VERSION: continue
+        rules = payload[path[0]][path[1]]
+        assert {key: rules[key] for key in defaults} == defaults
+        for key in defaults: del rules[key]
+        if not rules: del payload[path[0]][path[1]]
+    assert decode_config(payload) == config

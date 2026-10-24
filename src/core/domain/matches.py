@@ -68,9 +68,9 @@ class LiveMatchRecord:
 
 # The engine logs these for its own bookkeeping. TeamStats already counts corners and
 # free kicks, and no view lists them, so a stored result keeps every other kind.
-TRANSIENT_EVENT_KINDS = frozenset({"possession", "progress", "delivery", "turnover", "corner", "free_kick"})
+TRANSIENT_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "turnover", "corner", "free_kick"})
 # The replay draws the possessions that led to a shot, so their build-up survives storage.
-REPLAY_EVENT_KINDS = frozenset({"possession", "progress", "delivery", "corner", "free_kick"})
+REPLAY_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "corner", "free_kick"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,6 +97,9 @@ class TeamStats:
     xg: float = 0
     possession_seconds: float = 0
     possessions: int = 0
+    # Conservation passes, forward passes and long balls; None for a match played before they were counted.
+    passes: int | None = None
+    passes_attempted: int | None = None
     corners: int = 0
     free_kicks: int = 0
     yellows: int = 0
@@ -158,7 +161,9 @@ class Match:
 
 
 def stored_events(events: list[MatchEvent]) -> list[MatchEvent]:
-    """The events a saved result keeps: every listed kind, plus the build-up of each chance."""
+    """The events a saved result keeps: every listed kind, plus the build-up of each chance and the loss of the ball
+    that gave the chance's side the ball."""
     chances = {event.possession_id for event in events if event.kind == "shot"}
     return [event for event in events if event.kind not in TRANSIENT_EVENT_KINDS
-            or (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances)]
+            or (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances)
+            or (event.kind == "turnover" and event.possession_id + 1 in chances)]

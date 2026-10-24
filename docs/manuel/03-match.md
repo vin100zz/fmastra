@@ -2,9 +2,9 @@
 
 ## Vue d'ensemble
 
-Un match est une suite de **possessions** qui alternent entre les deux équipes : environ {{n((moteur_match.chronologie.duree_match_secondes + moteur_match.chronologie.temps_additionnel_max) / moteur_match.chronologie.duree_possession_moyenne, -1)}} par match, de {{moteur_match.chronologie.duree_possession_moyenne}} secondes en moyenne. À chaque possession, l'équipe qui a le ballon tente de le faire avancer de zone en zone, puis de créer une occasion, puis de marquer. Chaque étape est un duel entre ce que vaut l'attaque et ce que vaut la défense à cet endroit du terrain. Dès qu'un duel est perdu, le ballon change de camp.
+Un match est une suite de **possessions** qui alternent entre les deux équipes, et chaque possession une suite d'actions. L'équipe qui a le ballon le garde par des passes, tente de le faire avancer de zone en zone, puis de créer une occasion, puis de marquer. Chaque passe et chaque tentative se jouent entre ce que vaut l'attaque et ce que vaut la défense à cet endroit du terrain. Dès qu'une passe est interceptée ou qu'une tentative échoue, le ballon change de camp.
 
-Rien n'est décidé joueur contre joueur avant le tir : ce sont des notes de zone, calculées à partir des onze joueurs présents, de leurs postes et de leur état, qui s'affrontent. Les joueurs nommés dans le résumé (celui qui porte le ballon, celui qui le récupère) sont désignés ensuite.
+Rien n'est décidé joueur contre joueur avant le tir : ce sont des notes de zone, calculées à partir des onze joueurs présents, de leurs postes et de leur état, qui s'affrontent. Le porteur du ballon choisit ce qu'il tente selon ses qualités, mais la réussite se décide entre notes de zone. Les autres joueurs nommés dans le résumé (celui qui récupère le ballon, celui qui le perd) sont désignés ensuite.
 
 ## Le terrain : zones et couloirs
 
@@ -46,12 +46,38 @@ La **densité** est la somme des implications des joueurs à cet endroit. La moy
 
 Les quatre multiplicateurs d'état sont détaillés dans [Forme, moral et condition physique](#/aide/etats). Les notes sont recalculées toutes les {{moteur_match.recalcul_notes.palier_fatigue_minutes}} minutes pour suivre la fatigue, et à chaque remplacement, changement de poste, blessure ou expulsion.
 
-## Progresser et créer
+## Une possession
 
 Dans la zone et le couloir où se trouve le ballon, l'écart est la note d'attaque moins la note de défense adverse. Il est borné en douceur : au-delà de {{moteur_match.transitions.ecart_note_max * 2}} points, un écart supplémentaire ne change presque plus rien.
 
+À chaque pas, l'équipe qui a le ballon tente quelque chose ou le garde. La probabilité de tenter, le **tempo**, dépend de la zone ; entre équipes égales et face à une défense en place, elle vaut {{pct(moteur_match.actions.tempo_par_zone[0], 0)}} en défense, {{pct(moteur_match.actions.tempo_par_zone[1], 0)}} au milieu bas, {{pct(moteur_match.actions.tempo_par_zone[2], 0)}} au milieu haut, {{pct(moteur_match.actions.tempo_par_zone[3], 0)}} dans la zone de vérité, et {{pct(moteur_match.actions.tempo_contre, 0)}} pendant un contre.
+
+### Garder le ballon
+
+Entre équipes égales, une passe de conservation réussit dans {{pct(sigmoide(moteur_match.actions.conservation.biais_par_zone[0]), 0)}} des cas en défense et {{pct(sigmoide(moteur_match.actions.conservation.biais_par_zone[3]), 0)}} dans la zone de vérité. Une passe manquée est une **interception** : l'adversaire récupère le ballon à cet endroit, et une interception près de son propre but est la plus coûteuse.
+
+Ce qui change ces chances, c'est l'**avantage à la conservation** : l'écart de l'équipe là où se trouve le ballon, moins celui de l'adversaire au même endroit de son propre camp. Il est nul entre équipes égales, quelles que soient leurs formations. Chaque point d'avantage ajoute {{moteur_match.actions.conservation.sensibilite}} au logit de la passe et retire {{moteur_match.actions.patience}} au logit du tempo : l'équipe qui domine prend son temps, celle qui est dominée se presse et perd le ballon plus vite. Avec {{n(10 * 2, 0)}} points d'avantage sur 200, une passe au milieu haut réussit dans {{pct(sigmoide(moteur_match.actions.conservation.biais_par_zone[2] + 10 * moteur_match.actions.conservation.sensibilite), 0)}} des cas au lieu de {{pct(sigmoide(moteur_match.actions.conservation.biais_par_zone[2]), 0)}}, et l'équipe n'y tente plus que dans {{pct(sigmoide(logit(moteur_match.actions.tempo_par_zone[2]) - 10 * moteur_match.actions.patience), 0)}} des pas. C'est ce qui donne le ballon aux meilleures équipes.
+
+Chaque passe réussie **ouvre** la défense adverse, qui doit bouger pour suivre le ballon :
+
+- elle ajoute {{moteur_match.actions.ouverture.gain_par_passe}} au logit des tentatives suivantes, jusqu'à {{moteur_match.actions.ouverture.max}} ;
+- elle rend une tentative plus probable : avec l'ouverture au plus haut, le tempo du milieu haut passe à {{pct(moteur_match.actions.tempo_par_zone[2] + (1 - moteur_match.actions.tempo_par_zone[2]) * moteur_match.actions.attrait_ouverture, 0)}} ;
+- elle fait passer le ballon dans un couloir voisin dans {{pct(moteur_match.actions.conservation.part_laterale, 0)}} des cas, ou le fait revenir d'une zone (une passe en retrait) dans {{pct(moteur_match.actions.conservation.part_recul_par_zone[1], 0)}} des cas, {{pct(moteur_match.actions.conservation.part_recul_par_zone[3], 0)}} dans la zone de vérité ;
+- elle met fin au contre : la défense a eu le temps de se replacer.
+
+### Tenter
+
+Le porteur du ballon est désigné parmi les joueurs impliqués à cet endroit, puis il choisit ce qu'il tente. Ses qualités changent ce qu'il tente, jamais les chances qu'il a de réussir, qui se décident entre notes de zone.
+
+| Tentative | Où | Part des tentatives | Ce qui la fait varier |
+|---|---|---:|---|
+| Long ballon | Défense, milieu bas | {{pct(moteur_match.actions.jeu_long.part_par_zone[0], 0)}}, {{pct(moteur_match.actions.jeu_long.part_par_zone[1], 0)}} | Plus pour un bon passeur (Passes au-dessus de {{n(moteur_match.actions.jeu_long.reference_passe / 5, 0)}} sur 20) |
+| Frappe de loin | Milieu haut, axe | {{pct(moteur_match.actions.tir_de_loin.part, 0)}} | Plus pour un bon finisseur (Finition au-dessus de {{n(moteur_match.actions.tir_de_loin.reference_finition / 5, 0)}} sur 20), moins face à une défense ouverte |
+| Progression | Hors zone de vérité | Le reste | — |
+| Créer l'occasion | Zone de vérité | Toutes | — |
+
 ```
-chance de réussir = sigmoïde(sensibilité × écart + biais)
+chance de réussir = sigmoïde(sensibilité × écart + biais + ouverture)
 ```
 
 | Écart (points sur 200) | Avancer d'une zone | Avancer, à domicile | Créer l'occasion |
@@ -62,23 +88,37 @@ chance de réussir = sigmoïde(sensibilité × écart + biais)
 | +20 | {{pct(sigmoide(moteur_match.transitions.progression_bias + moteur_match.transitions.k_prog * moteur_match.transitions.ecart_note_max * tanh(10 / moteur_match.transitions.ecart_note_max)), 0)}} | {{pct(sigmoide(moteur_match.transitions.progression_bias + moteur_match.transitions.bonus_domicile + moteur_match.transitions.k_prog * moteur_match.transitions.ecart_note_max * tanh(10 / moteur_match.transitions.ecart_note_max)), 0)}} | {{pct(sigmoide(moteur_match.transitions.creation_bias + moteur_match.transitions.k_occ * moteur_match.transitions.ecart_note_max * tanh(10 / moteur_match.transitions.ecart_note_max)), 0)}} |
 | +40 | {{pct(sigmoide(moteur_match.transitions.progression_bias + moteur_match.transitions.k_prog * moteur_match.transitions.ecart_note_max * tanh(20 / moteur_match.transitions.ecart_note_max)), 0)}} | {{pct(sigmoide(moteur_match.transitions.progression_bias + moteur_match.transitions.bonus_domicile + moteur_match.transitions.k_prog * moteur_match.transitions.ecart_note_max * tanh(20 / moteur_match.transitions.ecart_note_max)), 0)}} | {{pct(sigmoide(moteur_match.transitions.creation_bias + moteur_match.transitions.k_occ * moteur_match.transitions.ecart_note_max * tanh(20 / moteur_match.transitions.ecart_note_max)), 0)}} |
 
-Dans les trois premières zones, une réussite fait avancer le ballon d'une zone, et dans environ {{pct(moteur_match.couloirs.probabilite_changement_aile, 0)}} des cas le fait passer dans un couloir voisin, de préférence celui où l'équipe domine le plus. Dans la zone de vérité, une réussite donne une occasion : une frappe si le ballon est dans l'axe, un centre repris de la tête s'il est sur une aile.
+Ce tableau vaut pour une défense en place ; une défense ouverte au plus haut ajoute {{moteur_match.actions.ouverture.max}} au logit (à écart nul, une progression réussit alors dans {{pct(sigmoide(moteur_match.transitions.progression_bias + moteur_match.actions.ouverture.max), 0)}} des cas).
 
-Trois correctifs s'appliquent à la chance de réussir :
+- **Une progression réussie** fait avancer le ballon d'une zone, par une passe, une conduite ou un dribble. Dans environ {{pct(moteur_match.couloirs.probabilite_changement_aile, 0)}} des cas, elle le fait aussi passer dans un couloir voisin, de préférence celui où l'équipe domine le plus. L'ouverture garde {{pct(moteur_match.actions.ouverture.part_conservee_apres_progression, 0)}} de sa valeur. Ratée, c'est une interception ou un tacle.
+- **Un long ballon** saute une zone : de la défense au milieu haut, du milieu bas à la zone de vérité, dans le couloir où l'équipe domine le plus. À écart nul, il trouve son destinataire dans {{pct(sigmoide(moteur_match.actions.jeu_long.biais), 0)}} des cas, et l'ouverture repart de zéro. Raté, c'est un duel aérien perdu loin du but adverse.
+- **Une frappe de loin** part sans duel préalable (voir « Les tirs »).
+- **Une occasion créée** se joue selon le couloir (voir « Les tirs »).
 
-- **L'avantage du terrain** aide l'équipe à domicile à avancer (colonne du milieu), jamais à créer ni à marquer. Il disparaît sur terrain neutre.
-- **Le relâchement** : une équipe qui mène de plus de {{moteur_match.transitions.avance_confortable}} buts gère son avance. Chaque but d'avance supplémentaire réduit ses chances d'avancer et de créer (à écart nul, elle n'avance plus que dans {{pct(sigmoide(moteur_match.transitions.progression_bias - moteur_match.transitions.relachement_par_but), 0)}} des cas avec trois buts d'avance).
+Trois correctifs s'appliquent :
+
+- **L'avantage du terrain** aide l'équipe à domicile à avancer (deuxième colonne), jamais à créer ni à marquer. Il disparaît sur terrain neutre.
+- **Le relâchement** : une équipe qui mène de plus de {{moteur_match.transitions.avance_confortable}} buts gère son avance. Chaque but d'avance supplémentaire réduit son tempo : elle garde le ballon au lieu de tenter (avec trois buts d'avance, elle ne tente plus au milieu haut que dans {{pct(sigmoide(logit(moteur_match.actions.tempo_par_zone[2]) - moteur_match.transitions.relachement_par_but), 0)}} des pas, défense en place).
 - **Le contre** : voir plus bas.
 
 ## Les tirs
 
-Le tireur est désigné parmi les joueurs impliqués à l'endroit de l'occasion, en proportion de leur implication offensive : un avant-centre frappe bien plus souvent qu'un milieu défensif. Chaque occasion a une probabilité de but de départ, corrigée par le duel entre le tireur et le gardien.
+Ce que le porteur tente dans la zone de vérité dépend du couloir :
+
+- **dans l'axe**, une frappe dans la surface, un dribble ou une passe en profondeur, dans {{pct(moteur_match.actions.creation.parts_axe.frappe / (moteur_match.actions.creation.parts_axe.frappe + moteur_match.actions.creation.parts_axe.dribble + moteur_match.actions.creation.parts_axe.profondeur), 0)}}, {{pct(moteur_match.actions.creation.parts_axe.dribble / (moteur_match.actions.creation.parts_axe.frappe + moteur_match.actions.creation.parts_axe.dribble + moteur_match.actions.creation.parts_axe.profondeur), 0)}} et {{pct(moteur_match.actions.creation.parts_axe.profondeur / (moteur_match.actions.creation.parts_axe.frappe + moteur_match.actions.creation.parts_axe.dribble + moteur_match.actions.creation.parts_axe.profondeur), 0)}} des cas face à une défense en place. Une défense ouverte au plus haut multiplie la part de la passe en profondeur par {{n(exp(moteur_match.actions.creation.attrait_profondeur_ouverture), 1)}}, un contre par {{moteur_match.actions.creation.facteur_profondeur_contre}} ;
+- **sur une aile**, un centre aérien dans {{pct(moteur_match.actions.creation.parts_aile.centre / (moteur_match.actions.creation.parts_aile.centre + moteur_match.actions.creation.parts_aile.retrait), 0)}} des cas pour un centreur à {{n(moteur_match.occasion.niveau_reference_centre / 5, 1)}} sur 20 en Centres, davantage s'il centre mieux, sinon un centre en retrait.
+
+Le tireur est désigné parmi les joueurs impliqués dans l'axe de la zone de vérité, en proportion de leur implication offensive : un avant-centre frappe bien plus souvent qu'un milieu défensif. Sur un dribble ou une frappe de loin, c'est le porteur qui frappe. Chaque occasion a une probabilité de but de départ, corrigée par le duel entre le tireur et le gardien.
 
 | Occasion | Probabilité de départ | Qualité du tireur | Qualité du gardien |
 |---|---:|---|---|
-| Frappe dans l'axe | {{pct(moteur_match.occasion.xg_base_frappe, 1)}} | Frappe | Arrêts |
-| Frappe en contre | {{pct(moteur_match.occasion.xg_base_frappe * moteur_match.occasion.multiplicateur_contre, 1)}} | Frappe | Arrêts |
+| Frappe dans la surface | {{pct(moteur_match.occasion.xg_base_frappe, 1)}} | Frappe | Arrêts |
+| Frappe dans la surface, en contre | {{pct(moteur_match.occasion.xg_base_frappe * moteur_match.occasion.multiplicateur_contre, 1)}} | Frappe | Arrêts |
+| Dribble dans la surface | {{pct(moteur_match.occasion.xg_base_dribble, 1)}} | Frappe | Arrêts |
+| Passe en profondeur | {{pct(moteur_match.occasion.xg_base_profondeur, 1)}}, {{pct(moteur_match.occasion.xg_base_profondeur * moteur_match.occasion.multiplicateur_contre, 1)}} en contre | Frappe | {{pct(moteur_match.occasion.poids_gardien_face_a_face.sortie, 0)}} sorties, {{pct(moteur_match.occasion.poids_gardien_face_a_face.arret, 0)}} arrêts |
 | Centre repris de la tête | {{pct(moteur_match.occasion.xg_base_centre, 1)}} | Jeu aérien | {{pct(moteur_match.occasion.poids_gardien_sur_tete.sortie, 0)}} sorties aériennes, {{pct(moteur_match.occasion.poids_gardien_sur_tete.arret, 0)}} arrêts |
+| Centre en retrait | {{pct(moteur_match.occasion.xg_base_retrait, 1)}} | Frappe | Arrêts |
+| Frappe de loin | {{pct(moteur_match.occasion.xg_base_tir_de_loin, 1)}} | Frappe | Arrêts |
 | Corner | {{pct(moteur_match.coups_arretes.xg_base_corner, 1)}} | Jeu aérien | Comme un centre |
 | Coup franc direct | {{pct(moteur_match.coups_arretes.xg_base_coup_franc_direct, 1)}} | Frappe, plus son avance en coups arrêtés | Arrêts |
 
@@ -92,15 +132,15 @@ Les qualités du tireur et du gardien sont multipliées par leur état (forme, c
 | +20 | {{pct(sigmoide(logit(moteur_match.occasion.xg_base_frappe) + moteur_match.occasion.sensibilite_tireur_gardien * moteur_match.transitions.ecart_note_max * tanh(10 / moteur_match.transitions.ecart_note_max)), 0)}} |
 | +40 | {{pct(sigmoide(logit(moteur_match.occasion.xg_base_frappe) + moteur_match.occasion.sensibilite_tireur_gardien * moteur_match.transitions.ecart_note_max * tanh(20 / moteur_match.transitions.ecart_note_max)), 0)}} |
 
-**La qualité du service** modifie la probabilité de départ d'une tête. Sur un centre, le centreur est désigné dans le couloir, la tête est reprise par un joueur de l'axe ; un attribut Centres au-dessus de {{n(moteur_match.occasion.niveau_reference_centre / 5, 1)}} sur 20 rend l'occasion meilleure, en dessous elle la dégrade. Sur corner, c'est l'attribut Coups arrêtés du tireur qui joue, autour de {{n(moteur_match.occasion.niveau_reference_cpa / 5, 1)}} sur 20.
+**La qualité du service** modifie la probabilité de départ d'un centre, aérien ou en retrait, et d'un corner. Sur un centre, le centreur est le porteur dans le couloir, la reprise est faite par un joueur de l'axe ; un attribut Centres au-dessus de {{n(moteur_match.occasion.niveau_reference_centre / 5, 1)}} sur 20 rend l'occasion meilleure, en dessous elle la dégrade. Sur corner, c'est l'attribut Coups arrêtés du tireur qui joue, autour de {{n(moteur_match.occasion.niveau_reference_cpa / 5, 1)}} sur 20.
 
-Un tir est cadré (but compris) avec une probabilité qui part de {{pct(moteur_match.occasion.probabilite_tir_cadre_base, 0)}} pour un tireur dont la qualité vaut {{moteur_match.occasion.niveau_reference_cadrage * 2}} et monte avec elle. Un tir cadré qui n'est pas un but est un arrêt du gardien.
+Un tir est cadré (but compris) avec une probabilité qui part de {{pct(moteur_match.occasion.probabilite_tir_cadre_base, 0)}} pour un tireur dont la qualité vaut {{moteur_match.occasion.niveau_reference_cadrage * 2}} et monte avec elle. Un tir cadré qui n'est pas un but est un arrêt du gardien. Une frappe non cadrée est contrée par un défenseur dans {{pct(moteur_match.notes_joueurs.part_non_cadres_contres, 0)}} des cas, {{pct(moteur_match.notes_joueurs.part_non_cadres_contres_de_loin, 0)}} pour une frappe de loin.
 
 Le **xG** affiché dans les statistiques est la probabilité de départ de chaque occasion (service compris), avant le duel tireur-gardien : il mesure ce que l'équipe a créé, pas la qualité de ses finisseurs.
 
 ## Coups de pied arrêtés
 
-Quand une attaque échoue dans le milieu haut ou la zone de vérité, elle obtient un corner dans {{pct(moteur_match.coups_arretes.probabilite_corner_sur_turnover_avance, 1)}} des cas et un coup franc direct dans {{pct(moteur_match.coups_arretes.probabilite_coup_franc_sur_turnover, 1)}}.
+Quand une tentative échoue dans le milieu haut ou la zone de vérité, l'équipe obtient un corner dans {{pct(moteur_match.coups_arretes.probabilite_corner_sur_turnover_avance, 1)}} des cas et un coup franc direct dans {{pct(moteur_match.coups_arretes.probabilite_coup_franc_sur_turnover, 1)}}. Un corner finit sur une tête dans {{pct(moteur_match.coups_arretes.part_corners_frappe, 0)}} des cas ; sinon il est dégagé, et l'adversaire repart de sa défense alors que l'attaque est encore montée.
 
 Le tireur de tous les coups de pied arrêtés est le joueur de champ qui a le meilleur attribut Coups arrêtés sur le terrain. Sur corner, il ne peut pas être à la réception : la tête est reprise par un autre joueur de champ, tiré en proportion de son Jeu de tête. Sur coup franc, il frappe lui-même : son écart à {{n(moteur_match.occasion.niveau_reference_coup_franc / 5, 1)}} sur 20 en Coups arrêtés s'ajoute à sa qualité de frappe ou s'en retranche, à raison de 10 points de qualité par point d'attribut.
 
@@ -111,10 +151,16 @@ L'endroit où repart l'équipe qui récupère le ballon dépend de la façon don
 - **Après un but** : engagement au milieu bas, dans l'axe.
 - **Après un tir adverse** : le gardien relance. Il fait repartir son équipe du milieu bas plutôt que de sa défense dans {{pct(moteur_match.relance_gardien.probabilite_depart_milieu_bas, 0)}} des cas pour une Relance de {{n(moteur_match.relance_gardien.niveau_reference / 5, 0)}} sur 20, davantage au-dessus ({{pct(sigmoide(logit(moteur_match.relance_gardien.probabilite_depart_milieu_bas) + moteur_match.relance_gardien.sensibilite_relance * (100 - moteur_match.relance_gardien.niveau_reference)), 0)}} à 20 sur 20).
 - **Après une récupération** : l'équipe repart là où elle a gagné le ballon. Plus son bloc est haut, plus elle a de chances de le gagner une zone plus haut ({{pct(formations.hauteur_bloc.probabilite_recuperation_avancee_base, 0)}} des cas avec un bloc neutre).
+- **Après un corner dégagé** : de sa défense.
 
-Une récupération dans le milieu haut ou plus haut lance un **contre**. Une récupération plus basse peut aussi en lancer un : {{pct(moteur_match.turnover.probabilite_contre_depuis_zone_basse, 0)}} des cas à vitesse égale, davantage si l'équipe qui récupère est plus rapide en moyenne que celle qui vient de perdre le ballon, et si cette dernière jouait haut. Le contre gagne alors une zone d'entrée.
+Une récupération peut lancer un **contre**, d'autant plus souvent qu'elle est haute : à vitesse égale et bloc neutre, dans {{pct(moteur_match.turnover.probabilite_contre_par_zone[0], 0)}} des cas en défense, {{pct(moteur_match.turnover.probabilite_contre_par_zone[1], 0)}} au milieu bas, {{pct(moteur_match.turnover.probabilite_contre_par_zone[2], 0)}} au milieu haut et {{pct(moteur_match.turnover.probabilite_contre_par_zone[3], 0)}} dans la zone de vérité. C'est plus fréquent :
 
-Pendant tout un contre, la défense adverse est prise à revers : sa note est réduite de {{moteur_match.turnover.malus_defensif_couloir_concerne * 2}} points à chaque duel, et une frappe au bout du contre a une probabilité de départ multipliée par {{moteur_match.occasion.multiplicateur_contre}}.
+- quand l'équipe qui a perdu le ballon tentait quelque chose (une passe vers l'avant, un dribble, un centre, un corner) : ses joueurs sont montés ({{pct(sigmoide(logit(moteur_match.turnover.probabilite_contre_par_zone[2]) + moteur_match.turnover.bonus_contre_attaque_engagee), 0)}} au milieu haut) ;
+- quand l'équipe qui récupère est plus rapide en moyenne, et quand l'adversaire jouait haut.
+
+C'est plus rare après un long ballon perdu, loin du but qu'il visait. Le contre gagne alors une zone d'entrée.
+
+Pendant un contre, l'équipe tente presque à chaque pas, la défense adverse est prise à revers (sa note est réduite de {{moteur_match.turnover.malus_defensif_couloir_concerne * 2}} points à chaque duel), et une frappe dans la surface ou une passe en profondeur au bout du contre a une probabilité de départ multipliée par {{moteur_match.occasion.multiplicateur_contre}}. Le contre s'arrête à la première passe de conservation : la défense a eu le temps de se replacer.
 
 ## Hauteur de bloc et mentalité
 
@@ -125,7 +171,7 @@ Chaque équipe a une hauteur de bloc entre {{formations.hauteur_bloc.min}} (trè
 | Récupérations | Plus souvent une zone plus haut, donc plus de contres |
 | Fatigue | Effort multiplié par {{etats.fatigue.intensite_par_hauteur_bloc.pressing_haut}} au pressing le plus haut, par {{etats.fatigue.intensite_par_hauteur_bloc.bloc_bas}} au bloc le plus bas |
 | Blessures | Le risque suit l'effort |
-| Contres subis | L'adversaire part plus souvent en contre depuis une récupération basse |
+| Contres subis | L'adversaire part plus souvent en contre |
 
 Ce qui fait bouger le bloc en cours de match :
 
@@ -135,17 +181,21 @@ Ce qui fait bouger le bloc en cours de match :
 
 ## Cartons
 
-Chaque attaque stoppée peut valoir un carton au défenseur qui l'a arrêtée. Il est désigné parmi les joueurs de champ impliqués à cet endroit, en proportion de leur implication défensive et de leur agressivité.
+Chaque tentative stoppée (une passe vers l'avant, une conduite, un dribble, une occasion manquée) peut valoir un carton au défenseur qui l'a arrêtée. Il est désigné parmi les joueurs de champ impliqués à cet endroit, en proportion de leur implication défensive et de leur agressivité. Une passe de conservation interceptée et un long ballon perdu n'en donnent pas.
 
-- Carton jaune : {{pct(moteur_match.cartons.probabilite_jaune_par_turnover_defensif, 1)}} par attaque stoppée, multiplié par {{moteur_match.cartons.poids_zone_defense}} dans sa propre zone de défense.
+- Carton jaune : {{pct(moteur_match.cartons.probabilite_jaune_par_turnover_defensif, 1)}} par tentative stoppée, multiplié par {{moteur_match.cartons.poids_zone_defense}} dans sa propre zone de défense.
 - Un joueur déjà averti fait attention : sa probabilité de second jaune est multipliée par {{moteur_match.cartons.booked_caution_multiplier}}.
-- Rouge direct : {{pct(moteur_match.cartons.probabilite_rouge_direct_par_turnover_defensif, 2)}} par attaque stoppée.
+- Rouge direct : {{pct(moteur_match.cartons.probabilite_rouge_direct_par_turnover_defensif, 2)}} par tentative stoppée.
 
 Une équipe réduite à moins de {{monde.regles_match.joueurs_minimum_poursuite}} joueurs perd par forfait {{monde.regles_match.score_forfait_buts_vainqueur}}–{{monde.regles_match.score_forfait_buts_perdant}}. Les suspensions sont décrites dans [Blessures et suspensions](#/aide/blessures).
 
 ## Durée et temps additionnel
 
 Chaque mi-temps dure {{monde.regles_match.mi_temps_secondes / 60}} minutes, plus un temps additionnel : entre {{moteur_match.chronologie.temps_additionnel_min / 60}} et {{moteur_match.chronologie.temps_additionnel_max / 60}} minutes tirées au sort pour le match et partagées entre les deux mi-temps, plus {{moteur_match.chronologie.secondes_par_arret_de_jeu}} secondes par but, blessure ou remplacement.
+
+Le temps passe avec les actions : {{moteur_match.actions.durees_secondes.passe}} secondes pour une passe, {{moteur_match.actions.durees_secondes.progression}} pour une progression, {{moteur_match.actions.durees_secondes.jeu_long}} pour un long ballon et {{moteur_match.actions.durees_secondes.occasion}} pour une occasion. Avant chaque possession, le ballon est arrêté (une touche, une faute, une sortie de but) {{moteur_match.actions.temps_mort.moyen}} secondes en moyenne, plus {{moteur_match.actions.temps_mort.apres_but}} après un but et {{moteur_match.actions.temps_mort.apres_tir}} après un tir ; un corner arrête le jeu {{moteur_match.actions.temps_mort.corner}} secondes, un coup franc {{moteur_match.actions.temps_mort.coup_franc}}.
+
+Une possession ne commence pas une fois le temps écoulé. Commencée, elle va à son terme, mais l'arbitre siffle à la première passe de conservation.
 
 En coupe, une égalité à la fin du temps réglementaire se règle directement aux tirs au but, sans prolongation. Chaque tireur marque dans 75 % des cas à qualité égale ; l'écart entre la moyenne de sa Finition et de son Sang-froid et les Réflexes du gardien déplace cette probabilité, qui reste entre 50 % et 95 %. Les meilleurs tireurs présents sur le terrain à la fin du match tirent en premier.
 
@@ -178,6 +228,6 @@ Chaque minute jouée retire {{moteur_match.notes_joueurs.attendu_par_minute}} : 
 
 Quand une action réussit, elle est attribuée de préférence aux meilleurs joueurs impliqués à cet endroit ; quand elle échoue, aux moins bons. Cette attribution se fait à part : les notes ne modifient jamais le déroulement du match. Elles comptent pourtant, car elles pilotent la [forme](#/aide/etats/la-forme).
 
-## Ce que la possession ne dit pas
+## La possession et les passes
 
-Les possessions alternent strictement et leurs durées sont tirées au hasard. Le pourcentage de possession affiché mesure donc le temps passé avec le ballon, proche de 50 % pour tout le monde : il ne dit rien de la domination. Pour juger un match, regardez les tirs, le xG et les couloirs d'attaque.
+Le pourcentage de possession affiché est la part du temps de jeu effectif où l'équipe avait le ballon : le ballon arrêté n'y compte pas. Une équipe qui a l'avantage à la conservation garde le ballon plus longtemps, joue plus de passes et en réussit une plus grande part. Le compte rendu donne aussi le nombre de passes réussies (passes de conservation, passes vers l'avant et longs ballons) et leur précision ; un match joué avant que les passes soient comptées n'en montre pas.

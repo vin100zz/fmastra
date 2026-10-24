@@ -22,14 +22,22 @@ def minute_cost(player: Player, position: Position, effort: float, cfg: Config) 
 
 def consume(team: TeamState, seconds: float, cfg: Config) -> None:
     rules = cfg.states.fitness
-    effort = intensity(team.block_height, cfg)
+    minutes = seconds / 60
+    # A minute's cost is proportional to the effort, so each player's cost at full effort is kept for the whole match.
+    effort, low, high = intensity(team.block_height, cfg) * minutes, rules.min, rules.max
+    fitness, individual, costs = team.fitness, team.individual, team.costs
     for slot in team.active:
         player = slot.player
-        team.fitness[player.id] = clamp(team.fitness[player.id] - minute_cost(player, slot.position, effort, cfg) * seconds / 60,
-                                       rules.min, rules.max)
-        stats = team.individual[player.id]
-        stats.minutes += seconds / 60
-        stats.final_fitness = team.fitness[player.id]
+        key = (player.id, slot.position)
+        cost = costs.get(key)
+        if cost is None:
+            cost = costs[key] = minute_cost(player, slot.position, 1.0, cfg)
+        value = fitness[player.id] - cost * effort
+        value = low if value < low else high if value > high else value
+        fitness[player.id] = value
+        stats = individual[player.id]
+        stats.minutes += minutes
+        stats.final_fitness = value
 
 
 def match_load(spent: float, cfg: Config) -> float:

@@ -39,7 +39,11 @@ def test_crediting_actions_differently_never_changes_the_play(config):
     for seed in range(4):
         played, credited_otherwise = play(config, seed), play(other, seed)
         assert (played.home_goals, played.away_goals) == (credited_otherwise.home_goals, credited_otherwise.away_goals)
-        assert played.home_stats == credited_otherwise.home_stats and played.away_stats == credited_otherwise.away_stats
+        # The passes counted follow what each move is drawn to look like (a pass, a carry, a dribble), on the ratings' stream.
+        assert (replace(played.home_stats, passes=None, passes_attempted=None)
+                == replace(credited_otherwise.home_stats, passes=None, passes_attempted=None))
+        assert (replace(played.away_stats, passes=None, passes_attempted=None)
+                == replace(credited_otherwise.away_stats, passes=None, passes_attempted=None))
         assert ([(event.kind, event.second, event.shot_id) for event in played.events]
                 == [(event.kind, event.second, event.shot_id) for event in credited_otherwise.events])
 

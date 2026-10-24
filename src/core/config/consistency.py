@@ -175,8 +175,20 @@ def validate_consistency(cfg: Config) -> None:
         require(notes[0] < notes[1] < notes[2], f"{label} source notes must increase from low to high")
     require(0 < cards.aggression_min <= 1 <= cards.aggression_max, "Foul propensity must be positive and bracket the neutral factor 1")
     require(cards.aggression_weight >= 0, "Foul propensity exponent must be nonnegative")
-    require(cfg.engine.density.reference > 0 and cfg.engine.timing.possession_mean > 0, "Invalid engine scale")
-    require(cfg.engine.timing.possession_gamma_shape > 0, "Gamma shape must be positive")
+    require(cfg.engine.density.reference > 0, "Invalid engine scale")
+    actions, zone_count = cfg.engine.actions, len(cfg.involvement.zones)
+    for label, values in (("Tempo", actions.tempo_by_zone), ("Conservation bias", actions.conservation.bias_by_zone),
+                          ("Back pass share", actions.conservation.back_share_by_zone),
+                          ("Counter probability", cfg.engine.turnover.counter_probability_by_zone)):
+        require(len(values) == zone_count, f"{label} needs one value per zone")
+    require(len(actions.long_ball.share_by_zone) <= zone_count - 2, "A long ball goes two zones forward")
+    require(all(0 < value < 1 for value in actions.tempo_by_zone + actions.long_ball.share_by_zone
+                + cfg.engine.turnover.counter_probability_by_zone + (actions.counter_tempo, actions.long_shot.share)),
+            "Tempos and shares drawn in logit must lie within (0, 1)")
+    require(0 <= actions.opening_pull < 1 and actions.opening.max > 0, "An open defence draws the tempo short of 1")
+    durations = actions.durations
+    require(min(durations.pass_, durations.progression, durations.long_ball, durations.chance) > 0, "Actions must take time")
+    require(0 <= cfg.engine.set_pieces.corner_shot_share <= 1, "Corner shot share must be within [0, 1]")
     require(cfg.world.season.days_between_rounds > 0, "Round spacing must be positive")
     require(len({league.division_id for league in cfg.world.competitions}) == len(cfg.world.competitions), "Duplicate competitions")
     movement = cfg.world.promotion_relegation

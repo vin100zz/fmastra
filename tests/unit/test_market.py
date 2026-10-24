@@ -1109,6 +1109,7 @@ def test_an_older_save_lets_a_demand_for_a_raise_too_small_to_ask_for_lapse(conf
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 29:
             for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("demands")
@@ -1412,7 +1413,7 @@ def test_an_older_save_plans_in_rounds_and_dates_its_free_agents(config, tmp_pat
     import json
     from core.domain.clubs import Competition
     from core.world.events import PlayerReleased
-    from infrastructure.persistence.store import SaveStore
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, SaveStore
     world = mini_world(config)
     world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
     for club in world.clubs.values(): club.competition_id = -16
@@ -1427,6 +1428,11 @@ def test_an_older_save_plans_in_rounds_and_dates_its_free_agents(config, tmp_pat
     payload = json.loads(gzip.decompress(path.read_bytes()))
     payload["schema_version"] = 36
     rules = payload["world"]["config"]
+    # Nor what the schemas after it brought.
+    for introduced, config_path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 37:
+            for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     for key in ("tours_planification", "agents_libres", "contrats_longs"): del rules["ia_gestion"]["mercato"][key]
     del rules["ia_gestion"]["contrats"]["refus_prolongation"]
     rules["ia_gestion"]["mercato"]["daily_proposal_probability"] = 0.06

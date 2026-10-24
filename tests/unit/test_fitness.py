@@ -160,6 +160,7 @@ def test_an_older_save_takes_the_recalibrated_fatigue_rules_and_keeps_those_chos
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 30:
             for key in defaults: del rules[config_path[0]][config_path[1]][key]
+            if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     rules["etats"]["fatigue"].update(recuperation_base_par_jour=0.10, recuperation_facteur_endurance=0.05)
     rules["etats"]["blessures"].update(facteur_fatigue_max=1.9, probabilite_base_par_possession=0.0025)
     rules["moteur_match"]["notes_joueurs"]["arret"] = 0.10

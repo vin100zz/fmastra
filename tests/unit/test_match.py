@@ -21,7 +21,8 @@ def test_detailed_match_ledgers_and_no_world_mutation(config):
     assert result.home_stats.xg == pytest.approx(sum(event.xg for event in result.events if event.kind == "shot" and event.team_id == 1))
     assert [event.sequence for event in result.events] == list(range(len(result.events)))
     assert [event.second for event in result.events] == sorted(event.second for event in result.events)
-    assert abs(result.home_stats.possession_seconds + result.away_stats.possession_seconds - result.duration) < 1
+    # Possession counts the ball in play: the dead ball between two possessions belongs to neither side.
+    assert 0.4 * result.duration < result.home_stats.possession_seconds + result.away_stats.possession_seconds < 0.8 * result.duration
     assert all(0 <= stats.final_fitness <= 1 for stats in result.player_stats.values())
     for team_id, lineup in ((1, home), (2, away)):
         changes = [event for event in result.events if event.kind == "substitution" and event.team_id == team_id]

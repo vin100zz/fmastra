@@ -25,13 +25,20 @@ concerne calendrier et scores seuls, pas le monde complet avec mercato.
 
 ## Chronologie
 
-Deux périodes séparées par une mi-temps. Les possessions consomment une durée
-Gamma positive de moyenne configurée (26 secondes au départ). Tirer un temps
-additionnel par match, le répartir entre les périodes et ajouter les arrêts
-survenus dans chacune ; ne pas ajouter deux fois le même arrêt. Une possession
-est limitée au temps restant de la période pour ne pas créer d'événement après
-le coup de sifflet. La durée simulée est la somme des durées attribuées aux deux
-équipes, ce qui définit la possession temporelle affichée.
+Deux périodes séparées par une mi-temps. Avant chaque possession, le ballon est
+arrêté pendant une durée Gamma (`actions.temps_mort`), majorée après un but ou un
+tir ; un corner et un coup franc arrêtent aussi le jeu pendant la possession. La
+possession avance ensuite l'horloge de la durée de chacune de ses actions
+(`actions.durees_secondes`), et chaque événement porte la seconde de son action.
+`possession_seconds` ne compte que ces actions : la possession affichée est la part
+du temps de jeu effectif. La fatigue s'intègre après la possession, de son début à
+sa fin, en tranches coupées à chaque palier de recalcul des notes : les notes d'une
+possession datent du dernier palier qui la précède.
+
+Tirer un temps additionnel par match, le répartir entre les périodes et ajouter
+les arrêts survenus dans chacune ; ne pas ajouter deux fois le même arrêt. Aucune
+possession ne commence après la fin de la période ; commencée, elle va à son terme,
+sauf que l'arbitre siffle à la première passe de conservation jouée après la fin.
 
 À la mi-temps : changer l'engagement, appliquer les changements autorisés et
 conserver l'orientation relative des coordonnées. Les fenêtres tactiques à la
@@ -111,11 +118,41 @@ La racine atténue les apports marginaux ; elle n'est pas une saturation bornée
 La note de zone n'est pas nécessairement sur l'échelle [1, 100], contrairement
 aux attributs : sa différence combine qualité et densité.
 
-Utiliser le composite de progression pour franchir une zone et le composite
-de création pour obtenir une occasion dans la dernière zone. Chaque transition
-est une sigmoïde de la différence attaque/défense pondérée par son coefficient.
-Le bonus domicile intervient seulement dans la progression du moteur détaillé.
-Un échec rend la possession, sauf attribution explicite d'un coup arrêté.
+Une possession est une suite d'actions (`possession.play_possession`). À chaque
+pas, un seul tirage uniforme décide de tenter (avec la probabilité du tempo de la
+zone, `actions.tempo_par_zone`, ou `tempo_contre`), de réussir une passe de
+conservation ou d'être intercepté. Le tempo est attiré par l'**ouverture** :
+chaque passe de conservation réussie ajoute `ouverture.gain_par_passe` au logit
+des tentatives suivantes, jusqu'à `ouverture.max`, et le tempo monte de
+`attrait_ouverture` × ouverture ÷ maximum vers 1. Une passe de conservation peut
+changer de couloir ou revenir d'une zone ; elle met fin au contre.
+
+L'**avantage à la conservation** est l'écart de progression de l'attaquant à
+l'endroit du ballon moins celui du défenseur au même endroit de son propre camp :
+nul entre équipes égales, quelles que soient les formations. La passe de
+conservation réussit à sigmoïde(`biais_par_zone` + `sensibilite` × avantage), et
+le tempo perd `patience` × avantage en logit. C'est ce qui donne la possession à
+l'équipe la plus forte ; les écarts bruts, structurellement positifs dans son camp
+et négatifs devant le but adverse, n'y suffisent pas.
+
+Une tentative tire un porteur parmi les joueurs impliqués : ses attributs
+décident de ce qu'il tente (long ballon selon `passe`, frappe de loin selon
+`finition`), jamais de la réussite. Utiliser le composite de progression pour
+franchir une zone, ou deux sur un long ballon, et le composite de création pour
+obtenir une occasion dans la dernière zone. Chaque transition est une sigmoïde de
+la différence attaque/défense pondérée par son coefficient, plus l'ouverture.
+L'étiquette d'une progression (passe, conduite, dribble) se tire sur le flux des
+notes. Le bonus domicile intervient seulement dans la progression du moteur
+détaillé. Un échec rend la possession, sauf attribution explicite d'un coup
+arrêté ; une interception sur une passe de conservation et un long ballon perdu ne
+donnent ni coup arrêté ni carton.
+
+Les écarts ne changent qu'au recalcul des notes : `zones.gap` les met en cache par
+côté, phase, contre, zone et couloir, contre les révisions des deux équipes.
+`refresh` garde pour une même composition (`Layout`) les composites de chaque
+joueur, son état sans la fraîcheur, les poids d'implication de chaque case et
+leurs poids cumulés, dont `involved_player` et `credited` tirent par dichotomie ;
+la fatigue garde le coût d'une minute de chaque joueur à son poste.
 
 Les tableaux de densités doivent être calculés depuis les JSON, jamais maintenus
 à la main. La conservation d'un budget d'implication identique entre tous les
@@ -142,11 +179,14 @@ Une perte près du but du possesseur donne géométriquement une récupération
 avancée à l'adversaire. Une perte près du but adverse lui donne une récupération
 basse : elle ne doit pas le téléporter directement devant le but opposé.
 
-Après symétrie et effet de bloc, une récupération au moins en zone
-`zone_declenchant_contre` démarre un contre. Depuis une zone basse, un tirage
-peut lancer une transition rapide : logit de la probabilité configurée, plus
-écart des vitesses moyennes × sensibilité, plus hauteur adverse × vulnérabilité.
-En cas de succès, avancer d'une zone et marquer le contre.
+Après symétrie et effet de bloc, un tirage décide du contre : logit de
+`probabilite_contre_par_zone` à la zone du récupérateur, plus
+`bonus_contre_attaque_engagee` si le ballon est perdu sur une tentative ou un
+corner dégagé, plus `malus_contre_jeu_long` sur un long ballon perdu, plus écart
+des vitesses moyennes × sensibilité, plus hauteur adverse × vulnérabilité. En cas
+de succès, avancer d'une zone et marquer le contre. Un corner dégagé donne le
+ballon au défenseur dans sa zone de défense, sans récupération avancée. Le contre
+prend fin à la première passe de conservation.
 
 Le contre applique le malus défensif temporaire au défenseur en repli, dans le
 repère converti ; dans le couloir concerné, utiliser le malus spécifique à la
@@ -158,16 +198,26 @@ chaque possession. Une expulsion applique la baisse de bloc configurée.
 
 ## Occasions, tirs et xG
 
-Les occasions sur une aile sont des centres aboutissant à une tentative de tête ;
-les occasions axiales sont des frappes. La probabilité de créer l'occasion
-englobe en v1 la réussite préalable du centre. Nommer centreur et réceptionneur
-séparément et interdire qu'ils soient la même personne.
+Le porteur de la dernière zone choisit ce qu'il tente avant le duel de création
+(`actions.creation`) : dans l'axe une frappe dans la surface (`shot`), un dribble
+(`dribble`) ou une passe en profondeur (`through_ball`, plus probable avec
+l'ouverture et en contre) ; sur une aile un centre aérien (`cross`, plus probable
+avec l'attribut `centre`) ou un centre en retrait (`cutback`). Au milieu haut dans
+l'axe, une tentative peut être une frappe de loin (`long_shot`), sans duel de
+création. La probabilité de créer l'occasion englobe la réussite préalable du
+service. Le tireur est tiré dans l'axe de la dernière zone, autre que le passeur
+sur un centre ou une passe en profondeur ; sur un dribble ou une frappe de loin,
+c'est le porteur. Nommer passeur et tireur séparément.
 
 Le xG décrit la situation **avant** prise en compte des qualités du tireur et
-du gardien : base centre ou frappe, majoration axiale si contre. Il est cumulé
-par tentative, même si le tir est non cadré ou arrêté.
+du gardien : base du type d'occasion, majorée en contre pour la frappe dans la
+surface et la passe en profondeur, corrigée par le service pour un centre aérien
+ou en retrait. Il est cumulé par tentative, même si le tir est non cadré ou arrêté.
 
-- Frappe : composite de tir contre composite d'arrêt.
+- Frappe, dribble, centre en retrait, frappe de loin : composite de tir contre
+  composite d'arrêt.
+- Passe en profondeur : composite de tir contre une combinaison des composites de
+  sortie et d'arrêt (`poids_gardien_face_a_face`).
 - Tête sur centre ou corner : composite de tête contre combinaison des
   composites de sortie et d'arrêt du gardien, pondérée dans la configuration.
   Le xG de l'action dépend de sa livraison : qualité du centreur (`centre`) ou du
@@ -185,8 +235,10 @@ Borner les entrées du logit aux limites configurées. Un but est un tir cadré,
 un arrêt est un tir cadré sans but ; les catégories ne créent pas deux tirs.
 Les qualités sont comparées individuellement, jamais diluées dans le onze.
 
-Les corners et coups francs sont des branches de turnover, résolues avec des
-probabilités exclusives (leur somme ne peut dépasser 1). Le tireur de corner et de
+Les corners et coups francs sont des branches de tentative manquée, résolues avec des
+probabilités exclusives (leur somme ne peut dépasser 1). Un corner n'aboutit à une
+tête que dans `part_corners_frappe` des cas ; sinon il est dégagé (`turnover` de
+détail `clearance`). Le tireur de corner et de
 coup franc est le meilleur `cpa` du terrain, gardien exclu. Un corner choisit un
 receveur parmi les autres joueurs de champ pondérés par la tête ; son xG dépend du
 `cpa` du tireur. Un coup franc direct est frappé par le spécialiste avec son propre
@@ -198,10 +250,21 @@ extension devra ajouter attribution, tirage et cibles dédiés ensemble.
 
 Chaque événement porte seconde de jeu, période, index stable à seconde égale,
 équipe, joueurs, zone/couloir et identifiant de possession/tentative si pertinent.
-Le journal distingue changement de possession, tentative, issue de tir, corner,
-coup franc, faute, carton, blessure, remplacement et fin de période. Le monde ne
-stocke pas les changements de possession, pertes de balle, corners ni coups francs
-(`TRANSIENT_EVENT_KINDS`) : les statistiques d'équipe les comptent déjà.
+Le journal distingue changement de possession, série de passes, tentative, issue de
+tir, corner, coup franc, faute, carton, blessure, remplacement et fin de période.
+Une série de passes de conservation est un seul événement `circulation`, à la zone
+et au couloir où elle finit, de détail le nombre de passes ; personne n'y est nommé.
+`progress` porte en détail `pass`, `carry`, `dribble` ou `long` (un ancien
+`progress` sans détail se lit comme une passe), `turnover` `interception`, `tackle`,
+`aerial` ou `clearance`, `delivery` le type d'occasion qu'un passeur a servie. Le
+monde ne stocke pas les changements de possession, séries de passes, progressions,
+services, pertes de balle, corners ni coups francs (`TRANSIENT_EVENT_KINDS`), sauf
+pour les possessions qui finissent sur un tir (`REPLAY_EVENT_KINDS`) et la perte de
+balle qui précède l'une d'elles, que le résumé montre.
+
+`TeamStats.passes` et `passes_attempted` comptent passes de conservation,
+progressions de type passe et longs ballons ; ils valent `None` pour un match joué
+avant qu'ils existent.
 
 Pour un but, la passe décisive est attribuée au dernier passeur nommé de la même
 possession, différent du buteur ; pas d'assist sur un coup franc direct ou une
