@@ -29,7 +29,7 @@ def test_each_pyramid_follows_the_divisions_of_the_source(pyramids):
     with (ROOT / "data" / "divisions.csv").open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle, delimiter=";"))
     with (ROOT / "data" / "nations.csv").open(encoding="utf-8-sig", newline="") as handle:
-        codes = {row["name"]: row["code"] for row in csv.DictReader(handle)}
+        codes = {row["name"]: row["code"] for row in csv.DictReader(handle, delimiter=";")}
     with (ROOT / "data" / "clubs.csv").open(encoding="utf-8-sig", newline="") as handle:
         sizes = Counter(int(row["DivisionUID"]) for row in csv.DictReader(handle, delimiter=";") if row["DivisionUID"])
     levels: dict[str, dict[int, list[int]]] = defaultdict(lambda: defaultdict(list))

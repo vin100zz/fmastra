@@ -106,7 +106,7 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
     if fmt.wage_unit != "euros_par_semaine":
         raise ValueError("Unsupported wage unit")
     with (directory / "nations.csv").open(encoding="utf-8-sig", newline="") as handle:
-        nations = {row["name"]: row["code"] for row in csv.DictReader(handle)}
+        nations = {row["name"]: row["code"] for row in csv.DictReader(handle, delimiter=";")}
     nations["Allemagne de l'Est"] = "GDR"
     names = {code: name for name, code in nations.items()}
     for alias, canonical in ALIASES.items():

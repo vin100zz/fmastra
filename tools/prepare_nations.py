@@ -26,7 +26,7 @@ def main() -> None:
     for index, name in enumerate(unknown):
         codes[name] = "X" + alphabet[index // len(alphabet)] + alphabet[index % len(alphabet)]
     with (ROOT / "data" / "nations.csv").open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, delimiter=";")
         writer.writerow(("code", "name", "weight", "internal_code"))
         for name in sorted(labels):
             writer.writerow((codes[name], name, production[name], int(name not in KNOWN)))
