@@ -534,8 +534,9 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
   le rang en championnat,
   ses points à sa suite, atténués ; sinon le tour atteint ou perdu en coupe) ;
   ses joueurs et leur âge moyen, sur une tuile de deux colonnes ; sa tactique ;
-  son entraînement et son recrutement des jeunes, sur 20 sans le dire (leur
-  infobulle le dit) ; en dernier, la valeur de l'effectif. Un club qui ne joue
+  son entraînement et son recrutement des jeunes, sur une tuile de deux
+  colonnes, sur 20 sans le dire (leur infobulle le dit) ; en dernier, la
+  valeur de l'effectif. Un club qui ne joue
   aucune compétition n'a pas la première tuile. Les tuiles se partagent la
   largeur de la rangée, les colonnes d'une tuile la sienne ; le contenu de
   chacune y est centré horizontalement, comme sur le bandeau.

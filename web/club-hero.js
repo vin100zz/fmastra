@@ -104,8 +104,8 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
 
 // The row of tiles that opens a club's Présentation: its place in each competition of the season on one tile (`competitions`,
 // the record of its calendar: the rank in its league, else how far it went), its players and their mean age on another, its
-// tactic, its training, its youth recruitment, and last its squad's value. A competition is written after its badge, the
-// two one link to its page.
+// tactic, its training and its youth recruitment on one tile, and last its squad's value. A competition is written after its
+// badge, the two one link to its page.
 export function clubTiles(club,competitions=[]){
  const place=row=>{
   const standing=row.kind==='league'?club.standing:null;
@@ -113,8 +113,9 @@ export function clubTiles(club,competitions=[]){
  };
  const seasons=competitions.length?split(competitions.map(row=>`<div><span>${competitionLink(row,{badge:true})}</span><strong>${place(row)}</strong></div>`).join('')):'';
  return `<div class="club-tiles">${seasons}${split(column('Joueurs',club.squad_size==null?'—':n(club.squad_size))+column('Âge moyen',club.average_age==null?'—':n(club.average_age)))}`
-  +`${tile('Tactique',e(club.formation||'—'))}${tile('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'','Entraînement sur 20')}`
-  +`${tile('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'','Recrutement des jeunes sur 20')}${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;
+  +`${tile('Tactique',e(club.formation||'—'))}${split(column('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'Entraînement sur 20')
+   +column('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'Recrutement des jeunes sur 20'))}`
+  +`${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;
 }
 
 // The row of tiles that opens a selection's Présentation, a club's where they apply: where it stands in the edition it is at

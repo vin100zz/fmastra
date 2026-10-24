@@ -355,8 +355,8 @@ du club la mieux lisible sur le panneau du thème.
 sans défiler : ses listes prennent les lignes que la hauteur laisse et se redessinent quand elle change (charte,
 « Présentation d'un club »). En tête, une rangée de cases : la place dans chaque compétition de la saison (le
 rang et les points en championnat, le tour atteint en coupe ; `competitions` du calendrier de la saison), les
-joueurs et leur âge moyen, la tactique, l'entraînement et le recrutement des jeunes (sur 20), la valeur de
-l'effectif. Puis quatre colonnes, chaque carte avec « Voir → » vers ce qu'elle résume quand elle a une page :
+joueurs et leur âge moyen, la tactique, l'entraînement et le recrutement des jeunes (sur 20, sur une même case),
+la valeur de l'effectif. Puis quatre colonnes, chaque carte avec « Voir → » vers ce qu'elle résume quand elle a une page :
 
 | Carte | Contenu | Lien |
 |---|---|---|

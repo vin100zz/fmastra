@@ -84,7 +84,7 @@ test('the band of a club picked before a game shows its home and away outfits be
  assert.doesNotMatch(nationHero({...dressed,nation:'FRA'},{menu,section:'squad'}),/class="club-hero-kit"/);
 });
 
-test('the Présentation opens on the club\'s tiles: its competitions, its players and their age, its tactic, its facilities, its value last',()=>{
+test('the Présentation opens on the club\'s tiles: its competitions, its players and their age, its tactic, its facilities on one tile, its value last',()=>{
  const competitions=[{id:16,name:'Ligue 1',kind:'league',place:'1er'},{id:-3,name:'Coupe de France',kind:'cup',place:'Éliminé · Finale'}];
  const html=clubTiles({...club,standing:{rank:1,points:77},squad_size:23,average_age:24.6,squad_value:1312e6},competitions);
  const tiles=html.replace(/^<div class="club-tiles">/,'').split('<div class="club-hero-tile');
@@ -93,10 +93,10 @@ test('the Présentation opens on the club\'s tiles: its competitions, its player
  assert.match(tiles[1],/^ split"><div><span><a class="competition-link" href="#\/league\/16"><span class="competition-code league" title="Ligue 1">[^<]*<\/span>Ligue 1<\/a><\/span><strong>1er<em>77 pts<\/em><\/strong><\/div><div><span><a class="competition-link" href="#\/league\/-3"><span class="competition-code cup"[^>]*>[^<]*<\/span>Coupe de France<\/a><\/span><strong>Finale<\/strong><\/div><\/div>$/);
  assert.match(tiles[2],/^ split"><div><span>Joueurs<\/span><strong>23<\/strong><\/div><div><span>Âge moyen<\/span><strong>24\.6<\/strong><\/div><\/div>$/);
  assert.match(tiles[3],/<span>Tactique<\/span><strong>4-3-3<\/strong>/);
- assert.match(tiles[4],/title="Entraînement sur 20"><span>Entraînement<\/span><strong>16<\/strong>/);
- assert.match(tiles[5],/title="Recrutement des jeunes sur 20"><span>Recrutement<\/span><strong>13<\/strong>/);
- assert.match(tiles[6],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
- assert.equal(tiles.length,7);
+ // Its training and its youth recruitment, out of 20, on one tile of two columns.
+ assert.match(tiles[4],/^ split"><div title="Entraînement sur 20"><span>Entraînement<\/span><strong>16<\/strong><\/div><div title="Recrutement des jeunes sur 20"><span>Recrutement<\/span><strong>13<\/strong><\/div><\/div>$/);
+ assert.match(tiles[5],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
+ assert.equal(tiles.length,6);
  // A club playing nowhere has no tile of competitions.
  assert.doesNotMatch(clubTiles(club,[]),/competition-code/);
 });
