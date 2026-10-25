@@ -8,7 +8,7 @@ from core.domain.world import World
 from core.math import clamp
 from core.randomness import stream
 from collections import Counter
-from core.ai.market import market_wage, contract_for, nominal_size, squad_quality, wage_room
+from core.ai.market import market_wage, contract_for, nominal_size, loses_quality_without, squad_scores, wage_room, SquadScores
 from .events import PlayerReleased, PlayerSigned, PlayerChanged, RenewalProposed
 from .human import is_human_club, listed_price
 from .reserves import accepts_reserve, in_reserve
@@ -134,6 +134,8 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
     games, arrivals = games_by_club(world), season_arrivals(world)
     settling = recent_arrival_ids(world)
     ranks, useful_ids = {}, set()
+    # Each club's squad and its `squad_scores`, worked out once for all its players.
+    squads: dict[int, tuple[list[Player], SquadScores]] = {}
     for club in world.clubs.values():
         useful_ids.update(sorted(club.player_ids, key=lambda pid: (-world.players[pid].rating, pid))[:nominal_size(cfg)])
         ranks.update(position_ranks(world, club))
@@ -158,9 +160,11 @@ def renewal_events(world: World) -> list[PlayerSigned | PlayerChanged | RenewalP
         indispensable_keeper = player.position == "GB" and rank < cfg.management.guardrails.min_goalkeepers
         useful = player.id in useful_ids or indispensable_keeper or len(club.player_ids) <= cfg.management.guardrails.min_squad
         if club.competition_id is not None and not indispensable_keeper and len(club.player_ids) > cfg.management.guardrails.min_squad:
-            squad = [world.players[pid] for pid in club.player_ids]
-            departure_cost = squad_quality(squad, club, cfg) - squad_quality([item for item in squad if item.id != player.id], club, cfg)
-            useful = departure_cost > 0
+            if club.id not in squads:
+                squad = [world.players[pid] for pid in club.player_ids]
+                squads[club.id] = squad, squad_scores(squad, club, cfg)
+            squad, scores = squads[club.id]
+            useful = loses_quality_without(squad, player, club, cfg, scores)
         if not useful: continue
         # Wages that have outgrown the club's income are not signed again: its players leave as their contracts end.
         means = club.income * cfg.management.budgets.wage_income_share / cfg.management.budgets.weeks_per_year

@@ -90,3 +90,51 @@ def test_the_human_club_chooses_its_own_formation(config):
     for event in formation_events(world, margin=False): apply(world, event)
     assert world.clubs[1].formation == "5-4-1" and world.clubs[1].formation_squad == ()
     assert world.clubs[2].formation_squad
+
+
+def market_club(config, formation):
+    from core.domain.clubs import Club, ClubPersonality, ClubStatus
+    return Club(1, "Club", "FRA", 16, 16, ClubStatus.ACTIVE, 30000, 70, 70, formation, ClubPersonality(.5, .5, .5, .5))
+
+
+def test_the_market_values_a_squad_in_its_best_formation_and_reads_its_needs_there(config):
+    from core.ai.market import _assign, needs_for, squad_quality
+    players = squad(config, ["GB", "GB", "DG", "DC", "DC", "DC", "DD", "MC", "MC", "AILD", "AILG", "BU", "BU", "MC", "DC"])
+    club = market_club(config, "4-2-3-1")
+    scores = {name: _assign(players, club, config, False, name).score for name in config.formations.formations}
+    assert squad_quality(players, club, config) == max(scores.values()) > scores["4-2-3-1"]
+    # No defensive midfielder to find: the best formation has none to fill, whatever the club plays today.
+    assert Position.DEFENSIVE_MIDFIELDER not in {need.position for need in needs_for(club, players, config) if need.gap > 0}
+
+
+def test_a_player_who_makes_another_formation_the_best_is_worth_more_than_in_the_formation_played(config):
+    from core.ai.market import _assign, squad_quality
+    players = squad(config, ["GB", "GB", "DG", "DC", "DC", "DC", "DD", "MC", "MC", "AILD", "BU", "BU", "MC", "DC"])
+    winger = squad(config, ["AILG"], club_id=2)[0]
+    club = market_club(config, "5-3-2")
+    played = _assign([*players, winger], club, config, False).score - _assign(players, club, config, False).score
+    assert squad_quality([*players, winger], club, config) - squad_quality(players, club, config) > played
+
+
+def test_the_bounds_of_the_market_spare_formations_without_changing_the_quality(config):
+    from core.ai.market import _assign, _ceilings, _ranked, loses_quality_without, quality_with, squad_quality, squad_scores
+    rng = Random(3)
+    positions = [position.value for position in Position]
+
+    def exhaustive(players, club):
+        return max(_assign(players, club, config, False, name).score for name in config.formations.formations)
+
+    for trial in range(60):
+        players = squad(config, [rng.choice(positions) for _ in range(rng.randint(8, 24))])
+        for player in players:
+            player.attributes = type(player.attributes)(tuple(rng.uniform(50, 85) for _ in player.attributes.values))
+        club = market_club(config, rng.choice(list(config.formations.formations)))
+        for deep in (False, True):
+            for name, ceiling in _ceilings(_ranked(players, config), club, config, deep).items():
+                assert ceiling >= _assign(players, club, config, deep, name).score - 1e-9
+        scores = squad_scores(players, club, config)
+        assert scores.best == squad_quality(players, club, config) == exhaustive(players, club)
+        for player in players[:5]:
+            rest = [item for item in players if item is not player]
+            assert loses_quality_without(players, player, club, config, scores) == (exhaustive(rest, club) < scores.best)
+            assert quality_with(rest, player, club, config, squad_scores(rest, club, config)) == exhaustive(players, club)
