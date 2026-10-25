@@ -298,6 +298,15 @@ const PARTICLES=new Set(['da','das','de','del','della','den','der','des','di','d
 export const surname = name => {const words=String(name??'').trim().split(/\s+/);let start=words.length-1;while(start>1&&PARTICLES.has(words[start-1].toLowerCase()))start--;return words.slice(start).join(' ');};
 // A player's short name: the one the API gives (`short`), told apart within his squad ("L. Hernandez"), else his surname.
 export const shortName = (name, short) => short || surname(name);
+// A match minute as television gives it, the minute in progress: 1 to 45, 45+1… in added time, then from the restart 46
+// to 90, 90+1…. `halfEnd` is the first half's whistle; an event's `period`, when known, tells the half.
+export const matchMinute = (second, halfEnd, period) => {
+ const late = period ? period === 2 : second > halfEnd, cap = late ? 90 : 45;
+ const value = late ? 46 + Math.floor(Math.max(0, second - halfEnd) / 60) : Math.floor(second / 60) + 1;
+ return value > cap ? `${cap}+${value - cap}` : `${value}`;
+};
+// When the first half ended: its whistle, or 45 minutes for a match without one.
+export const halfEnd = events => events.find(event => event.kind === 'period_end' && event.period === 1)?.second ?? 2700;
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
 export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
