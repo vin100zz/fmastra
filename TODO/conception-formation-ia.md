@@ -442,6 +442,69 @@ précédent, lancée en même temps sur la même graine. `small_club_stars` pass
 (maximum 30) : deux saisons ne suffisent pas à trancher, à revoir avec la suite `economy`
 de l'étape 2.
 
+### Étape 2, faite
+
+Code : `core.ai.market` (`_best_assignment`, `squad_scores`, `quality_with`,
+`loses_quality_without`, les plafonds `_ceilings`), `maximize_assignment_with_duals` dans
+`core.ai.assignment`, les prolongations de `core.world.contracts`. Le manuel (chapitre 10,
+« Ce qu'un club cherche ») et `docs/ia-gestion.md` (« Utilité et effectif cible ») décrivent
+la règle.
+
+Ce qui a changé à l'implémentation :
+
+- **Le coût de l'option C.** Essayer les huit formations à chaque évaluation rendait le
+  monde 2.4 fois plus lent sur les 150 premiers jours. Le calcul reste exact sans les
+  essayer toutes :
+  - chaque formation a un plafond : les places de chaque poste remplies par ses meilleurs
+    candidats, comme si un joueur pouvait tenir plusieurs postes. Les formations sont
+    essayées du plus haut plafond au plus bas, jusqu'à ce qu'aucune ne puisse dépasser le
+    meilleur score trouvé ;
+  - l'algorithme hongrois rend ses valeurs duales. Une recrue ne peut pas ajouter plus que
+    le meilleur écart, sur une place, entre sa valeur et la valeur duale de la place ; un
+    départ coûte au moins la valeur duale du joueur ;
+  - une prolongation demande seulement si la qualité baisse sans le joueur ;
+  - les postes, poids et profils de chaque formation sont gardés avec la configuration.
+
+  Un test compare chaque fois ces raccourcis au calcul complet sur les huit formations.
+- **Égalités** : la formation essayée la première l'emporte, celle du club avant les
+  autres à plafond égal.
+- **Décision 4** : l'option C est gardée, voir le temps plus bas.
+
+Mesures, graine par défaut, suite `economy` (5 saisons de stabilisation, 15 observées),
+comparée à la référence de l'étape 1 lancée sur la même graine et le même horizon. Les
+deux tournaient en même temps sur la machine.
+
+| Critère | Étape 1 | Étape 2 |
+|---|---|---|
+| Critères conformes (hors champions différents et diagnostics) | 19 sur 26 | 18 sur 26 |
+| `wages_window_drift` (≤ 0.25) | 0.323 | 0.260 |
+| `small_club_top_monthly_wage` (≤ 80 000) | 77 905 | 113 442 : une saison, les quatorze autres entre 21 550 et 73 281 |
+| `small_club_stars` (≤ 30) | 19 | 17 |
+| `positions_max_share_drift` (≤ 0.02) | 0.012 | 0.016 |
+| `elite85_absolute_change` (≤ 7.6) | 26.2 | 27.4 |
+| `top3_elite_share` (≤ 0.25) | 0.445 | 0.471 |
+| `cash_annual_growth` (± 0.05) | 0.119 | 0.122 |
+| `dormant_incoming_share` (0.25 à 0.40) | 0.227 | 0.229 |
+| Champions différents, Serie A (minimum 4) | 5 | 3 ; les dix-huit autres championnats passent |
+| Changements de formation par club et par saison | 0.46 | 0.74 |
+| Formation la plus jouée | 30 % des clubs actifs | 27 % |
+| Temps moyen d'une saison, sauvegardes comprises | 541 s | 595 s |
+
+- **Le mercato fait changer les clubs de formation** : 0.74 changement par club et par
+  saison au lieu de 0.46. C'est l'effet attendu de l'option C : un club recrute pour le
+  système où son effectif vaut le plus, puis y passe.
+- **Les autres critères** restent proches de la référence. Les échecs communs aux deux
+  (élites, trésorerie, part des dormants, sauvegarde) ne viennent pas de ce chantier.
+  Les deux écarts nouveaux, le plus haut salaire d'un petit club et les champions de
+  Serie A, portent sur un pire cas ou un seul championnat : à revoir sur d'autres graines
+  du monde (`graines_monde`) avant d'y lire une tendance.
+- **Le temps** : sur les 150 premiers jours, lancés côte à côte, le monde va aussi vite
+  qu'à l'étape 1 (104.5 s contre 106.2 s). Sur la suite `economy`, une saison prend
+  10 % de plus, mesure faite sans machine au repos. La plus longue sauvegarde mensuelle
+  (81 s contre 11 s) ne dépend pas du mercato : la machine était chargée. Le budget de
+  40 secondes est dépassé sur ce conteneur par les deux versions ; la mesure qui tranche
+  la décision 4 est la suite `performance` sur la machine de Vincent, au repos.
+
 ## Décisions
 
 1. **Ce qui définit la meilleure formation.** Le meilleur onze (valeur au poste ×
