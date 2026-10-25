@@ -11,3 +11,6 @@ le code, et quitte ce dossier.
 | Document | Chantier | État |
 |---|---|---|
 | `conception-consignes-tactiques.md` | C, les consignes tactiques | Décisions à valider |
+
+`reprise.md` donne à une nouvelle conversation l'état du projet, les règles de travail et
+la liste de ce qui reste à faire.
