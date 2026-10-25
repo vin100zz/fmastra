@@ -203,8 +203,8 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 
 /* Lines of a list: a match, a move, a fact. As a table's rows: no line between them, one in two on a band, under what a
    row's own state or the pointer gives it. */
-:is(.fixture,.club-match,.moves li,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.attribute,.watch-list li,.season-moves li,.calendar-row,.movement-row){border-bottom-color:transparent!important}
-:where(.fixture:nth-child(even of .fixture),.club-match:nth-child(even of .club-match),.timeline-row:nth-child(even of .timeline-row),.journal-row:nth-child(even of .journal-row),.fact:nth-child(even of .fact),.news-row:nth-child(even of .news-row),.attribute:nth-child(even of .attribute),.calendar-row:nth-child(even of .calendar-row),.movement-row:nth-child(even of .movement-row),.highlight-row:nth-child(even of .highlight-row),.result:nth-child(even of .result),:is(.moves,.watch-list,.season-moves)>li:nth-child(even)){background:var(--stripe)}
+:is(.fixture,.club-match,.moves li,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.attribute,.watch-list li,.calendar-row,.movement-row){border-bottom-color:transparent!important}
+:where(.fixture:nth-child(even of .fixture),.club-match:nth-child(even of .club-match),.timeline-row:nth-child(even of .timeline-row),.journal-row:nth-child(even of .journal-row),.fact:nth-child(even of .fact),.news-row:nth-child(even of .news-row),.attribute:nth-child(even of .attribute),.calendar-row:nth-child(even of .calendar-row),.movement-row:nth-child(even of .movement-row),.highlight-row:nth-child(even of .highlight-row),.result:nth-child(even of .result),:is(.moves,.watch-list)>li:nth-child(even)){background:var(--stripe)}
 .club-match,.moves li,.club-overview .fact,.fact,.fixture,.league-summary-grid .fixture,.bench-slot,.timeline-row,.highlight-row,.journal-row p,.news-widgets .moves li,.calendar-row,.movement-row{font-size:var(--fs-body)}
 .club-match{min-height:var(--h-row);padding:0;grid-template-columns:48px minmax(0,1fr) auto;gap:var(--s2)}
 .club-match-date,.club-match-who small,.moves small,.fixture-scorers,.fixture-date,.journal-row small,.highlight small,.timeline-row small,.calendar-round,.calendar-opponent small,.status{font-size:var(--fs-small)}
@@ -773,7 +773,7 @@ a.targeted:where(:not(.pitch-player)){text-decoration-line:underline}
 tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted){background:var(--panel-3)}
 /* The cell of a name, which stays in place when a list scrolls sideways, has a ground of its own: it follows its row's. */
 .player-table tbody tr:where(:not(.selected,.chosen)):is(:hover,.targeted) td:nth-child(2){background:var(--panel-3)}
-:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.watch-list li,.season-moves li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
+:where(.fixture,.club-match,.calendar-row,.movement-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.watch-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
@@ -943,21 +943,15 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
    in the pale blue of a series, which no note takes. */
 .season-eleven .pitch{width:calc(100% - 2*var(--s2));margin:var(--s2) auto;overflow:visible}
 .block-season{display:inline-flex;align-items:center;gap:3px;color:var(--series-1-soft)}
-/* What asks for a decision, and the season's movements: a line of 26 each; a side of the movements under a heading that
-   counts it and gives its fees. */
-.watch-list,.season-moves{margin:0;padding:0;list-style:none}
-.watch-list li,.season-moves li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+/* What asks for a decision: a line of 26 each. */
+.watch-list{margin:0;padding:0;list-style:none}
+.watch-list li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
 .watch-list li{grid-template-columns:32px minmax(0,1fr) auto}
-.season-moves li{grid-template-columns:32px minmax(0,1fr) minmax(0,120px) 56px}
-:is(.watch-list,.season-moves) li:last-child{border-bottom:0}
-:is(.watch-list,.season-moves) li>span:nth-child(2),.market-club{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-:is(.watch-list,.season-moves) li>span:nth-child(2) a{font-weight:600;color:var(--strong)}
-.season-moves li>:last-child{text-align:right;white-space:nowrap}
-.season-moves b{font-weight:600;color:var(--strong)}
+.watch-list li:last-child{border-bottom:0}
+.watch-list li>span:nth-child(2),.market-club{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.watch-list li>span:nth-child(2) a{font-weight:600;color:var(--strong)}
 .watch-facts{display:flex;align-items:center;gap:var(--s3);white-space:nowrap}
 .watch-facts b{font-weight:600}
-.season-market .section-title{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
-.season-market .section-title b{font-weight:600;letter-spacing:0;text-transform:none;color:var(--strong)}
 /* Players ranked on one figure (« Classement de joueurs »): a line of 26 each, his rank, his name, a bar of 8 against the first
    of the list (its end rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one
    (.soft) on the lists of the Présentation. */
@@ -981,9 +975,8 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .comparison-bar>i:only-child{border-radius:4px}
 /* A section's title in a column: a band of 26 within the column's width, rounded, its text 10 from the edge. Drawn under
    the title, the band reaches into the margins above and under it: nothing around it moves. */
-:is(.section-title,.country h3,.preview h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title,.season-market .section-title){position:relative;isolation:isolate;padding-left:10px!important}
-:is(.section-title,.country h3,.preview h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title,.season-market .section-title)::before{content:"";position:absolute;inset:-6px 0 -4px;z-index:-1;border-radius:var(--radius);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
-.season-market .section-title b{color:var(--strong)}
+:is(.section-title,.country h3,.preview h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title){position:relative;isolation:isolate;padding-left:10px!important}
+:is(.section-title,.country h3,.preview h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title)::before{content:"";position:absolute;inset:-6px 0 -4px;z-index:-1;border-radius:var(--radius);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
 /* What leads on — « Voir », « Continuer », the next page — ends on a chevron, drawn and not a character, in the colour of
    what carries it and centred on its place; on the main action, in a disc of its ink. Back, the same turned over. */
 .go{position:relative;display:inline-block;flex:none;width:.625em;height:1em;vertical-align:-.15em}

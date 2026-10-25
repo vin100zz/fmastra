@@ -175,7 +175,7 @@ où le fond est déjà jaune.
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
 | Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note`, `.block-season` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
-| Présentation d'un club | `.tiles.row`, `.presentation`, `.kits`, `.kit-outfit`, `.watch-list`, `.watch-facts`, `.season-moves` | La fiche d'un club s'ouvre sur elle : une rangée de tuiles, quatre colonnes qui remplissent la fenêtre. Celle d'une sélection aussi. Voir « Présentation d'un club », « Présentation d'une sélection » |
+| Présentation d'un club | `.tiles.row`, `.presentation`, `.kits`, `.kit-outfit`, `.watch-list`, `.watch-facts` | La fiche d'un club s'ouvre sur elle : une rangée de tuiles, quatre colonnes qui remplissent la fenêtre. Celle d'une sélection aussi. Voir « Présentation d'un club », « Présentation d'une sélection » |
 | Classement de joueurs | `.leader-bars`, `.leader-bars.soft`, `.card-hint` | Rang, nom, barre contre le premier, chiffre ; l'unité dans l'en-tête de la carte. Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
@@ -575,15 +575,15 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
   aucune compétition n'a pas la première tuile. Les tuiles se partagent la
   largeur de la rangée, les colonnes d'une tuile la sienne ; le contenu de
   chacune y est centré horizontalement, comme sur le bandeau.
-- **Colonnes**, dans cet ordre : les tenues et le mercato ; l'équipe-type, « À
-  surveiller » (club dirigé seulement) et les finances ; le calendrier et le
-  classement ; les buteurs, les passeurs et les notes.
+- **Colonnes**, dans cet ordre : les tenues et les finances ; l'équipe-type et
+  « À surveiller » (club dirigé seulement) ; le calendrier et le classement ; les
+  buteurs, les passeurs et les notes.
 - **Elles remplissent la fenêtre.** Leurs listes prennent les lignes que la
   hauteur laisse, sans défilement : le classement entier tant que cinq matches
   tiennent encore à côté de lui, sinon les lignes autour du club ; le calendrier
   le reste, les trois prochains matches au plus, les derniers joués avant eux ;
-  les trois classements de joueurs, autant de lignes chacun ; le mercato, ses
-  arrivées d'abord. Le terrain de l'équipe-type se rétrécit à la hauteur qu'il a.
+  les trois classements de joueurs, autant de lignes chacun. Le terrain de
+  l'équipe-type se rétrécit à la hauteur qu'il a.
   Un changement de taille de la fenêtre redessine la page.
 - **Tenues** (`.kits`) : les deux tenues complètes, domicile d'abord, 165 de
   large au plus, au ratio 320 × 725, sur `--panel-2` (une tenue blanche se
@@ -613,13 +613,6 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
   la blessure en rouge (« Contrat · 30 juin 2034 », « Blessé · 12 juil. »), la
   suspension, le moral sous 70 % et sa cause, comme dans la liste. Six au plus ;
   pas de carte quand personne n'attend rien.
-- **Mercato** (`.season-moves`) : tous les mouvements de la saison, les arrivées
-  puis les départs, chaque sens sous un intertitre (`.section-title`) qui le
-  compte (« Départs · 9 ») et donne à droite le total de ses indemnités, absent
-  sans indemnité. Une ligne de 26 par mouvement : poste, joueur, l'autre club
-  après sa pastille (« Centre de formation » pour un jeune promu, « Libre »),
-  l'indemnité à droite (« Prêt » pour un prêt, « — » sans), la plus grosse
-  d'abord. « Voir » ouvre l'onglet Transferts.
 - **Calendrier, classement, finances** : les blocs d'Actualités et de l'ancien
   Effectif (le score du côté du club coloré V, N ou D ; le classement réduit à
   PTS et DIFF ; la trésorerie sous le budget de transferts).
@@ -634,7 +627,7 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
 La fiche d'une sélection s'ouvre elle aussi sur « Présentation » ; son onglet
 « Effectif » ne garde que la liste du rassemblement, sur toute la largeur. La
 rangée de tuiles et les quatre colonnes d'un club, avec ce qui s'applique à une
-sélection : ni mercato, ni finances, ni « À surveiller ».
+sélection : ni finances, ni « À surveiller ».
 
 - **Rangée de tuiles** : la place dans l'édition où elle en est (la pastille de
   l'édition puis son nom, un seul lien vers sa page ; le tour perdu sans
@@ -1423,7 +1416,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
-| Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`), le mercato de la saison (`marketCard`, lu dans `/clubs/{id}/transferts`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
+| Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`) et les finances sous elles (`financesBlock`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son logo seul, son drapeau après son nom (initiales sur le disque sans logo), aux couleurs de son maillot lues dans `data/nations.csv` (`NATION_KITS`, `src/api/nations.py`) ; la Présentation d'un club, premier onglet (`presentationContent`, `web/international.js` ; tuiles `nationTiles`, `web/club-hero.js` ; colonnes `presentationColumns`, tenues `kitsCard`, équipe-type `elevenCard`, calendrier `calendarBlock`, classements de joueurs `leadersCards` de `web/club-overview.js` ; parcours `runsCard` ; `/international/nations/{id}/apercu`, `nation_overview`, `src/api/international.py`), la liste seule sur l'Effectif (les widgets à côté d'elle retirés) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |

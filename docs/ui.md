@@ -364,10 +364,9 @@ salariale, que nulle règle ne lit, n'est pas montrée. Puis quatre colonnes, ch
 | Carte | Contenu | Lien |
 |---|---|---|
 | Tenues | les deux tenues complètes, domicile d'abord, en grand ; leur nom en infobulle | le PNG |
-| Mercato | tous les mouvements de la saison (transferts, prêts, jeunes promus, fins de contrat), arrivées puis départs, chaque sens compté et le total de ses indemnités, la plus grosse indemnité d'abord | onglet Transferts |
+| Finances | sous les tenues : budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 | Équipe-type | sur le terrain debout de la Composition, à chaque place de la forme que le club a le plus alignée dans la saison, le joueur de son équipe première qui y a été le plus souvent titulaire ; sous son nom ses matches et ses buts (« 52 m / 24 » et le ballon). Avant le premier match de la saison, ou pour un club qui n'en joue pas, ses meilleurs joueurs aux places de sa formation, chacun avec sa note au poste (`eleven` de l'aperçu) | — |
 | À surveiller | club dirigé seulement : les joueurs qui attendent une décision (contrat qui finit dans l'année, blessure et date de retour, suspension, moral sous 70 % et sa cause), six au plus | — |
-| Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 | Calendrier | les trois prochains matches au plus et les derniers joués avant eux, autant que la colonne en laisse (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne) | onglet Calendrier |
 | Championnat | « Ligue 1 – 18e journée » : le classement entier tant que cinq matches tiennent à côté, sinon les lignes autour du club, avec les points puis la différence de buts | page de la compétition |
 | Buteurs, Passeurs, Notes | les meilleurs du club dans la saison, toutes compétitions, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |

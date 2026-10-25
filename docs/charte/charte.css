@@ -188,7 +188,7 @@
 .tr:nth-child(even){background:var(--stripe)}
 /* The rows of a list follow a table's: no line between them, one in two on a band, under what a row's own state or the
    pointer gives it. */
-:where(.honour-line:nth-child(even of .honour-line),.match-row:nth-child(even of .match-row),.fixture:nth-child(even of .fixture),.fact:nth-child(even of .fact),.attribute:nth-child(even of .attribute),.highlight-row:nth-child(even of .highlight-row),.nation-line:nth-child(even of .nation-line),.result:nth-child(even of .result),:is(.watch-list,.season-moves)>li:nth-child(even)){background:var(--stripe)}
+:where(.honour-line:nth-child(even of .honour-line),.match-row:nth-child(even of .match-row),.fixture:nth-child(even of .fixture),.fact:nth-child(even of .fact),.attribute:nth-child(even of .attribute),.highlight-row:nth-child(even of .highlight-row),.nation-line:nth-child(even of .nation-line),.result:nth-child(even of .result),.watch-list>li:nth-child(even)){background:var(--stripe)}
 .tr.head{border-bottom:1px solid var(--head-line);font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 /* Every column sorts, and no sort moves a column: each column has a set width, and the arrow of a heading stands in the
    heading's right margin (the gap between two columns), where it takes no room. */
@@ -790,17 +790,13 @@ span.entity-step svg{opacity:.3}
 /* Under a name of its équipe-type, the season: his matches, his goals, the ball after them, in the pale blue of a series,
    which no note takes. */
 .block-season{display:inline-flex;align-items:center;gap:3px;color:var(--series-1-soft)}
-/* What asks for a decision and the season's movements: a line of 26 each; a side of the movements under a heading that
-   counts it and gives its fees on its right. */
-.watch-list,.season-moves{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
-.watch-list>li,.season-moves>li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+/* What asks for a decision: a line of 26 each. */
+.watch-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.watch-list>li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
 .watch-list>li{grid-template-columns:32px minmax(0,1fr) auto}
-.season-moves>li{grid-template-columns:32px minmax(0,1fr) minmax(0,120px) 56px}
-:is(.watch-list,.season-moves)>li:last-child{border-bottom:0}
-:is(.watch-list,.season-moves)>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.season-moves>li>:last-child{text-align:right}
+.watch-list>li:last-child{border-bottom:0}
+.watch-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .watch-facts{display:flex;align-items:center;gap:var(--s3)}
-.section-title>b{margin-left:auto;font-weight:600;color:var(--strong)}
 /* Players ranked on one figure: a line of 26 each, his rank, his name, a bar of 8 against the first of the list (its end
    rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) on the
    lists of the Présentation. */
@@ -822,7 +818,7 @@ span.entity-step svg{opacity:.3}
 .prose a{color:var(--accent-text)}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
-:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.season-moves>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
 a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}

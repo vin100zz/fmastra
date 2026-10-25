@@ -101,9 +101,9 @@ export async function clubScreen(id,section,params){
  const lead=clubNavigation(neighbours,section,section==='squad'&&params.get('vue')?query({vue:params.get('vue')}):'');
  let content='',tools='';
  if(section==='overview'){
-  const [overview,season,squad,transfers,standings]=await Promise.all([api(`/clubs/${id}/apercu`),api(`/clubs/${id}/calendrier`),api(`/clubs/${id}/effectif`),api(`/clubs/${id}/transferts`),
+  const [overview,season,squad,standings]=await Promise.all([api(`/clubs/${id}/apercu`),api(`/clubs/${id}/calendrier`),api(`/clubs/${id}/effectif`),
    club.competition_id?api(`/competitions/${club.competition_id}/classement`):null]);
-  content=presentationContent(club,{overview,season,squad,transfers,standings,human});
+  content=presentationContent(club,{overview,season,squad,standings,human});
  }
  else if(section==='squad'){
   const data=await api(`/clubs/${id}/effectif?${params}`);
