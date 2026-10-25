@@ -99,7 +99,7 @@ test('the Présentation opens on the club\'s tiles: its competitions, its player
  assert.deepEqual([...tiles[5].matchAll(/<div title="([^"]+)"><span>([^<]+)<\/span><strong>(\d+)</g)].map(match=>[match[2],match[3],match[1].split(' : ')[0]]),
   [['Risque','18','Appétit du risque sur 20'],['Jeunes','6','Préférence pour les jeunes sur 20'],['Patience','1','Patience en négociation sur 20']]);
  assert.match(tiles[5],/title="Patience en négociation sur 20 : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps"/);
- assert.match(tiles[6],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s310\sM€<\/strong>/);
+ assert.match(tiles[6],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
  assert.equal(tiles.length,7);
  // Without a personality (an older server), no tile for it.
  assert.doesNotMatch(clubTiles(club,[]),/Patience/);

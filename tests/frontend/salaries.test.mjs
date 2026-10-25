@@ -11,12 +11,12 @@ test('salary rounding follows the requested two-significant-digit examples',()=>
 
 test('a transfer amount stands on a step that widens with it, as the server rounds it',()=>{
  const written=text=>text.replace(/\s/g,' ');
- // 1 k€ under 10 k€, 10 k€ under 100 k€, 100 k€ under 5 M€, 1 M€ under 50 M€, 5 M€ beyond.
- for(const [value,shown] of [[4200,'4 k€'],[31000,'30 k€'],[240000,'200 k€'],[1250000,'1.3 M€'],[8.2e6,'8 M€'],[14.9e6,'15 M€'],[49.6e6,'50 M€'],[62e6,'60 M€'],[1.31e9,'1 310 M€']]){
+ // Two figures, and halves of the second from a first figure of 5.
+ for(const [value,shown] of [[4210,'4.2 k€'],[31400,'31 k€'],[97000,'95 k€'],[240000,'240 k€'],[560000,'550 k€'],[1250000,'1.3 M€'],[8.2e6,'8 M€'],[8.3e6,'8.5 M€'],[14.9e6,'15 M€'],[62e6,'60 M€'],[1.31e9,'1 300 M€']]){
   assert.equal(written(price(value)),shown);
  }
  // A budget stands on the step under it: a price shown no higher is one it can pay.
- assert.equal(written(budget(14.9e6)),'14 M€');assert.equal(written(budget(99999)),'90 k€');
+ assert.equal(written(budget(14.9e6)),'14 M€');assert.equal(written(budget(99999)),'95 k€');
  assert.equal(roundFee(4.96e6,Math.ceil),5e6);assert.equal(roundFee(0),0);
 });
 

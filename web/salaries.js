@@ -23,10 +23,13 @@ export const monthlySalary=weekly=>amount(monthlyAmount(weekly));
 // What is left under a wage cap, per month and rounded down.
 export const monthlyMargin=weekly=>amount(monthlyAmount(weekly,Math.floor));
 
-// A transfer amount (a value, a fee, an asking price, a budget) stands on a step that widens with it: 1 k€ under 10 k€,
-// 10 k€ under 100 k€, 100 k€ under 5 M€, 1 M€ under 50 M€, 5 M€ beyond (docs/charte-graphique.md), as the server rounds
-// them (`core.world.market.fee_step`). Each bound is a step of the next tier, so an amount rounded to its step stays on them.
-export const feeStep=value=>{const size=Math.abs(value);return size<1e4?1e3:size<1e5?1e4:size<5e6?1e5:size<5e7?1e6:5e6;};
+// A transfer amount (a value, a fee, an asking price, a budget) has two figures, and halves of the second from a first
+// figure of 5 (1.1 M€, 4.9 M€, 5.5 M€, 9.5 M€, 10 M€): a step stays between 2 and 10 % of it (docs/charte-graphique.md),
+// as the server rounds it (`core.world.market.fee_step`).
+export const feeStep=value=>{
+ const digits=String(Math.trunc(Math.abs(value))),step=10**Math.max(0,digits.length-2);
+ return digits.length>1&&digits[0]>='5'?step*5:step;
+};
 export function roundFee(value,round=Math.round){
  if(!value)return 0;
  const step=feeStep(value);

@@ -1148,8 +1148,9 @@ couleur, sur le noir du bloc (voir « Terrain et maillot »).
   au-delà (850 €, 95 k€, 1.2 M€).
 - Un montant de transfert (valeur d'un joueur ou d'un effectif, indemnité, prix
   demandé, offre, budget de transferts) tombe sur un palier qui s'élargit avec
-  lui : 1 k€ sous 10 k€, 10 k€ sous 100 k€, 100 k€ sous 5 M€, 1 M€ sous 50 M€,
-  5 M€ au-delà (8 k€, 30 k€, 400 k€, 4.9 M€, 8 M€, 15 M€, 65 M€). Le serveur
+  lui : deux chiffres, et des demi-unités du second dès que le premier vaut 5
+  ou plus (37 k€, 95 k€, 340 k€, 550 k€, 4.9 M€, 5.5 M€, 15 M€, 65 M€, 140 M€).
+  Un palier pèse ainsi entre 2 et 10 % du montant. Le serveur
   pose un prix demandé sur le palier au-dessus et une offre sur celui en
   dessous ; l'écran arrondit une valeur ou une indemnité au plus proche
   (`price`, `web/ui.js`) et un budget au palier en dessous (`budget`), pour qu'un

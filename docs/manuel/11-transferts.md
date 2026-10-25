@@ -106,7 +106,7 @@ Au-delà, ce club ne suit pas. En dessous, le prix n'est jamais le seul critère
 
 ## Des montants arrondis
 
-Valeurs, prix, offres et budgets de transferts tombent sur des paliers d'autant plus larges que le montant est grand : 1 k€ sous 10 k€, 10 k€ sous 100 k€, 100 k€ sous 5 M€, 1 M€ sous 50 M€, 5 M€ au-delà.
+Valeurs, prix, offres et budgets de transferts s'écrivent avec deux chiffres, et par demi-unités dès que le premier chiffre vaut 5 ou plus : 4.8, 4.9, 5, 5.5, 6… 9.5, 10, 11 M€ ; de même 340 k€, 550 k€, 65 M€, 140 M€. Un palier pèse ainsi entre 2 et 10 % du montant.
 
 - **Un prix demandé est arrondi au-dessus** : c'est le prix exact du club, et l'offrir suffit.
 - **Une offre d'un club est arrondie en dessous**, comme ses relances : elle ne dépasse jamais ce qu'il voulait payer.
