@@ -35,12 +35,19 @@ function attributeItem({key,value,weight}) {
 // An attribute his position makes no use of: its name greyed, its badge neutral.
 const otherItem=({key,value})=>`<div class="attribute"><span>${ATTRIBUTES[key]}</span><span class="rating neutral" title="${ATTRIBUTES[key]} sur 20">${attributeScore(value)}</span></div>`;
 
-// The traits of his character the page shows, out of 20, in the rail under Caractère, in the alphabetical order of their
-// names. Greed is neither good nor bad in itself: a plain badge. Fragility, which multiplies his risk of injury, is graded
-// the other way round from an attribute: red when high.
+// The traits of his character, out of 20, in the rail under Caractère, in the alphabetical order of their names. Ambition
+// and greed are neither good nor bad in themselves: a plain badge. Aggression and fragility can only cost him (cards, injuries):
+// graded the other way round from an attribute, red when high.
 const outOf20=value=>Math.round(1+value*19);
-const characterFacts=player=>(player.greed==null?'':fact('Appât du gain',`<span class="rating" title="Appât du gain sur 20">${outOf20(player.greed)}</span>`))
- +(player.fragility==null?'':fact('Fragilité',reverseScoreBadge(outOf20(player.fragility),'Fragilité sur 20 : plus elle est haute, plus il se blesse')));
+const CHARACTER=[
+ {key:'aggression',label:'Agressivité',cost:'plus elle est haute, plus il est sanctionné'},
+ {key:'ambition',label:'Ambition',help:'plus elle est haute, plus un club trop petit pour lui le lasse'},
+ {key:'greed',label:'Appât du gain'},
+ {key:'fragility',label:'Fragilité',cost:'plus elle est haute, plus il se blesse'}];
+const characterFacts=player=>CHARACTER.filter(({key})=>player[key]!=null).map(({key,label,cost,help})=>{
+ const score=outOf20(player[key]),title=`${label} sur 20`;
+ return fact(label,cost?reverseScoreBadge(score,`${title} : ${cost}`):`<span class="rating" title="${e(help?`${title} : ${help}`:title)}">${score}</span>`);
+}).join('');
 
 // The composites the engine plays with, out of 200 like the level: a goalkeeper's two, or the six of an outfield player. Those
 // the position `role` asks for are marked like key attributes, the others grey.

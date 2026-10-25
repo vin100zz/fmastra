@@ -382,6 +382,14 @@ test('attributes are graded badges without bars; greed is a trait of his charact
  assert.doesNotMatch((await render()).html,/Caractère|Appât du gain|Fragilité|class="potential"|Potentiel estimé/);
 });
 
+test('the four traits of his character in alphabetical order, aggression and fragility graded the other way round, ambition and greed plain',async()=>{
+ const html=rail((await render({...detail,aggression:1,ambition:0,greed:.21,fragility:.5})).html);
+ const section=html.match(/<h3>Caractère<\/h3><div class="rail-section">(.*?)<\/div><h3>Contrat/)[1];
+ assert.deepEqual([...section.matchAll(/<div class="fact"><span>([^<]+)<\/span>/g)].map(match=>match[1]),['Agressivité','Ambition','Appât du gain','Fragilité']);
+ assert.match(section,/<span>Agressivité<\/span><strong><span class="rating graded" style="--hue:0" title="Agressivité sur 20 : plus elle est haute, plus il est sanctionné">20</);
+ assert.match(section,/<span>Ambition<\/span><strong><span class="rating" title="Ambition sur 20 : plus elle est haute, plus un club trop petit pour lui le lasse">1</);
+});
+
 test('fragility follows greed under Caractère, graded the other way round from an attribute: red when high',async()=>{
  const fragility=async value=>rail((await render({...detail,greed:.21,fragility:value})).html).match(/<div class="fact"><span>Fragilité<\/span><strong>(.*?)<\/strong><\/div>/)?.[1];
  assert.equal(await fragility(1),'<span class="rating graded" style="--hue:0" title="Fragilité sur 20 : plus elle est haute, plus il se blesse">20</span>');

@@ -287,9 +287,13 @@ def player_detail(world: World, player: Player) -> dict:
     result.update(player_morale(world, player))
     result.update(MarketFlags(world).row(player))
     result["greed"] = player.greed
-    # Fragility read from 0 to 1 within the bounds of the configuration, like greed, for the page to write it out of 20.
-    injuries = world.config.states.injuries
-    result["fragility"] = min(1.0, max(0.0, (player.fragility - injuries.fragility_min) / (injuries.fragility_max - injuries.fragility_min)))
+    # The other traits of his character read from 0 to 1 within the bounds of the configuration, like greed, for the page
+    # to write them out of 20.
+    cfg = world.config
+    share = lambda value, low, high: min(1.0, max(0.0, (value - low) / (high - low)))
+    result["fragility"] = share(player.fragility, cfg.states.injuries.fragility_min, cfg.states.injuries.fragility_max)
+    result["ambition"] = share(player.ego, cfg.management.contracts.ego_min, cfg.management.contracts.ego_max)
+    result["aggression"] = share(player.aggression, cfg.engine.cards.aggression_min, cfg.engine.cards.aggression_max)
     # What the lists of the world tell a recruiter, for the preview beside them.
     result.update({"interested": interested(world, player), "wage_demand": asked_wage(world, player)})
     # The bounds form keeps, for the page to draw it between them.
