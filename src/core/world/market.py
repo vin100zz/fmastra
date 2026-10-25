@@ -20,15 +20,24 @@ from .news import answer_offer, offer_received
 from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on, wants_to_leave
 
 
+def fee_step(amount: int) -> int:
+    """The step a transfer amount (a value, a fee, an asking price, a budget) is written to: two figures, and halves of
+    the second from a first figure of 5 (1.1 M€, 4.9 M€, 5.5 M€, 9.5 M€, 10 M€), so that a step stays between 2 and 10 %
+    of the amount (docs/charte-graphique.md, « Montants »). An amount rounded to its step stays on the same scale."""
+    digits = str(abs(int(amount)))
+    step = 10 ** max(0, len(digits) - 2)
+    return step * 5 if len(digits) > 1 and digits[0] >= "5" else step
+
+
 def quoted_minimum(amount: int) -> int:
-    """An asking price rounded up to three significant digits, as the news feed shows amounts."""
-    step = 10 ** max(0, len(str(amount)) - 3)
+    """An asking price rounded up to its step, as the pages show amounts: offering it is enough."""
+    step = fee_step(amount)
     return -(-amount // step) * step
 
 
 def quoted_offer(amount: int) -> int:
-    """A fee offered, cut down to three significant digits: it never reads above what the buyer meant to pay."""
-    step = 10 ** max(0, len(str(max(0, amount))) - 3)
+    """A fee offered, cut down to its step: it never reads above what the buyer meant to pay."""
+    step = fee_step(max(0, amount))
     return max(0, amount) // step * step
 
 

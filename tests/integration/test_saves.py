@@ -200,7 +200,7 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     import json
     import shutil
     from infrastructure.config.loader import config_payload, decode_config
-    from infrastructure.persistence.store import DELIVERY_OFFSETS, LEGACY_ATTRIBUTE_COUNT, MIGRATION_DEFAULTS
+    from infrastructure.persistence.store import DELIVERY_ATTRIBUTE_COUNT, DELIVERY_OFFSETS, LEGACY_ATTRIBUTE_COUNT, MIGRATION_DEFAULTS
     # An older save embeds an older configuration: no weight for `centre` and `cpa` in the overall rating.
     raw = config_payload(config)
     raw["attributs"]["liste"]["techniques"] = [name for name in raw["attributs"]["liste"]["techniques"] if name not in ("centre", "cpa")]
@@ -229,7 +229,7 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     bounds = config.attributes.bounds
     for player in fallback.players.values():
         expected = [min(bounds.max, max(bounds.min, player.rating + offset)) for offset in DELIVERY_OFFSETS[player.position.value]]
-        assert list(player.attributes.values[LEGACY_ATTRIBUTE_COUNT:]) == expected
+        assert list(player.attributes.values[LEGACY_ATTRIBUTE_COUNT:DELIVERY_ATTRIBUTE_COUNT]) == expected
         assert player.attributes.values[:LEGACY_ATTRIBUTE_COUNT] == world.players[player.id].attributes.values[:LEGACY_ATTRIBUTE_COUNT]
         assert player.aggression == 1.0
     # With the file the game was imported from, imported players get exactly their source values.
@@ -238,11 +238,12 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     migrated = store.load("old")
     from infrastructure.importation.readers import read_sources
     _, rows, _ = read_sources(ROOT / "data", config)
-    source = {row.id: row.attributes.values[LEGACY_ATTRIBUTE_COUNT:] for row in rows}
+    source = {row.id: row.attributes.values[LEGACY_ATTRIBUTE_COUNT:DELIVERY_ATTRIBUTE_COUNT] for row in rows}
     assert sum(pid in source for pid in world.players) > 0.99 * len(world.players)
     for pid, player in migrated.players.items():
         # Players generated at import have no source row and keep the position level.
-        assert player.attributes.values[LEGACY_ATTRIBUTE_COUNT:] == (source[pid] if pid in source else fallback.players[pid].attributes.values[LEGACY_ATTRIBUTE_COUNT:])
+        extended = slice(LEGACY_ATTRIBUTE_COUNT, DELIVERY_ATTRIBUTE_COUNT)
+        assert player.attributes.values[extended] == (source[pid] if pid in source else fallback.players[pid].attributes.values[extended])
     store.save(migrated, "upgraded")
     assert store.load("upgraded").players == migrated.players
 
@@ -476,6 +477,66 @@ def test_save_from_before_the_stoppages_drops_the_retired_rules_and_takes_the_re
     assert store.load("upgraded").config == migrated.config
     # A rule changed by hand in the file is not taken for one the save shipped with.
     engine["actions"]["temps_mort"]["apres_tir"] = 20.0
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    with pytest.raises(SaveError, match="configuration"):
+        store.load("old")
+
+
+def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from_finishing_and_composure(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    import shutil
+    from core.domain.players import ATTRIBUTE_INDEX
+    from infrastructure.persistence.store import DELIVERY_ATTRIBUTE_COUNT, MIGRATION_DEFAULTS, PENALTY_ESTIMATE
+    world = import_world(ROOT / "data", config, 14)
+    saves = tmp_path / "saves"
+    store = SaveStore(saves)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 39
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 39:
+            for key in defaults: del rules[path[0]][path[1]][key]
+    # As schema 39 shipped them: no attribute `penalty` to list, generate or decline, but for a profile the player had set.
+    rules["attributs"]["liste"]["techniques"].remove("penalty")
+    for position, profile in rules["attributs"]["profils_generation"]["profils"].items():
+        profile.pop("penalty", None)
+    rules["attributs"]["profils_generation"]["profils"]["BU"]["penalty"] = -5.0
+    del rules["demographie"]["progression"]["poids_declin_par_attribut"]["penalty"]
+    raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
+    for player in legacy["world"]["players"].values():
+        del player["attributes"]["values"][DELIVERY_ATTRIBUTE_COUNT:]
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    # Without the exact source file every player receives the level his finishing and composure predict.
+    fallback = store.load("old")
+    bounds, (intercept, finishing, composure) = config.attributes.bounds, PENALTY_ESTIMATE
+    for player in fallback.players.values():
+        values = player.attributes.values
+        assert values[:DELIVERY_ATTRIBUTE_COUNT] == world.players[player.id].attributes.values[:DELIVERY_ATTRIBUTE_COUNT]
+        expected = intercept + finishing * values[ATTRIBUTE_INDEX["finition"]] + composure * values[ATTRIBUTE_INDEX["sang_froid"]]
+        assert player.attributes.get("penalty") == min(bounds.max, max(bounds.min, expected))
+        assert player.rating == world.players[player.id].rating
+    attributes = fallback.config.attributes
+    assert attributes.composites == config.attributes.composites and attributes.groups == config.attributes.groups
+    profiles = attributes.generation_profiles.profiles
+    assert profiles["BU"]["penalty"] == -5
+    assert {position: profile.get("penalty") for position, profile in profiles.items() if position != "BU"} == \
+           {position: profile.get("penalty") for position, profile in config.attributes.generation_profiles.profiles.items() if position != "BU"}
+    assert fallback.config.demography.progression.decline_weights == config.demography.progression.decline_weights
+    store.save(fallback, "upgraded")
+    assert store.load("upgraded").config == fallback.config
+    # With the file the game was imported from, imported players get exactly their source value.
+    (tmp_path / "data").mkdir()
+    shutil.copy(ROOT / "data" / "players.csv", tmp_path / "data" / "players.csv")
+    migrated = store.load("old")
+    for pid, player in migrated.players.items():
+        assert player.attributes.values == (world.players[pid] if world.players[pid].source_current_ability is not None
+                                            else fallback.players[pid]).attributes.values
+    # A list changed by hand in the file is not taken for the one the save shipped with.
+    rules["attributs"]["liste"]["techniques"].remove("tacle")
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     with pytest.raises(SaveError, match="configuration"):
         store.load("old")

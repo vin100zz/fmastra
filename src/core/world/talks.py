@@ -22,7 +22,7 @@ from core.randomness import stream
 from .application import apply
 from .events import OffersUpdated
 from .human import record
-from .market import offer_limit, quoted_minimum, resolve_accepted_offer, tell_buyer
+from .market import offer_limit, quoted_minimum, quoted_offer, resolve_accepted_offer, tell_buyer
 from .transfer_rules import accepts_move, recent_arrival_ids, free_to_move_on
 
 
@@ -123,7 +123,11 @@ def asked_wage(world: World, player: Player) -> int:
 
 
 def offer_fee(world: World, player: Player, fee: int) -> Reply:
-    """The selling club's answer to a fee: agreed at its asking price or above, a counter-offer otherwise."""
+    """The selling club's answer to a fee: agreed at its asking price or above, a counter-offer otherwise.
+
+    The fee is cut down to its step and the asking price raised to its own, as the pages show them: the price shown is
+    the price asked."""
+    fee = quoted_offer(fee)
     if (obstacle := opening_obstacle(world, player)) is not None: raise TalksRefused(obstacle)
     club = world.clubs[world.controlled_club_id]
     seller = world.clubs.get(player.club_id) if player.club_id is not None else None
@@ -134,13 +138,13 @@ def offer_fee(world: World, player: Player, fee: int) -> Reply:
     check_limits(world, player, contract, fee, demanded=True)
     talks = TransferOffer(f"talks:{club.id}:{player.id}", world.date, player.id, seller.id, club.id, contract, fee, fee, 0.0,
                           stage=FEE_TALKS, rounds=current.rounds if current is not None else 0)
-    minimum = asking_price(player, seller, world)
+    minimum = quoted_minimum(asking_price(player, seller, world))
     if fee >= minimum:
         due = min(answer_day(world, player), window_end(world))
         talks = replace(talks, stage=AGREED_FEE, due=due, rounds=0)
         if due <= world.date: talks = open_wage_talks(world, talks, player)
         return Reply("accepte", store(world, talks))
-    return refuse(world, talks, quoted_minimum(minimum))
+    return refuse(world, talks, minimum)
 
 
 def offer_wage(world: World, player: Player, weekly: int) -> Reply:

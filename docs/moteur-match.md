@@ -278,8 +278,9 @@ pondéré par la tête ; son xG dépend du `cpa` du tireur, pour un corner comme
 coup franc centré. Un coup franc direct est frappé par le spécialiste avec son
 propre composite de tir, majoré des points de `cpa` au-delà de la référence.
 
-Le **penalty** est tiré par le meilleur tireur de séance présent (moyenne finition
-et sang-froid) et réussit selon la règle des tirs au but, en configuration
+Le **penalty** est tiré par le meilleur tireur de séance présent (composite
+`attributs.composites.penalty` : 75 % de l'attribut `penalty`, 25 % de sang-froid,
+voir `docs/attributs.md`) et réussit selon la règle des tirs au but, en configuration
 (`penalty`, `shots.penalty_probability`) et partagée avec `cup_matches.decide_winner` ;
 son xG est la réussite de base. Raté, il est arrêté, sauf `part_rates_hors_cadre`.
 

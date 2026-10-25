@@ -1,11 +1,28 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {roundSalary,monthlySalary,amount,salarySearchParams} from '../../web/salaries.js';
+import {roundSalary,monthlySalary,monthlyMargin,roundFee,amount,salarySearchParams} from '../../web/salaries.js';
+import {price,budget} from '../../web/ui.js';
 
 test('salary rounding follows the requested two-significant-digit examples',()=>{
  for(const [value,expected] of [[92854,93000],[257628,260000],[1314589,1300000],[0,0],[7,7],[99999,100000]]){
   assert.equal(roundSalary(value),expected);
  }
+});
+
+test('a transfer amount stands on a step that widens with it, as the server rounds it',()=>{
+ const written=text=>text.replace(/\s/g,' ');
+ // Two figures, and halves of the second from a first figure of 5.
+ for(const [value,shown] of [[4210,'4.2 k€'],[31400,'31 k€'],[97000,'95 k€'],[240000,'240 k€'],[560000,'550 k€'],[1250000,'1.3 M€'],[8.2e6,'8 M€'],[8.3e6,'8.5 M€'],[14.9e6,'15 M€'],[62e6,'60 M€'],[1.31e9,'1 300 M€']]){
+  assert.equal(written(price(value)),shown);
+ }
+ // A budget stands on the step under it: a price shown no higher is one it can pay.
+ assert.equal(written(budget(14.9e6)),'14 M€');assert.equal(written(budget(99999)),'95 k€');
+ assert.equal(roundFee(4.96e6,Math.ceil),5e6);assert.equal(roundFee(0),0);
+});
+
+test('a wage margin is rounded down, so that a wage shown under it fits',()=>{
+ // 2 000 a week is 8 667 a month.
+ assert.equal(monthlyMargin(2000).replace(/\s/g,' '),'8.6 k€');assert.equal(monthlySalary(2000).replace(/\s/g,' '),'8.7 k€');
 });
 
 test('monthly salary uses 52 weeks per year and is written in €, k€ or M€, with a point',()=>{

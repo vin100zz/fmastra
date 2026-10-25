@@ -18,6 +18,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from core.config.model import Config
+from core.domain.players import ATTRIBUTE_INDEX
 from core.config.models.management import PLANNING_ROUNDS
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
@@ -35,10 +36,12 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 39
+SCHEMA_VERSION = 40
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A taker's quality from the spot is a composite of the attribute `penalty` and composure (see `_upgrade_penalties`).
+    (40, ("attributs", "composites"), {"penalty": {"penalty": 0.75, "sang_froid": 0.25}}),
     # A failed action ends in a foul, the ball out of play, an offside or lost in play; corners and free kicks have a
     # cause, penalties are given, a shot may be followed by a corner or a rebound, and each stoppage has its dead time
     # (see `_upgrade_stoppages`).
@@ -265,6 +268,14 @@ ATTACKING_442 = ("GB", "DG", "DC", "DC", "DD", "MDC", "MDC", "AILG", "AILD", "BU
 LEGACY_ATTRIBUTE_COUNT = 13
 DELIVERY_OFFSETS = {"GB": (-25, -25), "DC": (-27, -37), "DG": (1, -17), "DD": (-2, -24), "MDC": (-19, -20),
                     "MC": (-14, -16), "MOC": (-10, -11), "AILG": (-6, -15), "AILD": (-4, -15), "BU": (-20, -25)}
+# Attribute `penalty` was appended at schema 40. A player whose source row is unavailable receives the level his finishing
+# and composure predict, as (intercept, finishing, composure): a regression on the source's 44,643 players (r² = 0.50).
+DELIVERY_ATTRIBUTE_COUNT = 15
+PENALTY_ESTIMATE = (-9.27, 0.442, 0.525)
+# What generation gives a position from the spot, and how fast the skill declines, as `attributs.json` and
+# `demographie.json` ship them since schema 40; a goalkeeper's comes from his `_autres`.
+PENALTY_OFFSETS = {"DC": -30, "DG": -23, "DD": -24, "MDC": -21, "MC": -16, "MOC": -12, "AILG": -14, "AILD": -15, "BU": -7}
+PENALTY_DECLINE_WEIGHT = 0.40
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
 # A slot, or the copy a save keeps of the one it replaced, named after the date that one was made at: `Marseille-2033-05-30`.
@@ -406,6 +417,7 @@ class SaveStore:
             if version < 37: _upgrade_market(world)
             if version < 38: _upgrade_possessions(world)
             if version < 39: _upgrade_stoppages(world)
+            if version < 40: _upgrade_penalties(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -463,19 +475,20 @@ def original_slot(slot: str) -> str:
     return found.group(1) if found else slot
 
 
-def _source_delivery(world: dict, source_path: Path, wanted: set[int]) -> dict[int, list[float]]:
-    """`centre` and `cpa` of imported players, read back only from the exact CSV the game was imported from."""
-    if not source_path.is_file(): return {}
+def _source_attributes(world: dict, source_path: Path, wanted: set[int], names: tuple[str, ...]) -> dict[int, list[float]]:
+    """Attributes `names` of imported players, read back only from the exact CSV the game was imported from."""
+    if not wanted or not source_path.is_file(): return {}
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != world.get("source_hashes", {}).get("players.csv"): return {}
     source = world["config"]["import"]["format_source"]
     reader = csv.DictReader(io.StringIO(raw.decode(source["encodage"])), delimiter=source["separateur"])
-    return {int(row["UID"]): [note(row, *ATTRIBUTE_COLUMNS[name]) * 5 for name in ("centre", "cpa")]
+    return {int(row["UID"]): [note(row, *ATTRIBUTE_COLUMNS[name]) * 5 for name in names]
             for row in reader if int(row["UID"]) in wanted}
 
 
 # Rules each schema version took out, by section: an older embedded configuration drops them before it is typed, and gets
-# them back, with the values it held, to have its fingerprint checked (see `_config_matches`).
+# them back, with the values it held, to have its fingerprint checked (see `_config_matches`). A rule changed before typing,
+# like the attribute list of schema 40, is given back the same way.
 RETIRED_RULES = (
     # The length of a possession is the sum of its actions; a counter follows where and how the ball was won.
     (38, ("moteur_match", "chronologie"), ("duree_possession_moyenne", "duree_possession_forme_gamma")),
@@ -512,6 +525,7 @@ def _upgrade_document(raw: bytes, version: int, source_path: Path) -> tuple[byte
         world = document["world"]
         world["trajectories"] = _monthly_trajectories(world["trajectories"], world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
     _extend_attribute_vectors(document["world"], source_path)
+    if version < 40: _list_penalty(document["world"]["config"], retired)
     return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8"), retired
 
 
@@ -531,15 +545,39 @@ def _rename_positions(node, skip: str | None = None):
 
 
 def _extend_attribute_vectors(world: dict, source_path: Path) -> None:
-    """Schema 12 appended `centre` and `cpa` to every attribute vector; vectors already extended are left alone."""
-    stale = [player for player in world["players"].values() if len(player["attributes"]["values"]) == LEGACY_ATTRIBUTE_COUNT]
-    if not stale: return
-    imported = _source_delivery(world, source_path, {player["id"] for player in stale})
+    """Schema 12 appended `centre` and `cpa` to every attribute vector, schema 40 `penalty`; vectors already extended are
+    left alone."""
+    players = world["players"].values()
+    stale = {player["id"] for player in players if len(player["attributes"]["values"]) < len(ATTRIBUTE_INDEX)}
+    imported = _source_attributes(world, source_path, stale, ("centre", "cpa", "penalty"))
     bounds = world["config"]["attributs"]["bornes"]
-    for player in stale:
-        extra = imported.get(player["id"]) or [min(bounds["max"], max(bounds["min"], player["rating"] + offset))
-                                               for offset in DELIVERY_OFFSETS[player["position"]]]
-        player["attributes"]["values"].extend(extra)
+    bounded = lambda value: min(bounds["max"], max(bounds["min"], value))
+    for player in players:
+        values, source = player["attributes"]["values"], imported.get(player["id"])
+        if len(values) == LEGACY_ATTRIBUTE_COUNT:
+            values.extend(source[:2] if source else [bounded(player["rating"] + offset) for offset in DELIVERY_OFFSETS[player["position"]]])
+        if len(values) == DELIVERY_ATTRIBUTE_COUNT:
+            intercept, finishing, composure = PENALTY_ESTIMATE
+            values.append(source[2] if source else bounded(intercept + finishing * values[ATTRIBUTE_INDEX["finition"]]
+                                                           + composure * values[ATTRIBUTE_INDEX["sang_froid"]]))
+
+
+def _list_penalty(config: dict, retired: dict) -> None:
+    """Schema 40 lists `penalty` among the technical attributes; the list the save held is checked against its fingerprint."""
+    groups = config["attributs"]["liste"]
+    if any("penalty" in names for names in groups.values()): return
+    retired[("attributs", "liste")] = {"techniques": list(groups["techniques"])}
+    groups["techniques"].append("penalty")
+
+
+def _upgrade_penalties(world: World) -> None:
+    """Schema 40: the attribute `penalty` chooses the taker and makes his penalties. Generation gives each position the
+    level it ships with, and the skill declines as `cpa` does; a value the save already holds for it is kept."""
+    payload = config_payload(world.config)
+    for position, offset in PENALTY_OFFSETS.items():
+        payload["attributs"]["profils_generation"]["profils"].get(position, {}).setdefault("penalty", offset)
+    payload["demographie"]["progression"]["poids_declin_par_attribut"].setdefault("penalty", PENALTY_DECLINE_WEIGHT)
+    world.config = decode_config(payload)
 
 
 def _assign_greed(world: World, source_path: Path) -> None:

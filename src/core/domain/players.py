@@ -23,7 +23,7 @@ class Position(StrEnum):
 # New attributes are appended: the first thirteen keep their index in saved vectors.
 ATTRIBUTE_NAMES = ("passe", "technique", "finition", "tacle", "jeu_tete", "vision",
                    "placement", "sang_froid", "vitesse", "endurance", "reflexes", "sorties", "relance",
-                   "centre", "cpa")
+                   "centre", "cpa", "penalty")
 ATTRIBUTE_INDEX = {name: index for index, name in enumerate(ATTRIBUTE_NAMES)}
 
 

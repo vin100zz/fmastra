@@ -1,7 +1,7 @@
-import {monthlySalary,monthlyAmount} from './salaries.js';
+import {monthlySalary,monthlyAmount,roundFee} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,levelHue,levelBadge,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -163,9 +163,9 @@ function talksPart(player, talks, scope='') {
  if(talks.obstacle)return {rows:[{label,obstacle:talks.obstacle}],dialogs:''};
  const counter=talks.contre_offre,amount=value=>wage?monthlySalary(value):price(value);
  const left=`${talks.tours_restants} offre${talks.tours_restants>1?'s':''} restante${talks.tours_restants>1?'s':''}`;
- const intro=wage?`Salaire actuel ${player.club?monthlySalary(player.wage):'—'}`:`Prix minimum ${price(player.asking_price)} · budget ${price(talks.budget)}`;
+ const intro=wage?`Salaire actuel ${player.club?monthlySalary(player.wage):'—'}`:`Prix minimum ${price(player.asking_price)} · budget ${budget(talks.budget)}`;
  const field=wage?`<label>Salaire proposé (€) <input name="montant" type="number" min="1" step="1" value="${Math.max(1,monthlyAmount(counter||player.wage))}" required></label>`
-  :`<label>Indemnité proposée (M€) <input name="montant" type="number" min="0" step="0.01" value="${counter?counter/1e6:Math.round((player.value||0)/1e6)}" required></label>`;
+  :`<label>Indemnité proposée (M€) <input name="montant" type="number" min="0" step="0.01" value="${(counter||roundFee(player.value||0))/1e6}" required></label>`;
  const accept=counter?`<button type="submit" name="accepter" value="${counter}">Accepter ${amount(counter)}</button>`:'';
  const dialog=`<dialog id="${scope}talks-dialog" class="action-dialog"><form id="${scope}talks-form" data-kind="${wage?'salaire':'indemnite'}"><span class="eyebrow">${wage?'CONTRAT':'MERCATO'}</span><h2>${wage?'Contrat':'Offre'} pour ${e(player.name)}</h2><p>${intro}</p>${counter?`<p><strong>${wage?e(player.name):e(player.club.name)} demande ${amount(counter)}</strong> · ${left}</p>`:''}<input type="hidden" name="joueur_id" value="${player.id}">${field}${dialogButtons(`${accept}<button class="primary" type="submit">Proposer</button>`)}</form></dialog>`;
  return {rows:[{label,open:`${scope}talks-dialog`,note:counter?`Contre-offre · ${amount(counter)}`:''}],dialogs:dialog};
@@ -204,7 +204,7 @@ function contractAction(player, terms, scope='') {
 // he receives none; either way of selling him puts him back on the market.
 function saleAction(player, sale, scope='') {
  const listed=sale.prix_liste!=null,kept=Boolean(sale.intransferable);
- const fee=(id,kind,title,confirm)=>`<dialog id="${id}" class="action-dialog"><form data-sale="${kind}"><span class="eyebrow">VENTE</span><h2>${title}</h2><p>Valeur ${price(player.value)}</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Prix demandé (M€) <input name="montant" type="number" min="0" step="0.01" value="${Math.round((listed?sale.prix_liste:player.value||0)/1e4)/100}" required></label>${dialogButtons(`<button class="primary" type="submit">${confirm}</button>`)}</form></dialog>`;
+ const fee=(id,kind,title,confirm)=>`<dialog id="${id}" class="action-dialog"><form data-sale="${kind}"><span class="eyebrow">VENTE</span><h2>${title}</h2><p>Valeur ${price(player.value)}</p><input type="hidden" name="joueur_id" value="${player.id}"><label>Prix demandé (M€) <input name="montant" type="number" min="0" step="0.01" value="${roundFee(listed?sale.prix_liste:player.value||0)/1e6}" required></label>${dialogButtons(`<button class="primary" type="submit">${confirm}</button>`)}</form></dialog>`;
  const list=listed?{label:'Retirer de la liste',note:price(sale.prix_liste),send:{command:'liste-transferts',player:player.id}}:{label:'Mettre sur la liste',open:`${scope}listing-dialog`};
  const offer={label:'Proposer aux clubs',...(sale.obstacle_proposition?{obstacle:sale.obstacle_proposition}:{open:`${scope}proposal-dialog`})};
  const received=sale.offres.length?[{label:'Offres reçues',note:String(sale.offres.length),open:`${scope}offers-dialog`}]:[];
@@ -338,7 +338,7 @@ function feeTiles(player) {
  const tile=(cls,label,value,title)=>`<div class="tile ${cls}"${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
  const na=player.transferable===false?'Intransférable : son club refuse de le vendre':!player.club?'Sans club : aucun prix demandé':'';
  const asking=na?tile('fee-ask na','Prix demandé','N/A',na):tile('fee-ask','Prix demandé',price(player.asking_price));
- return `<div class="rail-tiles fees">${tile('fee-value','Valeur',money(player.value),'Valeur de marché')}${asking}</div>`;
+ return `<div class="rail-tiles fees">${tile('fee-value','Valeur',price(player.value),'Valeur de marché')}${asking}</div>`;
 }
 
 // Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
@@ -401,7 +401,7 @@ function careerCompetitions(row) {
 // setting the two apart.
 function careerCard(player, career) {
  const totals=career.totals,nation=internationalCareer(player);
- const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.loan?'Prêt':row.fee?money(row.fee):'—',`<span class="competition">${careerCompetitions(row)}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?averageNote(row.average):'—']));
+ const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.loan?'Prêt':row.fee?price(row.fee):'—',`<span class="competition">${careerCompetitions(row)}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?averageNote(row.average):'—']));
  const total=careerRow(['Total','',totals.fee?money(totals.fee):'—','',n(totals.matches),n(totals.goals),n(totals.assists),totals.average?averageNote(totals.average):'—'],{name:'total'});
  const clubs=rows.length?`<tbody>${rows.join('')}${total}</tbody>`:'';
  const head=careerRow(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],{tag:'th'});

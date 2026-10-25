@@ -177,7 +177,7 @@ test('the market under way stands in four columns: offers by player with his val
   liste:[{joueur_id:8,joueur:'Édouard',poste:'BU',indemnite:25e5}],prets:[{joueur_id:9,joueur:'Vasseur',club:ref(33,'Amiens'),fin:'2031-06-30'}],emprunts:[]},
   {club:{available_budget:18.6e6,wage_bill:4000,wage_cap:5000},market:'winter'});
  assert.match(html,/<span class="market-state open">Mercato d’hiver ouvert<\/span>/);
- assert.match(html,/Budget <b>19\sM€<\/b>/);
+ assert.match(html,/Budget <b>18\sM€<\/b>/);
  assert.equal((html.match(/class="market-column"/g)||[]).length,4);
  assert.match(html,/Offres reçues<span class="market-count alert">2<\/span>/);
  assert.match(html,/Baidoo<\/a><small>valeur 41\sM€<\/small>/);

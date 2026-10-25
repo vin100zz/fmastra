@@ -1,4 +1,4 @@
-import {monthlySalary,amount} from './salaries.js';
+import {monthlySalary,amount,roundFee} from './salaries.js';
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 // Every number is written with a point as its decimal separator (docs/charte-graphique.md).
 export const number = value => new Intl.NumberFormat('fr-FR', {maximumFractionDigits:1}).format(value ?? 0).replace(',','.');
@@ -12,8 +12,11 @@ export const appearances = (total, substitutes=0) => substitutes ? `${number(tot
 export const minutes = value => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(value??0);
 export const facilityRating = value => value == null ? '—' : `${number(value)} / 20`;
 export const money = value => amount(value,2);
-// A fee to act on (an asking price, a counter-offer): three significant digits, as the server rounds it up.
-export const price = value => amount(value,3);
+// A transfer amount (a value, a fee, an asking price, an offer) on its nearest step; the server already puts an asking
+// price and an offer on theirs.
+export const price = value => amount(roundFee(value),3);
+// A budget on the step under it: a price shown no higher is one the club can pay.
+export const budget = value => amount(roundFee(value,Math.floor),3);
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
 export const level = value => value==null ? null : Math.round(value*2);
 // Red (hue 0) at `low` or less, yellow (50) at `mid`, green (120) at `high` or more.
@@ -81,12 +84,12 @@ export function moraleCell(player) {
 }
 // The affinity to a position out of 20, only below 20: a round tag after the note at that position.
 export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;
-export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
+export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés',penalty:'Penaltys'};
 // What an attribute is for decides its section; inside it, the attributes come in the alphabetical order of their names.
 export const ATTRIBUTE_SECTIONS=[
  {key:'goalkeeper',title:'Gardien',attributes:['reflexes','relance','sorties']},
  {key:'defense',title:'Défense',attributes:['placement','tacle']},
- {key:'attack',title:'Attaque',attributes:['centre','cpa','finition','jeu_tete','sang_froid','technique','vision']},
+ {key:'attack',title:'Attaque',attributes:['centre','cpa','finition','jeu_tete','penalty','sang_froid','technique','vision']},
  {key:'general',title:'Général',attributes:['endurance','passe','vitesse']}];
 export const byAttributeName = (first, second) => ATTRIBUTES[first].localeCompare(ATTRIBUTES[second],'fr');
 // The composites the match engine plays with (`attributs.composites`), out of 200 like the level, by the phase they decide.
@@ -298,6 +301,15 @@ const PARTICLES=new Set(['da','das','de','del','della','den','der','des','di','d
 export const surname = name => {const words=String(name??'').trim().split(/\s+/);let start=words.length-1;while(start>1&&PARTICLES.has(words[start-1].toLowerCase()))start--;return words.slice(start).join(' ');};
 // A player's short name: the one the API gives (`short`), told apart within his squad ("L. Hernandez"), else his surname.
 export const shortName = (name, short) => short || surname(name);
+// A match minute as television gives it, the minute in progress: 1 to 45, 45+1… in added time, then from the restart 46
+// to 90, 90+1…. `halfEnd` is the first half's whistle; an event's `period`, when known, tells the half.
+export const matchMinute = (second, halfEnd, period) => {
+ const late = period ? period === 2 : second > halfEnd, cap = late ? 90 : 45;
+ const value = late ? 46 + Math.floor(Math.max(0, second - halfEnd) / 60) : Math.floor(second / 60) + 1;
+ return value > cap ? `${cap}+${value - cap}` : `${value}`;
+};
+// When the first half ended: its whistle, or 45 minutes for a match without one.
+export const halfEnd = events => events.find(event => event.kind === 'period_end' && event.period === 1)?.second ?? 2700;
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
 export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
@@ -397,7 +409,7 @@ export const loanTag = player => player.loan ? `<span class="tag loan" title="${
 // the initials, named in their tooltips, for the columns of a list.
 export const marketTags = (transfer, loan, none='—', short=false) => transfer||loan ? `<span class="tags">${transfer?`<span class="tag"${short?' title="Transfert"':''}>${short?'T':'Transfert'}</span>`:''}${loan?`<span class="tag loan"${short?' title="Prêt"':''}>${short?'P':'Prêt'}</span>`:''}</span>` : none;
 const textColumns=['position','name','nation','club','academy_club'];
-const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA'};
+const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA',penalty:'PEN'};
 const LIST_SECTIONS=['general','defense','attack','goalkeeper'].map(key=>ATTRIBUTE_SECTIONS.find(section=>section.key===key));
 const SECTION_OF=Object.fromEntries(ATTRIBUTE_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,section.key])));
 // What the player page hides or greys fades: goalkeeping for an outfield player, Défense (Placement aside) and Attaque for a goalkeeper.
@@ -448,7 +460,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    nation:mainNation(player),
    age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
    caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
-   value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
+   value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
    wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}\u00a0%</span>`,
    form:formBadge(player.form),morale:moraleCell(player),

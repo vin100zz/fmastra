@@ -2,7 +2,7 @@
 
 ## Les attributs
 
-Un joueur a quinze attributs. Le moteur de match ne lit jamais le niveau global : il lit ces attributs, à travers les composites décrits plus bas.
+Un joueur a seize attributs. Le moteur de match ne lit jamais le niveau global : il lit ces attributs, à travers les composites décrits plus bas.
 
 | Attribut | Ce qu'il change |
 |---|---|
@@ -10,11 +10,12 @@ Un joueur a quinze attributs. Le moteur de match ne lit jamais le niveau global 
 | Technique | Remonter le ballon, créer, frapper ; un joueur plus technique que passeur dribble davantage |
 | Vision | Créer l'occasion avant tout |
 | Vitesse | Remonter le ballon et défendre au milieu ; la vitesse moyenne de l'équipe décide des contres |
-| Finition | Frapper au but ; penaltys et tirs au but |
-| Sang-froid | Frapper, jouer de la tête ; penaltys et tirs au but |
+| Finition | Frapper au but |
+| Sang-froid | Frapper, jouer de la tête ; tirer les penaltys |
 | Jeu de tête | Reprendre un centre ou un corner |
 | Centres | Qualité du centre : une meilleure occasion pour celui qui le reprend |
 | Coups arrêtés | Tirer les corners et les coups francs directs |
+| Penaltys | Tirer les penaltys, en match comme aux tirs au but |
 | Tacle | Défendre au milieu comme dans la surface |
 | Placement | Défendre, et pour un gardien arrêter et sortir |
 | Endurance | Moins de fatigue en match, récupération plus rapide |
@@ -46,6 +47,8 @@ Le moteur de match regroupe les attributs en huit composites, un par type d'acti
 | Défense de surface | Empêcher l'occasion | {{poids(attributs.composites.occasion_defense)}} |
 | Arrêts | Arrêter un tir (gardien) | {{poids(attributs.composites.arret)}} |
 | Sorties aériennes | Capter un centre ou un corner (gardien) | {{poids(attributs.composites.sortie)}} |
+
+Un neuvième composite, absent de la vue « Jeu », désigne le tireur de penalty et fait sa réussite : {{poids(attributs.composites.penalty)}} (voir [Arrêts de jeu](#/aide/match/arrets-de-jeu)).
 
 ## Postes et affinité
 

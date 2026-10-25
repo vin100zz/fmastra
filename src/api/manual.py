@@ -28,7 +28,7 @@ NARROW_SPACE, HARD_SPACE, MINUS = "\u202f", "\u00a0", "\u2212"
 ATTRIBUTE_LABELS = {"passe": "passe", "technique": "technique", "finition": "finition", "tacle": "tacle", "jeu_tete": "jeu de tête",
                     "vision": "vision", "placement": "placement", "sang_froid": "sang-froid", "vitesse": "vitesse",
                     "endurance": "endurance", "reflexes": "réflexes", "sorties": "sorties", "relance": "relance",
-                    "centre": "centres", "cpa": "coups arrêtés"}
+                    "centre": "centres", "cpa": "coups arrêtés", "penalty": "penaltys"}
 MONTHS = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
 
 

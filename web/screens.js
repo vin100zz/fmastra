@@ -13,7 +13,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
+import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -66,7 +66,7 @@ export async function clubsScreen(params,leagues=[]){
   club.standing?rank(club.standing):'—',club.standing?form(club.standing.form):'—',`<span class="bar-figure">${miniBar(club.reputation/100)}<b>${n(club.reputation)}</b></span>`,
   scoreBadge(club.training_facilities,'Entraînement sur 20'),scoreBadge(club.youth_recruitment,'Recrutement des jeunes sur 20'),figure(club.squad_size),figure(club.average_age==null?'—':n(club.average_age)),
   levelBadge(club.top_rating,'Moyenne des 16 meilleurs niveaux sur 200'),levelBadge(club.top_potential,'Moyenne des 16 meilleurs potentiels sur 200'),
-  figure(club.squad_value?money(club.squad_value):'—'),figure(club.available_budget==null?'—':money(club.available_budget)),wages(club)];
+  figure(club.squad_value?price(club.squad_value):'—'),figure(club.available_budget==null?'—':budget(club.available_budget)),wages(club)];
  const list=card(`${n(data.total)} clubs`,`<div class="clubs-table">${table(['#',...columns.map(([key,label,title])=>sortHeader(key,label,title))],data.items.map(cells),undefined,selected==null?undefined:data.items.map(club=>club.id===selected?'selected':''),undefined,['rang-column',...columns.map(([key])=>`${key}-column`)],undefined,selected==null?undefined:data.items.map(club=>`data-select="${club.id}"`))}</div>`,headPager(data));
  const side=selected==null?'':sidePanel('club',await clubPreview(selected));
  return toolbar+`<div class="split${side?' with-side':''}" data-fit="clubs" data-rows="${rows??''}">${list}${side}</div>`;

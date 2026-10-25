@@ -72,8 +72,8 @@ test('another club’s player is offered for and borrowed, in one group; a free 
  assert.deepEqual(rows(menuHtml(open)),[[['Faire une offre'],['Emprunter']]]);
  assert.match(menuHtml(open),/data-open-dialog="menu-talks-dialog">Faire une offre<\/button><button type="button" role="menuitem" data-open-dialog="menu-borrow-dialog">Emprunter</);
  assert.match(open.dialogs,/<dialog id="menu-talks-dialog" class="action-dialog"><form id="menu-talks-form" data-kind="indemnite">/);
- const counter=await menu(other,{squad:lendable,talks:{...idle,contre_offre:62e6,tours_restants:2}});
- assert.deepEqual(rows(menuHtml(counter))[0][0],['Faire une offre','Contre-offre · 62 M€']);
+ const counter=await menu(other,{squad:lendable,talks:{...idle,contre_offre:65e6,tours_restants:2}});
+ assert.deepEqual(rows(menuHtml(counter))[0][0],['Faire une offre','Contre-offre · 65 M€']);
  const closed=await menu(other,{squad:{...lendable,obstacle_pret:'Nice ne souhaite pas prêter Cible.'},talks:{...idle,obstacle:'Le mercato est fermé.'}});
  assert.match(menuHtml(closed),/aria-disabled="true" title="Le mercato est fermé.">Faire une offre<\/button><button type="button" role="menuitem" aria-disabled="true" title="Nice ne souhaite pas prêter Cible.">Emprunter</);
  assert.equal(closed.dialogs,'');
@@ -85,8 +85,8 @@ test('another club’s player is offered for and borrowed, in one group; a free 
 });
 
 test('where nothing can be decided the menu tells the player’s state alone: talks agreed, a loan, a career over',async()=>{
- const agreed=await menu(other,{squad:{...lendable,obstacle_pret:'Un transfert de Cible est en cours.'},talks:{...idle,etape:'accord_club',indemnite:62e6,date_prevue:'2026-01-22'}});
- assert.match(menuHtml(agreed),/^<div class="menu" role="menu"><p>Accord avec le club · 62\sM€ · réponse le 22 janv\. 2026<\/p><hr><button type="button" role="menuitem" aria-disabled="true" title="Un transfert de Cible est en cours.">Emprunter<\/button><\/div>$/);
+ const agreed=await menu(other,{squad:{...lendable,obstacle_pret:'Un transfert de Cible est en cours.'},talks:{...idle,etape:'accord_club',indemnite:65e6,date_prevue:'2026-01-22'}});
+ assert.match(menuHtml(agreed),/^<div class="menu" role="menu"><p>Accord avec le club · 65\sM€ · réponse le 22 janv\. 2026<\/p><hr><button type="button" role="menuitem" aria-disabled="true" title="Un transfert de Cible est en cours.">Emprunter<\/button><\/div>$/);
  const signed=await menu(other,{squad:{...lendable,obstacle_pret:'Un transfert de Cible est en cours.'},talks:{...idle,etape:'signature',salaire:2000,date_prevue:'2026-02-01'}});
  assert.match(menuHtml(signed),/<p>Arrivée le 1 févr\. 2026 · /);
  // On loan or retired, the game is not even asked.

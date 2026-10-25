@@ -100,6 +100,12 @@ positif et au plus 1, `agressivite_max` au moins 1. Une ancienne partie garde
 rend l'agressivité pratiquement neutre pour elle. Ses joueurs reçoivent `centre` et
 `cpa` à la migration (`migrations/README.md`).
 
+Les configurations antérieures à la version 40 reçoivent le composite
+`attributs.composites.penalty` (`penalty` 0,75, `sang_froid` 0,25) ; l'attribut `penalty`
+rejoint leurs `liste.techniques`, leurs `profils_generation` (décalages par poste) et
+`demographie.progression.poids_declin_par_attribut` (0,40), sauf valeur déjà présente.
+Ses joueurs reçoivent `penalty` à la migration (`migrations/README.md`).
+
 ## Cohérence
 
 - Somme des poids des composites, notes globales et distributions : 1 à la

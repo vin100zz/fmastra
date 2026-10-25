@@ -72,7 +72,7 @@ def decide_winner(world: World, match: Match, result: MatchResult, lineups: list
             raise ValueError("No eligible penalty taker")
         keeper = max(candidates, key=lambda p: (p.position == Position.GOALKEEPER, p.attributes.get("reflexes"), -p.id))
         keepers.append(keeper)
-        teams.append(sorted(candidates, key=lambda p: (-penalty_skill(p), p.id)))
+        teams.append(sorted(candidates, key=lambda p: (-penalty_skill(p, world.config), p.id)))
     # Both teams must have the same number of eligible kickers.
     count = min(map(len, teams))
     for side, team in enumerate(teams):

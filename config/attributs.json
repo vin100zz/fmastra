@@ -1,7 +1,7 @@
 {
-  "_note": "15 attributs. Pour en ajouter un, il faut pouvoir nommer la transition qu'il modifie. centre : qualite du centre (xG de la tete). cpa : qualite des coups de pied arretes (corner, coup franc direct).",
+  "_note": "16 attributs. Pour en ajouter un, il faut pouvoir nommer la transition qu'il modifie. centre : qualite du centre (xG de la tete). cpa : qualite des coups de pied arretes (corner, coup franc direct). penalty : choix du tireur et reussite du penalty, en match comme aux tirs au but.",
   "liste": {
-    "techniques": ["passe", "technique", "finition", "tacle", "jeu_tete", "centre", "cpa"],
+    "techniques": ["passe", "technique", "finition", "tacle", "jeu_tete", "centre", "cpa", "penalty"],
     "mentaux": ["vision", "placement", "sang_froid"],
     "physiques": ["vitesse", "endurance"],
     "gardien": ["reflexes", "sorties", "relance"]
@@ -16,7 +16,8 @@
     "tir":                 {"finition": 0.60, "sang_froid": 0.25, "technique": 0.15},
     "arret":               {"reflexes": 0.70, "placement": 0.30},
     "tete":                {"jeu_tete": 0.65, "placement": 0.20, "sang_froid": 0.15},
-    "sortie":              {"sorties": 0.60, "placement": 0.40}
+    "sortie":              {"sorties": 0.60, "placement": 0.40},
+    "penalty":             {"penalty": 0.75, "sang_froid": 0.25}
   },
   "note_globale": {
     "_note": "Ponderation par poste pour calculer la note affichee et la valorisation",
@@ -36,15 +37,15 @@
     "bruit_ecart_type": 6.0,
     "profils": {
       "GB":   {"reflexes": 15, "sorties": 12, "relance": 8, "_autres": -25},
-      "DC":   {"tacle": 12, "placement": 10, "jeu_tete": 10, "finition": -18, "vision": -8, "centre": -27, "cpa": -37},
-      "DG":   {"vitesse": 10, "endurance": 8, "passe": 5, "finition": -15, "jeu_tete": -8, "centre": 1, "cpa": -17},
-      "DD":   {"vitesse": 10, "endurance": 8, "passe": 5, "finition": -15, "jeu_tete": -8, "centre": -2, "cpa": -24},
-      "MDC":  {"tacle": 10, "placement": 10, "passe": 8, "finition": -12, "centre": -19, "cpa": -20},
-      "MC":   {"passe": 12, "vision": 8, "endurance": 8, "jeu_tete": -6, "centre": -14, "cpa": -16},
-      "MOC":  {"vision": 14, "technique": 12, "passe": 8, "tacle": -15, "centre": -10, "cpa": -11},
-      "AILG": {"vitesse": 14, "technique": 12, "tacle": -12, "jeu_tete": -8, "centre": -6, "cpa": -15},
-      "AILD": {"vitesse": 14, "technique": 12, "tacle": -12, "jeu_tete": -8, "centre": -4, "cpa": -15},
-      "BU":   {"finition": 16, "sang_froid": 10, "jeu_tete": 6, "tacle": -18, "placement": -10, "centre": -20, "cpa": -25}
+      "DC":   {"tacle": 12, "placement": 10, "jeu_tete": 10, "finition": -18, "vision": -8, "centre": -27, "cpa": -37, "penalty": -30},
+      "DG":   {"vitesse": 10, "endurance": 8, "passe": 5, "finition": -15, "jeu_tete": -8, "centre": 1, "cpa": -17, "penalty": -23},
+      "DD":   {"vitesse": 10, "endurance": 8, "passe": 5, "finition": -15, "jeu_tete": -8, "centre": -2, "cpa": -24, "penalty": -24},
+      "MDC":  {"tacle": 10, "placement": 10, "passe": 8, "finition": -12, "centre": -19, "cpa": -20, "penalty": -21},
+      "MC":   {"passe": 12, "vision": 8, "endurance": 8, "jeu_tete": -6, "centre": -14, "cpa": -16, "penalty": -16},
+      "MOC":  {"vision": 14, "technique": 12, "passe": 8, "tacle": -15, "centre": -10, "cpa": -11, "penalty": -12},
+      "AILG": {"vitesse": 14, "technique": 12, "tacle": -12, "jeu_tete": -8, "centre": -6, "cpa": -15, "penalty": -14},
+      "AILD": {"vitesse": 14, "technique": 12, "tacle": -12, "jeu_tete": -8, "centre": -4, "cpa": -15, "penalty": -15},
+      "BU":   {"finition": 16, "sang_froid": 10, "jeu_tete": 6, "tacle": -18, "placement": -10, "centre": -20, "cpa": -25, "penalty": -7}
     }
   },
   "malus_hors_poste": {

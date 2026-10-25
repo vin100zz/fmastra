@@ -344,8 +344,11 @@ bout de `tours_negociation` (3) offres refusées, les discussions sont rompues
 pendant `jours_rupture_negociation` (7) jours.
 
 1. L'indemnité, avec le club vendeur, dont la demande est son prix demandé. Le
-   prix affiché et les contre-offres sont arrondis au-dessus à trois chiffres
-   significatifs, pour qu'offrir le montant affiché suffise.
+   prix affiché, les contre-offres et le seuil d'acceptation sont ce prix arrondi
+   au-dessus à son palier (`quoted_minimum`, voir « Montants » dans
+   `docs/charte-graphique.md`) : le prix affiché est exactement le prix demandé.
+   L'offre saisie est arrondie en dessous à son palier (`quoted_offer`), ce qui
+   ne change pas son acceptation.
 2. Une fois l'indemnité acceptée, le joueur est réservé : aucun club IA ne peut plus
    l'acheter. Il répond de `delai_reponse_min_jours` à `delai_reponse_max_jours`
    (1 à 3) jours plus tard, au plus tard le dernier jour de la fenêtre ; une
@@ -370,7 +373,7 @@ la clôture sont signalées comme expirées.
 pour ses joueurs. Un club ne vient que si son prix maximum atteint le prix qu'un club
 IA demanderait à sa place, qu'il réserve, et ouvre à une part de ce maximum :
 `ratio_contre_offre` (0,75), décalé de `offres.ecart_ouverture` × (0,5 − patience du
-club), le montant étant arrondi en dessous à trois chiffres significatifs. Les offres
+club), le montant étant arrondi en dessous à son palier (`quoted_offer`), comme chaque relance. Les offres
 en cours pour un joueur surenchérissent à chaque règlement (`surface`) : une offre
 relevée est annoncée de nouveau, la ligne de son ancien montant passant à l'état
 « relevée ». L'utilisateur accepte, refuse ou contre-propose :
@@ -379,11 +382,14 @@ relevée est annoncée de nouveau, la ligne de son ancien montant passant à l'�
   `delai_reponse_max_jours` jours plus tard (`TransferOffer.due`) avec une offre plus
   haute ; il se donne de `offres.relances_min` à `offres.relances_max` relances selon
   sa patience (`raises_allowed`) et répartit sur elles l'écart à ce qu'il peut
-  atteindre, la dernière étant sa limite. Sans relance ni marge, il abandonne :
+  atteindre, la dernière étant sa limite arrondie en dessous à son palier. Sans relance ni marge, il abandonne :
   `World.turned_away` le retient et il ne revient pas pour ce joueur avant la fenêtre
   suivante (la clôture vide le registre), sauf si le joueur est listé ou proposé ;
 - une contre-proposition (`counter`) conclut la vente au prix nommé s'il tient sous ce
   que l'acheteur peut atteindre, et vaut refus sinon.
+
+Le prix que l'utilisateur nomme (liste, proposition, contre-proposition) est arrondi
+au-dessus à son palier (`quoted_minimum`), comme tout prix demandé.
 
 L'utilisateur peut déclarer un joueur **intransférable** (`set_untouchable`,
 `World.not_for_sale`) : `can_sell` le refuse à tous, ses offres en cours tombent et il

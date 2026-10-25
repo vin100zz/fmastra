@@ -24,20 +24,22 @@ def set_piece_taker(team: TeamState) -> LineupSlot:
     return max(candidates, key=lambda slot: (slot.player.attributes.get("cpa"), -slot.player.id))
 
 
-def penalty_skill(player: Player) -> float:
-    return (player.attributes.get("finition") + player.attributes.get("sang_froid")) / 2
+def penalty_skill(player: Player, cfg: Config) -> float:
+    """A taker's quality from the spot: the `penalty` composite, mostly the attribute of that name."""
+    return weighted_rating(player.attributes, cfg.attributes.composites.penalty)
 
 
-def penalty_taker(team: TeamState) -> LineupSlot:
+def penalty_taker(team: TeamState, cfg: Config) -> LineupSlot:
     """The best penalty taker on the pitch, as in a shoot-out, goalkeeper excluded; ties go to the lowest id."""
     candidates = [slot for slot in team.active if slot.position != Position.GOALKEEPER] or team.active
-    return max(candidates, key=lambda slot: (penalty_skill(slot.player), -slot.player.id))
+    return max(candidates, key=lambda slot: (penalty_skill(slot.player, cfg), -slot.player.id))
 
 
 def penalty_probability(taker: Player, keeper: Player, cfg: Config) -> float:
     """A penalty's chance of a goal, in the match as in a shoot-out: the taker's skill against the keeper's reflexes."""
     rules = cfg.engine.penalty
-    return clamp(rules.base + rules.sensitivity * (penalty_skill(taker) - keeper.attributes.get("reflexes")), rules.min, rules.max)
+    return clamp(rules.base + rules.sensitivity * (penalty_skill(taker, cfg) - keeper.attributes.get("reflexes")),
+                 rules.min, rules.max)
 
 
 def delivery_quality(slot: LineupSlot, attribute: str, team: TeamState, cfg: Config) -> float:
@@ -76,7 +78,7 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
         free_kick_edge = delivery_quality(shooter, "cpa", attacker, cfg) - rules.free_kick_reference
         xg, passer = cfg.engine.set_pieces.free_kick_xg, None
     elif kind == "penalty":
-        shooter, passer = penalty_taker(attacker), None
+        shooter, passer = penalty_taker(attacker, cfg), None
         xg = cfg.engine.penalty.base
         log.emit("penalty", attacker, shooter.player.id, zone=zone, lane=lane)
     elif kind == "rebound":

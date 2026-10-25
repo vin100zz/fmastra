@@ -131,7 +131,7 @@ export function clubTiles(club,competitions=[]){
   +`${tile('Tactique',e(club.formation||'—'))}${split(column('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'Entraînement sur 20')
    +column('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'Recrutement des jeunes sur 20'))}`
   +(club.personality?split(PERSONALITY.map(([key,label,title])=>column(label,Math.round(1+club.personality[key]*19),title)).join('')):'')
-  +`${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;
+  +`${tile('Valeur',club.squad_value==null?'—':price(club.squad_value),'','Valeur de l’effectif')}</div>`;
 }
 
 // The row of tiles that opens a selection's Présentation, a club's where they apply: where it stands in the edition it is at
@@ -142,7 +142,7 @@ export function nationTiles(nation,edition=null){
  const age=squad.length?Math.round(10*squad.reduce((sum,player)=>sum+player.age,0)/squad.length)/10:null;
  const place=edition?split(`<div><span>${competitionLink(edition,{badge:true})}</span><strong>${e(String(edition.place||'—').replace(/^Éliminé · /,''))}</strong></div>`):'';
  return `<div class="club-tiles">${place}${split(column('Joueurs',squad.length?n(squad.length):'—')+column('Âge moyen',age==null?'—':n(age)))}`
-  +`${tile('Valeur',valued.length?money(valued.reduce((sum,player)=>sum+player.value,0)):'—','','Valeur de la liste')}</div>`;
+  +`${tile('Valeur',valued.length?price(valued.reduce((sum,player)=>sum+player.value,0)):'—','','Valeur de la liste')}</div>`;
 }
 
 // The band of a club before a game is made with it (« Nouvelle partie »): its colours, its crest, its name, its country's
@@ -235,5 +235,5 @@ export function playerHero(player,{lead='',foot=''}){
  return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',before:number,
   after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
   tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${split(grade('Niveau',player.rating,'Niveau actuel sur 200')+grade('Potentiel',player.potential,'Potentiel sur 200'))}`
-   +split(column('Valeur',money(player.value),'Valeur de marché')+(unasked?column('Prix demandé','N/A',unasked):column('Prix demandé',price(player.asking_price))))});
+   +split(column('Valeur',price(player.value),'Valeur de marché')+(unasked?column('Prix demandé','N/A',unasked):column('Prix demandé',price(player.asking_price))))});
 }

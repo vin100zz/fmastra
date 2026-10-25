@@ -29,7 +29,7 @@ from core.randomness import stream
 from .application import apply
 from .events import OffersUpdated
 from .human import is_human_club, untouchable
-from .market import can_open_offer, quoted_minimum, reach, resolve_accepted_offer
+from .market import can_open_offer, quoted_minimum, quoted_offer, reach, resolve_accepted_offer
 from .news import answer_offer, offer_received
 from .talks import window_end
 from .transfer_rules import recent_arrival_ids, free_to_move_on
@@ -44,12 +44,12 @@ ON_LOAN = "Ce joueur vous est prêté : il n'est pas à vendre."
 
 
 def set_listing(world: World, player: Player, fee: int | None) -> None:
-    """Puts a player of the human club on its transfer list at this fee, changes the fee, or takes him off with None."""
+    """Puts a player of the human club on its transfer list at this fee, raised to its step, changes the fee, or takes him off with None."""
     if not is_human_club(world, player.club_id): raise SaleRefused(NOT_OWN)
     if player.loan is not None: raise SaleRefused(ON_LOAN)
     if fee is None: world.transfer_list.pop(player.id, None)
     else:
-        world.transfer_list[player.id] = fee
+        world.transfer_list[player.id] = quoted_minimum(fee)
         world.not_for_sale.pop(player.id, None)
 
 
@@ -86,8 +86,9 @@ def offer_obstacle(world: World, player: Player) -> str | None:
 
 
 def offer_to_clubs(world: World, player: Player, fee: int) -> list[TransferOffer]:
-    """Every club considers the player at this fee today; the offers he would prefer await the human club's answer."""
+    """Every club considers the player at this fee, raised to its step, today; the offers he would prefer await the human club's answer."""
     if (obstacle := offer_obstacle(world, player)) is not None: raise SaleRefused(obstacle)
+    fee = quoted_minimum(fee)
     world.not_for_sale.pop(player.id, None)
     rules = world.config.management.market
     # Set first: the clubs are weighed with the tolerance of a player who knows he may leave.
@@ -127,12 +128,12 @@ def raised(world: World, offer: TransferOffer) -> TransferOffer | None:
     few days, or None when it gives up.
 
     It splits what separates its offer from the most it can pay (see `market.reach`) evenly over the raises it still
-    allows itself (see `raises_allowed`), so that its last one is its limit. Out of raises or of room, it gives up
-    and does not come back for the player before the next window.
+    allows itself (see `raises_allowed`), so that its last one is its limit, cut down to its step like every offer.
+    Out of raises or of room, it gives up and does not come back for the player before the next window.
     """
     rules = world.config.management.market
     buyer = world.clubs[offer.target_id]
-    top, raises = reach(world, offer), raises_allowed(buyer, world.config)
+    top, raises = quoted_offer(reach(world, offer)), raises_allowed(buyer, world.config)
     if top <= offer.fee or offer.rounds >= raises:
         away = world.turned_away.setdefault(offer.player_id, [])
         if buyer.id not in away: away.append(buyer.id)
@@ -159,12 +160,13 @@ def answer(world: World, offer: TransferOffer, accept: bool) -> None:
 
 
 def counter(world: World, offer: TransferOffer, fee: int) -> bool:
-    """The human club names its own price for an offer, and learns at once whether the player is sold.
+    """The human club names its own price for an offer, raised to its step, and learns at once whether the player is sold.
 
     Within what the buyer can pay (see `market.reach`), the sale is made at that fee. Beyond, the buyer takes it as
     a refusal: it raises its offer or gives up, as it would have (see `raised`).
     """
     if not offer.awaiting_review or not is_human_club(world, offer.source_id): raise SaleRefused("Offre introuvable ou déjà traitée.")
+    fee = quoted_minimum(fee)
     if fee <= offer.fee: raise SaleRefused("Ce prix ne dépasse pas l'offre : acceptez-la.")
     sold = fee <= reach(world, offer)
     answer(world, replace(offer, fee=fee, ceiling=max(offer.ceiling, fee)) if sold else offer, sold)

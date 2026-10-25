@@ -1,7 +1,7 @@
-import {monthlySalary} from './salaries.js';
+import {monthlySalary,monthlyMargin} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle,kitShirt,GO} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle,kitShirt,GO} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -115,8 +115,8 @@ function expiryBody(data){
 
 function marketBody(data,club){
  const players=list=>list.map(named).join(' · ');
- const budget=`<div class="fact"><span><a href="#/club/${club.id}/finances">Budget transferts</a></span><strong>${money(data.budget)}</strong></div>`;
- const facts=data.end?fact('Fermeture',date(data.end))+budget+fact('Marge salariale',monthlySalary(Math.max(0,data.wages)))
+ const budget=`<div class="fact"><span><a href="#/club/${club.id}/finances">Budget transferts</a></span><strong>${spendable(data.budget)}</strong></div>`;
+ const facts=data.end?fact('Fermeture',date(data.end))+budget+fact('Marge salariale',monthlyMargin(Math.max(0,data.wages)))
   :(data.talks.length?fact('Vos offres en cours',players(data.talks)):'')+(data.offers.length?fact('Offres reçues',players(data.offers)):'')+budget;
  return `<div class="news-facts">${facts}</div><a class="news-more" href="#/players">Joueurs ${GO}</a>`;
 }

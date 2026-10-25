@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query,competitionLink} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,price,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query,competitionLink} from './ui.js';
 import {monthlySalary} from './salaries.js';
 import {resetButton} from './filters.js';
 import {wideScreen,fittedRows,sidePanel,searchField,positionChips,choiceLinks,toggleLink,rangeMenu,choiceSelect} from './listing.js';
@@ -64,7 +64,7 @@ function marketSummary(summary, params, base){
  const most=list=>Math.max(1,...list.map(entry=>entry.spent));
  const clubs=card('Clubs',summaryTable('figures',headers('CLUB'),summary.clubs.map(entry=>[`<span class="strong">${clubLink(entry.club)}</span>`,...figures(entry,most(summary.clubs))]),summary.clubs.map(entry=>[entry.club.name,...raw(entry)])),'','clubs-summary');
  const leagues=card('Championnats',summaryTable('figures',headers('CHAMPIONNAT'),summary.leagues.map(entry=>[league(entry),...figures(entry,most(summary.leagues))]),summary.leagues.map(entry=>[entry.name??'',...raw(entry)])),'','leagues-summary');
- return tiles([['Transferts',n(summary.total)],['Volume',money(summary.volume)],['Médiane',money(summary.median)],['Record',summary.record?money(summary.record.fee):'—',summary.record?.player||'']])+chart+clubs+leagues;
+ return tiles([['Transferts',n(summary.total)],['Volume',money(summary.volume)],['Médiane',money(summary.median)],['Record',summary.record?price(summary.record.fee):'—',summary.record?.player||'']])+chart+clubs+leagues;
 }
 
 // Beside the retirements: how many, at what age, then the clubs and the leagues they left.
@@ -116,8 +116,8 @@ const movementsTable=(columns,data,rows)=>`<div class="movements-table">${table(
 function transfersTable(data, summary){
  const columns=[['date','DATE'],['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['source','PROVENANCE'],['arrow',''],['target','DESTINATION'],['fee','MONTANT'],['value','VALEUR']];
  const record=Math.max(1,summary?.record?.fee||0,...data.items.map(row=>row.fee||0));
- const fee=row=>row.kind==='loan'?'<span class="num muted">Prêt</span>':row.kind==='release'?'<span class="num muted">Fin de contrat</span>':row.kind==='departure_unknown'?'<span class="num muted">Motif non archivé</span>':row.fee?`<span class="bar-figure">${miniBar(row.fee/record)}<b>${money(row.fee)}</b></span>`:'<span class="num muted">Libre</span>';
- return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),levelBadge(row.rating,'Niveau actuel sur 200'),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':money(row.value))]));
+ const fee=row=>row.kind==='loan'?'<span class="num muted">Prêt</span>':row.kind==='release'?'<span class="num muted">Fin de contrat</span>':row.kind==='departure_unknown'?'<span class="num muted">Motif non archivé</span>':row.fee?`<span class="bar-figure">${miniBar(row.fee/record)}<b>${price(row.fee)}</b></span>`:'<span class="num muted">Libre</span>';
+ return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),levelBadge(row.rating,'Niveau actuel sur 200'),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':price(row.value))]));
 }
 
 // A retirement tells who left: his level on the day and the best of his history, his career in the game and his caps. The
@@ -148,7 +148,7 @@ function promotionsTable(data, recruiting){
  const clubs=(row,now)=>`${clubLink(row.target)}${now&&now.club?.id!==row.target?.id?` <span class="muted">→</span> ${clubLink(now.club)}`:''}`;
  return movementsTable(columns,data,data.items.map(row=>{const then=row.details||{},now=then.current;
   return [then.position?position(then.position):'—',playerCell(row),mainNation(then),figure(then.age??'—'),clubs(row,now),
-   levelBadge(then.rating,'Niveau à la promotion sur 200'),levelBadge(now?.rating,'Niveau actuel sur 200'),progress(then,now),levelBadge(then.potential,'Potentiel sur 200'),figure(now?money(now.value):'—'),
+   levelBadge(then.rating,'Niveau à la promotion sur 200'),levelBadge(now?.rating,'Niveau actuel sur 200'),progress(then,now),levelBadge(then.potential,'Potentiel sur 200'),figure(now?price(now.value):'—'),
    ...(recruiting?[figure(now?.wage_demand==null?'—':monthlySalary(now.wage_demand)),now?.interested==null?'—':now.interested?'Oui':'<span class="muted">Non</span>']:[])];}));
 }
 

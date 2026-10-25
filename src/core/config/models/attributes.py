@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from core.config.types import FrozenMap, MODEL_CONFIG
+from core.config.types import FrozenDict, FrozenMap, MODEL_CONFIG
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class AttributesConfigGroups:
@@ -29,6 +29,7 @@ class AttributesConfigComposites:
     saving: FrozenMap[float] = Field(alias="arret")
     heading: FrozenMap[float] = Field(alias="tete")
     claiming: FrozenMap[float] = Field(alias="sortie")
+    penalty: FrozenMap[float] = Field(default_factory=lambda: FrozenDict({"penalty": 0.75, "sang_froid": 0.25}), alias="penalty")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
