@@ -356,7 +356,10 @@ sans défiler : ses listes prennent les lignes que la hauteur laisse et se redes
 « Présentation d'un club »). En tête, une rangée de cases : la place dans chaque compétition de la saison (le
 rang et les points en championnat, le tour atteint en coupe ; `competitions` du calendrier de la saison), les
 joueurs et leur âge moyen, la tactique, l'entraînement et le recrutement des jeunes (sur 20, sur une même case),
-la valeur de l'effectif. Puis quatre colonnes, chaque carte avec « Voir → » vers ce qu'elle résume quand elle a une page :
+la personnalité du club sur une même case (Risque, Jeunes, Patience : son appétit du risque, sa préférence pour
+les jeunes et sa patience en négociation, sur 20 entre les bornes où ils sont tirés ; `personality` de la fiche du
+club), chaque infobulle disant ce que le trait fait faire au club, puis la valeur de l'effectif. L'agressivité
+salariale, que nulle règle ne lit, n'est pas montrée. Puis quatre colonnes, chaque carte avec « Voir → » vers ce qu'elle résume quand elle a une page :
 
 | Carte | Contenu | Lien |
 |---|---|---|

@@ -145,6 +145,12 @@ def test_club_list_averages_its_sixteen_best_players_and_sorts_on_it(client):
         assert [row[field] for row in weakest] == sorted(row[field] for row in weakest) and weakest[0][field] < rows[0][field]
     names = [v.normalized(row['name']) for row in client.get('/api/clubs?tri=nom').json()['items']]
     assert names == sorted(names)
+    # Its personality from 0 to 1 within the bounds it was drawn from; its wage aggression, which drives nothing, left out.
+    club = next(iter(world.active_clubs()))
+    bounds = world.config.management.personality
+    assert client.get(f'/api/clubs/{club.id}').json()['personality'] == {
+        key: pytest.approx((getattr(club.personality, key) - getattr(bounds, key).min) / (getattr(bounds, key).max - getattr(bounds, key).min))
+        for key in ('risk_appetite', 'youth_preference', 'negotiation_patience')}
     empty = next((club for club in world.clubs.values() if not club.player_ids), None)
     if empty:
         assert client.get(f'/api/clubs/{empty.id}').json()['top_rating'] is None

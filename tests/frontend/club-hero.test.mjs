@@ -84,9 +84,9 @@ test('the band of a club picked before a game shows its home and away outfits be
  assert.doesNotMatch(nationHero({...dressed,nation:'FRA'},{menu,section:'squad'}),/class="club-hero-kit"/);
 });
 
-test('the Présentation opens on the club\'s tiles: its competitions, its players and their age, its tactic, its facilities on one tile, its value last',()=>{
+test('the Présentation opens on the club\'s tiles: its competitions, its players and their age, its tactic, its facilities on one tile, its personality on another, its value last',()=>{
  const competitions=[{id:16,name:'Ligue 1',kind:'league',place:'1er'},{id:-3,name:'Coupe de France',kind:'cup',place:'Éliminé · Finale'}];
- const html=clubTiles({...club,standing:{rank:1,points:77},squad_size:23,average_age:24.6,squad_value:1312e6},competitions);
+ const html=clubTiles({...club,standing:{rank:1,points:77},squad_size:23,average_age:24.6,squad_value:1312e6,personality:{risk_appetite:.9,youth_preference:.25,negotiation_patience:0}},competitions);
  const tiles=html.replace(/^<div class="club-tiles">/,'').split('<div class="club-hero-tile');
  // The competitions on one tile of columns, each after its badge, the two one link to its page: the rank and the points in
  // the league, how far it went in a cup.
@@ -95,8 +95,14 @@ test('the Présentation opens on the club\'s tiles: its competitions, its player
  assert.match(tiles[3],/<span>Tactique<\/span><strong>4-3-3<\/strong>/);
  // Its training and its youth recruitment, out of 20, on one tile of two columns.
  assert.match(tiles[4],/^ split"><div title="Entraînement sur 20"><span>Entraînement<\/span><strong>16<\/strong><\/div><div title="Recrutement des jeunes sur 20"><span>Recrutement<\/span><strong>13<\/strong><\/div><\/div>$/);
- assert.match(tiles[5],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
- assert.equal(tiles.length,6);
+ // Its personality out of 20, each tooltip telling what the trait makes it do.
+ assert.deepEqual([...tiles[5].matchAll(/<div title="([^"]+)"><span>([^<]+)<\/span><strong>(\d+)</g)].map(match=>[match[2],match[3],match[1].split(' : ')[0]]),
+  [['Risque','18','Appétit du risque sur 20'],['Jeunes','6','Préférence pour les jeunes sur 20'],['Patience','1','Patience en négociation sur 20']]);
+ assert.match(tiles[5],/title="Patience en négociation sur 20 : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps"/);
+ assert.match(tiles[6],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
+ assert.equal(tiles.length,7);
+ // Without a personality (an older server), no tile for it.
+ assert.doesNotMatch(clubTiles(club,[]),/Patience/);
  // A club playing nowhere has no tile of competitions.
  assert.doesNotMatch(clubTiles(club,[]),/competition-code/);
 });
