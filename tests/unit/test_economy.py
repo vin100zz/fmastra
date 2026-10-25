@@ -244,8 +244,8 @@ def test_an_older_save_takes_the_recalibrated_rules_and_the_income_they_give(con
     rules["ia_gestion"]["garde_fous"]["solde_minimal_autorise"] = -5000000
     rules["demographie"]["estimation_potentiel"]["bruit_max"] = 22.0
     rules["demographie"]["cohorte"]["poids_reputation_tri"] = 0.5  # chosen by hand: kept
-    for club in payload["world"]["clubs"].values(): del club["prize_income"]
-    for player in payload["world"]["players"].values(): del player["past_performance"]
+    for club in payload["world"]["clubs"].values(): club.pop("prize_income", None)
+    for player in payload["world"]["players"].values(): player.pop("past_performance", None)
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("old")

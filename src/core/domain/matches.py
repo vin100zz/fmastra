@@ -73,6 +73,9 @@ TRANSIENT_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "del
 # The replay draws the possessions that led to a shot, so their build-up survives storage.
 REPLAY_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "corner", "free_kick", "foul", "penalty",
                                 "throw_in"})
+# A match without its replay keeps what its page and the round lists show: goals, cards, injuries, substitutions, the
+# whistles, the penalties missed in play (their shot and its save or miss) and the shoot-out.
+FACT_EVENT_KINDS = frozenset({"kickoff", "goal", "yellow", "red", "injury", "substitution", "period_end"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +153,8 @@ class MatchResult:
     temporary_players: dict[int, str] = field(default_factory=dict)
     # The number each player of the match sheet wore, the starters and the bench of both clubs.
     shirts: dict[int, int] = field(default_factory=dict)
+    # Whether its events keep the build-up of the chances the 2D replay draws: only the user's club's matches do.
+    replay: bool = True
 
 
 @dataclass(slots=True)
@@ -166,10 +171,20 @@ class Match:
     first_leg_id: int | None = None
 
 
-def stored_events(events: list[MatchEvent]) -> list[MatchEvent]:
+def stored_events(events: list[MatchEvent], replay: bool = True) -> list[MatchEvent]:
     """The events a saved result keeps: every listed kind, plus the build-up of each chance and the loss of the ball
-    that gave the chance's side the ball, or the foul that stopped its counter."""
+    that gave the chance's side the ball, or the foul that stopped its counter. Without the `replay`, only its facts."""
+    if not replay:
+        penalties = {event.shot_id for event in events if event.kind == "shot" and event.detail == "penalty"} - {None}
+        return [event for event in events if event.kind in FACT_EVENT_KINDS or event.period == 3
+                or (event.shot_id in penalties and event.kind in ("shot", "save", "off_target"))]
     chances = {event.possession_id for event in events if event.kind == "shot"}
     return [event for event in events if event.kind not in TRANSIENT_EVENT_KINDS
             or (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances)
             or (event.kind in ("turnover", "foul") and event.possession_id + 1 in chances)]
+
+
+def store_events(result: MatchResult, replay: bool) -> None:
+    """Trims a played result to the events it keeps (see `stored_events`), with or without its replay."""
+    result.events = stored_events(result.events, replay and result.replay)
+    result.replay = replay and result.replay

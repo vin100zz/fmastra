@@ -301,9 +301,9 @@ def test_loans_and_the_reserve_survive_a_save_and_an_older_save_has_none(config,
     borrowed["club_id"] = 2
     saved["transfers"] = []
     for player in saved["players"].values():
-        for name in ("loan", "reserve_since", "reserve_days"): del player[name]
+        for name in ("loan", "reserve_since", "reserve_days"): player.pop(name, None)
     for club in saved["clubs"].values():
-        for name in ("loaned_ids", "borrowed_ids"): del club[name]
+        for name in ("loaned_ids", "borrowed_ids"): club.pop(name, None)
     rules = saved["config"]
     for introduced, config_path, defaults in MIGRATION_DEFAULTS:
         if introduced > 24:

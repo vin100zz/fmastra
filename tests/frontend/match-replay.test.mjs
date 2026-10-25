@@ -77,7 +77,7 @@ test('a played match page carries the replay card',async()=>{
  const stats={xg:1,shots:2,on_target:1,possession_seconds:2700,corners:0,free_kicks:0,yellows:0,reds:0};
  const lineup=[{id:1,name:'Gardien Un',position:'GB'}];
  globalThis.fetch=async()=>({ok:true,json:async()=>({id:9,home:{id:1,name:'Home'},away:{id:2,name:'Away'},competition:'Ligue',round:1,date:'2026-08-16',score:[1,0],
-  result:{status:'played',duration:5600,home_stats:stats,away_stats:stats,home_lineup:lineup,away_lineup:[{id:2,name:'Gardien Deux',position:'GB'}],home_bench:[],away_bench:[],
+  result:{status:'played',duration:5600,replay:true,home_stats:stats,away_stats:stats,home_lineup:lineup,away_lineup:[{id:2,name:'Gardien Deux',position:'GB'}],home_bench:[],away_bench:[],
    events:[event('shot',1,{shot_id:1,player_id:1,player:'Gardien Un',detail:'shot'}),event('goal',1,{shot_id:1,player_id:1})]}})});
  const html=await matchScreen(9);
  // Folded by default: the banner's toggle controls an empty panel, the replay is mounted on first opening.
