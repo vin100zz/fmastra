@@ -11,6 +11,9 @@ from .kit_images import NATION_CODE, PATTERN_COUNT, normalize_color, render_kit,
 PATTERNS = {0: 1, **{code: code for code in range(1, PATTERN_COUNT + 1)}}
 NEUTRAL = "#8A9193"
 HexColor = Annotated[str, Query(pattern=r"^[0-9a-fA-F]{6}$")]
+# A kit's address spells out its pattern and colours, so the browser keeps its picture: a club that changes them gets a
+# new address. A day, so that a new template or crest still shows by the next session.
+CACHE = {"Cache-Control": "private, max-age=86400"}
 router = APIRouter()
 
 
@@ -54,7 +57,7 @@ def kit_url(club: Club, side: str = "home", nation: str | None = None) -> str | 
 @router.get("/kits/{kit_id}.png")
 def kit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor):
     image = render_kit(PATTERNS.get(kit_id, 1), (major, minor, third))
-    return Response(image, media_type="image/png")
+    return Response(image, media_type="image/png", headers=CACHE)
 
 
 @router.get("/kits/{kit_id}/outfit.png")
@@ -66,4 +69,4 @@ def outfit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor,
     image = render_outfit(PATTERNS.get(kit_id, 1), (major, minor, third),
                           (shorts_major, shorts_minor, shorts_third),
                           (socks_major, socks_minor, socks_third), club_id=club_id, nation=nation)
-    return Response(image, media_type="image/png")
+    return Response(image, media_type="image/png", headers=CACHE)

@@ -40,7 +40,7 @@ const otherItem=({key,value})=>`<div class="attribute"><span>${ATTRIBUTES[key]}<
 // graded the other way round from an attribute, red when high.
 const outOf20=value=>Math.round(1+value*19);
 const CHARACTER=[
- {key:'aggression',label:'Agressivité',cost:'plus elle est haute, plus il est sanctionné'},
+ {key:'aggression',label:'Agressivité',cost:'plus elle est haute, plus il commet de fautes et prend de cartons'},
  {key:'ambition',label:'Ambition',help:'plus elle est haute, plus un club trop petit pour lui le lasse'},
  {key:'greed',label:'Appât du gain'},
  {key:'fragility',label:'Fragilité',cost:'plus elle est haute, plus il se blesse'}];

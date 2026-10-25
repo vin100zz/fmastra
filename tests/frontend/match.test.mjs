@@ -173,6 +173,30 @@ test('a match played since passes are counted shows them and their accuracy unde
  assert.match(html,/<span class="lead">86\.4 %<\/span><div>Précision des passes<[^]*?<\/div><span class="">75 %<\/span>/);
 });
 
+test('a match played since fouls are counted shows them and the offsides in place of the free kicks',async()=>{
+ const counted={...stats,fouls:12,offsides:2};
+ const html=await screen({...report,result:{...report.result,home_stats:counted,away_stats:{...counted,fouls:9,offsides:3}}});
+ const lines=[...html.matchAll(/<div class="comparison( fold-more)?">.*?<div>([^<]+)</g)].map(([,more,label])=>label);
+ assert.deepEqual(lines.slice(4,7),['Corners','Fautes','Hors-jeu']);
+ assert.ok(!lines.includes('Coups francs'));
+ assert.match(html,/<span class="lead">12<\/span><div>Fautes</);
+});
+
+test('a penalty scored says so in place of the passer, and a penalty missed has its own line',async()=>{
+ const events=[{kind:'shot',period:1,second:600,team_id:1,player_id:11,player:'Lucas Hernandez',player_short:'L. Hernandez',shot_id:1,detail:'penalty'},
+  {kind:'goal',period:1,second:600,team_id:1,player_id:11,player:'Lucas Hernandez',player_short:'L. Hernandez',secondary_id:null,secondary:null,shot_id:1,detail:'penalty'},
+  {kind:'shot',period:2,second:3000,team_id:2,player_id:21,player:'Honest Ahanor',player_short:'Ahanor',shot_id:2,detail:'penalty'},
+  {kind:'save',period:2,second:3000,team_id:1,player_id:1,shot_id:2,detail:'held'},
+  {kind:'shot',period:2,second:4000,team_id:2,player_id:22,player:'Ângelo',player_short:null,shot_id:3,detail:'penalty'},
+  {kind:'off_target',period:2,second:4000,team_id:2,player_id:22,shot_id:3,detail:''}];
+ const html=await screen({...report,result:{...report.result,events}});
+ assert.match(html,/<strong title="Lucas Hernandez"><a href="#\/player\/11">L\. Hernandez<\/a><\/strong><small title="Sur penalty">pen\.<\/small>/);
+ assert.match(html,/<span class="match-mark missed" title="Penalty arrêté"><\/span><\/span><span class="highlight-names"><strong title="Honest Ahanor">/);
+ assert.match(html,/<span class="match-mark missed" title="Penalty manqué"><\/span>/);
+ // The penalty scored is told once, by its goal.
+ assert.equal((html.match(/L\. Hernandez/g)||[]).length,1);
+});
+
 test('expected goals keep one figure after the point, even round ones',async()=>{
  const html=await screen({...report,result:{...report.result,home_stats:{...stats,xg:2},away_stats:{...stats,xg:0.95}}});
  assert.match(html,/<div class="comparison"><span class="lead">2\.0<\/span><div>Buts attendus \(xG\)<[^]*?<\/div><span class="">1\.0<\/span><\/div>/);

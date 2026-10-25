@@ -10,15 +10,15 @@ Un joueur a quinze attributs. Le moteur de match ne lit jamais le niveau global 
 | Technique | Remonter le ballon, créer, frapper ; un joueur plus technique que passeur dribble davantage |
 | Vision | Créer l'occasion avant tout |
 | Vitesse | Remonter le ballon et défendre au milieu ; la vitesse moyenne de l'équipe décide des contres |
-| Finition | Frapper au but ; tirs au but |
-| Sang-froid | Frapper, jouer de la tête ; tirs au but |
+| Finition | Frapper au but ; penaltys et tirs au but |
+| Sang-froid | Frapper, jouer de la tête ; penaltys et tirs au but |
 | Jeu de tête | Reprendre un centre ou un corner |
 | Centres | Qualité du centre : une meilleure occasion pour celui qui le reprend |
 | Coups arrêtés | Tirer les corners et les coups francs directs |
 | Tacle | Défendre au milieu comme dans la surface |
 | Placement | Défendre, et pour un gardien arrêter et sortir |
 | Endurance | Moins de fatigue en match, récupération plus rapide |
-| Réflexes | Arrêter les tirs ; tirs au but |
+| Réflexes | Arrêter les tirs ; penaltys et tirs au but |
 | Sorties | Capter centres et corners |
 | Relance | Faire repartir son équipe plus haut après un tir adverse |
 
@@ -76,7 +76,7 @@ Quatre traits stables, fixés à la création du joueur, pèsent sur sa carrièr
 | Trait | Plage | Effet |
 |---|---|---|
 | Fragilité | {{etats.blessures.fragilite_min}} à {{etats.blessures.fragilite_max}} (1 à 20 sur la fiche) | Multiplie le risque de blessure en match |
-| Agressivité | {{moteur_match.cartons.agressivite_min}} à {{moteur_match.cartons.agressivite_max}} (1 à 20 sur la fiche) | Multiplie la probabilité d'être l'auteur d'une faute sanctionnée |
+| Agressivité | {{moteur_match.cartons.agressivite_min}} à {{moteur_match.cartons.agressivite_max}} (1 à 20 sur la fiche) | Multiplie la probabilité de commettre une faute, et donc d'être averti |
 | Ambition | {{ia_gestion.contrats.ego_min}} à {{ia_gestion.contrats.ego_max}} (1 à 20 sur la fiche) | Rend le joueur impatient dans un club trop petit pour lui |
 | Appât du gain | 0 à 1 (1 à 20 sur la fiche) | Gonfle le salaire demandé |
 

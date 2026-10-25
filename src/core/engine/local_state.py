@@ -16,7 +16,7 @@ class TeamState:
     bench: list[Player]
     fitness: dict[int, float]
     players: dict[int, Player]
-    stats: TeamStats = field(default_factory=lambda: TeamStats(passes=0, passes_attempted=0))
+    stats: TeamStats = field(default_factory=lambda: TeamStats(passes=0, passes_attempted=0, fouls=0, offsides=0))
     individual: dict[int, PlayerMatchStats] = field(default_factory=dict)
     substituted: int = 0
     windows: int = 0

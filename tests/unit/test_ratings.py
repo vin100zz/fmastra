@@ -34,16 +34,12 @@ def test_the_side_stream_leaves_the_match_stream_untouched(config):
 
 
 def test_crediting_actions_differently_never_changes_the_play(config):
-    other = with_ratings(config, sensibilite_qualite=0.3, part_dribbles=0.9, part_non_cadres_contres=1.0,
-                         recuperation_par_zone=[1.0, 1.0, 1.0, 1.0], attendu_par_minute=0.0)
+    other = with_ratings(config, sensibilite_qualite=0.3, recuperation_par_zone=[1.0, 1.0, 1.0, 1.0], attendu_par_minute=0.0,
+                         faute=-1.0, penalty_concede=-2.0, penalty_arrete=2.0)
     for seed in range(4):
         played, credited_otherwise = play(config, seed), play(other, seed)
         assert (played.home_goals, played.away_goals) == (credited_otherwise.home_goals, credited_otherwise.away_goals)
-        # The passes counted follow what each move is drawn to look like (a pass, a carry, a dribble), on the ratings' stream.
-        assert (replace(played.home_stats, passes=None, passes_attempted=None)
-                == replace(credited_otherwise.home_stats, passes=None, passes_attempted=None))
-        assert (replace(played.away_stats, passes=None, passes_attempted=None)
-                == replace(credited_otherwise.away_stats, passes=None, passes_attempted=None))
+        assert played.home_stats == credited_otherwise.home_stats and played.away_stats == credited_otherwise.away_stats
         assert ([(event.kind, event.second, event.shot_id) for event in played.events]
                 == [(event.kind, event.second, event.shot_id) for event in credited_otherwise.events])
 
@@ -92,22 +88,23 @@ def test_rating_adds_credits_minutes_result_and_the_clean_sheet_by_depth(config)
 
 
 def test_rating_rules_default_for_configurations_made_before_them(config):
-    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, STOPPAGE_RECALIBRATED_RULES, _recalibrated
     added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 18]
     assert {path for path, _ in added} == {("moteur_match", "notes_joueurs"), ("benchmarks", "stats_match")}
     raw = config_payload(config)
     for (domain, section), defaults in added:
         for key in defaults: del raw[domain][section][key]
     older = decode_config(raw)
-    # The model defaults, the save migration and the shipped configuration describe the same rules.
-    assert older == config
+    # The model defaults and the save migration describe the rules as they shipped then; the scale recalibrated with the
+    # stoppages brings them to the shipped configuration.
+    assert _recalibrated(older, STOPPAGE_RECALIBRATED_RULES) == config
     restored = config_payload(older)
     for (domain, section), defaults in added:
         assert {key: restored[domain][section][key] for key in defaults} == defaults
 
 
-@pytest.mark.parametrize("key,value", [("progression_par_zone", [0.0, 0.1]), ("part_dribbles", 1.0),
-                                       ("part_non_cadres_contres", 1.5), ("sensibilite_qualite", -0.1)])
+@pytest.mark.parametrize("key,value", [("progression_par_zone", [0.0, 0.1]), ("minutes_sans_encaisser", -1),
+                                       ("recuperation_par_zone", [0.07]), ("sensibilite_qualite", -0.1)])
 def test_incoherent_rating_rules_are_rejected(config, key, value):
     from core.config.consistency import ConfigError
     with pytest.raises(ConfigError):

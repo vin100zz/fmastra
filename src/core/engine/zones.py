@@ -25,14 +25,15 @@ def mirror(zone: int, lane: int, cfg: Config) -> tuple[int, int]:
 @dataclass(slots=True)
 class Layout:
     """What holds while the same players keep the same positions: their ratings in each phase and their state without
-    fitness, each cell's involvement weights with its density factor, and the cumulative weights who is involved is drawn
-    from, by attacking or defending side, zone and lane."""
+    fitness, each cell's involvement weights with its density factor, the cumulative weights who is involved is drawn
+    from, by attacking or defending side, zone and lane, and how readily the outfield players defending each place foul."""
     slots: list[LineupSlot]
     ratings: dict[str, list[float]]
     rested: list[float]
     cells: dict[bool, list[tuple[tuple[float, ...], float | None]]]
     involvement: dict[bool, list[list[list[float]]]]
     pace: float
+    aggression: list[list[float]]
     credit: dict[tuple, tuple[list[int], list[float]]] = field(default_factory=dict)
 
 
@@ -56,7 +57,20 @@ def _layout(team: TeamState, cfg: Config) -> Layout:
                 row.append(list(accumulate(weights)))
             draws[attack].append(row)
     pace = sum(slot.player.attributes.get("vitesse") for slot in slots) / len(slots) if slots else 0.0
-    return Layout(slots, ratings, rested, cells, draws, pace)
+    # The propensity of those who defend a place, weighted by their involvement there: `foul_committer` draws the one who
+    # fouls with the same weights, so an action ends in a foul as often as each of them would commit it.
+    outfield = [index for index, slot in enumerate(slots) if slot.position != Position.GOALKEEPER] or list(range(len(slots)))
+    weight = cfg.engine.cards.aggression_weight
+    aggression = []
+    for zone in range(len(involvement.zones)):
+        row = []
+        for lane in range(len(involvement.lanes)):
+            weights = [involvement.defense[slots[index].position][zone] * involvement.lateral[slots[index].position][lane] for index in outfield]
+            total = sum(weights)
+            row.append(sum(share * slots[index].player.aggression ** weight for share, index in zip(weights, outfield)) / total
+                       if total else 1.0)
+        aggression.append(row)
+    return Layout(slots, ratings, rested, cells, draws, pace, aggression)
 
 
 def refresh(team: TeamState, cfg: Config) -> None:

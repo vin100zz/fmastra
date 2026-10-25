@@ -12,7 +12,7 @@ from .analytical import lineup_strength
 from .fitness import consume, intensity, overload
 from .local_state import TeamState, MatchLog
 from .personnel import ensure_keeper, substitutions, injure
-from .possession import play_possession, next_possession
+from .possession import RESTARTS, play_possession, next_possession
 from .results import assemble
 from .zones import refresh, involved_player, mirror
 
@@ -183,18 +183,20 @@ class LiveMatch:
         self.end = log.second + self.cfg.world.match_rules.half_seconds + self.base_stoppage / 2
         self.owner = self.first_kickoff if period == 1 else 1 - self.first_kickoff
         self.zone, self.lane, self.counter = 1, len(self.cfg.involvement.lanes) // 2, False
-        # The dead ball the next possession waits for beyond the ordinary pause: a goal celebrated, a goal kick.
-        self.restart = 0.0
+        # How the next possession starts (see `possession.RESTARTS`): a kick-off is played at once.
+        self.restart = ""
         log.emit("kickoff", self.teams[self.owner])
 
     def _possession(self) -> None:
         cfg, rng, log, teams = self.cfg, self.rng, self.log, self.teams
-        rules, dead = cfg.engine.timing, cfg.engine.actions.dead_time
+        rules, dead = cfg.engine.timing, cfg.engine.stoppages.dead_time
         owner = self.owner
         attacker, defender = teams[owner], teams[1 - owner]
         start = log.second
-        # The ball is dead before it is played again: a throw-in, a free kick, a goal kick, a goal celebrated.
-        pause = rng.gammavariate(dead.gamma_shape, dead.mean / dead.gamma_shape) + self.restart
+        # A ball won in play goes on at once; a dead one waits for its throw-in, its free kick, its goal kick, a goal celebrated.
+        cause, opening = RESTARTS[self.restart]
+        mean = getattr(dead, cause) if cause else 0.0
+        pause = rng.gammavariate(dead.gamma_shape, mean / dead.gamma_shape) if mean else 0.0
         if start + pause >= self.end:
             # No possession starts once the time is up.
             log.second = self.end
@@ -206,6 +208,7 @@ class LiveMatch:
         attacker.stats.possessions += 1
         attacker.stats.lane_attacks[self.lane] += 1
         log.emit("possession", attacker, zone=self.zone, lane=self.lane, detail="counter" if self.counter else "")
+        if opening: log.emit(opening, attacker, zone=self.zone, lane=self.lane, detail="short" if opening == "free_kick" else "")
         outcome = play_possession(attacker, defender, self.zone, self.lane, self.counter, owner == 0 and not self.neutral, log, cfg,
                                   rng, self.end)
         # Possession counts the play, not the dead ball: its share is that of the time the ball was in play.
@@ -236,9 +239,11 @@ class LiveMatch:
                 team.next_substitution = log.second + cfg.states.substitutions.evaluation_interval * 60
             team.block_height = self.controllers[side].late_block(team, teams[1 - side].goals, log.second)
         self.end += sum(event.kind in ("goal", "injury", "substitution") for event in log.events[event_start:]) * rules.seconds_per_stoppage
-        self.zone, self.lane, self.counter = next_possession(outcome, defender, attacker, cfg, rng)
-        self.restart = dead.after_goal if outcome.goal else dead.after_shot if outcome.shot else 0.0
+        self.zone, self.lane, self.counter, self.restart = next_possession(outcome, defender, attacker, log, cfg, rng)
         self.owner = 1 - owner
+        # A counter stopped by a foul may have cost a side its last players.
+        if self._short_handed():
+            self._forfeit()
 
     def _run_clock(self, start: float) -> None:
         """Both sides tire from `start` to now, in steps cut at each refresh of the zone ratings: the ratings a possession

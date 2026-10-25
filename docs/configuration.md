@@ -21,7 +21,7 @@ les deux, pas résolue silencieusement par l'implémentation.
 | `config/attributs.json` | attributs, composites, notes globales, profils de génération |
 | `config/implications.json` | matrices d'implication verticale et latérale |
 | `config/formations.json` | formations et hauteur de bloc |
-| `config/moteur_match.json` | chronologie, actions d'une possession, transitions, tirs, contres, statistiques, référence Poisson |
+| `config/moteur_match.json` | chronologie, actions d'une possession, arrêts de jeu (fautes, sorties, coups de pied arrêtés, après un tir, temps mort), penalty, transitions, tirs, contres, cartons, statistiques, référence Poisson |
 | `config/etats.json` | fatigue, blessures, suspensions, forme, moral |
 | `config/ia_gestion.json` | utilité, revenus, salaires, mercato, contrats, garde-fous |
 | `config/demographie.json` | progression, déclin, estimations, cohortes et sorties |

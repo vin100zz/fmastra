@@ -25,10 +25,13 @@ concerne calendrier et scores seuls, pas le monde complet avec mercato.
 
 ## Chronologie
 
-Deux périodes séparées par une mi-temps. Avant chaque possession, le ballon est
-arrêté pendant une durée Gamma (`actions.temps_mort`), majorée après un but ou un
-tir ; un corner et un coup franc arrêtent aussi le jeu pendant la possession. La
-possession avance ensuite l'horloge de la durée de chacune de ses actions
+Deux périodes séparées par une mi-temps. Une possession gagnée en jeu commence
+aussitôt ; après un arrêt (touche, six mètres, coup franc, hors-jeu, ballon capté,
+but), le ballon reste arrêté pendant une durée Gamma de moyenne propre à l'arrêt
+(`arrets.temps_mort`, voir `possession.RESTARTS`). Un arrêt à l'intérieur de la
+possession (faute subie, touche gagnée, corner, coup franc, penalty, carton) avance
+l'horloge de la même façon, hors du temps de possession. La possession avance
+ensuite l'horloge de la durée de chacune de ses actions
 (`actions.durees_secondes`), et chaque événement porte la seconde de son action.
 `possession_seconds` ne compte que ces actions : la possession affichée est la part
 du temps de jeu effectif. La fatigue s'intègre après la possession, de son début à
@@ -179,14 +182,20 @@ Une perte près du but du possesseur donne géométriquement une récupération
 avancée à l'adversaire. Une perte près du but adverse lui donne une récupération
 basse : elle ne doit pas le téléporter directement devant le but opposé.
 
-Après symétrie et effet de bloc, un tirage décide du contre : logit de
-`probabilite_contre_par_zone` à la zone du récupérateur, plus
-`bonus_contre_attaque_engagee` si le ballon est perdu sur une tentative ou un
-corner dégagé, plus `malus_contre_jeu_long` sur un long ballon perdu, plus écart
-des vitesses moyennes × sensibilité, plus hauteur adverse × vulnérabilité. En cas
-de succès, avancer d'une zone et marquer le contre. Un corner dégagé donne le
-ballon au défenseur dans sa zone de défense, sans récupération avancée. Le contre
-prend fin à la première passe de conservation.
+Seul un ballon gagné en jeu peut lancer un contre ; une touche, un six mètres, un
+coup franc ou un hors-jeu repartent là où le jeu s'est arrêté (le six mètres par
+la relance du gardien), sans contre. Après symétrie et effet de bloc, un tirage
+décide du contre : logit de `probabilite_contre_par_zone` à la zone du
+récupérateur, plus `bonus_contre_attaque_engagee` si le ballon est perdu sur une
+tentative ou dégagé de la surface, plus `malus_contre_jeu_long` sur un long ballon
+perdu, plus `malus_contre_gardien` sur un ballon capté par le gardien (qui relance
+comme après un tir), plus écart des vitesses moyennes × sensibilité, plus hauteur
+adverse × vulnérabilité. En cas de succès depuis le milieu bas ou le milieu haut,
+l'équipe qui a perdu le ballon l'arrête d'une faute tactique avec la probabilité
+`arrets.faute.faute_tactique` × l'agressivité de ses joueurs à cet endroit : coup
+franc court, sans contre. Sinon, avancer d'une zone et marquer le contre. Un ballon
+dégagé donne le ballon au défenseur dans sa zone, sans récupération avancée. Le
+contre prend fin à la première passe de conservation.
 
 Le contre applique le malus défensif temporaire au défenseur en repli, dans le
 repère converti ; dans le couloir concerné, utiliser le malus spécifique à la
@@ -235,16 +244,53 @@ Borner les entrées du logit aux limites configurées. Un but est un tir cadré,
 un arrêt est un tir cadré sans but ; les catégories ne créent pas deux tirs.
 Les qualités sont comparées individuellement, jamais diluées dans le onze.
 
-Les corners et coups francs sont des branches de tentative manquée, résolues avec des
-probabilités exclusives (leur somme ne peut dépasser 1). Un corner n'aboutit à une
-tête que dans `part_corners_frappe` des cas ; sinon il est dégagé (`turnover` de
-détail `clearance`). Le tireur de corner et de
-coup franc est le meilleur `cpa` du terrain, gardien exclu. Un corner choisit un
-receveur parmi les autres joueurs de champ pondérés par la tête ; son xG dépend du
-`cpa` du tireur. Un coup franc direct est frappé par le spécialiste avec son propre
-composite de tir, majoré des points de `cpa` au-delà de la référence. Le gardien est nommé.
-Les penalties ne sont pas une branche séparée du moteur simplifié v1 ; une
-extension devra ajouter attribution, tirage et cibles dédiés ensemble.
+## Arrêts de jeu
+
+Une action ratée (`_Play.failed`) ou une passe de conservation manquée finit, sur un
+seul tirage du flux du match, en faute, ballon sorti, hors-jeu ou ballon perdu en
+jeu (`arrets.faute`, `arrets.sortie`, `arrets.hors_jeu`). La réussite de l'action
+était déjà décidée par les zones.
+
+- **Faute** : `part_par_action` × l'agressivité moyenne des défenseurs impliqués
+  (cache `Layout.aggression`, mêmes poids que `foul_committer`), × exp(`sensibilite_ecart`
+  × l'avantage de l'attaque là où l'action échoue, le même que pour la conservation, nul
+  entre équipes égales), × `facteur_surface` si l'action de la zone de vérité a lieu
+  dans la surface (`part_surface`). Une faute ne tombant que sur une action ratée, un
+  favori qui rate moins en subirait sinon moins que son adversaire. Le fautif
+  est tiré par `foul_committer`, le joueur fauché est le porteur. En défense et au
+  milieu bas, coup franc court : la possession continue sur place, ouverture à zéro,
+  sans contre. Au milieu haut et dans la zone de vérité, coup franc frappé (tir
+  `free_kick`) ou centré (`crossed_free_kick`) selon `arrets.coup_franc` ; dans la
+  surface, penalty. Une faute de l'attaquant dans un duel aérien donne un coup franc
+  court à la défense.
+- **Sortie** : touche pour la défense (passe sortie, restart `throw_in`), pour
+  l'attaque (tacle qui sort le ballon : la possession continue), corner, six mètres.
+  Le gardien capte une part des centres, plus s'il sort bien (`sensibilite_sorties`).
+- **Hors-jeu** : une part des passes en profondeur ratées et des longs ballons
+  perdus dans la zone de vérité ; coup franc court pour la défense.
+
+Un **corner** vient d'un tir contré, d'un arrêt détourné, d'une action ratée de la
+zone de vérité ou d'un coup franc centré dégagé ; il se joue en tête, dégagement,
+prise du gardien ou corner à deux (`arrets.corner`), la possession continuant alors
+au coin de la surface. Le tireur de corner et de coup franc est le meilleur `cpa`
+du terrain, gardien exclu ; la tête est reprise par un autre joueur de champ
+pondéré par la tête ; son xG dépend du `cpa` du tireur, pour un corner comme pour un
+coup franc centré. Un coup franc direct est frappé par le spécialiste avec son
+propre composite de tir, majoré des points de `cpa` au-delà de la référence.
+
+Le **penalty** est tiré par le meilleur tireur de séance présent (moyenne finition
+et sang-froid) et réussit selon la règle des tirs au but, en configuration
+(`penalty`, `shots.penalty_probability`) et partagée avec `cup_matches.decide_winner` ;
+son xG est la réussite de base. Raté, il est arrêté, sauf `part_rates_hors_cadre`.
+
+**Après un tir** (`arrets.apres_tir`), le même tirage uniforme décide d'un tir
+contré (`part_contres`, `part_contres_de_loin` ; jamais une tête ni un penalty)
+puis du poteau (`part_poteaux` des autres tirs à côté). Un arrêt est capté,
+détourné en corner ou repoussé ; un tir contré va en corner ou laisse un second
+ballon à l'attaque (la possession continue) ou à la défense ; un ballon repoussé
+ou revenu du poteau donne une reprise (`rebound`) ou un dégagement. Un but marqué
+dans une possession qui a eu un corner, un coup franc frappé ou centré ou un penalty
+compte comme but sur coup de pied arrêté.
 
 ## Événements et statistiques
 
@@ -256,15 +302,22 @@ Une série de passes de conservation est un seul événement `circulation`, à l
 et au couloir où elle finit, de détail le nombre de passes ; personne n'y est nommé.
 `progress` porte en détail `pass`, `carry`, `dribble` ou `long` (un ancien
 `progress` sans détail se lit comme une passe), `turnover` `interception`, `tackle`,
-`aerial` ou `clearance`, `delivery` le type d'occasion qu'un passeur a servie. Le
+`aerial`, `clearance` ou `claim` (le gardien capte), `delivery` le type d'occasion
+qu'un passeur a servie. `foul` nomme le fautif et le joueur fauché, dans le repère
+du fautif (`tactical` pour une faute qui arrête un contre) ; `free_kick` porte
+`short`, `crossed` ou `direct` ; `corner` sa cause (`cross`, `clearance`, `save`,
+`blocked`) ; `save` `held`, `corner` ou `parried` ; `off_target` `blocked`, `post` ou
+rien. `penalty`, `throw_in` et `offside` marquent les arrêts correspondants. Le
 monde ne stocke pas les changements de possession, séries de passes, progressions,
-services, pertes de balle, corners ni coups francs (`TRANSIENT_EVENT_KINDS`), sauf
-pour les possessions qui finissent sur un tir (`REPLAY_EVENT_KINDS`) et la perte de
-balle qui précède l'une d'elles, que le résumé montre.
+services, pertes de balle, corners, coups francs, fautes, penaltys, touches ni
+hors-jeu (`TRANSIENT_EVENT_KINDS`), sauf pour les possessions qui finissent sur un
+tir (`REPLAY_EVENT_KINDS`) et la perte de balle ou la faute qui précède l'une
+d'elles, que le résumé montre.
 
 `TeamStats.passes` et `passes_attempted` comptent passes de conservation,
-progressions de type passe et longs ballons ; ils valent `None` pour un match joué
-avant qu'ils existent.
+progressions de type passe et longs ballons ; `fouls` et `offsides` les fautes
+commises et les hors-jeu ; `free_kicks` les coups francs frappés ou centrés. Les
+compteurs ajoutés valent `None` pour un match joué avant qu'ils existent.
 
 Pour un but, la passe décisive est attribuée au dernier passeur nommé de la même
 possession, différent du buteur ; pas d'assist sur un coup franc direct ou une
@@ -277,11 +330,12 @@ sont déduits des tentatives et issues reliées, sans compter un événement de 
 comme une seconde tentative. Les compositions initiales et le banc sont stockés
 avant mutation de l'état local.
 
-Cartons : la faute est commise par un joueur de champ tiré selon son implication
-défensive multipliée par `agressivité ** poids_agressivite_tacle` (gardien exclu tant
-qu'il reste un joueur de champ) ; la probabilité de carton ne dépend que de la zone et
-des avertissements déjà reçus. Un tacleur adroit n'est donc pas plus sanctionné.
-Le fautif n'est pas le joueur nommé sur la perte de balle, tiré à part (ci-dessous).
+Cartons : un carton ne tombe que sur une faute, à son auteur, tiré selon son
+implication défensive multipliée par `agressivité ** poids_agressivite_tacle`
+(gardien exclu tant qu'il reste un joueur de champ). Ses chances dépendent de la
+faute (`cartons.par_faute`, `faute_tactique`, `penalty`) et des avertissements déjà
+reçus. Le fautif n'est pas le joueur nommé sur une perte de balle, tiré à part
+(ci-dessous).
 
 ## Notes des joueurs
 
@@ -299,18 +353,23 @@ le ballon à une équipe fatiguée, et un remplaçant frais ne doit pas être go
 chaque changement sur le terrain, comme eux.
 
 - Progression : le porteur déjà nommé par le moteur reçoit `progression_par_zone`
-  de la zone atteinte. Selon sa technique face à sa passe (`part_dribbles`,
-  `sensibilite_dribble`), il élimine un défenseur, nommé en second sur
-  l'événement `progress` (`detail` = `dribble`), qui reçoit `defenseur_elimine`.
+  de la zone atteinte. Quand il dribble (l'étiquette se tire sur le flux du match,
+  car une conduite attire plus de fautes : `actions.part_dribbles`,
+  `sensibilite_dribble`), il élimine un défenseur, nommé en second sur l'événement
+  `progress` (`detail` = `dribble`), qui reçoit `defenseur_elimine`.
 - Perte de balle : un récupérateur et un perdant sont nommés sur `turnover`,
   crédités de `recuperation_par_zone` et `perte_par_zone`, chacun dans son
   propre repère : récupérer devant son but vaut plus, perdre devant le sien coûte plus.
 - Occasion en jeu : `passe_cle` au passeur ou centreur, `participation_occasion`
   aux autres porteurs de l'action.
-- Tir : `tir_cadre_sans_but` ou `tir_non_cadre` au tireur. Une frappe non cadrée
-  est contrée selon `part_non_cadres_contres` : `off_target` nomme le défenseur
-  (`detail` = `blocked`), crédité de `contre`. Un but coûte `but_encaisse_gardien`
-  au gardien et `defenseur_battu` à un défenseur de champ.
+- Tir : `tir_cadre_sans_but` ou `tir_non_cadre` au tireur. Une frappe contrée
+  (décidée par le moteur, voir « Arrêts de jeu ») nomme le défenseur sur
+  `off_target` (`detail` = `blocked`), crédité de `contre`. Un but coûte
+  `but_encaisse_gardien` au gardien et `defenseur_battu` à un défenseur de champ,
+  sauf sur penalty.
+- Faute : `faute` au fautif ; sur un penalty, `penalty_concede` au fautif et
+  `penalty_obtenu` au joueur fauché ; `penalty_manque` au tireur qui le rate,
+  `penalty_arrete` au gardien qui l'arrête ; `hors_jeu` au joueur hors-jeu.
 - Buts, passes décisives, arrêts et cartons gardent leur barème.
 - Résultat : `victoire` en plus ou en moins, au prorata des minutes. Sans but
   encaissé, `sans_encaisser` au joueur d'au moins `minutes_sans_encaisser`

@@ -464,6 +464,9 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 .marks{display:inline-flex;align-items:center;gap:3px;flex:none}
 .mark{display:inline-block;flex:none;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
 .mark.goal{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+/* A penalty missed: the ball, barred. */
+.mark.missed{position:relative;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .mark.yellow,.mark.red{width:8px;height:11px;border-radius:1px}
 .mark.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
 .mark.red{background:var(--bad)}

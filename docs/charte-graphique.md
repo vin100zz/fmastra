@@ -649,20 +649,24 @@ en chiffres au milieu, la composition de l'autre à droite (480).
 
 ### Temps forts d'un match
 
-Les buts, les blessures et les cartons rouges, dans l'ordre du match
-(`.highlight-row`) : la minute au milieu, en chiffre clé (16, `--display`,
-`--accent-text`), chaque fait au bord de son camp, celui qui reçoit à gauche.
+Les buts, les blessures, les cartons rouges et les penaltys manqués, dans
+l'ordre du match (`.highlight-row`) : la minute au milieu, en chiffre clé (16,
+`--display`, `--accent-text`), chaque fait au bord de son camp, celui qui reçoit à
+gauche.
 
 - **Une ligne de 26 par fait**, quels que soient les noms : aucune ne passe sur
   deux lignes.
 - **Marques** (`.marks`), au bord : le ballon, la croix de la blessure, le
-  carton rouge ; un carton jaune puis le rouge pour un deuxième avertissement.
-  Aucun libellé (« But », « Blessure ») : la marque le dit, son infobulle aussi.
+  carton rouge ; un carton jaune puis le rouge pour un deuxième avertissement ;
+  le ballon barré de rouge (`.mark.missed`) pour un penalty manqué. Aucun libellé
+  (« But », « Blessure ») : la marque le dit, son infobulle aussi.
 - **Joueur** : son nom court (voir « Joueurs »), en 600 à l'encre forte.
 - **Passeur** : après le buteur, en 11, atténué, sans mot ni signe. Quand les
-  deux ne tiennent pas, il est coupé avant le buteur.
+  deux ne tiennent pas, il est coupé avant le buteur. Un but sur penalty porte
+  « pen. » à sa place, de la même façon.
 - **Infobulles** : le nom entier du joueur ; « Passe de » et le nom entier sur le
-  passeur.
+  passeur ; « Sur penalty » sur « pen. » ; « Penalty arrêté » ou « Penalty manqué »
+  sur le ballon barré.
 
 ### Match dans une liste
 
@@ -859,7 +863,7 @@ l'essentiel, et son en-tête entier montre le reste (`.card-head.toggle`).
 
 | Carte | Montré | Replié |
 |---|---|---|
-| Le match en chiffres (compte rendu, direct) | Buts attendus, tirs, tirs cadrés, possession | Corners, coups francs, cartons jaunes, cartons rouges |
+| Le match en chiffres (compte rendu, direct) | Buts attendus, tirs, tirs cadrés, possession | Passes et précision des passes, corners, fautes et hors-jeu (pour un match qui les compte ; un match plus ancien montre ses coups francs), cartons jaunes, cartons rouges |
 
 ## Terrain et maillot
 

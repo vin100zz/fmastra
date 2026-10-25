@@ -29,15 +29,17 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
             measurements.append(Measurement(formation, score / total, bounds.min_balance_score, bounds.max_balance_score, total))
         return measurements
     home, away = synthetic_lineup(cfg, 1, delivery=AVERAGE_DELIVERY), synthetic_lineup(cfg, 2, delivery=AVERAGE_DELIVERY)
-    totals = {key: 0.0 for key in ("possessions", "shots", "xg", "goals", "yellows", "reds", "set_goals", "home_advantage")}
+    totals = {key: 0.0 for key in ("possessions", "shots", "xg", "goals", "yellows", "reds", "fouls", "penalties", "set_goals",
+                                   "home_advantage")}
     ratings: dict[str, list[float]] = {}
     started = perf_counter()
     for index in range(iterations):
         result = engine.simulate(home, away, cfg, stream(seed, "symmetric", index))
         for stats in (result.home_stats, result.away_stats):
-            for key in ("possessions", "shots", "xg", "yellows", "reds"):
+            for key in ("possessions", "shots", "xg", "yellows", "reds", "fouls"):
                 totals[key] += getattr(stats, key)
             totals["set_goals"] += stats.set_piece_goals
+        totals["penalties"] += sum(event.kind == "shot" and event.detail == "penalty" for event in result.events)
         totals["goals"] += result.home_goals + result.away_goals
         totals["home_advantage"] += result.home_goals - result.away_goals
         if suite != "performance":
@@ -50,7 +52,8 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
     target = cfg.benchmarks.stats_match
     measurements = []
     for key, reference in (("possessions", target.possessions_per_team), ("shots", target.shots_per_team),
-                           ("xg", target.xg_per_team), ("yellows", target.yellows_per_team), ("reds", target.reds_per_team)):
+                           ("xg", target.xg_per_team), ("yellows", target.yellows_per_team), ("reds", target.reds_per_team),
+                           ("fouls", target.fouls_per_team), ("penalties", target.penalties_per_team)):
         measurements.append(Measurement(key, totals[key] / (2 * iterations), reference.min, reference.max, iterations))
     for key, reference, divisor in (("goals", target.goals_per_team, 2 * iterations),
                                     ("home_advantage", target.home_goal_advantage, iterations)):

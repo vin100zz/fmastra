@@ -66,11 +66,13 @@ class LiveMatchRecord:
     floor: int = 0
 
 
-# The engine logs these for its own bookkeeping. TeamStats already counts corners and
-# free kicks, and no view lists them, so a stored result keeps every other kind.
-TRANSIENT_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "turnover", "corner", "free_kick"})
+# The engine logs these for its own bookkeeping. TeamStats already counts corners, free kicks,
+# fouls and offsides, and no view lists them, so a stored result keeps every other kind.
+TRANSIENT_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "turnover", "corner", "free_kick",
+                                   "foul", "penalty", "throw_in", "offside"})
 # The replay draws the possessions that led to a shot, so their build-up survives storage.
-REPLAY_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "corner", "free_kick"})
+REPLAY_EVENT_KINDS = frozenset({"possession", "circulation", "progress", "delivery", "corner", "free_kick", "foul", "penalty",
+                                "throw_in"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,7 +103,11 @@ class TeamStats:
     passes: int | None = None
     passes_attempted: int | None = None
     corners: int = 0
+    # Free kicks struck at goal or played into the box.
     free_kicks: int = 0
+    # Fouls committed and offsides; None for a match played before they were counted.
+    fouls: int | None = None
+    offsides: int | None = None
     yellows: int = 0
     reds: int = 0
     set_piece_goals: int = 0
@@ -162,8 +168,8 @@ class Match:
 
 def stored_events(events: list[MatchEvent]) -> list[MatchEvent]:
     """The events a saved result keeps: every listed kind, plus the build-up of each chance and the loss of the ball
-    that gave the chance's side the ball."""
+    that gave the chance's side the ball, or the foul that stopped its counter."""
     chances = {event.possession_id for event in events if event.kind == "shot"}
     return [event for event in events if event.kind not in TRANSIENT_EVENT_KINDS
             or (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances)
-            or (event.kind == "turnover" and event.possession_id + 1 in chances)]
+            or (event.kind in ("turnover", "foul") and event.possession_id + 1 in chances)]

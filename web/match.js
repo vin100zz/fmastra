@@ -74,6 +74,9 @@ export function statsCard(match){
  const result=match.result,home=result.home_stats,away=result.away_stats,totalPoss=home.possession_seconds+away.possession_seconds;
  const [homeColor,awayColor]=chartColours(match.home,match.away);
  const stats=[['Buts attendus (xG)',home.xg,away.xg],['Tirs',home.shots,away.shots],['Tirs cadrés',home.on_target,away.on_target],['Possession',100*home.possession_seconds/Math.max(1,totalPoss),100*away.possession_seconds/Math.max(1,totalPoss)],['Corners',home.corners,away.corners],['Coups francs',home.free_kicks,away.free_kicks],['Cartons jaunes',home.yellows,away.yellows],['Cartons rouges',home.reds,away.reds]];
+ // Fouls and offsides are counted since the stoppages have a cause; an older match shows its free kicks instead.
+ if(home.fouls!=null&&away.fouls!=null)stats.splice(stats.findIndex(([label])=>label==='Coups francs'),1,
+  ['Fautes',home.fouls,away.fouls],['Hors-jeu',home.offsides,away.offsides]);
  // Passes are counted since the possessions are built pass by pass: an older match has none.
  if(home.passes!=null&&away.passes!=null)stats.splice(4,0,['Passes',home.passes,away.passes],
   ['Précision des passes',100*home.passes/Math.max(1,home.passes_attempted),100*away.passes/Math.max(1,away.passes_attempted)]);
@@ -86,20 +89,24 @@ export function statsCard(match){
  return foldCard('match-stats','Le match en chiffres',`<div class="comparisons">${rows}</div>`,'match-stats');
 }
 
-// Goals, injuries and red cards in the order they came, the home side's on the left and the away side's on the right, one
-// line each whatever the names. Its marks say what happened; then the player by his short name (his family name, with as
-// much of his given name as tells him from a team-mate: `player_short` of the API) and, after a goal's scorer, the passer,
-// smaller. Their whole names are in the tooltips. `link` names a player: a link to his page, or plain text where leaving the
-// screen is not allowed (the live match).
+// Goals, injuries, red cards and penalties missed in the order they came, the home side's on the left and the away side's
+// on the right, one line each whatever the names. Its marks say what happened; then the player by his short name (his
+// family name, with as much of his given name as tells him from a team-mate: `player_short` of the API) and, after a goal's
+// scorer, the passer, smaller, or "pen." for a penalty. Their whole names are in the tooltips. `link` names a player: a
+// link to his page, or plain text where leaving the screen is not allowed (the live match).
 export function highlightsCard(match,link=playerLink){
- const events=match.result.events.filter(event=>['goal','injury','red'].includes(event.kind)&&event.period!==3);
+ const all=match.result.events,scored=new Set(all.filter(event=>event.kind==='goal').map(event=>event.shot_id));
+ const saved=new Set(all.filter(event=>event.kind==='save').map(event=>event.shot_id));
+ const events=all.filter(event=>(['goal','injury','red'].includes(event.kind)||(event.kind==='shot'&&event.detail==='penalty'&&!scored.has(event.shot_id)))&&event.period!==3);
  const named=(tag,id,name,short,title)=>{const shown=shortName(name,short);return `<${tag}${title||shown!==name?` title="${e(title||name)}"`:''}>${link(id,shown)}</${tag}>`;};
  const content=event=>{
   // A second yellow card shows as a yellow card followed by the red one.
   const marks=event.kind==='goal'?icon('goal','','But'):event.kind==='injury'?icon('injury','','Blessure')
+   :event.kind==='shot'?icon('missed','',saved.has(event.shot_id)?'Penalty arrêté':'Penalty manqué')
    :event.detail==='second_yellow'?icon('booking yellow','','Carton jaune')+icon('booking red','','Deuxième carton jaune'):icon('booking red','','Carton rouge');
   const player=event.player?named('strong',event.player_id,event.player,event.player_short):'<strong>—</strong>';
-  const passer=event.kind==='goal'&&event.secondary?named('small',event.secondary_id,event.secondary,event.secondary_short,`Passe de ${event.secondary}`):'';
+  const passer=event.kind!=='goal'?'':event.detail==='penalty'?'<small title="Sur penalty">pen.</small>'
+   :event.secondary?named('small',event.secondary_id,event.secondary,event.secondary_short,`Passe de ${event.secondary}`):'';
   return `<span class="marks">${marks}</span><span class="highlight-names">${player}${passer}</span>`;
  };
  const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');

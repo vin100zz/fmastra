@@ -386,7 +386,7 @@ test('the four traits of his character in alphabetical order, aggression and fra
  const html=rail((await render({...detail,aggression:1,ambition:0,greed:.21,fragility:.5})).html);
  const section=html.match(/<h3>Caractère<\/h3><div class="rail-section">(.*?)<\/div><h3>Contrat/)[1];
  assert.deepEqual([...section.matchAll(/<div class="fact"><span>([^<]+)<\/span>/g)].map(match=>match[1]),['Agressivité','Ambition','Appât du gain','Fragilité']);
- assert.match(section,/<span>Agressivité<\/span><strong><span class="rating graded" style="--hue:0" title="Agressivité sur 20 : plus elle est haute, plus il est sanctionné">20</);
+ assert.match(section,/<span>Agressivité<\/span><strong><span class="rating graded" style="--hue:0" title="Agressivité sur 20 : plus elle est haute, plus il commet de fautes et prend de cartons">20</);
  assert.match(section,/<span>Ambition<\/span><strong><span class="rating" title="Ambition sur 20 : plus elle est haute, plus un club trop petit pour lui le lasse">1</);
 });
 

@@ -51,7 +51,8 @@ def create_app(root: Path | None = None, saves: Path | None = None, resume: bool
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; frame-ancestors 'none'"
-        response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/") else "no-cache"
+        # A route that knows how long its answer holds, a kit's picture, says so itself.
+        response.headers.setdefault("Cache-Control", "no-store" if request.url.path.startswith("/api/") else "no-cache")
         return response
 
     @app.exception_handler(CommandError)
