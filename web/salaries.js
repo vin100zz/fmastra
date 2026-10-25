@@ -10,15 +10,31 @@ export function amount(value,digits=2){
  }
 }
 
-export function roundSalary(value){
+// A wage has two significant figures; a margin under a cap is rounded down (`Math.floor`), so that a wage shown under it fits.
+export function roundSalary(value,round=Math.round){
  if(!value)return 0;
  const step=10**Math.max(0,Math.floor(Math.log10(Math.abs(value)))-1);
- return Math.round(value/step)*step;
+ return round(value/step)*step;
 }
 
-export const monthlyAmount=weekly=>roundSalary((weekly??0)*weeksPerYear/12);
+export const monthlyAmount=(weekly,round)=>roundSalary((weekly??0)*weeksPerYear/12,round);
 // A wage is always shown per month: no screen says so again.
 export const monthlySalary=weekly=>amount(monthlyAmount(weekly));
+// What is left under a wage cap, per month and rounded down.
+export const monthlyMargin=weekly=>amount(monthlyAmount(weekly,Math.floor));
+
+// A transfer amount (a value, a fee, an asking price, a budget) has two figures, and halves of the second from a first
+// figure of 5 (1.1 M€, 4.9 M€, 5.5 M€, 9.5 M€, 10 M€): a step stays between 2 and 10 % of it (docs/charte-graphique.md),
+// as the server rounds it (`core.world.market.fee_step`).
+export const feeStep=value=>{
+ const digits=String(Math.trunc(Math.abs(value))),step=10**Math.max(0,digits.length-2);
+ return digits.length>1&&digits[0]>='5'?step*5:step;
+};
+export function roundFee(value,round=Math.round){
+ if(!value)return 0;
+ const step=feeStep(value);
+ return round(value/step)*step;
+}
 export const weeklyFromMonthly=monthly=>Math.round(monthly*12/weeksPerYear);
 // What a weekly wage costs over a season, to the euro: what a budget is measured against.
 export const yearlyAmount=weekly=>(weekly??0)*weeksPerYear;

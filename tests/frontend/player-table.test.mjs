@@ -216,9 +216,9 @@ test('appearances show the substitute entries in brackets after the starts',()=>
 });
 
 test('the player list shows the lowest fee a club accepts, sortable, or that it will not sell',()=>{
- const html=playerTable({items:[{...player,asking_price:25100000,transferable:true},{...player,id:2,asking_price:null,transferable:false}],total:2,page_size:30},true,'asking_price','desc',{asking:true});
+ const html=playerTable({items:[{...player,asking_price:26000000,transferable:true},{...player,id:2,asking_price:null,transferable:false}],total:2,page_size:30},true,'asking_price','desc',{asking:true});
  assert.match(html,/data-sort="asking_price"/);assert.match(html,/data-order="desc" data-sort="asking_price">PRIX MIN\.</);
- assert.match(html,/25\.1\sM€/);
+ assert.match(html,/26\sM€/);
  assert.match(html,/<span class="muted">Intransférable<\/span>/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
 });

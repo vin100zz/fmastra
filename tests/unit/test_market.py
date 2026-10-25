@@ -1441,3 +1441,17 @@ def test_an_older_save_plans_in_rounds_and_dates_its_free_agents(config, tmp_pat
     restored = SaveStore(tmp_path).load("market")
     assert restored.config == config and restored.config.management.market.daily_proposal_probability == 0
     assert restored.players[free.id].free_since == released
+
+
+def test_transfer_amounts_stand_on_steps_that_widen_with_the_amount():
+    from core.world.market import quoted_minimum, quoted_offer
+    # Two figures, and halves of the second from a first figure of 5: a step stays between 2 and 10 % of the amount.
+    for amount, up, down in [(4_210, 4_300, 4_200), (31_400, 32_000, 31_000), (99_001, 100_000, 95_000),
+                             (110_500, 120_000, 110_000), (560_000, 600_000, 550_000), (1_250_000, 1_300_000, 1_200_000),
+                             (4_950_001, 5_000_000, 4_900_000), (5_010_000, 5_500_000, 5_000_000), (9_700_000, 10_000_000, 9_500_000),
+                             (14_900_000, 15_000_000, 14_000_000), (62_000_000, 65_000_000, 60_000_000),
+                             (135_000_000, 140_000_000, 130_000_000), (620_000_000, 650_000_000, 600_000_000)]:
+        assert (quoted_minimum(amount), quoted_offer(amount)) == (up, down)
+    # An amount on its step stays where it is, either way.
+    for amount in (0, 7_000, 95_000, 4_900_000, 5_500_000, 10_000_000, 49_000_000, 55_000_000, 140_000_000):
+        assert quoted_minimum(amount) == quoted_offer(amount) == amount

@@ -9,6 +9,7 @@ from core.domain.date import Date
 from core.domain.offers import TransferOffer
 from core.world.application import apply
 from core.world.events import PlayerReleased, PlayerSigned
+from core.world.market import quoted_offer
 from core.world.sales import SaleRefused, answer, awaiting_offers, counter, offer_obstacle, offer_to_clubs, set_listing, set_untouchable
 from test_market import add_star, close_auction, extra_buyer, mini_world, recruitment_world, renewal_setup
 
@@ -68,16 +69,20 @@ def test_offers_for_a_listed_player_come_at_his_price_and_await_the_answer(confi
 def test_a_buyer_pays_no_more_than_its_own_price_limit_for_a_listed_player(config):
     world, player, buyer = wanted_world(config)
     limit = next(bid.limit for bid in propose_transfers(world, Random(1)) if bid.target_id == buyer.id and bid.player_id == player.id)
+    from core.world.market import open_offers, quoted_minimum, quoted_offer, reach
+    # A listing price stands on the steps amounts are shown on: the last one under the limit, the first one above.
+    price = quoted_offer(limit)
     set_listing(world, player, limit + 1)
+    assert world.transfer_list[player.id] == quoted_minimum(limit + 1) > limit
     assert not bids_for(world, buyer, {player.id})
-    set_listing(world, player, limit)
-    assert bids_for(world, buyer, {player.id}) == [(player.id, limit)]
+    set_listing(world, player, price)
+    assert bids_for(world, buyer, {player.id}) == [(player.id, price)]
     # Listed, he is offered at the fee asked and no more: the buyer does not raise above it.
-    from core.world.market import open_offers, reach
-    set_listing(world, player, limit - 1000)
+    lower = quoted_offer(price - 1)
+    set_listing(world, player, lower)
     open_offers(world, True)
     offer = next(offer for offer in world.offers.values() if offer.player_id == player.id)
-    assert offer.fee == offer.limit == reach(world, offer) == limit - 1000
+    assert offer.fee == offer.limit == reach(world, offer) == lower
 
 
 def received(world, player):
@@ -129,8 +134,8 @@ def test_a_buyer_turned_down_comes_back_higher_until_its_limit_then_gives_up(con
         offer = world.offers[offer.key]
         assert offer.awaiting_review and offer.countered and offer.ceiling >= offer.fee
         fees.append(offer.fee)
-    # Its raises split what separated it from its limit: the last one is the most it pays.
-    assert fees[0] < fees[1] < fees[2] == offer.limit
+    # Its raises split what separated it from its limit: the last one is the most it pays, cut down to its step.
+    assert fees[0] < fees[1] < fees[2] == quoted_offer(offer.limit)
     assert lines_of(world, offer.key) == [(fees[0], "refused", ""), (fees[1], "refused", "raised"), (fees[2], "pending", "raised")]
     answer(world, offer, False)
     assert offer.key not in world.offers and world.turned_away == {player.id: [buyer.id]}
@@ -158,7 +163,7 @@ def test_an_impatient_buyer_raises_once_straight_to_its_limit(config):
     world.date = world.offers[offer.key].due
     settle_offers(world, True)
     offer = world.offers[offer.key]
-    assert offer.fee == offer.limit
+    assert offer.fee == quoted_offer(offer.limit)
     answer(world, offer, False)
     assert not world.offers and world.turned_away == {player.id: [buyer.id]}
 
@@ -174,13 +179,14 @@ def test_the_club_names_its_price_and_sells_within_what_the_buyer_can_pay(config
     world.date = world.offers[offer.key].due
     settle_offers(world, True)
     offer = world.offers[offer.key]
-    assert offer.fee < offer.limit
+    top = quoted_offer(offer.limit)
+    assert offer.fee < top
     # Within it, the sale is made at the price named.
     before = world.clubs[2].balance
-    assert counter(world, offer, offer.limit)
-    assert player.club_id == buyer.id and world.transfers[-1].fee == offer.limit
-    assert world.clubs[2].balance == before + offer.limit and not world.offers
-    assert lines_of(world, offer.key)[-1] == (offer.limit, "accepted", "raised")
+    assert counter(world, offer, top)
+    assert player.club_id == buyer.id and world.transfers[-1].fee == top
+    assert world.clubs[2].balance == before + top and not world.offers
+    assert lines_of(world, offer.key)[-1] == (top, "accepted", "raised")
 
 
 def test_rival_offers_for_a_player_of_the_club_raise_each_other(config):

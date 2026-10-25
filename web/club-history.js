@@ -1,4 +1,4 @@
-import {escape as e,date,playerLink,clubLink,empty,money,position,initials,safeColor,contrastText} from './ui.js';
+import {escape as e,date,playerLink,clubLink,empty,money,price,position,initials,safeColor,contrastText} from './ui.js';
 
 const signedMoney=value=>value>0?`+${money(value)}`:value<0?`−${money(-value)}`:money(0);
 const shortDay=value=>new Intl.DateTimeFormat('fr-FR',{day:'2-digit',month:'2-digit'}).format(new Date(`${value}T12:00:00`));
@@ -17,7 +17,7 @@ function movementRow(row,incoming){
  const [label]=KINDS[row.kind]||['Mouvement'];
  const other=incoming?row.source:row.target;
  const club=row.kind==='academy'?'<span class="muted">Centre de formation</span>':row.kind==='retirement'?'<span class="muted">—</span>':other?clubLink(other):'<span class="muted">Libre</span>';
- const fee=row.kind==='transfer'?(row.fee?money(row.fee):'Libre'):'—';
+ const fee=row.kind==='transfer'?(row.fee?price(row.fee):'Libre'):'—';
  return `<div class="movement-row"><span class="movement-date">${shortDay(row.date)}</span><span class="movement-kind ${row.kind}">${label}</span>${row.position?position(row.position):'<span class="position">—</span>'}`
   +`<span class="movement-player">${playerLink(row.player_id,row.player)}</span><span class="movement-age">${row.age==null?'<span title="Âge non archivé">—</span>':`${row.age} ans`}</span><span class="movement-club">${club}</span><b class="movement-fee">${fee}</b></div>`;
 }
@@ -37,7 +37,7 @@ function movementSide(title,rows,total,incoming,param,picked){
 function recordTile(title,row,incoming){
  if(!row)return '';
  const other=incoming?row.source:row.target;
- return `<div class="card movement-record">${miniCrest(other)}<div><span>${title}</span><p>${playerLink(row.player_id,row.player)} <small>${incoming?'←':'→'} ${e(other?.name||'Libre')}</small></p></div><strong>${money(row.fee)}</strong></div>`;
+ return `<div class="card movement-record">${miniCrest(other)}<div><span>${title}</span><p>${playerLink(row.player_id,row.player)} <small>${incoming?'←':'→'} ${e(other?.name||'Libre')}</small></p></div><strong>${price(row.fee)}</strong></div>`;
 }
 
 // The Transferts tab: the season's spending and takings, its biggest sale and signing, then its arrivals and its departures,

@@ -103,3 +103,14 @@ La proposition sert à savoir tout de suite si un prix trouve preneur ; la liste
 Que le joueur soit listé ou proposé, un acheteur ne paie jamais plus que son [prix maximum](#/aide/mercato/le-prix-maximum-d-un-acheteur) : de {{ia_gestion.mercato.multiplicateur_prix_max_acheteur}} fois la valeur qu'il voit dans le joueur s'il en a à peine besoin, à {{n(ia_gestion.mercato.multiplicateur_prix_max_acheteur + ia_gestion.mercato.offres.prime_besoin, 2)}} fois s'il en a le plus besoin, un peu plus ou un peu moins selon le club.
 
 Au-delà, ce club ne suit pas. En dessous, le prix n'est jamais le seul critère : il faut encore que le club ait un besoin au poste, la marge salariale pour ce que le joueur demande, et que le joueur accepte d'y aller.
+
+## Des montants arrondis
+
+Valeurs, prix, offres et budgets de transferts s'écrivent avec deux chiffres, et par demi-unités dès que le premier chiffre vaut 5 ou plus : 4.8, 4.9, 5, 5.5, 6… 9.5, 10, 11 M€ ; de même 340 k€, 550 k€, 65 M€, 140 M€. Un palier pèse ainsi entre 2 et 10 % du montant.
+
+- **Un prix demandé est arrondi au-dessus** : c'est le prix exact du club, et l'offrir suffit.
+- **Une offre d'un club est arrondie en dessous**, comme ses relances : elle ne dépasse jamais ce qu'il voulait payer.
+- **Votre budget est arrondi en dessous** : un prix affiché qui ne le dépasse pas est un prix que vous pouvez payer.
+- **Les montants que vous saisissez** suivent la même règle : votre offre est arrondie en dessous, le prix que vous demandez (liste, proposition, contre-proposition) au-dessus.
+
+Les salaires suivent leur propre règle : deux chiffres, par mois ; ce que le joueur demande est arrondi au-dessus et votre marge salariale en dessous.

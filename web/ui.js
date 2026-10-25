@@ -1,4 +1,4 @@
-import {monthlySalary,amount} from './salaries.js';
+import {monthlySalary,amount,roundFee} from './salaries.js';
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 // Every number is written with a point as its decimal separator (docs/charte-graphique.md).
 export const number = value => new Intl.NumberFormat('fr-FR', {maximumFractionDigits:1}).format(value ?? 0).replace(',','.');
@@ -12,8 +12,11 @@ export const appearances = (total, substitutes=0) => substitutes ? `${number(tot
 export const minutes = value => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(value??0);
 export const facilityRating = value => value == null ? '—' : `${number(value)} / 20`;
 export const money = value => amount(value,2);
-// A fee to act on (an asking price, a counter-offer): three significant digits, as the server rounds it up.
-export const price = value => amount(value,3);
+// A transfer amount (a value, a fee, an asking price, an offer) on its nearest step; the server already puts an asking
+// price and an offer on theirs.
+export const price = value => amount(roundFee(value),3);
+// A budget on the step under it: a price shown no higher is one the club can pay.
+export const budget = value => amount(roundFee(value,Math.floor),3);
 export const attributeScore = value => Math.max(1,Math.min(20,Math.round(value/5)));
 export const level = value => value==null ? null : Math.round(value*2);
 // Red (hue 0) at `low` or less, yellow (50) at `mid`, green (120) at `high` or more.
@@ -454,7 +457,7 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    nation:mainNation(player),
    age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
    caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
-   value:figure(player.value==null?'—':money(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
+   value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
    wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}\u00a0%</span>`,
    form:formBadge(player.form),morale:moraleCell(player),

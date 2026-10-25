@@ -24,17 +24,17 @@ const screen=(items,message=null,query='')=>withApi({'/monde/etat':{controlled_c
  '/ma-partie/actualites':feed(items),'/competitions/3/classement':standings,...(message?{[`/ma-partie/actualites/${message.id}`]:message}:{})},()=>newsScreen(new URLSearchParams(query)));
 
 test('the feed lists each message with its badge, the unread and those awaiting an answer marked, the one opened selected',async()=>{
- const items=[row(2,'offer_received','2 offres pour Vendu',{read:false,pending:true}),row(1,'offer_rejected','Nice refuse votre offre de 3000000 € pour Cible : le club en attend au moins 4850000 €'),
+ const items=[row(2,'offer_received','2 offres pour Vendu',{read:false,pending:true}),row(1,'offer_rejected','Nice refuse votre offre de 3000000 € pour Cible : le club en attend au moins 4900000 €'),
   row(0,'renewal_proposed','Fidèle veut un nouveau contrat')];
- const html=await screen(items,{...items[1],segments:[{text:'Nice',ref:{club:9}},{text:' refuse votre offre de 3000000 € pour '},{text:'Cible',ref:{player:20}},{text:' : le club en attend au moins 4850000 €'}]},'msg=1');
+ const html=await screen(items,{...items[1],segments:[{text:'Nice',ref:{club:9}},{text:' refuse votre offre de 3000000 € pour '},{text:'Cible',ref:{player:20}},{text:' : le club en attend au moins 4900000 €'}]},'msg=1');
  assert.doesNotMatch(html,/class="tabs"/);
  assert.match(html,/<div class="page-heading news-heading"><div><h1>Actualités<\/h1><\/div><button type="button" data-news-read="all">Tout lire<\/button><\/div>/);
  assert.match(html,/<a class="news-row unread" href="#\/actualites\?msg=2"><span class="news-row-top"><span class="news-tag transfer">Transfert<\/span><small>2 août<\/small><\/span><span class="news-row-title"><span>2 offres pour Vendu<\/span><i class="news-todo" role="img" aria-label="À traiter"><\/i>/);
- assert.match(html,/<a class="news-row selected" href="#\/actualites\?msg=1" aria-current="true">.*Nice refuse votre offre de 3\sM€ pour Cible : le club en attend au moins 4\.85\sM€<\/span><\/span><\/a>/);
+ assert.match(html,/<a class="news-row selected" href="#\/actualites\?msg=1" aria-current="true">.*Nice refuse votre offre de 3\sM€ pour Cible : le club en attend au moins 4\.9\sM€<\/span><\/span><\/a>/);
  // A message that asked for an answer says it was given.
  assert.match(html,/<span class="news-tag contract">Contrat<\/span>.*Fidèle veut un nouveau contrat<\/span><i class="news-done" role="img" aria-label="Traité">✓<\/i>/);
  // The message opened links each name where it is written.
- assert.match(html,/<h2><a href="#\/club\/9">Nice<\/a> refuse votre offre de 3\sM€ pour <a href="#\/player\/20">Cible<\/a> : le club en attend au moins 4\.85\sM€<\/h2>/);
+ assert.match(html,/<h2><a href="#\/club\/9">Nice<\/a> refuse votre offre de 3\sM€ pour <a href="#\/player\/20">Cible<\/a> : le club en attend au moins 4\.9\sM€<\/h2>/);
  assert.doesNotMatch(html,/class="news-body"/);  // a plain sentence is all in its title
 });
 
@@ -75,7 +75,7 @@ test('the offers of a day for a player are answered one by one or all at once',a
  const message={...row(2,'offer_received','3 offres pour Vendu',{pending:true}),segments:[{text:'3 offres pour '},{text:'Vendu',ref:{player:11}}],offers};
  const html=await screen([message],message,'msg=2');
  assert.match(html,/<span class="news-status todo"><i class="news-todo" aria-hidden="true"><\/i>À traiter<\/span>/);
- assert.match(html,/<h2>3 offres pour <a href="#\/player\/11">Vendu<\/a><\/h2><div class="tile fee-value"><span>Valeur<\/span><strong>28\.3\sM€<\/strong><\/div>/);
+ assert.match(html,/<h2>3 offres pour <a href="#\/player\/11">Vendu<\/a><\/h2><div class="tile fee-value"><span>Valeur<\/span><strong>28\sM€<\/strong><\/div>/);
  assert.match(html,/<a href="#\/club\/9" class="club-link">.*Nice<\/a><\/span><b>34\sM€<\/b><span class="market-actions"><button data-command="reponse-offre" data-decision="accepter" data-offer="a">Accepter<\/button><button type="button" data-open-dialog="counter-dialog-0">Contre-proposer<\/button><button data-command="reponse-offre" data-decision="refuser" data-offer="a">Refuser<\/button>/);
  assert.match(html,/<span class="news-state ">Refusée<\/span>/);
  assert.match(html,/<div class="news-actions"><button class="primary" data-command="reponse-offres" data-decision="accepter" data-player="11">Tout accepter<\/button><button class="danger" data-command="reponse-offres" data-decision="refuser" data-player="11">Tout refuser<\/button><\/div>/);
@@ -116,11 +116,11 @@ test('a contract asked for shows what he has beside what he asks, to accept or r
 });
 
 test('a player whose club agreed the fee negotiates his wage from the message, or the talks are given up',async()=>{
- const talks={player:{id:20,name:'Cible',gone:false},club:ref(9,'Nice'),fee:3450000,state:'pending',arrival:null,
-  talks:{etape:'salaire',indemnite:3450000,salaire:null,contre_offre:2000,tours_restants:2,date_prevue:null,budget:1e6,obstacle:null},profile:{id:20,name:'Cible',club:ref(9,'Nice'),wage:1000}};
+ const talks={player:{id:20,name:'Cible',gone:false},club:ref(9,'Nice'),fee:3500000,state:'pending',arrival:null,
+  talks:{etape:'salaire',indemnite:3500000,salaire:null,contre_offre:2000,tours_restants:2,date_prevue:null,budget:1e6,obstacle:null},profile:{id:20,name:'Cible',club:ref(9,'Nice'),wage:1000}};
  const message={...row(5,'talks_open','Cible est prêt à négocier son contrat',{pending:true}),segments:[{text:'Cible',ref:{player:20}},{text:' est prêt à négocier son contrat'}],talks};
  const html=await screen([message],message,'msg=5');
- assert.match(html,/<span>Indemnité convenue<\/span><strong>3\.45\sM€ · <a href="#\/club\/9" class="club-link">/);
+ assert.match(html,/<span>Indemnité convenue<\/span><strong>3\.5\sM€ · <a href="#\/club\/9" class="club-link">/);
  assert.match(html,/<span>Salaire demandé<\/span><strong>8\.7\sk€<\/strong>/);
  assert.match(html,/data-open-dialog="talks-dialog">Négocier le contrat<\/button>/);assert.match(html,/<form id="talks-form" data-kind="salaire">/);
  assert.match(html,/<button class="danger" data-command="abandon-negociation" data-player="20">Abandonner<\/button>/);
@@ -165,7 +165,7 @@ test('a transfer window is told when it opens and on the eve of its last day',as
  const html=await screen([opened],opened,'msg=8');
  assert.match(html,/<span class="news-tag market">Mercato<\/span>/);
  assert.match(html,/<h2>Le <a href="#\/transfers">mercato d’hiver<\/a> est ouvert<\/h2>/);
- assert.match(html,/<span>Fermeture<\/span><strong>31 janv\. 2030<\/strong>.*<a href="#\/club\/7\/finances">Budget transferts<\/a><\/span><strong>24\sM€<\/strong>.*<span>Marge salariale<\/span><strong>8\.7\sk€<\/strong>/);
+ assert.match(html,/<span>Fermeture<\/span><strong>31 janv\. 2030<\/strong>.*<a href="#\/club\/7\/finances">Budget transferts<\/a><\/span><strong>24\sM€<\/strong>.*<span>Marge salariale<\/span><strong>8\.6\sk€<\/strong>/);
  assert.match(html,/<a class="news-more" href="#\/players">Joueurs →<\/a>/);
  const closing={...row(8,'market_close','Le mercato d’hiver ferme demain'),market:{window:'winter',budget:19e6,wages:null,end:null,talks:[{id:20,name:'Cible',gone:false}],offers:[{id:11,name:'Vendu',gone:false}]}};
  const eve=await screen([closing],closing,'msg=8');
@@ -182,7 +182,7 @@ test('the recap of a window lists its main transfers, in the club’s division t
  const html=await screen([message],message,'msg=10');
  assert.match(html,/<span class="news-tag market">Mercato<\/span>/);
  assert.match(html,/<h2>Bilan du <a href="#\/transfers">mercato d’été<\/a><\/h2>/);
- assert.match(html,/<section><h3 class="section-title"><a href="#\/league\/3">Ligue 1<\/a><\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/1">Ada Un<\/a><\/span><span><a href="#\/club\/9" class="club-link">[^→]*Nice<\/a><small>→<\/small><a href="#\/club\/7" class="club-link">[^→]*Lens<\/a><\/span><b>34\.5\sM€<\/b><\/li>/);
+ assert.match(html,/<section><h3 class="section-title"><a href="#\/league\/3">Ligue 1<\/a><\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/1">Ada Un<\/a><\/span><span><a href="#\/club\/9" class="club-link">[^→]*Nice<\/a><small>→<\/small><a href="#\/club\/7" class="club-link">[^→]*Lens<\/a><\/span><b>35\sM€<\/b><\/li>/);
  // A free player comes from no club, and has his level where the fee would be.
  assert.match(html,/<a href="#\/player\/2">Bob Deux<\/a><\/span><span><span class="muted">Libre<\/span><small>→<\/small><a href="#\/club\/8" class="club-link">[^→]*Metz<\/a><\/span><span><span class="rating graded" style="--hue:120">150<\/span><\/span><\/li><\/ul><\/section>/);
  assert.match(html,/<section><h3 class="section-title">Monde<\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/5">Eve Cinq<\/a><\/span>.*<b>80\sM€<\/b><\/li><\/ul><\/section>/);
@@ -241,7 +241,7 @@ test('the market under way stands over the history of the club’s transfers',()
  assert.match(html,/Aucun prêt en cours/);assert.doesNotMatch(html,/Prolongations/);
 });
 
-const player={id:20,name:'Cible',position:'BU',secondary_positions:[],age:24,nationalities:['FRA'],club:ref(9,'Nice'),born:'2005-01-01',wage:1000,contract_end:'2030-06-30',value:2e6,asking_price:3450000,transferable:true,greed:.5,
+const player={id:20,name:'Cible',position:'BU',secondary_positions:[],age:24,nationalities:['FRA'],club:ref(9,'Nice'),born:'2005-01-01',wage:1000,contract_end:'2030-06-30',value:2e6,asking_price:3500000,transferable:true,greed:.5,
  rating:70,potential:80,fitness:1,form:0,morale:.5,injured_until:null,discipline:[],attributes:{},position_ratings:{}};
 const history={career:{items:[],totals:{fee:0,matches:0,goals:0,assists:0,average:null}},trajectory:[]};
 const idle={etape:null,indemnite:null,salaire:null,contre_offre:null,tours_restants:3,date_prevue:null,obstacle:null};
@@ -253,7 +253,7 @@ const playerRoutes=(detail,state,talks=idle,sale=unlisted,squad=noLoan,contract=
 
 test('another club’s player can receive an offer from his page, only while the market is open',async()=>{
  const open=await withApi(playerRoutes(player,{controlled_club_id:7,market:true}),()=>playerScreen(20));
- assert.match(open,/<span>Prix demandé<\/span><strong>3\.45\sM€<\/strong>/);
+ assert.match(open,/<span>Prix demandé<\/span><strong>3\.5\sM€<\/strong>/);
  assert.match(open,/<button class="primary" type="button" data-open-dialog="talks-dialog">Faire une offre<\/button>/);
  assert.match(open,/<form id="talks-form" data-kind="indemnite">/);assert.doesNotMatch(open,/name="accepter"/);
  const closed=await withApi(playerRoutes(player,{controlled_club_id:7,market:false},{...idle,obstacle:'Le mercato est fermé.'}),()=>playerScreen(20));
@@ -270,12 +270,12 @@ test('an obstacle to an offer is named in a pill, the reason after its colon lef
 });
 
 test('a counter-offer comes back in the dialog, ready to accept, and agreed steps wait in a pill',async()=>{
- const countered=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,etape:'indemnite',contre_offre:3450000,tours_restants:2}),()=>playerScreen(20));
- assert.match(countered,/Nice demande 3\.45\sM€<\/strong> · 2 offres restantes/);
- assert.match(countered,/<button type="submit" name="accepter" value="3450000">Accepter 3\.45\sM€<\/button>/);
- assert.match(countered,/name="montant" type="number" min="0" step="0.01" value="3.45"/);
- const agreed=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,etape:'accord_club',indemnite:3450000,date_prevue:'2029-08-04'}),()=>playerScreen(20));
- assert.match(agreed,/<span class="pill">Accord avec le club · 3\.45\sM€ · réponse le/);assert.doesNotMatch(agreed,/<dialog id="talks-dialog"/);
+ const countered=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,etape:'indemnite',contre_offre:3500000,tours_restants:2}),()=>playerScreen(20));
+ assert.match(countered,/Nice demande 3\.5\sM€<\/strong> · 2 offres restantes/);
+ assert.match(countered,/<button type="submit" name="accepter" value="3500000">Accepter 3\.5\sM€<\/button>/);
+ assert.match(countered,/name="montant" type="number" min="0" step="0.01" value="3.5"/);
+ const agreed=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,etape:'accord_club',indemnite:3500000,date_prevue:'2029-08-04'}),()=>playerScreen(20));
+ assert.match(agreed,/<span class="pill">Accord avec le club · 3\.5\sM€ · réponse le/);assert.doesNotMatch(agreed,/<dialog id="talks-dialog"/);
  const wage=await withApi(playerRoutes(player,{controlled_club_id:7,market:true},{...idle,etape:'salaire',indemnite:3450000}),()=>playerScreen(20));
  assert.match(wage,/data-open-dialog="talks-dialog">Négocier le contrat<\/button>/);assert.match(wage,/<form id="talks-form" data-kind="salaire">/);
  assert.match(wage,/Salaire proposé \(€\)/);
