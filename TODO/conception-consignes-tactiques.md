@@ -3,7 +3,8 @@
 25 octobre 2026. Proposition à valider : rien n'est codé. S'appuie sur les
 possessions construites (chantier A, schéma 38) et les arrêts de jeu (chantier B,
 schéma 39) ; l'attribut Penaltys a porté le schéma à 40. Les décisions ouvertes
-sont à la fin, chacune avec une recommandation.
+sont à la fin, chacune avec une recommandation. Le document rejoindra `docs/` avec
+le code, comme ceux des chantiers A et B.
 
 ## Objectif
 
@@ -78,7 +79,7 @@ points par match vaut environ 0,03.
 
 La possession de A varie comme attendu : 53 % pour la construction courte, 46 % pour
 la directe, et 65 % pour le favori qui construit court en amplifiant l'écart.
-Script : `tools/maquette_consignes.py`, à remplacer par la suite `consignes` (voir
+Script : `TODO/maquette_consignes.py`, à remplacer par la suite `consignes` (voir
 « Mesure »).
 
 Ce qu'elle apprend :

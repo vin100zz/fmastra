@@ -1,7 +1,7 @@
-"""Mock-up of the tactical instructions (docs/conception-consignes-tactiques.md), never edits code or config.
+"""Mock-up of the tactical instructions (TODO/conception-consignes-tactiques.md), never edits code or config.
 
 Side A plays a style through local patches of the engine, side B the shipped play: equal sides, A favourite (74 against
-66), A underdog. Run from the repository: PYTHONPATH=src python tools/maquette_consignes.py [matches] [style,style...]
+66), A underdog. Run from the repository: PYTHONPATH=src python TODO/maquette_consignes.py [matches] [style,style...]
 """
 import sys, json
 from dataclasses import replace
