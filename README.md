@@ -13,6 +13,10 @@ s'ouvre automatiquement sur la partie. Garder la fenêtre du serveur ouverte ;
 `Ctrl+C` arrête le jeu. Si le serveur tourne déjà, le lanceur ouvre simplement
 le jeu.
 
+Un fichier `.bat` ne peut pas avoir d'icône : double-cliquer une fois sur
+**raccourci.bat** crée sur le Bureau un raccourci « Football Manager » vers
+`start.bat`, à l'icône du jeu (`web/favicon.ico`).
+
 Python 3.12 est requis. Depuis ce dossier, dans PowerShell :
 
 ```powershell
