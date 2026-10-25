@@ -114,6 +114,6 @@ test('a club’s movements list the loans of the season on each side, without a 
  const sections={arrivals:[],departures:[],release:[],retirement:[],academy:[],departure_unknown:[],loans_in:[],loans_out:[row]};
  const html=movementsHistory({season:2029,previous_season:null,next_season:null,history_since:'2029-07-01',arrival_total:0,departure_total:0,sections});
  const [arrivals,departures]=html.split('aria-label="Départs"');
- assert.match(departures,/<span class="movement-kind loan">Prêt<\/span>.*Parti.*<a href="#\/club\/9"[^>]*>.*Nice<\/a><\/span><b class="movement-fee">—<\/b>/);
+ assert.match(departures,/<span class="movement-kind loan">Prêt<\/span>.*Parti.*<a href="#\/club\/9"[^>]*>.*Nice<\/a><\/td><td data-value=""><span class="num">—<\/span>/);
  assert.doesNotMatch(arrivals,/movement-kind loan/);
 });

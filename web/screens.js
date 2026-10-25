@@ -111,7 +111,7 @@ export async function clubScreen(id,section,params){
  }
  else if(section==='composition'&&human)content=await compositionContent(params,state);
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${year}`);content=calendarContent(club,data,params);tools=seasonSteps(data);}
- else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${year}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market,{club,market:state.market}):'')+movementsHistory(data,params);tools=seasonSteps(data);}
+ else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${year}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market,{club,market:state.market}):'')+movementsHistory(data);tools=seasonSteps(data);}
  else if(section==='finances'){const [data,squad]=await Promise.all([api(`/clubs/${id}/finances?${year}`),api(`/clubs/${id}/effectif`)]);content=financesContent(club,data,squad);tools=seasonSteps(data.history);}
  else {const view=historyView(CLUB_VIEWS,params);const data=await api(`/clubs/${id}/historique?${query({vue:view})}`);content=clubHistory(view,data,club,state.season??null);tools=viewChoice(CLUB_VIEWS,view,`#/club/${id}/history`);}
  return clubHero(club,{lead,menu,section,tools})+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+content;

@@ -33,7 +33,23 @@ def movements(world: World, club_id: int, season: int | None, page: int) -> dict
     return {**v.paginate(regular, page), **nav, "sections": sections,
             "arrival_total": sum(row['fee'] for row in sections['arrivals']),
             "departure_total": sum(row['fee'] for row in sections['departures']),
+            "mercatos": mercatos(world, club_id),
             "history_since": (world.movement_history_since or world.date).iso()}
+
+
+def mercatos(world: World, club_id: int) -> list[dict]:
+    """What a club spent and received in transfer fees in each window of every season of the game, the latest season first.
+    The winter of the season under way is None until it opens."""
+    first = world.config.world.start_date.year
+    seasons = {season: {'summer': {'spent': 0, 'earned': 0}, 'winter': {'spent': 0, 'earned': 0}} for season in range(first, world.season + 1)}
+    for item in world.transfers:
+        if item.kind != 'transfer' or not item.fee or club_id not in (item.source_id, item.target_id): continue
+        windows = seasons.get(item.season if item.season is not None else financial_season(world, item.date))
+        if windows is None: continue
+        window = windows['summer' if summer_move(world, item.date) else 'winter']
+        window['spent' if item.target_id == club_id else 'earned'] += item.fee
+    if summer_move(world, world.date): seasons[world.season]['winter'] = None
+    return [{'season': season, **seasons[season]} for season in range(world.season, first - 1, -1)]
 
 
 TRANSFER_KINDS = {'transfer', 'release', 'departure_unknown'}
