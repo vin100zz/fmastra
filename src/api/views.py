@@ -136,7 +136,7 @@ def player_row(world: World, player: Player) -> dict:
 
 
 def asking_quote(world: World, player: Player, settled: set[int]) -> dict:
-    """The lowest fee his club accepts, as shown and offered: rounded up to three significant digits.
+    """The lowest fee his club accepts, as shown and offered: rounded up to its step.
 
     None for a free agent, and for a player his club cannot let go (`transferable` false)."""
     from core.world.market import quoted_minimum

@@ -21,7 +21,7 @@ test('each side lists every kind of movement by date with its badge, its club an
  assert.deepEqual(names,[4,2,1]);
  assert.match(arrivals,/<span class="movement-kind academy">Jeune promu<\/span>.*Centre de formation/);
  assert.match(arrivals,/Libre<\/a><\/span><span class="movement-age">24 ans<\/span><span class="movement-club"><span class="muted">Libre<\/span><\/span><b class="movement-fee">Libre<\/b>/);
- assert.match(arrivals,/9\.5\sM€<\/b>/);
+ assert.match(arrivals,/10\sM€<\/b>/);
  assert.match(departures,/<span class="movement-kind release">Fin de contrat<\/span>/);assert.match(departures,/<span class="movement-kind retirement">Retraite<\/span><span class="position">—<\/span>/);
  assert.match(departures,/<span class="movement-kind loan">Prêt<\/span>/);
  assert.match(html,/<span title="Âge non archivé">—<\/span>/);

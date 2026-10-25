@@ -9,10 +9,11 @@ from test_market import sellable_world, close_auction
 
 
 def agreed_fee(world, player, seller):
-    """Talks brought to an agreed fee at the club's asking price."""
+    """Talks brought to an agreed fee at the club's asking price, as shown."""
     from core.ai.market import asking_price
+    from core.world.market import quoted_minimum
     from core.world.talks import offer_fee
-    return offer_fee(world, player, asking_price(player, seller, world))
+    return offer_fee(world, player, quoted_minimum(asking_price(player, seller, world)))
 
 
 def wage_talks(world, player, seller):

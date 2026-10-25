@@ -1,6 +1,6 @@
-import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
+import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
  spreadLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
-import {monthlySalary,monthlyAmount} from './salaries.js';
+import {monthlySalary,monthlyAmount,monthlyMargin} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
 const BEST_PLAYERS=8;
@@ -40,7 +40,7 @@ export function financesBlock(club,data,{balance=false}={}){
  const left=Math.round(100*margin/Math.max(1,data.wage_cap));
  const ring=`<span class="news-ring${left<=5?' full':''}" role="img" aria-label="${left} % du plafond salarial disponible"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(left*1.6336).toFixed(1)} 163.4"/></svg><b>${left} %</b></span>`;
  const cash=balance?`<small>Trésorerie <b>${money(data.balance)}</b></small>`:'';
- return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Marge salariale</span><strong>${money(monthlyAmount(margin))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
+ return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${spendable(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Marge salariale</span><strong>${monthlyMargin(margin)}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
   `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
 }
 
@@ -109,7 +109,7 @@ export function marketCard(club,data,rows=12){
  const line=(row,incoming)=>{
   const other=incoming?row.source:row.target;
   const where=row.kind==='academy'?'<span class="muted">Centre de formation</span>':row.kind==='retirement'?'<span class="muted">—</span>':other?clubLink(other):'<span class="muted">Libre</span>';
-  const fee=row.kind==='transfer'?(row.fee?`<b>${money(row.fee)}</b>`:'<span class="muted">Libre</span>'):`<span class="muted">${row.kind==='loan'?'Prêt':'—'}</span>`;
+  const fee=row.kind==='transfer'?(row.fee?`<b>${price(row.fee)}</b>`:'<span class="muted">Libre</span>'):`<span class="muted">${row.kind==='loan'?'Prêt':'—'}</span>`;
   return `<li>${row.position?position(row.position):'<span class="position">—</span>'}<span>${playerLink(row.player_id,row.player)}</span><span class="market-club">${where}</span>${fee}</li>`;
  };
  const fees=items=>items.reduce((sum,row)=>sum+(row.kind==='transfer'&&row.fee||0),0);
@@ -180,12 +180,12 @@ export async function clubPreview(id){
  const standing=club.standing;
  const tiles=`<div class="rail-tiles">${tile('Réputation',n(club.reputation))}${standing?tile('Classement',`${standing.rank}${standing.rank===1?'er':'e'}`)+tile('Points',standing.points):''}</div>`;
  const books=data.finances,used=Math.round(100*books.wage_bill/Math.max(1,books.wage_cap));
- const finances=`<h3>Finances</h3>${fact('Budget transferts',money(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
+ const finances=`<h3>Finances</h3>${fact('Budget transferts',spendable(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
   +fact('Masse salariale',`<i class="gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><i style="width:${Math.min(100,used)}%"></i></i><b>${money(monthlyAmount(books.wage_bill))} / ${money(monthlyAmount(books.wage_cap))}</b>`)
   +fact('Achats de la saison',money(books.season_spent))+fact('Ventes de la saison',money(books.season_sales));
  // The players the club has lent are not its to field.
  const best=squad.items.filter(player=>!player.away).slice(0,BEST_PLAYERS);
- const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential),figure(money(player.value))]))}</div>`:'';
+ const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential),figure(price(player.value))]))}</div>`:'';
  const tab=(key,label)=>`<a class="button" href="#/club/${club.id}/${key}">${label}</a>`;
  return `<div class="card preview"><div class="preview-head">${crest}<h2><a href="#/club/${club.id}">${e(club.name)}</a></h2></div>`
   +`<div class="preview-line"><span>${nationBadge(club.nation_code,{full:true})}</span><span class="muted">${club.competition?competitionLink({id:club.competition_id,name:club.competition}):'Marché extérieur'} · ${n(club.capacity)} places</span></div>`
@@ -203,8 +203,8 @@ const WINDOWS={summer:'Mercato d’été ouvert',winter:'Mercato d’hiver ouver
 export function marketBlock(transfers,{club=null,market=null}={}){
  const offerButtons=offer=>`<button class="primary" data-command="reponse-offre" data-decision="accepter" data-offer="${e(offer.offre_id)}">Accepter</button><button data-command="reponse-offre" data-decision="refuser" data-offer="${e(offer.offre_id)}">Refuser</button>`;
  const who=(id,name,role)=>`<span class="market-player">${role?position(role):''}${playerLink(id,name)}</span>`;
- const incoming=transfers.entrantes.map(group=>`<li class="market-group"><div class="market-group-head">${playerLink(group.joueur_id,group.joueur)}${group.valeur!=null?`<small>valeur ${money(group.valeur)}</small>`:''}</div>`
-  +`<ul>${group.offres.map(offer=>`<li><span class="market-club">${clubLink(offer.acheteur)}</span><b>${money(offer.indemnite)}</b><span class="market-actions">${offerButtons(offer)}</span></li>`).join('')}</ul></li>`);
+ const incoming=transfers.entrantes.map(group=>`<li class="market-group"><div class="market-group-head">${playerLink(group.joueur_id,group.joueur)}${group.valeur!=null?`<small>valeur ${price(group.valeur)}</small>`:''}</div>`
+  +`<ul>${group.offres.map(offer=>`<li><span class="market-club">${clubLink(offer.acheteur)}</span><b>${price(offer.indemnite)}</b><span class="market-actions">${offerButtons(offer)}</span></li>`).join('')}</ul></li>`);
  // Talks show where they stand; an older offer still in its auction shows the wage it proposes.
  const stage=offer=>({indemnite:'Contre-offre en cours',accord_club:`Réponse du joueur le ${date(offer.date_prevue)}`,salaire:'Contrat à négocier',signature:`Arrivée le ${date(offer.date_prevue)}`})[offer.etape]||monthlySalary(offer.salaire_propose);
  const outgoing=transfers.sortantes.map(offer=>`<li><div class="market-line">${who(offer.joueur_id,offer.joueur,offer.poste)}<b>${price(offer.indemnite)}</b></div><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}${offer.etape==='salaire'?` · <a href="#/player/${offer.joueur_id}">Négocier →</a>`:''}</small></li>`);
@@ -214,7 +214,7 @@ export function marketBlock(transfers,{club=null,market=null}={}){
  const offers=transfers.entrantes.reduce((sum,group)=>sum+group.offres.length,0);
  const section=(title,items,none,count=items.length,alert=false)=>`<div class="market-column"><h3>${title}<span class="market-count${alert&&count?' alert':''}">${count}</span></h3>${items.length?`<ul class="market-list">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}</div>`;
  const head=[market?`<span class="market-state open">${WINDOWS[market]||'Mercato ouvert'}</span>`:'<span class="market-state">Mercato fermé</span>',
-  club?`<span class="market-room">Budget <b>${money(club.available_budget)}</b> · Marge salariale <b>${monthlySalary(Math.max(0,club.wage_cap-club.wage_bill))}</b></span>`:''].join('');
+  club?`<span class="market-room">Budget <b>${spendable(club.available_budget)}</b> · Marge salariale <b>${monthlyMargin(Math.max(0,club.wage_cap-club.wage_bill))}</b></span>`:''].join('');
  const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.',offers,true)+section('Vos offres',outgoing,'Aucune offre en cours.')
   +section('Liste des transferts',listed,'Aucun joueur sur la liste.')+section('Prêts',loans,'Aucun prêt en cours.');
  return `<section class="card market-card"><div class="card-head"><h2>Mercato en cours</h2>${head}</div><div class="market-columns">${body}</div></section>`;

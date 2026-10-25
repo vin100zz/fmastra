@@ -1,4 +1,4 @@
-import {escape as e,number as n,money,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,competitionLink,editionHref,noteHue,averageNote,pitch} from './ui.js';
+import {escape as e,number as n,money,price,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,competitionLink,editionHref,noteHue,averageNote,pitch} from './ui.js';
 import {awayIcon} from './club-overview.js';
 
 // The Historique tab of a club or of a selection (docs/ui.md, « Historique »), in four views chosen at the end of its row of
@@ -207,10 +207,10 @@ function clubSeasons(data){
   ['season-col','league-col','rank-col',...FIGURES,'cup-col','europe-col','scorer-col','figure-col','reputation-col']),'','history-seasons');
 }
 
-const transfersTable=(rows,side,heading)=>rows.length?table(['JOUEUR','INDEMNITÉ',heading,'SAISON'],rows.map(row=>[player(row),num(`<b>${money(row.fee)}</b>`),clubLink(row[side]),season(row.season)]),
+const transfersTable=(rows,side,heading)=>rows.length?table(['JOUEUR','INDEMNITÉ',heading,'SAISON'],rows.map(row=>[player(row),num(`<b>${price(row.fee)}</b>`),clubLink(row[side]),season(row.season)]),
  undefined,undefined,sorted(rows,row=>[row.player||'',row.fee,row[side]?.name||'',row.season]),['','fee-col','','season-col']):empty('Aucun transfert payant enregistré.','Pas de transfert');
 function gainsCard(rows){
- return card('Plus-values',rows.length?table(['JOUEUR','GAIN','ACHAT','VENTE'],rows.map(row=>[player(row),num(delta(row.gain,money)),num(money(row.bought)),num(money(row.sold))]),undefined,undefined,
+ return card('Plus-values',rows.length?table(['JOUEUR','GAIN','ACHAT','VENTE'],rows.map(row=>[player(row),num(delta(row.gain,money)),num(price(row.bought)),num(price(row.sold))]),undefined,undefined,
   sorted(rows,row=>[row.player||'',row.gain,row.bought,row.sold]),['','gain-col','fee-col','fee-col']):empty('Aucun joueur acheté puis revendu.','Pas de plus-value'),'','history-gains');
 }
 

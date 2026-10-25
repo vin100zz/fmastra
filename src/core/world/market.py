@@ -20,15 +20,27 @@ from .news import answer_offer, offer_received
 from .transfer_rules import recent_arrival_ids, accepts_move, free_to_move_on, wants_to_leave
 
 
+# The steps a transfer amount stands on (a value, a fee, an asking price, a budget), each up to the amount it stays
+# under, 5 M€ beyond (docs/charte-graphique.md, « Montants »). Each bound is a step of the next tier: an amount rounded
+# to its step stays on the same scale.
+FEE_STEPS = ((10_000, 1_000), (100_000, 10_000), (5_000_000, 100_000), (50_000_000, 1_000_000))
+TOP_FEE_STEP = 5_000_000
+
+
+def fee_step(amount: int) -> int:
+    """The step a transfer amount of this size is written to."""
+    return next((step for bound, step in FEE_STEPS if abs(amount) < bound), TOP_FEE_STEP)
+
+
 def quoted_minimum(amount: int) -> int:
-    """An asking price rounded up to three significant digits, as the news feed shows amounts."""
-    step = 10 ** max(0, len(str(amount)) - 3)
+    """An asking price rounded up to its step, as the pages show amounts: offering it is enough."""
+    step = fee_step(amount)
     return -(-amount // step) * step
 
 
 def quoted_offer(amount: int) -> int:
-    """A fee offered, cut down to three significant digits: it never reads above what the buyer meant to pay."""
-    step = 10 ** max(0, len(str(max(0, amount))) - 3)
+    """A fee offered, cut down to its step: it never reads above what the buyer meant to pay."""
+    step = fee_step(max(0, amount))
     return max(0, amount) // step * step
 
 

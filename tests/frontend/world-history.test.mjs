@@ -64,7 +64,7 @@ test('a transfer tells who the player is, from where to where, and its fee again
  assert.match(paid[1],/<span class="position att">BU<\/span>/);assert.match(paid[3],/flags\/ma\.svg[^>]*>MAR<\/span>$/);assert.doesNotMatch(paid[3],/Pays-Bas|\+1/);
  assert.equal(paid[4],'<span class="num">22</span>');assert.match(paid[5],/title="Niveau actuel sur 200">163</);
  assert.match(paid[6],/Como/);assert.match(paid[7],/→/);assert.match(paid[8],/Man City/);
- assert.match(paid[9],/<i style="width:100%"><\/i><\/i><b>350\sM€<\/b>/);assert.match(paid[10],/160\sM€/);
+ assert.match(paid[9],/<i style="width:100%"><\/i><\/i><b>345\sM€<\/b>/);assert.match(paid[10],/160\sM€/);
  assert.deepEqual([free[1],free[3],free[5]],['—','—','—']);assert.match(free[9],/Libre/);assert.equal(free[10],'<span class="num">—</span>');
  assert.match(released[8],/Libre/);assert.match(released[9],/Fin de contrat/);
  // The pages step from the head of the card; without a wide window there is no summary beside the list.
@@ -129,7 +129,7 @@ test('a promotion tells the level then and now, the way covered to the potential
  assert.match(cells[5],/title="Niveau à la promotion sur 200">81</);assert.match(cells[6],/title="Niveau actuel sur 200">98</);
  // 17 levels gained of the 114 between his level then and his potential.
  assert.match(cells[7],/<span class="bar-figure gain"><i class="mini-bar" aria-hidden="true"><i style="width:15%"><\/i><\/i><b>\+17<\/b><\/span>/);
- assert.match(cells[8],/title="Potentiel sur 200">195</);assert.match(cells[9],/750\sk€/);assert.match(cells[10],/350\sk€/);assert.equal(cells[11],'Oui');
+ assert.match(cells[8],/title="Potentiel sur 200">195</);assert.match(cells[9],/700\sk€/);assert.match(cells[10],/350\sk€/);assert.equal(cells[11],'Oui');
  assert.doesNotMatch(cells[4],/→/);
  // Levels and potentials go to the server on its scale; a class opens on its best prospects.
  const request=decodeURIComponent(asked[0]);

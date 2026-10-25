@@ -16,10 +16,10 @@ const club={id:7,name:'Lens'};
 test('the share of the budgets on one bar, then the cash gained since the season opened and the transfer balance',()=>{
  const html=financesContent(club,data(),squad);
  // Each envelope at its end: the budget left free of offers, the wage cap by month.
- assert.match(html,/<section class="finance-figure balance" aria-label="Répartition des budgets"><div class="balance-end"><span>Budget transferts<\/span><strong>18\.6\sM€<\/strong><\/div><div class="balance-end right"><span>Plafond salarial<\/span><strong>5\.55\sM€<\/strong><\/div>/);
+ assert.match(html,/<section class="finance-figure balance" aria-label="Répartition des budgets"><div class="balance-end"><span>Budget transferts<\/span><strong>18\sM€<\/strong><\/div><div class="balance-end right"><span>Plafond salarial<\/span><strong>5\.5\sM€<\/strong><\/div>/);
  // The bar, in euros of a season: what offers hold back, the free budget, the room under the cap, the wage bill.
  assert.match(html,/<div class="balance-bar"><i class="budget held" style="flex-grow:12000000"><\/i><i class="budget" style="flex-grow:18600000"><\/i><i class="wages" style="flex-grow:10920000"><\/i><i class="wages held" style="flex-grow:55640000"><\/i><\/div>/);
- assert.match(html,/<small class="balance-note"><b>12\sM€<\/b> réservés aux offres en cours<\/small><small class="balance-note right">Masse salariale <b>4\.64\sM€<\/b> · <b>84 %<\/b><\/small><\/section>/);
+ assert.match(html,/<small class="balance-note"><b>12\sM€<\/b> réservés aux offres en cours<\/small><small class="balance-note right">Masse salariale <b>4\.6\sM€<\/b> · <b>84 %<\/b><\/small><\/section>/);
  assert.match(html,/<span>Trésorerie<\/span><strong>48\sM€<\/strong><small><b class="good">\+33\sM€<\/b> depuis l’ouverture de la saison<\/small>/);
  assert.match(html,/<div class="finance-figure good"><span>Balance des transferts<\/span><strong>\+23\sM€<\/strong><small>Achats <b>15\sM€<\/b> · Ventes <b>38\sM€<\/b><\/small>/);
  // Nothing held back: no note, no part; a past season tells no gain; red from 95 % of the cap.
@@ -30,7 +30,7 @@ test('the share of the budgets on one bar, then the cash gained since the season
  // The wages offers reserve stand beside the wage bill, and count in the part of the cap that is taken.
  const reserving=financesContent(club,data({reserved_wages:100000}),squad);
  assert.match(reserving,/<i class="wages" style="flex-grow:5720000"><\/i><i class="wages held" style="flex-grow:5200000"><\/i><i class="wages held" style="flex-grow:55640000"><\/i>/);
- assert.match(reserving,/Masse salariale <b>4\.64\sM€<\/b> \+ <b>433\sk€<\/b> réservés · <b>91 %<\/b>/);
+ assert.match(reserving,/Masse salariale <b>4\.6\sM€<\/b> \+ <b>430\sk€<\/b> réservés · <b>91 %<\/b>/);
 });
 
 // The club the user runs: nothing held back, and the wage caps it can set, from its wage bill up to what its budget pays.
@@ -45,15 +45,15 @@ test('in the user’s club a handle parts the two free shares, and the block car
 });
 
 test('a held handle shows what each side gains or gives up, and the slice it has just moved',()=>{
- // 100 000 a week more of cap: a season of it, 5.2 M€, leaves the budget for 433 k€ a month.
+ // 100 000 a week more of cap: a season of it, 5.2 M€, leaves the budget for 430 k€ a month.
  const raised=shareContent(own(),1.38e6,true);
- assert.match(raised,/<span>Budget transferts<\/span><strong>25\.4\sM€<em>−5\.2\sM€<\/em><\/strong>/);
- assert.match(raised,/<span>Plafond salarial<\/span><strong><em>\+433\sk€<\/em>5\.98\sM€<\/strong>/);
+ assert.match(raised,/<span>Budget transferts<\/span><strong>25\sM€<em>−5\sM€<\/em><\/strong>/);
+ assert.match(raised,/<span>Plafond salarial<\/span><strong><em>\+430\sk€<\/em>6\sM€<\/strong>/);
  assert.match(raised,/<i class="budget" style="flex-grow:25400000"><\/i><button type="button" class="balance-handle dragged"[^>]*>.*?<\/button><i class="wages" style="flex-grow:5200000"><\/i><i class="wages" style="flex-grow:10920000"><\/i><i class="wages held" style="flex-grow:55640000"><\/i>/);
- assert.match(raised,/Masse salariale <b>4\.64\sM€<\/b> · <b>78 %<\/b>/);
+ assert.match(raised,/Masse salariale <b>4\.6\sM€<\/b> · <b>78 %<\/b>/);
  // The other way, the slice stands on the budget's side of the handle.
  const lowered=shareContent(own(),1.18e6,true);
- assert.match(lowered,/<strong>35\.8\sM€<em>\+5\.2\sM€<\/em><\/strong>/);assert.match(lowered,/<strong><em>−433\sk€<\/em>5\.11\sM€<\/strong>/);
+ assert.match(lowered,/<strong>35\sM€<em>\+5\sM€<\/em><\/strong>/);assert.match(lowered,/<strong><em>−430\sk€<\/em>5\.1\sM€<\/strong>/);
  assert.match(lowered,/<i class="budget" style="flex-grow:30600000"><\/i><i class="budget" style="flex-grow:5200000"><\/i><button[^>]*>.*?<\/button><i class="wages" style="flex-grow:5720000"><\/i><i class="wages held"/);
  // On the cap the club has, no gain is written, held or not.
  assert.doesNotMatch(shareContent(own(),1.28e6,true),/<em>/);

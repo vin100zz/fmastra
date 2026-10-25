@@ -407,8 +407,8 @@ la masse salariale passe au rouge à partir de 95 %. Dans le club de l'utilisate
 les deux parts libres : glissée, ou déplacée aux flèches gauche et droite, elle montre le budget et
 le plafond qu'elle donnerait, avec ce que chacun gagne ou cède ; lâchée, elle les fixe
 (`POST /api/partie/budgets`), sans confirmation. Elle s'arrête sur ce qui est engagé et se pose sur
-des plafonds ronds, ou sur celui d'où elle est partie. Les montants de la répartition ont trois
-chiffres significatifs. Dessous, la trésorerie à la fin de chaque mois sur les douze mois de la
+des plafonds ronds, ou sur celui d'où elle est partie. Le budget de la répartition est arrondi au
+palier en dessous, le plafond et la masse salariale à deux chiffres significatifs, comme les salaires. Dessous, la trésorerie à la fin de chaque mois sur les douze mois de la
 saison, la plus grosse vente et le plus gros achat nommés sur leur mois ; les dix plus gros salaires
 mensuels de l'effectif (hors joueurs prêtés), les autres additionnés ; les revenus et les dépenses
 de chaque mois côte à côte ; la répartition des revenus (structurels, ventes) et des dépenses

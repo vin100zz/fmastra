@@ -1,4 +1,4 @@
-import {escape as e,money,price,date,card,empty,sortableTable,playerLink} from './ui.js';
+import {escape as e,money,price,budget,date,card,empty,sortableTable,playerLink} from './ui.js';
 import {monthlySalary,monthlyAmount,yearlyAmount,weeklyFromMonthly} from './salaries.js';
 
 const euros=price;
@@ -115,19 +115,19 @@ export function steppedCap(data,cap,direction,width){
  return snapCap(data,cap+direction*step*12/yearlyAmount(1),step);
 }
 const HANDLE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg>';
-const signedPrice=value=>value>0?`+${price(value)}`:`−${price(-value)}`;
+const signed=(value,write)=>value>0?`+${write(value)}`:`−${write(-value)}`;
 // What the block of the share holds for a wage cap of `cap`: each envelope named at its end with its figure, and what it gains
 // or gives up beside it when the cap is not the club's own; the bar, with its handle for the club the user runs (`dragged`
 // while he holds it); under the bar, what each end has committed.
 export function shareContent(data,cap=data.wage_cap,dragged=false){
- const share=budgetShare(data,cap),delta=value=>share.moved?`<em>${signedPrice(value)}</em>`:'';
+ const share=budgetShare(data,cap),delta=(value,write)=>share.moved?`<em>${signed(value,write)}</em>`:'';
  const parts=(side,list)=>list.map(([kind,value])=>value>0?`<i class="${side}${kind?` ${kind}`:''}" style="flex-grow:${value}"></i>`:'').join('');
  const handle=data.wage_cap_range?`<button type="button" class="balance-handle${dragged?' dragged':''}" data-command="budgets" aria-label="Déplacer la répartition entre budget de transferts et plafond salarial">${HANDLE}</button>`:'';
- return `<div class="balance-end"><span>Budget transferts</span><strong>${price(share.free)}${delta(-share.moved)}</strong></div>`
-  +`<div class="balance-end right"><span>Plafond salarial</span><strong>${delta(share.moved/12)}${price(yearlyAmount(cap)/12)}</strong></div>`
+ return `<div class="balance-end"><span>Budget transferts</span><strong>${budget(share.free)}${delta(-share.moved,price)}</strong></div>`
+  +`<div class="balance-end right"><span>Plafond salarial</span><strong>${delta(share.moved/12,money)}${money(yearlyAmount(cap)/12)}</strong></div>`
   +`<div class="balance-bar">${parts('budget',share.budget)}${handle}${parts('wages',share.wages)}</div>`
-  +(data.reserved_transfer_budget?`<small class="balance-note"><b>${money(data.reserved_transfer_budget)}</b> réservés aux offres en cours</small>`:'')
-  +`<small class="balance-note right">Masse salariale <b>${price(yearlyAmount(data.wage_bill)/12)}</b>${data.reserved_wages?` + <b>${price(yearlyAmount(data.reserved_wages)/12)}</b> réservés`:''} · <b>${share.used} %</b></small>`;
+  +(data.reserved_transfer_budget?`<small class="balance-note"><b>${price(data.reserved_transfer_budget)}</b> réservés aux offres en cours</small>`:'')
+  +`<small class="balance-note right">Masse salariale <b>${money(yearlyAmount(data.wage_bill)/12)}</b>${data.reserved_wages?` + <b>${money(yearlyAmount(data.reserved_wages)/12)}</b> réservés`:''} · <b>${share.used} %</b></small>`;
 }
 // The block itself, over two of the four columns of the key figures; it carries what its handle needs to move (budget-share.js).
 const SHARE_FIELDS=['transfer_budget','reserved_transfer_budget','wage_bill','wage_cap','reserved_wages','wage_cap_range'];
