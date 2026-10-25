@@ -14,7 +14,7 @@ s'ouvre automatiquement sur la partie. Garder la fenêtre du serveur ouverte ;
 le jeu.
 
 Un fichier `.bat` ne peut pas avoir d'icône : double-cliquer une fois sur
-**raccourci.bat** crée sur le Bureau un raccourci « Football Manager » vers
+**shortcut.bat** crée sur le Bureau un raccourci « Football Manager » vers
 `start.bat`, à l'icône du jeu (`web/favicon.ico`).
 
 Python 3.12 est requis. Depuis ce dossier, dans PowerShell :

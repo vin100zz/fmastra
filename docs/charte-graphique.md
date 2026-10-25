@@ -116,7 +116,7 @@ où le fond est déjà jaune.
   jusqu'en 16.
 - **Icône du lanceur** : la même marque en `web/favicon.ico` (16 à 256),
   rendue depuis `web/favicon.svg`, sur le raccourci de `start.bat` que crée
-  `raccourci.bat`.
+  `shortcut.bat`.
 - **En tête du menu** (`.brand`) : un coin jaune de la hauteur de la barre du
   haut, qu'il ouvre. La marque inversée en 32 (`.logo`), puis, à 12, le nom sur
   deux lignes de 16 en capitales (`.wordmark`), à l'encre : FOOTBALL en 700,
