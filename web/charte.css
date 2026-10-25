@@ -45,7 +45,7 @@ main{padding:var(--s2) var(--s4) var(--s3)}
    of a choice, an entry of a menu, a season's step, a player on a pitch...) keeps it. The main action is the accent lit
    from above, its shadow under it. */
 button,a.button{height:var(--h-control);padding:0 var(--s3);border-radius:var(--radius);font-size:var(--fs-body);font-weight:600;line-height:1;white-space:nowrap}
-:is(button,a.button):where(:not(.primary,.danger,.cta,.pitch-player,.position-row,.advance-todo,.check,.replay-marker,.replay-start,.sort-toggle,.balance-handle,#autoplay,#theme-toggle,#search-open,.segmented>*,.tactics>*,.menu>*,.season>*,.sidebar-tools>*,th *,.chips *)){border-color:transparent;background:var(--panel);box-shadow:var(--shadow-field)}
+:is(button,a.button):where(:not(.primary,.danger,.cta,.pitch-player,.position-row,.advance-todo,.check,.check-option,.replay-marker,.replay-start,.sort-toggle,.balance-handle,#autoplay,#theme-toggle,#search-open,.segmented>*,.tactics>*,.menu>*,.season>*,.sidebar-tools>*,th *,.chips *)){border-color:transparent;background:var(--panel);box-shadow:var(--shadow-field)}
 :is(button,a.button).primary,.cta{border-color:transparent;background-image:linear-gradient(#ffffff2e,#ffffff00);box-shadow:var(--shadow-accent)}
 #advance{border-radius:var(--radius-box)}
 #search-open{border-color:transparent;background:var(--panel-2)}
@@ -779,6 +779,7 @@ tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted)
 :where(.fixture,.club-match,.calendar-row,.highlight-row,.timeline-row,.journal-row,.fact,.news-row,.slot-row,.position-row,.bench-slot:not(.empty),.moves li,.news-lines li,.leader-bars li,.watch-list li,.salary-bars li,.finance-split li,.scout-players li,.market-list>li,.bracket-tie:not(.empty),.result):hover{background:var(--panel-3)}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:hover{background:var(--panel-3)}
+.check-option:hover{background:var(--panel-3);color:var(--strong)}
 /* A season of the mercatos opens it: the ground, unless it is the one shown. */
 .mercato-season:where(:not(.picked)):hover{background:var(--panel-3)}
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
@@ -922,6 +923,11 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .check svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
 .check[aria-pressed="true"]{border-color:var(--accent-text);background:var(--accent)}
 .check[aria-pressed="true"] svg{visibility:visible}
+/* An option turned on or off by a word, the box before it, the details in its tooltip (`.check-option`): the options of
+   the Composition's automatic lineup. Under the pointer, the ground of a control. */
+.check-option{display:inline-flex;align-items:center;gap:6px;flex:none;height:var(--h-control);padding:0 var(--s2) 0 6px;border:0;border-radius:var(--radius);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--ink);white-space:nowrap;cursor:pointer}
+.check-option[aria-pressed="true"]>.check{border-color:var(--accent-text);background:var(--accent)}
+.check-option[aria-pressed="true"]>.check svg{visibility:visible}
 .nation-line{display:grid;grid-template-columns:var(--h-chip) minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
 .nation-line:last-child{border-bottom:0}
 .nation-line>.num{color:var(--muted)}

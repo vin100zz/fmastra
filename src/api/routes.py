@@ -479,17 +479,26 @@ def router(service: GameService) -> APIRouter:
                     "default": default, "suggestions": suggestions}
 
     @api.get("/ma-partie/composition/suggestion")
-    def custom_lineup_suggestion(postes: str, match_id: int | None = None) -> dict:
-        """The best eleven and bench on the club's own tactic being built, `postes` listing its positions place by place."""
-        from core.ai.selection import select_lineup
+    def custom_lineup_suggestion(postes: str | None = None, formation: str | None = None, niveau: int = 0,
+                                 jeunes: bool = False, libre: bool = False, match_id: int | None = None) -> dict:
+        """The AI's eleven and bench on the tactic on screen: a `formation`, or the club's own tactic being built, `postes`
+        listing its positions place by place. `niveau` is the level of rotation (0, the best eleven, to 3, every outfield
+        starter rested), `jeunes` favours the prospects in it, `libre` lets the AI change the formation."""
+        from core.ai.selection import ROTATION_LEVELS, select_lineup
         from core.domain.players import Position
-        positions = postes.split(",")
+        positions = postes.split(",") if postes else None
         with service.reading() as world:
-            if (len(positions) != world.config.world.match_rules.players_on_pitch
-                    or any(position not in {item.value for item in Position} for position in positions)):
+            if (positions is not None and (len(positions) != world.config.world.match_rules.players_on_pitch
+                    or any(position not in {item.value for item in Position} for position in positions))):
                 raise HTTPException(400, "Tactique invalide.")
+            if positions is None and formation not in world.config.formations.formations:
+                raise HTTPException(400, "Tactique inconnue.")
+            if not 0 <= niveau <= ROTATION_LEVELS:
+                raise HTTPException(400, "Niveau de rotation inconnu.")
             _, _, context = lineup_context(world, match_id)
-            return lineup_suggestion(select_lineup(context, world.config, positions=positions))
+            lineup = select_lineup(context, world.config, None if positions else formation, positions,
+                                   adapt=libre, rotation=niveau, youth=jeunes)
+            return {"formation": lineup.formation, **lineup_suggestion(lineup)}
 
     @api.post("/partie/renouvellement")
     def respond_renewal(command: RenewalDecision) -> dict:

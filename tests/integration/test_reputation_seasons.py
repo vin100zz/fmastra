@@ -6,7 +6,7 @@ from core.world.reputation import division_levels
 from core.world.simulation import advance_day
 from core.world.validation import validate_world
 from infrastructure.importation.loader import import_world
-from infrastructure.persistence.store import SaveStore
+from infrastructure.persistence.store import SaveStore, UNSAVED_FIELDS
 from test_season_rollover import finish_season
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -43,7 +43,7 @@ def test_july_revises_every_club_and_the_history_survives_saves_and_a_second_sea
     store.save(world, 'july')
     restored = store.load('july')
     for field in fields(world):
-        if field.name != 'rngs':
+        if field.name != 'rngs' and field.name not in UNSAVED_FIELDS['world']:
             assert getattr(world, field.name) == getattr(restored, field.name), field.name
 
     for candidate in (world, restored):

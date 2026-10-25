@@ -942,7 +942,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   remplaçant après son nom)
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
   de la ligne du match, l'ouvre et lance la lecture, puis le replie (la lecture se
-  met en pause). Le terrain n'est construit qu'à la première ouverture.
+  met en pause). Le terrain n'est construit qu'à la première ouverture. Seuls les
+  matches du club dirigé gardent de quoi le dérouler (`replay` de `match_detail`) :
+  les autres, et ceux des sélections, n'ont pas le bouton.
   Chaque occasion suit la trace du moteur (récupération, zones franchies, centre,
   tir et issue) ; le résumé en choisit la manière, la même à chaque lecture. Le
   ballon est un projectile (`replay-physics.js`) : frappé, il vole sous la
@@ -996,13 +998,29 @@ message (« il vient d'arriver ») reste dans son infobulle.
 
 ### Composition
 
-L'onglet Composition du club dirigé : à gauche les tactiques, au-dessus du terrain, puis le terrain
+L'onglet Composition du club dirigé : à gauche le pas des formations, au-dessus du terrain, puis le terrain
 et les remplaçants sur une ligne (autant de places que `bench_size`) ; au centre la liste de
-l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, « Meilleure
-composition » et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
+l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, la composition auto
+et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
-ou le met sur la prochaine place libre, avant ses autres actions ; « Meilleure composition » reprend la suggestion de l'IA pour la
-tactique affichée, ses remplaçants rangés par poste (GB, DG, DD, DC, MDC…). Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
+ou le met sur la prochaine place libre, avant ses autres actions.
+
+Le pas des formations (charte, « Pas de saison ») : une flèche vers la formation d'avant, celle du
+terrain, qui ouvre la liste de toutes (« Perso » après un trait quand le club a la sienne), une flèche
+vers la suivante, dans l'ordre de `formations.json`.
+
+La composition auto, sur une ligne, un clic par action : « Meilleure », « Légère », « Forte »,
+« Complète », puis les cases « Jeunes » et « Formation » ; le détail de chacun est dans son infobulle.
+Un niveau compose aussitôt la tactique affichée (`/ma-partie/composition/suggestion`, `niveau` 0 à 3), ses
+remplaçants rangés par poste (GB, DG, DD, DC, MDC…), et reste marqué tant que la composition est celle
+qu'il a donnée ; le moindre changement à la main retire la marque. « Meilleure » prend la meilleure
+équipe pour ce match ; « Légère », « Forte » et « Complète » mettent au repos un tiers, deux tiers ou tous
+les joueurs de champ, remplacés par leurs seconds choix ; le gardien reste le meilleur. Les titulaires
+reposés sont ceux dont le second choix est le plus proche, le temps de jeu qu'il attend compté (voir
+`rotate`, `src/core/ai/selection.py`). « Jeunes » fait passer les grands espoirs avant les seconds
+choix ; « Formation » laisse l'IA changer de formation, sinon elle garde celle du terrain. Cocher ou
+décocher une case pendant qu'un niveau est marqué recompose aussitôt. Les deux cases restent d'un match
+à l'autre. Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
 seconde) marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
 
 L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
@@ -1030,7 +1048,7 @@ composites que ce poste demande, multipliée par le facteur hors poste du moteur
 Les composites demandés par poste sont une liste d'affichage de l'API (`COMPOSITES_BY_POSITION`,
 tirée de `implications.json`, la clé en premier) : aucun match ne la lit.
 
-« Infos » et « Jeu », à côté de « Meilleure composition », changent les colonnes de la liste :
+« Infos » et « Jeu », après la composition auto, changent les colonnes de la liste :
 potentiel, fatigue, cinq derniers matches, forme (son effet signé, comme dans l'effectif) et saison, ou les huit composites.
 « 5 DERNIERS » dessine les cinq derniers matches du club (charte, « Cinq derniers matches ») : une barre par match à la
 hauteur des minutes jouées, la piste vide sur le banc, un tiret quand il n'était pas retenu, la croix ou le carton quand il

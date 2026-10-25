@@ -117,8 +117,9 @@ export function highlightsCard(match,link=playerLink){
 export async function matchScreen(id){
  const match=await api(`/matches/${id}`);
  const result=match.result;
- // The 2D summary exists only for a played match with details; its toggle is the last command of the match's line.
- const replay=result?.home_stats?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
+ // The 2D summary exists only for a played match that kept its replay (the user's club's); its toggle is the last command
+ // of the match's line.
+ const replay=result?.home_stats&&result.replay?replayCard(match,replayTeams(match)):{toggle:'',panel:''};
  // The band has no bar: the match's line says which match it is, over the highlights (or alone under the band before the
  // match). The competition and the round, the day, a neutral ground, who went through; at its end the first leg and the summary.
  const badge=competitionBadge({id:match.competition_id,name:match.competition,...(match.international?{kind:'international',code:match.competition_code,year:match.season}:{})});

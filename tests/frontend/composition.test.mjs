@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {pitchLayout,place,remove,dropOnSquad,nextFree,changeFormation,lineupProblems,compositionContent} from '../../web/composition.js';
+import {pitchLayout,place,remove,dropOnSquad,nextFree,changeFormation,lineupProblems,compositionContent,autoHtml} from '../../web/composition.js';
 
 const F433=['GB','DG','DC','DC','DD','MDC','MC','MC','AILG','BU','AILD'];
 const F442=['GB','DG','DC','DC','DD','AILG','MC','MC','AILD','BU','BU'];
@@ -70,7 +70,8 @@ test('the editor starts from the previous lineup and flags unavailable players',
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:5});
   assert.doesNotMatch(html,/composition légale/);
-  assert.match(html,/data-tactic="4-4-2 plat" aria-pressed="true"/);
+  assert.match(html,/<summary[^>]*>4-4-2 plat<svg/);
+  assert.match(html,/role="menuitemradio" aria-checked="true" data-tactic="4-4-2 plat"/);
   assert.match(html,/class="pitch-player lineup-slot def invalid" data-slot="1" data-player="2"/);
   assert.match(html,/lineup-icon injury/);assert.match(html,/lineup-icon suspension" title="Suspendu \(2 matchs\)"/);
   assert.match(html,/Joueur 2 est blessé/);
@@ -123,7 +124,7 @@ test('under each starter\'s shirt, his block: his name, then his note at his pos
   assert.match(html,/data-slot="1"[^>]*><span class="kit-shirt empty">[^]*?<\/span><span class="player-block"><span class="block-name">—<\/span><span><\/span><\/span>/);
   assert.doesNotMatch(html,/position-note|<small>/);
   // The list switches between its infos and the composites, beside the suggestion, over the list.
-  assert.match(html,/<div class="lineup-list"><div class="lineup-toolbar"><button type="button" data-lineup-suggest>Meilleure composition<\/button><div class="segmented" role="group" aria-label="Colonnes"><button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><\/div><div class="lineup-squad"/);
+  assert.match(html,/<div class="lineup-list"><div class="lineup-toolbar"><div class="auto-group">[^]*?<\/div><span class="toolbar-rule"><\/span><div class="segmented" role="group" aria-label="Colonnes"><button type="button" data-lineup-view="infos" aria-pressed="true" class="active">Infos<\/button><button type="button" data-lineup-view="jeu" aria-pressed="false" class="">Jeu<\/button><\/div><\/div><div class="lineup-squad"/);
  }finally{globalThis.fetch=previous;}
 });
 
@@ -180,7 +181,9 @@ test('the editor offers the club\'s own tactic beside the others, on its cells, 
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/data-tactic="4-3-3" aria-pressed="false" class="">4-3-3<\/button><button type="button" data-tactic="Perso" aria-pressed="true" class="active">Perso</);
+  // The club's own tactic closes the list of the formations, after a line.
+  assert.match(html,/aria-checked="false" data-tactic="4-3-3">4-3-3<\/button><hr><button type="button" role="menuitemradio" aria-checked="true" data-tactic="Perso">Perso</);
+  assert.match(html,/<button type="button" aria-label="Formation précédente" data-tactic="4-3-3">[^]*?<button type="button" aria-label="Formation suivante" disabled>/);
   assert.match(html,/data-slot="8" data-player="2" draggable="true" style="left:50%;top:31%"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MOC</);
   // Empty places move too; the keeper's cell and the taken ones are not offered.
   assert.match(html,/class="pitch-player lineup-slot mid empty" data-slot="6" draggable="true" style="left:32%;top:46%"/);
@@ -218,7 +221,7 @@ test('the tactics stand over the pitch and the substitutes on one line; starters
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/<div class="lineup-field"><div class="tactics" role="group" aria-label="Tactique"><button type="button" data-tactic="4-3-3"[^]*?<\/div><div class="pitch lineup-pitch"/);
+  assert.match(html,/<div class="lineup-field"><div class="field-head"><div class="season" role="group" aria-label="Formation"><button type="button" aria-label="Formation précédente" disabled>[^]*?data-tactic="4-4-2 plat"><svg[^]*?<\/div><\/div><div class="pitch lineup-pitch"/);
   assert.match(html,/<div class="lineup-bench" style="--bench:9">/);
   assert.equal((html.match(/class="bench-slot/g)||[]).length,9);
   // The keeper wears the kit with his position on it; an empty place keeps the outline of a shirt.
@@ -249,4 +252,14 @@ test('beside the list, the opponent: its standing and form, its tactic, its reco
  assert.equal(scoutingHtml(null),'');
  const quiet=scoutingHtml({...scout,standing:null,absent:[],key_players:[],last_meeting:null,home:false,record:{venue:'home',won:0,drawn:0,lost:0}});
  assert.match(quiet,/Extérieur/);assert.match(quiet,/À domicile/);assert.doesNotMatch(quiet,/Absents|Joueurs clés|scout-meeting|pts/);
+});
+
+test('the automatic lineup offers its four levels and its two options, the level on screen marked',()=>{
+ const html=autoHtml(1,{young:true,free:false});
+ assert.deepEqual([...html.matchAll(/data-lineup-auto="(\d)"[^>]*>([^<]+)</g)].map(match=>[match[1],match[2]]),[['0','Meilleure'],['1','Légère'],['2','Forte'],['3','Complète']]);
+ assert.match(html,/data-lineup-auto="1" title="Légère rotation : [^"]+" aria-pressed="true" class="active">/);
+ assert.match(html,/data-lineup-auto="0" title="La meilleure équipe pour ce match" aria-pressed="false" class="">/);
+ assert.match(html,/class="check-option" data-lineup-option="young" aria-pressed="true" title="[^"]+"><span class="check">[^]*?<\/span>Jeunes<\/button>/);
+ assert.match(html,/data-lineup-option="free" aria-pressed="false"[^>]*>[^]*?Formation<\/button>/);
+ assert.doesNotMatch(autoHtml(null,{}),/aria-pressed="true"/);
 });

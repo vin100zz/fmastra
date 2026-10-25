@@ -29,12 +29,13 @@ def test_save_restore_rng_and_config(config, tmp_path):
     import json
     legacy = json.loads(gzip.decompress(store.path_for("test").read_bytes()))
     legacy["schema_version"] = 2
+    # A save leaves out the values equal to their default: some of these are not written to begin with.
     for name in ("finance_history", "finance_history_since", "movement_history_since", "custom_formation"):
-        legacy["world"].pop(name)
+        legacy["world"].pop(name, None)
     for player in legacy['world']['players'].values():
-        for name in ('source_current_ability', 'source_potential_ability', 'position_ratings'): player.pop(name)
+        for name in ('source_current_ability', 'source_potential_ability', 'position_ratings'): player.pop(name, None)
     for club in legacy['world']['clubs'].values():
-        for name in ('training_facilities', 'youth_recruitment'): club.pop(name)
+        for name in ('training_facilities', 'youth_recruitment'): club.pop(name, None)
     store.path_for("legacy").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("legacy")
     assert migrated.finance_history == {} and migrated.custom_formation == ()
@@ -222,7 +223,7 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     for player in legacy["world"]["players"].values():
         del player["attributes"]["values"][LEGACY_ATTRIBUTE_COUNT:]
-        del player["aggression"]
+        player.pop("aggression", None)
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     # Without the exact source file every player receives the level generation gives his position.
     fallback = store.load("old")
@@ -279,8 +280,8 @@ def test_save_from_before_the_age_records_rebuilds_them_and_keeps_the_strength_o
     store.save(world, "modern")
     legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
     legacy["schema_version"] = 35
-    legacy["world"].pop("age_records")
-    legacy["world"]["international"].pop("age_records")
+    legacy["world"].pop("age_records", None)
+    legacy["world"]["international"].pop("age_records", None)
     legacy["world"]["international"].pop("strength_history")
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
@@ -368,7 +369,7 @@ def test_save_from_before_the_shirt_numbers_numbers_every_squad_by_the_rules_of_
     store.save(world, "modern")
     legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
     legacy["schema_version"] = 34
-    for player in legacy["world"]["players"].values(): del player["shirt"]
+    for player in legacy["world"]["players"].values(): player.pop("shirt", None)
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
     for club in migrated.clubs.values():

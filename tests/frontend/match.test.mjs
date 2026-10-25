@@ -38,7 +38,7 @@ const stats={xg:1.2,shots:8,on_target:3,possession_seconds:2700,corners:4,free_k
 const player=(id,name)=>({id,name,position:'GB',stats:{minutes:90,rating:7}});
 const report={id:9,competition_id:5,competition:'Ligue des champions',round:10,round_label:'Barrages · retour',date:'2031-09-17',capacity:83186,neutral:false,
  home,away,score:[3,1],aggregate:[4,3],penalties:null,winner_id:1,first_leg_id:8,
- result:{status:'played',duration:5600,home_stats:stats,away_stats:stats,home_lineup:[player(11,'Gardien Un')],away_lineup:[player(21,'Gardien Deux')],home_bench:[],away_bench:[],
+ result:{status:'played',duration:5600,replay:true,home_stats:stats,away_stats:stats,home_lineup:[player(11,'Gardien Un')],away_lineup:[player(21,'Gardien Deux')],home_bench:[],away_bench:[],
   events:[{kind:'goal',period:1,second:2400,team_id:1,player_id:11,player:'Gardien Un',secondary_id:null,secondary:null,detail:''},
    {kind:'red',period:2,second:4000,team_id:2,player_id:21,player:'Gardien Deux',secondary_id:null,secondary:null,detail:'direct'}]}};
 async function screen(data){
@@ -69,6 +69,10 @@ test('the band has no bar: the match’s line, over the highlights, says which m
  const league=await screen({...report,round_label:null,round:4,neutral:true,aggregate:null,winner_id:null,first_leg_id:null});
  assert.match(league,/<strong>Journée 4<\/strong><span class="muted">mercredi 17 septembre 2031 · Terrain neutre<\/span><\/div><div class="tools"><button type="button" class="replay-toggle"/);
  assert.doesNotMatch(league,/Vainqueur|Match aller|Cumul/);
+ // A match the user's club did not play kept no replay: no summary to open.
+ const elsewhere=await screen({...report,first_leg_id:null,result:{...report.result,replay:false}});
+ assert.doesNotMatch(elsewhere,/replay-toggle|<div class="tools">/);
+ assert.match(elsewhere,/<h2>Les temps forts<\/h2>/);
  // A match to come has its line right under the band, without a command: there is no summary yet.
  const coming=await screen({...report,score:null,aggregate:null,winner_id:null,first_leg_id:null,result:null});
  assert.match(coming,/<strong class="big-score">VS<\/strong>/);

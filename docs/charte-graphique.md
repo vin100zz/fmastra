@@ -186,6 +186,7 @@ où le fond est déjà jaune.
 | Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list` | Deux panneaux l'un sous l'autre : créer une partie, reprendre une partie. Voir « Accueil » |
 | Nouvelle partie | `.nation-line`, `.segmented.range`, `.check` | Le monde, ses clubs, le club choisi, sur un écran. Voir « Nouvelle partie » |
 | Case à cocher | `.check` | 18, bordée ; cochée, l'accent et son encre |
+| Option d'un mot | `.check-option` | Une case puis un mot court, sans bordure ; le détail dans son infobulle. Voir « Composition auto » |
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
 | Suite | `.go`, `.go.back` | Ce qui mène plus loin (« Voir », « Voir le championnat », « Suivant », « Continuer ») finit sur un chevron dessiné, pas un caractère, centré sur sa place, dans la couleur de ce qui le porte ; sur l'action principale, au centre d'une pastille de son encre. « Précédent » le retourne |
@@ -251,6 +252,26 @@ blocs repliés.
 
 D'un onglet à l'autre de la fiche d'un club, la saison choisie est gardée.
 
+**Les formations de la Composition** se parcourent avec le même contrôle, en tête du terrain, à
+gauche, sur la ligne de la barre d'outils de la liste : dans leur ordre (la première au bout gauche),
+pas la plus récente d'abord ; la liste s'ouvre alignée sur le bord gauche, la tactique du club
+(« Perso ») après un trait.
+
+### Composition auto
+
+Sur la ligne au-dessus de la liste de la Composition, tout ce que l'IA sait composer, un clic par
+action, sans menu à ouvrir.
+
+- **Niveaux** : un choix (`.segmented`) de quatre mots, « Meilleure », « Légère », « Forte »,
+  « Complète ». Un clic compose ; le niveau dont la composition est à l'écran garde la marque de ce
+  qui est choisi, perdue au premier changement fait à la main.
+- **Options** (`.check-option`) : la case de la charte puis un mot, « Jeunes », « Formation », 4 entre
+  deux, 8 après les niveaux. Cochée, la case prend l'accent ; sous le pointeur, le fond d'un contrôle.
+- **Infobulles** : le détail que les mots courts taisent (« Légère rotation : un tiers des joueurs de
+  champ au repos… »).
+- **Place** : après le premier problème de la composition, qui se coupe pour lui laisser la place ;
+  un trait (`--line`, 22 de haut) le sépare d'« Infos » / « Jeu ».
+
 **La couleur d'un club sous ses onglets.** L'onglet ouvert d'une fiche et les
 flèches de ses saisons prennent, des deux couleurs du club, de la sélection ou
 de la compétition, celle qui se lit le mieux sur le fond. Une couleur qui s'y lirait mal (un
@@ -277,6 +298,7 @@ voile de son encre.
 | Option d'un choix, sur sa piste | Aucun fond | `--track-hover`, plus clair que la piste, encre `--strong` |
 | Panneau « Créer une partie » de l'accueil | L'accent | `--accent-hover` et la main |
 | Case à cocher | Son fond | `--panel-3` tant qu'elle n'est pas cochée |
+| Option d'un mot | Aucun fond | `--panel-3` sous la case et le mot, encre `--strong` |
 | Flèche d'un pas de saison, saison qui ouvre sa liste | Aucun fond | `--panel-3` ; la flèche garde la couleur du club |
 | Flèche de la navigation d'un bandeau, traits qui ouvrent sa liste | Aucun fond | Un voile de l'encre du bandeau, à 12 % ; ils gardent leur couleur |
 | Onglet, en-tête de colonne | `--muted` | `--strong` |
@@ -1463,6 +1485,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Sujet | Fait |
 |---|---|
 | Échelles | Sept tailles, trois graisses, un rayon, dans toutes les feuilles |
+| Formation et composition auto | Sur la Composition, le pas des formations (`steps`, options `attribute` et `forward`, `web/ui.js`) à la place des neuf boutons au-dessus du terrain ; la composition auto (`autoHtml`, `web/composition.js` ; `.check-option`, `web/charte.css`) à la place de « Meilleure composition » |
 | Fond | Blanc en thème clair |
 | Onglets | `.tabs` partout, en-tête de club compris |
 | Terrain et maillot | `.pitch` et `.kit-shirt` sur la composition, le match, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), les buts en grappe au coin du maillot (`.kit-goals`), la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |

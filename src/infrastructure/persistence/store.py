@@ -36,7 +36,7 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 40
+SCHEMA_VERSION = 41
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
@@ -278,6 +278,10 @@ PENALTY_OFFSETS = {"DC": -30, "DG": -23, "DD": -24, "MDC": -21, "MC": -16, "MOC"
 PENALTY_DECLINE_WEIGHT = 0.40
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
+# What a save leaves out besides the values equal to their default, which loading gives back: the UI journal, which no view
+# reads any more, and the source players the import left out, which nothing needs once the world exists. Since schema 41;
+# a migration of a later schema cannot count on a key holding its default value.
+UNSAVED_FIELDS = {"world": {"journal", "excluded_player_ids"}}
 # A slot, or the copy a save keeps of the one it replaced, named after the date that one was made at: `Marseille-2033-05-30`.
 SLOT_NAME = re.compile(r"[\w-]{1,64}(?:-\d{4}-\d{2}-\d{2})?")
 DATED_COPY = r"-\d{4}-\d{2}-\d{2}"
@@ -313,7 +317,7 @@ class SaveStore:
         # Made while the new save is serialized: it is long ready when the new save replaces the slot.
         copying = self.rotation.submit(self._keep, slot, world.date.iso()) if self.rotation else None
         payload = SaveEnvelope(SCHEMA_VERSION, "0.1.0", platform.python_version(), config_fingerprint(world.config), world)
-        raw = ADAPTER.dump_json(payload, by_alias=True, warnings="error")
+        raw = ADAPTER.dump_json(payload, by_alias=True, exclude_defaults=True, exclude=UNSAVED_FIELDS, warnings="error")
         temporary = None
         try:
             with tempfile.NamedTemporaryFile(dir=self.directory, prefix=".save-", suffix=".tmp", delete=False) as handle:
@@ -418,6 +422,7 @@ class SaveStore:
             if version < 38: _upgrade_possessions(world)
             if version < 39: _upgrade_stoppages(world)
             if version < 40: _upgrade_penalties(world)
+            if version < 41: _trim_matches(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -523,7 +528,7 @@ def _upgrade_document(raw: bytes, version: int, source_path: Path) -> tuple[byte
     if version < 22: document["world"] = _rename_positions(document["world"], skip="config")
     if version < 23:
         world = document["world"]
-        world["trajectories"] = _monthly_trajectories(world["trajectories"], world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
+        world["trajectories"] = _monthly_trajectories(world.get("trajectories", {}), world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
     _extend_attribute_vectors(document["world"], source_path)
     if version < 40: _list_penalty(document["world"]["config"], retired)
     return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8"), retired
@@ -578,6 +583,20 @@ def _upgrade_penalties(world: World) -> None:
         payload["attributs"]["profils_generation"]["profils"].get(position, {}).setdefault("penalty", offset)
     payload["demographie"]["progression"]["poids_declin_par_attribut"].setdefault("penalty", PENALTY_DECLINE_WEIGHT)
     world.config = decode_config(payload)
+
+
+def _trim_matches(world: World) -> None:
+    """Schema 41: only the user's club's matches keep the build-up of their replay, and a selection's matches are archived
+    once their edition is over, like a club's at the end of their season."""
+    from core.domain.matches import store_events
+    from core.world.application import _archived
+    for match in world.matches.values():
+        if match.result and match.result.engine != "archived":
+            store_events(match.result, world.controlled_club_id in (match.home_id, match.away_id))
+    for match in world.international.matches.values():
+        if match.result and match.result.engine != "archived":
+            if match.season < world.season: match.result = _archived(match.result)
+            else: store_events(match.result, False)
 
 
 def _assign_greed(world: World, source_path: Path) -> None:
