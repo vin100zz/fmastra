@@ -301,6 +301,9 @@ export const shortName = (name, short) => short || surname(name);
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
 export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
+// What leads on (« Voir », « Continuer », the next page) ends on the charter's chevron, drawn by its sheet (.go); « Précédent »
+// has it turned over.
+export const GO='<span class="go" aria-hidden="true"></span>',BACK='<span class="go back" aria-hidden="true"></span>';
 export const card = (title, content, action='', className='') => `<section class="card${className?` ${className}`:''}"><div class="card-head"><h2>${escape(title)}</h2>${action}</div>${content}</section>`;
 // A card that folds what is secondary (what `content` marks `fold-more`): its whole head opens and closes it, a bare arrow at
 // its end (app.js turns it). The choice is kept for each `key`, from one match to the next and across reloads.
@@ -373,7 +376,7 @@ export function sortTable(table, column, direction) {
 // The active column carries its direction, so a click never has to guess it from the URL; text columns start A→Z.
 // The arrow comes from the style sheet, like on the tables sorted in the browser.
 export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label}</button>`;
-export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
+export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>${BACK} Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant ${GO}</button></div></div>`;}
 // The same pages from the head of a card: the range shown and two square steps; nothing for a list that fits on one page.
 export function headPager(data) {
  if(data.total<=data.page_size)return '';

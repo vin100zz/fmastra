@@ -7,8 +7,10 @@
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
  --text:"Segoe UI",system-ui,sans-serif;
  --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--caps:.06em;
- /* Space: 4, 8, 12, 16, 24. Shape: one radius, or a full round; the mark of what is open is 3 px on a bar, 2 px on a control. */
+ /* Space: 4, 8, 12, 16, 24. Shape: four radii, from a badge to a card, or a full round; the mark of what is open is 3 px on a
+    bar, 2 px on a control. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;--mark:3px;--mark-control:2px;
+ --radius-chip:4px;--radius:6px;--radius-box:8px;--radius-card:10px;
  --h-bar:56px;--h-bar-control:40px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in both themes. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
@@ -18,13 +20,18 @@
  --good:#5fd08a;--warn:#e3c34f;--bad:#ff7a72;--info:#7cc4ff;--gold-bright:#ffd23f;
  --c3:#b996e6;--c3-soft:#2a2140;--c4:#5cc8cf;--c4-soft:#12302f;
  --ink:#e8ecf1;--muted:#9aa5b4;--line:#2a323d;--paper:var(--bg);--white:var(--panel);--sidebar:var(--rail);
- --green:var(--accent);--lime:var(--accent);--red:#ff7a72;--green-light:#5fd08a;--red-light:#ff9d95;--gold:#ffd23f;--radius:3px;
+ --green:var(--accent);--lime:var(--accent);--red:#ff7a72;--green-light:#5fd08a;--red-light:#ff9d95;--gold:#ffd23f;
  --strong:#fff;--ink-2:#c3ccd7;--ink-3:#c9d1db;--stripe:#191f27;--rail-hover:#141a21;--band:#121820;--unread:#1b222b;--disabled:#4a5563;--placeholder:#7d8896;--backdrop:#05080bb3;
  --good-soft:#1f4a31;--good-line:#2f5a41;--bad-soft:#3a1f1f;--bad-line:#6b3434;--warn-soft:#1f1c12;--warn-line:#5a4a1c;--own-row:#2c2a14;--gold-soft:#3a3113;--info-soft:#13293a;--att-soft:#3a1a1a;--mid-ink:#7fd69a;--att-ink:#ff9d95;
+ /* A line under a table's heading; the track of a choice and an option under the pointer there; the wash of a section's
+    title. Depth: on the dark ground a shadow does not read, a faint ring of light draws the edge. */
+ --head-line:#2a323d;--track:#0e1217;--track-hover:#ffffff12;--title-wash:#2a2614;
+ --shadow-card:0 0 0 1px #ffffff0d,0 1px 3px #00000059;--shadow-field:0 0 0 1px #ffffff1f;--shadow-float:0 0 0 1px #ffffff17,0 16px 36px -10px #000000b3;
+ --shadow-thumb:0 1px 2px #00000080;--shadow-accent:inset 0 -1px 0 #00000033,0 1px 2px #00000059;
  --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
  font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--bg);color-scheme:dark
 }
-body{background:var(--bg)}
+body{background:none}
 ::selection{background:var(--accent);color:var(--accent-ink)}
 :focus-visible{outline:2px solid var(--accent)}
 
@@ -209,9 +216,6 @@ dialog::backdrop{background:var(--backdrop)}
 .slot-row{border-color:var(--line)}
 
 /* Line-up editor. */
-.tactics,.segmented{border-color:var(--line);border-radius:var(--radius)}
-.tactics button,.segmented button{background:var(--panel);border-color:var(--line);color:var(--muted)}
-.tactics button.active,.segmented button.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 -2px 0 var(--accent)}
 .lineup-problems{background:var(--bad-soft);border-color:var(--bad-line);color:var(--bad)}
 .bench-slot{background:var(--panel-2);border-color:var(--line)}
 .bench-slot.invalid{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
@@ -335,7 +339,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .composition-card{margin-bottom:0}
 .lineup-toolbar{justify-content:flex-start;gap:12px;padding:6px 10px;border-bottom:1px solid var(--line)}
 .lineup-toolbar [data-lineup-suggest]{margin-left:auto;padding:5px 12px}
-.tactics button,.segmented button{padding:5px 11px}
 .lineup-fixture{font-size:13px;color:var(--muted)}
 .lineup-fixture b{color:var(--ink)}
 .lineup-problems{display:inline-flex;align-items:center;gap:6px;margin:0;padding:3px 10px;border:1px solid;border-radius:var(--radius);font-size:13px;font-weight:600;line-height:18px}
@@ -356,20 +359,24 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  .lineup-squad .table-scroll{max-height:calc(100vh - var(--h-bar) - 188px)}
 }
 
-/* Light theme: same layout and accent, on white panels; pitches stay green. */
+/* Light theme: same layout and accent, white panels on a pale ground; pitches stay green. */
 :root[data-theme="light"]{
- --bg:#fff;--rail:#fff;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--row-line:#e6eaef;--line:#d6dce4;
+ --bg:#f0f2f5;--rail:#fff;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--row-line:#edf0f3;--line:#d6dce4;
+ --head-line:#e2e6eb;--track:#e9ecf1;--track-hover:#ffffffa6;--title-wash:#fcf1c9;
+ --shadow-card:0 0 0 1px #1018280a,0 1px 2px #1018280f,0 2px 8px -3px #10182814;--shadow-field:0 0 0 1px #10182817,0 1px 2px #1018280d;
+ --shadow-float:0 0 0 1px #1018280d,0 16px 36px -10px #10182833,0 4px 12px -4px #1018281a;--shadow-thumb:0 1px 2px #1018282e,inset 0 -1px 0 #00000017;
+ --shadow-accent:inset 0 -1px 0 #7f620040,0 1px 2px #7f62002e,0 2px 6px -2px #7f620033;
  --ink:#16202b;--muted:#5d6a79;--strong:#0b121a;--ink-2:#34404e;--ink-3:#4a5563;
  --accent-text:#7f6200;--accent-soft:#f5c40033;--accent-hover:#e6b800;
  --good:#1a7340;--warn:#8a6600;--bad:#bf3329;--info:#2166a8;--gold-bright:#8a6600;--mid-ink:#1a7340;--att-ink:#b3443a;
  --red:#bf3329;--green-light:#1a7340;--red-light:#c75a50;--gold:#8a6600;
- --stripe:#f7f9fb;--rail-hover:#f3f5f8;--band:#fff;--unread:#fffaeb;--disabled:#b9c1cb;--placeholder:#8a94a1;--backdrop:#0f172a66;
+ --stripe:#f5f7f9;--rail-hover:#f3f5f8;--band:#fff;--unread:#fffaeb;--disabled:#b9c1cb;--placeholder:#8a94a1;--backdrop:#0f172a66;
  --good-soft:#e1f3e7;--good-line:#a9d9bb;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--warn-soft:#fdf4d8;--warn-line:#ecd69a;--own-row:#fff3c4;
  --gold-soft:#fbf0cf;--info-soft:#e3eefa;--att-soft:#fbe6e3;
  --c3:#7b46a4;--c3-soft:#f4edfc;--c4:#00646f;--c4-soft:#e0f5f8;
  color-scheme:light
 }
-:root[data-theme="light"] .rating.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
+:root[data-theme="light"] .rating.graded{background:hsl(var(--hue) 78% 89%);color:hsl(var(--hue) 72% 26%);border-color:transparent}
 :root[data-theme="light"] dialog,:root[data-theme="light"] #toast{box-shadow:0 12px 32px #1a2d3a2e}
 
 /* Ma partie, auto mode, theme switch and manual: four icons of one width in a row at the bottom of the sidebar, named in
@@ -574,7 +581,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .tile.fee-ask strong{color:var(--accent-text)}
 .tile.fee-ask.na{background:var(--panel-2);border-color:var(--line);color:var(--muted);cursor:help}
 .tile.fee-ask.na strong{color:var(--muted)}
-:root[data-theme="light"] .tile.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
+:root[data-theme="light"] .tile.graded{background:hsl(var(--hue) 70% 90%);color:hsl(var(--hue) 65% 26%);border-color:transparent}
 /* The facts of the rail: a label, then its value with what draws it (a bar, a flag) ahead of it. */
 .rail-section .fact{padding:0;font-size:13px}
 .rail-section .fact strong{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--strong);white-space:nowrap}
@@ -657,11 +664,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .chip.nation-chip,.chip.toggle{padding:0 10px;font-size:13px;font-weight:400}
 .chip.on.nation-chip,.chip.on.toggle{font-weight:600}
 .chip .nation{gap:0}
-.segmented a{display:flex;align-items:center;height:28px;padding:0 11px;border-right:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;font-weight:600;white-space:nowrap}
-.segmented a:last-of-type{border-right:0}
-
-.segmented a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 -2px 0 var(--accent)}
-.card-head .segmented a{height:22px}
 /* A range folded behind a button: its fields open under it; set, it reads the range and a cross takes it off. */
 .filter-menu{position:relative}
 .filter-menu>summary{display:flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--ink-2);font-size:13px;font-weight:400;white-space:nowrap;cursor:pointer;list-style:none;user-select:none}
@@ -673,7 +675,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .filter-menu .clear{display:grid;place-items:center;width:20px;height:20px;border-radius:var(--radius);color:var(--accent-text);font-size:16px;font-weight:400;line-height:1}
 
 .filter-panel{position:absolute;top:34px;left:0;z-index:6;display:flex;flex-direction:column;gap:8px;width:232px;padding:10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 12px 32px #0009}
-:root[data-theme="light"] .filter-panel{box-shadow:0 12px 32px #1a2d3a2e}
 .filter-fields{display:flex;gap:8px}
 .filter-fields label{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;font-size:11px;font-weight:600;color:var(--muted)}
 .filter-fields input{width:100%;height:28px;padding:0 8px}

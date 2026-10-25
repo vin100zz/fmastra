@@ -15,12 +15,16 @@
 <h2>Couleurs</h2>
 <div class="spec-row">
 <div class="spec-group"><span class="label">Surfaces et traits</span><div class="spec-line">
-<div class="sw"><i style="background: var(--bg)"></i><span class="token">--bg · --panel</span><span class="value">#ffffff</span></div>
+<div class="sw"><i style="background: var(--bg)"></i><span class="token">--bg</span><span class="value">#f0f2f5</span></div>
+<div class="sw"><i style="background: var(--panel); box-shadow: var(--shadow-card)"></i><span class="token">--panel</span><span class="value">#ffffff</span></div>
 <div class="sw"><i style="background: var(--panel-2)"></i><span class="token">--panel-2</span><span class="value">#f3f5f8</span></div>
 <div class="sw"><i style="background: var(--panel-3)"></i><span class="token">--panel-3</span><span class="value">#e8edf3</span></div>
-<div class="sw"><i style="background: var(--stripe)"></i><span class="token">--stripe</span><span class="value">#f7f9fb</span></div>
+<div class="sw"><i style="background: var(--stripe)"></i><span class="token">--stripe</span><span class="value">#f5f7f9</span></div>
 <div class="sw"><i style="background: var(--line)"></i><span class="token">--line</span><span class="value">#d6dce4</span></div>
-<div class="sw"><i style="background: var(--row-line)"></i><span class="token">--row-line</span><span class="value">#e6eaef</span></div>
+<div class="sw"><i style="background: var(--row-line)"></i><span class="token">--row-line</span><span class="value">#edf0f3</span></div>
+<div class="sw"><i style="background: var(--head-line)"></i><span class="token">--head-line</span><span class="value">#e2e6eb</span></div>
+<div class="sw"><i style="background: var(--track)"></i><span class="token">--track</span><span class="value">#e9ecf1</span></div>
+<div class="sw"><i style="background: var(--title-wash)"></i><span class="token">--title-wash</span><span class="value">#fcf1c9</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Encres</span><div class="spec-line">
 <div class="sw"><i style="background: var(--strong)"></i><span class="token">--strong</span><span class="value">#0b121a</span></div>
@@ -82,7 +86,8 @@
 <div class="type-row"><span class="page-title">Coupes d’Europe</span><span class="token">--fs-page</span><span class="value">26 / 32</span><span class="value">700</span><span class="value">Titre de page</span></div>
 <div class="type-row"><span class="figure">42.5 M€</span><span class="token">--fs-title</span><span class="value">20 / 24</span><span class="value">700</span><span class="value">Chiffre clé, date du jour</span></div>
 <div class="type-row"><span style="font: 700 semi-condensed 16px/20px var(--display); letter-spacing: var(--caps); text-transform: uppercase">Continuer</span><span class="token">--fs-figure</span><span class="value">16 / 20</span><span class="value">700</span><span class="value">Action principale, délai</span></div>
-<div class="type-row"><span style="font: 600 semi-condensed 13px/16px var(--display); letter-spacing: var(--caps); text-transform: uppercase; color: var(--muted)">Équipe-type</span><span class="token">--fs-body</span><span class="value">13 / 16</span><span class="value">600</span><span class="value">Titre de carte</span></div>
+<div class="type-row"><span style="font: 600 semi-condensed 13px/16px var(--display); letter-spacing: var(--caps); text-transform: uppercase; color: var(--strong)">Équipe-type</span><span class="token">--fs-body</span><span class="value">13 / 16</span><span class="value">600</span><span class="value">Titre de carte</span></div>
+<div class="type-row"><span style="font: 700 semi-condensed 11px/14px var(--display); letter-spacing: var(--caps); text-transform: uppercase; color: var(--ink)">Arrivées · 3</span><span class="token">--fs-small</span><span class="value">11 / 14</span><span class="value">700</span><span class="value">Titre d’une section (--display)</span></div>
 <div class="type-row"><span><b class="strong">Ousmane Dembélé</b> · 28 ans · juin 2028</span><span class="token">--fs-body</span><span class="value">13 / 18</span><span class="value">400 · 600</span><span class="value">Texte, cellule, onglet, bouton</span></div>
 <div class="type-row"><span class="label">Poste · Âge · Note</span><span class="token">--fs-small</span><span class="value">11 / 14</span><span class="value">400 · 600</span><span class="value">En-tête de colonne, libellé, légende</span></div>
 <div class="type-row"><span><span class="position mid">MDC</span></span><span class="token">--fs-micro</span><span class="value">10 / 10</span><span class="value">700</span><span class="value">Pastille, maillot</span></div>
@@ -113,11 +118,21 @@
 <div class="measure"><i style="height: 18px"></i><span class="token">--h-chip</span><span class="value">18 · pastille</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Formes et marques</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
-<div class="measure"><i style="width: 56px; height: 36px; border-radius: var(--radius)"></i><span class="token">--radius</span><span class="value">3</span></div>
+<div class="measure"><i style="width: 36px; height: 18px; border-radius: var(--radius-chip)"></i><span class="token">--radius-chip</span><span class="value">4 · pastille</span></div>
+<div class="measure"><i style="width: 56px; height: 28px; border-radius: var(--radius)"></i><span class="token">--radius</span><span class="value">6 · contrôle</span></div>
+<div class="measure"><i style="width: 56px; height: 36px; border-radius: var(--radius-box)"></i><span class="token">--radius-box</span><span class="value">8 · piste, menu, tuile</span></div>
+<div class="measure"><i style="width: 56px; height: 36px; border-radius: var(--radius-card)"></i><span class="token">--radius-card</span><span class="value">10 · carte, bandeau</span></div>
 <div class="measure"><i style="width: 36px; height: 36px; border-radius: 50%"></i><span class="token">Rond</span><span class="value">points, écussons</span></div>
-<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 1px solid var(--line)"></i><span class="token">--line</span><span class="value">1 · bordure</span></div>
-<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 2px solid var(--accent)"></i><span class="token">--mark-control</span><span class="value">2 · choix ouvert</span></div>
-<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 3px solid var(--accent)"></i><span class="token">--mark</span><span class="value">3 · barre, menu, onglet</span></div>
+<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 1px solid var(--line)"></i><span class="token">--line</span><span class="value">1 · case, compétition</span></div>
+<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 2px solid var(--accent)"></i><span class="token">--mark-control</span><span class="value">2 · prochain match, pas ouvert</span></div>
+<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 3px solid var(--accent)"></i><span class="token">--mark</span><span class="value">3 · barre, onglet, intertitre</span></div>
+</div></div>
+<div class="spec-group"><span class="label">Profondeur · une ombre plutôt qu’une bordure</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
+<div class="measure"><i style="width: 84px; height: 48px; border: 0; border-radius: var(--radius-card); background: var(--panel); box-shadow: var(--shadow-card)"></i><span class="token">--shadow-card</span><span class="value">carte sur le fond</span></div>
+<div class="measure"><i style="width: 84px; height: 28px; border: 0; border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-field)"></i><span class="token">--shadow-field</span><span class="value">bouton, champ</span></div>
+<div class="measure"><i style="width: 84px; height: 48px; border: 0; border-radius: var(--radius-box); background: var(--panel); box-shadow: var(--shadow-float)"></i><span class="token">--shadow-float</span><span class="value">menu, liste</span></div>
+<div class="measure"><i style="width: 56px; height: 24px; border: 0; border-radius: var(--radius); background: var(--accent); box-shadow: var(--shadow-thumb)"></i><span class="token">--shadow-thumb</span><span class="value">option ouverte</span></div>
+<div class="measure"><i style="width: 84px; height: 36px; border: 0; border-radius: var(--radius); background: var(--accent) linear-gradient(#ffffff2e, #ffffff00); box-shadow: var(--shadow-accent)"></i><span class="token">--shadow-accent</span><span class="value">action principale</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Marque · .brand · .logo · .wordmark · inversée sur le coin jaune du menu ; sur son carré jaune en favicon</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
 <a class="brand" href="#" style="width: 216px"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg><span class="wordmark">FOOTBALL<span>MANAGER</span></span></a>
@@ -148,7 +163,7 @@
 <a class="next-match" href="#"><b>J-33</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 64%, #ffd100 64%)"></i>Rodez</strong><small class="cup">Coupe de France</small></span></a>
 <a class="next-match" href="#"><b>J-54</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #1a1a1a 64%, #ffffff 64%)"></i>Angers<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></strong><small>Ligue 1</small></span></a>
 </div>
-<button type="button" class="cta">Continuer <span>→</span></button>
+<button type="button" class="cta">Continuer <span class="go" aria-hidden="true"></span></button>
 </header>
 </div>
 </div>
@@ -167,10 +182,17 @@
 <div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
 </div>
 </div>
-<div class="spec-group"><span class="label">Vues d’un onglet · .segmented.views · au bout de la rangée d’onglets, marquées de la couleur de l’onglet ouvert</span>
+<div class="spec-group"><span class="label">Dans la couleur du club · --club-fill, --club-ink · sur la page d’un club, d’une sélection, d’un joueur, d’une compétition</span>
+<div class="spec-line">
+<div class="segmented" role="group" aria-label="Colonnes" style="--club-fill: #2098c8; --club-ink: #111418"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
+<div class="segmented" role="group" aria-label="Colonnes" style="--club-fill: #0058c0; --club-ink: #ffffff"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
+<div class="segmented small" role="group" aria-label="Colonnes" style="--club-fill: #d01018; --club-ink: #ffffff"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
+</div>
+</div>
+<div class="spec-group"><span class="label">Vues d’un onglet · .segmented.views · au bout de la rangée d’onglets, l’ouverte dans la couleur de la page</span>
 <div class="spec-line">
 <nav class="segmented views" aria-label="Vues de l’historique"><a class="active" href="#">Vue d’ensemble</a><a href="#">Saisons</a><a class="hover" href="#">Joueurs</a><a href="#">Records</a></nav>
-<nav class="segmented views" aria-label="Vues de l’historique" style="--club: #e30613"><a href="#">Vue d’ensemble</a><a class="active" href="#">Éditions</a><a href="#">Joueurs</a><a href="#">Records</a></nav>
+<nav class="segmented views" aria-label="Vues de l’historique" style="--club-fill: #e30613; --club-ink: #ffffff"><a href="#">Vue d’ensemble</a><a class="active" href="#">Éditions</a><a href="#">Joueurs</a><a href="#">Records</a></nav>
 </div>
 </div>
 <div class="spec-row">
@@ -227,7 +249,10 @@
 </div>
 </div>
 <div class="spec-group"><span class="label">.cta · 36, 40 dans la barre du haut · un seul par écran</span>
-<div class="spec-line gap"><button type="button" class="count" aria-label="2 messages à traiter" style="border: 0">2</button><button type="button" class="cta">Continuer <span>→</span></button></div>
+<div class="spec-line gap"><button type="button" class="count" aria-label="2 messages à traiter" style="border: 0">2</button><button type="button" class="cta">Continuer <span class="go" aria-hidden="true"></span></button></div>
+</div>
+<div class="spec-group"><span class="label">.go · ce qui mène plus loin finit sur un chevron dessiné, centré sur sa place ; dans une pastille sur l’action principale</span>
+<div class="spec-line gap"><a href="#" class="small strong">Voir le championnat <span class="go" aria-hidden="true"></span></a><a href="#" class="small strong hover">Voir <span class="go" aria-hidden="true"></span></a><button type="button" class="button small"><span class="go back" aria-hidden="true"></span> Précédent</button><button type="button" class="button small">Suivant <span class="go" aria-hidden="true"></span></button><button type="button" class="button primary">Accepter <span class="go" aria-hidden="true"></span></button></div>
 </div>
 <div class="spec-group"><span class="label">.field</span>
 <div class="spec-line gap">
@@ -242,7 +267,7 @@
 <h2>Carte, tableau, faits</h2>
 <div class="pair">
 <section class="card" style="flex: 1.7">
-<div class="card-head"><h2>Ligue 1 – 11e journée</h2><a href="#">Voir →</a></div>
+<div class="card-head"><h2>Ligue 1 – 11e journée</h2><a href="#">Voir <span class="go" aria-hidden="true"></span></a></div>
 <div class="table t-standings">
 <div class="tr head"><button type="button" class="center">#</button><button type="button">Club</button><button type="button" class="num sorted">Pts</button><button type="button" class="num">J</button><button type="button" class="num">V</button><button type="button" class="num">N</button><button type="button" class="num">D</button><button type="button" class="num">BP</button><button type="button" class="num">BC</button><button type="button" class="num">Diff.</button><button type="button">Forme</button></div>
 <div class="tr own"><span class="rank good">1</span><span class="cell strong"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 64%, #da291c 64%)"></i><a href="#">Paris SG</a></span><span class="num strong">27</span><span class="num">11</span><span class="num">8</span><span class="num">3</span><span class="num">0</span><span class="num">27</span><span class="num">8</span><span class="num">+19</span><span class="form"><i class="V">V</i><i class="V">V</i><i class="N">N</i><i class="V">V</i><i class="V">V</i></span></div>
@@ -339,6 +364,29 @@
 </section>
 
 <section class="spec" style="grid-column: span 12">
+<h2>Page d’un club · .club-page · les couleurs de son bandeau pour toute la page</h2>
+<div class="pair">
+<div class="club-page" style="--club-fill: #2098c8; --club-ink: #111418; --club: #2098c8; flex: 1; padding: 12px; border-radius: var(--radius-card)">
+<section class="card">
+<nav class="tabs" aria-label="Sections"><a class="active" href="#">Effectif</a><a href="#">Composition</a><a href="#">Calendrier</a></nav>
+<div class="card-head"><h2>Équipe première · 16 joueurs</h2><div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div></div>
+<div class="section-title"><span class="label">Arrivées · 2</span></div>
+<div class="card-body stack"><div><div class="fact"><span>Budget transferts</span><strong>18 M€</strong></div><div class="fact"><span>Masse salariale</span><strong>900 k€</strong></div><div class="fact"><span>Plafond</span><strong>4.1 M€</strong></div></div><div class="section-title inset"><span class="label">Dernière journée</span></div></div>
+</section>
+</div>
+<div class="plain-page" style="flex: 1; padding: 12px; border-radius: var(--radius-card)">
+<section class="card">
+<nav class="tabs" aria-label="Sections"><a class="active" href="#">Effectif</a><a href="#">Composition</a><a href="#">Calendrier</a></nav>
+<div class="card-head"><h2>Équipe première · 16 joueurs</h2><div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div></div>
+<div class="section-title"><span class="label">Arrivées · 2</span></div>
+<div class="card-body stack"><div><div class="fact"><span>Budget transferts</span><strong>18 M€</strong></div><div class="fact"><span>Masse salariale</span><strong>900 k€</strong></div><div class="fact"><span>Plafond</span><strong>4.1 M€</strong></div></div><div class="section-title inset"><span class="label">Dernière journée</span></div></div>
+</section>
+</div>
+</div>
+<div class="spec-line"><span class="token">Fond</span><span class="value">un souffle de la couleur du bandeau, plus marqué en haut ; les cartes restent blanches</span><span class="token" style="margin-left: 16px">Choix, onglet, intertitre</span><span class="value">dans ses couleurs ; ailleurs, le jaune</span><span class="token" style="margin-left: 16px">Intertitre en colonne</span><span class="value">.inset, arrondi, dans la largeur de sa colonne</span></div>
+</section>
+
+<section class="spec" style="grid-column: span 12">
 <h2>Présentation d’un club · .tiles · .kits · .block-season · .watch-list · .season-moves · .leader-bars</h2>
 <div class="spec-group"><span class="label">Rangée de tuiles · les compétitions, joueurs et âge moyen, tactique, entraînement et recrutement, personnalité, la valeur en dernier ; la largeur partagée, le contenu centré</span>
 <div class="tiles row"><div class="tile split"><div><span class="label"><a class="comp-link" href="#"><span class="comp">L1</span>Ligue 1</a></span><strong>1er <em class="muted">77 pts</em></strong></div><div><span class="label"><a class="comp-link" href="#"><span class="comp cup">CF</span>Coupe de France</a></span><strong>Finale</strong></div><div><span class="label"><a class="comp-link" href="#"><span class="comp europe">C1</span>Ligue des champions</a></span><strong>Demi-finales</strong></div></div>
@@ -368,7 +416,7 @@
 <section class="card"><div class="card-head"><h2>À surveiller</h2></div><ul class="watch-list"><li><span class="position gk">GB</span><a href="#" class="strong">Unai Marrero</a><span class="watch-facts"><span class="rating graded" style="--hue:12">45 %</span></span></li><li><span class="position">DG</span><a href="#" class="strong">Luca Cecchetto</a><span class="watch-facts"><b class="bad">Contrat · 30 juin 2034</b><b class="bad">Blessé · 12 juil.</b></span></li><li><span class="position mid">MC</span><a href="#" class="strong">Holger Quintero</a><span class="watch-facts"><b class="warn">Suspendu · 1 match</b></span></li></ul></section>
 </div>
 <div class="stack">
-<section class="card"><div class="card-head"><h2>Mercato</h2><a href="#">Voir →</a></div><div class="section-title"><span class="label">Arrivées · 3</span><b>340 M€</b></div><ul class="season-moves"><li><span class="position att">BU</span><a href="#" class="strong">Francesco Camarda</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #6cabdd 64%, #ffffff 64%)"></i>Man City</span><b class="strong">300 M€</b></li><li><span class="position mid">MOC</span><a href="#" class="strong">Antoine Bourgault</a><span class="muted">Centre de formation</span><span class="muted">—</span></li></ul><div class="section-title"><span class="label">Départs · 9</span><b>300 M€</b></div><ul class="season-moves"><li><span class="position mid">MDC</span><a href="#" class="strong">Jadiel Pereira da Gama</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #7a263a 64%, #95bfe5 64%)"></i>Aston Villa</span><b class="strong">190 M€</b></li><li><span class="position mid">MOC</span><a href="#" class="strong">Mohamed Tawfik</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #f84000 64%, #080808 64%)"></i>Lorient</span><span class="muted">Prêt</span></li></ul></section>
+<section class="card"><div class="card-head"><h2>Mercato</h2><a href="#">Voir <span class="go" aria-hidden="true"></span></a></div><div class="section-title"><span class="label">Arrivées · 3</span><b>340 M€</b></div><ul class="season-moves"><li><span class="position att">BU</span><a href="#" class="strong">Francesco Camarda</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #6cabdd 64%, #ffffff 64%)"></i>Man City</span><b class="strong">300 M€</b></li><li><span class="position mid">MOC</span><a href="#" class="strong">Antoine Bourgault</a><span class="muted">Centre de formation</span><span class="muted">—</span></li></ul><div class="section-title"><span class="label">Départs · 9</span><b>300 M€</b></div><ul class="season-moves"><li><span class="position mid">MDC</span><a href="#" class="strong">Jadiel Pereira da Gama</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #7a263a 64%, #95bfe5 64%)"></i>Aston Villa</span><b class="strong">190 M€</b></li><li><span class="position mid">MOC</span><a href="#" class="strong">Mohamed Tawfik</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #f84000 64%, #080808 64%)"></i>Lorient</span><span class="muted">Prêt</span></li></ul></section>
 <span class="value">Arrivées puis départs, la plus grosse indemnité d’abord ; le total de chaque sens à droite, absent sans indemnité</span>
 </div>
 <div class="stack">

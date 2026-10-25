@@ -1,5 +1,5 @@
 import {api,escape as e,number as n,money,price,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
- spreadLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
+ spreadLayout,level,levelHue,blockNote,averageNote,moraleCell,GO} from './ui.js';
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
@@ -30,7 +30,7 @@ const matchList=(matches,club,none)=>`<div class="club-matches">${matches.length
 // `link` lets another screen point the block elsewhere than the club's own tab.
 export function calendarBlock(club,data,link=`#/club/${club.id}/calendar`){
  // The API lists the played matches newest first; the block reads in date order, from the oldest to the next ones.
- return card('Calendrier',`<div class="card-body">${matchList([...[...data.last].reverse(),...data.next],club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir →</a>`);
+ return card('Calendrier',`<div class="card-body">${matchList([...[...data.last].reverse(),...data.next],club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir ${GO}</a>`);
 }
 
 // What is left to spend on transfers and in wages, the offers under way set aside; the wage margin as a ring filled to its
@@ -41,7 +41,7 @@ export function financesBlock(club,data,{balance=false}={}){
  const ring=`<span class="news-ring${left<=5?' full':''}" role="img" aria-label="${left} % du plafond salarial disponible"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(left*1.6336).toFixed(1)} 163.4"/></svg><b>${left} %</b></span>`;
  const cash=balance?`<small>Trésorerie <b>${money(data.balance)}</b></small>`:'';
  return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${money(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Marge salariale</span><strong>${money(monthlyAmount(margin))}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
-  `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
+  `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir ${GO}</a>`);
 }
 
 // `rows` of the club's league around its own (five by default, the whole league when it has room), titled with the
@@ -52,7 +52,7 @@ export function standingsExtract(club,standings,rows=5){
  const shown=Math.min(rows,items.length),at=items.findIndex(row=>row.club?.id===club.id),start=Math.max(0,Math.min(at-Math.floor((shown-1)/2),items.length-shown));
  const round=Math.max(0,...items.map(row=>row.played));
  const title=`${e(club.competition)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
- return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir →</a></div>${standingsTable({items:items.slice(start,start+shown)},'points',false,club.id)}</section>`;
+ return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir ${GO}</a></div>${standingsTable({items:items.slice(start,start+shown)},'points',false,club.id)}</section>`;
 }
 
 // The club's two outfits, home first, on the raised ground (a white kit would melt into the card); each opens its
@@ -115,7 +115,7 @@ export function marketCard(club,data,rows=12){
  const fees=items=>items.reduce((sum,row)=>sum+(row.kind==='transfer'&&row.fee||0),0);
  const shownIn=order(arrivals).slice(0,rows),shownOut=order(departures).slice(0,Math.max(0,rows-shownIn.length));
  const side=(title,items,shown,incoming)=>items.length?`<h3 class="section-title"><span>${title} · ${items.length}</span>${fees(items)?`<b>${money(fees(items))}</b>`:''}</h3><ul class="season-moves">${shown.map(row=>line(row,incoming)).join('')}</ul>`:'';
- return card('Mercato',side('Arrivées',arrivals,shownIn,true)+side('Départs',departures,shownOut,false),`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir →</a>`,'season-market');
+ return card('Mercato',side('Arrivées',arrivals,shownIn,true)+side('Départs',departures,shownOut,false),`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir ${GO}</a>`,'season-market');
 }
 
 // Players ranked on one figure, as bars against the first of them, its unit in the head of the card. `format` writes the
@@ -207,7 +207,7 @@ export function marketBlock(transfers,{club=null,market=null}={}){
   +`<ul>${group.offres.map(offer=>`<li><span class="market-club">${clubLink(offer.acheteur)}</span><b>${money(offer.indemnite)}</b><span class="market-actions">${offerButtons(offer)}</span></li>`).join('')}</ul></li>`);
  // Talks show where they stand; an older offer still in its auction shows the wage it proposes.
  const stage=offer=>({indemnite:'Contre-offre en cours',accord_club:`Réponse du joueur le ${date(offer.date_prevue)}`,salaire:'Contrat à négocier',signature:`Arrivée le ${date(offer.date_prevue)}`})[offer.etape]||monthlySalary(offer.salaire_propose);
- const outgoing=transfers.sortantes.map(offer=>`<li><div class="market-line">${who(offer.joueur_id,offer.joueur,offer.poste)}<b>${price(offer.indemnite)}</b></div><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}${offer.etape==='salaire'?` · <a href="#/player/${offer.joueur_id}">Négocier →</a>`:''}</small></li>`);
+ const outgoing=transfers.sortantes.map(offer=>`<li><div class="market-line">${who(offer.joueur_id,offer.joueur,offer.poste)}<b>${price(offer.indemnite)}</b></div><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}${offer.etape==='salaire'?` · <a href="#/player/${offer.joueur_id}">Négocier ${GO}</a>`:''}</small></li>`);
  const listed=transfers.liste.map(row=>`<li><div class="market-line">${who(row.joueur_id,row.joueur,row.poste)}<b>${price(row.indemnite)}</b></div></li>`);
  const loan=(row,arrow)=>`<li><div class="market-line"><span class="market-player">${playerLink(row.joueur_id,row.joueur)}<small>${arrow} ${clubLink(row.club)}</small></span><span class="muted">${shortDate(row.fin)}</span></div></li>`;
  const loans=[...(transfers.prets||[]).map(row=>loan(row,'→')),...(transfers.emprunts||[]).map(row=>loan(row,'←'))];

@@ -182,7 +182,7 @@ test('the market under way stands in four columns: offers by player with his val
  assert.match(html,/Offres reçues<span class="market-count alert">2<\/span>/);
  assert.match(html,/Baidoo<\/a><small>valeur 41\sM€<\/small>/);
  assert.equal((html.match(/data-command="reponse-offre" data-decision="accepter"/g)||[]).length,2);
- assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier →/);
+ assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier <span class="go" aria-hidden="true"><\/span>/);
  assert.match(html,/→ <a href="#\/club\/33"/);
  assert.match(marketBlock({entrantes:[],sortantes:[],liste:[],prets:[],emprunts:[]}),/Mercato fermé.*Aucune offre sur vos joueurs.*Aucune offre en cours.*Aucun joueur sur la liste.*Aucun prêt en cours/);
 });

@@ -197,8 +197,8 @@
 /* Composition: the tactics over the pitch, the substitutes on one line, the list with its controls, the opponent on the right. */
 .composition-card .lineup-layout{grid-template-columns:auto minmax(0,1fr);align-items:start}
 .composition-card .lineup-layout.with-scout{grid-template-columns:auto minmax(0,1fr) minmax(280px,320px)}
-.composition-card .lineup-field>.tactics{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-.composition-card .lineup-field>.tactics button{border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;font-family:var(--display);font-stretch:semi-condensed;font-size:13px;white-space:nowrap}
+.composition-card .lineup-field>.tactics{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));margin-bottom:8px}
+.composition-card .lineup-field>.tactics button{font-family:var(--display);font-stretch:semi-condensed;font-size:13px;white-space:nowrap}
 .composition-card .lineup-bench{grid-template-columns:repeat(var(--bench,9),minmax(0,1fr))}
 .composition-card .bench-slot{flex-direction:column;justify-content:center;gap:3px;min-height:52px;padding:5px 2px;text-align:center}
 .composition-card .bench-slot>span:last-child{max-width:100%;font-size:10px;letter-spacing:0}

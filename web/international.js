@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,averageNote,date,card,fact,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,leadersCards,playerTable,playerViewSwitch,query,competitionBadge,editionHref,SELECTION_COMPETITIONS} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,card,GO,fact,heading,steps,table,sortableTable,standings,empty,clubLink,playerLink,fixtures,leadersCards,playerTable,playerViewSwitch,query,competitionBadge,editionHref,SELECTION_COMPETITIONS} from './ui.js';
 import {nationNavigation,selectionNavigation} from './navigation.js';
 import {nationHero,nationTiles,competitionHero,competitionBand} from './club-hero.js';
 import {calendarBlock,kitsCard,elevenCard,leadersCards as presentationLeaders,presentationHeight,presentationColumns,rowsIn,PRESENTATION} from './club-overview.js';
@@ -133,7 +133,7 @@ function groupCard(group,own,extract=false){
  const round=Math.max(0,...group.rows.map(row=>row.played));
  const title=`Groupe ${e(group.name)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
  const tab=group.finals?'finals':group.stage==='Phase de ligue'?'league':'qualifications';
- return `<section class="card standings-card${extract?' standings-extract':''}"><div class="card-head"><h2>${title}</h2><a href="${editionHref(group.code,group.year,tab)}" aria-label="Voir le groupe">Voir →</a></div>${internationalStandings(group.rows,group.places,{extract,own})}</section>`;
+ return `<section class="card standings-card${extract?' standings-extract':''}"><div class="card-head"><h2>${title}</h2><a href="${editionHref(group.code,group.year,tab)}" aria-label="Voir le groupe">Voir ${GO}</a></div>${internationalStandings(group.rows,group.places,{extract,own})}</section>`;
 }
 // The Effectif tab, a club's: the list alone, across the page.
 const squadContent=(nation,params)=>`<div class="club-squad">${squadCard(nation,params)}</div>`;

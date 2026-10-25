@@ -1,7 +1,7 @@
 import {monthlySalary} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle,kitShirt} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle,kitShirt,GO} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -118,7 +118,7 @@ function marketBody(data,club){
  const budget=`<div class="fact"><span><a href="#/club/${club.id}/finances">Budget transferts</a></span><strong>${money(data.budget)}</strong></div>`;
  const facts=data.end?fact('Fermeture',date(data.end))+budget+fact('Marge salariale',monthlySalary(Math.max(0,data.wages)))
   :(data.talks.length?fact('Vos offres en cours',players(data.talks)):'')+(data.offers.length?fact('Offres reçues',players(data.offers)):'')+budget;
- return `<div class="news-facts">${facts}</div><a class="news-more" href="#/players">Joueurs →</a>`;
+ return `<div class="news-facts">${facts}</div><a class="news-more" href="#/players">Joueurs ${GO}</a>`;
 }
 
 // The main transfers of a window, in the club's division then in the world: who, from which club to which, and the fee. A
@@ -146,7 +146,7 @@ function reviewBody(data,club){
  const europe=data.europe?`<span class="news-good">Qualifié pour la <a href="${competitionHref(data.europe)}">${e(data.europe.name)}</a> ${season(data.season+1)}</span>`:'<span></span>';
  const players=(data.scorer?fact('Meilleur buteur',`${named(data.scorer.player)} · ${data.scorer.goals} but${data.scorer.goals>1?'s':''}`):'')
   +(data.rating?fact('Meilleure note',`${named(data.rating.player)} · ${averageNote(data.rating.average)}`):'');
- return `${table}<div class="news-foot">${europe}<a class="news-more" href="#/honours">Palmarès →</a></div>${players?`<div class="news-facts">${players}</div>`:''}`;
+ return `${table}<div class="news-foot">${europe}<a class="news-more" href="#/honours">Palmarès ${GO}</a></div>${players?`<div class="news-facts">${players}</div>`:''}`;
 }
 
 // The message opened: its badge and date, what it still asks or how it was answered, its title with each name linked, then
@@ -164,7 +164,7 @@ function messagePane(message,club){
 
 function standingsBlock(club,standings){
  if(!standings)return card('Classement',empty('Votre club ne dispute pas de championnat simulé.','Pas de classement'));
- return card(roundTitle('Classement',standings.items),standingsTable(standings,'record',false,club.id),`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir →</a>`,'standings-card');
+ return card(roundTitle('Classement',standings.items),standingsTable(standings,'record',false,club.id),`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir ${GO}</a>`,'standings-card');
 }
 
 // The first-team players who cannot play: injured, with the day they are back, or suspended.
@@ -172,7 +172,7 @@ function unavailableBlock(club,squad){
  const out=squad.items.filter(player=>!player.away&&(player.injured_until||player.suspension));
  const state=player=>player.injured_until?`<b class="danger">Blessé · ${shortDate(player.injured_until)}</b>`:`<b class="news-ban">Suspendu · ${player.suspension} match${player.suspension>1?'s':''}</b>`;
  const body=out.length?`<ul class="moves">${out.map(player=>`<li>${position(player.position)}<span>${playerLink(player.id,player.name)}</span>${state(player)}</li>`).join('')}</ul>`:'<p class="muted">Aucun</p>';
- return card(`Indisponibles · ${out.length}`,`<div class="card-body">${body}</div>`,`<a href="#/club/${club.id}/composition" aria-label="Voir la composition">Voir →</a>`);
+ return card(`Indisponibles · ${out.length}`,`<div class="card-body">${body}</div>`,`<a href="#/club/${club.id}/composition" aria-label="Voir la composition">Voir ${GO}</a>`);
 }
 
 // The five players with the most goals, assists and matches for the club this season, and its five best-rated ones among
@@ -183,7 +183,7 @@ function leadersBlock(club,squad){
   .map(player=>`<li><span>${playerLink(player.id,player.name)}</span><b>${key==='average'?averageNote(player[key]):n(player[key])}</b></li>`).join('');
  const list=(title,items)=>`<div><h3>${title}</h3>${items?`<ul class="moves">${items}</ul>`:'<p class="muted">—</p>'}</div>`;
  return card('Joueurs',`<div class="card-body news-leaders">${list('Buts',top('goals'))}${list('Passes',top('assists'))}${list('Notes',top('average',played.filter(player=>player.appearances*2>=most)))}${list('Matches',top('appearances'))}</div>`,
-  `<a href="#/club/${club.id}" aria-label="Voir l’effectif">Voir →</a>`);
+  `<a href="#/club/${club.id}" aria-label="Voir l’effectif">Voir ${GO}</a>`);
 }
 
 // Actualités: the feed on the left, the message opened in the middle (`msg`, marked as read by the page before it is drawn),

@@ -51,6 +51,15 @@ export function initHeroCrests(root){
   if(event.target.matches?.('.club-hero-crest>.crest-logo'))event.target.remove();
  },true);
 }
+// The page of a club, a selection, a player or a competition takes the colours of its band (« Page d'un club »): what
+// fills an open choice, the ink written on it, and the colour that reads on a panel in each theme, which the sheet picks.
+// A match has two bands and keeps the accent; a page without a band, or a band without colours, too.
+const PAGE_COLOURS=[['--club-fill','--hero-field'],['--club-ink','--hero-ink'],['--club-light','--hero-accent-light'],['--club-dark','--hero-accent-dark']];
+export function tintPage(main){
+ const band=main.querySelector(':scope>.club-hero:not(.match-hero)'),colours=band?.style.getPropertyValue('--hero-field')?band.style:null;
+ for(const [page,hero] of PAGE_COLOURS){const value=colours?.getPropertyValue(hero).trim();if(value)main.style.setProperty(page,value);else main.style.removeProperty(page);}
+ main.classList.toggle('club-page',Boolean(colours));
+}
 const clubKit=club=>{
  const outfits=[['Domicile',club.kit_url],['Extérieur',club.away_kit_url]].filter(([,url])=>url);
  return outfits.length?`<div class="club-hero-kits">${outfits.map(([label,url])=>`<a href="${e(url)}" target="_blank" rel="noopener" title="${label}" aria-label="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}"><img class="club-hero-kit" src="${e(url)}" alt="Tenue ${(label==='Domicile'?'à domicile':'extérieure')} de ${e(club.name)}" width="48" height="80"></a>`).join('')}</div>`:'';

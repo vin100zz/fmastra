@@ -41,16 +41,21 @@ la structure HTML des spécimens.
 
 | Jetons | Emploi |
 |---|---|
-| `--bg`, `--panel` | Fond de la page et des cartes : blanc |
-| `--panel-2` | En-tête de tableau, bouton, choix ouvert, tuile en relief |
+| `--bg` | Fond de la page : un gris pâle, sur lequel les cartes se posent |
+| `--panel` | Cartes, menus, champs, boutons : blanc |
+| `--panel-2` | Tuile dans une carte, score d'un match, prochains matchs, case du banc |
 | `--panel-3` | Ce qui est sous le pointeur (voir « Sous le pointeur ») |
-| `--stripe` | Une ligne de tableau sur deux |
-| `--line`, `--row-line` | Bordures ; séparation des lignes |
+| `--stripe` | Une ligne sur deux d'un tableau ou d'une liste |
+| `--line` | Le trait de ce qui en garde un : case à cocher, pastille d'une compétition, étage d'un score, deux tableaux côte à côte |
+| `--row-line` | Trait entre deux colonnes (attributs, tuile à colonnes), dans un menu |
+| `--head-line` | Sous l'en-tête d'un tableau |
+| `--track`, `--track-hover` | La piste d'un choix ; une option sous le pointeur, sur elle |
+| `--title-wash` | Le bandeau d'un intertitre |
 | `--strong`, `--ink`, `--ink-2`, `--muted` | Encres, de la plus forte au libellé atténué |
 | `--accent`, `--accent-ink` | Le jaune de l'application et l'encre écrite dessus : action principale, marque de ce qui est ouvert |
 | `--accent-hover` | L'action principale sous le pointeur |
 | `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
-| `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie |
+| `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie, entrée ouverte du menu |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
 | `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement ») |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
@@ -60,7 +65,7 @@ la structure HTML des spécimens.
 
 Trois familles de pastilles ne se ressemblent jamais :
 
-- **Note** : fond pâle gradué et sa bordure, du rouge (jusqu'à 70 sur 200, 4
+- **Note** : fond pâle gradué, sans bordure, du rouge (jusqu'à 70 sur 200, 4
   sur 20) au jaune (110 ; 10) puis au vert (à partir de 150 ; 16).
 - **Poste** : couleur pleine, hors de cette échelle (bleu-vert, indigo, violet,
   magenta), la même pour un poste dans toutes les listes. Largeur fixe de 32,
@@ -85,10 +90,11 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 | `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, ce qui suit un nom dans son bandeau |
 | `--fs-figure` | 16 / 20 | 700 | Action principale, délai, saison montrée par son pas |
 | `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
-| `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`) |
+| `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`, `--strong`) |
 | `--fs-body` | 13 / 18 | 400, 600 | Texte, cellule, onglet, bouton |
 | `--fs-body` | 13 / 13 | 700 | Numéro sur un maillot |
 | `--fs-small` | 11 / 14 | 400, 600 | En-tête de colonne, libellé, légende |
+| `--fs-small` | 11 / 14 | 700 | Intertitre (capitales, `--display`, `--ink`) |
 | `--fs-micro` | 10 / 10 | 700 | Pastille, poste sur un maillot |
 
 Sept tailles, trois graisses (400, 600, 700). Seules les capitales sont
@@ -99,9 +105,10 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 | | Valeurs |
 |---|---|
 | Espacements | 4, 8, 12, 16, 24 (`--s1` à `--s6`) : 8 entre deux cartes, 8 et 12 dans une carte, marges de page 8, 16, 12 |
-| Hauteurs | Barre du haut 56, ce qui s'y tient 40 (`--h-bar-control`) · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · ligne et en-tête de tableau 26 · pastille 18 |
-| Formes | Rayon de 3 (`--radius`), ou rond (points, écussons) |
-| Traits | Bordure de 1 ; ce qui est ouvert porte l'accent : 3 sur une barre, le menu, les onglets (`--mark`), 2 sur un contrôle (`--mark-control`) |
+| Hauteurs | Barre du haut 56, ce qui s'y tient 40 (`--h-bar-control`) · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · choix d'une vue : piste 28 et options 24, piste 26 et options 22 dans l'en-tête d'une carte · ligne et en-tête de tableau, intertitre 26 · pastille 18 |
+| Formes | Quatre rayons : 4 pour une pastille, le point d'un club, une case (`--radius-chip`) ; 6 pour un contrôle, une option, un intertitre (`--radius`) ; 8 pour ce qui en tient d'autres, piste d'un choix, menu, tuile, terrain (`--radius-box`) ; 10 pour une carte et un bandeau (`--radius-card`). Ou rond (points, écussons) |
+| Traits | Peu : une carte, un bouton, un champ, un menu n'ont pas de bordure ; un tableau a un trait sous son en-tête, aucun entre ses lignes. Ce qui est ouvert porte l'accent : 3 sur la barre, sous l'onglet ouvert en trait aux bouts arrondis, au bord d'un intertitre (`--mark`) ; 2 sous le prochain match, sous un pas de saison ouvert (`--mark-control`) ; l'option ouverte d'un choix en est remplie |
+| Profondeur | Une ombre plutôt qu'une bordure : une carte sur le fond (`--shadow-card`), un bouton ou un champ sur sa carte (`--shadow-field`), un menu au-dessus de la page (`--shadow-float`), l'option ouverte sur sa piste (`--shadow-thumb`), l'action principale éclairée d'en haut (`--shadow-accent`) |
 | Défilement | La page garde à droite la place de sa barre de défilement sur tous les écrans, qu'elle défile ou non : rien ne se décale d'un écran court à un écran long |
 
 ### Marque
@@ -127,15 +134,15 @@ où le fond est déjà jaune.
 |---|---|---|
 | Marque | `.brand`, `.logo`, `.wordmark` | Le coin jaune en tête du menu. Voir « Marque » |
 | Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
-| Onglets d'une page | `.tabs` | Une seule rangée par écran. Soulignés de l'accent, ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Pas de saison ») |
-| Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes |
-| Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte est marquée de la couleur de l'onglet ouvert. Voir « Historique » |
+| Onglets d'une page | `.tabs` | Une seule rangée par écran, sans trait dessous. L'ouvert souligné d'un trait de 3 aux bouts arrondis, de l'accent ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Page d'un club ») |
+| Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes. Une piste sans trait (`--track`), l'option ouverte posée dessus, remplie de l'accent et écrite de son encre ; sur la page d'un club, de ses couleurs (voir « Page d'un club »). Piste de 28, options de 24, leur texte à 16 de leurs bords ; dans l'en-tête d'une carte (`.small`), piste de 26, options de 22, à 12 |
+| Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte prend la couleur de la page, comme tout choix. Voir « Historique » |
 | Pas d'une série | `.segmented.steps` | Journées : une flèche à chaque bout, toutes écrites entre elles |
 | Pas de saison | `.season`, `.season-pick` | Saisons, éditions des sélections : une flèche de chaque côté de celle montrée, qui ouvre la liste de toutes. Voir « Pas de saison » |
-| Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Carré, 28 ; 22 dans une carte ou une ligne |
+| Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Blanc, cerclé d'une ombre fine (`--shadow-field`), sans bordure ; 28, 22 dans une carte ou une ligne ; carré pour une icône seule. L'action principale sur l'accent éclairé d'en haut (`--shadow-accent`) ; `.danger` garde son trait |
 | Pied du menu | `.sidebar-bottom`, `.sidebar-tools` | Ma partie, le mode Auto, le thème et le manuel du jeu : quatre boutons d'une icône, de même largeur, sur une ligne ; leur nom en infobulle. Auto montre ce que fait un clic (lecture, pause), sur fond d'accent tant qu'il tourne ; le thème, celui où il mène |
-| Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut |
-| Champ | `.field` | Recherche, liste déroulante |
+| Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut. Elle finit sur un chevron dans une pastille (`.go`) |
+| Champ | `.field` | Recherche, liste déroulante : blancs, cerclés d'une ombre fine, sans bordure |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero`, `.hero-logo`, `.hero-name`, `.hero-context`, `.hero-flag` | Bandeau de 88 aux couleurs du club ou de la sélection, son écusson seul, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
@@ -147,13 +154,14 @@ où le fond est déjà jaune.
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
 | Compétition des sélections en colonne | `.hero.narrow` | Son bandeau en tête de sa colonne, sur Sélections nationales : il ouvre sa page. Voir « Compétitions des sélections » |
 | Finale, parcours d'une nation | `.final-score`, `.run` | Une finale du côté de son vainqueur ; le parcours d'une nation, une colonne par édition. Voir « Finales et parcours » |
-| Carte | `.card`, `.card-head`, `.card-body`, `.section-title` | Titre en capitales ; lien ou commandes à droite |
+| Carte | `.card`, `.card-head`, `.card-body` | Blanche, sans bordure, posée sur le fond par une ombre (`--shadow-card`), aux coins de 10. En-tête de 32 sans trait dessous : le titre en capitales à l'encre forte, sa boîte arrêtée à ses capitales, qui se centrent ainsi dans l'en-tête, un pixel plus bas pour l'œil (l'ombre de la carte l'allonge vers le bas, les accents chargent le haut) ; lien ou commandes à droite |
+| Intertitre | `.section-title`, `.section-title.inset` | Le titre d'une section : capitales de 11 dans la police des titres, en 700, à l'encre, sur un bandeau de 26 lavé de jaune (`--title-wash`), un trait de l'accent (3) à son bord gauche ; dans les couleurs du club sur sa page. Sur toute la largeur d'une carte, un bandeau ; dans une colonne (`.inset`), aux coins de 6, dans la largeur de la colonne, son texte à 10 du bord. Ainsi, il ne se confond pas avec un en-tête de colonne |
 | Carte repliable | `.card.fold`, `.card-head.toggle`, `.toggle-arrow`, `.fold-more` | L'en-tête entier montre ou cache ce qui est secondaire. Voir « Carte repliable » |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
-| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau. Sur un bandeau et dans une rangée de tuiles, le contenu de chaque tuile est centré horizontalement, celui de chaque colonne dans la sienne |
+| Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile n'a pas de bordure : grise dans une carte, blanche et en relief sur un bandeau, blanche et posée comme une carte dans une rangée (`.tiles.row`). Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau. Sur un bandeau et dans une rangée de tuiles, le contenu de chaque tuile est centré horizontalement, celui de chaque colonne dans la sienne |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Dans une section, les attributs suivent l'ordre alphabétique de leurs noms ; les composites, l'ordre des phases du jeu. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
 | Attributs en colonnes | `.attribute-columns`, `.attribute-column`, `.composites-column`, `.others-column`, `.attribute-rows` | Sur la fiche d'un joueur, une colonne par section, Jeu en tête : son bandeau `.section-title` sans trait au-dessus, les bandeaux formant une seule bande, un trait `--row-line` entre deux colonnes, ses lignes à 12 des bords. Les colonnes se partagent la largeur, aucune plus étroite que `--attribute-column` et ses marges ; la dernière passe à la ligne quand la carte ne les tient pas. La carte s'arrête à sa plus longue colonne. Ce que le poste n'emploie pas (`.others-column`) ferme la rangée, ses noms en `--muted`, ses pastilles neutres |
-| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank`, `.reached`, `.delta` | 18 de haut ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur ; `.reached` le tour atteint dans une coupe, `.delta` un écart signé. Voir « Historique » |
+| Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank`, `.reached`, `.delta` | 18 de haut, aux coins de 4 ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur ; `.reached` le tour atteint dans une coupe, `.delta` un écart signé. Voir « Historique » |
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation`, `.club-flag` | Voir « Clubs et pays » |
 | Compétition après sa pastille | `.comp-link` | La pastille puis le nom, un seul lien vers sa page ; le nom se souligne. Voir « Compétitions » |
@@ -174,6 +182,8 @@ où le fond est déjà jaune.
 | Case à cocher | `.check` | 18, bordée ; cochée, l'accent et son encre |
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
 | Lien | `a`, `.prose a` | Voir « Sous le pointeur » |
+| Suite | `.go`, `.go.back` | Ce qui mène plus loin (« Voir », « Voir le championnat », « Suivant », « Continuer ») finit sur un chevron dessiné, pas un caractère, centré sur sa place, dans la couleur de ce qui le porte ; sur l'action principale, au centre d'une pastille de son encre. « Précédent » le retourne |
+| Page d'un club | `.club-page`, `--club`, `--club-fill`, `--club-ink`, `--club-wash` | Voir « Page d'un club » |
 
 ### Barre du haut
 
@@ -181,14 +191,14 @@ Une barre blanche de 56, soulignée de l'accent (3), que le coin jaune de la
 marque ouvre à gauche.
 
 - **Écharpe** : le coin de la marque se termine dans la barre comme le bandeau
-  d'un club, sur 64 : un bord incliné, puis une fine bande parallèle. Le trait
-  qui borde le menu est jaune à sa hauteur.
+  d'un club, sur 64 : un bord incliné, puis une fine bande parallèle. Le menu,
+  blanc sur le fond, n'a pas de bordure.
 - **Date** : à 16 de l'écharpe, la saison en libellé (11 / 14), le jour dessous
   en 20 / 22.
 - **À droite**, dans cet ordre : la pastille du mercato, la loupe, les trois
   prochains matchs, l'action principale. Ce qui s'y tient a 40 de haut
   (`--h-bar-control`) ; la pastille garde ses 18.
-- **Prochains matchs** (`.next-matches`) : un bandeau de trois blocs ; pour
+- **Prochains matchs** (`.next-matches`) : un bandeau gris (`--panel-2`), sans bordure, de trois blocs ; pour
   chacun le délai en chiffre clé, l'adversaire après sa pastille (un avion à
   l'extérieur), la compétition dessous, en bleu pour une coupe. Le prochain a
   son délai et un soulignement à l'accent. Chacun ouvre la fiche de
@@ -252,12 +262,13 @@ voile de son encre.
 
 | Élément | Au repos | Sous le pointeur |
 |---|---|---|
-| Lien : le nom d'un club, d'un joueur, d'un pays, d'une compétition, le score d'un match, « Voir → » | La couleur du texte qui le porte, non souligné | Souligné (trait de 1, à 2 du texte), même couleur |
+| Lien : le nom d'un club, d'un joueur, d'un pays, d'une compétition, le score d'un match, « Voir » | La couleur du texte qui le porte, non souligné | Souligné (trait de 1, à 2 du texte), même couleur |
 | Lien dans une phrase : le manuel, le titre et le texte d'une actualité (`.prose`) | `--accent-text`, non souligné | Souligné, même couleur |
 | Ligne d'un tableau ou d'une liste, fait | Son fond | `--panel-3` ; la ligne teintée (club dirigé, ligne choisie, état) garde sa teinte |
 | Ligne ou carte qui s'ouvre tout entière : une actualité, un match du calendrier, une ligne de la recherche globale | Son fond | `--panel-3` et la main ; aucun texte souligné |
 | En-tête d'une carte repliable | Son fond | `--panel-3` et la main ; la flèche garde sa couleur |
-| Bouton, option d'un choix, pas d'une série, filtre, entrée du menu, ligne d'un menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Bouton, pas d'une série, filtre, entrée du menu, ligne d'un menu | Son fond | `--panel-3`, encre `--strong` ; `--accent-hover` pour l'action principale, `--bad-soft` pour `.danger` |
+| Option d'un choix, sur sa piste | Aucun fond | `--track-hover`, plus clair que la piste, encre `--strong` |
 | Panneau « Créer une partie » de l'accueil | L'accent | `--accent-hover` et la main |
 | Case à cocher | Son fond | `--panel-3` tant qu'elle n'est pas cochée |
 | Flèche d'un pas de saison, saison qui ouvre sa liste | Aucun fond | `--panel-3` ; la flèche garde la couleur du club |
@@ -273,7 +284,7 @@ voile de son encre.
   main et son infobulle, qui nomme le pays, le disent. Suivi du nom ou du code
   du pays, c'est ce texte qui se souligne.
 - Dans une carte dont l'en-tête entier ouvre une page, c'est son lien
-  « Voir → » qui se souligne.
+  « Voir » qui se souligne.
 - Un graphique garde ses propres réactions (repère, infobulle) : voir
   « Graphiques ».
 - Ce que vise le menu d'un joueur garde cet état tant que le menu est ouvert :
@@ -377,7 +388,9 @@ Sans palette de maillot, la tenue domicile est grise.
 La fiche d'un club, d'une sélection, d'un joueur, d'une compétition s'ouvre sur
 le même bandeau (`.hero`) : 88 de haut, aux couleurs du club, de la sélection ou
 de la compétition, l'écusson à gauche, les tuiles à droite. Tout nouvel en-tête
-le reprend.
+le reprend. Il a les coins et l'ombre d'une carte ; une lumière traverse ses
+couleurs depuis le coin haut gauche, une ombre douce tient son pied, un filet
+clair borde son haut. Ses tuiles sont blanches, en relief.
 
 - **Écusson** (`.hero-logo`) : celui d'un club, le logo d'une sélection, seul
   sur le bandeau, sans disque, sous l'ombre des tenues (`0 1px 2px`, encre à
@@ -421,6 +434,22 @@ son drapeau, sans lien.
 Le bandeau d'un match n'a rien à la suite de ses noms, sinon, dans une coupe
 d'Europe, le drapeau du pays de chaque club : la ligne du match dit le reste
 (voir « En-tête d'un match »).
+
+### Page d'un club
+
+La fiche d'un club, d'une sélection, d'un joueur (celles de son club) ou d'une
+compétition prend les couleurs de son bandeau pour toute la page (`.club-page`) :
+
+- **Fond** : un souffle de la couleur du bandeau, 12 % en haut, 6 au tiers,
+  4 en bas ; les cartes restent blanches. Sur un match, chaque camp teinte son
+  côté de la page.
+- **Ce qui est ouvert** : l'option ouverte d'un choix est remplie de la couleur
+  du bandeau (`--club-fill`), écrite de son encre (`--club-ink`). L'onglet
+  ouvert, le trait et le lavis d'un intertitre prennent la couleur du club qui
+  se lit sur un panneau (`--club`, `--club-wash` à 10 %).
+- **Ailleurs**, et pour un club sans couleurs, l'accent. L'action principale et
+  l'entrée ouverte du menu restent jaunes : elles sont celles du jeu, pas de la
+  page.
 
 ### Navigation d'un bandeau
 
@@ -587,7 +616,7 @@ onglets, une rangée de tuiles, puis, à 8 sous elle, quatre colonnes
   sans indemnité. Une ligne de 26 par mouvement : poste, joueur, l'autre club
   après sa pastille (« Centre de formation » pour un jeune promu, « Libre »),
   l'indemnité à droite (« Prêt » pour un prêt, « — » sans), la plus grosse
-  d'abord. « Voir → » ouvre l'onglet Transferts.
+  d'abord. « Voir » ouvre l'onglet Transferts.
 - **Calendrier, classement, finances** : les blocs d'Actualités et de l'ancien
   Effectif (le score du côté du club coloré V, N ou D ; le classement réduit à
   PTS et DIFF ; la trésorerie sous le budget de transferts).
@@ -1282,7 +1311,7 @@ lien (`.comp-link`), à 6 l'un de l'autre (à 8 sur une tuile) ; sous le pointeu
 le nom se souligne, la pastille ne change pas. Le nom n'est pas un lien là où
 sa pastille n'en est pas un (ci-dessus), ni :
 
-- dans le titre d'une carte dont le « Voir → » mène déjà à sa page ;
+- dans le titre d'une carte dont le « Voir » mène déjà à sa page ;
 - sur sa propre page ;
 - pendant le match en direct, qui tient l'écran jusqu'à la fin de la journée ;
 - dans une infobulle ou une liste déroulante.
@@ -1337,6 +1366,9 @@ sa pastille n'en est pas un (ci-dessus), ni :
   affichent : un chiffre, un montant dans son unité, une date, sinon le texte.
 - En-têtes et lignes de 26 ; chiffres alignés à droite, sous un en-tête aligné
   de même.
+- Aucun trait entre les lignes : une sur deux sur une bande (`--stripe`).
+  L'en-tête n'a pas de fond, un trait pâle dessous (`--head-line`). Les listes
+  (matchs, faits, attributs, temps forts) font de même.
 - Une colonne a la largeur de ce qu'elle tient, quelle que soit la valeur : rang
   36, poste 48, pastille 56, chiffre 52 (68 sous un en-tête long : MATCHES,
   SAISONS), score 76, montant 84, saison 96, date 108 ; ce qui reste va au nom.
