@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -10,21 +10,21 @@ const KEY_WEIGHT=.14;
 // The player on screen, whose Jeu section follows the position picked on his pitch of aptitudes.
 let shown=null;
 
-// Sections and attributes keep the order of ATTRIBUTE_SECTIONS, whatever the position. Goalkeeper attributes mean nothing
-// for an outfield player and the reverse: the irrelevant section is hidden, and for a goalkeeper its attributes stay
-// reachable in a fold. Placement is part of a goalkeeper's craft (30% of a save, 40% of a claim), so it moves from Défense
-// to Gardien for him.
+// Sections keep the order of ATTRIBUTE_SECTIONS whatever the position, and the attributes of each the alphabetical order
+// of their names. Goalkeeper attributes mean nothing for an outfield player and the reverse: the irrelevant section is
+// hidden, and for a goalkeeper its attributes stay in sight among the others, greyed. Placement is part of a goalkeeper's
+// craft (30% of a save, 40% of a claim), so it moves from Défense to Gardien for him.
 export function attributeGroups(player) {
  const keeper=player.position==='GB',weights=player.attribute_weights||{};
  const listed=name=>{
   const own=ATTRIBUTE_SECTIONS.find(section=>section.key===name).attributes.filter(key=>!(keeper&&key==='placement'));
-  return keeper&&name==='goalkeeper'?[...own.slice(0,2),'placement',...own.slice(2)]:own;
+  return keeper&&name==='goalkeeper'?[...own,'placement'].sort(byAttributeName):own;
  };
  const items=name=>listed(name).filter(key=>key in player.attributes)
   .map(key=>({key,value:player.attributes[key],weight:weights[key]||0}));
  const names=keeper?['goalkeeper','general']:['defense','attack','general'];
  return {sections:names.map(name=>({key:name,title:ATTRIBUTE_SECTIONS.find(section=>section.key===name).title,items:items(name)})).filter(section=>section.items.length),
-  others:keeper?[...items('defense'),...items('attack')]:[]};
+  others:keeper?[...items('defense'),...items('attack')].sort((first,second)=>byAttributeName(first.key,second.key)):[]};
 }
 
 function attributeItem({key,value,weight}) {
@@ -32,8 +32,22 @@ function attributeItem({key,value,weight}) {
  return `<div class="attribute${important?' key':''}"${important?` title="Compte pour ${Math.round(weight*100)} % de la note du poste"`:''}><span>${ATTRIBUTES[key]}</span>${scoreBadge(attributeScore(value))}</div>`;
 }
 
-// Greed is a trait out of 20 like an attribute, but neither good nor bad in itself: it closes Général, in a plain badge.
-const greedItem=player=>player.greed==null?'':`<div class="attribute"><span>Appât du gain</span><span class="rating" title="Appât du gain sur 20">${Math.round(1+player.greed*19)}</span></div>`;
+// An attribute his position makes no use of: its name greyed, its badge neutral.
+const otherItem=({key,value})=>`<div class="attribute"><span>${ATTRIBUTES[key]}</span><span class="rating neutral" title="${ATTRIBUTES[key]} sur 20">${attributeScore(value)}</span></div>`;
+
+// The traits of his character, out of 20, in the rail under Caractère, in the alphabetical order of their names. Ambition
+// and greed are neither good nor bad in themselves: a plain badge. Aggression and fragility can only cost him (cards, injuries):
+// graded the other way round from an attribute, red when high.
+const outOf20=value=>Math.round(1+value*19);
+const CHARACTER=[
+ {key:'aggression',label:'Agressivité',cost:'plus elle est haute, plus il commet de fautes et prend de cartons'},
+ {key:'ambition',label:'Ambition',help:'plus elle est haute, plus un club trop petit pour lui le lasse'},
+ {key:'greed',label:'Appât du gain'},
+ {key:'fragility',label:'Fragilité',cost:'plus elle est haute, plus il se blesse'}];
+const characterFacts=player=>CHARACTER.filter(({key})=>player[key]!=null).map(({key,label,cost,help})=>{
+ const score=outOf20(player[key]),title=`${label} sur 20`;
+ return fact(label,cost?reverseScoreBadge(score,`${title} : ${cost}`):`<span class="rating" title="${e(help?`${title} : ${help}`:title)}">${score}</span>`);
+}).join('');
 
 // The composites the engine plays with, out of 200 like the level: a goalkeeper's two, or the six of an outfield player. Those
 // the position `role` asks for are marked like key attributes, the others grey.
@@ -46,19 +60,24 @@ export function compositeItems(player, role=player.position) {
 const weighting=weights=>Object.entries(weights||{}).map(([key,weight])=>`${ATTRIBUTES[key]} ${Math.round(weight*100)} %`).join(' · ');
 
 // Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for.
-export function compositesGroup(player, role=player.position) {
+// On the page it is the first of the attribute columns (`column`), in a preview a grid of its own.
+export function compositesGroup(player, role=player.position, column=false) {
  const items=compositeItems(player,role);
  if(!items.length)return '';
  const item=({key,value,wanted})=>{const badge=levelBadge(value),weights=weighting(player.composite_weights?.[key]);
   return `<div class="attribute${wanted?' key':''}" title="${e(weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key])}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
- return `<div class="attribute-group composites-group" data-composites><h3>Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
+ return column?attributeColumn(`Jeu ${position(role)}`,items.map(item).join(''),'composites-column" data-composites="column')
+  :`<div class="attribute-group composites-group" data-composites><h3>Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
 }
 
+// A section in a column of its own, under its strip: the strips of the card make one band, read like a table's head.
+const attributeColumn=(title,rows,className='')=>`<div class="attribute-column${className?` ${className}`:''}"><h3 class="section-title">${title}</h3><div class="attribute-rows">${rows}</div></div>`;
+
+// The Jeu section, then a column for each section of attributes; a goalkeeper's other attributes close the row, greyed.
 function attributesBody(player) {
  const {sections,others}=attributeGroups(player);
- const grid=(list,extra='')=>`<div class="attributes-grid">${list.map(attributeItem).join('')}${extra}</div>`;
- const fold=others.length?`<details class="attribute-others"><summary>Autres attributs (${others.length})</summary>${grid(others)}</details>`:'';
- return `<div class="card-body">${compositesGroup(player)}${sections.map(section=>`<div class="attribute-group"><h3>${section.title}</h3>${grid(section.items,section.key==='general'?greedItem(player):'')}</div>`).join('')}${fold}</div>`;
+ return `<div class="attribute-columns">${compositesGroup(player,player.position,true)}${sections.map(section=>attributeColumn(section.title,section.items.map(attributeItem).join(''))).join('')}`
+  +`${others.length?attributeColumn('Autres',others.map(otherItem).join(''),'others-column'):''}</div>`;
 }
 
 // Position of each role on the pitch, in % of its width and height: goalkeeper at the bottom, striker at the top, as in match line-ups.
@@ -325,16 +344,18 @@ function feeTiles(player) {
 // Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
 const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.parent)],['Fin du prêt',date(player.loan.end)]]:[]),...(player.reserve?[['Équipe','Réserve']]:[])];
 
-// Beside the page, a card of facts: how he is, with his other nationalities (the flag, then the code), then what his
-// contract holds. Who he is and what he is worth stand in the header.
+// Beside the page, a card of facts: how he is, with his other nationalities (the flag, then the code), the traits of his
+// character he shows, then what his contract holds. Who he is and what he is worth stand in the header.
 function rail(player) {
  const others=nationCodes(player).slice(1);
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
  const state=`${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}`
   +(others.length?fact(others.length>1?'Autres nationalités':'Autre nationalité',others.map(code=>nationBadge(code)).join('')):'');
+ const character=characterFacts(player);
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),...loanTerms(player)];
  return `<aside class="card player-rail"><div class="card-head"><h2>État</h2></div><div class="rail-section">${state}</div>`
+  +(character?`<h3>Caractère</h3><div class="rail-section">${character}</div>`:'')
   +`<h3>Contrat</h3><div class="rail-section">${terms.map(([label,value])=>fact(label,value)).join('')}</div></aside>`;
 }
 
@@ -433,7 +454,8 @@ function install(){
  document.addEventListener('click',event=>{
   const role=event.target.closest?.('[data-composite-role]')?.dataset.compositeRole;
   if(!role||!shown)return;
-  document.querySelector('[data-composites]')?.replaceWith(Object.assign(document.createElement('template'),{innerHTML:compositesGroup(shown,role)}).content);
+  const composites=document.querySelector('[data-composites]');
+  composites?.replaceWith(Object.assign(document.createElement('template'),{innerHTML:compositesGroup(shown,role,composites.dataset.composites==='column')}).content);
   document.querySelectorAll('[data-composite-role]').forEach(item=>{const picked=item.dataset.compositeRole===role;item.classList.toggle('picked',picked);item.setAttribute('aria-pressed',String(picked));});
  });
 }

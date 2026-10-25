@@ -280,6 +280,11 @@ def player_morale(world: World, player: Player) -> dict:
     return morale_outlook(world, player, club, position_ranks(world, club)[player.id], *played)
 
 
+def share(value: float, low: float, high: float) -> float:
+    """Where a stable trait stands from 0 to 1 within the bounds the configuration draws it from, for a page to write out of 20."""
+    return min(1.0, max(0.0, (value - low) / (high - low)))
+
+
 def player_detail(world: World, player: Player) -> dict:
     from core.world.transfer_rules import recent_arrival_ids
     result = player_row(world, player)
@@ -287,6 +292,12 @@ def player_detail(world: World, player: Player) -> dict:
     result.update(player_morale(world, player))
     result.update(MarketFlags(world).row(player))
     result["greed"] = player.greed
+    # The other traits of his character read from 0 to 1 within the bounds of the configuration, like greed, for the page
+    # to write them out of 20.
+    cfg = world.config
+    result["fragility"] = share(player.fragility, cfg.states.injuries.fragility_min, cfg.states.injuries.fragility_max)
+    result["ambition"] = share(player.ego, cfg.management.contracts.ego_min, cfg.management.contracts.ego_max)
+    result["aggression"] = share(player.aggression, cfg.engine.cards.aggression_min, cfg.engine.cards.aggression_max)
     # What the lists of the world tell a recruiter, for the preview beside them.
     result.update({"interested": interested(world, player), "wage_demand": asked_wage(world, player)})
     # The bounds form keeps, for the page to draw it between them.
@@ -467,6 +478,10 @@ def club_detail(world: World, club_id: int, standings: dict | None = None, reser
                                  if world.season in held and world.season - 1 in held else None,
             "academy": round(club.academy, 1), "training_facilities": club.training_facilities,
             "youth_recruitment": club.youth_recruitment,
+            # Its personality, drawn once with the world, from 0 to 1 within its bounds (agressivité salariale drives nothing).
+            "personality": {key: share(getattr(club.personality, key), bounds.min, bounds.max)
+                            for key in ("risk_appetite", "youth_preference", "negotiation_patience")
+                            for bounds in (getattr(world.config.management.personality, key),)},
             "formation": club.formation, "squad_size": len(club.player_ids), **squad_strength(world, club_id), "standing": standing,
             **squad_profile(world, club_id),
             # The budget left for a bid, and the wages against their cap (weekly, like every wage of the API).

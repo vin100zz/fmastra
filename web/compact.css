@@ -33,10 +33,9 @@ th button.sort-toggle{font-weight:inherit;text-transform:inherit}
 th button.sort-toggle:after,th button[data-sort]:after{content:" ↓";visibility:hidden}
 th[aria-sort=ascending] button:after,th button[data-order=asc]:after{content:" ↑";visibility:visible}th[aria-sort=descending] button:after,th button[data-order=desc]:after{content:" ↓";visibility:visible}
 
-/* Player attributes: one block per section (laid out in theme.css); the main position's key attributes in bold with a dot; the rest folded away. */
+/* Player attributes: the main position's key attributes in bold with a dot. */
 .attribute-group h3{letter-spacing:var(--caps);text-transform:uppercase}
 .attribute.key>span:first-child{font-weight:700}.attribute.key>span:first-child:after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--green);vertical-align:middle}
-.attribute-others summary{cursor:pointer;font-size:11px;color:var(--muted)}
 
 .standings-card tr:has(.own){background:#fff6d6}.standings-card .own{font-weight:700}
 .market-card .moves{max-height:190px;overflow-y:auto}.market-card .moves li,.action-dialog .moves li{flex-wrap:wrap}.market-card .moves li>a{font-size:10px;color:var(--green);white-space:nowrap}.market-actions{display:flex;gap:4px;width:100%;justify-content:flex-end}.market-actions button{padding:3px 8px;font-size:10px}

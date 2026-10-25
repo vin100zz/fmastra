@@ -152,10 +152,11 @@ test('the Jeu section leads the attributes: an outfield player\'s six composites
  assert.equal(compositesGroup(detail),'');
 });
 
-test('the Jeu section sits in the attributes card, ahead of the attributes',async()=>{
+test('the Jeu section is the first column of the attributes card, ahead of the attributes',async()=>{
  const {html}=await render(playing);
  const attributes=html.slice(html.indexOf('>Attributs<'),html.indexOf('Aptitudes par poste'));
- assert.ok(attributes.indexOf('data-composites')>=0&&attributes.indexOf('data-composites')<attributes.indexOf('<h3>Attaque</h3>'));
+ assert.match(attributes,/<div class="attribute-columns"><div class="attribute-column composites-column" data-composites="column"><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="attribute-rows">/);
+ assert.ok(attributes.indexOf('data-composites')<attributes.indexOf('>Attaque</h3>'));
  assert.match(html,/class="block-note"/);
 });
 
@@ -370,14 +371,32 @@ test('the rail carries salary and contract end; the market value and the asking 
  assert.match(rail(free),/Salaire<\/span><strong>—<\/strong>/);assert.match(header(free),/title="Sans club : aucun prix demandé"><span>Prix demandé<\/span><strong>N\/A<\/strong>/);
 });
 
-test('attributes are graded badges without bars, and greed closes Général in a plain badge',async()=>{
+test('attributes are graded badges without bars; greed is a trait of his character, in the rail in a plain badge',async()=>{
  const {html}=await render({...detail,attributes:{passe:80,technique:30,vitesse:50},greed:.21});
  const card=html.match(/<section class="card attributes-card"><div class="card-head"><h2>Attributs[^]*?<\/section>/)[0];
  assert.match(card,/class="attribute"><span>Passe<\/span><span class="rating graded" style="--hue:120">16</);
  assert.match(card,/<span>Technique<\/span><span class="rating graded" style="--hue:\d+">6</);
- assert.doesNotMatch(card,/class="gauge|class="meter"|Niv\.|Pot\./);
- assert.match(card,/<h3>Général<\/h3><div class="attributes-grid">.*<span>Vitesse<\/span>[^]*?<\/div><div class="attribute"><span>Appât du gain<\/span><span class="rating" title="Appât du gain sur 20">5<\/span><\/div><\/div>/);
- assert.doesNotMatch((await render()).html,/Appât du gain|class="potential"|Potentiel estimé/);
+ assert.doesNotMatch(card,/class="gauge|class="meter"|Niv\.|Pot\.|Appât du gain/);
+ // Between his state and his contract, whose demands it inflates.
+ assert.match(rail(html),/<\/div><h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span><strong><span class="rating" title="Appât du gain sur 20">5<\/span><\/strong><\/div><\/div><h3>Contrat<\/h3>/);
+ assert.doesNotMatch((await render()).html,/Caractère|Appât du gain|Fragilité|class="potential"|Potentiel estimé/);
+});
+
+test('the four traits of his character in alphabetical order, aggression and fragility graded the other way round, ambition and greed plain',async()=>{
+ const html=rail((await render({...detail,aggression:1,ambition:0,greed:.21,fragility:.5})).html);
+ const section=html.match(/<h3>Caractère<\/h3><div class="rail-section">(.*?)<\/div><h3>Contrat/)[1];
+ assert.deepEqual([...section.matchAll(/<div class="fact"><span>([^<]+)<\/span>/g)].map(match=>match[1]),['Agressivité','Ambition','Appât du gain','Fragilité']);
+ assert.match(section,/<span>Agressivité<\/span><strong><span class="rating graded" style="--hue:0" title="Agressivité sur 20 : plus elle est haute, plus il commet de fautes et prend de cartons">20</);
+ assert.match(section,/<span>Ambition<\/span><strong><span class="rating" title="Ambition sur 20 : plus elle est haute, plus un club trop petit pour lui le lasse">1</);
+});
+
+test('fragility follows greed under Caractère, graded the other way round from an attribute: red when high',async()=>{
+ const fragility=async value=>rail((await render({...detail,greed:.21,fragility:value})).html).match(/<div class="fact"><span>Fragilité<\/span><strong>(.*?)<\/strong><\/div>/)?.[1];
+ assert.equal(await fragility(1),'<span class="rating graded" style="--hue:0" title="Fragilité sur 20 : plus elle est haute, plus il se blesse">20</span>');
+ assert.match(await fragility(0),/style="--hue:120"[^>]*>1</);
+ assert.match(rail((await render({...detail,greed:.21,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span>.*<span>Fragilité<\/span>.*<\/div><\/div><h3>Contrat<\/h3>/);
+ // Alone, it opens Caractère all the same.
+ assert.match(rail((await render({...detail,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
 });
 
 test('the career card is one table: the clubs, then the national team under its name in the same four columns',async()=>{
@@ -438,29 +457,29 @@ const WEIGHTS={GB:{reflexes:.40,sorties:.25,placement:.20,relance:.15},DC:{tacle
 const of=position=>({...detail,position,attributes:everything,attribute_weights:WEIGHTS[position]});
 const names=section=>section.items.map(item=>item.key);
 
-test('a goalkeeper gets Gardien and Général, Placement joins his craft, and the rest is folded away',()=>{
+test('a goalkeeper gets Gardien and Général, Placement joins his craft, and the rest goes among the others',()=>{
  const {sections,others}=attributeGroups(of('GB'));
  assert.deepEqual(sections.map(section=>section.title),['Gardien','Général']);
- assert.deepEqual(names(sections[0]),['reflexes','sorties','placement','relance']);// Placement joins the goalkeeper's craft
- assert.deepEqual(names(sections[1]),['passe','vitesse','endurance']);
- assert.deepEqual(others.map(item=>item.key).sort(),['centre','cpa','finition','jeu_tete','sang_froid','tacle','technique','vision']);
+ assert.deepEqual(names(sections[0]),['placement','reflexes','relance','sorties']);// Placement joins the goalkeeper's craft
+ assert.deepEqual(names(sections[1]),['endurance','passe','vitesse']);
+ assert.deepEqual(others.map(item=>item.key),['centre','cpa','finition','jeu_tete','sang_froid','tacle','technique','vision']);
 });
 
-test('an outfield player never sees goalkeeper attributes, nor a fold, and Placement stays a defensive skill',()=>{
+test('an outfield player never sees goalkeeper attributes, nor others, and Placement stays a defensive skill',()=>{
  const {sections,others}=attributeGroups(of('DC'));
  assert.deepEqual(sections.map(section=>section.title),['Défense','Attaque','Général']);
- assert.deepEqual(names(sections[0]),['tacle','placement']);
+ assert.deepEqual(names(sections[0]),['placement','tacle']);
  assert.equal(others.length,0);
  assert.ok(!sections.some(section=>names(section).some(key=>['reflexes','sorties','relance'].includes(key))));
 });
 
-test('sections and the attributes inside them keep one fixed order whatever the position',()=>{
+test('sections keep one fixed order whatever the position, the attributes inside them the alphabetical order of their names',()=>{
  const layout=position=>attributeGroups(of(position)).sections.map(section=>[section.title,...names(section)]);
  assert.deepEqual(layout('DC'),layout('BU'));
- assert.deepEqual(layout('BU'),[['Défense','tacle','placement'],['Attaque','finition','sang_froid','technique','vision','jeu_tete','centre','cpa'],['Général','passe','vitesse','endurance']]);
+ assert.deepEqual(layout('BU'),[['Défense','placement','tacle'],['Attaque','centre','cpa','finition','jeu_tete','sang_froid','technique','vision'],['Général','endurance','passe','vitesse']]);
 });
 
-test('every attribute is shown exactly once, in a section or in the fold',()=>{
+test('every attribute is shown exactly once, in a section or among the others',()=>{
  for(const position of ['GB','DC','BU']){
   const {sections,others}=attributeGroups(of(position));
   const shown=[...sections.flatMap(names),...others.map(item=>item.key)];
@@ -478,18 +497,19 @@ test('an answer without weights still renders every section in its default order
 test('the card titles its sections and marks the key attributes of the position with their weight',async()=>{
  const {html}=await render(of('BU'));
  const card=html.match(/<section class="card attributes-card"><div class="card-head"><h2>Attributs[^]*?<\/section>/)[0];
- assert.deepEqual([...card.matchAll(/<h3>([^<]+)<\/h3>/g)].map(match=>match[1]),['Défense','Attaque','Général']);
+ assert.deepEqual([...card.matchAll(/<h3 class="section-title">([^<]+)<\/h3>/g)].map(match=>match[1]),['Défense','Attaque','Général']);
  assert.match(card,/class="attribute key" title="Compte pour 38 % de la note du poste"><span>Finition<\/span>/);
  assert.match(card,/class="attribute"><span>Vision<\/span>/);
- assert.doesNotMatch(card,/attribute-others|Réflexes/);
+ assert.doesNotMatch(card,/others-column|Réflexes/);
 });
 
-test('a goalkeeper card folds the other attributes closed by default',async()=>{
+test('a goalkeeper card closes its row on his other attributes, greyed in neutral badges',async()=>{
  const {html}=await render(of('GB'));
  const card=html.match(/<section class="card attributes-card"><div class="card-head"><h2>Attributs[^]*?<\/section>/)[0];
- assert.deepEqual([...card.matchAll(/<h3>([^<]+)<\/h3>/g)].map(match=>match[1]),['Gardien','Général']);
- assert.match(card,/<details class="attribute-others"><summary>Autres attributs \(8\)<\/summary>/);
- assert.doesNotMatch(card,/<details[^>]* open/);
+ assert.deepEqual([...card.matchAll(/<h3 class="section-title">([^<]+)<\/h3>/g)].map(match=>match[1]),['Gardien','Général','Autres']);
+ assert.match(card,/<div class="attribute-column others-column"><h3 class="section-title">Autres<\/h3><div class="attribute-rows"><div class="attribute"><span>Centres<\/span><span class="rating neutral" title="Centres sur 20">\d+<\/span><\/div>/);
+ assert.equal((card.match(/class="rating neutral"/g)||[]).length,8);
+ assert.doesNotMatch(card,/<details/);
  assert.match(card,/class="attribute key"[^>]*><span>Placement<\/span>/);
 });
 
