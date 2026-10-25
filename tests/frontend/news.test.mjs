@@ -166,7 +166,7 @@ test('a transfer window is told when it opens and on the eve of its last day',as
  assert.match(html,/<span class="news-tag market">Mercato<\/span>/);
  assert.match(html,/<h2>Le <a href="#\/transfers">mercato d’hiver<\/a> est ouvert<\/h2>/);
  assert.match(html,/<span>Fermeture<\/span><strong>31 janv\. 2030<\/strong>.*<a href="#\/club\/7\/finances">Budget transferts<\/a><\/span><strong>24\sM€<\/strong>.*<span>Marge salariale<\/span><strong>8\.6\sk€<\/strong>/);
- assert.match(html,/<a class="news-more" href="#\/players">Joueurs →<\/a>/);
+ assert.match(html,/<a class="news-more" href="#\/players">Joueurs <span class="go" aria-hidden="true"><\/span><\/a>/);
  const closing={...row(8,'market_close','Le mercato d’hiver ferme demain'),market:{window:'winter',budget:19e6,wages:null,end:null,talks:[{id:20,name:'Cible',gone:false}],offers:[{id:11,name:'Vendu',gone:false}]}};
  const eve=await screen([closing],closing,'msg=8');
  assert.match(eve,/<span>Vos offres en cours<\/span><strong><a href="#\/player\/20">Cible<\/a><\/strong>.*<span>Offres reçues<\/span><strong><a href="#\/player\/11">Vendu<\/a><\/strong>/);
@@ -224,7 +224,7 @@ test('the review of the season tells each competition with its winner, and the b
  assert.match(html,/<span class="news-head">Lens<\/span><span class="news-head">VAINQUEUR<\/span><span><a href="#\/league\/3">Ligue 1<\/a><\/span><span>2e · 74 pts<\/span><span><a href="#\/club\/9" class="club-link">/);
  assert.match(html,/<a href="#\/league\/-3">Coupe de France<\/a><\/span><span>Vainqueur<\/span>/);
  assert.match(html,/<a href="#\/europe\/C1">Ligue des champions<\/a><\/span><span>Huitièmes de finale<\/span><span>—<\/span>/);
- assert.match(html,/<span class="news-good">Qualifié pour la <a href="#\/europe\/C1">Ligue des champions<\/a> 2030 \/ 2031<\/span><a class="news-more" href="#\/honours">Palmarès →<\/a>/);
+ assert.match(html,/<span class="news-good">Qualifié pour la <a href="#\/europe\/C1">Ligue des champions<\/a> 2030 \/ 2031<\/span><a class="news-more" href="#\/honours">Palmarès <span class="go" aria-hidden="true"><\/span><\/a>/);
  assert.match(html,/<span>Meilleur buteur<\/span><strong><a href="#\/player\/1">Ada Un<\/a> · 21 buts<\/strong>.*<span>Meilleure note<\/span><strong><a href="#\/player\/2">Bob Deux<\/a> · 7\.38<\/strong>/);
 });
 
@@ -236,7 +236,7 @@ test('the market under way stands over the history of the club’s transfers',()
  const html=marketBlock(transfers);
  assert.match(html,/<h2>Mercato en cours<\/h2>/);
  assert.match(html,/data-command="reponse-offre" data-decision="accepter" data-offer="in-1"/);
- assert.match(html,/<a href="#\/player\/20">Négocier →<\/a>/);
+ assert.match(html,/<a href="#\/player\/20">Négocier <span class="go" aria-hidden="true"><\/span><\/a>/);
  assert.match(html,/<h3>Liste des transferts<span class="market-count">1<\/span><\/h3><ul class="market-list"><li><div class="market-line"><span class="market-player"><a href="#\/player\/13">Partant<\/a><\/span><b>4\.5\sM€<\/b><\/div><\/li>/);
  assert.match(html,/Aucun prêt en cours/);assert.doesNotMatch(html,/Prolongations/);
 });

@@ -364,10 +364,9 @@ salariale, que nulle règle ne lit, n'est pas montrée. Puis quatre colonnes, ch
 | Carte | Contenu | Lien |
 |---|---|---|
 | Tenues | les deux tenues complètes, domicile d'abord, en grand ; leur nom en infobulle | le PNG |
-| Mercato | tous les mouvements de la saison (transferts, prêts, jeunes promus, fins de contrat), arrivées puis départs, chaque sens compté et le total de ses indemnités, la plus grosse indemnité d'abord | onglet Transferts |
+| Finances | sous les tenues : budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 | Équipe-type | sur le terrain debout de la Composition, à chaque place de la forme que le club a le plus alignée dans la saison, le joueur de son équipe première qui y a été le plus souvent titulaire ; sous son nom ses matches et ses buts (« 52 m / 24 » et le ballon). Avant le premier match de la saison, ou pour un club qui n'en joue pas, ses meilleurs joueurs aux places de sa formation, chacun avec sa note au poste (`eleven` de l'aperçu) | — |
 | À surveiller | club dirigé seulement : les joueurs qui attendent une décision (contrat qui finit dans l'année, blessure et date de retour, suspension, moral sous 70 % et sa cause), six au plus | — |
-| Finances | budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 | Calendrier | les trois prochains matches au plus et les derniers joués avant eux, autant que la colonne en laisse (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne) | onglet Calendrier |
 | Championnat | « Ligue 1 – 18e journée » : le classement entier tant que cinq matches tiennent à côté, sinon les lignes autour du club, avec les points puis la différence de buts | page de la compétition |
 | Buteurs, Passeurs, Notes | les meilleurs du club dans la saison, toutes compétitions, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |
@@ -482,10 +481,11 @@ l'état du plus indisponible (blessé, puis suspendu) au plus frais. Il n'y a pa
 colonne de minutes jouées. Tous les autres tableaux se trient aussi : celui qui ne
 donne pas de valeur de tri se trie sur ce que ses cellules affichent (un chiffre, un
 montant dans son unité, une date, sinon le texte ; `sortValue`, `web/ui.js`). Un tri ne change
-la largeur d'aucune colonne, dans aucun tableau : la flèche d'un en-tête se loge dans sa
-marge, et les listes triées par le serveur (joueurs, clubs, mercato mondial) ont
-des colonnes de largeur fixe, si bien qu'un tri ou une autre page ne les déplace pas ;
-la page garde sa position de défilement.
+la largeur d'aucune colonne, dans aucun tableau : la flèche d'un en-tête suit son libellé
+sans prendre de place, et les listes en pages (joueurs, clubs, mercato mondial) gardent
+à leur nom sa plus grande largeur, si bien qu'un tri ou une autre page ne déplace aucune
+colonne ; la page garde sa position de défilement. Dans tous les tableaux, ce qui reste de
+largeur se partage à parts égales entre les colonnes (« Tableaux » dans la charte).
 
 Dans la vue Infos d'un effectif, FORME donne l'effet de la forme sur tout ce que fait le joueur en match, signé (1,11 se lit « +11 % »), en vert ou en rouge, en gris entre −2 % et +2 %. MORAL donne le moral sur 100, une flèche vers la cible qu'il rejoint peu à peu chaque semaine (à partir de 3 points d'écart) et, sous 70 %, ce qui le retient le plus : € pour le salaire, ◷ pour le temps de jeu, ★ pour un club en dessous de son niveau, ⊘ pour un départ refusé à un joueur déclaré intransférable (`morale_target` et `morale_cause` de la liste, tirés du calcul hebdomadaire des contrats). L'infobulle donne la cible et la satisfaction du joueur pour son salaire et son temps de jeu. L'écran Joueurs n'a pas ces colonnes.
 
@@ -998,13 +998,29 @@ message (« il vient d'arriver ») reste dans son infobulle.
 
 ### Composition
 
-L'onglet Composition du club dirigé : à gauche les tactiques, au-dessus du terrain, puis le terrain
+L'onglet Composition du club dirigé : à gauche le pas des formations, au-dessus du terrain, puis le terrain
 et les remplaçants sur une ligne (autant de places que `bench_size`) ; au centre la liste de
-l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, « Meilleure
-composition » et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
+l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, la composition auto
+et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
-ou le met sur la prochaine place libre, avant ses autres actions ; « Meilleure composition » reprend la suggestion de l'IA pour la
-tactique affichée, ses remplaçants rangés par poste (GB, DG, DD, DC, MDC…). Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
+ou le met sur la prochaine place libre, avant ses autres actions.
+
+Le pas des formations (charte, « Pas de saison ») : une flèche vers la formation d'avant, celle du
+terrain, qui ouvre la liste de toutes (« Perso » après un trait quand le club a la sienne), une flèche
+vers la suivante, dans l'ordre de `formations.json`.
+
+La composition auto, sur une ligne, un clic par action : « Meilleure », « Légère », « Forte »,
+« Complète », puis les cases « Jeunes » et « Formation » ; le détail de chacun est dans son infobulle.
+Un niveau compose aussitôt la tactique affichée (`/ma-partie/composition/suggestion`, `niveau` 0 à 3), ses
+remplaçants rangés par poste (GB, DG, DD, DC, MDC…), et reste marqué tant que la composition est celle
+qu'il a donnée ; le moindre changement à la main retire la marque. « Meilleure » prend la meilleure
+équipe pour ce match ; « Légère », « Forte » et « Complète » mettent au repos un tiers, deux tiers ou tous
+les joueurs de champ, remplacés par leurs seconds choix ; le gardien reste le meilleur. Les titulaires
+reposés sont ceux dont le second choix est le plus proche, le temps de jeu qu'il attend compté (voir
+`rotate`, `src/core/ai/selection.py`). « Jeunes » fait passer les grands espoirs avant les seconds
+choix ; « Formation » laisse l'IA changer de formation, sinon elle garde celle du terrain. Cocher ou
+décocher une case pendant qu'un niveau est marqué recompose aussitôt. Les deux cases restent d'un match
+à l'autre. Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
 seconde) marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
 
 L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
@@ -1032,7 +1048,7 @@ composites que ce poste demande, multipliée par le facteur hors poste du moteur
 Les composites demandés par poste sont une liste d'affichage de l'API (`COMPOSITES_BY_POSITION`,
 tirée de `implications.json`, la clé en premier) : aucun match ne la lit.
 
-« Infos » et « Jeu », à côté de « Meilleure composition », changent les colonnes de la liste :
+« Infos » et « Jeu », après la composition auto, changent les colonnes de la liste :
 potentiel, fatigue, cinq derniers matches, forme (son effet signé, comme dans l'effectif) et saison, ou les huit composites.
 « 5 DERNIERS » dessine les cinq derniers matches du club (charte, « Cinq derniers matches ») : une barre par match à la
 hauteur des minutes jouées, la piste vide sur le banc, un tiret quand il n'était pas retenu, la croix ou le carton quand il

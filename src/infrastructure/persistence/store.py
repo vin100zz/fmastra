@@ -551,8 +551,8 @@ def _rename_positions(node, skip: str | None = None):
 
 def _extend_attribute_vectors(world: dict, source_path: Path) -> None:
     """Schema 12 appended `centre` and `cpa` to every attribute vector, schema 40 `penalty`; vectors already extended are
-    left alone."""
-    players = world["players"].values()
+    left alone. A selection's campaign-only reinforcements have vectors too, and no source row."""
+    players = [*world["players"].values(), *world.get("international", {}).get("temporary", {}).values()]
     stale = {player["id"] for player in players if len(player["attributes"]["values"]) < len(ATTRIBUTE_INDEX)}
     imported = _source_attributes(world, source_path, stale, ("centre", "cpa", "penalty"))
     bounds = world["config"]["attributs"]["bornes"]
