@@ -1122,6 +1122,15 @@ Une saison s'écrit de ses deux années entières, une barre entre deux espaces 
 années courtes : 31-32. Une édition des sélections porte son nom et l'année de sa
 phase finale : Euro 2032.
 
+### Minutes
+
+Une minute de match s'écrit comme à la télévision : la minute en cours, suivie
+d'un prime (14′). De 1′ à 45′, puis 45+1′, 45+2′… dans le temps additionnel de la
+première mi-temps ; la seconde repart de 46′ à la reprise, quel qu'ait été ce
+temps additionnel, jusqu'à 90′, puis 90+1′… Partout la même : temps forts,
+marques des joueurs, buteurs sous un score, compteur du résumé et du direct
+(`matchMinute`, `web/ui.js` ; `goal_minute`, `src/api/rounds.py`).
+
 ### Notes
 
 | Donnée | Écriture | Exemple |

@@ -5,7 +5,7 @@
 // played where it will be at that moment, by a player sent there in time. A pass goes along the grass or over the
 // lines; it is taken first time, or controlled then played, or carried on touch after touch. Players run at a
 // footballer's pace and speed up and brake like one. The 3D view (replay-3d.js) draws all of it as it is.
-import {escape as e,shortName} from './ui.js';
+import {escape as e,matchMinute,shortName} from './ui.js';
 import {GRAVITY,ballAt,dip,lofted,path,rolled} from './replay-physics.js';
 
 const W=105,H=68;
@@ -45,8 +45,8 @@ const lerpPoint=(from,to,k)=>({x:lerp(from.x,to.x,k),y:lerp(from.y,to.y,k)});
 const unit=(from,to)=>{const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);return length?{x:dx/length,y:dy/length}:{x:1,y:0};};
 const scale=(vector,k)=>({x:vector.x*k,y:vector.y*k});
 const turn=(vector,angle)=>({x:vector.x*Math.cos(angle)-vector.y*Math.sin(angle),y:vector.x*Math.sin(angle)+vector.y*Math.cos(angle)});
-// Minutes as a broadcast shows them: 0 to 45, 45+1…, then 45 to 90, 90+1…; `half` is when the first half ended.
-const clockLabel=(second,half)=>{const late=second>half,value=Math.floor((late?second-half:second)/60)+(late?45:0),cap=late?90:45;return value>=cap?`${cap}+${value-cap+1}′`:`${value}′`;};
+// Minutes as the match report gives them (`matchMinute`); `half` is when the first half ended.
+const clockLabel=(second,half)=>`${matchMinute(second,half)}′`;
 // Stable jitter, so a chance looks the same each time it is replayed.
 const seeded=seed=>()=>{seed=(seed+0x6d2b79f5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
 const SVG='http://www.w3.org/2000/svg';

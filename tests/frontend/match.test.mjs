@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {matchHero} from '../../web/club-hero.js';
 import {matchScreen} from '../../web/match.js';
-import {setNations,setFoldOpen,setCompetitions} from '../../web/ui.js';
+import {setNations,setFoldOpen,setCompetitions,matchMinute,halfEnd} from '../../web/ui.js';
 
 const home={id:1,name:'Real <Madrid>',major_color:'#F8F8F8',minor_color:'#F8C028'},away={id:2,name:'Marseille',major_color:'#F8F8F8',minor_color:'#2098C8'};
 
@@ -100,8 +100,8 @@ test('each side is named once, in the band: the line-ups have no heading, nothin
  assert.doesNotMatch(html,/match-sides|match-banner|scoreboard/);
  assert.equal((html.match(/<section class="card match-lineup"><div class="pitch short" aria-label="Composition de /g)||[]).length,2);
  // The home side's highlights stand on the left of the minute, the away side's on its right.
- assert.match(html,/<h2>Les temps forts<\/h2><\/div><div class="highlights"><div class="highlight-row"><div class="highlight home"><span class="marks"><span class="match-mark goal"[^]*?<span class="minute">40′<\/span><div class="highlight away"><\/div><\/div>/);
- assert.match(html,/<div class="highlight home"><\/div><span class="minute">66′<\/span><div class="highlight away"><span class="marks"><span class="match-mark booking red"/);
+ assert.match(html,/<h2>Les temps forts<\/h2><\/div><div class="highlights"><div class="highlight-row"><div class="highlight home"><span class="marks"><span class="match-mark goal"[^]*?<span class="minute">41′<\/span><div class="highlight away"><\/div><\/div>/);
+ assert.match(html,/<div class="highlight home"><\/div><span class="minute">67′<\/span><div class="highlight away"><span class="marks"><span class="match-mark booking red"/);
  assert.match(html,/<h2>Le match en chiffres<\/h2><svg class="toggle-arrow"[^]*?<\/svg><\/div><div class="comparisons"><div class="comparison">/);
 });
 
@@ -110,7 +110,7 @@ test('on a line-up, a player’s goals stand at the top right of his shirt, a ba
  const html=await screen({...report,result:{...report.result,events:[scorer,{...scorer,second:3000},{kind:'substitution',period:2,second:4200,team_id:1,player_id:11,player:'Gardien Un',secondary_id:null,secondary:null,detail:''}]}});
  const [,shirt,block]=html.match(/aria-label="Composition de [^"]*">[^]*?(<span class="kit-shirt"[^]*?)<span class="player-block"><span class="block-name">[^<]+<\/span><span>(.*?)<\/span><\/span><\/a>/);
  assert.match(shirt,/<b>GB<\/b><span class="kit-goals" title="2 buts"><i><\/i><i><\/i><\/span><\/span>$/);
- assert.match(block,/^<b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><span class="match-mark sub-off"[^>]*>▼ 70′<\/span>$/);
+ assert.match(block,/^<b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><span class="match-mark sub-off"[^>]*>▼ 71′<\/span>$/);
  // A player without a goal has none on his shirt.
  assert.equal((html.match(/class="kit-goals"/g)||[]).length,1);
  assert.doesNotMatch(html,/pitch-marks|position-note|×2/);
@@ -135,7 +135,7 @@ test('the bench stands under its pitch on two columns, the first the longer, eac
  for(const column of [first,second])assert.match(column,/<thead><tr><th><button class="sort-toggle" data-table-sort>REMPLAÇANT<\/button><\/th><th><button class="sort-toggle" data-table-sort>ENTRÉE<\/button><\/th><th><button class="sort-toggle" data-table-sort>NOTE<\/button><\/th><\/tr><\/thead>/);
  // His short name, his whole name in the tooltip; the one who came on with his minute and his note, the others dimmed.
  assert.match(first,/<span class="bench-player unused" title="Victor Taïpa"><a href="#\/player\/12">Taïpa<\/a><\/span>/);
- assert.match(first,/<span class="bench-player" title="Kevin Pedro"><a href="#\/player\/13">Pedro<\/a><\/span><\/td><td[^>]*><span class="match-mark sub-on"[^>]*>▲ 55′<\/span><\/td><td[^>]*><span class="rating graded"/);
+ assert.match(first,/<span class="bench-player" title="Kevin Pedro"><a href="#\/player\/13">Pedro<\/a><\/span><\/td><td[^>]*><span class="match-mark sub-on"[^>]*>▲ 56′<\/span><\/td><td[^>]*><span class="rating graded"/);
  assert.match(second,/<span class="bench-player unused" title="Germain Mbiyavanga Kapela"><a href="#\/player\/14">Mbiyavanga Kapela<\/a><\/span>/);
  // A side without substitutes has no bench.
  assert.equal((html.match(/bench-halves/g)||[]).length,1);
@@ -146,7 +146,7 @@ test('a highlight takes one line: its marks, the player by his short name, a goa
   {kind:'red',period:2,second:3840,team_id:2,player_id:21,player:'Honest Ahanor',player_short:'Ahanor',secondary_id:null,secondary:null,detail:'second_yellow'},
   {kind:'injury',period:2,second:4000,team_id:2,player_id:22,player:'Ângelo',player_short:null,secondary_id:null,secondary:null,detail:''}];
  const html=await screen({...report,result:{...report.result,events}});
- assert.match(html,/<div class="highlight home"><span class="marks"><span class="match-mark goal" title="But"><\/span><\/span><span class="highlight-names"><strong title="Lucas Hernandez"><a href="#\/player\/11">L\. Hernandez<\/a><\/strong><small title="Passe de Benoit Cheyrou"><a href="#\/player\/12">Be\. Cheyrou<\/a><\/small><\/span><\/div><span class="minute">14′<\/span>/);
+ assert.match(html,/<div class="highlight home"><span class="marks"><span class="match-mark goal" title="But"><\/span><\/span><span class="highlight-names"><strong title="Lucas Hernandez"><a href="#\/player\/11">L\. Hernandez<\/a><\/strong><small title="Passe de Benoit Cheyrou"><a href="#\/player\/12">Be\. Cheyrou<\/a><\/small><\/span><\/div><span class="minute">15′<\/span>/);
  // A second yellow card: a yellow card, then the red one. No label is written under the name.
  assert.match(html,/<span class="marks"><span class="match-mark booking yellow" title="Carton jaune"><\/span><span class="match-mark booking red" title="Deuxième carton jaune"><\/span><\/span><span class="highlight-names"><strong title="Honest Ahanor"><a href="#\/player\/21">Ahanor<\/a><\/strong><\/span>/);
  // Without a short name from the API, the family name; a single name needs no tooltip.
@@ -200,4 +200,14 @@ test('a penalty scored says so in place of the passer, and a penalty missed has 
 test('expected goals keep one figure after the point, even round ones',async()=>{
  const html=await screen({...report,result:{...report.result,home_stats:{...stats,xg:2},away_stats:{...stats,xg:0.95}}});
  assert.match(html,/<div class="comparison"><span class="lead">2\.0<\/span><div>Buts attendus \(xG\)<[^]*?<\/div><span class="">1\.0<\/span><\/div>/);
+});
+
+test('a minute reads as on television: the minute in progress, added time after 45 and 90, the second half from its restart',()=>{
+ const half=2820;// the first half's whistle after 2 minutes of added time
+ assert.deepEqual([0,59,60,2699,2700,2819].map(second=>matchMinute(second,half)),['1','1','2','45','45+1','45+2']);
+ assert.deepEqual([2821,2880,half+44*60,half+45*60,half+46*60].map(second=>matchMinute(second,half)),['46','47','90','90+1','90+2']);
+ // An event's half settles a second on the whistle; a match without one ends its first half at 45 minutes.
+ assert.equal(matchMinute(half,half,2),'46');
+ assert.equal(halfEnd([{kind:'period_end',period:1,second:half}]),half);
+ assert.equal(halfEnd([]),2700);
 });

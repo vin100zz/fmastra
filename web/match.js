@@ -1,25 +1,26 @@
 import {replayCard} from './match-replay.js';
 import {matchHero} from './club-hero.js';
-import {api,escape as e,number as n,expectedGoals,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,competitionKind,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
+import {api,escape as e,matchMinute,halfEnd,number as n,expectedGoals,matchNoteBadge,date,clubLink,playerLink,empty,card,foldCard,table,pitch,competitionBadge,competitionKind,safeColor,contrastText,contrastRatio,chartColours,shortName} from './ui.js';
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
 const kitOf=(team,side)=>{const major=safeColor(team?.major_color);return major?{major,minor:safeColor(team.minor_color)||contrastText(major)}:fallbackKits[side];};
 // The away bars switch to their second colour, or a neutral one, when both sides would look alike.
 const barColors=(home,away)=>[home.major,[away.major,away.minor,fallbackKits.away.major,fallbackKits.home.major].find(color=>contrastRatio(home.major,color)>=1.6)||away.major];
-const minute=event=>Math.floor(event.second/60);
+const minute=(event,half)=>matchMinute(event.second,half,event.period);
 
 // What happened to each player during play (the shoot-out aside): goals, cards, injury, minutes of coming on and off.
 function playerEvents(events){
  const marks={};const of=id=>marks[id]??={goals:0,yellows:0,red:null,injury:null,on:null,off:null};
+ const half=halfEnd(events);
  for(const event of events){
   if(event.period===3||event.player_id==null)continue;
   const player=of(event.player_id);
   if(event.kind==='goal')player.goals++;
   else if(event.kind==='yellow')player.yellows++;
-  else if(event.kind==='red')player.red={minute:minute(event),secondYellow:event.detail==='second_yellow'};
-  else if(event.kind==='injury')player.injury=minute(event);
-  else if(event.kind==='substitution'){player.off=minute(event);if(event.secondary_id!=null)of(event.secondary_id).on=minute(event);}
+  else if(event.kind==='red')player.red={minute:minute(event,half),secondYellow:event.detail==='second_yellow'};
+  else if(event.kind==='injury')player.injury=minute(event,half);
+  else if(event.kind==='substitution'){player.off=minute(event,half);if(event.secondary_id!=null)of(event.secondary_id).on=minute(event,half);}
  }
  return marks;
 }
@@ -95,7 +96,7 @@ export function statsCard(match){
 // scorer, the passer, smaller, or "pen." for a penalty. Their whole names are in the tooltips. `link` names a player: a
 // link to his page, or plain text where leaving the screen is not allowed (the live match).
 export function highlightsCard(match,link=playerLink){
- const all=match.result.events,scored=new Set(all.filter(event=>event.kind==='goal').map(event=>event.shot_id));
+ const all=match.result.events,half=halfEnd(all),scored=new Set(all.filter(event=>event.kind==='goal').map(event=>event.shot_id));
  const saved=new Set(all.filter(event=>event.kind==='save').map(event=>event.shot_id));
  const events=all.filter(event=>(['goal','injury','red'].includes(event.kind)||(event.kind==='shot'&&event.detail==='penalty'&&!scored.has(event.shot_id)))&&event.period!==3);
  const named=(tag,id,name,short,title)=>{const shown=shortName(name,short);return `<${tag}${title||shown!==name?` title="${e(title||name)}"`:''}>${link(id,shown)}</${tag}>`;};
@@ -109,7 +110,7 @@ export function highlightsCard(match,link=playerLink){
    :event.secondary?named('small',event.secondary_id,event.secondary,event.secondary_short,`Passe de ${event.secondary}`):'';
   return `<span class="marks">${marks}</span><span class="highlight-names">${player}${passer}</span>`;
  };
- const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
+ const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event,half)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
  return card('Les temps forts',rows?`<div class="highlights">${rows}</div>`:`<div class="card-body">${empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
 }
 
