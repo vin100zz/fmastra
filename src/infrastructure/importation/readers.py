@@ -19,7 +19,8 @@ ATTRIBUTE_COLUMNS = {
     "passe": ("Passing",), "technique": ("Technique",), "finition": ("Finishing",), "tacle": ("Tackling",),
     "jeu_tete": ("Heading",), "vision": ("Creativity",), "placement": ("Positioning",),
     "sang_froid": ("Composure",), "vitesse": ("Pace",), "endurance": ("Stamina",), "reflexes": ("Reflexes",),
-    "sorties": ("RushingOut",), "relance": ("Kicking",), "centre": ("Crossing",), "cpa": ("Corners", "FreeKicks")}
+    "sorties": ("RushingOut",), "relance": ("Kicking",), "centre": ("Crossing",), "cpa": ("Corners", "FreeKicks"),
+    "penalty": ("Penalties",)}
 # The shirt number, under the first of these names the export has; a cell empty or outside 1-99 leaves it to the game.
 SHIRT_COLUMNS = ("SquadNumber", "ShirtNumber", "Number")
 

@@ -122,7 +122,7 @@ Le tireur est désigné parmi les joueurs impliqués dans l'axe de la zone de v�
 | Reprise après un arrêt ou un poteau | {{pct(moteur_match.occasion.xg_base_rebond, 0)}} | Frappe | Arrêts |
 | Tête sur corner ou coup franc centré | {{pct(moteur_match.coups_arretes.xg_base_corner, 1)}} | Jeu aérien | Comme un centre |
 | Coup franc frappé au but | {{pct(moteur_match.coups_arretes.xg_base_coup_franc_direct, 1)}} | Frappe, plus son avance en coups arrêtés | Arrêts |
-| Penalty | {{pct(moteur_match.penalty.reussite_base, 0)}} | Moyenne de Finition et Sang-froid | Réflexes (voir « Arrêts de jeu ») |
+| Penalty | {{pct(moteur_match.penalty.reussite_base, 0)}} | Penaltys et Sang-froid | Réflexes (voir « Arrêts de jeu ») |
 
 Les qualités du tireur et du gardien sont multipliées par leur état (forme, condition, moral, affinité au poste), comme les notes de zone, sauf la condition du tireur : un gardien se fatigue à peine (voir [La condition physique](#/aide/etats/la-condition-physique)), et la fatigue des attaquants pèse déjà sur la création des occasions. Pour une frappe dans l'axe, l'écart entre les deux donne :
 
@@ -181,7 +181,7 @@ Le tireur des corners et des coups francs est le joueur de champ qui a le meille
 
 - **Un coup franc frappé au but** : le tireur frappe lui-même ; son écart à {{n(moteur_match.occasion.niveau_reference_coup_franc / 5, 1)}} sur 20 en Coups arrêtés s'ajoute à sa qualité de frappe ou s'en retranche, à raison de 10 points de qualité par point d'attribut.
 - **Un coup franc centré** : il le joue dans la surface, comme un corner. Il finit sur une tête dans {{pct(moteur_match.arrets.coup_franc.issues_centre.tete, 0)}} des cas ; il est dégagé dans {{pct(moteur_match.arrets.coup_franc.issues_centre.degage, 0)}}, dont {{pct(moteur_match.arrets.coup_franc.part_degagements_en_corner, 0)}} derrière la ligne pour un corner ; le gardien le capte dans {{pct(moteur_match.arrets.coup_franc.issues_centre.capte, 0)}}.
-- **Un penalty** : le meilleur tireur présent sur le terrain, à la moyenne de sa Finition et de son Sang-froid, le tire. Il marque dans {{pct(moteur_match.penalty.reussite_base, 0)}} des cas à qualité égale ; chaque point d'écart sur 20 entre cette moyenne et les Réflexes du gardien déplace cette probabilité de {{pct(moteur_match.penalty.sensibilite * 5, 1)}}, entre {{pct(moteur_match.penalty.min, 0)}} et {{pct(moteur_match.penalty.max, 0)}}. Un penalty manqué est arrêté, sauf dans {{pct(moteur_match.penalty.part_rates_hors_cadre, 0)}} des cas où il passe à côté.
+- **Un penalty** : le joueur de champ présent sur le terrain qui a la meilleure qualité de tireur ({{poids(attributs.composites.penalty)}}) le tire. Il marque dans {{pct(moteur_match.penalty.reussite_base, 0)}} des cas à qualité égale ; chaque point d'écart sur 20 entre cette qualité et les Réflexes du gardien déplace cette probabilité de {{pct(moteur_match.penalty.sensibilite * 5, 1)}}, entre {{pct(moteur_match.penalty.min, 0)}} et {{pct(moteur_match.penalty.max, 0)}}. Un penalty manqué est arrêté, sauf dans {{pct(moteur_match.penalty.part_rates_hors_cadre, 0)}} des cas où il passe à côté.
 
 ### Les corners
 
@@ -281,7 +281,7 @@ Un arrêt à l'intérieur d'une possession (une faute subie, une touche gagnée,
 
 Une possession ne commence pas une fois le temps écoulé. Commencée, elle va à son terme, mais l'arbitre siffle à la première passe de conservation.
 
-En coupe, une égalité à la fin du temps réglementaire se règle directement aux tirs au but, sans prolongation. Chaque tir suit la règle d'un penalty du match : {{pct(moteur_match.penalty.reussite_base, 0)}} de réussite à qualité égale, déplacée par l'écart entre la moyenne de la Finition et du Sang-froid du tireur et les Réflexes du gardien, entre {{pct(moteur_match.penalty.min, 0)}} et {{pct(moteur_match.penalty.max, 0)}}. Les meilleurs tireurs présents sur le terrain à la fin du match tirent en premier.
+En coupe, une égalité à la fin du temps réglementaire se règle directement aux tirs au but, sans prolongation. Chaque tir suit la règle d'un penalty du match : {{pct(moteur_match.penalty.reussite_base, 0)}} de réussite à qualité égale, déplacée par l'écart entre la qualité du tireur ({{poids(attributs.composites.penalty)}}) et les Réflexes du gardien, entre {{pct(moteur_match.penalty.min, 0)}} et {{pct(moteur_match.penalty.max, 0)}}. Les meilleurs tireurs présents sur le terrain à la fin du match tirent en premier.
 
 ## Les notes de match
 

@@ -81,12 +81,12 @@ export function moraleCell(player) {
 }
 // The affinity to a position out of 20, only below 20: a round tag after the note at that position.
 export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;
-export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés'};
+export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés',penalty:'Penaltys'};
 // What an attribute is for decides its section; inside it, the attributes come in the alphabetical order of their names.
 export const ATTRIBUTE_SECTIONS=[
  {key:'goalkeeper',title:'Gardien',attributes:['reflexes','relance','sorties']},
  {key:'defense',title:'Défense',attributes:['placement','tacle']},
- {key:'attack',title:'Attaque',attributes:['centre','cpa','finition','jeu_tete','sang_froid','technique','vision']},
+ {key:'attack',title:'Attaque',attributes:['centre','cpa','finition','jeu_tete','penalty','sang_froid','technique','vision']},
  {key:'general',title:'Général',attributes:['endurance','passe','vitesse']}];
 export const byAttributeName = (first, second) => ATTRIBUTES[first].localeCompare(ATTRIBUTES[second],'fr');
 // The composites the match engine plays with (`attributs.composites`), out of 200 like the level, by the phase they decide.
@@ -394,7 +394,7 @@ export const loanTag = player => player.loan ? `<span class="tag loan" title="${
 // the initials, named in their tooltips, for the columns of a list.
 export const marketTags = (transfer, loan, none='—', short=false) => transfer||loan ? `<span class="tags">${transfer?`<span class="tag"${short?' title="Transfert"':''}>${short?'T':'Transfert'}</span>`:''}${loan?`<span class="tag loan"${short?' title="Prêt"':''}>${short?'P':'Prêt'}</span>`:''}</span>` : none;
 const textColumns=['position','name','nation','club','academy_club'];
-const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA'};
+const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA',penalty:'PEN'};
 const LIST_SECTIONS=['general','defense','attack','goalkeeper'].map(key=>ATTRIBUTE_SECTIONS.find(section=>section.key===key));
 const SECTION_OF=Object.fromEntries(ATTRIBUTE_SECTIONS.flatMap(section=>section.attributes.map(key=>[key,section.key])));
 // What the player page hides or greys fades: goalkeeping for an outfield player, Défense (Placement aside) and Attaque for a goalkeeper.

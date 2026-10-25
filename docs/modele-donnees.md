@@ -50,7 +50,7 @@ La date initiale reste le 1er juillet 2025, définie par la configuration.
 
 ## Attributs et progression
 
-Le moteur utilise 15 attributs. Chacun vient directement de la note source sur
+Le moteur utilise 16 attributs. Chacun vient directement de la note source sur
 20 (la moyenne de deux notes pour `cpa`), multipliée par 5 pour le stockage interne
 sur 100, puis réaffichée sur 20.
 Aucune génération ni recentrage à partir de Value ou WeeklyWage n'est appliqué.
@@ -75,6 +75,7 @@ Trois autres colonnes alimentent des traits stables du joueur : `InjuryProneness
 | relance | Kicking |
 | centre | Crossing |
 | cpa | moyenne de Corners et FreeKicks |
+| penalty | Penalties |
 
 Les notes doivent être dans [1,20]. CA et PA doivent satisfaire
 `1 <= CurrentAbility <= PotentialAbility <= 200` ; une valeur invalide bloque

@@ -450,7 +450,7 @@ test('retired players keep only their level history and career',async()=>{
  assert.doesNotMatch(html,/Attributs|player-rail|rail-section/);
 });
 
-const ALL=['passe','technique','finition','tacle','jeu_tete','vision','placement','sang_froid','vitesse','endurance','reflexes','sorties','relance','centre','cpa'];
+const ALL=['passe','technique','finition','tacle','jeu_tete','vision','placement','sang_froid','vitesse','endurance','reflexes','sorties','relance','centre','cpa','penalty'];
 const everything=Object.fromEntries(ALL.map((key,index)=>[key,20+index*5]));
 const WEIGHTS={GB:{reflexes:.40,sorties:.25,placement:.20,relance:.15},DC:{tacle:.28,placement:.28,jeu_tete:.20,vitesse:.14,passe:.10},
  BU:{finition:.38,sang_froid:.20,technique:.16,jeu_tete:.14,vitesse:.12}};
@@ -462,7 +462,7 @@ test('a goalkeeper gets Gardien and Général, Placement joins his craft, and th
  assert.deepEqual(sections.map(section=>section.title),['Gardien','Général']);
  assert.deepEqual(names(sections[0]),['placement','reflexes','relance','sorties']);// Placement joins the goalkeeper's craft
  assert.deepEqual(names(sections[1]),['endurance','passe','vitesse']);
- assert.deepEqual(others.map(item=>item.key),['centre','cpa','finition','jeu_tete','sang_froid','tacle','technique','vision']);
+ assert.deepEqual(others.map(item=>item.key),['centre','cpa','finition','jeu_tete','penalty','sang_froid','tacle','technique','vision']);
 });
 
 test('an outfield player never sees goalkeeper attributes, nor others, and Placement stays a defensive skill',()=>{
@@ -476,7 +476,7 @@ test('an outfield player never sees goalkeeper attributes, nor others, and Place
 test('sections keep one fixed order whatever the position, the attributes inside them the alphabetical order of their names',()=>{
  const layout=position=>attributeGroups(of(position)).sections.map(section=>[section.title,...names(section)]);
  assert.deepEqual(layout('DC'),layout('BU'));
- assert.deepEqual(layout('BU'),[['Défense','placement','tacle'],['Attaque','centre','cpa','finition','jeu_tete','sang_froid','technique','vision'],['Général','endurance','passe','vitesse']]);
+ assert.deepEqual(layout('BU'),[['Défense','placement','tacle'],['Attaque','centre','cpa','finition','jeu_tete','penalty','sang_froid','technique','vision'],['Général','endurance','passe','vitesse']]);
 });
 
 test('every attribute is shown exactly once, in a section or among the others',()=>{
@@ -508,7 +508,7 @@ test('a goalkeeper card closes its row on his other attributes, greyed in neutra
  const card=html.match(/<section class="card attributes-card"><div class="card-head"><h2>Attributs[^]*?<\/section>/)[0];
  assert.deepEqual([...card.matchAll(/<h3 class="section-title">([^<]+)<\/h3>/g)].map(match=>match[1]),['Gardien','Général','Autres']);
  assert.match(card,/<div class="attribute-column others-column"><h3 class="section-title">Autres<\/h3><div class="attribute-rows"><div class="attribute"><span>Centres<\/span><span class="rating neutral" title="Centres sur 20">\d+<\/span><\/div>/);
- assert.equal((card.match(/class="rating neutral"/g)||[]).length,8);
+ assert.equal((card.match(/class="rating neutral"/g)||[]).length,9);
  assert.doesNotMatch(card,/<details/);
  assert.match(card,/class="attribute key"[^>]*><span>Placement<\/span>/);
 });
