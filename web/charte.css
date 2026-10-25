@@ -272,6 +272,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
    the club's band, its second colour in a corner. */
 .kit-dot{width:14px;height:14px;margin-right:6px;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #0000003d;vertical-align:-2px}
 #own-club .kit-dot{width:16px;height:16px}
+#own-club[hidden],.nav-count[hidden]{display:none}
 .nation .flag,.flag{border-radius:0}
 .morale-cause{width:var(--h-chip);height:var(--h-chip);font-size:var(--fs-micro)}
 .fitness,.meter,.mini-bar,.gauge,.fatigue-bar,.force-bar{height:4px;border-radius:2px}
