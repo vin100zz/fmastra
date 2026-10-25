@@ -45,7 +45,7 @@ def test_the_human_club_shares_its_budgets_and_the_annual_review_carries_the_sha
     assert store.load("shared").clubs[club.id].wage_shift == moved
     path = store.path_for("shared")
     document = json.loads(gzip.decompress(path.read_bytes()))
-    for saved in document["world"]["clubs"].values(): del saved["wage_shift"]
+    for saved in document["world"]["clubs"].values(): saved.pop("wage_shift", None)
     path.write_bytes(gzip.compress(json.dumps(document).encode("utf-8")))
     older = store.load("shared")
     assert (older.clubs[club.id].wage_shift, older.clubs[club.id].wage_cap) == (0, cap + moved)

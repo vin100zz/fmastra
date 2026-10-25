@@ -942,7 +942,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   remplaçant après son nom)
 - Résumé 2D des occasions, replié par défaut : le bouton « Résumé 2D », au bout
   de la ligne du match, l'ouvre et lance la lecture, puis le replie (la lecture se
-  met en pause). Le terrain n'est construit qu'à la première ouverture.
+  met en pause). Le terrain n'est construit qu'à la première ouverture. Seuls les
+  matches du club dirigé gardent de quoi le dérouler (`replay` de `match_detail`) :
+  les autres, et ceux des sélections, n'ont pas le bouton.
   Chaque occasion suit la trace du moteur (récupération, zones franchies, centre,
   tir et issue) ; le résumé en choisit la manière, la même à chaque lecture. Le
   ballon est un projectile (`replay-physics.js`) : frappé, il vole sous la

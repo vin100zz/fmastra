@@ -3,7 +3,7 @@ from core.domain.date import Date, readable_duration
 from core.domain.players import Discipline, Loan
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, NewsLine, TransferRecord, SeasonRecord, MovementSnapshot
-from core.domain.matches import MatchResult, stored_events
+from core.domain.matches import MatchResult, store_events
 from core.engine.fitness import match_load
 from .age_records import note_club_match
 from .finances import book_cash, book_daily_cash
@@ -189,7 +189,8 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.matches[match.id] = match
             world.competitions[match.competition_id].match_ids.append(match.id)
             world.next_id = max(world.next_id, match.id + 1)
-        for match in world.matches.values():
+        # A selection's matches are known by the year of their edition: those of an edition over before this season.
+        for match in (*world.matches.values(), *world.international.matches.values()):
             if match.season < event.year and match.result and match.result.engine != "archived":
                 match.result = _archived(match.result)
         for club in world.clubs.values():
@@ -344,8 +345,9 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
     match = world.matches[event.match_id]
     if match.result is not None: raise ValueError("A match cannot be applied twice")
     match.result = event.result
-    # Full engine logs made up most of a save; the views only list the kinds that remain.
-    event.result.events = stored_events(event.result.events)
+    # Full engine logs made up most of a save; the views only list the kinds that remain, and only the user's club's
+    # matches keep the build-up their replay draws.
+    store_events(event.result, world.controlled_club_id in (match.home_id, match.away_id))
     for club_id in (match.home_id, match.away_id):
         for pid in world.clubs[club_id].player_ids:
             discipline = world.players[pid].discipline.get(match.competition_id)

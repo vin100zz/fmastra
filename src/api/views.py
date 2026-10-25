@@ -834,7 +834,7 @@ def match_detail(world: World, match: Match) -> dict:
     if result is None:
         data["result"] = None
         return data
-    detail = {"engine": result.engine, "status": result.status, "duration": result.duration,
+    detail = {"engine": result.engine, "status": result.status, "duration": result.duration, "replay": result.replay,
               "home_stats": asdict(result.home_stats) if result.home_stats else None,
               "away_stats": asdict(result.away_stats) if result.away_stats else None}
     # Where room is short (the highlights, the pitch), a player goes by his short name, told apart within his side's squad.
