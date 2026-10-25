@@ -41,6 +41,11 @@ def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
     detail = client.get(f'/api/joueurs/{player.id}').json()
     assert detail['potential'] == round(player.potential, 1) and detail['rating'] <= detail['potential']
     assert 'potential_estimate' not in detail and 'source_potential_ability' not in detail
+    share = lambda value, low, high: pytest.approx(min(1, max(0, (value - low) / (high - low))))
+    injuries, contracts, cards = world.config.states.injuries, world.config.management.contracts, world.config.engine.cards
+    assert detail['fragility'] == share(player.fragility, injuries.fragility_min, injuries.fragility_max)
+    assert detail['ambition'] == share(player.ego, contracts.ego_min, contracts.ego_max)
+    assert detail['aggression'] == share(player.aggression, cards.aggression_min, cards.aggression_max)
     assert client.get('/api/joueurs?tri=invalid').status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
@@ -140,6 +145,12 @@ def test_club_list_averages_its_sixteen_best_players_and_sorts_on_it(client):
         assert [row[field] for row in weakest] == sorted(row[field] for row in weakest) and weakest[0][field] < rows[0][field]
     names = [v.normalized(row['name']) for row in client.get('/api/clubs?tri=nom').json()['items']]
     assert names == sorted(names)
+    # Its personality from 0 to 1 within the bounds it was drawn from; its wage aggression, which drives nothing, left out.
+    club = next(iter(world.active_clubs()))
+    bounds = world.config.management.personality
+    assert client.get(f'/api/clubs/{club.id}').json()['personality'] == {
+        key: pytest.approx((getattr(club.personality, key) - getattr(bounds, key).min) / (getattr(bounds, key).max - getattr(bounds, key).min))
+        for key in ('risk_appetite', 'youth_preference', 'negotiation_patience')}
     empty = next((club for club in world.clubs.values() if not club.player_ids), None)
     if empty:
         assert client.get(f'/api/clubs/{empty.id}').json()['top_rating'] is None

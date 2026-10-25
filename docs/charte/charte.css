@@ -322,6 +322,18 @@
 .attribute{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);border-bottom:1px solid var(--row-line);white-space:nowrap}
 .attribute.key>span:first-child{font-weight:700}
 .attribute.key>span:first-child::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:middle}
+/* Attributes in columns, on a player's page: the Jeu section, then one column per section, its strip on one band with the
+   others' and a hairline between two columns, read like a table. The columns share the width, none narrower than its
+   longest name and its badge (--attribute-column, inside its 12 on each side); they wrap when the card cannot hold them
+   all. The attributes a goalkeeper makes no use of close the row, their names greyed. */
+.attribute-columns{display:flex;flex-wrap:wrap}
+.attribute-column{--attribute-column:140px;flex:1 1 0;min-width:calc(var(--attribute-column) + 2*var(--s3))}
+.attribute-column.composites-column{--attribute-column:180px}
+.attribute-column+.attribute-column{border-left:1px solid var(--row-line)}
+.attribute-column>.section-title{border-top:0}
+.attribute-rows{padding:0 var(--s3)}
+.attribute-rows>.attribute:last-child{border-bottom:0}
+.others-column .attribute>span:first-child{color:var(--muted)}
 
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
    graded ground with its border, a competition an outline (a solid black for a European cup). */

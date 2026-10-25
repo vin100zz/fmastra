@@ -102,9 +102,15 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
    +tile('Réputation',club.reputation==null?'—':n(club.reputation),change)});
 }
 
+// The three traits of a club's personality the market reads, out of 20, each tooltip saying what it makes the club do.
+const PERSONALITY=[
+ ['risk_appetite','Risque','Appétit du risque sur 20 : plus il est haut, plus le club paie cher les joueurs qu’il recrute'],
+ ['youth_preference','Jeunes','Préférence pour les jeunes sur 20 : plus elle est haute, plus le club fait jouer et progresser ses jeunes, et plus il recrute d’espoirs'],
+ ['negotiation_patience','Patience','Patience en négociation sur 20 : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps']];
+
 // The row of tiles that opens a club's Présentation: its place in each competition of the season on one tile (`competitions`,
 // the record of its calendar: the rank in its league, else how far it went), its players and their mean age on another, its
-// tactic, its training and its youth recruitment on one tile, and last its squad's value. A competition is written after its
+// tactic, its training and its youth recruitment on one tile, its personality on another, and last its squad's value. A competition is written after its
 // badge, the two one link to its page.
 export function clubTiles(club,competitions=[]){
  const place=row=>{
@@ -115,6 +121,7 @@ export function clubTiles(club,competitions=[]){
  return `<div class="club-tiles">${seasons}${split(column('Joueurs',club.squad_size==null?'—':n(club.squad_size))+column('Âge moyen',club.average_age==null?'—':n(club.average_age)))}`
   +`${tile('Tactique',e(club.formation||'—'))}${split(column('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'Entraînement sur 20')
    +column('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'Recrutement des jeunes sur 20'))}`
+  +(club.personality?split(PERSONALITY.map(([key,label,title])=>column(label,Math.round(1+club.personality[key]*19),title)).join('')):'')
   +`${tile('Valeur',club.squad_value==null?'—':money(club.squad_value),'','Valeur de l’effectif')}</div>`;
 }
 

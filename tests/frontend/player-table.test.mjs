@@ -241,7 +241,7 @@ const attributes={passe:70,technique:60,finition:81,tacle:20,jeu_tete:55,vision:
 test('the attribute view lists the attributes out of 20 by section, Général, Défense, Attaque then Gardien, under their headings',()=>{
  const html=playerTable({items:[{...player,attributes}],total:1,page_size:30},false,'finition','desc',{view:'attributs'});
  const keys=[...html.matchAll(/data-sort="(\w+)"/g)].map(match=>match[1]);
- assert.deepEqual(keys,['position','name','age','rating','potential','passe','vitesse','endurance','tacle','placement','finition','sang_froid','technique','vision','jeu_tete','centre','cpa','reflexes','sorties','relance']);
+ assert.deepEqual(keys,['position','name','age','rating','potential','endurance','passe','vitesse','placement','tacle','centre','cpa','finition','jeu_tete','sang_froid','technique','vision','reflexes','relance','sorties']);
  assert.doesNotMatch(html,/VALEUR|SALAIRE|CONTRAT|data-sort="goals"/);
  // Each heading spans its section on a first header row; the other headers span both rows.
  assert.deepEqual([...html.matchAll(/<th colspan="(\d+)" class="column-group">([^<]+)</g)].map(match=>`${match[2]}:${match[1]}`),['Général:3','Défense:2','Attaque:7','Gardien:3']);
@@ -256,10 +256,10 @@ test('the attribute view lists the attributes out of 20 by section, Général, D
  assert.equal(playerTable({items:[{...player,attributes}],total:1,page_size:30},true,'rating','desc',{view:'attributs'}).match(/data-sort="(\w+)"/g)[5],'data-sort="club"');
 });
 
-test('in the attribute view, what the player page hides or folds away fades',()=>{
+test('in the attribute view, what the player page hides or greys fades',()=>{
  const faded=position=>[...playerTable({items:[{...player,position,attributes}],total:1,page_size:30},false,'position','asc',{view:'attributs'}).matchAll(/<span class="off-role"><span[^>]*title="([^"]+) sur 20"/g)].map(match=>match[1]);
- assert.deepEqual(faded('BU'),['Réflexes','Sorties','Relance']);
- assert.deepEqual(faded('GB'),['Tacle','Finition','Sang-froid','Technique','Vision','Jeu de tête','Centres','Coups arrêtés']);
+ assert.deepEqual(faded('BU'),['Réflexes','Relance','Sorties']);
+ assert.deepEqual(faded('GB'),['Tacle','Centres','Coups arrêtés','Finition','Jeu de tête','Sang-froid','Technique','Vision']);
  assert.doesNotMatch(playerTable({items:[{...player,attributes:undefined}],total:1,page_size:30},false,'position','asc',{view:'attributs'}),/NaN|undefined/);
 });
 
