@@ -24,7 +24,7 @@ body{margin:0;background:var(--bg)}
 .measure>i{display:block;background:var(--panel-3);border:1px solid var(--line)}
 .heights{display:flex;align-items:flex-end;gap:12px}
 .heights .measure>i{width:84px;border-radius:var(--radius)}
-.t-standings .tr{grid-template-columns:24px minmax(0,1fr) 36px 24px 24px 24px 24px 28px 28px 44px 98px}
+.t-standings .tr{grid-template-columns:24px minmax(0,var(--w-name)) 36px 24px 24px 24px 24px 28px 28px 44px 98px}
 .spec-line.gap{gap:8px}
 .pair{display:flex;gap:16px;align-items:flex-start}
 .over{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -32,9 +32,9 @@ body{margin:0;background:var(--bg)}
 .patch.tall{height:112px}
 .anatomy{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
 .t-uses .tr{grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1.2fr)}
-.t-bench .tr{grid-template-columns:minmax(0,1fr) 52px 36px}
+.t-bench .tr{grid-template-columns:minmax(0,var(--w-name)) 52px 36px}
 .t-rules .tr{grid-template-columns:minmax(0,1.15fr) 96px minmax(0,1.5fr)}
-.t-short .tr{grid-template-columns:24px minmax(0,1fr) 36px 24px 44px}
+.t-short .tr{grid-template-columns:24px minmax(0,var(--w-name)) 36px 24px 44px}
 .families{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 32px}
 .comp-row{display:flex;align-items:center;gap:8px;height:var(--h-row);border-bottom:1px solid var(--row-line)}
 .t-colours .tr{grid-template-columns:minmax(0,1fr) 84px 88px minmax(0,1.7fr)}
@@ -49,8 +49,8 @@ body{margin:0;background:var(--bg)}
 .menu-tip{position:absolute;z-index:1;left:50%;transform:translateX(-50%);width:max-content}
 /* The competitions of the selections, a column each; a final from its winner's side; the runs of the nations. */
 .hub-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
-.t-finals .tr{grid-template-columns:64px minmax(0,1fr) 84px minmax(0,1fr)}
-.t-runs .tr{grid-template-columns:minmax(0,1fr) repeat(5,56px)}
-.t-runs .tr:has(>:nth-child(5):last-child){grid-template-columns:minmax(0,1fr) repeat(4,56px)}
+.t-finals .tr{grid-template-columns:64px minmax(0,var(--w-name)) 84px minmax(0,var(--w-name))}
+.t-runs .tr{grid-template-columns:minmax(0,var(--w-name)) repeat(5,56px)}
+.t-runs .tr:has(>:nth-child(5):last-child){grid-template-columns:minmax(0,var(--w-name)) repeat(4,56px)}
 /* A selection's place in each edition, on its Présentation. */
 .t-places .tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}

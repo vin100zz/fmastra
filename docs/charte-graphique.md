@@ -106,6 +106,7 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 |---|---|
 | Espacements | 4, 8, 12, 16, 24 (`--s1` à `--s6`) : 8 entre deux cartes, 8 et 12 dans une carte, marges de page 8, 16, 12 |
 | Hauteurs | Barre du haut 56, ce qui s'y tient 40 (`--h-bar-control`) · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · choix d'une vue : piste 28 et options 24, piste 26 et options 22 dans l'en-tête d'une carte · ligne et en-tête de tableau, intertitre 26 · pastille 18 |
+| Largeurs | Le nom d'un tableau, 200 au plus (`--w-name`) : il prend la largeur de son plus long, puis ce qui reste se partage entre les écarts des colonnes. Voir « Tableaux » |
 | Formes | Quatre rayons : 4 pour une pastille, le point d'un club, une case (`--radius-chip`) ; 6 pour un contrôle, une option, un intertitre (`--radius`) ; 8 pour ce qui en tient d'autres, piste d'un choix, menu, tuile, terrain (`--radius-box`) ; 10 pour une carte et un bandeau (`--radius-card`). Ou rond (points, écussons) |
 | Traits | Peu : une carte, un bouton, un champ, un menu n'ont pas de bordure ; un tableau a un trait sous son en-tête, aucun entre ses lignes. Ce qui est ouvert porte l'accent : 3 sur la barre, sous l'onglet ouvert en trait aux bouts arrondis, au bord d'un intertitre (`--mark`) ; 2 sous le prochain match, sous un pas de saison ouvert (`--mark-control`) ; l'option ouverte d'un choix en est remplie |
 | Profondeur | Une ombre plutôt qu'une bordure : une carte sur le fond (`--shadow-card`), un bouton ou un champ sur sa carte (`--shadow-field`), un menu au-dessus de la page (`--shadow-float`), l'option ouverte sur sa piste (`--shadow-thumb`), l'action principale éclairée d'en haut (`--shadow-accent`) |
@@ -1380,8 +1381,10 @@ sa pastille n'en est pas un (ci-dessus), ni :
 ### Tableaux
 
 - Toutes les colonnes de tous les tableaux se trient.
-- Chaque colonne garde sa largeur : la flèche d'un en-tête se loge dans sa
-  marge, où elle ne prend pas de place ; trier ne déplace aucune colonne.
+- Chaque colonne garde sa largeur : la flèche d'un en-tête suit son libellé,
+  dans l'écart qui le sépare de la colonne suivante, où elle ne prend pas de
+  place ; dans la dernière colonne, elle le précède, pour rester dans le
+  tableau. Trier ne déplace aucune colonne.
 - Un tableau qui ne donne pas de valeur de tri se trie sur ce que ses cellules
   affichent : un chiffre, un montant dans son unité, une date, sinon le texte.
 - En-têtes et lignes de 26 ; chiffres alignés à droite, sous un en-tête aligné
@@ -1389,10 +1392,30 @@ sa pastille n'en est pas un (ci-dessus), ni :
 - Aucun trait entre les lignes : une sur deux sur une bande (`--stripe`).
   L'en-tête n'a pas de fond, un trait pâle dessous (`--head-line`). Les listes
   (matchs, faits, attributs, temps forts) font de même.
-- Une colonne a la largeur de ce qu'elle tient, quelle que soit la valeur : rang
-  36, poste 48, pastille 56, chiffre 52 (68 sous un en-tête long : MATCHES,
-  SAISONS), score 76, montant 84, saison 96, date 108 ; ce qui reste va au nom.
-  Un texte trop long est coupé d'une ellipse, jamais la colonne voisine.
+- Une colonne a la largeur de ce qu'elle tient au plus, son en-tête ou sa plus
+  longue valeur, quelle que soit la valeur affichée : rang 36, poste 48,
+  pastille 56, chiffre 52 (68 sous un en-tête long : MATCHES, SAISONS), score
+  76, montant 84, saison 96, date 108. Un texte trop long est coupé d'une
+  ellipse, jamais la colonne voisine.
+- Le nom (d'un joueur, d'un club, d'une nation) n'a pas de largeur à lui : il
+  prend celle de son plus long, 200 au plus (`--w-name`). Dans une liste en
+  pages, où une autre page ou un tri amène d'autres noms, il garde 200, pour
+  que rien ne bouge. Dans une liste de joueurs, de clubs ou de transferts, il
+  tient 120 au moins.
+- **Des écarts égaux** : ce que le tableau a de plus que ses colonnes se
+  partage à parts égales entre leurs écarts, si bien que deux colonnes voisines
+  ne sont jamais plus proches ni plus éloignées que deux autres ; ses bords
+  gardent leur marge. Un tableau qui n'a rien de plus laisse au nom ce qui
+  reste, jusqu'à son minimum, puis défile ; ses écarts sont alors les marges de
+  ses cellules (`spreadColumns`, `web/columns.js`).
+- **Liste de joueurs** : les mêmes colonnes sur tous les écrans (effectif,
+  rassemblement, Joueurs, promotions du Mercato mondial), chacune de ce
+  qu'elle tient, sans ses marges de 8 : poste 36 · nationalité 54 · âge,
+  sélections 24 · niveau, potentiel, note 32 · valeur, salaire 48 · prix
+  minimum, prétentions, état 80 · listé 34 · intéressé 60 · contrat 78 · forme
+  46 · moral 72 · matches 40 · buts 30 · passes, cartons 16 · promotion 76 ·
+  données 88 ; un attribut ou un composite, sa pastille de 32. À côté d'un
+  aperçu (Joueurs), les marges de ses cellules passent à 4.
 
 ### Infobulles
 
@@ -1419,7 +1442,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`) et les finances sous elles (`financesBlock`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son logo seul, son drapeau après son nom (initiales sur le disque sans logo), aux couleurs de son maillot lues dans `data/nations.csv` (`NATION_KITS`, `src/api/nations.py`) ; la Présentation d'un club, premier onglet (`presentationContent`, `web/international.js` ; tuiles `nationTiles`, `web/club-hero.js` ; colonnes `presentationColumns`, tenues `kitsCard`, équipe-type `elevenCard`, calendrier `calendarBlock`, classements de joueurs `leadersCards` de `web/club-overview.js` ; parcours `runsCard` ; `/international/nations/{id}/apercu`, `nation_overview`, `src/api/international.py`), la liste seule sur l'Effectif (les widgets à côté d'elle retirés) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
-| Tableaux | Toutes les colonnes se trient (`sortValue`), flèche dans la marge |
+| Tableaux | Toutes les colonnes se trient (`sortValue`), la flèche après le libellé ; chaque colonne de ce qu'elle tient, le nom de son plus long à 200, des écarts égaux (`spreadColumns`, `web/columns.js`) ; une seule échelle pour les listes de joueurs |
 | Pays | Drapeau dans le menu et sur la Vue d'ensemble |
 | Sous le pointeur | Une seule règle pour les liens, les lignes et les commandes, dans `web/charte.css` ; les autres feuilles n'en disent plus rien (`tests/frontend/charte.test.mjs`) |
 | Palmarès | Pastilles de compétition de la charte (`competitionBadge`), filtres de poste aux couleurs des postes |

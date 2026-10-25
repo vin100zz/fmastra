@@ -168,12 +168,14 @@ td.num,th.num{display:table-cell}
 /* A short list on two columns side by side, a line between them: the first column the longer, read from top to bottom. */
 .halves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
 .halves>*+*{border-left:1px solid var(--line)}
-/* Every heading sorts, and no sort moves a column: the arrow stands in the heading's own right margin, where it takes no room. */
-th{position:relative}
-th button.sort-toggle::after,th button[data-sort]::after{content:"";position:absolute;right:1px;top:50%;margin-top:-2px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;visibility:hidden}
+/* Every heading sorts, and no sort moves a column: the arrow follows the heading's label, in the gap after it, where it
+   takes no room; in the last column it comes before the label, inside the table. */
+th button{position:relative}
+th button.sort-toggle::after,th button[data-sort]::after{content:"";position:absolute;right:-7px;top:50%;margin-top:-2px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;visibility:hidden}
 th[aria-sort] button::after,th button[data-order]::after{content:"";visibility:visible}
 th[aria-sort=ascending] button::after,th button[data-order=asc]::after{content:"";border-top:0;border-bottom:4px solid currentColor}
 th[aria-sort] button,th button[data-order]{color:var(--strong)}
+th:last-child button:is(.sort-toggle,[data-sort])::after{right:auto;left:-7px}
 /* A place in a table is told by its rank: a badge of 24 on the pale ground of its place, ringed with its colour; the other
    ranks bare, on the same centre. A row is never tinted, nothing runs along it; the row of the user's club is the only one
    coloured. The legend of the places shows the same badge, a square of 12. */
@@ -803,30 +805,31 @@ th button:hover{background:none}
 b,strong{font-weight:700}
 small{font-size:var(--fs-small)}
 .position,.rating,.nav-count,.market-count,.news-ring b,.competition-code{letter-spacing:0}
-/* A player list at 13 px: its columns as wide as what they show. */
-.player-table .position-column{width:44px}
-.player-table .nation-column,.split .player-table .nation-column{width:84px}
-.player-table .rating-column,.player-table .potential-column{width:36px}
-.player-table .wage-column,.split .player-table .wage-column{width:64px}
-.player-table .contract_end-column,.split .player-table .contract_end-column{width:84px}
-.player-table .fitness-column{width:68px}
-.player-table .form-column{width:52px}
-.player-table .morale-column{width:92px}
-/* A club's squad stands beside its widgets: no column wider than its heading or the longest value it shows, so that the
-   list fits a 1920 px screen without scrolling sideways. */
-.club-squad .player-table .position-column{width:36px}
-.club-squad .player-table .nation-column{width:72px}
-.club-squad .player-table .age-column{width:24px}
-.club-squad .player-table :is(.rating-column,.potential-column,.goals-column){width:30px}
-.club-squad .player-table :is(.value-column,.wage-column){width:48px}
-.club-squad .player-table :is(.contract_end-column,.morale-column){width:72px}
-.club-squad .player-table .form-column{width:44px}
-.club-squad .player-table :is(.assists-column,.yellows-column,.reds-column){width:20px}
-.club-squad .player-table .average-column{width:32px}
-/* The list of a selection's camp stands the same way: each player's club where a club's list names his nationality, then
-   his caps and his goals for the selection. */
-.club-squad .player-table .club-column{width:120px}
-.club-squad .player-table :is(.caps-column,.international_goals-column){width:30px}
+/* A player list: each column as wide as what it holds at most, its heading or its longest value, the same on every
+   screen; the player's name and a club's from 120 up to --w-name, then the gaps share what is left (« Tableaux »). */
+.player-table .position-column{width:36px}
+.player-table :is(.name-column,.club-column,.academy_club-column){width:auto;min-width:120px}
+/* So does a name in the list of clubs and in the world's transfers. */
+.clubs-table .nom-column,.movements-table .name-column{min-width:120px}
+.player-table .nation-column{width:54px}
+.player-table :is(.age-column,.caps-column){width:24px}
+.player-table :is(.rating-column,.potential-column,.average-column){width:32px}
+.player-table :is(.value-column,.wage-column){width:48px}
+.player-table :is(.asking_price-column,.wage_demand-column,.fitness-column){width:80px}
+.player-table .listed-column{width:34px}
+.player-table .interested-column{width:60px}
+.player-table .contract_end-column{width:78px}
+.player-table .form-column{width:46px}
+.player-table .morale-column{width:72px}
+.player-table .appearances-column{width:40px}
+.player-table :is(.goals-column,.international_goals-column){width:30px}
+.player-table :is(.assists-column,.yellows-column,.reds-column){width:16px}
+.player-table .promotion_date-column{width:76px}
+.player-table .data_at-column{width:88px}
+/* An attribute or a composite: its badge, set on its <col>, margins included. */
+.player-table col.grouped{width:calc(32px + 2*var(--s2))}
+/* Beside a preview (Joueurs), the list keeps to the width left: its cells' margins of 4. */
+.split .player-table :is(th,td){padding-left:var(--s1)!important;padding-right:var(--s1)!important}
 .player-table :is(.caps-column,.international_goals-column){text-align:right}
 /* A selection's calendar, a club's: a round of the finals reads in full, and the column on the right holds a group's whole
    table over the record in each edition. */

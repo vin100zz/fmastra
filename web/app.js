@@ -23,6 +23,7 @@ import {refit} from './listing.js';
 import {initSearch} from './search.js';
 import {openPlayerMenu,showPlayerDialog} from './player-menu.js';
 import {initBudgetShare} from './budget-share.js';
+import {initColumns} from './columns.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
@@ -33,6 +34,8 @@ let refitted=false,previewVersion=0;
 const main=document.querySelector('#main');
 initNationLogos(main);
 initHeroCrests(main);
+// Every table shares what its columns leave over equally between their gaps, dialogs' too.
+initColumns(document.body);
 // The search of the whole game leads to pages: it needs a game and its club, and waits while a live match holds the screen.
 const showSearch=initSearch(()=>Boolean(state.exists)&&!state.recovery_required&&state.controlled_club_id!=null&&!state.live_match_id);
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the round's results).

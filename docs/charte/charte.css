@@ -39,6 +39,8 @@
  --shadow-accent:inset 0 -1px 0 #7f620040,0 1px 2px #7f62002e,0 2px 6px -2px #7f620033;
  /* Heights. */
  --h-bar:56px;--h-bar-control:40px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
+ /* Widths: a table's name column, as wide as this at most while its table has width left over for its gaps. */
+ --w-name:200px;
 }
 *{box-sizing:border-box}
 
@@ -181,23 +183,30 @@
 .card.fold.open .toggle-arrow{transform:rotate(180deg)}
 .card.fold:not(.open) .fold-more{display:none}
 
-/* Tables: 26 px headings and rows, figures on the right. A row is a grid; each table sets its columns. */
+/* Tables: 26 px headings and rows, figures on the right. A row is a grid; each table sets its columns, each as wide as
+   what it holds at most, a name up to --w-name; what the row has left over is shared equally between the gaps of its
+   columns, so that no two columns stand closer than two others. */
 .table{display:flex;flex-direction:column;min-width:0}
-.tr{display:grid;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3)}
+.tr{display:grid;justify-content:space-between;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3)}
 .tr>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr:nth-child(even){background:var(--stripe)}
 /* The rows of a list follow a table's: no line between them, one in two on a band, under what a row's own state or the
    pointer gives it. */
 :where(.honour-line:nth-child(even of .honour-line),.match-row:nth-child(even of .match-row),.fixture:nth-child(even of .fixture),.fact:nth-child(even of .fact),.attribute:nth-child(even of .attribute),.highlight-row:nth-child(even of .highlight-row),.nation-line:nth-child(even of .nation-line),.result:nth-child(even of .result),.watch-list>li:nth-child(even)){background:var(--stripe)}
 .tr.head{border-bottom:1px solid var(--head-line);font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-/* Every column sorts, and no sort moves a column: each column has a set width, and the arrow of a heading stands in the
-   heading's right margin (the gap between two columns), where it takes no room. */
-.tr.head>*{position:relative;overflow:visible;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
-.tr.head>.num{text-align:right}
+/* Every column sorts, and no sort moves a column: each column has a set width, and the arrow of a heading follows its
+   label, in the gap after it, where it takes no room; in the last column it comes before the label, inside the table. */
+.tr.head>*{position:relative;justify-self:start;overflow:visible;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
+.tr.head>.num{justify-self:end;text-align:right}
+.tr.head>.center{justify-self:center}
 .tr.head>*::after{content:"";position:absolute;right:-7px;top:50%;margin-top:-2px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;visibility:hidden}
 .tr.head>.sorted{color:var(--strong)}
 .tr.head>.sorted::after{visibility:visible}
 .tr.head>.sorted.asc::after{border-top:0;border-bottom:4px solid currentColor}
+.tr.head>:last-child::after{right:auto;left:-7px}
+/* A player list: the same columns on every screen, each as wide as its heading or its longest value; the name from 120
+   up to --w-name. */
+.t-players .tr{grid-template-columns:36px minmax(120px,var(--w-name)) 54px 24px 32px 32px 48px 48px 78px 46px 72px 40px 30px 16px 16px 16px 32px}
 .tr.own{background:var(--own-row)}
 .tr.chosen{background:var(--good-soft)}
 .tr.lent{background:var(--info-soft)}

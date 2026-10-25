@@ -481,10 +481,11 @@ l'état du plus indisponible (blessé, puis suspendu) au plus frais. Il n'y a pa
 colonne de minutes jouées. Tous les autres tableaux se trient aussi : celui qui ne
 donne pas de valeur de tri se trie sur ce que ses cellules affichent (un chiffre, un
 montant dans son unité, une date, sinon le texte ; `sortValue`, `web/ui.js`). Un tri ne change
-la largeur d'aucune colonne, dans aucun tableau : la flèche d'un en-tête se loge dans sa
-marge, et les listes triées par le serveur (joueurs, clubs, mercato mondial) ont
-des colonnes de largeur fixe, si bien qu'un tri ou une autre page ne les déplace pas ;
-la page garde sa position de défilement.
+la largeur d'aucune colonne, dans aucun tableau : la flèche d'un en-tête suit son libellé
+sans prendre de place, et les listes en pages (joueurs, clubs, mercato mondial) gardent
+à leur nom sa plus grande largeur, si bien qu'un tri ou une autre page ne déplace aucune
+colonne ; la page garde sa position de défilement. Dans tous les tableaux, ce qui reste de
+largeur se partage à parts égales entre les colonnes (« Tableaux » dans la charte).
 
 Dans la vue Infos d'un effectif, FORME donne l'effet de la forme sur tout ce que fait le joueur en match, signé (1,11 se lit « +11 % »), en vert ou en rouge, en gris entre −2 % et +2 %. MORAL donne le moral sur 100, une flèche vers la cible qu'il rejoint peu à peu chaque semaine (à partir de 3 points d'écart) et, sous 70 %, ce qui le retient le plus : € pour le salaire, ◷ pour le temps de jeu, ★ pour un club en dessous de son niveau, ⊘ pour un départ refusé à un joueur déclaré intransférable (`morale_target` et `morale_cause` de la liste, tirés du calcul hebdomadaire des contrats). L'infobulle donne la cible et la satisfaction du joueur pour son salaire et son temps de jeu. L'écran Joueurs n'a pas ces colonnes.
 
