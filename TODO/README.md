@@ -11,6 +11,7 @@ le code, et quitte ce dossier.
 | Document | Chantier | État |
 |---|---|---|
 | `conception-consignes-tactiques.md` | C, les consignes tactiques | Décisions à valider |
+| `conception-formation-ia.md` | La formation choisie par l'effectif, clubs et sélections | Décisions à valider |
 
 `reprise.md` donne à une nouvelle conversation l'état du projet, les règles de travail et
 la liste de ce qui reste à faire.
