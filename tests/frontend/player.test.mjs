@@ -379,7 +379,16 @@ test('attributes are graded badges without bars; greed is a trait of his charact
  assert.doesNotMatch(card,/class="gauge|class="meter"|Niv\.|Pot\.|Appât du gain/);
  // Between his state and his contract, whose demands it inflates.
  assert.match(rail(html),/<\/div><h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span><strong><span class="rating" title="Appât du gain sur 20">5<\/span><\/strong><\/div><\/div><h3>Contrat<\/h3>/);
- assert.doesNotMatch((await render()).html,/Caractère|Appât du gain|class="potential"|Potentiel estimé/);
+ assert.doesNotMatch((await render()).html,/Caractère|Appât du gain|Fragilité|class="potential"|Potentiel estimé/);
+});
+
+test('fragility follows greed under Caractère, graded the other way round from an attribute: red when high',async()=>{
+ const fragility=async value=>rail((await render({...detail,greed:.21,fragility:value})).html).match(/<div class="fact"><span>Fragilité<\/span><strong>(.*?)<\/strong><\/div>/)?.[1];
+ assert.equal(await fragility(1),'<span class="rating graded" style="--hue:0" title="Fragilité sur 20 : plus elle est haute, plus il se blesse">20</span>');
+ assert.match(await fragility(0),/style="--hue:120"[^>]*>1</);
+ assert.match(rail((await render({...detail,greed:.21,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span>.*<span>Fragilité<\/span>.*<\/div><\/div><h3>Contrat<\/h3>/);
+ // Alone, it opens Caractère all the same.
+ assert.match(rail((await render({...detail,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
 });
 
 test('the career card is one table: the clubs, then the national team under its name in the same four columns',async()=>{

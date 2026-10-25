@@ -41,6 +41,8 @@ def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
     detail = client.get(f'/api/joueurs/{player.id}').json()
     assert detail['potential'] == round(player.potential, 1) and detail['rating'] <= detail['potential']
     assert 'potential_estimate' not in detail and 'source_potential_ability' not in detail
+    injuries = world.config.states.injuries
+    assert detail['fragility'] == pytest.approx(min(1, max(0, (player.fragility - injuries.fragility_min) / (injuries.fragility_max - injuries.fragility_min))))
     assert client.get('/api/joueurs?tri=invalid').status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 

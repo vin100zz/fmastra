@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,attributeScore,level,levelHue,levelBadge,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -35,8 +35,12 @@ function attributeItem({key,value,weight}) {
 // An attribute his position makes no use of: its name greyed, its badge neutral.
 const otherItem=({key,value})=>`<div class="attribute"><span>${ATTRIBUTES[key]}</span><span class="rating neutral" title="${ATTRIBUTES[key]} sur 20">${attributeScore(value)}</span></div>`;
 
-// Greed is a trait out of 20, neither good nor bad in itself: in the rail under Caractère, in a plain badge.
-const greedFact=player=>player.greed==null?'':fact('Appât du gain',`<span class="rating" title="Appât du gain sur 20">${Math.round(1+player.greed*19)}</span>`);
+// The traits of his character the page shows, out of 20, in the rail under Caractère, in the alphabetical order of their
+// names. Greed is neither good nor bad in itself: a plain badge. Fragility, which multiplies his risk of injury, is graded
+// the other way round from an attribute: red when high.
+const outOf20=value=>Math.round(1+value*19);
+const characterFacts=player=>(player.greed==null?'':fact('Appât du gain',`<span class="rating" title="Appât du gain sur 20">${outOf20(player.greed)}</span>`))
+ +(player.fragility==null?'':fact('Fragilité',reverseScoreBadge(outOf20(player.fragility),'Fragilité sur 20 : plus elle est haute, plus il se blesse')));
 
 // The composites the engine plays with, out of 200 like the level: a goalkeeper's two, or the six of an outfield player. Those
 // the position `role` asks for are marked like key attributes, the others grey.
@@ -340,7 +344,7 @@ function rail(player) {
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
  const state=`${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}`
   +(others.length?fact(others.length>1?'Autres nationalités':'Autre nationalité',others.map(code=>nationBadge(code)).join('')):'');
- const character=greedFact(player);
+ const character=characterFacts(player);
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),...loanTerms(player)];
  return `<aside class="card player-rail"><div class="card-head"><h2>État</h2></div><div class="rail-section">${state}</div>`

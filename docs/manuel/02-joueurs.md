@@ -71,11 +71,11 @@ Vous voyez le potentiel exact. Les clubs de l'IA, eux, n'en voient qu'une **esti
 
 ## Le caractère
 
-Quatre traits stables, fixés à la création du joueur, pèsent sur sa carrière. Seul l'appât du gain est affiché sur la fiche.
+Quatre traits stables, fixés à la création du joueur, pèsent sur sa carrière. La fiche en montre deux, sous Caractère : l'appât du gain et la fragilité, de 1 à 20.
 
 | Trait | Plage | Effet |
 |---|---|---|
-| Fragilité | {{etats.blessures.fragilite_min}} à {{etats.blessures.fragilite_max}} | Multiplie le risque de blessure en match |
+| Fragilité | {{etats.blessures.fragilite_min}} à {{etats.blessures.fragilite_max}} (1 à 20 sur la fiche) | Multiplie le risque de blessure en match |
 | Agressivité | {{moteur_match.cartons.agressivite_min}} à {{moteur_match.cartons.agressivite_max}} | Multiplie la probabilité d'être l'auteur d'une faute sanctionnée |
 | Ambition | {{ia_gestion.contrats.ego_min}} à {{ia_gestion.contrats.ego_max}} | Rend le joueur impatient dans un club trop petit pour lui |
 | Appât du gain | 0 à 1 (1 à 20 sur la fiche) | Gonfle le salaire demandé |

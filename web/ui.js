@@ -26,6 +26,8 @@ export const noteHue = score => gradeHue(score,6,6.75,7.5);
 const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</span>`;
 export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
 export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
+// A score out of 20 where more is worse (a player's fragility): the same scale, read the other way round.
+export const reverseScoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(21-score),title);
 export const matchNoteBadge = (value, title='Note du match') => value==null ? '' : gradedBadge(matchNote(value),noteHue(value),title);
 // A note on a pitch, in the block under a shirt: written in its colour, lightened to read on the dark, without a badge.
 export const blockNote = (text, hue, title='') => `<b class="block-note" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</b>`;
