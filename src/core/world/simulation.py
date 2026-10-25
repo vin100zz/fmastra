@@ -25,6 +25,7 @@ from .market import settle_offers, open_offers, ensure_minimums
 from .talks import progress_talks
 from .loans import return_events, run_loan_round
 from .reserves import reserve_events
+from .formations import formation_events
 from .promotion import promotion_event
 from .reputation import reputation_events
 from .squads import complete_squads
@@ -166,6 +167,8 @@ def open_day(world: World) -> None:
     for _ in range(cfg.world.market.rounds_per_day):
         rejected = settle_offers(world, open_market)
         open_offers(world, open_market, rejected)
+    # The day's matches are played in the formation of the squad as the day leaves it.
+    for event in formation_events(world): apply(world, event)
     daily_notices(world)
 
 

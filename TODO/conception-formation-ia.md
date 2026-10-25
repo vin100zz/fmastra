@@ -394,6 +394,54 @@ Chaque étape laisse les tests au vert et mesure les suites qu'elle touche.
    Mesure : part de renforts, forces des nations.
 4. **Interface et documentation.** Équipe-type des sélections, manuel, `docs/`.
 
+## Avancement
+
+Les dix recommandations sont validées.
+
+### Étape 1, faite
+
+Code : `core.ai.formation` (`best_formation`, `formation_value`), `core.world.formations`
+(`formation_events`), l'événement `FormationChosen`, le champ `Club.formation_squad`, la
+configuration `formations.choix`, la montée de schéma 41 (`_choose_formations`). Le manuel
+(chapitre 06, « La formation »), `docs/ia-gestion.md`, `docs/benchmarks.md`,
+`docs/configuration.md` et `migrations/README.md` décrivent la règle.
+
+Ce qui a changé à l'implémentation :
+
+- **Pas d'appel à chaque événement.** Plutôt que de relancer le choix dans chaque
+  événement qui touche l'effectif, chaque jour, avant les matches, un club de l'IA dont
+  l'équipe première n'est plus celle de `Club.formation_squad` refait son choix. Cela
+  couvre aussi la blessure qui passe sous les 30 jours restants, qui ne fait l'objet
+  d'aucun événement. La liste est sauvegardée : une partie rechargée refait les mêmes
+  choix qu'une partie continue.
+- **Tous les clubs**, dormants compris : ils jouent l'Europe et les coupes. Un club
+  sans joueur garde la première formation de la configuration.
+- **Égalités** : la première formation de la configuration. Un club ne change jamais
+  pour une égalité, même avec une marge nulle.
+- **Le coût** : la valeur de chaque joueur à chaque poste est calculée une fois et
+  partagée entre les huit formations. Un choix coûte 1.85 ms pour un club actif ; la
+  vérification quotidienne, 4 à 5 ms pour les 1 826 clubs. Sur 150 jours depuis la
+  création (1 229 choix), le choix prend 2.7 % du temps simulé.
+- **Décision 7** (l'actualité au changement de formation) : reportée à l'étape 4,
+  avec l'interface.
+
+Mesures, graine par défaut :
+
+| Suite | Avant | Après |
+|---|---|---|
+| `match` (3 000) | 9 critères sur 15 | 12 sur 15 : Clasico 48.7 / 27.1 / 24.2 %, PSG–Toulouse conforme ; restent City–Burnley (69.1 % de victoires, 12.5 % de défaites) et les défaites des équipes égales (32.2 %, inchangé) |
+| `season` (10) | champion 2.02, corrélation 0.46, plus fort 0.43 | 2.03, 0.45, 0.40 : inchangée dans le bruit |
+| `world`, 2 saisons | — | 0.45 changement de formation par club actif et par saison ; formation la plus jouée : 24 % des clubs actifs |
+| `formations`, `stats_match` | — | inchangées par construction : effectifs synthétiques |
+
+À la création, les clubs actifs jouent : 4-4-2 losange 62, 3-5-2 29, 5-3-2 29, 4-2-3-1 28,
+4-3-3 20, 5-4-1 20, 4-4-2 offensif 17, 4-4-2 plat 11.
+
+Sur deux saisons du monde, les autres mesures restent proches de la référence du code
+précédent, lancée en même temps sur la même graine. `small_club_stars` passe de 27 à 35
+(maximum 30) : deux saisons ne suffisent pas à trancher, à revoir avec la suite `economy`
+de l'étape 2.
+
 ## Décisions
 
 1. **Ce qui définit la meilleure formation.** Le meilleur onze (valeur au poste ×

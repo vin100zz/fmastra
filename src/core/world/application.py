@@ -12,7 +12,7 @@ from .shirts import assign
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
                      FinancePosted, BudgetRenewed, BudgetShifted, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
-                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded, ShirtsRenumbered)
+                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded, ShirtsRenumbered, FormationChosen)
 
 
 def movement_snapshot(world: World, player) -> MovementSnapshot:
@@ -131,6 +131,9 @@ def apply(world: World, event: WorldEvent) -> bool:
             player = world.players[pid]
             before, player.shirt = player.shirt, number
             report(world, "shirt_numbers", NewsLine(player_id=pid, amount=number, text="" if before is None else str(before)), event.club_id)
+    elif isinstance(event, FormationChosen):
+        club = world.clubs[event.club_id]
+        club.formation, club.formation_squad = event.formation, event.squad
     elif isinstance(event, FinancePosted):
         club = world.clubs[event.club_id]
         book_daily_cash(world, club, event.change, event.investment, event.unseen_wages)

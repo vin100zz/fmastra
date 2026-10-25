@@ -69,6 +69,9 @@ class Club:
     wage_shift: int = 0
     # The part of `income` its competitions pay this season, by "league", "europe" and "cup": what last season earned.
     prize_income: dict[str, int] = field(default_factory=dict)
+    # The first-team players `formation` was chosen for, by id (see `core.world.formations`): the choice is made again
+    # only when they change.
+    formation_squad: tuple[int, ...] = ()
 
     away_kit_id: int | None = None
     away_kit_major_color: str | None = None

@@ -595,7 +595,16 @@ l'utilisateur prête (`lend`, à un club de `takers`) et emprunte (`borrow`, un 
 
 ## Composition et remplacements
 
-Exclure blessés, suspendus et joueurs en réserve ; retenir la formation préférée si elle est
+La formation d'un club de l'IA (`Club.formation`) est celle que son équipe première remplit le
+mieux (`core.ai.formation.best_formation`) : moyenne par place de la meilleure affectation,
+niveau au poste × affinité, sans forme, condition ni moral. L'équipe première compte les
+joueurs empruntés, ni la réserve ni les blessés pour plus de `formations.choix.blessure_longue_jours`
+jours. Le choix est refait chaque jour avant les matches pour les clubs dont cette équipe a
+changé (`Club.formation_squad`, `core.world.formations.formation_events`) ; la formation ne
+change que pour un gain d'au moins `formations.choix.marge_changement` par place. Le club de
+l'utilisateur garde la sienne. Le mercato, la réserve et les prêts lisent cette formation.
+
+Exclure blessés, suspendus et joueurs en réserve ; retenir la formation du club si elle est
 remplissable, sinon la meilleure couverture. Optimiser une affectation unique
 joueur/poste, y compris pour les polyvalents et le banc. La qualité du poste
 comprend forme, fraîcheur, moral et affinité ; la rotation utilise les seuils

@@ -22,6 +22,8 @@ from core.domain.players import ATTRIBUTE_INDEX
 from core.config.models.management import PLANNING_ROUNDS
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
+from core.world.application import apply
+from core.world.formations import formation_events
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
 from core.world.age_records import initialize_age_records
@@ -36,10 +38,13 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 40
+SCHEMA_VERSION = 41
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A club of the AI plays the formation its first team fills best, kept unless another does clearly better
+    # (see `_choose_formations`).
+    (41, ("formations", "choix"), {"marge_changement": 0.25, "blessure_longue_jours": 30}),
     # A taker's quality from the spot is a composite of the attribute `penalty` and composure (see `_upgrade_penalties`).
     (40, ("attributs", "composites"), {"penalty": {"penalty": 0.75, "sang_froid": 0.25}}),
     # A failed action ends in a foul, the ball out of play, an offside or lost in play; corners and free kicks have a
@@ -418,6 +423,7 @@ class SaveStore:
             if version < 38: _upgrade_possessions(world)
             if version < 39: _upgrade_stoppages(world)
             if version < 40: _upgrade_penalties(world)
+            if version < 41: _choose_formations(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -578,6 +584,12 @@ def _upgrade_penalties(world: World) -> None:
         payload["attributs"]["profils_generation"]["profils"].get(position, {}).setdefault("penalty", offset)
     payload["demographie"]["progression"]["poids_declin_par_attribut"].setdefault("penalty", PENALTY_DECLINE_WEIGHT)
     world.config = decode_config(payload)
+
+
+def _choose_formations(world: World) -> None:
+    """Schema 41: a club of the AI no longer keeps the formation drawn for it at creation; it plays the one its first team
+    fills best. The human club keeps its own."""
+    for event in formation_events(world, margin=False): apply(world, event)
 
 
 def _assign_greed(world: World, source_path: Path) -> None:

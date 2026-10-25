@@ -35,6 +35,7 @@ def snapshot(world: World, elapsed: float) -> dict:
             "min_squad": min(len(club.player_ids) for club in clubs), "max_squad": max(len(club.player_ids) for club in clubs),
             "min_goalkeepers": min(sum(world.players[pid].position == "GB" for pid in club.player_ids) for club in clubs),
             "top3_elite_share": sum(player.club_id in top_ids for player in elite) / max(1, len(elite)),
+            "formations": {key: count / len(clubs) for key, count in sorted(Counter(club.formation for club in clubs).items())},
             "elapsed_seconds": elapsed}
 
 
@@ -79,8 +80,11 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
         started = perf_counter()
         held = {cid: club.reputation for cid, club in world.clubs.items()}
         boundary = Date(world.season + 1, cfg.world.key_dates.population_review.month, cfg.world.key_dates.population_review.day)
+        changes = 0
         while world.date < boundary:
+            played = {club.id: club.formation for club in world.active_clubs()}
             advance_day(world)
+            changes += sum(club.formation != played.get(club.id, club.formation) for club in world.active_clubs())
             if index >= warmup:
                 active = [world.players[pid] for club in world.active_clubs() for pid in club.player_ids]
                 for player in active:
@@ -99,6 +103,7 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
         row = snapshot(world, perf_counter() - started)
         row.update(reputation_row(world, held))
         row.update(economy_row(world))
+        row["formation_changes"] = changes
         row["warmup"] = index < warmup
         rows.append(row)
         for club in world.active_clubs():
@@ -163,6 +168,11 @@ def run_world_suite(world: World, suite: str, seasons: int, warmup: int, report_
             Measurement("fee_p90_window_drift", abs(fee_last - fee_first) / max(1, fee_first), 0, economy.fee_drift, seasons),
             Measurement("small_club_stars", max(row["small_club_stars"] for row in observed), 0, economy.max_small_club_stars, seasons),
             Measurement("small_club_top_monthly_wage", max(row["small_club_top_wage"] for row in observed), 0, economy.max_small_club_wage, seasons)])
+        # Diagnostics without a target (docs/benchmarks.md): how often a club changes formation, and whether one prevails.
+        measures.extend([
+            Measurement("formation_changes_per_club_season", mean(row["formation_changes"] for row in observed) / count, 0, float("inf"), seasons,
+                        blocking=False),
+            Measurement("formation_largest_share", mean(max(row["formations"].values()) for row in observed), 0, 1, seasons, blocking=False)])
         for cid, winners in world.champions.items():
             measures.append(Measurement(f"different_champions/{cid}", len({winner for _, winner in winners[-seasons:]}), cfg.benchmarks.economy.different_champions.min, seasons + cfg.benchmarks.economy.different_champions.min, seasons))
         first_year = rows[warmup]["season"] - 1

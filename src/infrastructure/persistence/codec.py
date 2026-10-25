@@ -80,6 +80,7 @@ def decode(value: Any) -> Any:
                 value["fields"].setdefault(name, None)
             for name in KIT_COMPONENT_FIELDS: value["fields"].setdefault(name, None)
             for name in ("loaned_ids", "borrowed_ids"): value["fields"].setdefault(name, [])
+            value["fields"].setdefault("formation_squad", {"$tuple": []})
         if cls is Player:
             for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),
                                   ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []}),

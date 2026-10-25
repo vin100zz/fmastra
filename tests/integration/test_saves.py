@@ -499,6 +499,7 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if introduced > 39:
             for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]
     # As schema 39 shipped them: no attribute `penalty` to list, generate or decline, but for a profile the player had set.
     rules["attributs"]["liste"]["techniques"].remove("penalty")
     for position, profile in rules["attributs"]["profils_generation"]["profils"].items():

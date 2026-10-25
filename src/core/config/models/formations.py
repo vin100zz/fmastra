@@ -22,6 +22,13 @@ class FormationsConfigBlockHeight:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class FormationsConfigChoice:
+    change_margin: float = Field(default=0.25, alias="marge_changement")
+    long_injury_days: int = Field(default=30, alias="blessure_longue_jours")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class FormationsConfig:
     formations: FrozenMap[tuple[str, ...]] = Field(alias="formations")
     block_height: FormationsConfigBlockHeight = Field(alias="hauteur_bloc")
+    choice: FormationsConfigChoice = Field(default_factory=FormationsConfigChoice, alias="choix")

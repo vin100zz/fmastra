@@ -207,6 +207,12 @@ transferts entre régimes pour vérifier l'identité comptable des populations.
   `reputation_row` (`benchmarks/world_suites.py`) ; les cibles sont dans `economie` de
   `config/benchmarks.json`.
 
+Les mêmes suites rapportent deux diagnostics sans cible, non bloquants : le nombre moyen
+de changements de formation par club actif et par saison (`formation_changes_per_club_season`),
+et la part moyenne de la formation la plus jouée parmi les clubs actifs
+(`formation_largest_share`). Le premier signale des bascules trop fréquentes, le second une
+formation qui écraserait les autres (`docs/manuel/06-entraineur.md`, « La formation »).
+
 La démographie et l'économie utilisent le monde complet, avec progression,
 contrats, minutes, états et événements nécessaires ; pas une substitution du
 moteur analytique laissant ces entrées vides. Des tests isolés peuvent employer

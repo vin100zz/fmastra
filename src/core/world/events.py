@@ -79,6 +79,14 @@ class ShirtsRenumbered:
 
 
 @dataclass(frozen=True, slots=True)
+class FormationChosen:
+    """The formation a club plays, chosen for the first-team players `squad` (see `core.world.formations`)."""
+    club_id: int
+    formation: str
+    squad: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class FinancePosted:
     """A club's day of accounts: `change` is its cash once `investment` is spent; `unseen_wages` are the weekly wages a
     dormant club pays the players the game does not hold."""
@@ -151,4 +159,4 @@ class RenewalProposed:
     proposal: RenewalProposal
 
 
-WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | ReserveChanged | LoanStarted | LoanEnded | ShirtsRenumbered | FinancePosted | BudgetRenewed | BudgetShifted | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed
+WorldEvent = PlayerChanged | MatchPlayed | PlayerSigned | PlayerReleased | PlayerGenerated | ReserveChanged | LoanStarted | LoanEnded | ShirtsRenumbered | FormationChosen | FinancePosted | BudgetRenewed | BudgetShifted | ReputationRevised | DivisionsChanged | SeasonOpened | DateAdvanced | OffersUpdated | RenewalProposed

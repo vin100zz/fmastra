@@ -81,7 +81,7 @@ Elles s'ajoutent à `CLAUDE.md`, que la conversation charge d'elle-même.
   vérifie dans `src/core/config/consistency.py`.
 - **Un changement de règle** atteint les sauvegardes existantes par une montée de
   schéma (`SCHEMA_VERSION` dans `src/infrastructure/persistence/store.py`,
-  actuellement 40). Trois tables y servent :
+  actuellement 41). Trois tables y servent :
   - `MIGRATION_DEFAULTS` : les clés ajoutées, avec leurs valeurs par version ;
   - `RETIRED_RULES` : les clés retirées. Le même chemin rend aussi, pour le contrôle
     d'empreinte, une règle modifiée avant le typage (la liste des attributs au
