@@ -14,8 +14,13 @@ s'ouvre automatiquement sur la partie. Garder la fenêtre du serveur ouverte ;
 le jeu.
 
 Un fichier `.bat` ne peut pas avoir d'icône : double-cliquer une fois sur
-**shortcut.bat** crée sur le Bureau un raccourci « Football Manager » vers
-`start.bat`, à l'icône du jeu (`web/favicon.ico`).
+**shortcut.bat** crée sur le Bureau un raccourci « Football Manager », à l'icône
+du jeu (`web/favicon.ico`), qui s'épingle à la barre des tâches (clic droit,
+« Épingler à la barre des tâches »). Il lance `launcher.pyw` sans console : le
+jeu s'ouvre dans sa propre fenêtre Edge ou Chrome, à l'icône du jeu, et le
+serveur s'arrête quand on la ferme. Le journal du serveur est dans
+`launcher.log`. Relancer `shortcut.bat` pour mettre à jour un raccourci créé
+auparavant.
 
 Python 3.12 est requis. Depuis ce dossier, dans PowerShell :
 
