@@ -27,10 +27,10 @@ travail sur le moteur de match de Touchline. Il date du 25 octobre 2026.
   (`TODO/conception-consignes-tactiques.md`, commits `c9792ff` et `a5cc6af`). Rien
   n'est codé.
 
-Tout cela est sur la branche `claude/exciting-feynman-6f0ut4`, dans la PR
-https://github.com/vin100zz/fmastra/pull/21, **pas encore fusionnée dans `main`**.
-Vérifier son état avant de commencer : fusionnée, la reprise part de `main` ; sinon,
-de cette branche.
+L'attribut Penaltys est dans `main` (PR https://github.com/vin100zz/fmastra/pull/21).
+Les minutes, la conception de C et ce fichier sont sur la branche
+`claude/exciting-feynman-6f0ut4`, dans une seconde PR. Vérifier son état avant de
+commencer : fusionnée, la reprise part de `main` ; sinon, de cette branche.
 
 À lire avant de toucher au moteur :
 - `docs/moteur-match.md` : le moteur tel qu'il est ;
