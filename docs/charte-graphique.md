@@ -175,6 +175,8 @@ où le fond est déjà jaune.
 | Palmarès | `.honour-line` | Une ligne par titre. Voir « Historique » |
 | Niveau au fil des mois | `.level-chart`, `.plot`, `.curve`, `.chart-point`, `.point-value` | Voir « Graphiques » |
 | Répartition réglable | `.balance`, `.balance-end`, `.balance-bar`, `.balance-handle`, `.balance-note` | Voir « Graphiques » |
+| Mercatos d'un club | `.mercatos`, `.mercato-season`, `.mercato-head`, `.mercato-row`, `.mercato-half` | Ce que le club a dépensé et reçu à chaque fenêtre de chaque saison ; un bloc ouvre sa saison. Voir « Graphiques » |
+| Tuile d'un record | `.tile.record` | Dans une rangée de tuiles, lue de gauche à droite : le joueur, le chevron (`.go`, retourné pour une arrivée), le club après sa pastille, le montant au bout. Le double d'une tuile à chiffres |
 | Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note`, `.block-season` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
 | Présentation d'un club | `.tiles.row`, `.presentation`, `.kits`, `.kit-outfit`, `.watch-list`, `.watch-facts` | La fiche d'un club s'ouvre sur elle : une rangée de tuiles, quatre colonnes qui remplissent la fenêtre. Celle d'une sélection aussi. Voir « Présentation d'un club », « Présentation d'une sélection » |
 | Classement de joueurs | `.leader-bars`, `.leader-bars.soft`, `.card-hint` | Rang, nom, barre contre le premier, chiffre ; l'unité dans l'en-tête de la carte. Voir « Graphiques » |
@@ -977,7 +979,9 @@ discrets et décalés entre joueurs. Le spécimen rapproché de ces allures est
 ## Graphiques
 
 Un texte n'est jamais dans la couleur de ce qu'il mesure : chiffres et libellés
-gardent les encres, la couleur reste à la barre.
+gardent les encres, la couleur reste à la barre. Seule exception, le montant au
+bout d'une barre des mercatos, dans le ton foncé de sa série (voir « Mercatos
+d'un club »).
 
 ### Deux camps comparés
 
@@ -1131,6 +1135,28 @@ part (le budget de transferts et le plafond salarial d'un club).
   à droite ce qu'occupe la seconde et sa part du plafond.
 - La part engagée d'un plafond passe au rouge à partir de 95 % (`.full`).
 
+### Mercatos d'un club
+
+`.mercatos` : ce qu'un club a dépensé et reçu en indemnités de transfert à
+chaque fenêtre, saison après saison, à gauche de l'onglet Transferts ; un bloc
+ouvre sa saison.
+
+- Un bloc par saison, la dernière en tête : son nom et sa balance (recettes
+  moins dépenses, signée, en vert ou en rouge) en 16 `--display`, puis une
+  ligne de 26 par fenêtre, Été puis Hiver. Pas de balance par fenêtre.
+- Un axe vertical `--ink-2` partage la ligne : les dépenses partent vers la
+  gauche en `--series-1`, les recettes vers la droite en `--series-2`, en barres
+  de 12 aux bouts extérieurs arrondis de 4. Chaque barre vaut son montant contre
+  le plus gros de la partie.
+- Le montant est au bout de sa barre, en 13 / 400, dans le ton foncé de sa
+  série (`--series-1-deep`, `--series-2-deep`) ; rien pour un côté vide.
+- La légende, Dépenses et Recettes en capitales de 11, est au-dessus des
+  barres, de part et d'autre de l'axe.
+- La saison montrée est sur le lavis du club (`--club-wash`), marquée de sa
+  couleur (3) à son bord gauche ; une autre prend le fond sous le pointeur.
+- L'hiver de la saison en cours, pas encore ouvert, garde son axe, en
+  pointillé (`--line`).
+
 ## Conventions d'écriture
 
 ### Nombres
@@ -1223,7 +1249,8 @@ Il s'écrit partout où le nom de famille suffisait :
 Dans une liste, un transfert s'écrit du club quitté au club rejoint, une flèche
 atténuée entre les deux (Monaco → Paris SG), puis son indemnité. Un joueur sans
 club vient de « Libre », atténué ; il n'a pas d'indemnité : sa pastille de
-niveau en tient lieu.
+niveau en tient lieu. Dans la tuile d'un record, le joueur est suivi du
+chevron (`.go`), retourné pour une arrivée, puis du club après sa pastille.
 
 ### Classement
 
@@ -1389,6 +1416,10 @@ sa pastille n'en est pas un (ci-dessus), ni :
   affichent : un chiffre, un montant dans son unité, une date, sinon le texte.
 - En-têtes et lignes de 26 ; chiffres alignés à droite, sous un en-tête aligné
   de même.
+- **Pied** : ce que les colonnes totalisent (le nombre de joueurs sous le nom,
+  la somme sous le montant), sous elles, sur `--panel-2`, un trait
+  `--head-line` au-dessus, en 600 à l'encre forte. Il ne se trie pas avec les
+  lignes.
 - Aucun trait entre les lignes : une sur deux sur une bande (`--stripe`).
   L'en-tête n'a pas de fond, un trait pâle dessous (`--head-line`). Les listes
   (matchs, faits, attributs, temps forts) font de même.
@@ -1466,6 +1497,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Numéros de maillot | Sur les terrains de la composition, du compte rendu d'un match et du direct, le numéro du joueur à la place de son poste, en 13 (`shirtLabel`, `kitShirt`, `.kit-shirt.number`, `web/ui.js`) : celui qu'il portait ce jour-là pour un match joué (`shirts` du résultat, `match_shirt`, `src/api/views.py`), le poste à défaut (place vide, renfort temporaire, sélection). Le bandeau d'un joueur porte son numéro devant son nom, en 40 et voilé (`playerHero`, `web/club-hero.js` ; `.club-hero-number`). Dans Actualités, le maillot du club sous le titre d'une arrivée, et les deux maillots d'un changement de numéro (`clubShirt`, `web/news.js` ; `.kit-shirt.former`, `.shirt-change`) |
 | Attributs | Sur la fiche et dans l'aperçu d'un joueur, une colonne à la mesure du plus long nom de sa section et de sa pastille (`--attribute-column`, `web/charte.css`), à la place des 165 de toutes les sections sur la fiche et des deux colonnes fixes de l'aperçu : dans l'aperçu, la section Jeu passe sur une colonne, ses lignes et celles des attributs à 26. Sur la fiche, les attributs en colonnes, une par section (`.attribute-columns`, `attributesBody`, `web/player.js`), à la place des sections empilées sur trois colonnes : la carte s'arrête à son contenu (`.player-row>.attributes-card`), et sur grand écran la carrière monte sous elle (`.player-main`, `web/theme.css`) ; les attributs d'un gardien qui ne servent pas à son poste en dernière colonne grisée à la place du repli « Autres attributs ». Les attributs de chaque section dans l'ordre alphabétique, sur la fiche, dans l'aperçu et dans la vue Attributs des listes (`ATTRIBUTE_SECTIONS`, `web/ui.js`). L'appât du gain quitte Général pour la sous-section Caractère de la colonne de la fiche (`rail`, `web/player.js`), où l'agressivité, l'ambition et la fragilité le rejoignent |
 | Écusson sans disque | Sur le bandeau d'un club, d'une sélection, d'un joueur et de « Nouvelle partie », l'écusson seul, à l'aire d'un carré de 64 (72 de haut, 128 de large au plus), à la place du disque blanc : son rapport lu sur l'image une fois chargée (`initHeroCrests`, `web/club-hero.js` ; `--r`, `web/charte.css`), le disque et ses initiales revenant pour un écusson absent ou qui ne se charge pas (le `onerror` en ligne, bloqué par la CSP, est retiré). Les PNG de `web/clubs` et `web/nations` rognés à ce qu'ils dessinent (`tools/trim_logos.py`, empreintes de `web/nations/sources.json`). Le drapeau d'une sélection après son nom, 37 × 28, à 16 (`.club-hero-flag`), plus dans le disque. Le bandeau d'un match et le disque d'un championnat ne changent pas |
+| Transferts d'un club | Les mercatos à gauche (`mercatoLedger`, `web/club-history.js` ; `mercatos`, `src/api/club_history.py`), chaque bloc ouvrant sa saison ; à droite la saison : Dépenses, Recettes et Balance sur une tuile à colonnes, la plus grosse recrue et la plus grosse vente en tuiles d'un record, puis Arrivées et Départs en tableaux triables à la charte, leur pied comptant les joueurs et totalisant les indemnités (`movementsHistory`). À la place des chiffres sur 2/1/1 au-dessus de deux colonnes, des flèches en caractères, du compte et du total dans l'en-tête des cartes et des filtres Tous, Transferts, Prêts, Autres. Le poste d'un retraité est celui de son dernier mouvement archivé (`transfer_row`, `src/api/views.py`) |
 | Liens des pastilles et des drapeaux | La pastille d'une compétition mène à sa page, le drapeau d'un pays à sa sélection, sur tous les écrans (`competitionBadge`, `competitionHref`, `nationFlag`, `nationBadge`, `nationHref`, `web/ui.js`) : le drapeau d'un club dans une coupe d'Europe (`clubLink`, option `flag`), la nationalité d'une liste de joueurs, la tuile de sélection d'un joueur jamais appelé (`selectionTile`, `web/club-hero.js`), la carrière d'un joueur, le calendrier d'un club ou d'une sélection, la ligne d'un match. L'option `link` les garde sans lien dans un filtre et dans ce qui est déjà un lien. L'API donne la sélection de chaque pays (`selection_id` de `/api/nations`), table relue à chaque changement de partie (`web/app.js`) |
 
 Ce qui reste :
@@ -1540,3 +1572,5 @@ son point ; le graphique sur deux tiers de la vue d'ensemble) :
 <https://claude.ai/artifact/LQomCAjbWUWmmfZgHLCtQc>.
 La Présentation d'un club a la sienne (proposition C, « La saison d'abord », et ses versions suivantes) :
 <https://claude.ai/artifact/V9bTNBNEmjtxw9NA7VkDkh>.
+Les transferts d'un club ont la leur (proposition B, « Les mercatos en registre ») :
+<https://claude.ai/artifact/4i36yB8GTgitMjDNd4K7jK>.
