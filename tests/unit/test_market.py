@@ -733,6 +733,47 @@ def test_settlement_surfaces_offers_for_the_human_seller_instead_of_deciding(con
     assert len(world.news) == news_count
 
 
+def test_auto_mode_leaves_the_human_club_to_the_ai_for_the_whole_day(config, monkeypatch):
+    from core.world import simulation
+    from core.world.human import is_controlled_club, is_human_club
+    world = mini_world(config)
+    world.controlled_club_id = 1
+    seen = []
+    note = lambda world: seen.append((is_human_club(world, 1), is_controlled_club(world, 1)))
+    monkeypatch.setattr(simulation, "open_day", note)
+    monkeypatch.setattr(simulation, "simulate_matches", note)
+    monkeypatch.setattr(simulation, "close_day", note)
+    assert simulation.advance_day(world, auto=True)
+    assert seen == [(False, True)] * 3
+    # The day over, the club is the user's again; a day he plays himself leaves it to him.
+    assert is_human_club(world, 1)
+    seen.clear()
+    assert simulation.advance_day(world)
+    assert seen == [(True, True)] * 3
+
+
+def test_in_auto_mode_the_ai_sells_a_player_of_the_human_club_as_it_would_its_own(config):
+    from core.ai.market import asking_price
+    from core.world.human import ai_in_charge
+    from core.world.market import settle_offers
+    from core.world.news import awaits_answer
+    world, player, seller = auction_world(config)
+    world.controlled_club_id = seller.id
+    with ai_in_charge(): rival_offers(world, player, seller, {3: (1.6, 1.0)})
+    close_auction(world)
+    # The user in charge, the offer awaits his answer...
+    assert not settle_offers(world, True) and player.club_id == seller.id
+    told = world.news[-1]
+    assert told.kind == "offer_received" and awaits_answer(world, told)
+    # ...the AI in charge, it sells at its asking price: the feed still tells the sale, and the offer no longer waits.
+    with ai_in_charge():
+        asked = asking_price(player, seller, world)
+        settle_offers(world, True)
+    assert player.club_id == 3 and world.transfers[-1].fee == asked
+    assert world.news[-1].kind == "transfer" and world.news[-1].club_id == seller.id
+    assert not awaits_answer(world, told)
+
+
 def extra_buyer(world, club_id):
     club = Club(club_id, f"Club {club_id}", "FRA", 16, 16, ClubStatus.ACTIVE, 30000, 70, 70, "4-3-3",
                 ClubPersonality(.5, .5, .5, .5), [], wage_cap=1000000000, transfer_budget=1000000000, balance=1000000000)
@@ -1011,6 +1052,25 @@ def test_renewal_forks_to_a_pending_proposal_for_the_human_club(config):
     # A pending proposal is not regenerated on the next weekly pass.
     again = renewal_events(world)
     assert not [e for e in again if isinstance(e, RenewalProposed) and e.proposal.player_id == player.id]
+
+
+def test_in_auto_mode_the_ai_extends_a_player_of_the_human_club_in_place_of_his_demand(config):
+    from core.world.contracts import renewal_events
+    from core.world.events import RenewalProposed
+    from core.world.human import ai_in_charge
+    from core.world.news import awaits_answer
+    world, player = renewal_setup(config, reputation=100)
+    world.controlled_club_id = player.club_id
+    for event in renewal_events(world): apply(world, event)
+    demand, end = world.news[-1], player.contract.end
+    assert demand.kind == "renewal_proposed" and awaits_answer(world, demand)
+    # Left to the AI, the club signs him as any other club would: his demand no longer awaits an answer.
+    with ai_in_charge():
+        events = renewal_events(world)
+        assert not [e for e in events if isinstance(e, RenewalProposed)]
+        for event in events: apply(world, event)
+    assert player.contract.end > end and not world.pending_renewals
+    assert not awaits_answer(world, demand)
 
 
 def test_a_demand_turned_down_is_made_again_only_once_when_the_end_comes_in_sight(config, monkeypatch):
