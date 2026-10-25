@@ -157,11 +157,16 @@ test('an attribute’s column holds the longest name of its section and its badg
   // The composites out of 200 (Défense de surface) need more room than the attributes out of 20 (Coups arrêtés).
   assert.match(body('.attributes-grid'),/--attribute-column:140px/,sheet);
   assert.match(body('.composites-group .attributes-grid'),/^--attribute-column:180px$/,sheet);
+  // On the page, a column per section: they share the width, none narrower than that room inside its padding, and wrap
+  // when the card cannot hold them all.
+  assert.equal(body('.attribute-columns'),'display:flex;flex-wrap:wrap',sheet);
+  assert.equal(body('.attribute-column'),'--attribute-column:140px;flex:1 1 0;min-width:calc(var(--attribute-column) + 2*var(--s3))',sheet);
+  assert.equal(body('.attribute-column.composites-column'),'--attribute-column:180px',sheet);
+  assert.equal(body('.attribute-column+.attribute-column'),'border-left:1px solid var(--row-line)',sheet);
+  assert.equal(body('.others-column .attribute>span:first-child'),'color:var(--muted)',sheet);
  }
- // On the page and in a preview, a column is never narrower than that room: in a preview's 348 the composites take one
- // column, the attributes two. The older sheets no longer fix their columns.
+ // In a preview's 348 the composites take one column, the attributes two. The older sheets no longer fix their columns.
  const app=rules(await read('web/charte.css')),told=selector=>app.find(([found])=>found===selector)?.[1]??'';
- assert.match(told('.attributes-card .attributes-grid'),/grid-template-columns:repeat\(auto-fill,minmax\(max\(var\(--attribute-column\),calc\(\(100% - 2\*var\(--s6\)\)\/3\)\),1fr\)\)/);
  assert.match(told('.preview .attributes-grid'),/grid-template-columns:repeat\(auto-fill,minmax\(max\(var\(--attribute-column\),calc\(\(100% - var\(--s4\)\)\/2\)\),1fr\)\)/);
  const older=rules(await read('web/theme.css'));
  assert.ok(!older.some(([selector,rule])=>/^\.(attributes-card|preview) \.attributes-grid$/.test(selector)&&/grid-template-columns/.test(rule)));
