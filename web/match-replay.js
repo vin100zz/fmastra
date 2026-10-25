@@ -161,10 +161,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    const marker=document.createElement('button');
    marker.type='button';marker.dataset.chance=index;
    marker.className=`replay-marker ${side}${sequence.goal?' goal':''}`;
-   marker.style.left=`${100*sequence.second/this.duration}%`;
+   // At the shot: a stoppage in the move (a penalty, a free kick) can hold the play up for minutes.
+   marker.style.left=`${100*sequence.shot.second/this.duration}%`;
    marker.style.setProperty('--team',this.teams[side].major);
    const shooter=sequence.shot.player||'—';
-   marker.title=`${this.minute(sequence.second)} ${sequence.goal?'But':'Occasion'} · ${shooter}`;
+   marker.title=`${this.minute(sequence.shot.second)} ${sequence.goal?'But':'Occasion'} · ${shooter}`;
    marker.setAttribute('aria-label',marker.title);
    timeline.append(marker);
   });
@@ -858,13 +859,37 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    const centre={x:spot.x+ahead.x*9.15,y:spot.y+ahead.y*9.15};
    // The man who will block the shot is one of them.
    const blocker=next?.blocker;
+   // Played into the box, it needs only two men in the wall: the others mark.
+   const size=move.crossed?2:4;
    this.wall=this.rosters[other].filter(player=>player.position!=='GB').map(player=>({side:other,id:player.id}))
-    .sort((a,b)=>(b.id===blocker?.id)-(a.id===blocker?.id)||distance(this.dot(a),centre)-distance(this.dot(b),centre)).slice(0,4);
-   this.wall.forEach((man,index)=>{const dot=this.dot(man);Object.assign(dot,{x:centre.x+across.x*(index-1.5)*.62,y:centre.y+across.y*(index-1.5)*.62,sx:0,sy:0});this.post(man,dot);});
+    .sort((a,b)=>(b.id===blocker?.id)-(a.id===blocker?.id)||distance(this.dot(a),centre)-distance(this.dot(b),centre)).slice(0,size);
+   this.wall.forEach((man,index)=>{const dot=this.dot(man);Object.assign(dot,{x:centre.x+across.x*(index-(size-1)/2)*.62,y:centre.y+across.y*(index-(size-1)/2)*.62,sx:0,sy:0});this.post(man,dot);});
+   if(move.crossed)this.crowd(side,shooter,next);
   };
   if(!(await this.cut(spot,side,move.by,setup)))return false;
   if(!(await this.wait(300)))return false;
   return this.runUp(shooter,spot,next,850);
+ }
+ // A ball about to be played into the box: the most advanced attackers wait in it, the one who will rise for it on
+ // his spot, each with a defender goal-side of him.
+ crowd(side,taker,cross){
+  const other=this.opponent(side),header=cross?.to,walled=new Set((this.wall||[]).map(man=>man.id));
+  const attackers=this.rosters[side].filter(player=>player.position!=='GB'&&player.id!==taker?.id)
+   .sort((a,b)=>(b.id===header?.id)-(a.id===header?.id)||b.u-a.u).slice(0,4);
+  const markers=this.rosters[other].filter(player=>player.position!=='GB'&&!walled.has(player.id)).sort((a,b)=>a.u-b.u);
+  // Near post, far post and short of the spot: clear of the man who will rise for it, at the spot.
+  const lanes=[.36,.64,.43];
+  attackers.forEach((player,index)=>{
+   const man={side,id:player.id},dot=this.dot(man);
+   if(!dot)return;
+   const spot=player.id===header?.id&&cross?.box?{x:cross.box.x+(this.random()-.5)*6,y:cross.box.y+(this.random()-.5)*8}
+    :this.toPitch(side,.87+this.random()*.05,lanes[(index-1+lanes.length)%lanes.length]+(this.random()-.5)*.03);
+   Object.assign(dot,{...spot,sx:0,sy:0});this.post(man,dot);
+   const marker=markers[index]&&{side:other,id:markers[index].id},guard=this.dot(marker);
+   if(!guard)return;
+   const local=this.toLocal(side,spot);
+   Object.assign(guard,{...this.toPitch(side,Math.min(.975,local.u+.025),local.v+(this.random()-.5)*.03),sx:0,sy:0});this.post(marker,guard);
+  });
  }
  // The strike, to where the engine's outcome puts it: in the net, in the keeper's arms, wide or over, or onto the
  // defender who threw himself in front of it. A header is nodded down; a free kick clears the wall and dips.
@@ -1097,12 +1122,12 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.tempo=CHANCE_TEMPO;
   this.updateRosters(sequence.second);
   this.trail.replaceChildren();this.showBanner('');
-  // The clock stops on the minute of the chance while it plays out.
-  this.showClock(sequence.second);
+  // The clock stops on the minute of the shot while the chance plays out, as the highlights show it.
+  this.showClock(sequence.shot.second);
   const involved=[];
   const note=(id,text)=>{if(id!=null)involved.push(id);this.highlight(involved);this.caption(text);};
   const shot=sequence.shot,counter=sequence.start?.detail==='counter';
-  const title=`<strong style="color:${team.major}">${e(team.name)}</strong> · ${this.minute(sequence.second)}`;
+  const title=`<strong style="color:${team.major}">${e(team.name)}</strong> · ${this.minute(sequence.shot.second)}`;
   const jitter=(value,amount)=>clamp(value+(this.random()-.5)*2*amount,.02,.98);
   // The move starts where the engine recovered the ball, where the shot before it in the possession left it (in the box
   // for a rebound), or just short of the shot for saves without a trail.
