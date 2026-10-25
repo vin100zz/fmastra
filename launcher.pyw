@@ -1,6 +1,6 @@
 """Lanceur Windows sans console, cible du raccourci créé par shortcut.bat.
 
-pythonw.exe n'ouvre aucune fenêtre : le jeu s'affiche dans une fenêtre d'application Edge ou Chrome
+pythonw.exe n'ouvre aucune fenêtre : le jeu s'affiche dans une fenêtre d'application Chrome ou Edge
 (--app), qui porte l'icône du jeu dans la barre des tâches. Le serveur s'arrête quand cette fenêtre se
 ferme ; s'il tournait déjà (start.bat), le lanceur l'ouvre seulement et le laisse tourner.
 """
@@ -30,15 +30,14 @@ def game_running() -> bool:
 
 
 def app_browser() -> str | None:
-    """Edge, présent sur tout Windows récent, sinon Chrome : seuls à ouvrir une page en fenêtre d'application."""
-    candidates = []
-    for base in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles"), os.environ.get("LOCALAPPDATA")):
-        if base:
-            candidates += [Path(base, "Microsoft", "Edge", "Application", "msedge.exe"),
-                           Path(base, "Google", "Chrome", "Application", "chrome.exe")]
+    """Chrome, sinon Edge, présent sur tout Windows récent : seuls à ouvrir une page en fenêtre d'application."""
+    bases = [base for base in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)"),
+                               os.environ.get("LOCALAPPDATA")) if base]
+    candidates = [Path(base, "Google", "Chrome", "Application", "chrome.exe") for base in bases]
+    candidates += [Path(base, "Microsoft", "Edge", "Application", "msedge.exe") for base in bases]
     for path in candidates:
         if path.is_file(): return str(path)
-    return shutil.which("msedge") or shutil.which("chrome")
+    return shutil.which("chrome") or shutil.which("msedge")
 
 
 def open_window() -> subprocess.Popen | None:
@@ -48,7 +47,8 @@ def open_window() -> subprocess.Popen | None:
         import webbrowser
         webbrowser.open(URL)
         return None
-    profile = Path(os.environ.get("LOCALAPPDATA", ROOT), "FootballManager", "browser")
+    # Un profil par navigateur : Chrome et Edge ne partagent pas le même.
+    profile = Path(os.environ.get("LOCALAPPDATA", ROOT), "FootballManager", Path(browser).stem)
     return subprocess.Popen([browser, f"--app={URL}", f"--user-data-dir={profile}", "--no-first-run",
                              "--no-default-browser-check", "--start-maximized"])
 
