@@ -35,8 +35,8 @@ Prolonger les courbes par leur valeur extrême hors de leur domaine.
 
 Répartir le déclin sur les attributs selon les poids configurés, normalisés par
 les poids de note globale du poste, pour que l'effet global corresponde au taux
-voulu. Les physiques déclinent davantage que placement, vision et sang-froid ; `centre` et
-`cpa` vieillissent lentement (poids 0,40). Une ancienne configuration sans poids pour
+voulu. Les physiques déclinent davantage que placement, vision et sang-froid ; `centre`,
+`cpa` et `penalty` vieillissent lentement (poids 0,40). Une ancienne configuration sans poids pour
 un attribut n'en fait pas décliner.
 Appliquer le bruit mensuel puis les bornes ; plafonner tout gain net à la marge
 réelle au potentiel. Les blessures peuvent ajouter une pénalité permanente.

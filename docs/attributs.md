@@ -19,9 +19,9 @@ pèse lourd en contre, peu en progression placée, pas du tout sur un tir.
 Les duels de tir utilisent les composites individuels ; endurance, vision,
 vitesse et relance peuvent aussi moduler les règles explicitement décrites de
 fatigue, changement de couloir, contre ou remise en jeu. `centre` et `cpa` fixent le xG
-de l'action de leur exécutant. Aucun attribut décoratif.
+de l'action de leur exécutant, `penalty` le tireur et la réussite d'un penalty. Aucun attribut décoratif.
 
-## Les 15 attributs
+## Les 16 attributs
 
 Échelle 1-100. Conserver des flottants en mémoire pour préserver les évolutions
 mensuelles ; toute valeur affichée est arrondie à un entier.
@@ -37,6 +37,7 @@ mensuelles ; toute valeur affichée est arrondie à un entier.
 | `jeu_tete` | centres, coups de pied arrêtés |
 | `centre` | qualité du centre : xG de la tête qui suit |
 | `cpa` | qualité des coups de pied arrêtés : tireur et xG des corners, tir des coups francs directs |
+| `penalty` | choix du tireur et réussite d'un penalty, en match comme aux tirs au but |
 
 ### Mentaux
 
@@ -44,7 +45,7 @@ mensuelles ; toute valeur affichée est arrondie à un entier.
 |---|---|
 | `vision` | création d'occasion, changement d'aile |
 | `placement` | défense, position du gardien |
-| `sang_froid` | tir, tête |
+| `sang_froid` | tir, tête, penalty |
 
 ### Physiques
 
@@ -166,6 +167,33 @@ de corner ne peut pas être aussi le receveur. Le coup franc n'a pas de xG modul
 le tireur frappe avec son propre composite de tir, majoré des points de `cpa` au-delà
 de la référence, contre le composite d'arrêt du gardien.
 
+### Penalty (individuel)
+
+Un composite, comme le tir, que les écrans ne montrent pas parmi les huit : l'attribut
+`penalty` (colonne Penalties de la source) pour l'essentiel, le sang-froid pour le reste.
+
+```python
+comp_penalty = 0.75*penalty + 0.25*sang_froid
+p_but = borne(reussite_base + sensibilite * (comp_penalty_tireur - reflexes_gardien), min, max)
+```
+
+Le tireur est le meilleur `comp_penalty` du terrain, gardien exclu (égalité : plus petit ID).
+Aux tirs au but, les tireurs passent dans l'ordre de ce composite, avec la même probabilité
+(`moteur_match.penalty`). Le composite ne lit ni la forme ni la fraîcheur, et `penalty` ne
+compte pas dans la note globale. Sur de vrais effectifs (216 clubs simulés, onze de départ),
+le tireur ainsi choisi est le même que celui de l'ancienne règle (moyenne de la finition et
+du sang-froid) dans 94 clubs ; l'écart moyen entre le tireur et le gardien ne bouge presque
+pas (−5,2 contre −5,3 points) et `reussite_base` reste à 0,75. Il passe d'un écart-type de 7,7 à 9,3 :
+les spécialistes se distinguent davantage.
+
+Mesures (25 octobre 2026, mêmes graines qu'avant l'attribut) : `stats_match` sur 10 000 matchs
+reste dans toutes ses cibles (0,150 penalty par équipe, 1,43 but, 28,6 % de buts sur coups de
+pied arrêtés) ; sur 3 000 matchs, les penaltys du panel synthétique réussissent à 76,1 %
+contre 77,3 % avant (environ 890 penaltys, un écart-type de 1,4 point), l'avant-centre les
+tirant tant qu'il est sur le terrain. Les affiches de la suite `match` ne bougent pas au-delà
+de 0,3 point, ni la suite `season` (10 itérations : 2,02 points par match pour le champion,
+corrélation réputation / classement 0,46, 43 % de titres pour l'équipe la plus forte).
+
 ### Centre et tête (individuel)
 
 ```python
@@ -280,16 +308,16 @@ Décalages par rapport au niveau cible, en points :
 | AIL | vitesse +14, technique +12 | tacle −12, jeu_tete −8 |
 | BU | finition +16, sang_froid +10, jeu_tete +6 | tacle −18, placement −10 |
 
-Les décalages `centre` et `cpa` sont relevés sur les joueurs des clubs actifs
+Les décalages `centre`, `cpa` et `penalty` sont relevés sur les joueurs importés des clubs actifs
 (moyenne de l'attribut moins moyenne de la note globale du poste) :
 
-| Poste | centre | cpa | Poste | centre | cpa |
-|---|---:|---:|---|---:|---:|
-| DC | −27 | −37 | MOC | −10 | −11 |
-| DG | +1 | −17 | AILG | −6 | −15 |
-| DD | −2 | −24 | AILD | −4 | −15 |
-| MDC | −19 | −20 | BU | −20 | −25 |
-| MC | −14 | −16 | GB | −25 | −25 (`_autres`) |
+| Poste | centre | cpa | penalty | Poste | centre | cpa | penalty |
+|---|---:|---:|---:|---|---:|---:|---:|
+| DC | −27 | −37 | −30 | MOC | −10 | −11 | −12 |
+| DG | +1 | −17 | −23 | AILG | −6 | −15 | −14 |
+| DD | −2 | −24 | −24 | AILD | −4 | −15 | −15 |
+| MDC | −19 | −20 | −21 | BU | −20 | −25 | −7 |
+| MC | −14 | −16 | −16 | GB | −25 | −25 | −25 (`_autres`) |
 
 Ajouter ensuite le bruit gaussien configuré. Recentrer le profil obtenu en
 retranchant l'écart entre sa note globale pondérée et le niveau cible, puis

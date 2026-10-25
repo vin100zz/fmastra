@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 39` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 40` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -222,6 +222,20 @@ perdent ces clés. Les règles recalibrées (`STOPPAGE_RECALIBRATED_RULES`) pren
 porte encore celle de la v38, et sont gardées sinon (`_upgrade_stoppages`). Les matchs déjà joués gardent leurs
 événements : ils n'ont ni faute ni touche, un `save` sans détail est un arrêt capté, et le compte rendu montre leurs
 coups francs à la place des fautes et des hors-jeu (`TeamStats.fouls`, `None` avant).
+
+La v40 ajoute l'attribut `penalty` (colonne Penalties), qui choisit le tireur et fait sa réussite, en match comme aux
+tirs au but (`docs/attributs.md`, `docs/manuel/03-match.md`). Chaque vecteur d'attributs passe de 15 à 16 valeurs avant
+le typage (`_extend_attribute_vectors`, qui allonge aussi d'abord un vecteur de 13 valeurs de la v11). Un joueur trouvé
+dans le fichier source exact (même empreinte que `source_hashes`) prend sa valeur Penalties × 5 ; les autres, joueurs
+générés ou fichier modifié depuis l'import, reçoivent la valeur que prédisent leur finition et leur sang-froid
+(`PENALTY_ESTIMATE` : −9,27 + 0,442 × finition + 0,525 × sang-froid, régression sur les 44 643 joueurs de la source,
+bornée à [1, 100]). Aucune note ni valeur de joueur ne bouge : `penalty` ne compte pas dans la note globale. La
+configuration embarquée reçoit le composite `attributs.composites.penalty` (`MIGRATION_DEFAULTS`) ; `penalty` rejoint
+`attributs.liste.techniques` avant le typage, et la liste d'origine lui est rendue pour vérifier son empreinte
+(`_list_penalty`, par le même chemin que `RETIRED_RULES`). Une fois l'empreinte vérifiée, `_upgrade_penalties` donne aux
+`profils_generation` les décalages livrés (`PENALTY_OFFSETS`) et à `poids_declin_par_attribut` le poids de `cpa`
+(0,40), sauf valeur déjà présente. Les règles du penalty (`moteur_match.penalty`) ne changent pas : l'écart moyen entre
+le tireur et le gardien reste le même sur de vrais effectifs.
 
 Sans changer de version, `InternationalRecord` garde les notes de match d'une édition (`rating_sum`, `rating_count`,
 comme `SeasonRecord`). Les deux champs ont une valeur par défaut : une sauvegarde antérieure se lit telle quelle, ses

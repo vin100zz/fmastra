@@ -1,4 +1,4 @@
-"""Traits read from the source (fragility, ego, foul propensity) and the delivery attributes `centre` and `cpa`."""
+"""Traits read from the source (fragility, ego, foul propensity), the delivery attributes `centre` and `cpa`, and `penalty`."""
 import re
 from collections import Counter
 from dataclasses import replace
@@ -11,7 +11,7 @@ from benchmarks.fixtures import synthetic_lineup
 from core.domain.date import Date
 from core.domain.players import ATTRIBUTE_NAMES, Attributes, Position
 from core.engine.local_state import MatchLog, TeamState
-from core.engine.shots import delivered_xg, resolve_shot, set_piece_taker
+from core.engine.shots import delivered_xg, penalty_probability, penalty_skill, penalty_taker, resolve_shot, set_piece_taker
 from core.engine.zones import foul_committer, refresh
 from core.randomness import stream
 from core.world.importation.construction import create_player, source_trait
@@ -101,6 +101,27 @@ def test_set_piece_taker_is_the_best_dead_ball_specialist_and_never_the_goalkeep
     assert set_piece_taker(team) is team.active[5]
     tied = team_with(config, {5: {"cpa": 80}, 6: {"cpa": 80}})
     assert set_piece_taker(tied).player.id == min(tied.active[5].player.id, tied.active[6].player.id)
+
+
+def test_the_penalty_taker_has_the_best_composite_of_the_attribute_and_composure_and_is_never_the_goalkeeper(config, sources):
+    row = next(iter(sources.values()))
+    assert ATTRIBUTE_COLUMNS["penalty"] == ("Penalties",) and row.attributes.get("penalty") % 5 == 0
+    assert dict(config.attributes.composites.penalty) == {"penalty": 0.75, "sang_froid": 0.25}
+    # 0.75 × 90 + 0.25 × 50 = 80 against 0.75 × 80 + 0.25 × 90 = 82.5: composure can make the taker.
+    team = team_with(config, {0: {"penalty": 100}, 5: {"penalty": 90, "sang_froid": 50}, 6: {"penalty": 80, "sang_froid": 90}})
+    assert penalty_skill(team.active[6].player, config) == pytest.approx(82.5)
+    assert penalty_taker(team, config) is team.active[6]
+    tied = team_with(config, {5: {"penalty": 80}, 6: {"penalty": 80}})
+    assert penalty_taker(tied, config).player.id == min(tied.active[5].player.id, tied.active[6].player.id)
+
+
+def test_a_penalty_is_scored_at_the_base_rate_between_equals_and_follows_the_gap_to_the_keeper(config):
+    team = team_with(config, {5: {"penalty": 80, "sang_froid": 60}})
+    taker, keeper = team.active[5].player, team.active[0].player  # the keeper's reflexes: 70, the taker's composite: 75
+    rules = config.engine.penalty
+    assert penalty_probability(taker, keeper, config) == pytest.approx(rules.base + 5 * rules.sensitivity)
+    equal = team_with(config).active[5].player
+    assert penalty_probability(equal, keeper, config) == pytest.approx(rules.base)
 
 
 def test_delivery_quality_moves_xg_and_the_reference_level_leaves_it_unchanged(config):
