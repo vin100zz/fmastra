@@ -197,15 +197,22 @@
 /* Composition: the tactics over the pitch, the substitutes on one line, the list with its controls, the opponent on the right. */
 .composition-card .lineup-layout{grid-template-columns:auto minmax(0,1fr);align-items:start}
 .composition-card .lineup-layout.with-scout{grid-template-columns:auto minmax(0,1fr) minmax(280px,320px)}
-.composition-card .lineup-field>.tactics{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));margin-bottom:8px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-.composition-card .lineup-field>.tactics button{border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;font-family:var(--display);font-stretch:semi-condensed;font-size:13px;white-space:nowrap}
+/* The step of the formations, on one line as high as the list's toolbar; at the left of the card, its list opens to the right. */
+.composition-card .lineup-field>.field-head{display:flex;align-items:center;height:var(--h-control);margin-bottom:6px}
+.composition-card .field-head .season-pick>.menu{left:0;right:auto}
 .composition-card .lineup-bench{grid-template-columns:repeat(var(--bench,9),minmax(0,1fr))}
 .composition-card .bench-slot{flex-direction:column;justify-content:center;gap:3px;min-height:52px;padding:5px 2px;text-align:center}
 .composition-card .bench-slot>span:last-child{max-width:100%;font-size:10px;letter-spacing:0}
 .composition-card .lineup-list{min-width:0;display:flex;flex-direction:column;gap:6px}
 .composition-card .lineup-toolbar{padding:0;border:0;justify-content:flex-end}
-.composition-card .lineup-toolbar .lineup-problems{margin-right:auto}
-.composition-card .lineup-toolbar [data-lineup-suggest]{margin-left:0}
+.composition-card .lineup-toolbar{flex-wrap:nowrap;gap:var(--s2)}
+/* The first problem keeps what the controls leave, cut short; all of them in its tooltip. */
+.composition-card .lineup-toolbar .lineup-problems{display:block;flex:0 1 auto;min-width:0;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composition-card .lineup-toolbar .lineup-problems:before{display:inline-grid;margin-right:6px;vertical-align:-2px}
+/* The automatic lineup: its levels, then its options; a line before the columns of the list. */
+.composition-card .auto-group{display:flex;align-items:center;gap:var(--s1);flex:none;margin-left:auto}
+.composition-card .auto-group>.segmented{margin-right:var(--s1)}
+.composition-card .toolbar-rule{flex:none;width:1px;height:var(--h-control-small);background:var(--line)}
 .composition-card .lineup-toolbar>.segmented{margin-left:0}
 .lineup-slot .shirt.kit{background:none!important;box-shadow:none!important;border:0}
 .lineup-slot .shirt.kit .kit-drawing{position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);overflow:visible}

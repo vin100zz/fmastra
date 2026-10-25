@@ -1,10 +1,18 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout,steps} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
 // The columns of the squad list, 'infos' or 'jeu' (the composites): kept from one match to the next.
 let squadView='infos';
+// The options of the automatic lineup, kept from one match to the next: the prospects first in the rotation, the AI free
+// to change the formation.
+const autoOptions={young:false,free:false};
+// The levels of the automatic lineup, from the best eleven to every outfield starter rested (`rotate`, src/core/ai/selection.py).
+export const AUTO_LEVELS=[['Meilleure','La meilleure équipe pour ce match'],['Légère','Légère rotation : un tiers des joueurs de champ au repos, leurs seconds choix jouent'],
+ ['Forte','Forte rotation : deux tiers des joueurs de champ au repos, leurs seconds choix jouent'],['Complète','Rotation complète : tous les joueurs de champ au repos, le gardien reste']];
+const AUTO_OPTIONS=[['young','Jeunes','Dans la rotation, les grands espoirs passent avant les seconds choix'],
+ ['free','Formation','L’IA peut changer la formation ; sinon elle garde celle du terrain']];
 
 const POSITION_ORDER=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 // The upright pitch of a formation is the one the Présentation draws its eleven on (web/ui.js).
@@ -240,17 +248,28 @@ export function scoutingHtml(scout){
   +meeting+'</div></aside>';
 }
 
+// What the lineup on screen is, to tell whether it is still the one a level of the automatic lineup gave.
+const signature=()=>JSON.stringify([editor.formation,editor.slots,editor.bench]);
+// The level whose lineup is on screen, or null once anything has changed it.
+const autoLevel=()=>editor.auto&&editor.auto.signature===signature()?editor.auto.level:null;
+// The automatic lineup: its levels, one click each, the one whose lineup is on screen marked; then its two options.
+export function autoHtml(level=null,options=autoOptions){
+ const levels=AUTO_LEVELS.map(([label,title],index)=>`<button type="button" data-lineup-auto="${index}" title="${e(title)}" aria-pressed="${index===level}" class="${index===level?'active':''}">${label}</button>`).join('');
+ const toggles=AUTO_OPTIONS.map(([key,label,title])=>`<button type="button" class="check-option" data-lineup-option="${key}" aria-pressed="${!!options[key]}" title="${e(title)}"><span class="check"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg></span>${label}</button>`).join('');
+ return `<div class="auto-group"><div class="segmented" role="group" aria-label="Composition auto">${levels}</div>${toggles}</div>`;
+}
+
 function editorHtml(){
  const byId=new Map(editor.data.players.map(player=>[player.id,player]));
  const current=roles(),cells=shape(),problems=lineupProblems(editor,current,editor.data.players);
- const tactics=Object.keys(editor.tactics).map(name=>`<button type="button" data-tactic="${e(name)}" aria-pressed="${name===editor.formation}" class="${name===editor.formation?'active':''}">${e(name)}</button>`).join('');
+ const tactics=steps(Object.keys(editor.tactics).map(name=>({value:name,label:name,divided:name===CUSTOM})),editor.formation,{name:'Formation',attribute:'tactic',forward:true});
  // The first problem is spelled out over the list, the others counted; all of them in the tooltip.
  const status=problems.length?`<span class="lineup-problems" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}${problems.length>1?` <b>+${problems.length-1}</b>`:''}</span>`:'';
  const views=[['infos','Infos'],['jeu','Jeu']].map(([key,label])=>`<button type="button" data-lineup-view="${key}" aria-pressed="${key===squadView}" class="${key===squadView?'active':''}">${label}</button>`).join('');
  const scout=scoutingHtml(editor.data.scouting);
- return `<div class="lineup-layout${scout?' with-scout':''}"><div class="lineup-field"><div class="tactics" role="group" aria-label="Tactique">${tactics}</div><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${PITCH_BOXES}${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
+ return `<div class="lineup-layout${scout?' with-scout':''}"><div class="lineup-field"><div class="field-head">${tactics}</div><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${PITCH_BOXES}${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
 <h3>Remplaçants</h3><div class="lineup-bench" style="--bench:${editor.bench.length}">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
-<div class="lineup-list"><div class="lineup-toolbar">${status}<button type="button" data-lineup-suggest>Meilleure composition</button><div class="segmented" role="group" aria-label="Colonnes">${views}</div></div><div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>${scout}</div>`;
+<div class="lineup-list"><div class="lineup-toolbar">${status}${autoHtml(autoLevel())}<span class="toolbar-rule"></span><div class="segmented" role="group" aria-label="Colonnes">${views}</div></div><div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>${scout}</div>`;
 }
 
 function refresh(){
@@ -302,13 +321,19 @@ export async function compositionContent(params, state) {
  return `<section class="card composition-card"><div id="lineup-form" data-match="${matchId}">${editorHtml()}</div></section>`;
 }
 
-// The AI's choice on the club's own tactic is asked for the positions on screen; a tactic changed meanwhile keeps its lineup.
-async function suggestCustom(){
- const current=editor,wanted=roles().join(',');
+// The automatic lineup at a level, on the tactic on screen: the club's own by its positions, another by its name. The best
+// eleven on a named tactic the AI may not change is known already; the rest is asked for. A tactic changed meanwhile
+// keeps its lineup. The level stays marked while its lineup is on screen.
+async function compose(level){
+ const current=editor,wanted=roles().join(','),formation=editor.formation;
+ const known=level===0&&!autoOptions.free&&formation!==CUSTOM?editor.data.suggestions?.[formation]:null;
  try{
-  const best=await api(`/ma-partie/composition/suggestion?${query({postes:wanted,match_id:current.data.match_id})}`);
-  if(editor!==current||editor.formation!==CUSTOM||roles().join(',')!==wanted)return;
-  load(CUSTOM,best.titulaires,best.banc);refresh();
+  const best=known?{formation,...known}:await api(`/ma-partie/composition/suggestion?${query({...(formation===CUSTOM?{postes:wanted}:{formation}),
+   niveau:level,jeunes:autoOptions.young||'',libre:autoOptions.free||'',match_id:current.data.match_id})}`);
+  if(editor!==current||editor.formation!==formation||roles().join(',')!==wanted)return;
+  load(best.formation,best.titulaires,best.banc);
+  editor.auto={level,signature:signature()};
+  if(editor.formation!==formation)pick(null);else refresh();
  }catch(error){toast(error.message,true);}
 }
 
@@ -387,9 +412,12 @@ function install(){
    if(!columns().some(([column])=>column===editor.sort.key))editor.sort={key:'selected',direction:'asc'};
    refresh();
   }
-  if('lineupSuggest' in button.dataset){
-   if(editor.formation===CUSTOM)suggestCustom();
-   else{const best=editor.data.suggestions[editor.formation];load(editor.formation,best.titulaires,best.banc);refresh();}
+  if(button.dataset.lineupAuto)compose(Number(button.dataset.lineupAuto));
+  // An option changed while a level's lineup is on screen composes it again at once.
+  if(button.dataset.lineupOption){
+   const level=autoLevel();
+   autoOptions[button.dataset.lineupOption]=!autoOptions[button.dataset.lineupOption];
+   if(level!=null)compose(level);else refresh();
   }
   if(button.dataset.lineupSort){
    const key=button.dataset.lineupSort,same=editor.sort.key===key;

@@ -734,6 +734,11 @@ span.entity-step svg{opacity:.3}
 .check svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
 .check[aria-pressed="true"]{border-color:var(--accent-text);background:var(--accent)}
 .check[aria-pressed="true"] svg{visibility:visible}
+/* An option turned on or off by a word, the box before it, the details in its tooltip (`.check-option`): the options of
+   the Composition's automatic lineup. Under the pointer, the ground of a control. */
+.check-option{display:inline-flex;align-items:center;gap:6px;flex:none;height:var(--h-control);padding:0 var(--s2) 0 6px;border:0;border-radius:var(--radius);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--ink);white-space:nowrap;cursor:pointer}
+.check-option[aria-pressed="true"]>.check{border-color:var(--accent-text);background:var(--accent)}
+.check-option[aria-pressed="true"]>.check svg{visibility:visible}
 /* A nation on one line of a list to choose from: the box that plays it, its flag and its name, the divisions it plays, its
    clubs. The divisions are a choice up to one (.segmented.range): every option down to the lowest played carries the mark
    of what is open. Left out, the nation is muted, its flag greyed, its divisions dimmed. */
@@ -827,6 +832,7 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
 :is(.button.primary,.cta,.door.main):is(:hover,.hover){background:var(--accent-hover)}
 .check:not([aria-pressed="true"]):is(:hover,.hover){background:var(--panel-3)}
+.check-option:is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}
 /* On a pitch, a player's name is what underlines. */
 .pitch-player:is(:hover,.hover) .block-name{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
