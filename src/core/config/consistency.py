@@ -160,13 +160,12 @@ def validate_consistency(cfg: Config) -> None:
     require(0 < fitness.load_decay < 1 and fitness.load_threshold >= 0 and fitness.load_slowdown >= 0
             and cfg.states.injuries.load_factor >= 0, "Load must fade, from a nonnegative threshold, with nonnegative effects")
     require(cfg.states.injuries.fitness_factor > fitness.max, "A fresh player's injury risk must stay positive")
-    require(cfg.engine.set_pieces.corner_probability + cfg.engine.set_pieces.free_kick_probability <= 1, "Set-piece probabilities overlap")
     require(cfg.engine.chance.probability_min > 0 and cfg.engine.chance.probability_max < 1, "Logit bounds must be open")
     require(cfg.engine.chance.delivery_sensitivity >= 0, "Delivery sensitivity must be nonnegative")
     ratings = cfg.engine.player_ratings
     require(all(len(table) == len(cfg.involvement.zones) for table in (ratings.progression, ratings.recovery, ratings.loss)),
             "Rating tables need one value per zone")
-    require(0 < ratings.dribble_share < 1 and 0 <= ratings.blocked_share <= 1, "Rating shares must be probabilities")
+    require(0 < cfg.engine.actions.dribble_share < 1, "The dribble share must be a probability")
     require(ratings.quality_sensitivity >= 0 and ratings.clean_sheet_minutes >= 0, "Rating attribution scales must be nonnegative")
     injuries, contracts, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
     for label, notes in (("Fragility", (injuries.fragility_source_low, injuries.fragility_source_reference, injuries.fragility_source_high)),
@@ -188,7 +187,31 @@ def validate_consistency(cfg: Config) -> None:
     require(0 <= actions.opening_pull < 1 and actions.opening.max > 0, "An open defence draws the tempo short of 1")
     durations = actions.durations
     require(min(durations.pass_, durations.progression, durations.long_ball, durations.chance) > 0, "Actions must take time")
-    require(0 <= cfg.engine.set_pieces.corner_shot_share <= 1, "Corner shot share must be within [0, 1]")
+    stoppages, penalty = cfg.engine.stoppages, cfg.engine.penalty
+    fouls, out, after = stoppages.foul, stoppages.out, stoppages.after_shot
+    shares = (after.blocked_share, after.long_shot_blocked_share, *(getattr(fouls.shares, name) for name in ("pass_", "carry", "centre_chance", "box_dribble", "cross", "aerial")),
+              fouls.attacker_aerial_share, fouls.box_share.wing, fouls.box_share.centre, fouls.box_factor, fouls.tactical,
+              stoppages.free_kick.in_range_share, stoppages.free_kick.direct_share, stoppages.free_kick.wing_crossed_share,
+              stoppages.free_kick.cleared_corner_share, *(getattr(getattr(out, name), lane) for name in ("conservation", "pass_", "carry")
+                                                        for lane in ("wing", "centre")),
+              out.long_ball, out.centre_chance_corner, stoppages.offside.through_ball, stoppages.offside.long_ball,
+              after.blocked_corner, after.second_ball, after.post_share, after.post_in_play, after.rebound, penalty.off_target_share)
+    require(all(0 <= share <= 1 for share in shares), "Stoppage shares must be within [0, 1]")
+    require(fouls.edge_sensitivity >= 0, "A beaten defence cannot foul less")
+    cross = out.cross
+    require(min(cross.corner, cross.goal_kick, cross.throw_in) >= 0 and 0 < cross.claimed < 1
+            and cross.corner + cross.goal_kick + cross.throw_in + cross.claimed <= 1, "A failed cross's outcomes must share at most all of it")
+    require(min(after.save.held, after.save.corner, after.save.parried) >= 0
+            and isclose(after.save.held + after.save.corner + after.save.parried, 1, abs_tol=1e-6), "A save's outcomes must sum to 1")
+    for label, box in (("corner", stoppages.corner), ("crossed free kick", stoppages.free_kick.crossed)):
+        require(min(box.header, box.cleared, box.short) >= 0 and 0 < box.claimed < 1
+                and box.header + box.cleared + box.claimed + box.short <= 1 + 1e-9, f"A {label}'s outcomes must share at most all of it")
+    require(min(stoppages.dead_time.keeper, stoppages.dead_time.throw_in, stoppages.dead_time.offside, stoppages.dead_time.short_free_kick,
+                stoppages.dead_time.goal_kick, stoppages.dead_time.corner, stoppages.dead_time.after_goal, stoppages.dead_time.free_kick,
+                stoppages.dead_time.penalty, stoppages.dead_time.card) >= 0, "Dead times must be nonnegative")
+    require(0 <= penalty.min <= penalty.base <= penalty.max <= 1 and penalty.sensitivity >= 0, "A penalty's success must lie within its bounds")
+    for odds in (cfg.engine.cards.foul, cfg.engine.cards.tactical, cfg.engine.cards.penalty):
+        require(min(odds.yellow, odds.red) >= 0 and odds.yellow + odds.red <= 1, "Card odds must be probabilities")
     require(cfg.world.season.days_between_rounds > 0, "Round spacing must be positive")
     require(len({league.division_id for league in cfg.world.competitions}) == len(cfg.world.competitions), "Duplicate competitions")
     movement = cfg.world.promotion_relegation

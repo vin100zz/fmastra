@@ -45,6 +45,34 @@ test('a chance follows its runs of passes and moves forward in order, from the l
  assert.deepEqual(distance.trail.map(item=>item.detail),['long']);
 });
 
+test('each shot of a possession is a chance of its own, the next one starting where the one before it left the ball',()=>{
+ const events=[
+  event('possession',1,{zone:1,lane:1}),event('foul',1,{team_id:2,player_id:31,secondary_id:8,zone:1,lane:1}),
+  event('free_kick',1,{zone:2,lane:1,detail:'short'}),event('progress',1,{zone:3,lane:0,player_id:8,detail:'pass'}),
+  event('delivery',1,{player_id:8,detail:'cross'}),event('shot',1,{shot_id:1,player_id:10,detail:'cross',zone:3,lane:0}),
+  event('save',1,{shot_id:1,detail:'parried',zone:3,lane:0}),
+  event('shot',1,{shot_id:2,player_id:11,detail:'rebound',zone:3,lane:1}),event('save',1,{shot_id:2,detail:'corner'}),
+  event('corner',1,{zone:3,lane:2,detail:'save'}),event('delivery',1,{player_id:7,detail:'corner'}),
+  event('shot',1,{shot_id:3,player_id:4,detail:'corner',zone:3,lane:2}),event('goal',1,{shot_id:3,player_id:4}),
+  event('possession',2,{zone:2,lane:1,team_id:2}),event('foul',2,{player_id:5,secondary_id:33,zone:0,lane:1}),
+  event('penalty',2,{player_id:34,team_id:2}),event('shot',2,{shot_id:4,player_id:34,detail:'penalty',team_id:2}),
+  event('save',2,{shot_id:4,detail:'held',team_id:1}),
+ ];
+ const [cross,rebound,corner,penalty]=chanceSequences(events);
+ // The foul and the free kick played short are part of the move; the shot after the save starts from it.
+ assert.deepEqual(cross.trail.map(item=>[item.kind,item.detail??null]),[['foul',null],['free_kick','short'],['progress','pass']]);
+ assert.equal(cross.start.zone,1);
+ assert.equal(rebound.start,undefined);
+ assert.equal(rebound.follow.detail,'parried');
+ assert.deepEqual(rebound.trail,[]);
+ assert.equal(corner.setPiece.detail,'save');
+ assert.equal(corner.delivery.player_id,7);
+ assert.ok(corner.goal&&!cross.goal&&!rebound.goal);
+ // A penalty names the man fouled for it.
+ assert.equal(penalty.foul.secondary_id,33);
+ assert.equal(penalty.setPiece,undefined);
+});
+
 test('a played match page carries the replay card',async()=>{
  const stats={xg:1,shots:2,on_target:1,possession_seconds:2700,corners:0,free_kicks:0,yellows:0,reds:0};
  const lineup=[{id:1,name:'Gardien Un',position:'GB'}];

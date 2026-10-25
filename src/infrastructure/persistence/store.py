@@ -35,13 +35,49 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 38
+SCHEMA_VERSION = 39
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A failed action ends in a foul, the ball out of play, an offside or lost in play; corners and free kicks have a
+    # cause, penalties are given, a shot may be followed by a corner or a rebound, and each stoppage has its dead time
+    # (see `_upgrade_stoppages`).
+    (39, ("moteur_match", "arrets"), {
+         "faute": {"part_par_action": {"passe": 0.06, "conduite": 0.3, "occasion_axe": 0.06, "dribble_zone_verite": 0.35,
+                                       "centre": 0.03, "duel_aerien": 0.1}, "part_attaquant_duel_aerien": 0.5,
+                   "part_surface": {"aile": 0.25, "axe": 0.55}, "facteur_surface": 0.13, "faute_tactique": 0.15,
+                   "sensibilite_ecart": 0.03},
+         "coup_franc": {"part_a_portee_milieu_haut": 0.25, "part_directe": 0.6, "part_centree_aile_milieu_haut": 0.35,
+                        "issues_centre": {"tete": 0.27, "degage": 0.58, "capte": 0.15, "joue_court": 0.0},
+                        "part_degagements_en_corner": 0.2},
+         "sortie": {"conservation": {"aile": 0.35, "axe": 0.05}, "passe": {"aile": 0.3, "axe": 0.05},
+                    "conduite": {"aile": 0.4, "axe": 0.05}, "jeu_long": 0.25,
+                    "centre": {"corner": 0.16, "six_metres": 0.12, "touche": 0.05, "capte": 0.15},
+                    "occasion_axe_corner": 0.06}, "hors_jeu": {"profondeur": 0.3, "jeu_long_zone_verite": 0.13},
+         "apres_tir": {"part_contres": 0.4, "part_contres_de_loin": 0.55, "contre_en_corner": 0.4,
+                       "second_ballon_attaque": 0.4, "arret": {"capte": 0.45, "corner": 0.3, "repousse": 0.25},
+                       "part_poteaux": 0.05, "poteau_en_jeu": 0.5, "rebond_attaque": 0.4},
+         "corner": {"tete": 0.33, "degage": 0.47, "capte": 0.12, "joue_court": 0.08}, "sensibilite_sorties": 0.02,
+         "reference_sorties": 70.0,
+         "temps_mort": {"forme_gamma": 2.0, "gardien": 8.5, "touche": 17.0, "hors_jeu": 23.0, "coup_franc_court": 25.0,
+                        "six_metres": 30.0, "corner": 34.0, "apres_but": 45.0, "coup_franc": 53.0, "penalty": 90.0,
+                        "carton": 30.0}}),
+    (39, ("moteur_match", "penalty"), {
+         "reussite_base": 0.75, "sensibilite": 0.003, "min": 0.5, "max": 0.95, "part_rates_hors_cadre": 0.3}),
+    (39, ("moteur_match", "actions"), {"part_dribbles": 0.3, "sensibilite_dribble": 0.08}),
+    (39, ("moteur_match", "cartons"), {
+         "par_faute": {"jaune": 0.16, "rouge": 0.0012}, "faute_tactique": {"jaune": 0.55, "rouge": 0.015},
+         "penalty": {"jaune": 0.25, "rouge": 0.08}}),
+    (39, ("moteur_match", "occasion"), {"xg_base_rebond": 0.3}),
+    (39, ("moteur_match", "turnover"), {"malus_contre_gardien": -0.5}),
+    (39, ("moteur_match", "notes_joueurs"), {
+         "faute": -0.02, "hors_jeu": 0.0, "penalty_concede": -0.3, "penalty_obtenu": 0.1, "penalty_manque": -0.3,
+         "penalty_arrete": 0.3}),
+    (39, ("benchmarks", "stats_match"), {
+         "fautes_par_equipe": {"min": 10.0, "max": 13.0}, "penaltys_par_equipe": {"min": 0.1, "max": 0.18}}),
     # A possession is a run of actions: what a side tries in each zone, how a defence opens, long balls, strikes from distance
-    # and the chances made in the last zone, how long an action and the dead ball last; corners cleared, and counters that
-    # follow where and how the ball was won (see `_upgrade_possessions`).
+    # and the chances made in the last zone, how long an action lasts, and counters that follow where and how the ball was
+    # won (see `_upgrade_possessions`). Its dead time and its share of corners headed were retired by schema 39.
     (38, ("moteur_match", "actions"), {
          "tempo_par_zone": [0.06, 0.08, 0.12, 0.20], "tempo_contre": 0.92, "attrait_ouverture": 0.8, "part_conduites": 0.15,
          "patience": 0.08,
@@ -52,14 +88,11 @@ MIGRATION_DEFAULTS = (
          "tir_de_loin": {"part": 0.23, "sensibilite_finition": 0.03, "reference_finition": 60.0, "effet_ouverture": -1.0},
          "creation": {"parts_axe": {"frappe": 0.55, "dribble": 0.20, "profondeur": 0.25}, "attrait_profondeur_ouverture": 1.5,
                       "facteur_profondeur_contre": 2.0, "parts_aile": {"centre": 0.30, "retrait": 0.70}, "sensibilite_centre": 0.03},
-         "durees_secondes": {"passe": 3.2, "progression": 4.2, "jeu_long": 4.0, "occasion": 3.0},
-         "temps_mort": {"moyen": 7.6, "forme_gamma": 2.0, "apres_but": 45.0, "apres_tir": 14.0, "corner": 25.0, "coup_franc": 30.0}}),
+         "durees_secondes": {"passe": 3.2, "progression": 4.2, "jeu_long": 4.0, "occasion": 3.0}}),
     (38, ("moteur_match", "occasion"), {"xg_base_dribble": 0.14, "xg_base_profondeur": 0.26, "xg_base_retrait": 0.16,
                                        "xg_base_tir_de_loin": 0.035, "poids_gardien_face_a_face": {"sortie": 0.6, "arret": 0.4}}),
-    (38, ("moteur_match", "coups_arretes"), {"part_corners_frappe": 0.33}),
     (38, ("moteur_match", "turnover"), {"probabilite_contre_par_zone": [0.03, 0.06, 0.15, 0.31], "bonus_contre_attaque_engagee": 0.5,
                                         "malus_contre_jeu_long": -1.0}),
-    (38, ("moteur_match", "notes_joueurs"), {"part_non_cadres_contres_de_loin": 0.55}),
     # Rounds of planning through each window instead of chance reviews, long contracts holding a club's regulars, free
     # agents every club sees and who lower their demands with time, and players letting their contract run out
     # (see `_upgrade_market`).
@@ -163,12 +196,12 @@ MIGRATION_DEFAULTS = (
          "hausse_par_point_reputation": 0.01, "hausse_salaire_max": 0.30, "baisse_par_point_reputation": 0.01,
          "baisse_salaire_max": 0.15}),
     # Ratings credited action by action: an older save keeps its older scale for goals, saves and cards,
-    # and rates tackles, losses, key passes and results from its next match on.
+    # and rates tackles, losses, key passes and results from its next match on. Its dribble and blocked-shot shares, which
+    # change the play since schema 39, were moved then.
     (18, ("moteur_match", "notes_joueurs"), {
          "sensibilite_qualite": 0.05, "progression_par_zone": [0.0, 0.01, 0.02, 0.04],
          "recuperation_par_zone": [0.07, 0.04, 0.025, 0.015], "perte_par_zone": [-0.04, -0.03, -0.02, -0.01],
-         "part_dribbles": 0.3, "sensibilite_dribble": 0.08, "defenseur_elimine": -0.02, "passe_cle": 0.1,
-         "participation_occasion": 0.03, "tir_non_cadre": -0.03, "part_non_cadres_contres": 0.4, "contre": 0.05,
+         "defenseur_elimine": -0.02, "passe_cle": 0.1, "participation_occasion": 0.03, "tir_non_cadre": -0.03, "contre": 0.05,
          "defenseur_battu": -0.15, "victoire": 0.1, "sans_encaisser": 0.25, "minutes_sans_encaisser": 60,
          "attendu_par_minute": 0.0055}),
     (18, ("benchmarks", "stats_match"), {"note_moyenne_poste_min": 6.4, "note_moyenne_poste_max": 6.6}),
@@ -372,6 +405,7 @@ class SaveStore:
                 initialize_strengths(world)
             if version < 37: _upgrade_market(world)
             if version < 38: _upgrade_possessions(world)
+            if version < 39: _upgrade_stoppages(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -446,6 +480,14 @@ RETIRED_RULES = (
     # The length of a possession is the sum of its actions; a counter follows where and how the ball was won.
     (38, ("moteur_match", "chronologie"), ("duree_possession_moyenne", "duree_possession_forme_gamma")),
     (38, ("moteur_match", "turnover"), ("zone_declenchant_contre", "probabilite_contre_depuis_zone_basse")),
+    # The dead time follows the cause of each stoppage; corners, free kicks and cards follow from a cause (see `arrets`).
+    (39, ("moteur_match", "actions"), ("temps_mort",)),
+    (39, ("moteur_match", "coups_arretes"), ("probabilite_corner_sur_turnover_avance", "probabilite_coup_franc_sur_turnover",
+                                              "part_corners_frappe", "part_cible_buts_sur_cpa")),
+    (39, ("moteur_match", "notes_joueurs"), ("part_dribbles", "sensibilite_dribble", "part_non_cadres_contres",
+                                              "part_non_cadres_contres_de_loin")),
+    (39, ("moteur_match", "cartons"), ("probabilite_jaune_par_turnover_defensif", "probabilite_rouge_direct_par_turnover_defensif",
+                                        "poids_zone_defense")),
 )
 
 
@@ -539,6 +581,13 @@ def _upgrade_possessions(world: World) -> None:
     world.config = _recalibrated(world.config, POSSESSION_RECALIBRATED_RULES)
 
 
+def _upgrade_stoppages(world: World) -> None:
+    """Schema 39: a failed action ends in a foul, the ball out of play, an offside or lost in play, and corners, free kicks,
+    penalties and cards follow from it; an older save takes the rules recalibrated with them (see
+    `STOPPAGE_RECALIBRATED_RULES`). Its matches keep their events: they hold no foul, and a save without a detail was held."""
+    world.config = _recalibrated(world.config, STOPPAGE_RECALIBRATED_RULES)
+
+
 def _upgrade_market(world: World) -> None:
     """Schema 37: clubs plan their windows in rounds rather than by chance (see `MARKET_RECALIBRATED_RULES`), and a free
     agent lowers his demands with the time he goes without a contract. A player without a club is dated by his last
@@ -613,21 +662,41 @@ RECALIBRATED_FATIGUE_RULES = (("states", "fitness", None, "daily_recovery", 0.10
 # Rules recalibrated by schema 37, in the same form: the planning rounds replace chance reviews.
 MARKET_RECALIBRATED_RULES = (("management", "market", None, "daily_proposal_probability", 0.06, 0.0),)
 # Rules recalibrated by schema 38, in the same form: the duels of a possession built action after action, which weigh the
-# gaps less since a possession holds more of them, cards given on the duels a side loses, more corners of which a third ends in a header, and the target for set-piece goals until
-# penalties and indirect free kicks exist.
+# gaps less since a possession holds more of them, and the target for set-piece goals until penalties and free kicks played
+# into the box exist. Its cards and its corners and free kicks drawn without a cause were retired by schema 39.
 POSSESSION_RECALIBRATED_RULES = (("engine", "transitions", None, "progression_bias", 0.0, -0.07),
                                  ("engine", "transitions", None, "creation_bias", -1.9, -1.575),
                                  ("engine", "transitions", None, "progression_sensitivity", 0.04, 0.02),
                                  ("engine", "transitions", None, "creation_sensitivity", 0.03, 0.012),
                                  ("engine", "transitions", None, "home_bonus", 0.3, 0.38),
                                  ("engine", "chance", None, "shot_xg", 0.15, 0.13),
-                                 ("engine", "set_pieces", None, "corner_probability", 0.075, 0.12),
-                                 ("engine", "set_pieces", None, "free_kick_probability", 0.025, 0.012),
                                  ("engine", "set_pieces", None, "corner_xg", 0.05, 0.09),
-                                 ("engine", "cards", None, "yellow_probability", 0.018, 0.03),
-                                 ("engine", "cards", None, "red_probability", 0.0003, 0.00055),
                                  ("benchmarks", "stats_match", "set_piece_goal_share", "min", 0.25, 0.1),
                                  ("benchmarks", "stats_match", "set_piece_goal_share", "max", 0.3, 0.16))
+# Rules recalibrated by schema 39, in the same form: shorter actions now that the dead time comes from the stoppages,
+# fewer and less dangerous chances in open play now that set pieces give penalties, headers from free kicks and rebounds,
+# counters a little likelier since a dead ball gives none, a scale that keeps each position's mean rating, and set-piece
+# goals back to their target.
+STOPPAGE_RECALIBRATED_RULES = (("engine", "actions", "durations", "pass_", 3.2, 3.0),
+                               ("engine", "actions", "durations", "progression", 4.2, 4.0),
+                               ("engine", "actions", "durations", "long_ball", 4.0, 3.8),
+                               ("engine", "actions", "durations", "chance", 3.0, 2.8),
+                               ("engine", "actions", "long_shot", "share", 0.23, 0.20),
+                               ("engine", "transitions", None, "creation_bias", -1.575, -1.78),
+                               ("engine", "chance", None, "cross_xg", 0.103, 0.095),
+                               ("engine", "chance", None, "shot_xg", 0.13, 0.105),
+                               ("engine", "chance", None, "dribble_xg", 0.14, 0.125),
+                               ("engine", "chance", None, "through_ball_xg", 0.26, 0.22),
+                               ("engine", "chance", None, "cutback_xg", 0.16, 0.13),
+                               ("engine", "set_pieces", None, "free_kick_xg", 0.05, 0.065),
+                               ("engine", "turnover", None, "counter_probability_by_zone", (0.03, 0.06, 0.15, 0.31), (0.04, 0.08, 0.19, 0.38)),
+                               ("engine", "player_ratings", None, "saving", 0.08, 0.09),
+                               ("engine", "player_ratings", None, "key_pass", 0.1, 0.12),
+                               ("engine", "player_ratings", None, "progression", (0.0, 0.01, 0.02, 0.04), (0.0, 0.01, 0.02, 0.05)),
+                               ("engine", "player_ratings", None, "recovery", (0.07, 0.04, 0.025, 0.015), (0.06, 0.04, 0.025, 0.015)),
+                               ("engine", "player_ratings", None, "expected_per_minute", 0.0055, 0.0056),
+                               ("benchmarks", "stats_match", "set_piece_goal_share", "min", 0.1, 0.25),
+                               ("benchmarks", "stats_match", "set_piece_goal_share", "max", 0.16, 0.3))
 
 
 def _recalibrated(cfg: Config, recalibrated: tuple) -> Config:

@@ -11,6 +11,8 @@
     "tempo_par_zone": [0.06, 0.08, 0.12, 0.20],
     "tempo_contre": 0.92,
     "attrait_ouverture": 0.8,
+    "part_dribbles": 0.30,
+    "sensibilite_dribble": 0.08,
     "part_conduites": 0.15,
     "patience": 0.08,
     "conservation": {
@@ -21,7 +23,7 @@
     },
     "ouverture": {"gain_par_passe": 0.10, "max": 0.6, "part_conservee_apres_progression": 0.5},
     "jeu_long": {"part_par_zone": [0.40, 0.15], "biais": -0.65, "sensibilite_passe": 0.03, "reference_passe": 60.0},
-    "tir_de_loin": {"part": 0.23, "sensibilite_finition": 0.03, "reference_finition": 60.0, "effet_ouverture": -1.0},
+    "tir_de_loin": {"part": 0.20, "sensibilite_finition": 0.03, "reference_finition": 60.0, "effet_ouverture": -1.0},
     "creation": {
       "parts_axe": {"frappe": 0.55, "dribble": 0.20, "profondeur": 0.25},
       "attrait_profondeur_ouverture": 1.5,
@@ -29,12 +31,61 @@
       "parts_aile": {"centre": 0.30, "retrait": 0.70},
       "sensibilite_centre": 0.03
     },
-    "durees_secondes": {"passe": 3.2, "progression": 4.2, "jeu_long": 4.0, "occasion": 3.0},
-    "temps_mort": {"moyen": 7.6, "forme_gamma": 2.0, "apres_but": 45.0, "apres_tir": 14.0, "corner": 25.0, "coup_franc": 30.0}
+    "durees_secondes": {"passe": 3.0, "progression": 4.0, "jeu_long": 3.8, "occasion": 2.8}
+  },
+  "arrets": {
+    "_note": "Comment finit une action ratee : faute (part_par_action x agressivite moyenne des defenseurs impliques ** poids_agressivite_tacle, x facteur_surface dans la surface), ballon sorti, hors-jeu, ou ballon perdu en jeu. Les parts de sortie portent sur les actions ratees sans faute. Le temps mort suit la cause de l'arret ; un ballon gagne en jeu repart sans pause.",
+    "faute": {
+      "part_par_action": {"passe": 0.06, "conduite": 0.30, "occasion_axe": 0.06, "dribble_zone_verite": 0.35, "centre": 0.03, "duel_aerien": 0.10},
+      "part_attaquant_duel_aerien": 0.5,
+      "part_surface": {"axe": 0.55, "aile": 0.25},
+      "facteur_surface": 0.13,
+      "faute_tactique": 0.15,
+      "sensibilite_ecart": 0.03
+    },
+    "coup_franc": {
+      "part_a_portee_milieu_haut": 0.25,
+      "part_directe": 0.60,
+      "part_centree_aile_milieu_haut": 0.35,
+      "issues_centre": {"tete": 0.27, "degage": 0.58, "capte": 0.15, "joue_court": 0.0},
+      "part_degagements_en_corner": 0.20
+    },
+    "sortie": {
+      "conservation": {"aile": 0.35, "axe": 0.05},
+      "passe": {"aile": 0.30, "axe": 0.05},
+      "conduite": {"aile": 0.40, "axe": 0.05},
+      "jeu_long": 0.25,
+      "centre": {"corner": 0.16, "six_metres": 0.12, "touche": 0.05, "capte": 0.15},
+      "occasion_axe_corner": 0.06
+    },
+    "hors_jeu": {"profondeur": 0.30, "jeu_long_zone_verite": 0.13},
+    "apres_tir": {
+      "part_contres": 0.40,
+      "part_contres_de_loin": 0.55,
+      "contre_en_corner": 0.40,
+      "second_ballon_attaque": 0.40,
+      "arret": {"capte": 0.45, "corner": 0.30, "repousse": 0.25},
+      "part_poteaux": 0.05,
+      "poteau_en_jeu": 0.5,
+      "rebond_attaque": 0.40
+    },
+    "corner": {"tete": 0.33, "degage": 0.47, "capte": 0.12, "joue_court": 0.08},
+    "sensibilite_sorties": 0.02,
+    "reference_sorties": 70.0,
+    "temps_mort": {"forme_gamma": 2.0, "gardien": 8.5, "touche": 17.0, "hors_jeu": 23.0, "coup_franc_court": 25.0, "six_metres": 30.0,
+                   "corner": 34.0, "apres_but": 45.0, "coup_franc": 53.0, "penalty": 90.0, "carton": 30.0}
+  },
+  "penalty": {
+    "_note": "Un penalty du match comme un tir au but : reussite_base a qualite egale, plus sensibilite par point d'ecart entre la moyenne Finition et Sang-froid du tireur et les Reflexes du gardien, entre min et max. Un penalty rate est arrete, sauf part_rates_hors_cadre.",
+    "reussite_base": 0.75,
+    "sensibilite": 0.003,
+    "min": 0.50,
+    "max": 0.95,
+    "part_rates_hors_cadre": 0.30
   },
   "transitions": {
     "progression_bias": -0.07,
-    "creation_bias": -1.575,
+    "creation_bias": -1.78,
     "k_prog": 0.020,
     "k_occ": 0.012,
     "bonus_domicile": 0.38,
@@ -56,12 +107,13 @@
   },
   "occasion": {
     "_note": "xG avant qualites individuelles ; la probabilite de but est ajustee ensuite dans l'espace logit.",
-    "xg_base_centre": 0.103,
-    "xg_base_frappe": 0.130,
-    "xg_base_dribble": 0.14,
-    "xg_base_profondeur": 0.26,
-    "xg_base_retrait": 0.16,
+    "xg_base_centre": 0.095,
+    "xg_base_frappe": 0.105,
+    "xg_base_dribble": 0.125,
+    "xg_base_profondeur": 0.22,
+    "xg_base_retrait": 0.13,
     "xg_base_tir_de_loin": 0.035,
+    "xg_base_rebond": 0.30,
     "multiplicateur_contre": 1.6,
     "sensibilite_tireur_gardien": 0.055,
     "poids_gardien_sur_tete": {"sortie": 0.8, "arret": 0.2},
@@ -77,18 +129,16 @@
     "borne_probabilite_max": 0.999999
   },
   "coups_arretes": {
-    "probabilite_corner_sur_turnover_avance": 0.12,
-    "probabilite_coup_franc_sur_turnover": 0.012,
-    "part_corners_frappe": 0.33,
+    "_note": "Les corners et les coups francs ont une cause : voir arrets. xg_base_corner vaut pour une tete sur corner ou sur coup franc centre.",
     "xg_base_corner": 0.09,
-    "xg_base_coup_franc_direct": 0.05,
-    "part_cible_buts_sur_cpa": 0.27
+    "xg_base_coup_franc_direct": 0.065
   },
   "turnover": {
-    "_note": "La probabilite de contre suit la zone du RECUPERATEUR apres symetrie et recuperation avancee, corrigee en logit : attaque engagee (tentative ou corner degage), long ballon perdu, ecart de vitesse et bloc de l'equipe qui perd le ballon.",
-    "probabilite_contre_par_zone": [0.03, 0.06, 0.15, 0.31],
+    "_note": "Un contre ne part que d'un ballon gagne en jeu. Sa probabilite suit la zone du RECUPERATEUR apres symetrie et recuperation avancee, corrigee en logit : attaque engagee (tentative ou ballon degage), long ballon perdu, ballon capte par le gardien, ecart de vitesse et bloc de l'equipe qui perd le ballon.",
+    "probabilite_contre_par_zone": [0.04, 0.08, 0.19, 0.38],
     "bonus_contre_attaque_engagee": 0.5,
     "malus_contre_jeu_long": -1.0,
+    "malus_contre_gardien": -0.5,
     "sensibilite_ecart_vitesse_contre": 0.03,
     "malus_defensif_contre": 8.0,
     "malus_defensif_couloir_concerne": 14.0,
@@ -100,11 +150,11 @@
     "niveau_reference": 70.0
   },
   "cartons": {
-    "_note": "Le fautif est tire parmi les joueurs de champ selon implication x agressivite ** poids_agressivite_tacle. agressivite = (Aggression + Dirtiness) / 2 converti en facteur entre agressivite_min et agressivite_max, 1.0 a la note de reference.",
-    "probabilite_jaune_par_turnover_defensif": 0.030,
+    "_note": "Un carton ne tombe que sur une faute. Le fautif est tire parmi les joueurs de champ selon implication x agressivite ** poids_agressivite_tacle. agressivite = (Aggression + Dirtiness) / 2 converti en facteur entre agressivite_min et agressivite_max, 1.0 a la note de reference.",
+    "par_faute": {"jaune": 0.16, "rouge": 0.0012},
+    "faute_tactique": {"jaune": 0.55, "rouge": 0.015},
+    "penalty": {"jaune": 0.25, "rouge": 0.08},
     "booked_caution_multiplier": 0.12,
-    "probabilite_rouge_direct_par_turnover_defensif": 0.00055,
-    "poids_zone_defense": 1.4,
     "poids_agressivite_tacle": 1.0,
     "agressivite_min": 0.25,
     "agressivite_max": 2.0,
@@ -130,28 +180,30 @@
     "but": 0.8,
     "passe_decisive": 0.5,
     "tir_cadre_sans_but": 0.05,
-    "arret": 0.08,
+    "arret": 0.09,
     "but_encaisse_gardien": -0.15,
     "jaune": -0.20,
     "expulsion": -1.0,
     "minutes_minimum_note": 15,
     "sensibilite_qualite": 0.05,
-    "progression_par_zone": [0.0, 0.010, 0.020, 0.040],
-    "recuperation_par_zone": [0.070, 0.040, 0.025, 0.015],
+    "progression_par_zone": [0.0, 0.010, 0.020, 0.050],
+    "recuperation_par_zone": [0.060, 0.040, 0.025, 0.015],
     "perte_par_zone": [-0.040, -0.030, -0.020, -0.010],
-    "part_dribbles": 0.30,
-    "sensibilite_dribble": 0.08,
     "defenseur_elimine": -0.02,
-    "passe_cle": 0.10,
+    "passe_cle": 0.12,
     "participation_occasion": 0.03,
     "tir_non_cadre": -0.03,
-    "part_non_cadres_contres": 0.40,
-    "part_non_cadres_contres_de_loin": 0.55,
     "contre": 0.05,
     "defenseur_battu": -0.15,
     "victoire": 0.10,
     "sans_encaisser": 0.25,
     "minutes_sans_encaisser": 60,
-    "attendu_par_minute": 0.0055
+    "attendu_par_minute": 0.0056,
+    "faute": -0.02,
+    "hors_jeu": 0.0,
+    "penalty_concede": -0.30,
+    "penalty_obtenu": 0.10,
+    "penalty_manque": -0.30,
+    "penalty_arrete": 0.30
   }
 }

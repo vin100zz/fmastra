@@ -75,9 +75,10 @@ temps de jeu effectif : le ballon arrêté entre deux possessions n'appartient �
 personne. Mesurer aussi la dangerosité par attaque axiale ou latérale, séparément
 du volume.
 
-`part_buts_coups_arretes` vaut 10 à 16 % tant que le moteur n'a ni penaltys ni
-coups francs indirects, qui font à eux seuls une bonne part des buts sur coups de
-pied arrêtés en vrai ; un corner n'y aboutit à une tête qu'une fois sur trois.
+`part_buts_coups_arretes` vaut 25 à 30 % : un but compte comme tel s'il est marqué
+dans la possession qui a eu un corner, un coup franc frappé ou centré ou un penalty,
+second ballon compris. `fautes_par_equipe` (10 à 13) et `penaltys_par_equipe` (0,10 à
+0,18) suivent les grands championnats.
 
 Avec les possessions construites, les diagnostics suivants accompagnent la suite,
 sur le même scénario symétrique (mesurés hors suite, non bloquants) : 320 à 450
@@ -86,7 +87,9 @@ possessions de trois passes ou moins et 2 à 8 % de dix ou plus, 10 à 20 % de
 possessions lancées en contre et 15 à 30 % des tirs en contre, 4,5 à 5,5 corners
 par équipe, 52 à 60 minutes de jeu effectif, 28 à 38 % de frappes de loin et 15 à
 25 % de têtes. Dans les affiches déséquilibrées de la suite `match`, le favori a
-56 à 65 % de possession.
+56 à 65 % de possession. Avec les arrêts de jeu s'y ajoutent 15 à 25 touches, 1,5 à
+2,5 hors-jeu par équipe, 2 à 4 % de tirs sur rebond et une réussite des penaltys de
+70 à 82 %.
 
 La note moyenne des titulaires de chaque poste du 4-3-3 symétrique (`rating_GB`,
 `rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`.

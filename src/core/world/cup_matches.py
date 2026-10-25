@@ -8,6 +8,7 @@ from core.domain.matches import Match, MatchEvent, MatchResult, Lineup
 from core.domain.players import Player, Position
 from core.domain.world import World
 from core.engine.abilities import generate_attributes, overall
+from core.engine.shots import penalty_probability, penalty_skill
 from core.math import clamp
 from core.randomness import stream
 
@@ -71,7 +72,7 @@ def decide_winner(world: World, match: Match, result: MatchResult, lineups: list
             raise ValueError("No eligible penalty taker")
         keeper = max(candidates, key=lambda p: (p.position == Position.GOALKEEPER, p.attributes.get("reflexes"), -p.id))
         keepers.append(keeper)
-        teams.append(sorted(candidates, key=lambda p: (-(p.attributes.get("finition") + p.attributes.get("sang_froid")), p.id)))
+        teams.append(sorted(candidates, key=lambda p: (-penalty_skill(p), p.id)))
     # Both teams must have the same number of eligible kickers.
     count = min(map(len, teams))
     for side, team in enumerate(teams):
@@ -90,9 +91,8 @@ def decide_winner(world: World, match: Match, result: MatchResult, lineups: list
         for side in (0, 1):
             player = teams[side][taken[side] % count]
             keeper = keepers[1 - side]
-            skill = (player.attributes.get("finition") + player.attributes.get("sang_froid")) / 2
-            probability = clamp(.75 + .003 * (skill - keeper.attributes.get("reflexes")), .5, .95)
-            scored = rng.random() < probability
+            # The rule of a penalty in the match.
+            scored = rng.random() < penalty_probability(player, keeper, world.config)
             scores[side] += int(scored)
             taken[side] += 1
             result.events.append(MatchEvent(result.duration, 3, len(result.events),

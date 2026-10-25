@@ -13,7 +13,8 @@ from core.world.player_states import match_event
 from test_market import mini_world
 
 ALL_KINDS = ("kickoff", "possession", "circulation", "progress", "delivery", "turnover", "shot", "save", "off_target", "corner",
-             "free_kick", "goal", "yellow", "red", "injury", "substitution", "period_end", "penalty_scored", "penalty_missed")
+             "free_kick", "goal", "yellow", "red", "injury", "substitution", "period_end", "penalty_scored", "penalty_missed", "foul",
+             "penalty", "throw_in", "offside")
 
 
 def full_result(**changes) -> MatchResult:
@@ -33,7 +34,8 @@ def test_applying_a_match_keeps_only_the_events_a_view_can_list(config):
     stored = world.matches[10].result
     # The loss of the ball that gave a side its chance is kept for the replay.
     assert [event.kind for event in stored.events] == [kind for kind in ALL_KINDS if kind not in TRANSIENT_EVENT_KINDS or kind == "turnover"]
-    assert TRANSIENT_EVENT_KINDS == {"possession", "circulation", "progress", "delivery", "turnover", "corner", "free_kick"}
+    assert TRANSIENT_EVENT_KINDS == {"possession", "circulation", "progress", "delivery", "turnover", "corner", "free_kick", "foul",
+                                     "penalty", "throw_in", "offside"}
     # Everything else the match page reads is untouched, and the survivors keep their order.
     assert [event.second for event in stored.events] == sorted(event.second for event in stored.events)
     assert stored.home_stats.corners == 2 and stored.player_stats[101].minutes == 90
@@ -46,20 +48,26 @@ def test_real_engine_log_loses_no_statistic_when_stored(config):
     world.matches[10] = Match(10, 16, 2025, 1, world.date, 1, 2)
     result = PossessionEngine().simulate(synthetic_lineup(config, 1), synthetic_lineup(config, 2), config, stream(7))
     logged = Counter(event.kind for event in result.events)
-    assert logged["possession"] and logged["turnover"] and logged["corner"] + logged["free_kick"], "the match must exercise every dropped kind"
+    played_free_kicks = sum(event.kind == "free_kick" and event.detail != "short" for event in result.events)
+    assert all(logged[kind] for kind in ("possession", "turnover", "corner", "free_kick", "foul", "throw_in")), "the match must exercise every dropped kind"
     apply(world, match_event(world, world.matches[10], result))
     kept = world.matches[10].result.events
     stored = Counter(event.kind for event in kept if event.kind not in TRANSIENT_EVENT_KINDS)
     assert stored == Counter({kind: count for kind, count in logged.items() if kind not in TRANSIENT_EVENT_KINDS})
-    # The build-up survives only for the possessions that ended in a shot, and entirely, with the loss of the ball before it.
+    # The build-up survives only for the possessions that ended in a shot, and entirely, with the loss of the ball or the foul
+    # that stopped a counter before it.
     chances = {event.possession_id for event in result.events if event.kind == "shot"}
-    assert {event.possession_id for event in kept if event.kind in REPLAY_EVENT_KINDS} == chances
+    def lead_in(event):
+        return event.kind in ("turnover", "foul") and event.possession_id + 1 in chances
+    assert {event.possession_id for event in kept if event.kind in REPLAY_EVENT_KINDS and not lead_in(event)} == chances
     assert [event for event in kept if event.kind in TRANSIENT_EVENT_KINDS] == [
-        event for event in result.events if (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances)
-        or (event.kind == "turnover" and event.possession_id + 1 in chances)]
+        event for event in result.events if (event.kind in REPLAY_EVENT_KINDS and event.possession_id in chances) or lead_in(event)]
     assert logged["circulation"] and any(event.kind == "turnover" for event in kept)
     home, away = world.matches[10].result.home_stats, world.matches[10].result.away_stats
-    assert home.corners + away.corners == logged["corner"] and home.free_kicks + away.free_kicks == logged["free_kick"]
+    assert home.corners + away.corners == logged["corner"]
+    # The free kicks counted are those struck at goal or played into the box; fouls and offsides are counted too.
+    assert home.free_kicks + away.free_kicks == played_free_kicks
+    assert home.fouls + away.fouls == logged["foul"] and home.offsides + away.offsides == logged["offside"]
     assert home.shots + away.shots == stored["shot"]
     assert home.yellows + away.yellows == stored["yellow"]
 
@@ -89,7 +97,8 @@ def test_rollover_archives_every_kind_of_competition_and_keeps_the_knockout_outc
 
 def test_the_replay_trail_never_changes_the_match(config):
     """The replay follows the possession from the events alone: a run of passes kept where the ball stands or behind it,
-    each move forward one zone and a long ball two, and a named server for every chance played in by a team-mate."""
+    each move forward one zone and a long ball two, a restart where the play stopped, and a named server for every chance
+    played in by a team-mate."""
     result = PossessionEngine().simulate(synthetic_lineup(config, 1), synthetic_lineup(config, 2), config, stream(7))
     by_possession = {}
     for event in result.events:
@@ -106,9 +115,15 @@ def test_the_replay_trail_never_changes_the_match(config):
             elif event.kind == "progress":
                 assert event.zone == zone + (2 if event.detail == "long" else 1)
                 zone = event.zone
-        shots = [event for event in events if event.kind == "shot"]
-        deliveries = [event for event in events if event.kind == "delivery"]
-        if shots and shots[0].detail in ("cross", "cutback", "through_ball", "corner"):
-            assert len(deliveries) == 1 and deliveries[0].detail == shots[0].detail and deliveries[0].player_id is not None
-        if deliveries:
-            assert shots and deliveries[0].player_id != shots[0].player_id
+            elif event.kind in ("throw_in", "free_kick", "corner") and event.team_id == start.team_id:
+                # A long ball lost may leave the side a throw-in or a free kick where it landed.
+                zone = event.zone
+        # A possession may hold several shots (a rebound, a header from the corner a save gave): each delivery names the
+        # server of the shot that follows it.
+        sequence = [event for event in events if event.kind in ("delivery", "shot")]
+        for index, event in enumerate(sequence):
+            if event.kind == "delivery":
+                shot = sequence[index + 1]
+                assert shot.kind == "shot" and shot.detail == event.detail and event.player_id not in (None, shot.player_id)
+            elif event.detail in ("cross", "cutback", "through_ball", "corner", "crossed_free_kick"):
+                assert index and sequence[index - 1].kind == "delivery"

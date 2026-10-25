@@ -110,6 +110,18 @@ class BenchmarksConfigStatsMatchRedsPerTeam:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class BenchmarksConfigStatsMatchFoulsPerTeam:
+    min: float = Field(default=10.0, alias="min")
+    max: float = Field(default=13.0, alias="max")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class BenchmarksConfigStatsMatchPenaltiesPerTeam:
+    min: float = Field(default=0.10, alias="min")
+    max: float = Field(default=0.18, alias="max")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class BenchmarksConfigStatsMatchLaneShares:
     target: float = Field(alias="cible")
     tolerance: float = Field(alias="tolerance")
@@ -126,6 +138,10 @@ class BenchmarksConfigStatsMatch:
     set_piece_goal_share: BenchmarksConfigStatsMatchSetPieceGoalShare = Field(alias="part_buts_coups_arretes")
     yellows_per_team: BenchmarksConfigStatsMatchYellowsPerTeam = Field(alias="jaunes_par_equipe")
     reds_per_team: BenchmarksConfigStatsMatchRedsPerTeam = Field(alias="rouges_par_equipe")
+    fouls_per_team: BenchmarksConfigStatsMatchFoulsPerTeam = Field(default_factory=BenchmarksConfigStatsMatchFoulsPerTeam,
+                                                                   alias="fautes_par_equipe")
+    penalties_per_team: BenchmarksConfigStatsMatchPenaltiesPerTeam = Field(default_factory=BenchmarksConfigStatsMatchPenaltiesPerTeam,
+                                                                           alias="penaltys_par_equipe")
     lane_shares: BenchmarksConfigStatsMatchLaneShares = Field(alias="repartition_couloirs")
     central_xg_above_wide: bool = Field(alias="xg_axe_superieur_aile")
     min_position_rating: float = Field(default=6.4, alias="note_moyenne_poste_min")

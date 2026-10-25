@@ -92,6 +92,11 @@ def test_reference_covers_every_engine_path(config):
     assert {"goal", "save", "off_target", "yellow", "red", "injury", "substitution", "forfeit", "double_forfeit"} <= kinds
     details = {(event.kind, event.detail) for result in play(config).values() for event in result.events}
     assert {("progress", label) for label in ("pass", "carry", "dribble", "long")} <= details
-    assert {("turnover", loss) for loss in ("interception", "tackle", "aerial", "clearance")} <= details
-    assert {("shot", kind) for kind in ("shot", "long_shot", "dribble", "through_ball", "cross", "cutback", "corner", "free_kick")} <= details
-    assert "circulation" in kinds
+    assert {("turnover", loss) for loss in ("interception", "tackle", "aerial", "clearance", "claim")} <= details
+    assert {("shot", kind) for kind in ("shot", "long_shot", "dribble", "through_ball", "cross", "cutback", "corner", "free_kick",
+                                        "crossed_free_kick", "penalty", "rebound")} <= details
+    assert {"circulation", "foul", "penalty", "throw_in", "offside"} <= kinds
+    # Every way a stoppage starts and every way a shot ends.
+    assert {("foul", "tactical"), ("free_kick", "short"), ("free_kick", "crossed"), ("free_kick", "direct")} <= details
+    assert {("corner", cause) for cause in ("cross", "clearance", "save", "blocked")} <= details
+    assert {("save", detail) for detail in ("held", "corner", "parried")} | {("off_target", "post"), ("off_target", "blocked")} <= details

@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 import pytest
 
@@ -401,7 +402,12 @@ def test_save_from_before_the_built_possessions_drops_the_retired_rules_and_take
     engine["chronologie"].update(duree_possession_moyenne=26.0, duree_possession_forme_gamma=2.5)
     engine["turnover"].update(zone_declenchant_contre="MILIEU_HAUT", probabilite_contre_depuis_zone_basse=0.15)
     engine["transitions"].update(progression_bias=0.0, creation_bias=-1.7, bonus_domicile=0.3)
-    engine["cartons"]["probabilite_jaune_par_turnover_defensif"] = 0.018
+    # And the rules schema 39 retired in turn.
+    engine["coups_arretes"].update(probabilite_corner_sur_turnover_avance=0.075, probabilite_coup_franc_sur_turnover=0.025,
+                                   part_cible_buts_sur_cpa=0.27)
+    engine["cartons"].update(probabilite_jaune_par_turnover_defensif=0.018, probabilite_rouge_direct_par_turnover_defensif=0.0003,
+                             poids_zone_defense=1.4)
+    engine["notes_joueurs"].update(part_dribbles=0.3, sensibilite_dribble=0.08, part_non_cadres_contres=0.4)
     rules["benchmarks"]["stats_match"]["part_buts_coups_arretes"] = {"min": 0.25, "max": 0.30}
     raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
@@ -413,12 +419,63 @@ def test_save_from_before_the_built_possessions_drops_the_retired_rules_and_take
     shipped = config.engine.transitions
     assert (engine_rules.transitions.progression_bias, engine_rules.transitions.home_bonus) == (shipped.progression_bias, shipped.home_bonus)
     assert engine_rules.transitions.creation_bias == -1.7
-    assert engine_rules.cards.yellow_probability == config.engine.cards.yellow_probability
+    assert engine_rules.cards == config.engine.cards and engine_rules.stoppages == config.engine.stoppages
     assert migrated.config.benchmarks.stats_match.set_piece_goal_share == config.benchmarks.stats_match.set_piece_goal_share
     store.save(migrated, "upgraded")
     assert store.load("upgraded").config == migrated.config
     # A rule changed by hand in the file is not taken for one the save shipped with.
     engine["turnover"]["probabilite_contre_depuis_zone_basse"] = 0.5
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    with pytest.raises(SaveError, match="configuration"):
+        store.load("old")
+
+
+def test_save_from_before_the_stoppages_drops_the_retired_rules_and_takes_the_recalibrated_ones(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, STOPPAGE_RECALIBRATED_RULES
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 38
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 38:
+            for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]
+    engine = rules["moteur_match"]
+    # As schema 38 shipped them, but for one rule the player had chosen.
+    engine["actions"]["temps_mort"] = {"moyen": 7.6, "forme_gamma": 2.0, "apres_but": 45.0, "apres_tir": 14.0, "corner": 25.0, "coup_franc": 30.0}
+    engine["actions"].update(durees_secondes={"passe": 3.2, "progression": 4.2, "jeu_long": 4.0, "occasion": 3.0})
+    engine["actions"]["tir_de_loin"]["part"] = 0.23
+    engine["coups_arretes"].update(probabilite_corner_sur_turnover_avance=0.12, probabilite_coup_franc_sur_turnover=0.012,
+                                   part_corners_frappe=0.33, part_cible_buts_sur_cpa=0.27, xg_base_coup_franc_direct=0.05)
+    engine["cartons"].update(probabilite_jaune_par_turnover_defensif=0.03, probabilite_rouge_direct_par_turnover_defensif=0.00055,
+                             poids_zone_defense=1.4)
+    engine["notes_joueurs"].update(part_dribbles=0.3, sensibilite_dribble=0.08, part_non_cadres_contres=0.4, part_non_cadres_contres_de_loin=0.55,
+                                   arret=0.08, passe_cle=0.1, progression_par_zone=[0.0, 0.01, 0.02, 0.04],
+                                   recuperation_par_zone=[0.07, 0.04, 0.025, 0.015], attendu_par_minute=0.0055)
+    engine["transitions"]["creation_bias"] = -1.575
+    engine["occasion"].update(xg_base_centre=0.103, xg_base_frappe=0.13, xg_base_dribble=0.14, xg_base_profondeur=0.26,
+                              xg_base_retrait=0.17)
+    engine["turnover"]["probabilite_contre_par_zone"] = [0.03, 0.06, 0.15, 0.31]
+    rules["benchmarks"]["stats_match"]["part_buts_coups_arretes"] = {"min": 0.1, "max": 0.16}
+    raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    # Every rule takes its new value, but the one the player had chosen.
+    assert len(STOPPAGE_RECALIBRATED_RULES) == 20
+    engine_rules = migrated.config.engine
+    assert engine_rules.chance.cutback_xg == 0.17
+    assert replace(engine_rules, chance=replace(engine_rules.chance, cutback_xg=config.engine.chance.cutback_xg)) == config.engine
+    assert migrated.config.benchmarks == config.benchmarks
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").config == migrated.config
+    # A rule changed by hand in the file is not taken for one the save shipped with.
+    engine["actions"]["temps_mort"]["apres_tir"] = 20.0
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     with pytest.raises(SaveError, match="configuration"):
         store.load("old")
