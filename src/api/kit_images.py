@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import re
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageFilter, ImageOps
 
 
 _ASSETS = Path(__file__).resolve().parents[2] / "web" / "kits"
@@ -33,6 +33,33 @@ def _normalize_palette(colors: tuple[str, str, str]) -> tuple[str, str, str]:
     return tuple(normalize_color(color) for color in colors)
 
 
+_RUN = re.compile(rb"\xff+")
+
+
+def _connected(mask: Image.Image, seed: tuple[int, int]) -> Image.Image:
+    """The part of a black and white mask joined to `seed` through its four neighbours. It follows each row's runs of
+    white rather than its pixels: Pillow's `floodfill` visits these one by one in Python, for seconds on a template."""
+    width, height = mask.size
+    data = mask.tobytes()
+    runs = [[match.span() for match in _RUN.finditer(data, row * width, (row + 1) * width)] for row in range(height)]
+    x, y = seed
+    start = next(run for run in runs[y] if run[0] <= y * width + x < run[1])
+    kept, queue = {(y, start)}, [(y, start)]
+    while queue:
+        row, (begin, end) = queue.pop()
+        for other in (row - 1, row + 1):
+            if 0 <= other < height:
+                shift = (other - row) * width
+                for run in runs[other]:
+                    if run[0] < end + shift and begin + shift < run[1] and (other, run) not in kept:
+                        kept.add((other, run))
+                        queue.append((other, run))
+    filled = bytearray(len(data))
+    for _, (begin, end) in kept:
+        filled[begin:end] = b"\xff" * (end - begin)
+    return Image.frombytes("L", mask.size, bytes(filled))
+
+
 def _isolate_shirt(image: Image.Image) -> Image.Image:
     """Remove detached atlas speckles while retaining the soft alpha edge."""
     alpha = image.getchannel("A")
@@ -40,9 +67,7 @@ def _isolate_shirt(image: Image.Image) -> Image.Image:
     seed = (image.width // 2, image.height // 2)
     if core.getpixel(seed) != 255:
         raise ValueError("The center of a kit pattern must contain a shirt.")
-    ImageDraw.floodfill(core, seed, 128)
-    core = core.point(lambda value: 255 if value == 128 else 0)
-    edge = core.filter(ImageFilter.MaxFilter(3))
+    edge = _connected(core, seed).filter(ImageFilter.MaxFilter(3))
     image.putalpha(ImageChops.multiply(alpha, edge))
     bounds = image.getchannel("A").getbbox()
     if bounds is None:

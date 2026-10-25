@@ -99,3 +99,11 @@ def test_a_selection_wears_its_logo_on_the_chest(client):
     assert client.get(url.replace("nation=FRA", "nation=ZZZ")).content == client.get(url.replace("&nation=FRA", "")).content
     for invalid in ("fr", "FRAN", "../FR", "F-A"):
         assert client.get(url.replace("nation=FRA", f"nation={invalid}")).status_code == 422
+
+
+def test_the_browser_keeps_a_kit_whose_address_names_its_colours_but_nothing_else(client):
+    club = SimpleNamespace(home_kit_id=16, home_kit_major_color="#FFFFFF")
+    assert client.get(kit_url(club)).headers["cache-control"] == "private, max-age=86400"
+    assert client.get("/kits/16.png", params={"major": "FFFFFF", "minor": "004170", "third": "DA291C"}).headers["cache-control"] == "private, max-age=86400"
+    assert client.get("/").headers["cache-control"] == "no-cache"
+    assert client.get("/api/game").headers["cache-control"] == "no-store"
