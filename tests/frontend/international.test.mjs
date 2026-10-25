@@ -145,7 +145,7 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
   assert.match(rows[3],/^ coming" data-competition="-102030">/);assert.doesNotMatch(rows[3],/Prochain/);
   // Beside the matches: the whole group in the charter's columns, then the record in each edition.
   const side=html.split('<aside class="calendar-side">')[1];
-  assert.match(side,/^<section class="card standings-card"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir →<\/a>/);
+  assert.match(side,/^<section class="card standings-card"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
   assert.match(side,/NATION<.*PTS<.*>J<.*>V<.*>N<.*>D<.*BP<.*BC<.*DIFF\.</s);assert.match(side,/<tr class="promoted own"/);
   assert.ok(side.indexOf('Groupe D')<side.indexOf('<h2>Bilan</h2>'));
   assert.match(side,/COMPÉTITION<.*PLACE<.*>J<.*>V<.*>N<.*>D<.*BP<.*BC</s);
@@ -322,12 +322,12 @@ test('a selection opens on its Présentation, a club’s: its tiles, its kits an
   assert.match(eleven,/<span class="block-season">2 m \/ 3<span class="match-mark goal"><\/span><\/span>/);
   assert.doesNotMatch(eleven,/>null<|undefined/);
   // Under it, its group: the place that qualifies and its own row marked, the points and the difference.
-  assert.match(columns[1],/<section class="card standings-card standings-extract"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir →<\/a>/);
+  assert.match(columns[1],/<section class="card standings-card standings-extract"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
   assert.match(columns[1],/NATION<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th><th class="difference-column"[^>]*><button class="sort-toggle" data-table-sort>DIFF\.<\/button><\/th><\/tr>/);
   assert.match(columns[1],/<tr class="promoted own"[^>]*><td[^>]*><span class="rank first">1<\/span>/);
   // Its matches, every edition included, oldest first: the other side after its flag, another edition's badge, no plane
-  // on neutral ground; « Voir → » opens its Calendrier.
-  assert.match(columns[2],/<a href="#\/international\/nation\/-1001\/calendar" aria-label="Voir le calendrier">Voir →<\/a>/);
+  // on neutral ground; « Voir » opens its Calendrier.
+  assert.match(columns[2],/<a href="#\/international\/nation\/-1001\/calendar" aria-label="Voir le calendrier">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
   const rows=columns[2].split('<a class="club-match"').slice(1);
   assert.equal(rows.length,3);
   assert.match(rows[0],/t\.a\.b\. 4 – 5/);assert.match(rows[0],/<b><span class="nation"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"[^>]*><\/span>Espagne<\/span><\/b><span class="competition-code international" title="Coupe du monde 2026">CM<\/span>/);

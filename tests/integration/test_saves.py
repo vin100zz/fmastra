@@ -487,9 +487,13 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     import hashlib
     import json
     import shutil
-    from core.domain.players import ATTRIBUTE_INDEX
+    from core.domain.players import ATTRIBUTE_INDEX, Position
+    from core.world.international_selection import reinforcement
     from infrastructure.persistence.store import DELIVERY_ATTRIBUTE_COUNT, MIGRATION_DEFAULTS, PENALTY_ESTIMATE
     world = import_world(ROOT / "data", config, 14)
+    # A selection's campaign-only reinforcement carries an attribute vector as well.
+    state = world.international
+    temporary = reinforcement(world, next(iter(state.editions.values())), next(iter(state.nations)), Position.STRIKER)
     saves = tmp_path / "saves"
     store = SaveStore(saves)
     store.save(world, "modern")
@@ -507,18 +511,20 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     del rules["demographie"]["progression"]["poids_declin_par_attribut"]["penalty"]
     raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
-    for player in legacy["world"]["players"].values():
+    for player in (*legacy["world"]["players"].values(), *legacy["world"]["international"]["temporary"].values()):
         del player["attributes"]["values"][DELIVERY_ATTRIBUTE_COUNT:]
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     # Without the exact source file every player receives the level his finishing and composure predict.
     fallback = store.load("old")
     bounds, (intercept, finishing, composure) = config.attributes.bounds, PENALTY_ESTIMATE
-    for player in fallback.players.values():
+    original = {**world.players, temporary.id: temporary}
+    assert set(fallback.international.temporary) == {temporary.id}
+    for player in (*fallback.players.values(), *fallback.international.temporary.values()):
         values = player.attributes.values
-        assert values[:DELIVERY_ATTRIBUTE_COUNT] == world.players[player.id].attributes.values[:DELIVERY_ATTRIBUTE_COUNT]
+        assert values[:DELIVERY_ATTRIBUTE_COUNT] == original[player.id].attributes.values[:DELIVERY_ATTRIBUTE_COUNT]
         expected = intercept + finishing * values[ATTRIBUTE_INDEX["finition"]] + composure * values[ATTRIBUTE_INDEX["sang_froid"]]
         assert player.attributes.get("penalty") == min(bounds.max, max(bounds.min, expected))
-        assert player.rating == world.players[player.id].rating
+        assert player.rating == original[player.id].rating
     attributes = fallback.config.attributes
     assert attributes.composites == config.attributes.composites and attributes.groups == config.attributes.groups
     profiles = attributes.generation_profiles.profiles

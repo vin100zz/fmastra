@@ -7,7 +7,7 @@ from core.domain.matches import MatchResult, stored_events
 from core.engine.fitness import match_load
 from .age_records import note_club_match
 from .finances import book_cash, book_daily_cash
-from .human import record as add_news, report
+from .human import is_human_club, record as add_news, report
 from .shirts import assign
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
@@ -233,8 +233,10 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         if event.source_id != event.target_id: return False
         club.wage_bill += event.contract.weekly_wage - old_wage
         player.contract = event.contract
-        # A demand turned down was about the contract he had.
+        # A demand turned down was about the contract he had; so is one pending when the AI extends him in the user's
+        # place (Auto mode). When the user signs, `renewals.sign` closes the demand with its message.
         world.refused_renewals.pop(player.id, None)
+        if not is_human_club(world, club.id): world.pending_renewals.pop(player.id, None)
         return True
     if event.source_id == event.target_id or club.squad_size >= guard.max_squad: return False
     if player.id in recent_arrival_ids(world): return False

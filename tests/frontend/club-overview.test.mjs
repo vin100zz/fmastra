@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {calendarBlock,financesBlock,standingsExtract,clubPreview,marketBlock,presentationContent,elevenCard,kitsCard,marketCard,watchCard,leadersCards} from '../../web/club-overview.js';
+import {calendarBlock,financesBlock,standingsExtract,clubPreview,marketBlock,presentationContent,elevenCard,kitsCard,watchCard,leadersCards} from '../../web/club-overview.js';
 import {pitch,contrastRatio} from '../../web/ui.js';
 
 const club={id:7,name:'Lens',competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
@@ -15,18 +15,13 @@ const data=(over={})=>({
  ...over});
 const clubOverview=(club,overview)=>calendarBlock(club,overview.calendar)+financesBlock(club,overview.finances,{balance:true});
 
-// A club's Présentation: a squad, its season, its movements, its league.
+// A club's Présentation: a squad, its season, its league.
 const member=(id,name,position,extra={})=>({id,name,position,shirt:id,appearances:0,substitutes:0,goals:0,assists:0,average:0,morale:.9,expiring:false,
  injured_until:null,suspension:0,away:false,contract_end:'2036-06-30',...extra});
 const squadItems=[member(1,'Brian Madjo','BU',{appearances:50,goals:33,assists:10,average:6.87}),member(2,'Milan Verhoeven','MOC',{appearances:48,goals:26,assists:6,average:6.86}),
  member(3,'Sacha Lung','DC',{appearances:46,goals:5,assists:1,average:6.94}),member(4,'Mohanad Haider','DC',{appearances:20,goals:2,average:6.96}),
  member(5,'Unai Marrero','GB',{appearances:2,average:5.9,morale:.45,morale_target:.4,morale_cause:'temps_de_jeu'}),member(6,'Holger Quintero','MC',{appearances:27,suspension:1,average:6.54}),
  member(7,'Luca Cecchetto','DG',{appearances:32,expiring:true,contract_end:'2034-06-30',injured_until:'2033-07-12',average:6.49}),member(8,'Parti','MOC',{away:true,expiring:true,morale:.3})];
-const movement=(id,name,kind,fee,source,target,position='MC',date='2032-08-01')=>({date,player_id:id,player:name,kind,fee,source,target,position});
-const lens=ref(7,'Lens');
-const transfers={sections:{arrivals:[movement(10,'Haider','transfer',45.2e6,ref(30,'Al-Shorta'),lens,'DC'),movement(11,'Camarda','transfer',295e6,ref(31,'Man City'),lens,'BU')],
- departures:[movement(12,'Bourgault','transfer',70000,lens,ref(32,'Inter Miami')),movement(13,'Pereira','transfer',191e6,lens,ref(33,'Aston Villa'))],
- academy:[movement(14,'Jeune','academy',0,null,lens)],loans_in:[],loans_out:[movement(15,'Tawfik','loan',0,lens,ref(34,'Lorient'))],release:[],retirement:[],departure_unknown:[]}};
 const eleven={basis:'starts',players:[['GB',5,'Longoni',54,54,0],['DG',3,'Cocchi',41,31,3],['DC',5,'Lung',46,37,5],['DC',4,'Tati',48,38,5],['DD',12,'Ângelo',40,30,2],['MDC',26,'Tounkara',44,32,1],
  ['MC',8,'Sullivan',48,37,8],['MOC',10,'Verhoeven',48,36,26],['MOC',7,'De Pieri',43,35,11],['BU',9,'Camarda',52,41,24],['BU',18,'Madjo',50,39,33]]
  .map(([position,shirt,short,appearances,starts,goals],index)=>({id:100+index,name:`Prénom ${short}`,short,position,shirt,note:75,appearances,starts,goals}))};
@@ -39,7 +34,7 @@ const presented={...club,competition_id:16,standing:{rank:1,points:77},squad_siz
  kit_url:'/kits/1/outfit.png?major=F8F8F8',away_kit_url:'/kits/45/outfit.png?major=282838'};
 const presentation=(human,height=1080,over={})=>{
  const previous=globalThis.window;globalThis.window={innerHeight:height};
- try{return presentationContent(presented,{overview:data({eleven}),season,squad:{items:squadItems},transfers,standings:leagueTable,human,...over});}finally{globalThis.window=previous;}
+ try{return presentationContent(presented,{overview:data({eleven}),season,squad:{items:squadItems},standings:leagueTable,human,...over});}finally{globalThis.window=previous;}
 };
 const section=(html,title)=>html.slice(html.indexOf(`<h2>${title}`)).split('</section>')[0];
 
@@ -49,8 +44,8 @@ test('a club opens on its Présentation: its tiles, then four columns that fill 
  const columns=html.split('<div class="presentation-column">').slice(1);
  assert.match(html,/<div class="club-presentation" data-fill>/);assert.equal(columns.length,4);
  const titles=part=>[...part.matchAll(/<h2>([^<]+)/g)].map(found=>found[1]);
- assert.deepEqual(titles(columns[0]),['Tenues','Mercato']);
- assert.deepEqual(titles(columns[1]),['Équipe-type','À surveiller','Finances']);
+ assert.deepEqual(titles(columns[0]),['Tenues','Finances']);
+ assert.deepEqual(titles(columns[1]),['Équipe-type','À surveiller']);
  assert.deepEqual(titles(columns[2]),['Calendrier','Ligue 1 – 34']);
  assert.deepEqual(titles(columns[3]),['Buteurs','Passeurs','Notes']);
  // What asks for a decision is the user's own business.
@@ -102,20 +97,6 @@ test('the kits show both outfits, home first, named by their tooltip only',()=>{
  assert.doesNotMatch(html,/figcaption|>Domicile<|>Extérieur</);
  assert.equal((kitsCard({...presented,away_kit_url:null}).match(/<img/g)||[]).length,1);
  assert.equal(kitsCard({...presented,kit_url:null,away_kit_url:null}),'');
-});
-
-test('the Mercato lists the season\'s movements, arrivals then departures, the biggest fees first',()=>{
- const html=marketCard(lens,transfers);
- assert.match(html,/<h2>Mercato<\/h2><a href="#\/club\/7\/transfers"/);
- assert.match(html,/<h3 class="section-title"><span>Arrivées · 3<\/span><b>340\sM€<\/b><\/h3>/);
- assert.match(html,/<span>Départs · 3<\/span><b>190\sM€<\/b>/);
- const names=[...html.matchAll(/#\/player\/(\d+)/g)].map(found=>Number(found[1]));
- assert.deepEqual(names,[11,10,14,13,12,15]);
- assert.match(html,/Centre de formation/);assert.match(html,/<span class="muted">Prêt<\/span><\/li>/);
- // A side without a fee has no total; rows that do not fit leave the departures first.
- assert.doesNotMatch(marketCard(lens,{sections:{...transfers.sections,arrivals:[]}}),/Arrivées · 1<\/span><b>/);
- assert.equal((marketCard(lens,transfers,4).match(/<li>/g)||[]).length,4);
- assert.equal(marketCard(lens,{sections:{arrivals:[],departures:[],academy:[],release:[],retirement:[],departure_unknown:[]}}),'');
 });
 
 test('À surveiller gathers what asks a decision of the user, a line for each player',()=>{
@@ -182,7 +163,7 @@ test('the market under way stands in four columns: offers by player with his val
  assert.match(html,/Offres reçues<span class="market-count alert">2<\/span>/);
  assert.match(html,/Baidoo<\/a><small>valeur 41\sM€<\/small>/);
  assert.equal((html.match(/data-command="reponse-offre" data-decision="accepter"/g)||[]).length,2);
- assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier →/);
+ assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier <span class="go" aria-hidden="true"><\/span>/);
  assert.match(html,/→ <a href="#\/club\/33"/);
  assert.match(marketBlock({entrantes:[],sortantes:[],liste:[],prets:[],emprunts:[]}),/Mercato fermé.*Aucune offre sur vos joueurs.*Aucune offre en cours.*Aucun joueur sur la liste.*Aucun prêt en cours/);
 });

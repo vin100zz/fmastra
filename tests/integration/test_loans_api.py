@@ -20,7 +20,8 @@ def client(config, tmp_path_factory):
     world = import_world(ROOT / "data", config, 777)
     clubs = sorted((club for club in world.active_clubs() if world.competitions[club.competition_id].level == 1), key=lambda club: club.reputation)
     world.controlled_club_id = clubs[len(clubs) // 2].id
-    for _ in range(16): advance_day(world, auto=True)
+    # Played by the user, not in Auto mode, which would leave his club to the AI: no match of his comes before August.
+    for _ in range(16): assert advance_day(world)
     app.state.game.world = world
     with TestClient(app) as client:
         yield client
