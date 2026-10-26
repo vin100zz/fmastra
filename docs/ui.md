@@ -72,13 +72,15 @@ et elle remplace tous les écrans de gestion supprimés.
 
 Barre persistante en tête d'application :
 
+- Précédent et Suivant, avant la date : l'historique de la fenêtre, pour le jeu en plein écran ou dans sa fenêtre
+  d'application, qui n'ont pas les flèches du navigateur ; une flèche se grise au bout de l'historique
 - Date courante, saison, prochaine échéance
 - Les trois prochains matchs du club dirigé, dans un bandeau segmenté à gauche
   de « Continuer » : pour chacun, le délai en gros (J-6, « Auj. »), puis
   l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
   en bleu pour une coupe. Le prochain match a son délai et un soulignement en
-  couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px.
-  Chacun ouvre la fiche de l'adversaire
+  couleur d'accent ; deux matchs seulement sous 1400 px, aucun sous 1150 px, et la pastille du mercato
+  disparaît sous 1280 px. Chacun ouvre la fiche de l'adversaire
 - Un bouton à la loupe, à gauche de ces matchs : la recherche globale (voir « Recherche globale »)
 - Bouton « Continuer », avec en pastille rouge le nombre de messages d'Actualités qui attendent une réponse ; la
   pastille ouvre le premier d'entre eux
@@ -157,7 +159,7 @@ panneaux l'un sous l'autre, jusqu'au bas de la fenêtre :
   Entrée) charge la partie, qui s'ouvre sur sa première page ; la poubelle, au bout de la
   ligne sous le pointeur, la supprime après confirmation.
 
-Sans partie, la barre du haut est vide et le menu de gauche n'a que le manuel et le thème.
+Sans partie, la barre du haut n'a que Précédent et Suivant, et le menu de gauche n'a que le manuel et le thème.
 Une partie sans club, d'une ancienne sauvegarde, s'ouvre toujours sur « Ma partie », sans menu ni
 « Continuer » : le club se choisit à la création.
 

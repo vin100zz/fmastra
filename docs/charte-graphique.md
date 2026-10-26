@@ -137,7 +137,7 @@ où le fond est déjà jaune.
 | Composant | Classes | Règle |
 |---|---|---|
 | Marque | `.brand`, `.logo`, `.wordmark` | Le coin jaune en tête du menu. Voir « Marque » |
-| Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
+| Barre du haut | `.topbar`, `.history-nav`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
 | Onglets d'une page | `.tabs` | Une seule rangée par écran, sans trait dessous. L'ouvert souligné d'un trait de 3 aux bouts arrondis, de l'accent ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Page d'un club ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes. Une piste sans trait (`--track`), l'option ouverte posée dessus, remplie de l'accent et écrite de son encre ; sur la page d'un club, de ses couleurs (voir « Page d'un club »). Piste de 28, options de 24, leur texte à 16 de leurs bords ; dans l'en-tête d'une carte (`.small`), piste de 26, options de 22, à 12 |
 | Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte prend la couleur de la page, comme tout choix. Voir « Historique » |
@@ -200,7 +200,14 @@ marque ouvre à gauche.
 - **Écharpe** : le coin de la marque se termine dans la barre comme le bandeau
   d'un club, sur 64 : un bord incliné, puis une fine bande parallèle. Le menu,
   blanc sur le fond, n'a pas de bordure.
-- **Date** : à 16 de l'écharpe, la saison en libellé (11 / 14), le jour dessous
+- **Précédent, Suivant** (`.history-nav`) : à 16 de l'écharpe, une paire de 40
+  sur un bandeau gris (`--panel-2`) comme les prochains matchs, une flèche dans
+  chaque moitié de 36, le trait du panneau entre elles. Elles parcourent
+  l'historique de la fenêtre, qui n'a pas les flèches du navigateur en plein
+  écran ni en fenêtre d'application ; au bout de l'historique, la flèche se
+  grise. Leur nom et leur raccourci (Alt ←, Alt →) en infobulle. Pas de paire
+  sur téléphone, qui a son propre retour.
+- **Date** : à 12 de la paire, la saison en libellé (11 / 14), le jour dessous
   en 20 / 22.
 - **À droite**, dans cet ordre : la pastille du mercato, la loupe, les trois
   prochains matchs, l'action principale. Ce qui s'y tient a 40 de haut

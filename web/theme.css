@@ -413,8 +413,9 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-who .away{flex:none;width:10px;height:10px;fill:var(--bad);transform:rotate(45deg)}
 .next-match-comp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)}
 .next-match-comp.cup{color:var(--info)}
-@media(max-width:1200px){.next-match:nth-child(n+3){display:none}}
-@media(max-width:950px){.next-matches{display:none}}
+@media(max-width:1399px){.next-match:nth-child(n+3){display:none}}
+@media(max-width:1149px){.next-matches{display:none}}
+@media(max-width:1279px){#market-badge{display:none}}
 
 /* Running job: inside the top bar, never pushing the page down. The label sits in the bar's free middle,
    the progress runs along its bottom edge in place of the accent line. */
