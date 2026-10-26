@@ -1,7 +1,7 @@
 // The screen of a new game (docs/charte-graphique.md, « Nouvelle partie »): the world on the left, a line per nation with
 // the divisions it plays, the clubs of that world in the middle, the club picked on the right. Every choice is in the
 // address: `nations` (FRA:3,ENG:2, the divisions each nation plays down to), the filters, sort and page of the list, `club`.
-import {api,escape as e,number as n,money,query,table,sortButton,headPager,figure,levelBadge,level,levelHue,position,kitDot,nationFlag,nationName,setNations,fact,facilityRating,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,date,money,query,table,sortButton,headPager,figure,levelBadge,level,levelHue,position,kitDot,nationFlag,nationName,setNations,fact,facilityRating,competitionBadge} from './ui.js';
 import {monthlyAmount} from './salaries.js';
 import {searchField,nationChips,fittedRows} from './listing.js';
 import {creationHero} from './club-hero.js';
@@ -27,7 +27,15 @@ export function chosenLevels(params,nations){
 // The choice written back, in the order of the nations.
 const levelsText=(levels,nations)=>nations.filter(nation=>levels[nation.code]).map(nation=>`${nation.code}:${levels[nation.code]}`).join(',');
 
-// What the screen holds, for the bar above it: the divisions played, the club picked, the first day of the game.
+// The name a game is saved under, from its club's: a slot holds letters, digits, `_` and `-`, 64 at most.
+export const SLOT=/^[\p{L}\p{N}_-]{1,64}$/u;
+export const slotFor=name=>name.normalize('NFC').replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-+|-+$/g,'').slice(0,64);
+// The save a name would replace, and what its tooltip says of it: its name, then its club and the day its game stands at.
+export const savedUnder=(name,saves)=>saves.find(save=>save.slot===name)??null;
+export const replacedTip=save=>`Remplace la sauvegarde « ${save.slot} »\n${[save.club?.name,save.date&&date(save.date)].filter(Boolean).join(' · ')}`.trim();
+
+// What the screen holds, for the bar above it: the divisions played, the club picked, the first day of the game, the saves
+// a name could replace.
 let choice=null;
 export const creationChoice=()=>choice;
 export const leaveCreation=()=>{choice=null;};
@@ -64,10 +72,10 @@ export async function newGameScreen(params){
  const levels=chosenLevels(params,data.nations),nations=levelsText(levels,data.nations),values=Object.fromEntries(params);
  delete values.club;
  const rows=fittedRows('creation',LIST_ABOVE),wanted=Number(params.get('club'));
- const [list,picked]=await Promise.all([api(`/creation/clubs?${query({...values,nations,taille:rows})}`),wanted?api(`/creation/clubs/${wanted}`).catch(()=>null):null]);
+ const [list,picked,saves]=await Promise.all([api(`/creation/clubs?${query({...values,nations,taille:rows})}`),wanted?api(`/creation/clubs/${wanted}`).catch(()=>null):null,api('/partie/slots')]);
  // A club out of the divisions now played is no longer picked.
  const club=picked&&picked.level<=(levels[picked.nation_code]||0)?picked:null;
- choice={levels,club,date:data.date,season:data.season};
+ choice={levels,club,date:data.date,season:data.season,saves};
  const played=data.nations.filter(nation=>levels[nation.code]).map(nation=>nation.code);
  const toolbar=`<form class="toolbar" data-filter><h1>Nouvelle partie</h1>${searchField(params,'Rechercher un club…')}${nationChips(BASE,params,played)}`
   +`<input type="hidden" name="nations" value="${e(nations)}">${club?`<input type="hidden" name="club" value="${club.id}">`:''}</form>`;

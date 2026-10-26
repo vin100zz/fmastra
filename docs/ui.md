@@ -72,13 +72,21 @@ et elle remplace tous les écrans de gestion supprimés.
 
 Barre persistante en tête d'application :
 
+- Précédent et Suivant, avant la date : l'historique de la fenêtre, pour le jeu en plein écran ou dans sa fenêtre
+  d'application, qui n'ont pas les flèches du navigateur ; une flèche se grise au bout de l'historique
 - Date courante, saison, prochaine échéance
-- Les trois prochains matchs du club dirigé, dans un bandeau segmenté à gauche
-  de « Continuer » : pour chacun, le délai en gros (J-6, « Auj. »), puis
-  l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
-  en bleu pour une coupe. Le prochain match a son délai et un soulignement en
-  couleur d'accent ; deux matchs seulement sous 1200 px, aucun sous 950 px.
-  Chacun ouvre la fiche de l'adversaire
+- Les matchs du club dirigé, dans un bandeau segmenté à gauche de « Continuer »,
+  qui se lit dans le temps (`club_last_matches`, `club_next_matches` de
+  `/monde/etat`) : les derniers joués de la saison, chacun par son score du côté
+  du club sur la pastille de son issue (V, N, D), un trait sarcelle pour
+  aujourd'hui, puis les trois prochains sur le lavis sarcelle, chacun par son
+  délai en gros (J-6, « Auj. »). Pour tous, l'adversaire (avion si le match est
+  à l'extérieur) et la compétition dessous, en bleu pour une coupe. Le prochain
+  match a son délai et un soulignement en sarcelle. Selon la place : trois matchs
+  joués tant que tous les noms se lisent en entier, puis deux, puis le score
+  seul après la pastille de l'adversaire ; deux prochains seulement sous
+  1200 px, aucun match sous 950 px. Un match joué ouvre son compte rendu, un
+  match à venir la fiche de l'adversaire
 - Un bouton à la loupe, à gauche de ces matchs : la recherche globale (voir « Recherche globale »)
 - Bouton « Continuer », avec en pastille rouge le nombre de messages d'Actualités qui attendent une réponse ; la
   pastille ouvre le premier d'entre eux
@@ -157,7 +165,7 @@ panneaux l'un sous l'autre, jusqu'au bas de la fenêtre :
   Entrée) charge la partie, qui s'ouvre sur sa première page ; la poubelle, au bout de la
   ligne sous le pointeur, la supprime après confirmation.
 
-Sans partie, la barre du haut est vide et le menu de gauche n'a que le manuel et le thème.
+Sans partie, la barre du haut n'a que Précédent et Suivant, et le menu de gauche n'a que le manuel et le thème.
 Une partie sans club, d'une ancienne sauvegarde, s'ouvre toujours sur « Ma partie », sans menu ni
 « Continuer » : le club se choisit à la création.
 
@@ -177,9 +185,12 @@ Tout le choix est dans l'adresse : `nations=FRA:3,ENG:2` (la plus basse division
 chaque nation), les filtres, le tri et la page de la liste, `club`. Un club que les divisions
 choisies n'incluent plus n'est plus choisi.
 
-La barre du haut porte le premier jour de la partie et « Commencer », grisé tant qu'aucun club
-n'est choisi. « Commencer » crée la partie avec ce monde et ce club (une partie en cours est
-remplacée après confirmation ; sa dernière sauvegarde reste) ; la graine est tirée au hasard.
+La barre du haut porte le premier jour de la partie, le nom de sa sauvegarde et « Commencer »,
+grisé tant qu'aucun club n'est choisi ou que le nom n'est pas valide. Le nom est celui du club
+choisi (`slotFor`) tant qu'on n'en écrit pas d'autre ; un nom déjà pris est marqué, son infobulle
+dit la sauvegarde qu'il remplacerait. « Commencer » crée la partie avec ce monde et ce club, dans
+cette sauvegarde (une partie en cours est remplacée après confirmation, sa dernière sauvegarde
+reste ; une sauvegarde du même nom l'est aussi après confirmation) ; la graine est tirée au hasard.
 La partie s'ouvre sur sa première page, les tirages de coupe du club dans les actualités.
 
 ### Actualités
@@ -1297,7 +1308,8 @@ signaler explicitement plutôt que d'afficher des sections vides.
 ```
 GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping),
                                           controlled_club, news : {unread, next_unread, pending: [id]} (messages non lus, le prochain à lire, ceux à traiter),
-                                          slot (sauvegarde où la partie s'enregistre)
+                                          slot (sauvegarde où la partie s'enregistre), club_last_matches (les 3 derniers joués de la saison,
+                                          par date, avec outcome V/N/D du côté du club), club_next_matches (les 3 prochains)
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
@@ -1452,9 +1464,10 @@ GET  /api/creation/clubs?nations=FRA:3,ENG:2&pays=&recherche=&tri=&ordre=&page=&
                                           tri : reputation | niveau | potentiel | stade | nom | championnat ; 400 sans nation ou division valide
 GET  /api/creation/clubs/{id}             un club de la création : couleurs, championnat, réputation, stade, installations,
                                           plafond salarial, niveau et potentiel, squad (ses 16 meilleurs joueurs)
-POST /api/partie/creer                   {commande_id, nations?: {FRA: 3, ENG: 2}, club_id?, graine?} -> travail_id ;
+POST /api/partie/creer                   {commande_id, nations?: {FRA: 3, ENG: 2}, club_id?, graine?, slot?} -> travail_id ;
                                           nations : la plus basse division jouée par nation (défaut : config/monde.json) ;
                                           club_id : le club dirigé, joué dans ces divisions (400 sinon) ; graine : tirée sans elle
+                                          slot : la sauvegarde où la partie s'enregistre (autosave sans lui)
 ```
 
 ## Front

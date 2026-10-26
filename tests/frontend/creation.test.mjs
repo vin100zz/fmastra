@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {savesList,homeScreen} from '../../web/home.js';
-import {chosenLevels,newGameScreen,creationChoice} from '../../web/new-game.js';
+import {chosenLevels,newGameScreen,creationChoice,SLOT,slotFor,savedUnder,replacedTip} from '../../web/new-game.js';
 
 const params=query=>new URLSearchParams(query);
 const nations=[
@@ -52,8 +52,9 @@ test('the divisions each nation plays come from the address, else from the defau
 
 test('a nation line plays or leaves its nation, and a division makes it the lowest played',async()=>{
  const list={items:[rennes],total:1,page:1,page_size:30,clubs:36,leagues:[]};
- const {result:html,asked}=await serve({'/creation':creation,'/creation/clubs':list,'/creation/clubs/7':rennes},()=>newGameScreen(params('nations=FRA:2&club=7')));
- assert.deepEqual(asked,['/api/creation','/api/creation/clubs?nations=FRA%3A2','/api/creation/clubs/7']);
+ const saves=[{slot:'Rennes',modified:100,date:'2028-03-14',club:{id:7,name:'Rennes'}}];
+ const {result:html,asked}=await serve({'/creation':creation,'/creation/clubs':list,'/creation/clubs/7':rennes,'/partie/slots':saves},()=>newGameScreen(params('nations=FRA:2&club=7')));
+ assert.deepEqual(asked,['/api/creation','/api/creation/clubs?nations=FRA%3A2','/api/creation/clubs/7','/api/partie/slots']);
  const lines=[...html.matchAll(/<div class="nation-line[^"]*">.*?<\/div><span class="num">[^<]*<\/span><\/div>/gs)].map(match=>match[0]);
  assert.equal(lines.length,3);
  // France, the only nation played, cannot be left out; its first two divisions are lit, its clubs counted.
@@ -72,12 +73,28 @@ test('a nation line plays or leaves its nation, and a division makes it the lowe
  assert.match(html,/<input type="hidden" name="club" value="7">/);
  assert.match(html,/<div class="new-game-club">.*Effectif.*Ludovic Blas/s);
  assert.deepEqual({levels:creationChoice().levels,club:creationChoice().club.id,date:creationChoice().date},{levels:{FRA:2},club:7,date:'2026-07-01'});
+ // The saves a name could replace come with the choice.
+ assert.deepEqual(creationChoice().saves,saves);
 });
 
 test('a club out of the divisions now played is no longer picked',async()=>{
  const list={items:[],total:0,page:1,page_size:30,clubs:18,leagues:[]};
- const {result:html}=await serve({'/creation':creation,'/creation/clubs':list,'/creation/clubs/9':juve},()=>newGameScreen(params('nations=FRA:1,ITA:1&club=9')));
+ const {result:html}=await serve({'/creation':creation,'/creation/clubs':list,'/creation/clubs/9':juve,'/partie/slots':[]},()=>newGameScreen(params('nations=FRA:1,ITA:1&club=9')));
  assert.equal(creationChoice().club,null);
  assert.doesNotMatch(html,/name="club"/);
  assert.match(html,/Aucun club choisi/);
+});
+
+test('a new game is saved under its club\'s name, a name already saved under telling what it replaces',()=>{
+ assert.equal(slotFor('Rennes'),'Rennes');
+ assert.equal(slotFor('Paris Saint-Germain'),'Paris-Saint-Germain');
+ assert.equal(slotFor('Saint-Étienne'),'Saint-Étienne');
+ assert.equal(slotFor(' Brighton & Hove Albion '),'Brighton-Hove-Albion');
+ assert.equal(slotFor('x'.repeat(80)).length,64);
+ assert.ok(SLOT.test('Saint-Étienne')&&SLOT.test('ma_partie-2'));
+ assert.ok(!SLOT.test('')&&!SLOT.test('ma partie')&&!SLOT.test('a/b')&&!SLOT.test('x'.repeat(65)));
+ const saves=[{slot:'Rennes',date:'2028-03-14',club:{name:'Rennes'}},{slot:'vide',date:null,club:null}];
+ assert.equal(savedUnder('Lens',saves),null);
+ assert.equal(replacedTip(savedUnder('Rennes',saves)),'Remplace la sauvegarde « Rennes »\nRennes · 14 mars 2028');
+ assert.equal(replacedTip(savedUnder('vide',saves)),'Remplace la sauvegarde « vide »');
 });

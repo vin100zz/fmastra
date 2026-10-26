@@ -404,8 +404,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match+.next-match{border-left:1px solid var(--line)}
 
 .next-match-when{flex:none;min-width:30px;font-family:var(--display);font-stretch:semi-condensed;font-size:16px;font-weight:700;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
-.next-match:first-child{box-shadow:inset 0 -2px 0 var(--accent)}
-.next-match:first-child .next-match-when{color:var(--accent-text)}
 .next-match-body{display:flex;flex-direction:column;min-width:0}
 .next-match-who{display:flex;align-items:center;gap:5px;min-width:0}
 .next-match-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--strong);font-size:13px;font-weight:600}
@@ -413,7 +411,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-who .away{flex:none;width:10px;height:10px;fill:var(--bad);transform:rotate(45deg)}
 .next-match-comp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)}
 .next-match-comp.cup{color:var(--info)}
-@media(max-width:1200px){.next-match:nth-child(n+3){display:none}}
+@media(max-width:1200px){.next-match~.next-match~.next-match{display:none}}
 @media(max-width:950px){.next-matches{display:none}}
 
 /* Running job: inside the top bar, never pushing the page down. The label sits in the bar's free middle,

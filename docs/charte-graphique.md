@@ -57,7 +57,7 @@ la structure HTML des spécimens.
 | `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
 | `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie, entrée ouverte du menu |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
-| `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement ») |
+| `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement »). La sarcelle marque aussi les matchs à venir du club dirigé dans la barre du haut |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
@@ -137,7 +137,7 @@ où le fond est déjà jaune.
 | Composant | Classes | Règle |
 |---|---|---|
 | Marque | `.brand`, `.logo`, `.wordmark` | Le coin jaune en tête du menu. Voir « Marque » |
-| Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
+| Barre du haut | `.topbar`, `.history-nav`, `.date-block`, `.next-matches`, `.last-match`, `.bar-today`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
 | Onglets d'une page | `.tabs` | Une seule rangée par écran, sans trait dessous. L'ouvert souligné d'un trait de 3 aux bouts arrondis, de l'accent ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Page d'un club ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes. Une piste sans trait (`--track`), l'option ouverte posée dessus, remplie de l'accent et écrite de son encre ; sur la page d'un club, de ses couleurs (voir « Page d'un club »). Piste de 28, options de 24, leur texte à 16 de leurs bords ; dans l'en-tête d'une carte (`.small`), piste de 26, options de 22, à 12 |
 | Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte prend la couleur de la page, comme tout choix. Voir « Historique » |
@@ -147,6 +147,7 @@ où le fond est déjà jaune.
 | Pied du menu | `.sidebar-bottom`, `.sidebar-tools` | Ma partie, le mode Auto, le thème et le manuel du jeu : quatre boutons d'une icône, de même largeur, sur une ligne ; leur nom en infobulle. Auto montre ce que fait un clic (lecture, pause), sur fond d'accent tant qu'il tourne ; le thème, celui où il mène |
 | Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut. Elle finit sur un chevron dans une pastille (`.go`) |
 | Champ | `.field` | Recherche, liste déroulante : blancs, cerclés d'une ombre fine, sans bordure |
+| Nom de la sauvegarde | `.slot-field` | Dans la barre du haut de « Nouvelle partie », avant « Commencer » : 40 de haut, sur `--panel-2`. Voir « Nouvelle partie » |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero`, `.hero-logo`, `.hero-name`, `.hero-context`, `.hero-flag` | Bandeau de 88 aux couleurs du club ou de la sélection, son écusson seul, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
@@ -200,16 +201,42 @@ marque ouvre à gauche.
 - **Écharpe** : le coin de la marque se termine dans la barre comme le bandeau
   d'un club, sur 64 : un bord incliné, puis une fine bande parallèle. Le menu,
   blanc sur le fond, n'a pas de bordure.
-- **Date** : à 16 de l'écharpe, la saison en libellé (11 / 14), le jour dessous
+- **Précédent, Suivant** (`.history-nav`) : à 16 de l'écharpe, une paire de 40
+  sur un bandeau gris (`--panel-2`) comme les prochains matchs, une flèche dans
+  chaque moitié de 36, le trait du panneau entre elles. Elles parcourent
+  l'historique de la fenêtre, qui n'a pas les flèches du navigateur en plein
+  écran ni en fenêtre d'application ; au bout de l'historique, la flèche se
+  grise. Leur nom et leur raccourci (Alt ←, Alt →) en infobulle. Pas de paire
+  sur téléphone, qui a son propre retour.
+- **Date** : à 12 de la paire, la saison en libellé (11 / 14), le jour dessous
   en 20 / 22.
-- **À droite**, dans cet ordre : la pastille du mercato, la loupe, les trois
-  prochains matchs, l'action principale. Ce qui s'y tient a 40 de haut
+- **À droite**, dans cet ordre : la pastille du mercato, la loupe, les matchs du
+  club dirigé, l'action principale. Ce qui s'y tient a 40 de haut
   (`--h-bar-control`) ; la pastille garde ses 18.
-- **Prochains matchs** (`.next-matches`) : un bandeau gris (`--panel-2`), sans bordure, de trois blocs ; pour
-  chacun le délai en chiffre clé, l'adversaire après sa pastille (un avion à
-  l'extérieur), la compétition dessous, en bleu pour une coupe. Le prochain a
-  son délai et un soulignement à l'accent. Chacun ouvre la fiche de
-  l'adversaire.
+- **Matchs du club** (`.next-matches`) : un bandeau, sans bordure, qui se lit
+  dans le temps : les derniers matchs joués de la saison, un trait pour
+  aujourd'hui, puis les trois prochains. Chaque bloc porte l'adversaire après sa
+  pastille (un avion à l'extérieur), la compétition dessous, en bleu pour une
+  coupe.
+  - **Joués** (`.last-match`) : sur le gris du bandeau (`--panel-2`), du plus
+    ancien au plus récent. Le score, du côté du club, ses buts d'abord, en
+    chiffre clé sur la pastille de son issue (22) : verte pour une victoire,
+    ambre pour un nul, rouge pour une défaite, comme au calendrier. Chacun ouvre
+    son compte rendu ; l'infobulle dit l'issue, le jour, la compétition, le tour
+    et le lieu.
+  - **Aujourd'hui** (`.bar-today`) : un trait de 2 en sarcelle (`--c4`), entre
+    les joués et les prochains.
+  - **À venir** (`.next-match`) : sur le lavis de la sarcelle (`--c4-soft`) ; le
+    délai en chiffre clé, atténué. Le prochain a son délai et un soulignement en
+    sarcelle. Chacun ouvre la fiche de l'adversaire. Sous le pointeur, un voile
+    de sa sarcelle (12 %) : ils sont teintés.
+  - **Mesures** : un bloc a 170 de large au plus, 180 pour un match joué, dont
+    le score est plus large que le délai ; un nom plus long y est coupé.
+  - **Selon la place** : trois matchs joués tant que tous les noms de la barre
+    se lisent en entier (hors d'un bloc à sa largeur maximale), puis deux, puis
+    le score seul après la pastille de l'adversaire (`.last-match.short`, son nom
+    dans l'infobulle), trois puis deux. Avant le premier match de la saison, les
+    prochains seuls.
 - **Avancement d'une simulation** : il se dessine dans le trait jaune de la
   barre, sans décaler la page.
 
@@ -374,7 +401,7 @@ Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
 
 - **Barre du haut** : la date est le premier jour de la partie (« Saison 2026 / 2027 »,
   « mercredi 1 juillet 2026 ») ; l'action principale est « Commencer », grisée tant qu'aucun club
-  n'est choisi ; les prochains matches et le mercato de la partie en cours n'y sont pas. La graine
+  n'est choisi ou que le nom de la sauvegarde n'en est pas un ; les prochains matches et le mercato de la partie en cours n'y sont pas. La graine
   n'est écrite nulle part : la partie en tire une.
 - **Monde** : une carte, une ligne par nation (`.nation-line`, 26), dans l'ordre de
   `config/creation.json`. La case qui la joue (`.check`), son drapeau et son nom, ses divisions,
@@ -390,6 +417,14 @@ Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
 - **Club choisi** : son bandeau (écusson, nom, drapeau et championnat à sa suite), sans tuile ;
   dessous, ses tuiles (réputation, niveau et potentiel gradués, plafond salarial mensuel), ses faits
   (stade, entraînement, recrutement des jeunes) et ses 16 meilleurs joueurs.
+- **Nom de la sauvegarde** (`.slot-field`) : dans la barre, juste avant « Commencer », un champ de
+  240 × 40 sur `--panel-2`, sans libellé : la disquette de « Reprendre » en tête, le nom en 16 dans
+  la police des titres (700, `--display`). Il prend le nom du club choisi (espaces et signes changés
+  en tirets) tant qu'on n'en écrit pas d'autre. Écrit, il passe en blanc cerclé de `--accent-text`.
+  Un nom déjà pris par une sauvegarde passe sur `--bad-soft` cerclé de `--bad-line`, la disquette en
+  `--bad` ; son infobulle dit ce qu'il remplacerait (son nom, son club, la date de sa partie) et
+  « Commencer » demande confirmation. Un nom qu'une sauvegarde ne peut pas porter (autre chose que
+  lettres, chiffres, `_` et `-`) prend le même rouge, son texte en `--bad`, et grise « Commencer ».
 - **Case à cocher** (`.check`) : 18, bordée, au rayon de la charte ; cochée, le fond de l'accent,
   sa bordure `--accent-text`, la coche à l'encre de l'accent. C'est un bouton (`aria-pressed`).
 
@@ -1103,7 +1138,9 @@ notes de la Présentation d'un club ; l'Historique classe les siens en tableaux)
 - L'unité est dans l'en-tête de la carte, à droite, en 11 atténué (`.card-hint`) :
   buts, passes, note moyenne.
 - La barre est en `--series-1` ; en pâle (`.soft`, `--series-1-soft`) sur la
-  Présentation.
+  Présentation. Sur la page d'un club, d'une sélection ou d'un joueur
+  (`.club-page`), elle prend la couleur du club (`--club`), son pâle mêlé à
+  45 % au panneau.
 
 ### Jauge, anneau
 
