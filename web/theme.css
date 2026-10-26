@@ -560,7 +560,8 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 /* Player page, under the header of his club: a rail saying how he is and what his contract holds; beside it his attributes
    and his positions, then his level over time and his career. */
 .player-page{display:grid;grid-template-columns:280px minmax(0,1fr);gap:10px}
-.player-rail{margin:0;display:flex;flex-direction:column;overflow:visible}
+/* The rail ends with its last fact, however tall the page beside it. */
+.player-rail{align-self:start;margin:0;display:flex;flex-direction:column;overflow:visible}
 /* Beside a list, the preview of a player: his age, his level and his potential as tiles, then his value and the fee asked. */
 .rail-tiles{display:flex;gap:6px;padding:12px 14px}
 .tile{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 6px 6px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--muted)}
@@ -598,30 +599,39 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .player-row>.card>.card-body.fill{flex:1}
 .player-row.profile{grid-template-columns:minmax(0,1fr) 300px}
 .player-row.history{flex:1;grid-template-columns:240px minmax(0,1fr)}
-/* Aptitudes: the pitch of the positions, a block under each shirt. */
-.positions{flex:1;display:flex;min-height:0}
+/* Aptitudes: the pitch of the positions, a block under each shirt; in a taller card it keeps its proportions. */
+.positions{flex:1;display:flex;align-items:center;min-height:0}
 .positions>.pitch{flex:1}
 .position-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;width:100%;height:32px;padding:0 12px;border:0;border-bottom:1px solid var(--row-line);border-radius:0;background:none;color:inherit;font-size:13px;font-weight:400;text-align:left}
 
 .position-row.picked{background:var(--own-row)}
 .position-row.head,.position-row.head:hover{height:26px;background:var(--panel-2);border-top:1px solid var(--line);border-bottom-color:var(--line);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:var(--caps)}
-/* Career: one table for the clubs, then the national team under the nation's name, their four figures in the same columns.
-   Each part ends on its total, styled as a table's foot. Eight columns beside the chart: the cells keep little padding.
-   The card is no taller than its table, whatever the height of the chart beside it. */
-.career-card{align-self:start}
-.career-card th,.career-card td{padding-left:5px!important;padding-right:5px!important}
+/* Career: two blocks in one card, the clubs, then the national team under the nation's name. Each is a table of its own,
+   ending on its total, styled as a table's foot; lined up, their four figures keep the same columns. Every column has the
+   width of what it holds (season 96, fee 84, competition badges 96, 68 under a long head, 52 for another figure), the
+   club takes the rest. Eight columns beside the chart: the cells keep little padding. The card is no taller than its
+   tables, whatever the height of the chart beside it; held to less, it shares its height between them, each block taking
+   what it needs up to an equal share, and scrolls them. */
+.player-row>.career-card{align-self:start}
+.career-body{display:grid;grid-template-rows:minmax(0,max-content) auto minmax(0,max-content);flex:0 1 auto;min-height:0}
+.career-block table{table-layout:fixed}
+.career-card th,.career-card td{padding-left:5px!important;padding-right:5px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .career-card th:first-child,.career-card td:first-child{padding-left:12px!important}
+.career-block tr>:first-child:nth-last-child(8),.career-block tr>:nth-child(4):nth-last-child(5){width:96px}
+.career-block tr>:nth-child(3):nth-last-child(6){width:84px}
+.career-block tr>:nth-last-child(-n+4){width:52px}
+.career-block tr>:is(:nth-last-child(4),:nth-last-child(2)){width:68px}
 .career-card tr.total td{background:var(--panel-2);font-weight:700;border-top:2px solid var(--line);border-bottom:0}
 .career-card tr.nation-head th{text-transform:uppercase}
 /* Between the clubs and the national team, a band of the page's ground: two blocks in one card. */
-.career-card .career-gap td{height:12px;padding:0!important;background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.career-card .career-gap{height:12px;background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 @media(max-width:1400px){.player-row.history{grid-template-columns:1fr}}
 /* Wide screen: two columns of two cards instead of stretched ones. Attributes over the career, each no wider than it reads
    well at; beside them the aptitudes, over the chart. Each column runs on its own: the career comes right under the
-   attributes, however tall the pitch beside them (the pitch and the career span the flexible middle row, which alone
-   takes what they need beyond the rows of the attributes and of the chart). */
+   attributes and the chart right under the pitch (the pitch takes the first rows, the attributes only the first; the
+   career and the chart share the flexible last one). */
 @media(min-width:1728px){
- .player-main{display:grid;grid-template-columns:minmax(0,1fr) 608px;grid-template-rows:auto 1fr auto;align-content:start}
+ .player-main{display:grid;grid-template-columns:minmax(0,1fr) 608px;grid-template-rows:auto auto minmax(0,1fr);align-content:start}
  .player-main>.player-row{display:contents}
  .player-main .attributes-card{grid-area:1/1}
  .player-main .positions-card{grid-area:1/2/3/3}
@@ -629,7 +639,16 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  .player-main .level-card{grid-area:3/2}
  /* Without a pitch the chart comes up beside the attributes, and the career runs under both. */
  .player-main>.player-row:not(.profile)+.history .level-card{grid-area:1/2}
- .player-main>.player-row:not(.profile)+.history .career-card{grid-area:2/1/3/-1}
+ .player-main>.player-row:not(.profile)+.history .career-card{grid-area:2/1/4/-1}
+}
+/* A window tall enough holds the whole page: it ends at the window's foot, the career scrolls in its card and the chart
+   takes what the pitch leaves. Both blocks of the career keep the room of a scroll bar, so that their columns stay level. */
+@media(min-width:1728px) and (min-height:860px){
+ main:has(>.player-page){display:flex;flex-direction:column;height:calc(100vh - var(--h-bar))}
+ main:has(>.player-page)>*{flex:none}
+ main>.player-page{flex:1 1 0;min-height:0;grid-template-rows:minmax(0,1fr)}
+ .player-main .career-card{max-height:100%}
+ .career-block{scrollbar-gutter:stable}
 }
 @media(max-width:1050px){.player-page{grid-template-columns:1fr}}
 @media(max-width:800px){.player-row.profile{grid-template-columns:1fr}}

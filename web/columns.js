@@ -42,6 +42,8 @@ export function spreadColumns(table){
  for(const [cell] of cells){cell.style.removeProperty('padding-left');cell.style.removeProperty('padding-right');}
  let group=table.querySelector(':scope>colgroup');
  group?.querySelectorAll('col').forEach(col=>col.style.removeProperty('width'));
+ // A table lined up with another (`.aligned`) keeps the widths the sheets give it, the same in both: no share of the gaps.
+ if(table.classList.contains('aligned'))return;
  const width=table.getBoundingClientRect().width;
  if(!width||count<2)return;
  const fixed=getComputedStyle(table).tableLayout==='fixed';

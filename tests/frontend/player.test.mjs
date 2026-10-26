@@ -167,7 +167,8 @@ test('player page is one screen without tabs or stat cards: the header of his cl
  for(const label of ['>État<','>Contrat<','>Attributs<','>Aptitudes par poste<','>Évolution du niveau<','>Carrière<'])assert.ok(html.includes(label),label);
  // A club without colours leaves the band plain; nobody manages a club here, so nothing stands under the band.
  assert.match(html,/^<header class="club-hero plain">/);assert.doesNotMatch(html,/club-hero-bar|<dialog/);
- assert.match(html,/<\/header><div class="player-page"><aside class="card player-rail"><div class="card-head"><h2>État<\/h2><\/div><div class="rail-section">/);
+ // The rail has no head: its first section opens it under its title, as the others do.
+ assert.match(html,/<\/header><div class="player-page"><aside class="card player-rail"><h3>État<\/h3><div class="rail-section">/);
  const side=rail(html),main=html.slice(html.indexOf('class="player-main"'));
  assert.ok(side.indexOf('>État<')<side.indexOf('<h3>Contrat</h3>'));
  assert.ok(!main.includes('>État<')&&!side.includes('>Attributs<'));
@@ -399,23 +400,25 @@ test('fragility follows greed under Caractère, graded the other way round from 
  assert.match(rail((await render({...detail,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
 });
 
-test('the career card is one table: the clubs, then the national team under its name in the same four columns',async()=>{
+test('the career card holds two tables lined up: the clubs, then the national team under its name in the same four columns',async()=>{
  setNations({SEN:{name:'Sénégal',display_code:'SEN',flag:'sn',selection_id:-12}});
  try{
   const records=[{edition:2026,matches:3,goals:1,assists:0,rating_sum:13,rating_count:2,average:6.5},{edition:2028,matches:5,goals:2,assists:2,rating_sum:35,rating_count:5,average:7}];
   const capped={...detail,national_team:'SEN',national_team_id:-12,international_caps:20,international_goals:5,historical_caps:12,historical_goals:2,international_records:records};
   const card=(await render(capped)).html.match(/<section class="card career-card">[^]*?<\/section>/)[0];
-  assert.equal((card.match(/<table/g)||[]).length,1);
+  // Each block scrolls on its own under its head, its total at its foot; lined up, the two keep the widths of the sheets.
+  assert.equal((card.match(/<div class="career-block table-scroll"><table class="aligned"><thead>/g)||[]).length,2);
+  assert.match(card,/^<section class="card career-card"><div class="card-head"><h2>Carrière<\/h2><\/div><div class="career-body"><div class="career-block/);
   assert.match(card,/<thead><tr><th>SAISON<\/th><th>CLUB<\/th><th>TRANSFERT<\/th><th>COMPÉTITION<\/th><th>MATCHS<\/th><th>BUTS<\/th><th>PASSES<\/th><th>NOTE<\/th><\/tr><\/thead>/);
   // A gap sets the clubs and the national team apart.
-  assert.match(card,/<tr class="total"><td>Total<\/td><td><\/td><td>—<\/td><td><\/td><td>4<\/td><td>1<\/td><td>0<\/td><td>6\.50<\/td><\/tr><\/tbody><tbody class="career-gap" aria-hidden="true"><tr><td colspan="8"><\/td><\/tr><\/tbody><tbody><tr class="nation-head">/);
+  assert.match(card,/<tfoot><tr class="total"><td>Total<\/td><td><\/td><td>—<\/td><td><\/td><td>4<\/td><td>1<\/td><td>0<\/td><td>6\.50<\/td><\/tr><\/tfoot><\/table><\/div><div class="career-gap" aria-hidden="true"><\/div><div class="career-block table-scroll"><table class="aligned"><thead><tr class="nation-head">/);
   // The nation's name spans the four columns the national team has no use for, so that its figures fall under the clubs'.
   const nation=card.slice(card.indexOf('<tr class="nation-head">'));
   assert.match(nation,/^<tr class="nation-head"><th colspan="4"><a class="nation" href="#\/international\/nation\/-12" title="Sénégal"><img[^>]*>Sénégal<\/a><\/th><th>MATCHS<\/th><th>BUTS<\/th><th>PASSES<\/th><th>NOTE<\/th><\/tr>/);
   // Editions newest first, then what he had played before the game, then his totals with the mean of every rated match.
   assert.deepEqual([...nation.matchAll(/<tr>(.*?)<\/tr>/g)].map(match=>match[1].replace(/<[^>]+>/g,'|').replace(/\|+/g,'|')),
    ['|2028|5|2|2|7.00|','|2026|3|1|0|6.50|','|Historique importé|12|2|—|—|']);
-  assert.match(nation,/<tr class="total"><td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>2<\/td><td>6\.86<\/td><\/tr><\/tbody><\/table>/);
+  assert.match(nation,/<\/tr><\/tbody><tfoot><tr class="total"><td colspan="4">Total<\/td><td>20<\/td><td>5<\/td><td>2<\/td><td>6\.86<\/td><\/tr><\/tfoot><\/table><\/div><\/div><\/section>$/);
   // An edition without any rated match, and a player never capped.
   const unrated=(await render({...capped,historical_caps:0,historical_goals:0,international_records:[{edition:2028,matches:1,goals:0,assists:0,rating_sum:0,rating_count:0,average:null}]})).html;
   assert.match(unrated,/<td colspan="4"><a href="#\/international\/2028\/finals">2028<\/a><\/td><td>1<\/td><td>0<\/td><td>0<\/td><td>—<\/td>/);

@@ -344,8 +344,9 @@ function feeTiles(player) {
 // Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
 const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.parent)],['Fin du prêt',date(player.loan.end)]]:[]),...(player.reserve?[['Équipe','Réserve']]:[])];
 
-// Beside the page, a card of facts: how he is, with his other nationalities (the flag, then the code), the traits of his
-// character he shows, then what his contract holds. Who he is and what he is worth stand in the header.
+// Beside the page, a card of facts in sections, each under its title, the first at the top of the card: how he is, with
+// his other nationalities (the flag, then the code), the traits of his character he shows, then what his contract holds.
+// Who he is and what he is worth stand in the header.
 function rail(player) {
  const others=nationCodes(player).slice(1);
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
@@ -354,7 +355,7 @@ function rail(player) {
  const character=characterFacts(player);
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),...loanTerms(player)];
- return `<aside class="card player-rail"><div class="card-head"><h2>État</h2></div><div class="rail-section">${state}</div>`
+ return `<aside class="card player-rail"><h3>État</h3><div class="rail-section">${state}</div>`
   +(character?`<h3>Caractère</h3><div class="rail-section">${character}</div>`:'')
   +`<h3>Contrat</h3><div class="rail-section">${terms.map(([label,value])=>fact(label,value)).join('')}</div></aside>`;
 }
@@ -372,8 +373,8 @@ function profile(player) {
 // spans them (`lead`), so that matches, goals, assists and rating stay in the columns they have for the clubs.
 const careerRow=(cells,{tag='td',lead=1,name=''}={})=>`<tr${name?` class="${name}"`:''}>${cells.map((cell,index)=>`<${tag}${lead>1&&!index?` colspan="${lead}"`:''}>${cell}</${tag}>`).join('')}</tr>`;
 
-// Under the clubs, the national team: an edition a row beneath the nation's name, newest first, then what he had played
-// before the game started (`historical_*`), and his totals. Nothing before a first cap.
+// Under the clubs, the national team, a table of its own: an edition a row beneath the nation's name, newest first, then
+// what he had played before the game started (`historical_*`), and his totals at its foot. Nothing before a first cap.
 function internationalCareer(player) {
  if(!player.international_caps)return '';
  const records=[...(player.international_records||[])].sort((a,b)=>b.edition-a.edition),wide={lead:4};
@@ -386,7 +387,7 @@ function internationalCareer(player) {
  const rated=records.reduce((sum,row)=>sum+(row.rating_count||0),0);
  const total=['Total',n(player.international_caps),n(player.international_goals),n(records.reduce((sum,row)=>sum+row.assists,0)),rated?averageNote(records.reduce((sum,row)=>sum+row.rating_sum,0)/rated):'—'];
  const head=[nation,'MATCHS','BUTS','PASSES','NOTE'];
- return `<tbody>${careerRow(head,{tag:'th',lead:4,name:'nation-head'})}</tbody><tbody>${rows.join('')}${careerRow(total,{lead:4,name:'total'})}</tbody>`;
+ return `<thead>${careerRow(head,{tag:'th',lead:4,name:'nation-head'})}</thead><tbody>${rows.join('')}</tbody><tfoot>${careerRow(total,{lead:4,name:'total'})}</tfoot>`;
 }
 
 // What a club played in a season of his career: the badge of its league, after the flag of its country,
@@ -397,16 +398,18 @@ function careerCompetitions(row) {
  return `${nationFlag(row.competition_nation)}${badges.map(competitionBadge).join('')}`;
 }
 
-// One card and one table for the whole career: a row per season and club, newest first, then the national team, a gap
-// setting the two apart.
+// One card for the whole career, in two blocks a gap sets apart: the clubs, a row per season and club, newest first, then
+// the national team. Each block is a table that scrolls under its head, its total pinned at its foot; the four figures
+// keep the same columns in both.
 function careerCard(player, career) {
  const totals=career.totals,nation=internationalCareer(player);
  const rows=career.items.map(row=>careerRow([season(row.season),clubLink(row.club),row.loan?'Prêt':row.fee?price(row.fee):'—',`<span class="competition">${careerCompetitions(row)}</span>`,appearances(row.matches,row.substitutes),row.goals,row.assists,row.average?averageNote(row.average):'—']));
  const total=careerRow(['Total','',totals.fee?money(totals.fee):'—','',n(totals.matches),n(totals.goals),n(totals.assists),totals.average?averageNote(totals.average):'—'],{name:'total'});
- const clubs=rows.length?`<tbody>${rows.join('')}${total}</tbody>`:'';
  const head=careerRow(['SAISON','CLUB','TRANSFERT','COMPÉTITION','MATCHS','BUTS','PASSES','NOTE'],{tag:'th'});
- const gap=clubs&&nation?'<tbody class="career-gap" aria-hidden="true"><tr><td colspan="8"></td></tr></tbody>':'';
- return card('Carrière',clubs||nation?`<div class="table-scroll"><table><thead>${head}</thead>${clubs}${gap}${nation}</table></div>`:empty(),'','career-card');
+ const block=table=>`<div class="career-block table-scroll"><table class="aligned">${table}</table></div>`;
+ const clubs=rows.length?block(`<thead>${head}</thead><tbody>${rows.join('')}</tbody><tfoot>${total}</tfoot>`):'';
+ const gap=clubs&&nation?'<div class="career-gap" aria-hidden="true"></div>':'';
+ return card('Carrière',clubs||nation?`<div class="career-body">${clubs}${gap}${nation?block(nation):''}</div>`:empty(),'','career-card');
 }
 
 // Beside a list of players, the one picked in it: who he is, how he is, his contract and what he is worth on a pitch, in

@@ -470,7 +470,9 @@ span.entity-step svg{opacity:.3}
 /* A player's page: under his header, a card of facts saying how he is, then what his contract holds; beside it his
    attributes and his positions, then his career and his level over time. Rows and strips of 26, as a table's. */
 .player-rail{margin-bottom:0}
-.player-rail>h3{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+.player-rail>h3,.preview h3{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);border:0;background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+/* No head: the first section's band opens the card, at its corners. */
+.player-rail>h3:first-child{border-radius:var(--radius-card) var(--radius-card) 0 0}
 .rail-section{padding:0 var(--s3)}
 .rail-section .fact{min-height:var(--h-row)}
 .gauge{width:40px}
@@ -572,7 +574,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .pitch.spread{--spread-front:calc(var(--s2) + var(--s3) + var(--s4));--spread-back:calc(var(--spread-front) + 1px + 2*var(--s4))}
 .pitch.spread .pitch-player{top:calc(var(--spread-front) + (100% - var(--spread-front) - var(--spread-back))*var(--row)/(var(--rows) - 1))}
 .match-lineup .pitch{margin:var(--s3)}
-.positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,360px);min-width:0;margin:var(--s2) auto}
+.positions>.pitch,.positions>.pitch:not(:only-child){flex:none;width:min(100%,280px);min-width:0;margin:var(--s2) auto}
 
 /* A player on a pitch: the shirt of his club, his goals at its top right, the block under it. One size, 32 px, on every pitch. He
    is held by his shirt: whatever hangs under it, the shirts of a line stay level. */
@@ -1075,12 +1077,27 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .bench-slot.empty{border:1px dashed var(--line)!important;background:none!important}
 .lineup-squad,.table-scroll,.standings-scroll{border-color:transparent!important}
 .standings-scroll,.table-scroll,.lineup-squad,.timeline{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+/* A table that scrolls in its box keeps its head at the top and its total at the foot, the rows passing under them. */
+.table-scroll thead th{position:sticky;top:0;z-index:1}
+.table-scroll tfoot td{position:sticky;bottom:0;z-index:1}
 .legend i{border-radius:var(--radius-chip)}
 .comparison-bar>i:only-child{border-radius:4px}
 /* A section's title in a column: a band of 26 within the column's width, rounded, its text 10 from the edge. Drawn under
    the title, the band reaches into the margins above and under it: nothing around it moves. */
-:is(.section-title,.country h3,.preview h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title){position:relative;isolation:isolate;padding-left:10px!important}
-:is(.section-title,.country h3,.preview h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title)::before{content:"";position:absolute;inset:-6px 0 -4px;z-index:-1;border-radius:var(--radius);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+:is(.section-title,.country h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title){position:relative;isolation:isolate;padding-left:10px!important}
+:is(.section-title,.country h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title)::before{content:"";position:absolute;inset:-6px 0 -4px;z-index:-1;border-radius:var(--radius);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+/* A section's title that follows another section stands 12 below it (--s3): white closes the section above before its
+   band opens the next. At the head of a card or of a column, or under a card's head, nothing above it. A band across a
+   card is the title's own box; a rounded band reaches 6 above its title, which stands as much lower. */
+:is(.card>.section-title,.player-rail>h3,.preview h3,.history-runs .section-title):not(:first-child,.card-head+*),.preview .composites-group>h3{margin-top:var(--s3)}
+:is(.section-title,.country h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title):not(:first-child){margin-top:calc(var(--s3) + 6px)}
+/* In a body whose gap already makes the 12, the title only stands lower by the reach of its band; in a grid of sections,
+   the rows stand as far apart as the 12 and that reach. */
+.scout-card .card-body>h3:not(:first-child){margin-top:6px}
+.news-leaders{row-gap:calc(var(--s3) + 6px)}
+/* Under a card's body, its padding gives part of the 12 (8, 4 under a competition's band). */
+.card>.card-body+.section-title{margin-top:var(--s1)}
+.selection-competition>.card-body+.section-title{margin-top:var(--s2)}
 /* What leads on — « Voir », « Continuer », the next page — ends on a chevron, drawn and not a character, in the colour of
    what carries it and centred on its place; on the main action, in a disc of its ink. Back, the same turned over. */
 .go{position:relative;display:inline-block;flex:none;width:.625em;height:1em;vertical-align:-.15em}
