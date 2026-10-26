@@ -3,9 +3,11 @@
 Dernier réglage des matches avec les CSV actuels :
 [recalibration du 18 septembre 2026](calibration-2026-09-18.md), après le
 [diagnostic du 17 septembre](calibration-2026-09-17.md).
-Le réglage améliore les confrontations PSG–Toulouse et City–Burnley ; le Clasico
-reste hors cible. Les statistiques synthétiques et l'équilibre des formations
-passent les critères mesurés.
+Le réglage améliore les confrontations PSG–Toulouse et City–Burnley. Depuis la
+[formation choisie par l'effectif](conception-formation-ia.md), le Clasico et
+PSG–Toulouse passent ; la cible de City–Burnley a été revue le 26 octobre 2026 (voir
+« Suite match »). Les statistiques synthétiques et l'équilibre des formations passent
+les critères mesurés.
 
 ## Statut des cibles
 
@@ -47,6 +49,20 @@ Ne pas mélanger la perspective du PSG et celle de l'équipe à domicile.
 Un intervalle statistique accompagne chaque fréquence ; un résultat proche de
 la limite appelle davantage de simulations, pas des changements de paramètres
 sur la seule base du bruit d'échantillonnage.
+
+Une cible décrit un rapport de forces, pas deux noms : quand les données changent ce
+rapport, la cible se revoit. City–Burnley visait 78 / 16 / 6, celle d'un club du haut
+du tableau contre un relégable. Dans les CSV actuels, Burnley n'est plus en Premier
+League et son onze vaut celui d'un club de bas de tableau qui s'y maintient (70.0, contre
+71.7 à 71.9 pour Leeds, Everton ou Brighton) ; l'écart avec City (environ 6 points de
+valeur moyenne du onze) est bien plus faible que celui de PSG–Toulouse (10.5), à qui la
+cible demandait pourtant moins. La cible est passée le 26 octobre 2026 à 70 / 17 / 13
+(tolérances 5, 4 et 4 points) : un club du haut du tableau reçoit un club de bas de
+tableau. Elle a été fixée après avoir mesuré le moteur (69.1 / 18.4 / 12.5 sur
+3 000 matchs) et en est donc proche. Un modèle logit ordonné ajusté sur les cibles des
+quatre autres affiches, sans le moteur, donnerait 62 / 23 / 15 pour cet écart : le
+moteur serait alors trop favorable à City. Les deux lectures sont à départager quand les
+cibles seront réétablies sur un corpus sourcé.
 
 La distribution des scores porte sur un panel fixe de confrontations équilibrées
 domicile/extérieur, dont le protocole et les poids figurent dans le rapport.

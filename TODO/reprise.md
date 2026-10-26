@@ -236,14 +236,14 @@ interface, migration (schéma 41) et documentation.
   C'est le plus gros manque de réalisme. D'après la maquette, le chantier C ne
   le comblera pas : sa décision 10 propose un chantier de calibrage dédié après C
   (sensibilité des duels aux écarts, sur de vrais championnats).
-- **Affiches de référence** (`match`, 3 000), depuis la formation choisie par l'effectif
-  (12 critères sur 15 ; le Clasico et PSG – Toulouse passent) :
-  - City – Burnley : 69.1 % de victoires (cible ≥ 73 %) et 12.5 % de défaites pour
-    City (cible ≤ 9 %). L'écart de valeur des onze n'est que d'environ 6 points, contre
-    10.5 pour PSG – Toulouse, à qui la cible demande moins : cible à revoir, ou affiche à
-    changer ;
-  - deux équipes égales : 32.2 % de défaites à domicile (cible ≤ 32 %), dans le bruit à
-    3 000 matchs ; à confirmer à 10 000.
+- **Affiches de référence** (`match`, 3 000), depuis la formation choisie par l'effectif et
+  la cible de City – Burnley revue à 70 / 17 / 13 (`docs/benchmarks.md`, « Suite match ») :
+  14 critères sur 15. Reste deux équipes égales : 32.2 % de défaites à domicile (cible
+  ≤ 32 %), dans le bruit à 3 000 matchs ; à confirmer à 10 000.
+- **Poids du gardien** : à valeur moyenne voisine, Arsenal bat Coventry (gardien 66) dans
+  81 % des cas et Hull (gardien 77) dans 65 % (3 000 matchs). `occasion.sensibilite_tireur_gardien`
+  (0.055, triplée le 18 septembre) fait peser un seul joueur très lourd : à revoir dans le
+  chantier de calibrage.
 - **Temps par match** : environ 22 ms pour un budget de 20 ms, sur la machine de
   Vincent. À remesurer après l'attribut Penaltys (`performance`, machine au repos).
 - **Scores**, cibles indicatives : 5.7 % de matchs sans but (cible 7 à 9 %) et
