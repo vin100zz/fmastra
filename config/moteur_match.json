@@ -98,8 +98,8 @@
     "_note": "Chaque tentative oppose le porteur a un defenseur. Le porteur est tire parmi les joueurs impliques, pondere par exp(selection_porteur x qualite) ; le defenseur, au meme endroit du camp adverse, par exp(selection_defenseur x qualite). Qualite = composite de la phase x forme x moral x affinite (x condition pour la reussite). Au logit de la tentative s'ajoutent sensibilite_porteur x (qualite du porteur - qualite attendue d'un porteur tire a cet endroit) et l'oppose pour le defenseur : nul en moyenne, ce terme repartit la reussite d'une equipe entre ses joueurs sans changer sa force.",
     "selection_porteur": 0.02,
     "selection_defenseur": 0.02,
-    "sensibilite_porteur": 0.008,
-    "sensibilite_defenseur": 0.008
+    "sensibilite_porteur": 0.02,
+    "sensibilite_defenseur": 0.02
   },
   "densite": {
     "_note": "facteur = (densite / reference) ** exposant. Levier principal d'equilibrage des formations.",

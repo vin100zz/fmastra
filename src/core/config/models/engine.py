@@ -265,8 +265,8 @@ class EngineConfigDuels:
     each one's quality beyond what the draw expects at that place adds to the logit of the try."""
     carrier_selection: float = Field(default=0.02, alias="selection_porteur")
     defender_selection: float = Field(default=0.02, alias="selection_defenseur")
-    carrier_sensitivity: float = Field(default=0.008, alias="sensibilite_porteur")
-    defender_sensitivity: float = Field(default=0.008, alias="sensibilite_defenseur")
+    carrier_sensitivity: float = Field(default=0.02, alias="sensibilite_porteur")
+    defender_sensitivity: float = Field(default=0.02, alias="sensibilite_defenseur")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

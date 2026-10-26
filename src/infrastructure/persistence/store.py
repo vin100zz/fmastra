@@ -43,8 +43,8 @@ SCHEMA_VERSION = 42
 MIGRATION_DEFAULTS = (
     # Each try is a duel between its carrier and a defender, and a rating counts the danger a player's actions add or take
     # away, at his position's scale (see `_upgrade_ratings`).
-    (42, ("moteur_match", "duels"), {"selection_porteur": 0.02, "selection_defenseur": 0.02, "sensibilite_porteur": 0.008,
-                                     "sensibilite_defenseur": 0.008}),
+    (42, ("moteur_match", "duels"), {"selection_porteur": 0.02, "selection_defenseur": 0.02, "sensibilite_porteur": 0.02,
+                                     "sensibilite_defenseur": 0.02}),
     (42, ("moteur_match", "notes_joueurs"), {
          "danger_par_zone": list(DANGER), "danger_contre_par_zone": list(COUNTER_DANGER),
          "danger_recuperation_par_zone": list(RECOVERY_DANGER), "part_defenseur_battu": 1.0, "part_tir": 0.3,
