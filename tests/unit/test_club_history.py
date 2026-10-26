@@ -544,3 +544,31 @@ def test_career_reads_a_summer_move_at_the_club_joined_and_a_later_one_at_both(c
     # Once retired, he keeps the same career.
     world.retired[101] = world.players.pop(101).name
     assert [(row['season'], row['club']['id']) for row in career(world, 101)['items']] == expected
+
+
+def test_mercatos_total_the_fees_of_each_window_of_every_season(config):
+    from api.club_history import mercatos
+    world = mini_world(config)
+    S = world.season
+    world.transfers = season_moves(world) + [TransferRecord(world.date, 203, 1, 2, 3_000_000, 'transfer', S),
+                                             TransferRecord(world.date, 204, 1, 2, 1_000_000, 'loan', S)]
+    world.season = S + 1
+    world.date = Date(S + 1, 8, 1)
+    rows = mercatos(world, 1)
+    assert [row['season'] for row in rows] == [S + 1, S]
+    # The winter of the season under way has not opened yet.
+    assert rows[0] == {'season': S + 1, 'summer': {'spent': 0, 'earned': 0}, 'winter': None}
+    # Paid transfers only: a free move and a loan count for nothing.
+    assert rows[1]['summer'] == {'spent': 5_000_000, 'earned': 3_250_000}
+    assert rows[1]['winter'] == {'spent': 0, 'earned': 0}
+    assert mercatos(world, 2)[1]['summer'] == {'spent': 3_250_000, 'earned': 5_000_000}
+
+
+def test_a_retired_player_keeps_the_position_his_retirement_archived(config):
+    world = mini_world(config)
+    S = world.season
+    world.movement_history_since = world.date
+    position = world.players[102].position.value
+    apply(world, PlayerReleased(102, retirement=True))
+    retired = movements(world, 1, S, 1)['sections']['retirement'][0]
+    assert 102 not in world.players and retired['position'] == position and retired['nationalities']

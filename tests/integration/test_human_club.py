@@ -561,6 +561,15 @@ def test_the_club_plays_a_tactic_of_its_own_and_starts_from_it_next_time(client)
     best = client.get(f"/api/ma-partie/composition/suggestion?match_id={match.id}&postes={','.join(positions)}").json()
     assert [position for _, position in best["titulaires"]] == positions[:len(best["titulaires"])]
     assert client.get("/api/ma-partie/composition/suggestion?postes=GB,BU").status_code == 400
+    # The automatic lineup on a named formation, at a level of rotation: the keeper stays, a third of the others rest.
+    first = client.get(f"/api/ma-partie/composition/suggestion?match_id={match.id}&formation=4-3-3").json()
+    rested = client.get(f"/api/ma-partie/composition/suggestion?match_id={match.id}&formation=4-3-3&niveau=1&jeunes=true").json()
+    assert first["formation"] == rested["formation"] == "4-3-3"
+    assert rested["titulaires"][0] == first["titulaires"][0]
+    assert len({pid for pid, _ in first["titulaires"]} - {pid for pid, _ in rested["titulaires"]}) == 3
+    assert client.get(f"/api/ma-partie/composition/suggestion?match_id={match.id}&formation=4-3-3&libre=true").json()["formation"] in data_formations(client, match)
+    assert client.get("/api/ma-partie/composition/suggestion?formation=9-0-1").status_code == 400
+    assert client.get("/api/ma-partie/composition/suggestion?formation=4-3-3&niveau=4").status_code == 400
 
     lineup = {"match_id": match.id, "formation": "Perso", "titulaires": best["titulaires"], "banc": best["banc"]}
     # Nothing is played under that name before the club has a tactic of its own, nor with a second keeper,
@@ -578,3 +587,9 @@ def test_the_club_plays_a_tactic_of_its_own_and_starts_from_it_next_time(client)
     data = client.get(f"/api/ma-partie/composition?match_id={following.id}").json()
     assert data["custom"] == places and "Perso" not in data["formations"]
     assert data["default"]["formation"] == "Perso" and [position for _, position in data["default"]["titulaires"]] == positions
+
+
+def data_formations(client, match):
+    """The tactics the Composition screen offers: the formations, and the club's own when it has one."""
+    data = client.get(f"/api/ma-partie/composition?match_id={match.id}").json()
+    return {*data["formations"], *(["Perso"] if data["custom"] else [])}

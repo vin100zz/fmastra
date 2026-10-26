@@ -435,6 +435,8 @@ class ManagementConfigSelection:
     fitness_weight: float = Field(alias="poids_fatigue")
     rotation_fitness: float = Field(alias="seuil_rotation_fatigue")
     rotation_gap: float = Field(alias="ecart_niveau_acceptable_rotation")
+    # The weight of a prospect's margin in his note when the human club's automatic lineup favours youth in its rotation.
+    youth_weight: float = Field(default=12.0, alias="poids_espoirs_rotation")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

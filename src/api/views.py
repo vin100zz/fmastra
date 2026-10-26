@@ -515,12 +515,15 @@ def transfer_row(world: World, row) -> dict:
     born = row.born or (player.born if player else None)
     if born is None:
         born = next((item.born for item in world.transfers if item.player_id == row.player_id and item.born), None)
-    # Position, level and value are the player's today: a movement keeps none of them (None once he has retired).
+    # Position, level and value are the player's today. Once he has retired, his position and nationalities are those his
+    # last archived movement kept (his retirement, or before it the end of his contract); level and value are gone.
+    kept = None if player else row.snapshot or next(
+        (item.snapshot for item in reversed(world.transfers) if item.player_id == row.player_id and item.snapshot), None)
     return {"date": row.date.iso(), "player_id": row.player_id, "player": player_name(world, row.player_id),
             "source": club_ref(world, row.source_id), "target": club_ref(world, row.target_id), "fee": row.fee, "kind": row.kind,
             "age": born.age_on(row.date) if born else None,
-            "position": player.position.value if player else None,
-            "nationalities": list(player.nationalities) if player else [],
+            "position": player.position.value if player else kept.position.value if kept else None,
+            "nationalities": list(player.nationalities) if player else list(kept.nationalities) if kept else [],
             "national_team": player.national_team if player else None,
             "rating": round(player.rating, 1) if player else None,
             "value": market_value(player, world) if player else None}
@@ -834,7 +837,7 @@ def match_detail(world: World, match: Match) -> dict:
     if result is None:
         data["result"] = None
         return data
-    detail = {"engine": result.engine, "status": result.status, "duration": result.duration,
+    detail = {"engine": result.engine, "status": result.status, "duration": result.duration, "replay": result.replay,
               "home_stats": asdict(result.home_stats) if result.home_stats else None,
               "away_stats": asdict(result.away_stats) if result.away_stats else None}
     # Where room is short (the highlights, the pitch), a player goes by his short name, told apart within his side's squad.

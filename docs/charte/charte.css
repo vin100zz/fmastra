@@ -769,6 +769,11 @@ span.entity-step svg{opacity:.3}
 .check svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
 .check[aria-pressed="true"]{border-color:var(--accent-text);background:var(--accent)}
 .check[aria-pressed="true"] svg{visibility:visible}
+/* An option turned on or off by a word, the box before it, the details in its tooltip (`.check-option`): the options of
+   the Composition's automatic lineup. Under the pointer, the ground of a control. */
+.check-option{display:inline-flex;align-items:center;gap:6px;flex:none;height:var(--h-control);padding:0 var(--s2) 0 6px;border:0;border-radius:var(--radius);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--ink);white-space:nowrap;cursor:pointer}
+.check-option[aria-pressed="true"]>.check{border-color:var(--accent-text);background:var(--accent)}
+.check-option[aria-pressed="true"]>.check svg{visibility:visible}
 /* A nation on one line of a list to choose from: the box that plays it, its flag and its name, the divisions it plays, its
    clubs. The divisions are a choice up to one (.segmented.range): every option down to the lowest played carries the mark
    of what is open. Left out, the nation is muted, its flag greyed, its divisions dimmed. */
@@ -825,8 +830,10 @@ span.entity-step svg{opacity:.3}
 .leader-bars>li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row)}
 .leader-bars>li>:first-child{font-weight:600;text-align:right;color:var(--muted)}
 .leader-bars>li>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--strong)}
-.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--series-1-soft),color-mix(in srgb,var(--series-1) 55%,var(--series-1-soft)))}
-.leader-bars.soft i{background:var(--series-1-soft)}
+.leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
+.club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
+.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leader-bars.soft i{background:var(--bar-soft)}
 .leader-bars b{text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
 
@@ -862,6 +869,7 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
 :is(.button.primary,.cta,.door.main):is(:hover,.hover){background-color:var(--accent-hover)}
 .check:not([aria-pressed="true"]):is(:hover,.hover){background:var(--panel-3)}
+.check-option:is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}
 /* On a pitch, a player's name is what underlines. */
 .pitch-player:is(:hover,.hover) .block-name{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
@@ -878,6 +886,41 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
    open, --club-ink is written on it, --club is the colour that reads on a panel, --club-wash its wash. Its ground takes
    a breath of the band's colour, stronger at the top. */
 .club-page{--club-wash:color-mix(in srgb,var(--club) 10%,var(--panel));background:linear-gradient(180deg,color-mix(in srgb,var(--club-fill) 12%,var(--bg)) 0,color-mix(in srgb,var(--club-fill) 6%,var(--bg)) 40%,color-mix(in srgb,var(--club-fill) 4%,var(--bg)) 100%)}
+
+/* The mercatos of a club (« Mercatos d'un club »): a block per season, the latest first, its name and its balance, then a
+   line per window. The spending runs left of an axis in the first series, the takings right of it in the second, each bar
+   its share of the largest amount of the game, each amount at its end in the deep tone of its series. The season shown is
+   washed in the page's colour and marked at its edge; a window not open yet keeps its axis, dashed. */
+.mercatos{display:flex;flex-direction:column;padding-bottom:var(--s2)}
+.mercato-season{display:block;width:100%;height:auto;padding:var(--s1) 0;border:0;border-radius:0;background:none;box-shadow:none;font:inherit;color:inherit;text-align:left}
+.mercato-season.picked{background:var(--club-wash,var(--own-row));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+.mercato-head{display:flex;align-items:center;justify-content:space-between;height:var(--h-row);padding:0 var(--s3);font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong)}
+.mercato-head>b.good{color:var(--good)}
+.mercato-head>b.bad{color:var(--bad)}
+.mercato-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,1fr);align-items:center;height:var(--h-row);padding:0 var(--s3)}
+.mercato-window{color:var(--muted)}
+.mercato-half{display:flex;align-items:center;gap:var(--s2);height:100%}
+.mercato-half.spent{justify-content:flex-end;padding-right:var(--s1);box-shadow:inset -1px 0 0 var(--ink-2)}
+.mercato-half.earned{padding-left:var(--s1)}
+.mercato-half>i{display:block;flex:none;width:calc((100% - 64px)*var(--share));height:12px}
+.mercato-half.spent>i{border-radius:var(--radius-chip) 0 0 var(--radius-chip);background:var(--series-1)}
+.mercato-half.earned>i{border-radius:0 var(--radius-chip) var(--radius-chip) 0;background:var(--series-2)}
+.mercato-half>b{font-weight:400;white-space:nowrap}
+.mercato-half.spent>b{color:var(--series-1-deep)}
+.mercato-half.earned>b{color:var(--series-2-deep)}
+.mercato-key .mercato-half{box-shadow:none}
+.mercato-key .mercato-half>b{font-size:var(--fs-small);line-height:14px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase}
+.mercato-row.future .mercato-half.spent{box-shadow:inset -1px 0 0 var(--line)}
+.mercato-season:where(:not(.picked)):is(:hover,.hover){background:var(--panel-3)}
+/* A tile of a record: the player, the other club after a chevron, the amount at its end. */
+.tiles.row>.tile.record{flex:2 1 0;align-items:stretch;min-width:0;text-align:left}
+.tile.record strong{min-width:0;white-space:nowrap}
+.tile strong.good{color:var(--good)}
+.tile strong.bad{color:var(--bad)}
+.tile.record small{display:inline-flex;align-items:center;gap:var(--s1);min-width:0;font:400 var(--fs-body)/18px var(--text);color:var(--muted)}
+.tile.record b{margin-left:auto;font:inherit}
+/* The foot of a table: what its columns add up to, under them, on the ground of a tile, a pale line over it. */
+.tr.foot{border-top:1px solid var(--head-line);background:var(--panel-2);font-weight:600;color:var(--strong)}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

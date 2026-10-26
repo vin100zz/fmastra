@@ -226,13 +226,29 @@ Garder le détail des matches de la saison courante seulement. À l'ouverture de
 saison suivante, tous les matches terminés (championnats, coupes nationales et
 coupes d'Europe) sont archivés : score, statut et, pour les rencontres à élimination,
 vainqueur et tirs au but, que la validation du monde relit au chargement. Compositions,
-statistiques, notes et renforts temporaires du match sont alors abandonnés.
+statistiques, notes et renforts temporaires du match sont alors abandonnés. Les
+matches des sélections le sont aussi, à l'ouverture de la première saison qui suit
+l'année de leur édition (depuis le schéma 41).
 
 Même dans la saison courante, seuls les événements qu'une vue peut afficher sont
 stockés : possession, perte de balle, corner et coup franc sont retirés à
 l'application du match (`TRANSIENT_EVENT_KINDS`). Les statistiques d'équipe
 comptent déjà corners et coups francs ; buts, tirs, cartons, remplacements,
-blessures et tirs au but restent stockés.
+blessures et tirs au but restent stockés. Seuls les matches du club dirigé gardent
+la construction des occasions que dessine le résumé 2D (`MatchResult.replay`) ;
+les autres, et tous ceux des sélections, ne gardent que leurs faits
+(`FACT_EVENT_KINDS`, les penalties manqués et la séance de tirs au but). Ce
+détail faisait l'essentiel d'une sauvegarde en cours de saison (≈ 140 Mo de JSON
+sur 233 en mars).
+
+Une sauvegarde n'écrit pas les valeurs égales à leur défaut, que le chargement
+redonne, ni le journal de l'interface (`World.journal`, qu'aucune vue ne lit plus)
+ni les joueurs source écartés à l'import (`excluded_player_ids`). Une migration
+future ne peut donc pas compter sur la présence d'une clé qui vaut son défaut, et
+changer le défaut d'un champ du monde change la valeur relue dans les sauvegardes
+existantes : il faut alors une migration. La configuration fait exception : elle
+est écrite entière (`SavedConfig`), pour qu'un défaut changé dans une version
+ultérieure ne change pas les règles d'une partie en cours.
 
 Une carrière est agrégée par **joueur, saison,
 club et compétition** : un transfert en cours de saison produit plusieurs lignes.

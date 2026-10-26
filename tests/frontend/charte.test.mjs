@@ -184,3 +184,16 @@ test('the history’s chart, runs, changes and views are drawn the same by the r
  assert.match(body(reference,'.cc-scroll'),/overflow-x:auto;.*direction:rtl/);
 });
 
+
+test('a club’s mercatos are drawn the same by the reference sheet and by the application’s',async()=>{
+ const [reference,app]=await Promise.all(['docs/charte/charte.css','web/charte.css'].map(async sheet=>rules(await read(sheet))));
+ const body=(said,selector)=>said.find(([found])=>found===selector)?.[1];
+ for(const selector of ['.mercatos','.mercato-season','.mercato-season.picked','.mercato-head','.mercato-row','.mercato-half','.mercato-half.spent',
+  '.mercato-half>i','.mercato-half.spent>i','.mercato-half.earned>i','.mercato-half>b','.mercato-half.spent>b','.mercato-half.earned>b','.mercato-row.future .mercato-half.spent']){
+  assert.ok(body(reference,selector),selector);
+  assert.equal(body(app,selector),body(reference,selector),selector);
+ }
+ // Each amount beside its bar in the deep tone of its series, not in bold.
+ assert.equal(body(reference,'.mercato-half>b'),'font-weight:400;white-space:nowrap');
+ assert.equal(body(reference,'.mercato-half.spent>b'),'color:var(--series-1-deep)');
+});

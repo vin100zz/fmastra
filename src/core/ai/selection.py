@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING
 from core.config.model import Config
 from core.domain.clubs import Club
 from core.domain.date import Date
-from core.domain.matches import Lineup, LineupSlot, SubmittedLineup
+from core.domain.matches import Lineup, LineupSlot, PlayingTimePriority, SubmittedLineup
 from core.domain.players import Player, Position
 from core.engine.abilities import overall, state_multiplier
 from core.engine.fitness import projected_fitness
 from .assignment import maximize_assignment
-from .playing_time import playing_time_priorities, rotation_bonus
+from .playing_time import playing_time_priorities, prospect, rotation_bonus
 
 if TYPE_CHECKING:
     from core.domain.world import World
@@ -22,6 +22,9 @@ CUSTOM_FORMATION = "Perso"
 # The lines of that pitch from the goal forward, each five columns wide; a place of the tactic is a cell of this grid.
 CUSTOM_LINES = ("gk", "def", "dm", "cm", "am", "att")
 CUSTOM_COLUMNS = 5
+# The levels of rotation of the automatic lineup, from the best eleven (0) to every outfield starter rested (3): a level
+# rests its share of the outfield starters, a third, two thirds, all of them.
+ROTATION_LEVELS = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,10 +58,12 @@ class LineupContext:
 
 
 def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None,
-                  positions: Sequence[str] | None = None) -> Lineup:
-    """Best eleven and bench; a given `formation`, or the `positions` of the club's own tactic, is kept as is,
-    otherwise the club's formation may give way to a better-suited one."""
-    forced = formation is not None or positions is not None
+                  positions: Sequence[str] | None = None, adapt: bool = False, rotation: int = 0,
+                  youth: bool = False) -> Lineup:
+    """Best eleven and bench; a given `formation`, or the `positions` of the club's own tactic, is kept as is unless
+    `adapt`, otherwise the formation may give way to a better-suited one. A `rotation` level rests a share of the
+    outfield starters for their second choices (see `rotate`), the club's prospects first with `youth`."""
+    forced = (formation is not None or positions is not None) and not adapt
     players = sorted((player for player in context.players if player.available(context.competition_id, context.date)),
                      key=lambda player: player.id)
     formations = cfg.formations.formations
@@ -90,16 +95,16 @@ def select_lineup(context: LineupContext, cfg: Config, formation: str | None = N
     slots = [LineupSlot(players[index], role) for role, index in zip(roles, assigned)]
     # Rotation is evaluated without ever selecting the same replacement twice.
     chosen = {slot.player.id for slot in slots}
-    rotation = cfg.management.selection
+    selection = cfg.management.selection
     for index, slot in enumerate(slots):
         # Rested when tired, or when this match would leave him tired for the European one that comes next.
         fresh = slot.player.fitness if context.european_in is None else min(
             slot.player.fitness, projected_fitness(slot.player, slot.position, slot.player.born.age_on(context.date), context.european_in, cfg))
-        if fresh >= rotation.rotation_fitness:
+        if fresh >= selection.rotation_fitness:
             continue
         alternatives = [player for player in players if player.id not in chosen
                         and player.fitness > fresh
-                        and overall(player.attributes, slot.position, cfg) >= overall(slot.player.attributes, slot.position, cfg) - rotation.rotation_gap]
+                        and overall(player.attributes, slot.position, cfg) >= overall(slot.player.attributes, slot.position, cfg) - selection.rotation_gap]
         if alternatives:
             replacement = max(alternatives, key=lambda player: (overall(player.attributes, slot.position, cfg)
                                                                * state_multiplier(player, slot.position, cfg), -player.id))
@@ -108,6 +113,9 @@ def select_lineup(context: LineupContext, cfg: Config, formation: str | None = N
             slots[index] = LineupSlot(replacement, slot.position)
     priorities = playing_time_priorities(context.players, context.club, context.date,
                                         context.seed, context.games_played, cfg, context.arrivals)
+    if rotation:
+        slots = rotate(context, slots, players, priorities, cfg, rotation, youth)
+        chosen = {slot.player.id for slot in slots}
     remaining = sorted((player for player in players if player.id not in chosen), key=lambda player: (-player.rating * player.fitness, player.id))
     keepers = [player for player in remaining if player.position == Position.GOALKEEPER][:1]
     bench = keepers[:cfg.world.match_rules.bench_size]
@@ -137,6 +145,41 @@ def select_lineup(context: LineupContext, cfg: Config, formation: str | None = N
         candidates.remove(player)
         covered.add(role)
     return Lineup(context.club.id, formation, slots, bench, playing_time=priorities)
+
+
+def rotate(context: LineupContext, slots: list[LineupSlot], players: list[Player],
+           priorities: dict[int, PlayingTimePriority], cfg: Config, level: int, youth: bool) -> list[LineupSlot]:
+    """The eleven with its share of outfield starters rested at a `level` of rotation (`ROTATION_LEVELS`), the keeper
+    always kept. Each place has its second choice: the best of the outfield players left out, all places filled at
+    once; with `youth`, a prospect's margin (`prospect`) adds to his note. The places rested are those where it costs
+    least: the starter's note less his replacement's, less the playing time the replacement is owed, so that a player
+    just behind a starter gets minutes; a tired starter's note already counts his fitness."""
+    outfield = [index for index, slot in enumerate(slots) if slot.position != Position.GOALKEEPER]
+    count = min(len(outfield), round(len(outfield) * max(0, min(level, ROTATION_LEVELS)) / ROTATION_LEVELS))
+    starters = {slot.player.id for slot in slots}
+    pool = [player for player in players if player.id not in starters and player.position != Position.GOALKEEPER]
+    if not count or not pool:
+        return slots
+    weight = cfg.management.selection.youth_weight if youth else 0
+    margins = {player.id: prospect(player, context.club, context.date, context.seed, cfg) if weight else 0
+               for player in pool + [slots[index].player for index in outfield]}
+
+    def value(player: Player, position: Position) -> float:
+        return overall(player.attributes, position, cfg) * state_multiplier(player, position, cfg) + weight * margins[player.id]
+
+    def assign(indexes: list[int]) -> dict[int, Player]:
+        # Places beyond the players left out stay without a replacement (a short squad).
+        rows = [[value(player, slots[index].position) for player in pool] + [-1e9] * max(0, len(indexes) - len(pool))
+                for index in indexes]
+        return {index: pool[column] for index, column in zip(indexes, maximize_assignment(rows)) if column < len(pool)}
+
+    second = assign(outfield)
+    cost = {index: value(slots[index].player, slots[index].position) - value(player, slots[index].position)
+                   - rotation_bonus(priorities.get(player.id, PlayingTimePriority()), cfg)
+            for index, player in second.items()}
+    rested = sorted(cost, key=lambda index: (cost[index], index))[:count]
+    replacements = assign(rested)
+    return [LineupSlot(replacements[index], slot.position) if index in replacements else slot for index, slot in enumerate(slots)]
 
 
 def validate_custom_formation(places: Sequence[tuple[str, str, int]], cfg: Config) -> None:
