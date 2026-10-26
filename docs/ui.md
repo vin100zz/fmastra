@@ -183,9 +183,12 @@ Tout le choix est dans l'adresse : `nations=FRA:3,ENG:2` (la plus basse division
 chaque nation), les filtres, le tri et la page de la liste, `club`. Un club que les divisions
 choisies n'incluent plus n'est plus choisi.
 
-La barre du haut porte le premier jour de la partie et « Commencer », grisé tant qu'aucun club
-n'est choisi. « Commencer » crée la partie avec ce monde et ce club (une partie en cours est
-remplacée après confirmation ; sa dernière sauvegarde reste) ; la graine est tirée au hasard.
+La barre du haut porte le premier jour de la partie, le nom de sa sauvegarde et « Commencer »,
+grisé tant qu'aucun club n'est choisi ou que le nom n'est pas valide. Le nom est celui du club
+choisi (`slotFor`) tant qu'on n'en écrit pas d'autre ; un nom déjà pris est marqué, son infobulle
+dit la sauvegarde qu'il remplacerait. « Commencer » crée la partie avec ce monde et ce club, dans
+cette sauvegarde (une partie en cours est remplacée après confirmation, sa dernière sauvegarde
+reste ; une sauvegarde du même nom l'est aussi après confirmation) ; la graine est tirée au hasard.
 La partie s'ouvre sur sa première page, les tirages de coupe du club dans les actualités.
 
 ### Actualités
@@ -1459,9 +1462,10 @@ GET  /api/creation/clubs?nations=FRA:3,ENG:2&pays=&recherche=&tri=&ordre=&page=&
                                           tri : reputation | niveau | potentiel | stade | nom | championnat ; 400 sans nation ou division valide
 GET  /api/creation/clubs/{id}             un club de la création : couleurs, championnat, réputation, stade, installations,
                                           plafond salarial, niveau et potentiel, squad (ses 16 meilleurs joueurs)
-POST /api/partie/creer                   {commande_id, nations?: {FRA: 3, ENG: 2}, club_id?, graine?} -> travail_id ;
+POST /api/partie/creer                   {commande_id, nations?: {FRA: 3, ENG: 2}, club_id?, graine?, slot?} -> travail_id ;
                                           nations : la plus basse division jouée par nation (défaut : config/monde.json) ;
                                           club_id : le club dirigé, joué dans ces divisions (400 sinon) ; graine : tirée sans elle
+                                          slot : la sauvegarde où la partie s'enregistre (autosave sans lui)
 ```
 
 ## Front

@@ -76,3 +76,14 @@ def test_a_new_game_plays_the_divisions_chosen_with_its_club_and_a_drawn_seed(cl
     # The save lists its club without being opened.
     [autosave] = client.get("/api/partie/slots").json()
     assert autosave["slot"] == "autosave" and autosave["date"] == "2026-07-01" and autosave["club"]["name"] == "Rennes"
+
+
+def test_a_new_game_is_saved_under_the_name_it_is_given(client):
+    rennes = client.get("/api/creation/clubs", params={"nations": "FRA:1", "recherche": "rennes"}).json()["items"][0]
+    refused = client.post("/api/partie/creer", json={"nations": {"FRA": 1}, "club_id": rennes["id"], "slot": "ma partie"})
+    assert refused.status_code == 422
+    job = client.post("/api/partie/creer", json={"nations": {"FRA": 1}, "club_id": rennes["id"], "slot": "Rennes-carrière"})
+    assert job.status_code == 202 and finish(client, job.json())["status"] == "done"
+    assert client.get("/api/monde/etat").json()["slot"] == "Rennes-carrière"
+    [save] = [save for save in client.get("/api/partie/slots").json() if save["slot"] == "Rennes-carrière"]
+    assert save["club"]["name"] == "Rennes"

@@ -160,8 +160,8 @@ recharger ou redémarrer le serveur en plein match : il est reconstruit à l'ide
 Voir `docs/ui.md` et `docs/architecture.md`.
 
 Les sauvegardes sont dans `saves/`. La partie s'enregistre automatiquement dans la
-sauvegarde dont elle vient, celle chargée ou la dernière enregistrée (`autosave` pour
-une nouvelle partie), après chaque commande d'avance (et à l'arrêt du mode Auto) et
+sauvegarde dont elle vient, celle chargée ou la dernière enregistrée (pour une
+nouvelle partie, celle nommée à sa création, d'après son club par défaut), après chaque commande d'avance (et à l'arrêt du mode Auto) et
 chaque changement de mois. Utiliser un autre nom dans « Ma partie » pour conserver
 plusieurs univers. Le chargement restitue la configuration de la sauvegarde, même si
 les JSON du dépôt ont changé.

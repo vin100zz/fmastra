@@ -84,7 +84,7 @@ class GameService:
         self.kit_revision = -1
         self.world: World | None = None
         # Where the game is saved, automatically too: the slot it was last saved in or loaded from (a dated copy
-        # resumes its own slot), `autosave` for a new game.
+        # resumes its own slot), the one a new game was named after.
         self.slot = "autosave"
         self.lock = RLock()
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="simulation")
@@ -203,7 +203,7 @@ class GameService:
                 slot = self.slot
             if job.command in ("create", "load"):
                 if job.command == "create":
-                    world, slot = new_world(self.root, payload["seed"], payload.get("levels"), payload.get("club_id")), "autosave"
+                    world, slot = new_world(self.root, payload["seed"], payload.get("levels"), payload.get("club_id")), payload.get("slot", "autosave")
                     self.store.save(world, slot)
                 else:  # nothing to write: the file loaded is the game
                     world, slot = self.store.load(payload["slot"]), original_slot(payload["slot"])
