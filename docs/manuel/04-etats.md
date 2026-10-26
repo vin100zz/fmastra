@@ -31,7 +31,7 @@ forme = forme + {{etats.forme.vitesse_convergence}} × (cible − forme) + un pe
 | Note du match | Forme visée |
 |---:|---:|
 | 5.0 | {{n(1 + etats.forme.sensibilite_note * (5 - etats.forme.note_reference), 2)}} |
-| 6.5 | {{n(1 + etats.forme.sensibilite_note * (6.5 - etats.forme.note_reference), 2)}} |
+| 6.8 | {{n(1 + etats.forme.sensibilite_note * (6.8 - etats.forme.note_reference), 2)}} |
 | 7.5 | {{n(1 + etats.forme.sensibilite_note * (7.5 - etats.forme.note_reference), 2)}} |
 | 8.5 | {{n(1 + etats.forme.sensibilite_note * (8.5 - etats.forme.note_reference), 2)}} |
 | 10 | {{n(1 + etats.forme.sensibilite_note * (10 - etats.forme.note_reference), 2)}} |

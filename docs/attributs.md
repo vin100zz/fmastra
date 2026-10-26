@@ -207,8 +207,8 @@ Distinction structurante, à respecter strictement :
 
 | Transition | Résolution |
 |---|---|
-| Progression | agrégat de zone (collectif) |
-| Création d'occasion | agrégat de zone (collectif) |
+| Progression | agrégat de zone (collectif), plus un duel porteur contre défenseur nul en moyenne |
+| Création d'occasion | agrégat de zone (collectif), plus un duel porteur contre défenseur nul en moyenne |
 | Tir | **deux joueurs nommés** : tireur contre gardien |
 | Tête sur centre | **deux joueurs nommés** : réceptionneur contre gardien ; le centreur fixe le xG |
 | Corner, coup franc direct | l'exécutant fixe le xG (corner) ou le tir (coup franc) |

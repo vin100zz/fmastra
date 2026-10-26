@@ -1,5 +1,4 @@
 """Individual shooter/keeper duels, xG and non-overlapping shot outcomes."""
-from collections.abc import Sequence
 from random import Random
 
 from core.config.model import Config
@@ -53,11 +52,13 @@ def delivered_xg(xg: float, quality: float, reference: float, cfg: Config) -> fl
 
 
 def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int, counter: bool,
-                 kind: str, passer: int | None, log: MatchLog, cfg: Config, rng: Random, carriers: Sequence[int] = (),
-                 carrier: LineupSlot | None = None, set_piece: bool = False) -> str:
-    """`carriers` took the ball up the pitch in this possession; `passer` is the last one named before the chance, None on
-    a set piece; `carrier` made the chance: he crosses, plays the ball in, takes his man on or strikes from distance;
-    `set_piece` says a corner, a free kick or a penalty came before it in the possession.
+                 kind: str, passer: int | None, log: MatchLog, cfg: Config, rng: Random,
+                 carrier: LineupSlot | None = None, set_piece: bool = False, stake: float | None = None,
+                 marker: LineupSlot | None = None) -> str:
+    """`passer` is the last one named before the chance, None on a set piece; `carrier` made the chance: he crosses, plays
+    the ball in, takes his man on or strikes from distance; `set_piece` says a corner, a free kick or a penalty came before
+    it in the possession. A chance made in play is worth to its maker what its xG adds to `stake`, the danger his side held
+    before, and costs `marker`, the defender he beat, his share of it.
 
     Returns what became of the shot: "goal"; "held", "save_corner" or "parried" when the keeper saved it; "blocked",
     "post" or "wide" when it missed."""
@@ -136,10 +137,14 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
     attacker.stats.xg += xg
     log.emit("shot", attacker, shooter.player.id, keeper.player.id, zone, lane, shot_id, xg, kind)
     ratings, credit_rng = cfg.engine.player_ratings, log.attribution
-    if kind in OPEN_PLAY:
-        # The pass or cross that made an open-play chance, and the rest of the move that led to it.
-        if passer is not None and passer != shooter.player.id: attacker.credit(passer, ratings.key_pass)
-        for carrier in set(carriers) - {passer, shooter.player.id}: attacker.credit(carrier, ratings.build_up)
+    if stake is not None and carrier is not None:
+        made = xg - stake
+        attacker.threaten(carrier.player.id, made)
+        if marker is not None: defender.threaten(marker.player.id, -ratings.beaten_share * made)
+    # The shooter answers for what he makes of the chance, the keeper for what he makes of a shot on target, against the
+    # share of those that go in.
+    stopping = min(rules.probability_max, xg / p_target) if p_target > 0 else rules.probability_max
+    weight = ratings.shot_share
     # Where the defence stood: in the middle when the ball comes in from the wing.
     marking = mirror(zone, centre if header or kind == "cutback" else lane, cfg)
     value = rng.random()
@@ -151,24 +156,20 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
         if passer == shooter.player.id: passer = None
         if passer is not None and passer in attacker.individual:
             attacker.individual[passer].assists += 1
-        defender.credit(keeper.player.id, ratings.keeper_conceded)
-        # The defender who gave the penalty away already paid for it.
-        if kind != "penalty":
-            defender.credit(credited(defender, "creation_defense", *marking, False, credit_rng, outfield=True), ratings.beaten)
+        attacker.threaten(shooter.player.id, weight * (1 - xg))
+        defender.threaten(keeper.player.id, weight * (stopping - 1))
         log.emit("goal", attacker, shooter.player.id, passer, zone, lane, shot_id, xg, kind)
         return "goal"
-    if kind == "penalty": attacker.credit(shooter.player.id, ratings.penalty_missed)
+    attacker.threaten(shooter.player.id, -weight * xg)
     if value < p_target:
         attacker.stats.on_target += 1
         defender.individual[keeper.player.id].saves += 1
-        attacker.credit(shooter.player.id, ratings.saved_shot)
-        if kind == "penalty": defender.credit(keeper.player.id, ratings.penalty_saved)
+        defender.threaten(keeper.player.id, weight * stopping)
         # Held, pushed behind for a corner, or parried back into the box.
         save, draw = cfg.engine.stoppages.after_shot.save, rng.random()
         detail = "held" if draw < save.held else "corner" if draw < save.held + save.corner else "parried"
         log.emit("save", defender, keeper.player.id, shooter.player.id, zone, lane, shot_id, detail=detail)
         return "save_corner" if detail == "corner" else detail
-    attacker.credit(shooter.player.id, ratings.off_target)
     # A strike, unlike a header or a penalty, often misses because a defender threw himself in front of it; one that gets
     # past him may hit the woodwork. The shot's own draw, made uniform again over its misses, decides which.
     miss = (value - p_target) / (1 - p_target)
@@ -176,7 +177,7 @@ def resolve_shot(attacker: TeamState, defender: TeamState, zone: int, lane: int,
     blocked = 0.0 if header or kind == "penalty" else after.long_shot_blocked_share if kind == "long_shot" else after.blocked_share
     if miss < blocked:
         blocker = credited(defender, "creation_defense", *marking, True, credit_rng, outfield=True)
-        defender.credit(blocker, ratings.block)
+        defender.threaten(blocker, weight * xg)
         log.emit("off_target", attacker, shooter.player.id, blocker, zone, lane, shot_id, detail="blocked")
         return "blocked"
     post = (miss - blocked) / (1 - blocked) < after.post_share
