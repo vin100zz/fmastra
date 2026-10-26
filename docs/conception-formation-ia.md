@@ -1,8 +1,9 @@
 # Formation choisie par l'effectif — conception
 
-25 octobre 2026. Proposition à valider : rien n'est codé. Les décisions ouvertes
-sont à la fin, chacune avec une recommandation. Le document rejoindra `docs/` avec
-le code.
+Conçu le 25 octobre 2026, codé les 25 et 26 octobre 2026 (schémas 41 et 42). Les dix
+décisions de la fin ont été validées telles que recommandées. La section « Avancement »
+dit, étape par étape, ce qui a changé à l'implémentation et ce qui a été mesuré ; le
+reste du document garde la conception telle qu'elle a été validée.
 
 ## Objectif
 
@@ -552,6 +553,31 @@ Sur deux saisons, jusqu'à l'Euro 2028 compris (452 rassemblements, 430 matches)
 
 Les mêmes nations restent en tête ; l'ordre change avec les formations, ce qu'une seule graine ne
 suffit pas à juger.
+
+### Étape 4, faite
+
+Code : `formation_notice` et `next_opponent` dans `core.world.formations` (l'événement
+`FormationChosen` porte `notify`), le message `formation_change` (`core.world.news`,
+`api/news.py`, `web/news.js`), l'équipe-type d'une sélection (`nation_overview` dans
+`api/international.py`) et son onze historique (`api/nation_archive.py`). Le manuel (chapitres 06,
+15 et 17) et `docs/ui.md` (« Actualités », historique d'une sélection) décrivent l'interface.
+
+Ce qui a changé à l'implémentation :
+
+- **L'actualité (décision 7)** : un message de catégorie Tactique quand le prochain adversaire du
+  club dirigé, ou un club de son championnat, change de formation. Les changements d'un même jour
+  font un seul message, une ligne par club : sa pastille, la formation quittée, la nouvelle. Les
+  choix faits d'un coup, à la création d'une partie ou au chargement d'une sauvegarde plus
+  ancienne, n'en font pas.
+- **L'équipe-type d'une sélection**, avant son premier match de l'édition, prend les places de la
+  formation de son rassemblement. Son onze historique prend celles de sa formation de référence ;
+  le 4-3-3 fixe ne sert plus qu'à une sélection qui n'en a pas.
+- Aucun composant ni style nouveau : le message réutilise la famille Saison des étiquettes et la
+  grille à deux colonnes des lignes d'un message.
+
+Sur la suite `economy`, un club change de formation 0.74 fois par saison : un club dirigé
+reçoit donc une quinzaine de messages par saison pour les dix-neuf autres clubs de son
+championnat, regroupés par jour.
 
 ## Décisions
 

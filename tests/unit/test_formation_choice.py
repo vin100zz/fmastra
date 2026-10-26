@@ -138,3 +138,22 @@ def test_the_bounds_of_the_market_spare_formations_without_changing_the_quality(
             rest = [item for item in players if item is not player]
             assert loses_quality_without(players, player, club, config, scores) == (exhaustive(rest, club) < scores.best)
             assert quality_with(rest, player, club, config, squad_scores(rest, club, config)) == exhaustive(players, club)
+
+
+def test_the_human_club_hears_when_a_rival_changes_formation_and_never_of_the_choices_made_at_once(config):
+    from api.news import title
+    from core.world.events import FormationChosen
+    world = mini_world(config)
+    world.controlled_club_id = 1
+    for event in formation_events(world, margin=False): apply(world, event)
+    assert world.news == []
+    squad = world.clubs[2].formation_squad
+    apply(world, FormationChosen(2, "5-4-1", squad))
+    [item] = world.news
+    assert (item.kind, item.lines[0].club_id, item.lines[0].key, item.lines[0].text) == ("formation_change", 2, "4-4-2 plat", "5-4-1")
+    assert "".join(part["text"] for part in title(world, item)) == "Club 2 passe au 5-4-1"
+    # Neither the same formation again, nor a club outside its league that it does not play next.
+    apply(world, FormationChosen(2, "5-4-1", squad))
+    world.clubs[2].competition_id = None
+    apply(world, FormationChosen(2, "4-3-3", squad))
+    assert len(world.news) == 1

@@ -23,6 +23,10 @@ travail sur le moteur de match de Touchline. Il date du 25 octobre 2026.
   46′ à la reprise, puis 90+1′ (`matchMinute` dans `web/ui.js`, `goal_minute` dans
   `src/api/rounds.py`). Fait (commit `be7d141`), règle dans la charte (« Conventions
   d'écriture », « Minutes »).
+- **La formation choisie par l'effectif** : un club de l'IA joue la formation que son effectif
+  remplit le mieux, le mercato l'évalue dans la meilleure, une sélection appelle ses 23 pour la
+  sienne. Fait (schémas 41 et 42, branche `claude/trusting-keller-gy4hlu`), décrit dans
+  `docs/conception-formation-ia.md`.
 - **Chantier C, les consignes tactiques** : conception rédigée, décisions à valider
   (`TODO/conception-consignes-tactiques.md`, commits `c9792ff` et `a5cc6af`). Rien
   n'est codé.
@@ -81,7 +85,7 @@ Elles s'ajoutent à `CLAUDE.md`, que la conversation charge d'elle-même.
   vérifie dans `src/core/config/consistency.py`.
 - **Un changement de règle** atteint les sauvegardes existantes par une montée de
   schéma (`SCHEMA_VERSION` dans `src/infrastructure/persistence/store.py`,
-  actuellement 41). Trois tables y servent :
+  actuellement 42). Trois tables y servent :
   - `MIGRATION_DEFAULTS` : les clés ajoutées, avec leurs valeurs par version ;
   - `RETIRED_RULES` : les clés retirées. Le même chemin rend aussi, pour le contrôle
     d'empreinte, une règle modifiée avant le typage (la liste des attributs au
@@ -232,13 +236,14 @@ interface, migration (schéma 41) et documentation.
   C'est le plus gros manque de réalisme. D'après la maquette, le chantier C ne
   le comblera pas : sa décision 10 propose un chantier de calibrage dédié après C
   (sensibilité des duels aux écarts, sur de vrais championnats).
-- **Affiches de référence** (`match`, 3 000) :
-  - Clasico à domicile : 53.6 % de victoires pour le Real (cible 39 à 49 %) et
-    19.9 % de défaites (cible 24 à 34 %) ;
-  - City – Burnley : 72.8 % de victoires (cible ≥ 73 %) et 10.4 % de défaites pour
-    City (cible ≤ 9 %) ;
-  - PSG – Toulouse à domicile : 15.6 % de nuls (cible ≥ 16 %) ; deux équipes égales :
-    32.2 % de défaites à domicile (cible ≤ 32 %).
+- **Affiches de référence** (`match`, 3 000), depuis la formation choisie par l'effectif
+  (12 critères sur 15 ; le Clasico et PSG – Toulouse passent) :
+  - City – Burnley : 69.1 % de victoires (cible ≥ 73 %) et 12.5 % de défaites pour
+    City (cible ≤ 9 %). L'écart de valeur des onze n'est que d'environ 6 points, contre
+    10.5 pour PSG – Toulouse, à qui la cible demande moins : cible à revoir, ou affiche à
+    changer ;
+  - deux équipes égales : 32.2 % de défaites à domicile (cible ≤ 32 %), dans le bruit à
+    3 000 matchs ; à confirmer à 10 000.
 - **Temps par match** : environ 22 ms pour un budget de 20 ms, sur la machine de
   Vincent. À remesurer après l'attribut Penaltys (`performance`, machine au repos).
 - **Scores**, cibles indicatives : 5.7 % de matchs sans but (cible 7 à 9 %) et

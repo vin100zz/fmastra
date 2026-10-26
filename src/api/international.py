@@ -449,8 +449,8 @@ def nation_overview(world, nid):
     """What a selection's Présentation shows: its latest matches, newest first, more than a column holds, and its next
     three, every edition included; then, of the edition it is at, its équipe-type, a club's (`eleven`) among the players of
     its latest camp and those who started for it there, from its matches of the edition, before the first at the places
-    national coaches play; and what each player did for it in the edition, as a squad's rows give it, for its best
-    scorers, providers and notes."""
+    of its formation; and what each player did for it in the edition, as a squad's rows give it, for its best scorers,
+    providers and notes."""
     from .club_overview import NEXT_MATCHES, eleven, outcome
     matches = sorted((m for m in world.international.matches.values() if nid in (m.home_id, m.away_id)), key=lambda m: (m.date, m.id))
     calendar = {"last": [{**international_match_row(world, m), "outcome": outcome(nid, m)} for m in reversed([m for m in matches if m.result][-PRESENTATION_MATCHES:])],
@@ -467,7 +467,8 @@ def nation_overview(world, nid):
     starts = Counter(pid for lineup in lineups for pid, _ in lineup)
     stats = {player.id: {"appearances": records[player.id].matches if player.id in records else 0, "starts": starts[player.id],
                          "goals": records[player.id].goals if player.id in records else 0} for player in squad}
-    team = eleven(world, squad, lineups, next(iter(world.config.formations.formations.values())), stats,
+    formations = world.config.formations.formations
+    team = eleven(world, squad, lineups, formations.get(world.international.nations[nid].formation) or next(iter(formations.values())), stats,
                   v.short_names({player.id: player.name for player in squad}))
     # A selection's players wear no number of their own; a campaign-only reinforcement has no page.
     for row in team["players"] if team else ():
