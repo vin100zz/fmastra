@@ -1018,7 +1018,7 @@ message (« il vient d'arriver ») reste dans son infobulle.
 ### Composition
 
 L'onglet Composition du club dirigé : à gauche le pas des formations, au-dessus du terrain, puis le terrain
-et les remplaçants sur une ligne (autant de places que `bench_size`) ; au centre la liste de
+et les remplaçants sur trois colonnes (autant de places que `bench_size`, le poste puis le nom court) ; au centre la liste de
 l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, la composition auto
 et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
