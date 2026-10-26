@@ -57,7 +57,7 @@ la structure HTML des spécimens.
 | `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
 | `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie, entrée ouverte du menu |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
-| `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement ») |
+| `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement »). La sarcelle marque aussi les matchs à venir du club dirigé dans la barre du haut |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
@@ -137,7 +137,7 @@ où le fond est déjà jaune.
 | Composant | Classes | Règle |
 |---|---|---|
 | Marque | `.brand`, `.logo`, `.wordmark` | Le coin jaune en tête du menu. Voir « Marque » |
-| Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
+| Barre du haut | `.topbar`, `.date-block`, `.next-matches`, `.last-match`, `.bar-today`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
 | Onglets d'une page | `.tabs` | Une seule rangée par écran, sans trait dessous. L'ouvert souligné d'un trait de 3 aux bouts arrondis, de l'accent ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Page d'un club ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes. Une piste sans trait (`--track`), l'option ouverte posée dessus, remplie de l'accent et écrite de son encre ; sur la page d'un club, de ses couleurs (voir « Page d'un club »). Piste de 28, options de 24, leur texte à 16 de leurs bords ; dans l'en-tête d'une carte (`.small`), piste de 26, options de 22, à 12 |
 | Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte prend la couleur de la page, comme tout choix. Voir « Historique » |
@@ -199,14 +199,33 @@ marque ouvre à gauche.
   blanc sur le fond, n'a pas de bordure.
 - **Date** : à 16 de l'écharpe, la saison en libellé (11 / 14), le jour dessous
   en 20 / 22.
-- **À droite**, dans cet ordre : la pastille du mercato, la loupe, les trois
-  prochains matchs, l'action principale. Ce qui s'y tient a 40 de haut
+- **À droite**, dans cet ordre : la pastille du mercato, la loupe, les matchs du
+  club dirigé, l'action principale. Ce qui s'y tient a 40 de haut
   (`--h-bar-control`) ; la pastille garde ses 18.
-- **Prochains matchs** (`.next-matches`) : un bandeau gris (`--panel-2`), sans bordure, de trois blocs ; pour
-  chacun le délai en chiffre clé, l'adversaire après sa pastille (un avion à
-  l'extérieur), la compétition dessous, en bleu pour une coupe. Le prochain a
-  son délai et un soulignement à l'accent. Chacun ouvre la fiche de
-  l'adversaire.
+- **Matchs du club** (`.next-matches`) : un bandeau, sans bordure, qui se lit
+  dans le temps : les derniers matchs joués de la saison, un trait pour
+  aujourd'hui, puis les trois prochains. Chaque bloc porte l'adversaire après sa
+  pastille (un avion à l'extérieur), la compétition dessous, en bleu pour une
+  coupe.
+  - **Joués** (`.last-match`) : sur le gris du bandeau (`--panel-2`), du plus
+    ancien au plus récent. Le score, du côté du club, ses buts d'abord, en
+    chiffre clé sur la pastille de son issue (22) : verte pour une victoire,
+    ambre pour un nul, rouge pour une défaite, comme au calendrier. Chacun ouvre
+    son compte rendu ; l'infobulle dit l'issue, le jour, la compétition, le tour
+    et le lieu.
+  - **Aujourd'hui** (`.bar-today`) : un trait de 2 en sarcelle (`--c4`), entre
+    les joués et les prochains.
+  - **À venir** (`.next-match`) : sur le lavis de la sarcelle (`--c4-soft`) ; le
+    délai en chiffre clé, atténué. Le prochain a son délai et un soulignement en
+    sarcelle. Chacun ouvre la fiche de l'adversaire. Sous le pointeur, un voile
+    de sa sarcelle (12 %) : ils sont teintés.
+  - **Mesures** : un bloc a 170 de large au plus, 180 pour un match joué, dont
+    le score est plus large que le délai ; un nom plus long y est coupé.
+  - **Selon la place** : trois matchs joués tant que tous les noms de la barre
+    se lisent en entier (hors d'un bloc à sa largeur maximale), puis deux, puis
+    le score seul après la pastille de l'adversaire (`.last-match.short`, son nom
+    dans l'infobulle), trois puis deux. Avant le premier match de la saison, les
+    prochains seuls.
 - **Avancement d'une simulation** : il se dessine dans le trait jaune de la
   barre, sans décaler la page.
 

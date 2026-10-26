@@ -790,6 +790,26 @@ def test_club_history_tells_its_honours_and_the_shape_of_its_league_and_answers_
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
 
 
+def test_the_bar_reads_the_club_last_matches_then_its_next_ones(played):
+    from api.club_overview import outcome
+    world = played.app.state.game.world
+    club = next(iter(world.active_clubs()))
+    kept, world.controlled_club_id = world.controlled_club_id, club.id
+    try:
+        state = played.get("/api/monde/etat").json()
+    finally:
+        world.controlled_club_id = kept
+    own = sorted((match for match in world.matches.values() if club.id in (match.home_id, match.away_id)), key=lambda match: (match.date, match.id))
+    done = [match for match in own if match.result and match.season == world.season]
+    last, upcoming = state["club_last_matches"], state["club_next_matches"]
+    # The last three played this season, in date order, each with its outcome from the club's side; then the next three.
+    assert done and [row["id"] for row in last] == [match.id for match in done[-3:]]
+    assert [row["outcome"] for row in last] == [outcome(club.id, world.matches[row["id"]]) for row in last]
+    assert all(row["score"] and "league" in row for row in last)
+    assert [row["id"] for row in upcoming] == [match.id for match in own if not match.result][:3]
+    assert all(row["score"] is None for row in upcoming)
+
+
 def test_the_lineup_screen_scouts_the_next_opponent(played):
     world = played.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}
