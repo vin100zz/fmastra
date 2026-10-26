@@ -28,8 +28,13 @@ class TeamState:
     zones: dict[str, list[list[float]]] = field(default_factory=dict)
     # Per phase, each player on the pitch with his vertical and lateral involvement and exp(sensitivity x quality).
     profiles: dict[str, list[tuple[LineupSlot, tuple[float, ...], tuple[float, ...], float]]] = field(default_factory=dict)
-    # The last position of every player who took the field, and what his actions added to his rating.
+    # By phase, each player's quality now, and what a player drawn at each cell is worth on average (see `zones.duel_edge`).
+    qualities: dict[str, dict[int, float]] = field(default_factory=dict)
+    expected: dict[str, list[float]] = field(default_factory=dict)
+    # The last position of every player who took the field, the danger his actions added, in goals, and the points his
+    # fouls cost his rating.
     roles: dict[int, Position] = field(default_factory=dict)
+    danger: dict[int, float] = field(default_factory=dict)
     credits: dict[int, float] = field(default_factory=dict)
     next_refresh: float = 0
     # Stamped by every refresh of the zone ratings, unique across sides: the gaps this side meets, cached by
@@ -62,6 +67,9 @@ class TeamState:
 
     def credit(self, player_id: int, amount: float) -> None:
         self.credits[player_id] = self.credits.get(player_id, 0.0) + amount
+
+    def threaten(self, player_id: int, goals: float) -> None:
+        self.danger[player_id] = self.danger.get(player_id, 0.0) + goals
 
     def goalkeeper(self) -> LineupSlot:
         if not self.active:

@@ -94,6 +94,13 @@
     "avance_confortable": 2,
     "relachement_par_but": 0.4
   },
+  "duels": {
+    "_note": "Chaque tentative oppose le porteur a un defenseur. Le porteur est tire parmi les joueurs impliques, pondere par exp(selection_porteur x qualite) ; le defenseur, au meme endroit du camp adverse, par exp(selection_defenseur x qualite). Qualite = composite de la phase x forme x moral x affinite (x condition pour la reussite). Au logit de la tentative s'ajoutent sensibilite_porteur x (qualite du porteur - qualite attendue d'un porteur tire a cet endroit) et l'oppose pour le defenseur : nul en moyenne, ce terme repartit la reussite d'une equipe entre ses joueurs sans changer sa force.",
+    "selection_porteur": 0.02,
+    "selection_defenseur": 0.02,
+    "sensibilite_porteur": 0.02,
+    "sensibilite_defenseur": 0.02
+  },
   "densite": {
     "_note": "facteur = (densite / reference) ** exposant. Levier principal d'equilibrage des formations.",
     "reference": 3.5,
@@ -173,37 +180,23 @@
     "bonus_domicile_buts": 0.30
   },
   "notes_joueurs": {
-    "_note": "Le moteur decide de la reussite d'une action avec les agregats de zone ; la note decide seulement a qui elle est attribuee, avec un flux aleatoire separe qui laisse les scores inchanges. Tables *_par_zone indexees dans le repere du joueur qui agit (DEFENSE a VERITE). Chaque minute jouee retire attendu_par_minute : la moyenne reste a la base.",
-    "base": 6.5,
+    "_note": "Une action vaut le danger qu'elle ajoute ou retire, en buts : la probabilite que la possession finisse en but la ou se trouve le ballon (danger_par_zone, danger_contre_par_zone pendant un contre, dans le repere de l'equipe qui attaque) et, pour un ballon gagne en jeu, celle de la possession qu'il lance (danger_recuperation_par_zone, dans le repere de celui qui le gagne). Le defenseur battu dans un duel perd part_defenseur_battu de ce que gagne le porteur. Chaque poste convertit le danger en points a son echelle_par_poste, et chaque minute jouee retire attendu_par_minute_par_poste : un joueur ordinaire reste a la base, a tous les postes. Tables mesurees par tools/calibrate_ratings.py ; la note ne change ni un score ni une action.",
+    "base": 6.8,
     "min": 1.0,
     "max": 10.0,
-    "but": 0.8,
-    "passe_decisive": 0.5,
-    "tir_cadre_sans_but": 0.05,
-    "arret": 0.09,
-    "but_encaisse_gardien": -0.15,
+    "but": 0.4,
+    "passe_decisive": 0.3,
     "jaune": -0.20,
     "expulsion": -1.0,
+    "faute": -0.02,
     "minutes_minimum_note": 15,
     "sensibilite_qualite": 0.05,
-    "progression_par_zone": [0.0, 0.010, 0.020, 0.050],
-    "recuperation_par_zone": [0.060, 0.040, 0.025, 0.015],
-    "perte_par_zone": [-0.040, -0.030, -0.020, -0.010],
-    "defenseur_elimine": -0.02,
-    "passe_cle": 0.12,
-    "participation_occasion": 0.03,
-    "tir_non_cadre": -0.03,
-    "contre": 0.05,
-    "defenseur_battu": -0.15,
-    "victoire": 0.10,
-    "sans_encaisser": 0.25,
-    "minutes_sans_encaisser": 60,
-    "attendu_par_minute": 0.0056,
-    "faute": -0.02,
-    "hors_jeu": 0.0,
-    "penalty_concede": -0.30,
-    "penalty_obtenu": 0.10,
-    "penalty_manque": -0.30,
-    "penalty_arrete": 0.30
+    "danger_par_zone": [0.007, 0.01, 0.0174, 0.0259],
+    "danger_contre_par_zone": [0.007, 0.0162, 0.0272, 0.0389],
+    "danger_recuperation_par_zone": [0.0083, 0.0125, 0.0252, 0.03],
+    "part_defenseur_battu": 1.0,
+    "part_tir": 0.3,
+    "echelle_par_poste": {"GB": 2.03, "DC": 2.72, "DG": 2.97, "DD": 2.97, "MDC": 2.86, "MC": 2.79, "MOC": 2.44, "AILG": 2.71, "AILD": 2.73, "BU": 1.94},
+    "attendu_par_minute_par_poste": {"GB": 0.00213, "DC": -0.00017, "DG": -0.00028, "DD": -0.00051, "MDC": 0.00013, "MC": 0.00067, "MOC": 0.00132, "AILG": -0.0002, "AILD": -0.00011, "BU": 0.00241}
   }
 }

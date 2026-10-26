@@ -173,5 +173,4 @@ def test_an_older_save_takes_the_recalibrated_fatigue_rules_and_keeps_those_chos
     assert all(player.load == 0 for player in restored.players.values())
     assert cfg.states.fitness == config.states.fitness
     assert cfg.states.injuries == config.states.injuries
-    assert cfg.engine.player_ratings.saving == config.engine.player_ratings.saving
     assert cfg.management.selection.rotation_fitness == 0.7

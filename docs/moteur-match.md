@@ -154,8 +154,25 @@ Les écarts ne changent qu'au recalcul des notes : `zones.gap` les met en cache 
 côté, phase, contre, zone et couloir, contre les révisions des deux équipes.
 `refresh` garde pour une même composition (`Layout`) les composites de chaque
 joueur, son état sans la fraîcheur, les poids d'implication de chaque case et
-leurs poids cumulés, dont `involved_player` et `credited` tirent par dichotomie ;
-la fatigue garde le coût d'une minute de chaque joueur à son poste.
+leurs poids cumulés, dont `involved_player`, `duel_defender` et `credited` tirent
+par dichotomie ; la fatigue garde le coût d'une minute de chaque joueur à son poste.
+
+## Duels
+
+Chaque tentative (progression, long ballon, création) oppose le porteur à un
+défenseur. Le porteur est tiré sur la case avec le poids implication ×
+exp(`duels.selection_porteur` × composite × état sans fraîcheur), le composite
+étant celui de la progression, ou de la création dans la zone de vérité ; le
+défenseur (`duel_defender`) sur la case miroir, de même avec
+`selection_defenseur` et le composite défensif de la phase. Ces poids sont ceux
+de `Layout.duels`. Au logit de la tentative s'ajoute `duel_edge` du porteur moins
+celui du défenseur : sensibilité × (qualité courante − qualité attendue), où la
+qualité courante compte la fraîcheur et l'attendue est la moyenne des qualités
+pondérée par les mêmes poids de tirage, recalculée à chaque `refresh`. Le terme
+est donc nul en moyenne : il répartit les réussites d'une équipe entre ses
+joueurs sans changer sa force. Sur un long ballon, le défenseur est celui de la
+case d'arrivée. Le porteur perd le ballon, le défenseur de son duel le gagne ;
+sur une passe de conservation, sans duel, `credited` les désigne.
 
 Les tableaux de densités doivent être calculés depuis les JSON, jamais maintenus
 à la main. La conservation d'un budget d'implication identique entre tous les
@@ -340,50 +357,51 @@ reçus. Le fautif n'est pas le joueur nommé sur une perte de balle, tiré à pa
 
 ## Notes des joueurs
 
-Les agrégats de zone décident si une action réussit ; la note décide seulement
-à qui elle est attribuée. Ces attributions utilisent un flux aléatoire dérivé
-de celui du match sans y puiser (`side_stream`) : changer le barème ne change
-ni un score, ni un tir, ni une minute.
+La note compte le **danger** que les actions d'un joueur ajoutent à son équipe ou
+retirent à l'adversaire, en buts (`danger.py`). Le danger d'une possession est la
+probabilité qu'elle finisse en but, ballon à une zone donnée du repère de
+l'attaque : `danger_par_zone`, `danger_contre_par_zone` pendant un contre ; celui
+d'un ballon gagné en jeu, `danger_recuperation_par_zone` dans le repère de celui
+qui le gagne. `tools/calibrate_ratings.py` les mesure sur des matches synthétiques
+de toutes les formations entre elles. Chaque tentative note le danger de départ
+(`stake`), et :
 
-Le joueur crédité est tiré parmi ceux impliqués dans la zone, pondérés par
-exp(± `sensibilite_qualite` × composite de la phase) : les meilleurs sont plus
-souvent nommés sur une réussite, les plus faibles sur un échec. Le composite
-retient forme, moral et poste mais pas la fraîcheur : les zones font déjà perdre
-le ballon à une équipe fatiguée, et un remplaçant frais ne doit pas être gonflé.
-`refresh` précalcule ces profils avec les agrégats ; ils ne valent qu'après
-chaque changement sur le terrain, comme eux.
+- Progression ou long ballon réussi : le porteur gagne le danger de la zone
+  atteinte moins `stake` ; le défenseur de son duel en perd
+  `part_defenseur_battu`. Un dribble le nomme en second sur `progress`.
+- Occasion créée : le porteur gagne xG − `stake`, le défenseur de son duel en
+  perd la même part. Une frappe de loin a pour `stake` le danger du milieu haut,
+  sans duel.
+- Ballon perdu en jeu (`turnover`) : le porteur perd `stake` plus le danger de
+  récupération à l'endroit où l'adversaire le gagne, que gagne le défenseur de son
+  duel. Une passe de conservation perdue a pour enjeu le danger de la case, entre
+  joueurs désignés par `credited` (flux d'attribution, pondéré par
+  exp(± `sensibilite_qualite` × composite)).
+- Ballon sorti en touche ou en six mètres sur une tentative : le porteur perd
+  `stake`, le défenseur le gagne ; hors-jeu : le joueur hors-jeu perd `stake`.
+  Ballon capté par le gardien : il gagne `stake` (ou le danger de la zone sur un
+  coup arrêté). Dégagement : le danger de la zone au défenseur désigné.
+- Penalty : le fautif perd, la victime gagne, le xG du penalty moins `stake`.
+- Tir, pondéré par `part_tir` : le tireur gagne 1 − xG s'il marque et perd xG
+  sinon ; sur un tir cadré, le gardien gagne xG ÷ probabilité de cadrer du
+  tireur, moins 1 s'il encaisse ; le défenseur qui contre gagne xG.
 
-- Progression : le porteur déjà nommé par le moteur reçoit `progression_par_zone`
-  de la zone atteinte. Quand il dribble (l'étiquette se tire sur le flux du match,
-  car une conduite attire plus de fautes : `actions.part_dribbles`,
-  `sensibilite_dribble`), il élimine un défenseur, nommé en second sur l'événement
-  `progress` (`detail` = `dribble`), qui reçoit `defenseur_elimine`.
-- Perte de balle : un récupérateur et un perdant sont nommés sur `turnover`,
-  crédités de `recuperation_par_zone` et `perte_par_zone`, chacun dans son
-  propre repère : récupérer devant son but vaut plus, perdre devant le sien coûte plus.
-- Occasion en jeu : `passe_cle` au passeur ou centreur, `participation_occasion`
-  aux autres porteurs de l'action.
-- Tir : `tir_cadre_sans_but` ou `tir_non_cadre` au tireur. Une frappe contrée
-  (décidée par le moteur, voir « Arrêts de jeu ») nomme le défenseur sur
-  `off_target` (`detail` = `blocked`), crédité de `contre`. Un but coûte
-  `but_encaisse_gardien` au gardien et `defenseur_battu` à un défenseur de champ,
-  sauf sur penalty.
-- Faute : `faute` au fautif ; sur un penalty, `penalty_concede` au fautif et
-  `penalty_obtenu` au joueur fauché ; `penalty_manque` au tireur qui le rate,
-  `penalty_arrete` au gardien qui l'arrête ; `hors_jeu` au joueur hors-jeu.
-- Buts, passes décisives, arrêts et cartons gardent leur barème.
-- Résultat : `victoire` en plus ou en moins, au prorata des minutes. Sans but
-  encaissé, `sans_encaisser` au joueur d'au moins `minutes_sans_encaisser`
-  minutes, pondéré par l'implication défensive de son dernier poste dans sa
-  propre zone : pleinement au gardien, pas du tout à l'attaquant.
-- Chaque minute retire `attendu_par_minute` : un joueur qui apporte ce qu'on
-  attend de ses minutes reste à la base, et la moyenne ne dérive pas.
+La note vaut `base` + `echelle_par_poste` × danger + buts × `but` + passes
+décisives × `passe_decisive` + fautes × `faute` + cartons − minutes ×
+`attendu_par_minute_par_poste`, au dernier poste du joueur, bornée à [`min`,
+`max`]. L'échelle porte l'écart-type du danger d'un poste sur 90 minutes à la même
+cible pour tous ; l'attendu retire ce qu'un joueur ordinaire du poste apporte, tout
+compris : chaque poste est centré sur la base et s'étale autant que les autres.
+Le résultat n'entre pas dans la note : une équipe qui domine accumule le danger.
 
 Les crédits s'accumulent pendant le match ; la note en direct et la note finale
-sont la même fonction. Une expulsion est pénalisée une fois, distinctement des
+sont la même fonction. Le barème ne change ni un score, ni un tir, ni une minute :
+les tirages des duels sont ceux du match, les autres attributions viennent du flux
+dérivé (`side_stream`). Une expulsion est pénalisée une fois, distinctement des
 jaunes déjà reçus. Un joueur sous le minimum de minutes sans but, assist ou
 expulsion n'est pas noté ; son absence de note n'est pas un zéro. La note nourrit
-la forme : `stats_match` vérifie que chaque poste reste centré sur la base.
+la forme : `stats_match` vérifie que chaque poste reste centré sur la base et
+s'étale dans les mêmes bornes.
 
 ## Disponibilité et validation
 

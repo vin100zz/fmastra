@@ -92,10 +92,13 @@ par équipe, 52 à 60 minutes de jeu effectif, 28 à 38 % de frappes de loin et 
 70 à 82 %.
 
 La note moyenne des titulaires de chaque poste du 4-3-3 symétrique (`rating_GB`,
-`rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`.
-La note nourrit la forme : un poste systématiquement mieux noté renforcerait ses
-joueurs match après match. Le levier est `attendu_par_minute` pour la moyenne
-générale, puis les tables par zone du barème pour l'écart entre postes.
+`rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`,
+et son écart-type (`rating_spread_GB`…) entre `ecart_type_note_poste_min` et
+`ecart_type_note_poste_max`. La note nourrit la forme : un poste
+systématiquement mieux noté renforcerait ses joueurs match après match, et un
+poste qui ne s'écarte jamais de la base ne pourrait pas briller. Les leviers sont
+`attendu_par_minute_par_poste` et `echelle_par_poste`, que
+`tools/calibrate_ratings.py` mesure avec les tables de danger.
 
 ## Suite formations
 

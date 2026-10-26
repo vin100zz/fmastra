@@ -41,9 +41,11 @@
     "rouges_par_equipe": {"min": 0.05, "max": 0.08}, "fautes_par_equipe": {"min": 10.0, "max": 13.0}, "penaltys_par_equipe": {"min": 0.10, "max": 0.18},
     "repartition_couloirs": {"cible": 0.333, "tolerance": 0.05},
     "xg_axe_superieur_aile": true,
-    "_note": "Note moyenne de chaque poste du 4-3-3 symetrique : aucun poste ne doit tirer la forme de ses titulaires vers le haut ou le bas.",
-    "note_moyenne_poste_min": 6.4,
-    "note_moyenne_poste_max": 6.6
+    "_note": "Note moyenne de chaque poste du 4-3-3 symetrique : aucun poste ne doit tirer la forme de ses titulaires vers le haut ou le bas. Son ecart-type : chaque poste doit pouvoir briller comme decevoir.",
+    "note_moyenne_poste_min": 6.7,
+    "note_moyenne_poste_max": 6.9,
+    "ecart_type_note_poste_min": 0.45,
+    "ecart_type_note_poste_max": 1.0
   },
   "saison": {
     "points_par_match_champion": {"min": 2.10, "max": 2.37},

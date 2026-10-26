@@ -10,8 +10,9 @@ from core.math import clamp, sigmoid, logit
 from .abilities import weighted_rating
 from .local_state import MatchLog, TeamState
 from .personnel import dismiss
+from .danger import danger
 from .shots import resolve_shot
-from .zones import credited, foul_committer, gap, involved_player, mirror, choose_lane
+from .zones import credited, duel_defender, duel_edge, foul_committer, gap, involved_player, mirror, choose_lane
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,30 +96,33 @@ def play_possession(attacker: TeamState, defender: TeamState, zone: int, lane: i
 
 
 class _Play:
-    """A possession under way: where the ball is, how open the defence, who carried it, whether a set piece came."""
+    """A possession under way: where the ball is, how open the defence, who carried it, whether a set piece came, and the
+    duel under way: the carrier and the defender who meets him, and the danger the side held when it began."""
     __slots__ = ("attacker", "defender", "home", "log", "cfg", "rng", "zone", "lane", "counter", "opening", "played",
-                 "passer", "carriers", "set_piece", "last_zone", "centre")
+                 "passer", "set_piece", "last_zone", "centre", "duel", "stake")
 
     def __init__(self, attacker: TeamState, defender: TeamState, zone: int, lane: int, counter: bool, home: bool,
                  log: MatchLog, cfg: Config, rng: Random) -> None:
         self.attacker, self.defender, self.home, self.log, self.cfg, self.rng = attacker, defender, home, log, cfg, rng
         self.zone, self.lane, self.counter = zone, lane, counter
-        self.opening, self.played, self.passer, self.carriers = 0.0, 0.0, None, []
+        self.opening, self.played, self.passer = 0.0, 0.0, None
         # Set once a corner, a free kick played at goal or a penalty came: a goal after it is a set piece's.
         self.set_piece = False
         self.last_zone, self.centre = len(cfg.involvement.zones) - 1, len(cfg.involvement.lanes) // 2
+        self.duel, self.stake = None, 0.0
 
     def run(self, deadline: float) -> PossessionOutcome:
         attacker, defender, log, cfg, rng = self.attacker, self.defender, self.log, self.cfg, self.rng
-        actions, rules, ratings = cfg.engine.actions, cfg.engine.transitions, cfg.engine.player_ratings
+        actions, rules = cfg.engine.actions, cfg.engine.transitions
         keeping, opening_rules, durations = actions.conservation, actions.opening, actions.durations
         last_zone, lanes = self.last_zone, len(cfg.involvement.lanes)
-        credit_rng, stats = log.attribution, attacker.stats
+        stats = attacker.stats
         # A side far ahead manages the score: it tries less and keeps the ball.
         easing = rules.easing_per_goal * max(0, attacker.goals - defender.goals - rules.comfortable_lead)
         series = 0
         while True:
             zone, lane, counter = self.zone, self.lane, self.counter
+            self.duel = None
             # How much better this side keeps the ball here than its opponent does at the same place of its own half: nil
             # between equals, whatever their formations.
             edge = gap(attacker, defender, zone, lane, False, cfg, counter) - gap(defender, attacker, zone, lane, False, cfg)
@@ -159,18 +163,22 @@ class _Play:
             if series:
                 log.emit("circulation", attacker, zone=zone, lane=lane, detail=str(series))
                 series = 0
-            # The carrier decides what he tries; the zones decide whether it comes off.
+            # The carrier decides what he tries; the zones decide whether it comes off, and the duel he meets a little.
             carrier = involved_player(attacker, zone, lane, True, rng)
             attributes = carrier.player.attributes
+            duel_zone, duel_lane = mirror(zone, lane, cfg)
             if zone == last_zone:
                 log.second += durations.chance
                 self.played += durations.chance
                 kind = _chance_kind(carrier.player, lane, counter, self.opening, cfg, rng)
+                marker = duel_defender(defender, duel_zone, duel_lane, True, rng)
+                self.duel, self.stake = (carrier, marker), danger(cfg, zone, counter)
                 chance = (rules.creation_sensitivity * gap(attacker, defender, zone, lane, True, cfg, counter)
-                          + rules.creation_bias + self.opening)
+                          + rules.creation_bias + self.opening + duel_edge(attacker, carrier, zone, lane, "creation_attack", cfg)
+                          - duel_edge(defender, marker, duel_zone, duel_lane, "creation_defense", cfg))
                 if rng.random() < sigmoid(chance):
-                    self.carriers.append(carrier.player.id)
-                    ended = self.shoot(kind, zone, lane, carrier)
+                    self.duel = None
+                    ended = self.shoot(kind, zone, lane, carrier, self.stake, marker)
                 else:
                     ended = self.failed(CREATION_ACTIONS[kind], carrier)
                 if ended: return ended
@@ -179,21 +187,26 @@ class _Play:
             if (zone < len(long_ball.share_by_zone) and rng.random()
                     < sigmoid(logit(long_ball.share_by_zone[zone])
                               + long_ball.passing_sensitivity * (attributes.get("passe") - long_ball.passing_reference))):
-                # Over the next line, to a team-mate who must win the ball in the air.
+                # Over the next line, to a team-mate who must win the ball in the air against the defender there.
                 log.second += durations.long_ball
                 self.played += durations.long_ball
                 stats.passes_attempted += 1
+                edge = duel_edge(attacker, carrier, zone, lane, "progression_attack", cfg)
+                self.stake = danger(cfg, zone, counter)
                 self.zone = zone = zone + 2
                 self.lane = lane = choose_lane(attacker, defender, zone, cfg, rng)
-                if rng.random() >= sigmoid(long_ball.bias + rules.progression_sensitivity * gap(attacker, defender, zone, lane, False, cfg, counter)):
+                duel_zone, duel_lane = mirror(zone, lane, cfg)
+                marker = duel_defender(defender, duel_zone, duel_lane, False, rng)
+                self.duel = (carrier, marker)
+                edge -= duel_edge(defender, marker, duel_zone, duel_lane, "progression_defense", cfg)
+                if rng.random() >= sigmoid(long_ball.bias + rules.progression_sensitivity * gap(attacker, defender, zone, lane, False, cfg, counter) + edge):
                     ended = self.failed("aerial", carrier)
                     if ended: return ended
                     continue
                 stats.passes += 1
                 self.passer = carrier.player.id
-                self.carriers.append(self.passer)
                 self.opening = 0.0
-                attacker.credit(self.passer, ratings.progression[zone])
+                self.advanced(danger(cfg, zone, counter))
                 log.emit("progress", attacker, self.passer, zone=zone, lane=lane, detail="long")
                 continue
             if (zone == last_zone - 1 and lane == self.centre and rng.random()
@@ -202,7 +215,7 @@ class _Play:
                 # A defence still in place leaves only the strike from distance.
                 log.second += durations.chance
                 self.played += durations.chance
-                ended = self.shoot("long_shot", zone, lane, carrier)
+                ended = self.shoot("long_shot", zone, lane, carrier, danger(cfg, zone, counter))
                 if ended: return ended
                 continue
             log.second += durations.progression
@@ -211,16 +224,18 @@ class _Play:
             label = ("dribble" if rng.random() < dribble_probability(carrier.player, cfg)
                      else "carry" if rng.random() < actions.carry_share else "pass")
             if label == "pass": stats.passes_attempted += 1
+            marker = duel_defender(defender, duel_zone, duel_lane, False, rng)
+            self.duel, self.stake = (carrier, marker), danger(cfg, zone, counter)
             chance = (rules.progression_sensitivity * gap(attacker, defender, zone, lane, False, cfg, counter)
-                      + rules.progression_bias + self.opening + (rules.home_bonus if self.home else 0))
+                      + rules.progression_bias + self.opening + (rules.home_bonus if self.home else 0)
+                      + duel_edge(attacker, carrier, zone, lane, "progression_attack", cfg)
+                      - duel_edge(defender, marker, duel_zone, duel_lane, "progression_defense", cfg))
             if rng.random() >= sigmoid(chance):
                 ended = self.failed("pass" if label == "pass" else "carry", carrier)
                 if ended: return ended
                 continue
             if label == "pass": stats.passes += 1
             self.passer = carrier.player.id
-            self.carriers.append(self.passer)
-            duel_zone, duel_lane = mirror(zone, lane, cfg)
             self.zone = zone = zone + 1
             self.opening *= opening_rules.kept_after_progression
             switch = cfg.engine.lanes.switch_probability * (1 + cfg.engine.lanes.switch_vision_weight
@@ -228,14 +243,18 @@ class _Play:
             if rng.random() < clamp(switch, 0, 1):
                 neighbors = [candidate for candidate in (lane - 1, lane + 1) if 0 <= candidate < lanes]
                 self.lane = lane = choose_lane(attacker, defender, zone, cfg, rng, neighbors)
-            attacker.credit(self.passer, ratings.progression[zone])
+            self.advanced(danger(cfg, zone, counter))
             # A carrier who prefers his feet to his passing takes his marker on rather than passing round him.
-            dribbled = None
-            if label == "dribble":
-                dribbled = credited(defender, "progression_defense", duel_zone, duel_lane, False, credit_rng)
-                defender.credit(dribbled, ratings.dribbled)
+            dribbled = marker.player.id if label == "dribble" else None
             # The ball carrier who took the side into the next zone, where the play now stands.
             log.emit("progress", attacker, self.passer, dribbled, zone=zone, lane=lane, detail=label)
+
+    def advanced(self, reached: float) -> None:
+        """The carrier won his duel: the danger he added is his, and the defender he beat takes his share of it."""
+        carrier, marker = self.duel
+        gained = reached - self.stake
+        self.attacker.threaten(carrier.player.id, gained)
+        self.defender.threaten(marker.player.id, -self.cfg.engine.player_ratings.beaten_share * gained)
 
     # How a failed action ends.
 
@@ -266,8 +285,8 @@ class _Play:
         if action == "cross":
             cross = out.cross
             if pick.falls(cross.corner): return self.corner("cross")
-            if pick.falls(cross.goal_kick): return self.dead("goal_kick")
-            if pick.falls(cross.throw_in): return self.dead("throw_in")
+            if pick.falls(cross.goal_kick): return self.dead("goal_kick", True)
+            if pick.falls(cross.throw_in): return self.dead("throw_in", True)
             if pick.falls(self.claiming(cross.claimed)): return self.claim()
         elif action in ("centre_chance", "through_ball", "box_dribble"):
             if action == "through_ball" and pick.falls(stoppages.offside.through_ball): return self.offside(carrier, self.centre)
@@ -276,14 +295,14 @@ class _Play:
             if zone == self.last_zone and pick.falls(stoppages.offside.long_ball): return self.offside(carrier, lane)
             if pick.falls(out.long_ball):
                 # Out off either side: the throw-in goes to the one who did not touch it last.
-                if rng.random() < 0.5: return self.dead("throw_in")
+                if rng.random() < 0.5: return self.dead("throw_in", True)
                 return self.throw_in()
             return self.lost("aerial", False)
         else:
             shares = out.pass_ if action == "pass" else out.carry
             if pick.falls(shares.centre if centre else shares.wing):
                 # A pass that runs out is the defence's throw-in; a tackle that puts the ball out leaves it to the attack.
-                return self.dead("throw_in") if action == "pass" else self.throw_in()
+                return self.dead("throw_in", True) if action == "pass" else self.throw_in()
         return self.lost(LOSSES[action], True)
 
     def misplaced(self) -> PossessionOutcome:
@@ -292,20 +311,34 @@ class _Play:
         if self.rng.random() < (shares.centre if self.lane == self.centre else shares.wing): return self.dead("throw_in")
         return self.lost("interception", False)
 
-    def dead(self, restart: str) -> PossessionOutcome:
-        """The ball went dead and goes to the defence: a throw-in, a goal kick."""
+    def dead(self, restart: str, failed: bool = False) -> PossessionOutcome:
+        """The ball went dead and goes to the defence: a throw-in, a goal kick. A carrier who put it out lost his duel."""
+        if failed and self.duel: self.settle(self.stake)
         return PossessionOutcome(self.zone, self.lane, False, False, self.played, restart=restart)
 
+    def settle(self, value: float, winner: int | None = None) -> None:
+        """The duel is lost: the carrier gives up `value`, which the defender who met him, or `winner`, takes."""
+        carrier, marker = self.duel
+        self.attacker.threaten(carrier.player.id, -value)
+        self.defender.threaten(winner if winner is not None else marker.player.id, value)
+        self.duel = None
+
     def lost(self, loss: str, committed: bool) -> PossessionOutcome:
-        """The ball goes to the best placed, and is lost by the least able; the action itself was decided by the zones."""
+        """The defender who met the carrier wins the ball from him; a pass kept that went astray is put down to those
+        involved, the better players winning it and the weaker ones losing it more often."""
         attacker, defender, cfg, zone, lane = self.attacker, self.defender, self.cfg, self.zone, self.lane
-        ratings, credit_rng = cfg.engine.player_ratings, self.log.attribution
-        creation = zone == self.last_zone
         defensive_zone, defensive_lane = mirror(zone, lane, cfg)
-        winner = credited(defender, "creation_defense" if creation else "progression_defense", defensive_zone, defensive_lane, True, credit_rng)
-        loser = credited(attacker, "creation_attack" if creation else "progression_attack", zone, lane, False, credit_rng)
-        defender.credit(winner, ratings.recovery[defensive_zone])
-        attacker.credit(loser, ratings.loss[zone])
+        recovery = cfg.engine.player_ratings.recovery_danger[defensive_zone]
+        if self.duel:
+            winner, loser = self.duel[1].player.id, self.duel[0].player.id
+            self.settle(self.stake + recovery)
+        else:
+            credit_rng, creation = self.log.attribution, zone == self.last_zone
+            winner = credited(defender, "creation_defense" if creation else "progression_defense", defensive_zone, defensive_lane, True, credit_rng)
+            loser = credited(attacker, "creation_attack" if creation else "progression_attack", zone, lane, False, credit_rng)
+            value = danger(cfg, zone, self.counter) + recovery
+            attacker.threaten(loser, -value)
+            defender.threaten(winner, value)
         self.log.emit("turnover", defender, winner, loser, zone=defensive_zone, lane=defensive_lane, detail=loss)
         return PossessionOutcome(zone, lane, False, False, self.played, loss, committed)
 
@@ -314,7 +347,7 @@ class _Play:
         defender, cfg = self.defender, self.cfg
         defensive_zone, defensive_lane = mirror(zone, lane, cfg)
         winner = credited(defender, "creation_defense", defensive_zone, defensive_lane, True, self.log.attribution)
-        defender.credit(winner, cfg.engine.player_ratings.recovery[defensive_zone])
+        defender.threaten(winner, danger(cfg, zone, False))
         self.log.emit("turnover", defender, winner, zone=defensive_zone, lane=defensive_lane, detail="clearance")
         return PossessionOutcome(zone, lane, False, False, self.played, "clearance", True)
 
@@ -326,6 +359,8 @@ class _Play:
 
     def claim(self) -> PossessionOutcome:
         keeper = self.defender.goalkeeper().player.id
+        if self.duel: self.settle(self.stake, keeper)
+        else: self.defender.threaten(keeper, danger(self.cfg, self.zone, False))
         defensive_zone, defensive_lane = mirror(self.zone, self.lane, self.cfg)
         self.log.emit("turnover", self.defender, keeper, zone=defensive_zone, lane=defensive_lane, detail="claim")
         return PossessionOutcome(self.zone, self.lane, False, False, self.played, "claim", True)
@@ -333,7 +368,7 @@ class _Play:
     def resume(self, pause: float) -> None:
         """The side keeps the ball after a stoppage, where the play stopped; the defence is back in shape."""
         self.log.second += _pause(pause, self.cfg, self.rng)
-        self.opening, self.counter = 0.0, False
+        self.opening, self.counter, self.duel = 0.0, False, None
         return None
 
     def throw_in(self) -> None:
@@ -344,7 +379,9 @@ class _Play:
         """The man the ball was played to had gone too soon: a free kick for the defence where he stood."""
         receiver = involved_player(self.attacker, self.zone, lane, True, self.rng, passer.player.id).player.id
         self.attacker.stats.offsides += 1
-        self.attacker.credit(receiver, self.cfg.engine.player_ratings.offside)
+        # The chance is gone, by the fault of the man who went too soon.
+        self.attacker.threaten(receiver, -self.stake)
+        self.duel = None
         self.log.emit("offside", self.attacker, receiver, passer.player.id, zone=self.zone, lane=lane)
         return PossessionOutcome(self.zone, lane, False, False, self.played, restart="offside")
 
@@ -361,8 +398,11 @@ class _Play:
         defender.credit(fouler, ratings.foul)
         log.emit("foul", defender, fouler, victim, zone=defensive_zone, lane=defensive_lane)
         if box:
-            defender.credit(fouler, ratings.penalty_conceded)
-            attacker.credit(victim, ratings.penalty_won)
+            # The penalty is worth more than the chance the foul stopped.
+            given = cfg.engine.penalty.base - (self.stake if self.duel else danger(cfg, self.zone, self.counter))
+            defender.threaten(fouler, -given)
+            attacker.threaten(victim, given)
+        self.duel = None
         if not _book(defender, fouler, cards.penalty if box else cards.foul, defensive_zone, defensive_lane, log, cfg, rng):
             return PossessionOutcome(self.zone, self.lane, False, False, self.played)
         return self.penalty() if box else self.free_kick()
@@ -413,6 +453,7 @@ class _Play:
         """A corner on the side the ball went out: met by a head, cleared, caught, or played short, and then the possession
         goes on at the corner of the box."""
         attacker, cfg, rng = self.attacker, self.cfg, self.rng
+        self.duel = None
         attacker.stats.corners += 1
         self.set_piece, self.counter, self.opening = True, False, 0.0
         lane = self.lane if self.lane != self.centre else (0 if rng.random() < 0.5 else len(cfg.involvement.lanes) - 1)
@@ -436,11 +477,13 @@ class _Play:
 
     # What follows a shot.
 
-    def shoot(self, kind: str, zone: int, lane: int, carrier) -> PossessionOutcome | None:
-        """The shot, then a goal kick, the keeper's ball, a corner, a rebound or a second ball."""
+    def shoot(self, kind: str, zone: int, lane: int, carrier, stake: float | None = None, marker=None) -> PossessionOutcome | None:
+        """The shot, then a goal kick, the keeper's ball, a corner, a rebound or a second ball. `stake` is the danger the
+        side held before the carrier made the chance, `marker` the defender he got the better of."""
         cfg, rng = self.cfg, self.rng
+        self.duel = None
         result = resolve_shot(self.attacker, self.defender, zone, lane, self.counter, kind, self.passer, self.log, cfg, rng,
-                              self.carriers, carrier, self.set_piece)
+                              carrier, self.set_piece, stake, marker)
         after = cfg.engine.stoppages.after_shot
         if result == "goal": return PossessionOutcome(zone, lane, True, True, self.played, restart="goal")
         if result == "held": return PossessionOutcome(zone, lane, True, False, self.played, restart="keeper")

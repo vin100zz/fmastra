@@ -469,7 +469,7 @@ def test_save_from_before_the_stoppages_drops_the_retired_rules_and_takes_the_re
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
     # Every rule takes its new value, but the one the player had chosen.
-    assert len(STOPPAGE_RECALIBRATED_RULES) == 20
+    assert len(STOPPAGE_RECALIBRATED_RULES) == 15
     engine_rules = migrated.config.engine
     assert engine_rules.chance.cutback_xg == 0.17
     assert replace(engine_rules, chance=replace(engine_rules.chance, cutback_xg=config.engine.chance.cutback_xg)) == config.engine
@@ -504,6 +504,7 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     for introduced, path, defaults in MIGRATION_DEFAULTS:
         if introduced > 39:
             for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]
     # As schema 39 shipped them: no attribute `penalty` to list, generate or decline, but for a profile the player had set.
     rules["attributs"]["liste"]["techniques"].remove("penalty")
     for position, profile in rules["attributs"]["profils_generation"]["profils"].items():
@@ -547,3 +548,42 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     with pytest.raises(SaveError, match="configuration"):
         store.load("old")
+
+
+def test_save_from_before_the_duels_drops_the_retired_rating_scale_and_takes_the_recalibrated_one(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 41
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 41:
+            for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]
+    # As schema 41 shipped them, but for one rule the player had chosen.
+    rules["moteur_match"]["notes_joueurs"].update(
+        base=6.5, but=0.8, passe_decisive=0.6, tir_cadre_sans_but=0.05, arret=0.09, but_encaisse_gardien=-0.15,
+        progression_par_zone=[0.0, 0.01, 0.02, 0.05], recuperation_par_zone=[0.06, 0.04, 0.025, 0.015],
+        perte_par_zone=[-0.04, -0.03, -0.02, -0.01], defenseur_elimine=-0.02, passe_cle=0.12, participation_occasion=0.03,
+        tir_non_cadre=-0.03, contre=0.05, defenseur_battu=-0.15, victoire=0.1, sans_encaisser=0.25, minutes_sans_encaisser=60,
+        attendu_par_minute=0.0056, hors_jeu=0.0, penalty_concede=-0.3, penalty_obtenu=0.1, penalty_manque=-0.3, penalty_arrete=0.3)
+    rules["etats"]["forme"].update(note_reference=6.5, sensibilite_note=0.06)
+    rules["ia_gestion"]["valorisation"]["performance"].update(note_reference=6.5, ecart_note_plein=0.5)
+    rules["benchmarks"]["stats_match"].update(note_moyenne_poste_min=6.4, note_moyenne_poste_max=6.6)
+    legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    # Every rule takes its new value, but the one the player had chosen.
+    assert migrated.config.engine.player_ratings.assist == 0.6
+    assert replace(migrated.config.engine.player_ratings, assist=config.engine.player_ratings.assist) == config.engine.player_ratings
+    assert migrated.config.engine.duels == config.engine.duels
+    assert migrated.config.states.form == config.states.form
+    assert migrated.config.management.valuation == config.management.valuation
+    assert migrated.config.benchmarks == config.benchmarks
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").config == migrated.config

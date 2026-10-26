@@ -653,6 +653,13 @@ DEFAULTS = {"benchmarks.economie.derive_reputation_moyenne_max": 3.0,
             "demographie.generation.noms_minimum_par_nation": 20,
             "formations.hauteur_bloc.mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}
 DEFAULTS.update({f"{section}.{key}": value for section, values in NEGOTIATION_DEFAULTS.items() for key, value in values.items()})
+# Duels and a rating counted in danger: schema 42. Their models carry the defaults by hand.
+WORDS.update({"duels": "duels", "selection_porteur": "carrier_selection", "selection_defenseur": "defender_selection",
+              "sensibilite_porteur": "carrier_sensitivity", "sensibilite_defenseur": "defender_sensitivity",
+              "danger_par_zone": "danger", "danger_contre_par_zone": "counter_danger",
+              "danger_recuperation_par_zone": "recovery_danger", "part_defenseur_battu": "beaten_share", "part_tir": "shot_share",
+              "echelle_par_poste": "scale", "attendu_par_minute_par_poste": "expected_per_minute",
+              "ecart_type_note_poste_min": "min_position_spread", "ecart_type_note_poste_max": "max_position_spread"})
 # Who a new world keeps from the source, tier by tier: schema 34.
 WORDS.update({"paliers": "tiers", "clubs_simules": "simulated", "joueurs": "players", "gardiens": "goalkeepers",
               "espoirs": "prospects", "age_max_espoir": "prospect_max_age", "vivier": "pool", "vedettes": "stars",

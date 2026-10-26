@@ -1,4 +1,5 @@
 """Detailed-engine calibration suites."""
+from statistics import fmean, pstdev
 from time import perf_counter
 
 from core.engine.match import PossessionEngine
@@ -61,9 +62,12 @@ def run_detailed_suite(suite: str, world, iterations: int, seed: int) -> list[Me
                                         reference.target + reference.tolerance, iterations))
     bounds = target.set_piece_goal_share
     measurements.append(Measurement("set_piece_goal_share", totals["set_goals"] / max(1, totals["goals"]), bounds.min, bounds.max, iterations))
-    # Every starter's position of the symmetric 4-3-3: none may pull its players' form up or down.
+    # Every starter's position of the symmetric 4-3-3: none may pull its players' form up or down, and each spreads its
+    # players' notes alike.
     for position, values in sorted(ratings.items()):
-        measurements.append(Measurement(f"rating_{position}", sum(values) / len(values), target.min_position_rating,
+        measurements.append(Measurement(f"rating_{position}", fmean(values), target.min_position_rating,
                                         target.max_position_rating, len(values)))
+        measurements.append(Measurement(f"rating_spread_{position}", pstdev(values), target.min_position_spread,
+                                        target.max_position_spread, len(values)))
     measurements.append(Measurement("match_milliseconds", elapsed * 1000 / iterations, 0, cfg.benchmarks.performance.match_milliseconds, iterations))
     return measurements
