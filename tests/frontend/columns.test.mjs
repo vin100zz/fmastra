@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {shareWidth,cellColumns} from '../../web/columns.js';
+import {shareWidth,cellColumns,spreadColumns} from '../../web/columns.js';
 
 const read=path=>readFile(new URL(`../../${path}`,import.meta.url),'utf8');
 // A column of a fixed width, margins included; a name, which has none of its own.
@@ -37,6 +37,14 @@ test('each cell is told the columns it spans, through the headings that span row
  const rows=[row([[1,2,'poste'],[1,2,'joueur'],[3,1,'général']]),row([[1,1,'END'],[1,1,'PAS'],[1,1,'VIT']]),row([[1,1,'a'],[1,1,'b'],[1,1,'c'],[1,1,'d'],[1,1,'e']])];
  assert.deepEqual(cellColumns(rows).map(([cell,first,last])=>[cell.id,first,last]),
   [['poste',0,0],['joueur',1,1],['général',2,4],['END',2,2],['PAS',3,3],['VIT',4,4],['a',0,0],['b',1,1],['c',2,2],['d',3,3],['e',4,4]]);
+});
+
+test('a table lined up with another keeps the widths of the sheets: its gaps share nothing, so that both stay level',()=>{
+ const writes=[],style={removeProperty(){},setProperty:(...args)=>writes.push(args)};
+ const cell=()=>({colSpan:1,rowSpan:1,style});
+ const table={rows:[{cells:[cell(),cell(),cell()]}],classList:{contains:name=>name==='aligned'},style,querySelector:()=>null,getBoundingClientRect:()=>({width:800})};
+ spreadColumns(table);
+ assert.deepEqual(writes,[]);
 });
 
 test('every table of the screens and of their dialogs is spread, from the start',async()=>{

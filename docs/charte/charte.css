@@ -197,6 +197,12 @@
 .section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
 .section-title>.label{font-family:var(--display);font-stretch:semi-condensed;font-weight:700;color:var(--ink)}
 .section-title.inset{padding:0 10px;border-radius:var(--radius)}
+/* A section's title that follows another section stands 12 below it: white closes the section above before its band
+   opens the next. At the head of a card or of a column, or under a card's head, nothing above it; in a stack, its gap
+   makes 8 of the 12, under a card's body its padding. A card made of sections has no head: the first band opens it, at
+   its corners. */
+.section-title:not(:first-child,.card-head+*){margin-top:var(--s3)}
+.stack>.section-title:not(:first-child),.card-body+.section-title{margin-top:var(--s1)}
 /* A card that folds what is secondary: its whole head opens and closes it, a bare arrow at its end (the chevron of an icon,
    in the muted ink), turned over while it is open. Folded, what is secondary (.fold-more) takes no room. */
 .card-head.toggle{cursor:pointer}
@@ -940,6 +946,20 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .tile.record b{margin-left:auto;font:inherit}
 /* The foot of a table: what its columns add up to, under them, on the ground of a tile, a pale line over it. */
 .tr.foot{border-top:1px solid var(--head-line);background:var(--panel-2);font-weight:600;color:var(--strong)}
+/* A table that scrolls in its box (.scroll, held to a height): its head stays at the top, its foot at the bottom, the rows
+   passing under them. Two tables lined up (.aligned: a player's clubs, then his national team) keep the same columns, and
+   the room of a scroll bar whether they scroll or not. */
+.table.scroll{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.table.scroll>.tr.head{position:sticky;top:0;z-index:1;background:var(--panel)}
+.table.scroll>.tr.foot{position:sticky;bottom:0;z-index:1}
+.table.scroll.aligned{scrollbar-gutter:stable}
+/* A player's career: his clubs, then his national team, two tables lined up in one card, a band of the page's ground
+   between them. Held lower than its tables, the card shares its height: each takes what it needs up to an equal share,
+   the rest goes to the other. */
+.career-body{display:grid;grid-template-rows:minmax(0,max-content) auto minmax(0,max-content);flex:0 1 auto;min-height:0}
+.career-gap{height:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}
+/* The rows of a section in a card made of sections (a player's column): 12 from the edges, flush with their band. */
+.rail-section{padding:0 var(--s3)}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}
