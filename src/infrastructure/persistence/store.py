@@ -28,6 +28,7 @@ from core.world.demography import draw_position_ratings, initialize_targets, sec
 from core.world.reputation import initialize_reputation
 from core.world.age_records import initialize_age_records
 from core.world.international import initialize_strengths
+from core.world.international_selection import initialize_formations
 from core.world.shirts import number_squads
 from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
@@ -38,10 +39,12 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 41
+SCHEMA_VERSION = 42
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A selection calls up its 23 for the formation its candidates fill best (see `core.world.international_selection.initialize_formations`).
+    (42, ("international", "squad_list"), {"pool_per_position": 6, "min_affinity": 0.5}),
     # A club of the AI plays the formation its first team fills best, kept unless another does clearly better
     # (see `_choose_formations`).
     (41, ("formations", "choix"), {"marge_changement": 0.25, "blessure_longue_jours": 30}),
@@ -424,6 +427,7 @@ class SaveStore:
             if version < 39: _upgrade_stoppages(world)
             if version < 40: _upgrade_penalties(world)
             if version < 41: _choose_formations(world)
+            if version < 42: initialize_formations(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)

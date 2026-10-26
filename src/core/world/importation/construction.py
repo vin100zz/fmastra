@@ -203,6 +203,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     from core.world.international import initialize_international, initialize_strengths
     initialize_international(world)
     initialize_strengths(world)
+    from core.world.international_selection import initialize_formations
+    initialize_formations(world)
     for match in season_fixtures(world, season):
         world.matches[match.id] = match
         world.competitions[match.competition_id].match_ids.append(match.id)

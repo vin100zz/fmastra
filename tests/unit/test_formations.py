@@ -8,7 +8,7 @@ import pytest
 from core.domain.clubs import Competition
 from core.domain.matches import SubmittedLineup
 from core.domain.players import Position
-from infrastructure.persistence.store import ADDED_FORMATIONS, SaveError, SaveStore
+from infrastructure.persistence.store import ADDED_FORMATIONS, MIGRATION_DEFAULTS, SaveError, SaveStore
 from test_market import mini_world
 
 OLDER_POSITIONS = {"DG": "DL", "DD": "DR"}
@@ -88,7 +88,8 @@ def test_a_save_from_before_schema_41_plays_the_formation_of_its_squad_and_its_h
     _, store, path, payload = saved_world(config, tmp_path)
     payload["schema_version"] = 40
     world = payload["world"]
-    del world["config"]["formations"]["choix"]
+    for introduced, (domain, section), _ in MIGRATION_DEFAULTS:
+        if introduced > 40: del world["config"][domain][section]
     for club in world["clubs"].values(): del club["formation_squad"]
     world["clubs"]["1"]["formation"] = world["clubs"]["2"]["formation"] = "5-4-1"
     world["controlled_club_id"] = 1

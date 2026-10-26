@@ -1,6 +1,6 @@
 # Sauvegardes
 
-Le format courant est `schema_version: 41` : JSON typé, compressé avec gzip,
+Le format courant est `schema_version: 42` : JSON typé, compressé avec gzip,
 configuration effective et états RNG inclus. Le lecteur est dans
 `src/infrastructure/persistence/store.py` ; le schéma de sérialisation compilé
 est dans `typed_codec.py`. Aucun pickle ni import de classe fourni par le fichier.
@@ -251,6 +251,14 @@ La v41 remplace la formation tirée au hasard à la création par celle que l'é
 choisie ; il a une valeur par défaut vide. Au chargement, `_choose_formations` donne à chaque club de l'IA sa meilleure
 formation, sans marge : la formation tirée n'avait rien à préserver. Le club de l'utilisateur garde la sienne. La
 configuration embarquée reçoit `formations.choix` (`marge_changement` 0,25, `blessure_longue_jours` 30,
+`MIGRATION_DEFAULTS`).
+
+La v42 donne à chaque sélection une formation : celle de son rassemblement (`NationalTeam.formation`), pour laquelle
+elle appelle ses 23 et joue, et une formation de référence revue à chaque révision des forces
+(`NationalTeam.reference_formation`), sur laquelle un binational mesure ses chances (`docs/manuel/15-selections.md`).
+Les deux champs ont une valeur par défaut vide ; au chargement, `initialize_formations` donne à chaque sélection sa
+formation de référence, et la même pour son prochain rassemblement. Un rassemblement en cours garde sa liste. La
+configuration embarquée reçoit `international.squad_list` (`pool_per_position` 6, `min_affinity` 0,5,
 `MIGRATION_DEFAULTS`).
 
 Toute future suppression ou modification du sens d'un champ requiert une nouvelle

@@ -505,6 +505,42 @@ deux tournaient en même temps sur la machine.
   40 secondes est dépassé sur ce conteneur par les deux versions ; la mesure qui tranche
   la décision 4 est la suite `performance` sur la machine de Vincent, au repos.
 
+### Étape 3, faite
+
+Code : `core.world.international_selection` (`list_roles`, `selection_value`, `shortlist`,
+`reference_formation`, `initialize_formations`, `fill_camp`, `camp_lineup`, `preferences`), les champs
+`NationalTeam.formation` et `NationalTeam.reference_formation`, `best_formation` qui accepte une valeur
+du joueur au poste, la configuration `international.squad_list`, la montée de schéma 42. Le manuel
+(chapitre 15) décrit la règle.
+
+Ce qui a changé à l'implémentation :
+
+- **Les clés de configuration** suivent la convention anglaise de `config/international.json` :
+  `squad_list.pool_per_position` et `squad_list.min_affinity`, au lieu de `vivier_par_poste` et
+  `affinite_min_liste`.
+- **Une montée de schéma de plus** (42) plutôt que de réutiliser la 41 : une sauvegarde faite avec le code
+  de l'étape 1 reste lisible.
+- **La valeur d'un joueur pour la liste** reprend la note du sélectionneur (niveau au poste, forme,
+  condition, aléa), multipliée par l'affinité comme pour les clubs ; elle est nulle sous l'affinité
+  minimale. La formation du rassemblement se choisit sur cette valeur, la formation de référence sur le
+  niveau seul.
+- **La liste** est une affectation unique des 23 places, au lieu d'un remplissage place par place. Une
+  place sans candidat possible revient à un renfort temporaire.
+- **Les binationaux** : un poste que la formation de référence n'aligne pas compte une place, pour ne pas
+  fermer ce poste à tous.
+
+Mesures au premier rassemblement (31 août 2026, graine par défaut), comparées au code de l'étape 2 :
+
+| Mesure | Étape 2 | Étape 3 |
+|---|---|---|
+| Renforts temporaires dans les listes | 149 sur 1 242 places, 15 nations | 146, 15 nations |
+| Formations des 54 sélections | toutes en 4-4-2 plat au départ | 3-5-2 18, 4-4-2 losange 17, 4-2-3-1 7, 4-4-2 plat 5, 5-3-2 4, 4-3-3 2, 4-4-2 offensif 1 |
+| Niveau moyen des 23, France / Espagne / Angleterre | 75.2 / 76.2 / 76.5 | 75.6 / 76.9 / 76.7 |
+
+Les renforts ne baissent presque pas : les petites nations manquent de joueurs tout court, pas d'un
+poste (Andorre et Saint-Marin gardent 10 et 18 renforts). L'évolution des forces des nations sur une
+campagne reste à mesurer.
+
 ## Décisions
 
 1. **Ce qui définit la meilleure formation.** Le meilleur onze (valeur au poste ×

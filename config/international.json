@@ -3,5 +3,10 @@
   "first_world_cup": 2030,
   "selection_noise": 1.5,
   "qualification_noise": 2.0,
-  "historical_nations": {}
+  "historical_nations": {},
+  "squad_list": {
+    "_note": "A selection weighs its pool_per_position best candidates at each position, chooses the formation they fill best, then calls up its eleven, a backup for each outfield place and three goalkeepers. A player needs min_affinity at a position to be called up there.",
+    "pool_per_position": 6,
+    "min_affinity": 0.5
+  }
 }

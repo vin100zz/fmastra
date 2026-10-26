@@ -14,6 +14,10 @@ class NationalTeam:
     federation: str
     strength: float
     reference_strength: float
+    # The formation of its current or last camp (see `core.world.international_selection`); empty before its first.
+    formation: str = ""
+    # The formation its whole pool fills best, revised once a year: the places a dual national weighs his chances by.
+    reference_formation: str = ""
 
 
 @dataclass(slots=True)
