@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Football Manager Short</title>
+<!-- Une démo du jeu au format Short (9:16, 35 s), dessinée avec la charte (docs/charte/charte.css) ; render.mjs la filme. -->
+<link rel="stylesheet" href="../charte/charte.css">
+<style>
+html,body{height:100%;margin:0}
+body{display:grid;place-items:center;overflow:hidden;background:var(--panel-3)}
+body.capture{place-items:start}
+.stage{position:relative;flex:none;width:480px;height:854px;overflow:hidden;background:var(--bg)}
+.stage *{animation-play-state:paused!important}
+.scene{position:absolute;inset:0;visibility:hidden}
+.scene.on{visibility:visible}
+.scene:not(.on){opacity:0}
+.scene.accent{background:var(--accent);color:var(--accent-ink)}
+.scene.white{background:var(--panel)}
+
+/* Ce qui entre, à son heure (--d, en secondes depuis le début du Short). */
+.in{animation:var(--k,rise) var(--t,.45s) cubic-bezier(.2,.8,.2,1) calc(var(--d)*1s) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+@keyframes pop{from{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.08)}}
+@keyframes drop{from{opacity:0;transform:translateY(-48px)}}
+@keyframes slide{from{opacity:0;transform:translateX(96px)}}
+@keyframes fade{from{opacity:0}}
+
+/* La légende d'une scène : en capitales, un mot sur l'accent. */
+.caption{position:absolute;left:var(--s4);right:var(--s4);top:64px;display:flex;flex-wrap:wrap;gap:0 var(--s3);font:700 semi-condensed var(--fs-hero)/48px var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--strong)}
+.caption>span{display:inline-block}
+.caption mark{padding:0 var(--s2);border-radius:var(--radius-chip);background:var(--accent);color:var(--accent-ink)}
+.content{position:absolute;left:var(--s4);right:var(--s4);top:168px;display:flex;flex-direction:column;gap:var(--s2)}
+
+/* Les chapitres, en tête. */
+.progress{position:absolute;left:var(--s4);right:var(--s4);top:var(--s6);z-index:5;display:flex;gap:var(--s1)}
+.progress>i{flex:1;height:var(--mark);border-radius:var(--mark);background:var(--line);overflow:hidden}
+.progress>i>b{display:block;width:0;height:100%;background:var(--strong)}
+
+/* Le passage d'une scène à l'autre : l'écharpe de la marque traverse l'écran. */
+.wipe{position:absolute;top:0;bottom:0;left:0;z-index:6;width:1100px;pointer-events:none;visibility:hidden}
+.wipe>i{position:absolute;inset:0;background:var(--accent);clip-path:polygon(160px 0,100% 0,calc(100% - 160px) 100%,0 100%)}
+.wipe>i+i{left:auto;right:-72px;width:200px;background:var(--strong);clip-path:polygon(184px 0,200px 0,40px 100%,24px 100%)}
+
+/* Le pointeur et son clic. */
+.pointer{position:absolute;left:0;top:0;z-index:7;width:28px;height:28px;pointer-events:none;visibility:hidden}
+.pointer svg{position:absolute;inset:0;width:100%;height:100%;fill:var(--strong);stroke:var(--panel);stroke-width:1.5;stroke-linejoin:round;filter:drop-shadow(0 2px 3px #0a141e59)}
+.pointer>i{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 3px var(--accent);opacity:0}
+
+/* Ouverture et fin : la marque, en grand. */
+.brand-big{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:var(--s4)}
+.brand-big .logo{width:112px;height:112px;stroke:var(--accent);stroke-width:2.5}
+.brand-big .wordmark{align-items:center;font-size:var(--fs-hero);line-height:40px;letter-spacing:var(--caps)}
+.white .brand-big .logo{color:var(--accent-ink)}
+.hook-line{position:absolute;left:var(--s6);right:var(--s6);top:560px;font:700 semi-condensed var(--fs-hero)/48px var(--display);letter-spacing:var(--caps);text-align:center;text-transform:uppercase}
+
+/* Le club. */
+.t-clubs .tr{grid-template-columns:minmax(0,1fr) 32px 40px 40px}
+
+/* La composition : le terrain, en 4-3-3. */
+.compo-pitch{height:372px}
+/* Le bandeau d'un match, à la largeur d'un téléphone : les noms à la taille d'un titre de page, pour qu'ils tiennent. */
+.content .hero.duel h1{font-size:var(--fs-page)}
+
+/* Le direct : le score, les temps forts, les chiffres. */
+.duel-score .big-score{display:inline-block}
+.goal-flash{position:absolute;left:0;right:0;top:330px;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s1);height:176px;background:var(--accent);box-shadow:0 0 0 var(--s2) var(--strong);color:var(--accent-ink);transform:scaleY(0)}
+.goal-flash strong{font:700 semi-condensed var(--fs-hero)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;transform:scale(2.4)}
+.goal-flash span{margin-top:var(--s6);font:700 semi-condensed var(--fs-title)/24px var(--display);letter-spacing:var(--caps);text-transform:uppercase}
+
+/* Le titre. */
+.t-league .tr{grid-template-columns:24px minmax(0,var(--w-name)) 36px 24px 44px 98px}
+.t-league .tr:not(.head){position:relative}
+.champion{display:flex;justify-content:center;margin-top:var(--s6)}
+.champion .reached{transform:scale(2.2)}
+.confetti{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none}
+.confetti>i{position:absolute;top:0;left:0;width:8px;height:12px;border-radius:1px}
+</style>
+</head>
+<body>
+<div class="app stage" id="stage">
+
+<div class="progress" id="progress"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+
+<!-- 0 · L'accroche -->
+<section class="scene accent" data-from="0" data-to="3">
+ <div class="brand-big" style="top:208px">
+  <svg class="logo in" style="--d:.15;--k:pop;--t:.6s" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg>
+  <span class="wordmark"><b class="in" style="--d:.45">FOOTBALL</b><span class="in" style="--d:.6">MANAGER</span></span>
+ </div>
+ <p class="hook-line"><span class="in" style="--d:1.1;display:inline-block">Et si tu dirigeais</span> <span class="in" style="--d:1.35;display:inline-block">ton club ?</span></p>
+</section>
+
+<!-- 1 · Le club -->
+<section class="scene" data-from="3" data-to="8.2" data-chapter="0">
+ <h2 class="caption"><span class="in" style="--d:3.2">Choisis</span><span class="in" style="--d:3.3">ton</span><span class="in" style="--d:3.4"><mark>club</mark></span></h2>
+ <div class="content">
+  <section class="card in" style="--d:3.45">
+   <div class="card-head"><h2>Le monde</h2><span class="label">9 nations</span></div>
+   <div id="nations"></div>
+  </section>
+  <section class="card in" style="--d:3.9">
+   <div class="card-head"><h2>Clubs</h2><span class="label">Ligue 1</span></div>
+   <div class="table t-clubs" id="clubs"></div>
+  </section>
+  <section class="card in" style="--d:6.15;--k:slide">
+   <div class="hero" style="background:#f8d000;color:var(--strong)">
+    <i class="hero-sash" style="background:#e00000"></i><i class="hero-sash thin" style="background:#e00000"></i>
+    <span class="crest large" style="background:linear-gradient(155deg,#f8d000 55%,#e00000 55%);color:var(--strong)">RCL</span>
+    <div class="hero-name"><h1>Lens</h1><span class="hero-context"><img class="flag" src="../../web/flags/fr.svg" alt="">Ligue 1</span></div>
+    <div class="tiles"><div class="tile graded h90"><span class="label">Niveau</span><strong>141</strong></div></div>
+   </div>
+  </section>
+ </div>
+</section>
+
+<!-- 2 · La composition -->
+<section class="scene" data-from="8.2" data-to="13.6" data-chapter="1">
+ <h2 class="caption"><span class="in" style="--d:8.4">Compose</span><span class="in" style="--d:8.5">ton</span><span class="in" style="--d:8.6"><mark>onze</mark></span></h2>
+ <div class="content" id="compo">
+  <div class="segmented in" style="--d:8.6" id="levels"><button type="button" class="active">Meilleure</button><button type="button">Légère</button><button type="button">Forte</button><button type="button">Complète</button></div>
+  <div class="pitch compo-pitch in" style="--d:8.7;--k:fade" id="pitch"><i class="pitch-box"></i><i class="pitch-box far"></i></div>
+  <div class="bench in" style="--d:9.9" id="bench"></div>
+ </div>
+</section>
+
+<!-- 3 · Le direct -->
+<section class="scene" data-from="13.6" data-to="23.2" data-chapter="2">
+ <h2 class="caption"><span class="in" style="--d:13.8">Vis</span><span class="in" style="--d:13.9">le</span><span class="in" style="--d:14"><mark>match</mark></span></h2>
+ <div class="content">
+  <section class="card in" style="--d:13.9">
+   <div class="hero duel" style="background:#f8d000">
+    <i class="hero-sash away-field" style="background:#e01e13"></i>
+    <i class="hero-sash home-band" style="background:#e00000"></i><i class="hero-sash home-band thin" style="background:#e00000"></i>
+    <i class="hero-sash away-band" style="background:#20325f"></i><i class="hero-sash away-band thin" style="background:#20325f"></i>
+    <div class="hero-side" style="color:var(--strong)"><span class="crest large" style="background:linear-gradient(155deg,#f8d000 55%,#e00000 55%);color:var(--strong)">RCL</span><h1>Lens</h1></div>
+    <div class="tile match-score duel-score"><span class="big-score" id="score">0 : 0</span><span class="label" id="clock">1′</span></div>
+    <div class="hero-side away" style="color:#fff"><span class="crest large" style="background:linear-gradient(155deg,#e01e13 55%,#20325f 55%);color:#fff">LOSC</span><h1>Lille</h1></div>
+   </div>
+  </section>
+  <div class="page-heading in" style="--d:14.1"><div class="match-facts"><span class="comp">L1</span><span class="strong">34e journée</span><span class="muted">samedi 15 mai 2027</span></div><div class="tools"><span class="tag alert">En direct</span></div></div>
+  <section class="card in t-live" style="--d:14.2">
+   <div class="card-head"><h2>Les temps forts</h2></div>
+   <div id="highlights" style="height:104px"></div>
+  </section>
+  <section class="card in" style="--d:14.3">
+   <div class="card-head"><h2>Statistiques</h2></div>
+   <div class="comparisons" id="stats"></div>
+  </section>
+ </div>
+ <div class="goal-flash" id="goal"><strong>But !</strong><span id="goal-who"></span></div>
+</section>
+
+<!-- 4 · Le mercato -->
+<section class="scene" data-from="23.2" data-to="28" data-chapter="3">
+ <h2 class="caption"><span class="in" style="--d:23.4">Fais</span><span class="in" style="--d:23.5">ton</span><span class="in" style="--d:23.6"><mark>mercato</mark></span></h2>
+ <div class="content">
+  <section class="card in" style="--d:23.5;--k:slide">
+   <div class="hero" style="background:#e2001a;color:#fff">
+    <i class="hero-sash" style="background:#fff"></i><i class="hero-sash thin" style="background:#fff"></i>
+    <span class="hero-number">9</span>
+    <div class="hero-name"><h1>Mbaye</h1></div>
+   </div>
+   <div class="hero-bar"><div class="hero-pills"><span class="position att">ATT</span><span class="cell strong"><i class="kit-dot" style="background:linear-gradient(135deg,#e2001a 64%,#fff 64%)"></i>Monaco</span><span class="muted">sous contrat jusqu’en 2028</span></div></div>
+  </section>
+  <div class="tiles row">
+   <div class="tile in" style="--d:23.7"><span class="label">Âge</span><strong>21</strong></div>
+   <div class="tile graded h120 in" style="--d:23.8"><span class="label">Niveau</span><strong>152</strong></div>
+   <div class="tile graded h120 in" style="--d:23.9"><span class="label">Potentiel</span><strong>171</strong></div>
+   <div class="tile in" style="--d:24"><span class="label">Valeur</span><strong>14 M€</strong></div>
+  </div>
+  <section class="card in" style="--d:24.1">
+   <div class="card-head"><h2>Faire une offre</h2></div>
+   <div class="card-body">
+    <div class="fact"><span>Indemnité</span><strong class="figure" id="fee">9.5 M€</strong></div>
+    <div class="fact"><span>Salaire</span><strong>95 k€</strong></div>
+    <div class="fact"><span>Contrat</span><strong>jusqu’en 2031</strong></div>
+    <div class="fact"><span id="offer-state"></span><button type="button" class="button primary" id="send">Envoyer l’offre <span class="go" aria-hidden="true"></span></button></div>
+   </div>
+  </section>
+  <section class="card in" style="--d:26.15;--k:pop">
+   <div class="card-head"><h2>Transfert</h2><span class="pill">Offre acceptée</span></div>
+   <div class="card-body"><div class="fact"><strong><span class="cell"><i class="kit-dot" style="background:linear-gradient(135deg,#e2001a 64%,#fff 64%)"></i>Monaco</span><span class="muted">→</span><span class="cell"><i class="kit-dot" style="background:linear-gradient(135deg,#f8d000 64%,#e00000 64%)"></i>Lens</span></strong><strong class="figure">15 M€</strong></div></div>
+  </section>
+ </div>
+</section>
+
+<!-- 5 · Le titre -->
+<section class="scene" data-from="28" data-to="32" data-chapter="4">
+ <h2 class="caption"><span class="in" style="--d:28.2">Vise</span><span class="in" style="--d:28.3">le</span><span class="in" style="--d:28.4"><mark>titre</mark></span></h2>
+ <div class="content">
+  <section class="card in" style="--d:28.3">
+   <div class="card-head"><h2 id="league-title">Ligue 1 – 33e journée</h2></div>
+   <div class="table t-league" id="league"></div>
+  </section>
+  <div class="champion in" style="--d:30.2;--k:pop;--t:.6s"><span class="reached won"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .5l1.3 2.9 3.2.3-2.4 2.1.7 3.1L5 7.3 2.2 8.9l.7-3.1L.5 3.7l3.2-.3z"></path></svg>Champion de France</span></div>
+ </div>
+ <div class="confetti" id="confetti"></div>
+</section>
+
+<!-- 6 · La fin -->
+<section class="scene white" data-from="32" data-to="35.5">
+ <div class="brand-big" style="top:248px">
+  <svg class="logo in" style="--d:32.2;--k:pop;--t:.6s" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg>
+  <span class="wordmark" style="color:var(--strong)"><b class="in" style="--d:32.45">FOOTBALL</b><span class="in" style="--d:32.6">MANAGER</span></span>
+  <span class="cta in" style="--d:33.1;--k:pop;margin-top:var(--s6)">Lancer une partie <span class="go" aria-hidden="true"></span></span>
+ </div>
+</section>
+
+<div class="wipe" id="wipe"><i></i><i></i></div>
+<div class="pointer" id="pointer"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M3 2l19 11.5-8.2 1.6 4.9 9.4-3.4 1.7-4.8-9.4L4.4 23z"></path></svg><i></i></div>
+</div>
+
+<script>
+const TOTAL = 35.5;
+const stage = document.getElementById('stage');
+const $ = (id) => document.getElementById(id);
+
+const LENS = {body: '#f8d000', sleeves: '#e00000', ink: 'var(--strong)'};
+const shirt = (kit, label) => `<span class="kit-shirt number" style="--kit-body:${kit.body};--kit-sleeves:${kit.sleeves};--kit-ink:${kit.ink}"><svg viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z"></path><path class="kit-body" d="M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z"></path><path class="kit-collar" d="M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z"></path><path class="kit-outline" d="M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z"></path></svg><b>${label}</b></span>`;
+// The pale ground of a note on 200: red up to 70, yellow at 110, green from 150 (docs/charte-graphique.md, « Couleurs »).
+const hue = (n) => 'h' + [0, 30, 60, 90, 120][Math.max(0, Math.min(4, Math.round((n - 70) / 20)))];
+const dot = (a, b) => `<i class="kit-dot" style="background:linear-gradient(135deg,${a} 64%,${b} 64%)"></i>`;
+const check = '<button type="button" class="check" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>';
+
+// 1 · Le club.
+$('nations').innerHTML = [
+  ['fr', 'France', ['L1', 'L2', 'L3'], 54], ['gb-eng', 'Angleterre', ['D1', 'D2'], 44],
+  ['es', 'Espagne', ['D1', 'D2'], 42], ['it', 'Italie', ['D1', 'D2'], 40],
+].map(([flag, name, divs, clubs], i) => `<div class="nation-line in" style="--d:${3.55 + i * .1}">${check}<span class="nation"><img class="flag" src="../../web/flags/${flag}.svg" alt="">${name}</span><div class="segmented small range">${divs.map((d) => `<button type="button" class="active">${d}</button>`).join('')}</div><span class="num">${clubs}</span></div>`).join('');
+$('clubs').innerHTML = '<div class="tr head"><span>Club</span><span>Ch.</span><span class="num">Niv.</span><span class="num">Pot.</span></div>' + [
+  ['Paris SG', '#004170', '#da291c', 168, 171], ['Marseille', '#2faee0', '#fff', 151, 155], ['Monaco', '#e2001a', '#fff', 149, 158],
+  ['Lyon', '#1a3c96', '#fff', 146, 152], ['Lille', '#e01e13', '#20325f', 144, 151], ['Lens', '#f8d000', '#e00000', 141, 156],
+].map(([name, a, b, lvl, pot]) => `<div class="tr in" data-club="${name}"><span class="cell strong">${dot(a, b)}${name}</span><span><span class="comp">L1</span></span><span class="num"><span class="rating graded ${hue(lvl)}">${lvl}</span></span><span class="num"><span class="rating graded ${hue(pot)}">${pot}</span></span></div>`).join('');
+document.querySelectorAll('#clubs .tr:not(.head)').forEach((row, i) => row.style.setProperty('--d', 4 + i * .08));
+
+// 2 · La composition.
+const XI = [
+  [50, 12, 9, 'Okafor', 112, 'down'], [18, 16, 7, 'Varenne', 141], [82, 16, 11, 'Lemaire', 138],
+  [25, 40, 8, 'Perrin', 139], [50, 44, 6, 'Fofana', 142], [75, 40, 10, 'Aït-Ali', 137],
+  [12, 64, 3, 'Léger', 128], [37, 67, 4, 'Kaboré', 136], [63, 67, 5, 'Dumont', 134], [88, 64, 2, 'Sanches', 130],
+  [50, 86, 1, 'Moreau', 132],
+];
+const block = (name, note, form) => `<span class="block-name">${name}</span><span><span class="block-note ${hue(note)}">${note}</span>${form ? `<i class="form-arrow ${form}"></i>` : ''}</span>`;
+$('pitch').insertAdjacentHTML('beforeend', XI.map(([x, y, n, name, note, form], i) => `<div class="pitch-player" style="left:${x}%;top:${y}%" ${i === 0 ? 'id="okafor"' : ''}><div class="in" style="--d:${9 + (10 - i) * .07};--k:drop;display:flex;flex-direction:column;align-items:center;gap:1px">${shirt(LENS, n)}<span class="player-block">${block(name, note, form)}</span></div></div>`).join(''));
+const SWAP = {out: [9, block('Okafor', 112, 'down'), 'Diakité'], in: [19, block('Diakité', 147, 'up'), 'Okafor']};
+$('bench').innerHTML = [
+  ['att', 'ATT', '<span>Diakité</span>', 'id="diakite"'],
+  ['mid', 'MIL', 'Camara', ''], ['', 'DÉF', 'Robert', ''],
+].map(([cls, pos, name, id]) => `<div class="bench-slot" ${id}><span class="position ${cls}">${pos}</span>${name}</div>`).join('');
+
+// 3 · Le direct. A minute of the match is a moment of the Short, from the kick-off at 14 s to the whistle at 21.5 s.
+const KICK = 14, WHISTLE = 21.5, LAST = 93;
+const at = (minute) => KICK + minute / LAST * (WHISTLE - KICK);
+const matchMinute = (m) => m <= 90 ? `${Math.max(1, Math.ceil(m))}′` : `90+${Math.ceil(m - 90)}′`;
+const EVENTS = [
+  {m: 23, side: 'home', mark: 'goal', who: 'Diakité', pass: 'Perrin'},
+  {m: 51, side: 'away', mark: 'goal', who: 'Haraldsen', pass: 'Mendy'},
+  {m: 64, side: 'home', mark: 'yellow', who: 'Kaboré'},
+  {m: 88, side: 'home', mark: 'goal', who: 'Varenne', pass: 'Diakité'},
+];
+$('highlights').innerHTML = EVENTS.map((e) => {
+  const fact = `<span class="marks"><i class="mark ${e.mark}"></i></span><span class="highlight-names"><strong>${e.who}</strong>${e.pass ? `<small>${e.pass}</small>` : ''}</span>`;
+  return `<div class="highlight-row"><div class="highlight home">${e.side === 'home' ? fact : ''}</div><span class="minute">${e.m}′</span><div class="highlight away">${e.side === 'away' ? fact : ''}</div></div>`;
+}).join('');
+// Each figure of the match as it stands at a minute: [minute, home, away].
+const STATS = [
+  {label: 'Possession', unit: ' %', steps: [[0, 50, 50], [15, 56, 44], [40, 53, 47], [60, 49, 51], [80, 55, 45], [93, 54, 46]]},
+  {label: 'Tirs', steps: [[0, 0, 0], [9, 1, 0], [18, 3, 1], [23, 4, 1], [37, 6, 2], [51, 7, 4], [70, 10, 6], [88, 13, 7], [93, 14, 8]]},
+  {label: 'Tirs cadrés', steps: [[0, 0, 0], [18, 1, 0], [23, 2, 0], [37, 3, 1], [51, 3, 2], [70, 5, 3], [88, 6, 3]]},
+];
+$('stats').innerHTML = STATS.map(() => '<div class="comparison"><span></span><div><span></span><span class="comparison-bar"><i style="color:oklch(.64 .13 95)"></i><i style="color:#e01e13"></i></span></div><span></span></div>').join('');
+const statAt = (steps, m) => steps.filter(([at]) => at <= m).at(-1);
+
+// 5 · Le titre.
+const LEAGUE = [
+  {club: 'Paris SG', c: ['#004170', '#da291c'], before: [72, 33, 41, 'VVNVV'], after: [73, 34, 41, 'VNVVN']},
+  {club: 'Lens', c: ['#f8d000', '#e00000'], before: [71, 33, 35, 'VVVNV'], after: [74, 34, 36, 'VVNVV'], own: true},
+  {club: 'Marseille', c: ['#2faee0', '#fff'], before: [66, 33, 27, 'VDVVN'], after: [66, 34, 26, 'DVVND']},
+  {club: 'Monaco', c: ['#e2001a', '#fff'], before: [62, 33, 19, 'NVDVV'], after: [65, 34, 21, 'VDVVV']},
+  {club: 'Lille', c: ['#e01e13', '#20325f'], before: [60, 33, 16, 'VNNDV'], after: [60, 34, 15, 'NNDVD']},
+  {club: 'Lyon', c: ['#1a3c96', '#fff'], before: [57, 33, 12, 'DVVNN'], after: [60, 34, 14, 'VVNNV']},
+];
+const PLACES = ['good', 'c1', 'c1', 'c1', 'c3', 'c4'];
+$('league').innerHTML = '<div class="tr head"><span class="center">#</span><span>Club</span><span class="num">Pts</span><span class="num">J</span><span class="num">Diff.</span><span>Forme</span></div>' +
+  LEAGUE.map((r, i) => `<div class="tr in${r.own ? ' own' : ''}" style="--d:${28.45 + i * .06}"><span class="rank ${PLACES[i]}">${i + 1}</span><span class="cell strong">${dot(...r.c)}${r.club}</span><span class="num strong"></span><span class="num"></span><span class="num"></span><span class="form"></span></div>`).join('');
+const DAY = 29.2, CLIMB = 29.6;
+const confettiColors = ['var(--accent)', '#e00000', '#f8d000', 'var(--strong)'];
+let seed = 7;
+const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const CONFETTI = Array.from({length: 56}, (_, i) => ({x: rand() * 480, v: 260 + rand() * 260, s: rand() * 6 - 3, r: rand() * 720 - 360, delay: rand() * .7, c: confettiColors[i % 4]}));
+$('confetti').innerHTML = CONFETTI.map((p) => `<i style="background:${p.c}"></i>`).join('');
+
+// The pointer: where it goes and when it clicks, a target named by its element.
+const POINTER = [
+  {t: 4.9, x: 440, y: 700}, {t: 5.75, el: '[data-club="Lens"]', dx: -60}, {t: 5.9, click: true}, {t: 6.1, el: '[data-club="Lens"]', dx: -60}, {t: 6.6, el: '[data-club="Lens"]', dx: -60, y: 700},
+  {t: 10.0, x: 440, y: 760}, {t: 10.6, el: '#okafor .kit-shirt'}, {t: 10.7, click: true}, {t: 10.85, el: '#okafor .kit-shirt'}, {t: 11.3, el: '#diakite'}, {t: 11.4, click: true}, {t: 11.6, el: '#diakite'}, {t: 12.3, x: 470, y: 800},
+  {t: 24.6, x: 440, y: 780}, {t: 25.3, el: '#send'}, {t: 25.45, click: true}, {t: 25.65, el: '#send'}, {t: 26.2, x: 470, y: 800},
+];
+const ease = (p) => p < .5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
+const clamp = (p) => Math.max(0, Math.min(1, p));
+function centre(sel) {
+  const s = stage.getBoundingClientRect(), r = document.querySelector(sel).getBoundingClientRect(), k = s.width / 480;
+  return [(r.left + r.width / 2 - s.left) / k, (r.top + r.height / 2 - s.top) / k];
+}
+function pointerAt(t) {
+  const stops = POINTER.filter((p) => !p.click).map((p) => {
+    const [x, y] = p.el ? centre(p.el) : [p.x, p.y];
+    return {t: p.t, x: x + (p.dx || 0), y: p.y ?? y + (p.el ? 4 : 0)};
+  });
+  const el = $('pointer'), ring = el.lastElementChild;
+  // Visible from its first stop of a scene to its last, a scene being a run of stops less than 3 s apart.
+  const runs = [];
+  stops.forEach((s, i) => (i && s.t - stops[i - 1].t < 3 ? runs.at(-1).push(s) : runs.push([s])));
+  const run = runs.find((r) => t >= r[0].t - .3 && t <= r.at(-1).t);
+  el.style.visibility = run ? 'visible' : 'hidden';
+  if (!run) return;
+  const i = run.findIndex((s) => s.t > t);
+  let x, y;
+  if (i <= 0) ({x, y} = i === 0 ? run[0] : run.at(-1));
+  else {
+    const a = run[i - 1], b = run[i], p = ease(clamp((t - a.t) / (b.t - a.t)));
+    x = a.x + (b.x - a.x) * p; y = a.y + (b.y - a.y) * p;
+  }
+  const click = POINTER.filter((p) => p.click && t >= p.t && t < p.t + .4).at(-1);
+  const q = click ? (t - click.t) / .4 : 1;
+  el.style.transform = `translate(${x}px,${y}px) scale(${click ? 1 - .15 * Math.sin(q * Math.PI) : 1})`;
+  ring.style.opacity = click ? 1 - q : 0;
+  ring.style.transform = `scale(${.4 + q * 1.4})`;
+}
+
+const scenes = [...document.querySelectorAll('.scene')];
+const BOUNDS = scenes.slice(1).map((s) => +s.dataset.from);
+const lerpSteps = (steps, t) => {
+  for (let i = steps.length - 1; i >= 0; i--) if (t >= steps[i][0]) return steps[i][1];
+  return steps[0][1];
+};
+
+function seek(t) {
+  for (const a of document.getAnimations()) a.currentTime = t * 1000;
+  scenes.forEach((s) => s.classList.toggle('on', t >= +s.dataset.from && t < +s.dataset.to));
+  // Chapters.
+  const chapters = scenes.filter((s) => s.dataset.chapter);
+  $('progress').style.visibility = t >= chapters[0].dataset.from && t < chapters.at(-1).dataset.to ? 'visible' : 'hidden';
+  chapters.forEach((s, i) => {
+    $('progress').children[i].firstElementChild.style.width = `${clamp((t - s.dataset.from) / (s.dataset.to - s.dataset.from)) * 100}%`;
+  });
+  // The wipe, centred on each change of scene.
+  const b = BOUNDS.find((b) => Math.abs(t - b) < .35);
+  $('wipe').style.visibility = b === undefined ? 'hidden' : 'visible';
+  if (b !== undefined) $('wipe').style.transform = `translateX(${480 - 1800 * ((t - b + .35) / .7)}px)`;
+  pointerAt(t);
+
+  // 1 · The club picked.
+  document.querySelector('[data-club="Lens"]').classList.toggle('own', t >= 5.9);
+  // 2 · Okafor picked, then swapped for Diakité, which drops the level the lineup was made at.
+  $('okafor').classList.toggle('picked', t >= 10.7 && t < 11.45);
+  $('diakite').style.boxShadow = t >= 11.4 && t < 11.45 ? 'inset 0 0 0 2px var(--accent)' : '';
+  const [number, lines, benched] = SWAP[t >= 11.45 ? 'in' : 'out'];
+  const player = $('okafor');
+  if (player.querySelector('.player-block').innerHTML !== lines) {
+    player.querySelector('.kit-shirt b').textContent = number;
+    player.querySelector('.player-block').innerHTML = lines;
+    $('diakite').lastElementChild.textContent = benched;
+  }
+  $('levels').firstElementChild.classList.toggle('active', t < 11.45);
+
+  // 3 · The match.
+  const m = clamp((t - KICK) / (WHISTLE - KICK)) * LAST;
+  const goals = EVENTS.filter((e) => e.mark === 'goal' && t >= at(e.m));
+  const home = goals.filter((e) => e.side === 'home').length, away = goals.length - home;
+  $('score').textContent = `${home} : ${away}`;
+  $('clock').textContent = t >= WHISTLE ? 'Terminé' : matchMinute(m);
+  const lastGoal = goals.at(-1);
+  $('score').style.transform = lastGoal && t - at(lastGoal.m) < .5 ? `scale(${1 + .35 * Math.sin((t - at(lastGoal.m)) / .5 * Math.PI)})` : '';
+  [...$('highlights').children].forEach((row, i) => {
+    const p = ease(clamp((t - at(EVENTS[i].m)) / .35));
+    row.style.opacity = p; row.style.transform = `translateY(${(1 - p) * 16}px)`;
+  });
+  STATS.forEach((s, i) => {
+    const [, h, a] = statAt(s.steps, m), row = $('stats').children[i], [left, mid, right] = row.children;
+    left.textContent = h + (s.unit || ''); right.textContent = a + (s.unit || '');
+    left.className = h > a ? 'lead' : ''; right.className = a > h ? 'lead' : '';
+    mid.firstElementChild.textContent = s.label;
+    const bar = mid.lastElementChild;
+    bar.classList.toggle('none', !h && !a);
+    bar.children[0].style.flexGrow = h || 1; bar.children[1].style.flexGrow = a || 1;
+  });
+  const flash = EVENTS.filter((e) => e.side === 'home' && e.mark === 'goal').find((e) => t >= at(e.m) && t < at(e.m) + 1.1);
+  if (flash) {
+    const p = t - at(flash.m);
+    $('goal').style.transform = `scaleY(${p < .15 ? p / .15 : p > .95 ? 1 - (p - .95) / .15 : 1})`;
+    $('goal-who').textContent = `${flash.who} · ${flash.m}′`;
+  } else $('goal').style.transform = 'scaleY(0)';
+
+  // 4 · The offer, raised step by step, then sent.
+  const FEES = ['9.5', '10', '11', '12', '13', '14', '15'];
+  $('fee').textContent = `${FEES[Math.floor(clamp((t - 24.3) / .9) * (FEES.length - 1))]} M€`;
+  $('send').disabled = t >= 25.45;
+  $('offer-state').textContent = t >= 25.45 ? 'Offre envoyée' : '';
+
+  // 5 · The last day: the figures move, then Lens climbs over Paris.
+  $('league-title').textContent = `Ligue 1 – ${t >= DAY ? 34 : 33}e journée`;
+  [...$('league').children].slice(1).forEach((row, i) => {
+    const r = LEAGUE[i], [pts, played, diff, form] = t >= DAY ? r.after : r.before;
+    const cells = row.children;
+    cells[2].textContent = pts; cells[3].textContent = played; cells[4].textContent = diff > 0 ? `+${diff}` : diff;
+    cells[5].innerHTML = [...form].map((f) => `<i class="${f}">${f}</i>`).join('');
+    const rank = i < 2 && t >= CLIMB ? 1 - i : i;
+    cells[0].textContent = rank + 1; cells[0].className = `rank ${PLACES[rank]}`;
+    const shift = i < 2 ? ease(clamp((t - CLIMB) / .5)) * 26 * (i === 0 ? 1 : -1) : 0;
+    row.style.transform = shift ? `translateY(${shift}px)` : '';
+    row.style.zIndex = r.own ? 1 : '';
+  });
+  [...$('confetti').children].forEach((el, i) => {
+    const p = CONFETTI[i], dt = t - 30.2 - p.delay;
+    el.style.visibility = dt > 0 ? 'visible' : 'hidden';
+    if (dt > 0) el.style.transform = `translate(${p.x + p.s * dt * 20}px,${-20 + dt * p.v}px) rotate(${p.r * dt}deg)`;
+  });
+}
+window.seek = seek;
+window.TOTAL = TOTAL;
+
+if (new URLSearchParams(location.search).has('capture')) document.body.classList.add('capture');
+else {
+  const fit = () => { stage.style.transform = `scale(${Math.min(innerWidth / 480, innerHeight / 854)})`; };
+  fit(); addEventListener('resize', fit);
+  let start = performance.now();
+  stage.addEventListener('click', () => { start = performance.now(); });
+  const loop = (now) => { seek(((now - start) / 1000) % TOTAL); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
