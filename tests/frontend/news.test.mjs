@@ -41,7 +41,7 @@ test('the feed lists each message with its badge, the unread and those awaiting 
 test('nothing left to read greys Tout lire out, and an empty feed says so',async()=>{
  const html=await screen([]);
  assert.match(html,/data-news-read="all" disabled>Tout lire/);
- assert.match(html,/Rien à signaler pour l’instant\./);
+ assert.match(html,/<p class="empty">Aucun message<\/p>/);
  assert.match(html,/<section class="card news-message" aria-label="Message"><\/section>/);
 });
 
@@ -50,7 +50,7 @@ test('the widgets show the table, the players out, the calendar, the leaders and
  for(const link of ['#/league/3','#/club/7/composition','#/club/7/calendar','#/club/7','#/club/7/finances'])assert.ok(html.includes(`href="${link}"`),link);
  assert.doesNotMatch(html,/Composition<\/a>|Dernier onze|Transferts et contrats/);
  // The table: points first, then won, drawn, lost, goals for and against, difference; the user's club marked.
- assert.match(html,/<h2>Classement · 2e journée<\/h2>/);
+ assert.match(html,/<h2>Ligue 1 · 2e journée<\/h2>/);
  assert.deepEqual([...html.matchAll(/<th[^>]*><button[^>]*>([^<]+)<\/button><\/th>/g)].map(found=>found[1]),['#','CLUB','PTS','V','N','D','BP','BC','DIFF.']);
  assert.match(html,/<tr class="own"[^>]*><td[^>]*><span class="rank ">2<\/span><\/td>.*<td[^>]*><b>3<\/b><\/td><td[^>]*>1<\/td><td[^>]*>0<\/td><td[^>]*>1<\/td><td[^>]*>2<\/td><td[^>]*>3<\/td><td[^>]*>-1<\/td><\/tr>/);
  // Injured and suspended players of the first team; one lent elsewhere is not the club's to field.
@@ -339,4 +339,23 @@ test('a change of formation of a rival tells each club after its badge, the form
  const html=await screen([message],message,'msg=8');
  assert.match(html,/<span class="news-tag season">Tactique<\/span>/);
  assert.match(html,/<ul class="news-lines"><li><span><a href="#\/club\/9" class="club-link">[^]*?Nice<\/a><\/span><span>4-4-2 plat<small>→<\/small>4-3-3<\/span><\/li><li><span><a href="#\/club\/11"/);
+});
+
+test('the demands of a day make one message: a line a player, his wage and the one he asks, until when, and his answer',async()=>{
+ const demand=(id,name,state,wage)=>({player:{id,name,gone:false},position:'MC',rating:70,current:{wage:1000,end:'2030-06-30'},asked:{wage,end:'2032-06-30'},state});
+ const item=row(5,'renewal_proposed','2 joueurs veulent un nouveau contrat',{pending:true});
+ const html=await screen([item],{...item,renewals:[demand(1,'Ada Un','pending',2000),demand(2,'Bob Deux','accepted',1500)]},'msg=5');
+ assert.match(html,/<ul class="news-lines renewals"><li class="news-lines-head">/);
+ assert.match(html,/<a href="#\/player\/1">Ada Un<\/a>.*<span>juin 2032<\/span><span class="market-actions"><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="1">Accepter<\/button>/);
+ assert.match(html,/<a href="#\/player\/2">Bob Deux<\/a>.*<span class="news-state good">Prolongé<\/span>/);
+});
+
+test('an injury tells when the player is back and the matches he misses, then leads to the lineup',async()=>{
+ const item=row(6,'injury','Ada Un blessé 3 semaines');
+ const match={id:40,date:'2029-08-09',competition:{id:3,name:'Ligue 1',kind:'league',code:'L1'},opponent:ref(9,'Nice'),home:false,played:false};
+ const html=await screen([item],{...item,players:[{player:{id:1,name:'Ada Un',gone:false},days:21,back:'2029-08-23',missed:1}],injury:{back:'2029-08-23',matches:[match]}},'msg=6');
+ assert.match(html,/<span>Retour<\/span><strong>jeudi 23 août 2029<\/strong>/);
+ assert.match(html,/<span>Matches manqués<\/span><strong>1<\/strong>/);
+ assert.match(html,/<ul class="news-lines missed"><li><span>9 août<\/span>.*Nice<\/a><\/span><span class="muted">Extérieur<\/span><\/li><\/ul>/);
+ assert.match(html,/<a class="news-more" href="#\/club\/7\/composition">Composition/);
 });

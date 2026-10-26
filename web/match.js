@@ -111,7 +111,7 @@ export function highlightsCard(match,link=playerLink){
   return `<span class="marks">${marks}</span><span class="highlight-names">${player}${passer}</span>`;
  };
  const rows=events.map(event=>{const home=event.team_id===match.home.id;return `<div class="highlight-row"><div class="highlight home">${home?content(event):''}</div><span class="minute">${minute(event,half)}′</span><div class="highlight away">${home?'':content(event)}</div></div>`;}).join('');
- return card('Les temps forts',rows?`<div class="highlights">${rows}</div>`:`<div class="card-body">${empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
+ return card('Les temps forts',rows?`<div class="highlights">${rows}</div>`:`<div class="card-body">${empty('Ni but, ni blessure, ni carton rouge')}</div>`);
 }
 
 export async function matchScreen(id){
@@ -130,8 +130,8 @@ export async function matchScreen(id){
   +`${commands?`<div class="tools">${commands}</div>`:''}</div>`;
  // In a European cup, each club's name is followed by its country's flag in the band; the line, under it, does not repeat it.
  const header=matchHero(match,'',{flags:!match.international&&competitionKind({id:match.competition_id,name:match.competition})==='europe'});
- if(!result)return header+line+card('Avant-match',empty('Cette rencontre sera simulée à sa date prévue.','Le coup d’envoi approche'));
- if(!result.home_stats)return header+line+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
+ if(!result)return header+line+card('Avant-match',empty('Match à venir'));
+ if(!result.home_stats)return header+line+card('Résultat archivé',empty('Détails non conservés'));
  const marks=playerEvents(result.events);
  return header+(result.status!=='played'?`<div class="notice">Résultat attribué par forfait (${e(result.status)}).</div>`:'')
   +replay.panel+`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${line}${highlightsCard(match)}${statsCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;

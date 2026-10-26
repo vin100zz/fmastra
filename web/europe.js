@@ -21,7 +21,7 @@ function knockoutStages(data){
 // Clubs of several countries meet in a European cup: on each of its views, a club's name is followed by its country's flag.
 export async function europeScreen(code,section,params,competitions){
  const cups=competitions.filter(item=>item.kind==='europe').sort((a,b)=>a.code.localeCompare(b.code));
- if(!cups.length)return heading('Coupes d’Europe')+empty('Créez une nouvelle partie pour découvrir les trois compétitions.');
+ if(!cups.length)return heading('Coupes d’Europe')+empty('Aucune coupe d’Europe');
  const cup=cups.find(item=>item.code===code||String(item.id)===String(code))||cups[0];
  section=SECTIONS.some(([key])=>key===section)?section:'table';
  const data=await api(`/competitions/${cup.id}/europe?${params}`);
@@ -38,7 +38,7 @@ export async function europeScreen(code,section,params,competitions){
   const rounds=data.rounds.filter(round=>round.number<=data.league_rounds);
   const focus=rounds.some(round=>round.number===data.next_round)?data.next_round:
    rounds.some(round=>round.number===data.latest_round)?data.latest_round:rounds.find(round=>!round.complete)?.number||rounds.at(-1).number;
-  content=rounds.map(round=>`<details class="card cup-round" ${round.number===focus?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures({...round,flags:true}):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir')}</details>`).join('');
+  content=rounds.map(round=>`<details class="card cup-round" ${round.number===focus?'open':''}><summary>${e(round.label)} <span class="muted">${date(round.date)}</span></summary>${round.items.length?fixtures({...round,flags:true}):empty('Tirage à venir')}</details>`).join('');
  }else if(isRoundTab(section)){
   content=roundContent(await api(`/competitions/${cup.id}/${roundPath(section)}?${year}`),section,{flags:true});
  }else if(section==='stats'){

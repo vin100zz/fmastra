@@ -117,7 +117,7 @@ test('before the first title, the table keeps every competition and the rankings
  assert.equal(count(html,/class="competition-code/g),5);
  assert.match(html,/<th class="current">2025 \/ 2026<span class="honours-live">EN COURS<\/span><\/th><\/tr>/);
  assert.doesNotMatch(html,/honours-lists/);
- assert.match(part(html,'honours-board'),/<h2>0 club titré<\/h2>.*Pas encore de palmarès/);
+ assert.match(part(html,'honours-board'),/<h2>0 club titré<\/h2>.*Aucun vainqueur/);
  assert.doesNotMatch(html,/head-pager/);
 });
 

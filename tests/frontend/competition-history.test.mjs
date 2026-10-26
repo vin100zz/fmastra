@@ -27,7 +27,7 @@ test('the leaders block ranks matches and goals side by side, links players and 
  assert.match(html,/href="#\/player\/1">Fidèle &lt;b&gt;/);assert.doesNotMatch(html,/Fidèle <b>/);
  assert.match(html,/412/);assert.match(html,/180/);
  assert.doesNotMatch(html,/Toutes saisons confondues/);
- assert.match(leadersCards({matches:[],goals:[]}),/Pas encore de statistiques/);
+ assert.match(leadersCards({matches:[],goals:[]}),/<p class="empty">Aucun joueur<\/p>/);
 });
 
 test('the league history keeps its champions, the table of one archived season stepped through from its card, and the all-time leaders',async()=>{

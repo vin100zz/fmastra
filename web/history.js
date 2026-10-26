@@ -71,7 +71,7 @@ export function rankChart(items,leagues,{standing=null,today=null,home=null,repu
  const shapes=new Map(leagues.map(league=>[league.id,league]));
  const points=items.filter(row=>row.rank!=null&&shapes.has(row.competition_id)).map(row=>({season:row.season,rank:row.rank,league:row.competition_id,done:true})).sort((a,b)=>a.season-b.season);
  if(standing&&today!=null&&shapes.has(home))points.push({season:today,rank:standing.rank,league:home,done:false});
- if(!points.length)return empty('Aucune saison de championnat terminée pour l’instant.','La première saison se joue');
+ if(!points.length)return empty('Aucune saison terminée');
  const storeys=leagues.filter(league=>points.some(point=>point.league===league.id)).sort((a,b)=>a.level-b.level);
  const seasons=[...points.map(point=>point.season),...reputation.map(row=>row.season)],first=Math.min(...seasons),count=Math.max(...seasons)-first+1;
  points.forEach(point=>point.index=point.season-first);
@@ -98,7 +98,7 @@ export function rankChart(items,leagues,{standing=null,today=null,home=null,repu
 const LEVELS={tournament:['Vainqueur','Finale','Demies','Quarts','8es','Groupes','Qualifications'],nations:['Vainqueur','Finale','Demies','Division A','Division B','Division C','Division D']};
 export function stageChart(items,current,strength=[]){
  const points=[...items.map(row=>({year:row.year,code:row.code,stage:row.stage,name:row.name,done:true})),...(current?[{...current,done:false}]:[])].sort((a,b)=>a.year-b.year);
- if(!points.length)return empty('Le parcours apparaîtra à la fin de la première édition disputée.','Pas encore d’édition terminée');
+ if(!points.length)return empty('Aucune édition terminée');
  const kinds=['tournament','nations'].filter(kind=>points.some(point=>(point.code==='LN')===(kind==='nations')));
  const years=[...points.map(point=>point.year),...strength.map(row=>row.season)],first=Math.min(...years),count=Math.max(...years)-first+1;
  points.forEach(point=>{point.index=point.year-first;point.storey=kinds.indexOf(point.code==='LN'?'nations':'tournament');});
@@ -117,12 +117,12 @@ export function stageChart(items,current,strength=[]){
 // The titles, a line each: the competition's badge, its title, the seasons or the years it was won in, the count.
 function honoursCard(rows,badge,title,when){
  const body=rows.length?`<div class="honour-lines">${rows.map(row=>`<div class="honour-line">${badge(row)}<b>${e(title(row))}</b><small>${when(row)}</small><strong>${n(row.count)}</strong></div>`).join('')}</div>`
-  :empty('Aucun titre pour l’instant.','Palmarès vierge');
+  :empty('Aucun titre');
  return card('Palmarès',body,'','honours-card');
 }
 // The record in each competition, after its badge, then all together; `competition` finds a row's competition.
 function recordCard(record,unit,competition){
- if(!record.rows.length)return card('Bilan',empty('Le bilan apparaîtra avec le premier match joué.','Pas encore de match'));
+ if(!record.rows.length)return card('Bilan',empty('Aucun match joué'));
  const line=row=>[row[unit],row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against].map(value=>num(n(value))).concat(num(difference(row)));
  return card('Bilan',table(['COMPÉTITION',unit==='seasons'?'SAISONS':'ÉDITIONS','J','V','N','D','BP','BC','DIFF.'],record.rows.map(row=>[`<span class="cell">${competitionLink(competition(row),{badge:true})}</span>`,...line(row)]),
   ['Toutes compétitions',...line(record.total)],undefined,sorted(record.rows,row=>[row.competition,row[unit],row.played,row.won,row.drawn,row.lost,row.goals_for,row.goals_against,row.goals_for-row.goals_against]),
@@ -130,10 +130,10 @@ function recordCard(record,unit,competition){
 }
 
 // A list of players ranked on one figure, that figure first after them: `figures` are [heading, raw value, cell].
-function leaders(title,rows,figures,none='Pas encore de statistiques'){
+function leaders(title,rows,figures,none='Aucun joueur'){
  const body=rows.length?table(['#','POSTE','JOUEUR',...figures.map(figure=>figure[0])],rows.map((row,index)=>[index+1,positionCell(row),player(row),...figures.map(figure=>figure[2](row))]),
   undefined,undefined,sorted(rows,(row,index)=>[index+1,row.position||'',row.player||'',...figures.map(figure=>figure[1](row))],[0]),['rank-col','position-col','',...figures.map(figure=>figureCol(figure[0]))])
-  :empty('Aucun joueur pour l’instant.',none);
+  :empty(none);
  return card(title,body,'','history-leaders');
 }
 const MATCHES=['MATCHES',row=>row.matches,row=>num(`<b>${n(row.matches)}</b>`)],GOALS=['BUTS',row=>row.goals,row=>num(`<b>${n(row.goals)}</b>`)],
@@ -141,7 +141,7 @@ const MATCHES=['MATCHES',row=>row.matches,row=>num(`<b>${n(row.matches)}</b>`)],
 // The best eleven of the tactic, on the pitch of the charter, each player's matches under his name.
 function elevenCard(data,kit,unit){
  const players=data.eleven.filter(place=>place.player_id).map(place=>({id:place.player_id,name:place.player,position:place.position,matches:place.matches}));
- return card('Onze type',players.length?`<div class="eleven">${pitch(players,'Onze type',{compact:true,kit,marks:row=>e(unit(row.matches))})}</div>`:empty('Aucun joueur pour l’instant.','Pas encore de statistiques'),
+ return card('Onze type',players.length?`<div class="eleven">${pitch(players,'Onze type',{compact:true,kit,marks:row=>e(unit(row.matches))})}</div>`:empty('Aucun joueur'),
   `<span class="card-hint">${e(data.formation)}</span>`,'eleven-card');
 }
 
@@ -150,12 +150,12 @@ const scoreCell=row=>`<a class="calendar-score ${row.scored>row.conceded?'V':row
 function scoresCard(title,rows,badge){
  const body=rows.length?table(['SCORE','ADVERSAIRE','COMP.','DATE'],rows.map(row=>[scoreCell(row),`<span class="cell">${clubLink(row.opponent)}${row.home||row.neutral?'':awayIcon}</span>`,badge(row),date(row.date)]),
   undefined,undefined,sorted(rows,row=>[Math.abs(row.scored-row.conceded),row.opponent?.name||'',row.competition,row.date]),['score-col','','badge-col','date-col'])
-  :empty('Aucun match pour l’instant.','Pas encore de résultat');
+  :empty('Aucun match');
  return card(title,body,'','history-scores');
 }
 const RUNS={wins:'Victoires',unbeaten:'Sans défaite',defeats:'Défaites',winless:'Sans victoire',scoring:'En marquant',scoreless:'Sans marquer',clean_sheets:'Sans encaisser',conceding:'En encaissant'};
 function runsCard(runs){
- if(!runs.longest.length)return card('Séries',empty('Aucun match pour l’instant.','Pas encore de série'));
+ if(!runs.longest.length)return card('Séries',empty('Aucun match'));
  const going=runs.ongoing.length?`<div class="section-title">En cours</div>${table(['SÉRIE','MATCHES','DEPUIS'],runs.ongoing.map(run=>[RUNS[run.kind],num(`<b>${n(run.count)}</b>`),date(run.first)]),undefined,undefined,
   sorted(runs.ongoing,run=>[RUNS[run.kind],run.count,run.first]),['',figureCol('MATCHES'),'date-col'])}`:'';
  return card('Séries',table(['SÉRIE','MATCHES','DU','AU'],runs.longest.map(run=>[RUNS[run.kind],num(`<b>${n(run.count)}</b>`),date(run.first),date(run.last)]),undefined,undefined,
@@ -164,19 +164,19 @@ function runsCard(runs){
 function opponentsCard(opponents,key){
  const line=(label,found,unit)=>found?fact(label,`${clubLink(found[key])} · ${n(found.count)} ${unit}`):'';
  const lines=line('Le plus affronté',opponents.played,'matches')+line('Le plus souvent battu',opponents.beaten,'victoires')+line('Le plus souvent vainqueur',opponents.beaten_by,'défaites');
- return card('Adversaires',lines?`<div class="card-body">${lines}</div>`:empty('Aucun match pour l’instant.','Pas encore d’adversaire'));
+ return card('Adversaires',lines?`<div class="card-body">${lines}</div>`:empty('Aucun match'));
 }
 // The best seasons or editions of the side's players on one figure: the player, the figure, when.
 function bestCard(title,rows,figure,when){
  const body=rows.length?table(['#','JOUEUR',figure[0],when[0]],rows.map((row,index)=>[index+1,who(row),figure[2](row),when[2](row)]),undefined,undefined,
   sorted(rows,(row,index)=>[index+1,row.player||'',figure[1](row),when[1](row)],[0]),['rank-col','',figureCol(figure[0]),'when-col'])
-  :empty('Aucun joueur pour l’instant.','Pas encore de statistiques');
+  :empty('Aucun joueur');
  return card(title,body,'','history-best');
 }
 const AGES={youngest:'Plus jeune joueur',oldest:'Plus âgé',youngest_scorer:'Plus jeune buteur',oldest_scorer:'Plus âgé buteur'};
 function agesCard(rows,when){
  return card('Âges',rows.length?`<div class="card-body">${rows.map(row=>fact(AGES[row.kind],`${who(row)}<span>${ageText(row)}</span><span class="muted">${when(row)}</span>`)).join('')}</div>`
-  :empty('Aucun match pour l’instant.','Pas encore de record'));
+  :empty('Aucun match'));
 }
 
 // A club's competition, by its id; a selection's edition, by its code; and their badges.
@@ -198,7 +198,7 @@ const FIGURES=Array(8).fill('figure-col');
 
 function clubSeasons(data){
  const shapes=new Map(data.leagues.map(league=>[league.id,league])),rows=data.items;
- if(!rows.length)return card('Les saisons du club',empty('La première saison du club est en cours.','Pas encore de saison terminée'));
+ if(!rows.length)return card('Les saisons du club',empty('Aucune saison terminée'));
  return card(`Les saisons du club · ${rows.length}`,table(['SAISON','CHAMPIONNAT','CL.','PTS','J','V','N','D','BP','BC','DIFF.','COUPE NATIONALE','COUPE D’EUROPE','MEILLEUR BUTEUR','BUTS','RÉPUTATION'],
   rows.map(row=>[`<b>${season(row.season)}</b>`,row.competition?`<span class="cell">${competitionLink(clubCompetition(row),{badge:true})}</span>`:'—',rankCell(row,shapes.get(row.competition_id)),...standingCells(row.standing),
    runChip(row.cup),row.europe?`<span class="cell">${competitionBadge({id:row.europe.competition_id,name:row.europe.competition})}${runChip(row.europe)}</span>`:'<span class="muted">—</span>',
@@ -208,10 +208,10 @@ function clubSeasons(data){
 }
 
 const transfersTable=(rows,side,heading)=>rows.length?table(['JOUEUR','INDEMNITÉ',heading,'SAISON'],rows.map(row=>[player(row),num(`<b>${price(row.fee)}</b>`),clubLink(row[side]),season(row.season)]),
- undefined,undefined,sorted(rows,row=>[row.player||'',row.fee,row[side]?.name||'',row.season]),['','fee-col','','season-col']):empty('Aucun transfert payant enregistré.','Pas de transfert');
+ undefined,undefined,sorted(rows,row=>[row.player||'',row.fee,row[side]?.name||'',row.season]),['','fee-col','','season-col']):empty('Aucun transfert payant');
 function gainsCard(rows){
  return card('Plus-values',rows.length?table(['JOUEUR','GAIN','ACHAT','VENTE'],rows.map(row=>[player(row),num(delta(row.gain,money)),num(price(row.bought)),num(price(row.sold))]),undefined,undefined,
-  sorted(rows,row=>[row.player||'',row.gain,row.bought,row.sold]),['','gain-col','fee-col','fee-col']):empty('Aucun joueur acheté puis revendu.','Pas de plus-value'),'','history-gains');
+  sorted(rows,row=>[row.player||'',row.gain,row.bought,row.sold]),['','gain-col','fee-col','fee-col']):empty('Aucune plus-value'),'','history-gains');
 }
 
 // The Historique tab of a club: `view` is the one chosen, `data` what the API gives for it, `club` the club today, `today`
@@ -240,7 +240,7 @@ export function clubHistory(view,data,club={},today=null){
 const firstPhase=label=>label?`<span${/Relégué/.test(label)?' class="bad"':/Promu/.test(label)?' class="good"':''}>${e(label)}</span>`:'—';
 function nationEditions(data){
  const rows=data.items;
- if(!rows.length)return card('Les éditions',empty('Le bilan apparaîtra à la fin de la première édition disputée.','Pas encore d’historique'));
+ if(!rows.length)return card('Les éditions',empty('Aucune édition terminée'));
  return card(`Les éditions · ${rows.length}`,table(['ÉDITION','PREMIÈRE PHASE','PHASE FINALE','J','V','N','D','BP','BC','DIFF.','MEILLEUR BUTEUR','BUTS','FORCE'],
   rows.map(row=>[`<span class="cell">${editionBadge(row)}<a class="strong" href="${editionHref(row.code,row.year,'finals')}">${e(row.name)}</a></span>`,firstPhase(row.first_phase),row.finals?runChip(row.finals):'<span class="muted">—</span>',
    ...standingCells({...row.record,points:0}).slice(1),row.scorer?player(row.scorer):'—',num(row.scorer?`<b>${n(row.scorer.goals)}</b>`:'—'),

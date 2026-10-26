@@ -50,7 +50,7 @@ function recordCard(rows){
 // Buttons above keep the matches of one competition (`competition` in the address). Its record in each competition stands beside.
 // The season is the one under way, or the one stepped to from the row of tabs.
 export function calendarContent(club,data,params){
- if(!data.items.length)return `<section class="card">${empty('Aucun match programmé pour cette saison.','Calendrier vide')}</section>`;
+ if(!data.items.length)return `<section class="card">${empty('Aucun match cette saison')}</section>`;
  const competitions=new Map(data.competitions.map(row=>[row.id,row]));
  const picked=Number(params.get('competition'))||null,shown=picked&&competitions.has(picked)?picked:null;
  const nextId=data.items.find(match=>!match.score)?.id;

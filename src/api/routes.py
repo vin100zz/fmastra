@@ -758,9 +758,9 @@ def router(service: GameService) -> APIRouter:
         # A reading flag only, outside the simulation: allowed while the auto mode runs, unlike `mutating`.
         with service.reading() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
-            targets = world.news if command.ids is None else [world.news[index] for index in command.ids if 0 <= index < len(world.news)]
-            for item in targets: item.read = True
-            return {"unread": sum(not item.read for item in world.news), "news": news.summary(world)}
+            news.mark_read(world, command.ids)
+            summary = news.summary(world)
+            return {"unread": summary["unread"], "news": summary}
 
     @api.get("/manuel")
     @api.get("/manuel/{chapitre}")

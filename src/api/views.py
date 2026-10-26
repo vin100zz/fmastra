@@ -127,6 +127,7 @@ def player_row(world: World, player: Player) -> dict:
             "club": club_ref(world, player.club_id), "wage": contract.weekly_wage if contract else 0,
             "contract_end": contract.end.iso() if contract else None,
             "expiring": bool(contract and world.date.months_until(contract.end) < 12),
+            "expiring_soon": bool(contract and world.date.months_until(contract.end) < 6),
             "fitness": player.fitness, "form": round(player.form, 3), "morale": round(player.morale, 3),
             "injured_until": player.injury.end.iso() if player.injury else None,
             "suspension": max((item.suspended_matches for item in player.discipline.values()), default=0),

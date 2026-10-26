@@ -115,8 +115,8 @@ test('groups show each group with its own compact table, and a cup round spreads
 });
 
 test('with no round, or a round not drawn yet, the tab says so',()=>{
- assert.match(roundContent({round:null,groups:[]},'latest'),/Pas encore de résultat/);
- assert.match(roundContent({round:null,groups:[]},'next'),/Pas de match à venir/);
+ assert.match(roundContent({round:null,groups:[]},'latest'),/Aucun match joué/);
+ assert.match(roundContent({round:null,groups:[]},'next'),/Aucun match à venir/);
  const draw=roundContent({round:{number:9,label:'Barrages · aller',date:'2027-02-17'},groups:[]},'next');
  assert.match(draw,/Barrages · aller/);assert.match(draw,/Tirage à venir/);
 });
@@ -139,7 +139,7 @@ test('every competition gets both tabs just before its statistics, each asking i
 
 test('an international edition gets both tabs, before its statistics',async()=>{
  const edition={year:2028,name:'Euro 2028',qualification_groups:[],final_groups:[],best_seconds:[],second_places:6,qualifiers:[],matches:[],records:[],winner:null};
- assert.match(editionContent(edition,'next',{round:null,groups:[]}),/Pas de match à venir/);
+ assert.match(editionContent(edition,'next',{round:null,groups:[]}),/Aucun match à venir/);
  const {html,urls}=await withApi(url=>url.endsWith('/international')?{enabled:true,editions:[{year:2028,name:'Euro 2028',kind:'euro',code:'EU'}],competitions:[],nations:[]}:url.includes('/journee/')?league:edition,
   ()=>internationalScreen('euro','latest',undefined,new URLSearchParams('edition=2028')));
  assert.match(html,/Qualifications<\/a><a class="active" href="#\/international\/euro\/latest\?edition=2028" aria-current="page">Derniers matches<\/a><a class="" href="#\/international\/euro\/next\?edition=2028">Prochains matches<\/a><a class="" href="#\/international\/euro\/statistics\?edition=2028">Statistiques/);
