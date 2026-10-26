@@ -535,6 +535,13 @@ main.addEventListener('click',event=>{
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit],[data-fill]'))render();else drawBarMatches();},250);});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.menu'),current=panel.querySelector('[aria-checked="true"]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
+// The bar's Précédent and Suivant walk the window's history, for the game's window that has no browser's arrows (app
+// window, full screen). Where the browser says how far it goes (the Navigation API of Chrome and Edge), an end greys out.
+const historyBack=document.querySelector('#history-back'),historyForward=document.querySelector('#history-forward');
+historyBack.addEventListener('click',()=>history.back());
+historyForward.addEventListener('click',()=>history.forward());
+const historyEnds=()=>{historyBack.disabled=!navigation.canGoBack;historyForward.disabled=!navigation.canGoForward;};
+if(window.navigation){navigation.addEventListener('currententrychange',historyEnds);historyEnds();}
 // A new page opens at the top; a new sort, filter or page of the same list keeps the scroll where it was.
 window.addEventListener('hashchange',event=>{const path=url=>new URL(url).hash.split('?')[0];render();if(path(event.oldURL)!==path(event.newURL))window.scrollTo({top:0});});
 document.addEventListener('lineup-change',updateAdvanceButton);

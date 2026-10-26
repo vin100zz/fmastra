@@ -72,6 +72,8 @@ et elle remplace tous les écrans de gestion supprimés.
 
 Barre persistante en tête d'application :
 
+- Précédent et Suivant, avant la date : l'historique de la fenêtre, pour le jeu en plein écran ou dans sa fenêtre
+  d'application, qui n'ont pas les flèches du navigateur ; une flèche se grise au bout de l'historique
 - Date courante, saison, prochaine échéance
 - Les matchs du club dirigé, dans un bandeau segmenté à gauche de « Continuer »,
   qui se lit dans le temps (`club_last_matches`, `club_next_matches` de
@@ -163,7 +165,7 @@ panneaux l'un sous l'autre, jusqu'au bas de la fenêtre :
   Entrée) charge la partie, qui s'ouvre sur sa première page ; la poubelle, au bout de la
   ligne sous le pointeur, la supprime après confirmation.
 
-Sans partie, la barre du haut est vide et le menu de gauche n'a que le manuel et le thème.
+Sans partie, la barre du haut n'a que Précédent et Suivant, et le menu de gauche n'a que le manuel et le thème.
 Une partie sans club, d'une ancienne sauvegarde, s'ouvre toujours sur « Ma partie », sans menu ni
 « Continuer » : le club se choisit à la création.
 

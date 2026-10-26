@@ -95,6 +95,15 @@
 .topbar .button.square{width:var(--h-bar-control);height:var(--h-bar-control)}
 .topbar .cta{height:var(--h-bar-control);border-radius:var(--radius-box)}
 .date-block{display:flex;flex-direction:column;margin-right:auto}
+/* Précédent and Suivant, first in the bar: a grey band like the next matches, an arrow in each half, the line of the panel
+   between them. An end of the history greys its arrow. */
+.history-nav{display:flex;flex:none;border-radius:var(--radius-box);background:var(--panel-2);overflow:hidden}
+.history-nav>button{display:flex;align-items:center;justify-content:center;width:36px;height:var(--h-bar-control);padding:0;border:0;background:none;color:var(--ink-2)}
+.history-nav>button+button{border-left:1px solid var(--panel)}
+.history-nav>button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.history-nav>button:not(:disabled):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+.history-nav>button:disabled{color:var(--muted)}
+.history-nav>button:disabled svg{opacity:.35}
 .date-block strong{font:700 semi-condensed var(--fs-title)/22px var(--display);color:var(--strong)}
 /* The club's matches, one band read in time: the last played on its grey, each by its score from the club's side on the
    badge of its outcome (.short: the opponent's dot and the score alone), a turquoise rule for today, then those to come on

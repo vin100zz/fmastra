@@ -21,7 +21,17 @@ html{scrollbar-gutter:stable}
 .wordmark>span{font-weight:400}
 .sidebar{border-right:0}
 .sidebar-bottom{border-top:0}
-.topbar{padding-left:calc(var(--s4) + 64px)!important}
+.topbar{gap:var(--s3);padding-left:calc(var(--s4) + 64px)!important}
+/* Précédent and Suivant, first in the bar: a grey band like the next matches, an arrow in each half, the line of the panel
+   between them. An end of the history greys its arrow. The phone has its own way back. */
+.history-nav{display:flex;flex:none;border-radius:var(--radius-box);background:var(--panel-2);overflow:hidden}
+.history-nav+.date-block{margin-right:auto}
+.history-nav>button{display:flex;align-items:center;justify-content:center;width:36px;height:var(--h-bar-control);padding:0;border:0;border-radius:0;background:none;color:var(--ink-2)}
+.history-nav>button+button{border-left:1px solid var(--panel)}
+.history-nav>button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.history-nav>button:disabled{opacity:1;color:var(--muted);cursor:default}
+.history-nav>button:disabled svg{opacity:.35}
+@media(max-width:650px){.history-nav{display:none}}
 .topbar::before,.topbar::after{content:"";position:absolute;inset:0 auto 0 0;width:64px;background:var(--accent);clip-path:polygon(0 0,40px 0,16px 100%,0 100%)}
 .topbar::after{clip-path:polygon(50px 0,56px 0,32px 100%,26px 100%)}
 /* Short of room, the club's matches give way, not the day nor the actions around them. */
@@ -60,7 +70,7 @@ main{padding:var(--s2) var(--s4) var(--s3)}
    of a choice, an entry of a menu, a season's step, a player on a pitch...) keeps it. The main action is the accent lit
    from above, its shadow under it. */
 button,a.button{height:var(--h-control);padding:0 var(--s3);border-radius:var(--radius);font-size:var(--fs-body);font-weight:600;line-height:1;white-space:nowrap}
-:is(button,a.button):where(:not(.primary,.danger,.cta,.pitch-player,.position-row,.advance-todo,.check,.check-option,.replay-marker,.replay-start,.sort-toggle,.balance-handle,#autoplay,#theme-toggle,#search-open,.segmented>*,.tactics>*,.menu>*,.season>*,.sidebar-tools>*,th *,.chips *)){border-color:transparent;background:var(--panel);box-shadow:var(--shadow-field)}
+:is(button,a.button):where(:not(.primary,.danger,.cta,.pitch-player,.position-row,.advance-todo,.check,.check-option,.history-nav>*,.replay-marker,.replay-start,.sort-toggle,.balance-handle,#autoplay,#theme-toggle,#search-open,.segmented>*,.tactics>*,.menu>*,.season>*,.sidebar-tools>*,th *,.chips *)){border-color:transparent;background:var(--panel);box-shadow:var(--shadow-field)}
 :is(button,a.button).primary,.cta{border-color:transparent;background-image:linear-gradient(#ffffff2e,#ffffff00);box-shadow:var(--shadow-accent)}
 #advance{border-radius:var(--radius-box)}
 #search-open{border-color:transparent;background:var(--panel-2)}
