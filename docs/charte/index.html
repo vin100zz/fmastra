@@ -15,12 +15,16 @@
 <h2>Couleurs</h2>
 <div class="spec-row">
 <div class="spec-group"><span class="label">Surfaces et traits</span><div class="spec-line">
-<div class="sw"><i style="background: var(--bg)"></i><span class="token">--bg · --panel</span><span class="value">#ffffff</span></div>
+<div class="sw"><i style="background: var(--bg)"></i><span class="token">--bg</span><span class="value">#f0f2f5</span></div>
+<div class="sw"><i style="background: var(--panel); box-shadow: var(--shadow-card)"></i><span class="token">--panel</span><span class="value">#ffffff</span></div>
 <div class="sw"><i style="background: var(--panel-2)"></i><span class="token">--panel-2</span><span class="value">#f3f5f8</span></div>
 <div class="sw"><i style="background: var(--panel-3)"></i><span class="token">--panel-3</span><span class="value">#e8edf3</span></div>
-<div class="sw"><i style="background: var(--stripe)"></i><span class="token">--stripe</span><span class="value">#f7f9fb</span></div>
+<div class="sw"><i style="background: var(--stripe)"></i><span class="token">--stripe</span><span class="value">#f5f7f9</span></div>
 <div class="sw"><i style="background: var(--line)"></i><span class="token">--line</span><span class="value">#d6dce4</span></div>
-<div class="sw"><i style="background: var(--row-line)"></i><span class="token">--row-line</span><span class="value">#e6eaef</span></div>
+<div class="sw"><i style="background: var(--row-line)"></i><span class="token">--row-line</span><span class="value">#edf0f3</span></div>
+<div class="sw"><i style="background: var(--head-line)"></i><span class="token">--head-line</span><span class="value">#e2e6eb</span></div>
+<div class="sw"><i style="background: var(--track)"></i><span class="token">--track</span><span class="value">#e9ecf1</span></div>
+<div class="sw"><i style="background: var(--title-wash)"></i><span class="token">--title-wash</span><span class="value">#fcf1c9</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Encres</span><div class="spec-line">
 <div class="sw"><i style="background: var(--strong)"></i><span class="token">--strong</span><span class="value">#0b121a</span></div>
@@ -82,7 +86,8 @@
 <div class="type-row"><span class="page-title">Coupes d’Europe</span><span class="token">--fs-page</span><span class="value">26 / 32</span><span class="value">700</span><span class="value">Titre de page</span></div>
 <div class="type-row"><span class="figure">42.5 M€</span><span class="token">--fs-title</span><span class="value">20 / 24</span><span class="value">700</span><span class="value">Chiffre clé, date du jour</span></div>
 <div class="type-row"><span style="font: 700 semi-condensed 16px/20px var(--display); letter-spacing: var(--caps); text-transform: uppercase">Continuer</span><span class="token">--fs-figure</span><span class="value">16 / 20</span><span class="value">700</span><span class="value">Action principale, délai</span></div>
-<div class="type-row"><span style="font: 600 semi-condensed 13px/16px var(--display); letter-spacing: var(--caps); text-transform: uppercase; color: var(--muted)">Équipe-type</span><span class="token">--fs-body</span><span class="value">13 / 16</span><span class="value">600</span><span class="value">Titre de carte</span></div>
+<div class="type-row"><span style="font: 600 semi-condensed 13px/16px var(--display); letter-spacing: var(--caps); text-transform: uppercase; color: var(--strong)">Équipe-type</span><span class="token">--fs-body</span><span class="value">13 / 16</span><span class="value">600</span><span class="value">Titre de carte</span></div>
+<div class="type-row"><span style="font: 700 semi-condensed 11px/14px var(--display); letter-spacing: var(--caps); text-transform: uppercase; color: var(--ink)">Arrivées · 3</span><span class="token">--fs-small</span><span class="value">11 / 14</span><span class="value">700</span><span class="value">Titre d’une section (--display)</span></div>
 <div class="type-row"><span><b class="strong">Ousmane Dembélé</b> · 28 ans · juin 2028</span><span class="token">--fs-body</span><span class="value">13 / 18</span><span class="value">400 · 600</span><span class="value">Texte, cellule, onglet, bouton</span></div>
 <div class="type-row"><span class="label">Poste · Âge · Note</span><span class="token">--fs-small</span><span class="value">11 / 14</span><span class="value">400 · 600</span><span class="value">En-tête de colonne, libellé, légende</span></div>
 <div class="type-row"><span><span class="position mid">MDC</span></span><span class="token">--fs-micro</span><span class="value">10 / 10</span><span class="value">700</span><span class="value">Pastille, maillot</span></div>
@@ -113,11 +118,21 @@
 <div class="measure"><i style="height: 18px"></i><span class="token">--h-chip</span><span class="value">18 · pastille</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Formes et marques</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
-<div class="measure"><i style="width: 56px; height: 36px; border-radius: var(--radius)"></i><span class="token">--radius</span><span class="value">3</span></div>
+<div class="measure"><i style="width: 36px; height: 18px; border-radius: var(--radius-chip)"></i><span class="token">--radius-chip</span><span class="value">4 · pastille</span></div>
+<div class="measure"><i style="width: 56px; height: 28px; border-radius: var(--radius)"></i><span class="token">--radius</span><span class="value">6 · contrôle</span></div>
+<div class="measure"><i style="width: 56px; height: 36px; border-radius: var(--radius-box)"></i><span class="token">--radius-box</span><span class="value">8 · piste, menu, tuile</span></div>
+<div class="measure"><i style="width: 56px; height: 36px; border-radius: var(--radius-card)"></i><span class="token">--radius-card</span><span class="value">10 · carte, bandeau</span></div>
 <div class="measure"><i style="width: 36px; height: 36px; border-radius: 50%"></i><span class="token">Rond</span><span class="value">points, écussons</span></div>
-<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 1px solid var(--line)"></i><span class="token">--line</span><span class="value">1 · bordure</span></div>
-<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 2px solid var(--accent)"></i><span class="token">--mark-control</span><span class="value">2 · choix ouvert</span></div>
-<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 3px solid var(--accent)"></i><span class="token">--mark</span><span class="value">3 · barre, menu, onglet</span></div>
+<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 1px solid var(--line)"></i><span class="token">--line</span><span class="value">1 · case, compétition</span></div>
+<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 2px solid var(--accent)"></i><span class="token">--mark-control</span><span class="value">2 · prochain match, pas ouvert</span></div>
+<div class="measure"><i style="width: 84px; height: 0; border: 0; border-top: 3px solid var(--accent)"></i><span class="token">--mark</span><span class="value">3 · barre, onglet, intertitre</span></div>
+</div></div>
+<div class="spec-group"><span class="label">Profondeur · une ombre plutôt qu’une bordure</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
+<div class="measure"><i style="width: 84px; height: 48px; border: 0; border-radius: var(--radius-card); background: var(--panel); box-shadow: var(--shadow-card)"></i><span class="token">--shadow-card</span><span class="value">carte sur le fond</span></div>
+<div class="measure"><i style="width: 84px; height: 28px; border: 0; border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow-field)"></i><span class="token">--shadow-field</span><span class="value">bouton, champ</span></div>
+<div class="measure"><i style="width: 84px; height: 48px; border: 0; border-radius: var(--radius-box); background: var(--panel); box-shadow: var(--shadow-float)"></i><span class="token">--shadow-float</span><span class="value">menu, liste</span></div>
+<div class="measure"><i style="width: 56px; height: 24px; border: 0; border-radius: var(--radius); background: var(--accent); box-shadow: var(--shadow-thumb)"></i><span class="token">--shadow-thumb</span><span class="value">option ouverte</span></div>
+<div class="measure"><i style="width: 84px; height: 36px; border: 0; border-radius: var(--radius); background: var(--accent) linear-gradient(#ffffff2e, #ffffff00); box-shadow: var(--shadow-accent)"></i><span class="token">--shadow-accent</span><span class="value">action principale</span></div>
 </div></div>
 <div class="spec-group"><span class="label">Marque · .brand · .logo · .wordmark · inversée sur le coin jaune du menu ; sur son carré jaune en favicon</span><div class="spec-line" style="align-items: flex-end; gap: 24px">
 <a class="brand" href="#" style="width: 216px"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg><span class="wordmark">FOOTBALL<span>MANAGER</span></span></a>
@@ -136,21 +151,41 @@
 
 <section class="spec" style="grid-column: span 12">
 <h2>Barre du haut</h2>
-<div class="spec-group"><span class="label">.brand · .topbar · 56 · blanche, ouverte par l’écharpe de la marque · ce qui s’y tient a 40</span>
+<div class="spec-group"><span class="label">.brand · .topbar · 56 · blanche, ouverte par l’écharpe de la marque · ce qui s’y tient a 40 · les matchs du club : joués, aujourd’hui, à venir</span>
 <div style="display: flex">
 <a class="brand" href="#" style="width: 216px"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"></rect><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"></path><circle cx="16" cy="16" r="6"></circle><circle cx="16" cy="16" r="2"></circle></svg><span class="wordmark">FOOTBALL<span>MANAGER</span></span></a>
 <header class="topbar" style="flex: 1">
-<div class="date-block"><span class="label">Saison 2032 / 2033</span><strong>mardi 20 juillet 2032</strong></div>
+<div class="history-nav" role="group" aria-label="Historique"><button type="button" aria-label="Précédent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg></button><button type="button" aria-label="Suivant" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg></button></div>
+<div class="date-block"><span class="label">Saison 2032 / 2033</span><strong>mardi 18 janvier 2033</strong></div>
 <span class="pill">Mercato ouvert</span>
 <button type="button" class="button square" aria-label="Rechercher"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"></circle><path d="M15 15l5 5"></path></svg></button>
 <div class="next-matches">
-<a class="next-match" href="#"><b>J-26</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e13327 64%, #1a1a1a 64%)"></i>Rennes</strong><small>Ligue 1</small></span></a>
-<a class="next-match" href="#"><b>J-33</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 64%, #ffd100 64%)"></i>Rodez</strong><small class="cup">Coupe de France</small></span></a>
-<a class="next-match" href="#"><b>J-54</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #1a1a1a 64%, #ffffff 64%)"></i>Angers<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></strong><small>Ligue 1</small></span></a>
+<a class="last-match V" href="#"><b>2–0</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #1d4a9c 64%, #ffffff 64%)"></i>Lyon</strong><small>Ligue 1</small></span></a>
+<a class="last-match N" href="#"><b>1–1</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #f8d000 64%, #e00000 64%)"></i>Lens<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></strong><small>Ligue 1</small></span></a>
+<a class="last-match D" href="#"><b>0–1</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 64%, #ffffff 64%)"></i>Brest</strong><small>Ligue 1</small></span></a>
+<i class="bar-today"></i>
+<a class="next-match" href="#"><b>J-4</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e13327 64%, #1a1a1a 64%)"></i>Rennes</strong><small>Ligue 1</small></span></a>
+<a class="next-match" href="#"><b>J-8</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 64%, #ffd100 64%)"></i>Rodez</strong><small class="cup">Coupe de France</small></span></a>
+<a class="next-match" href="#"><b>J-11</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #1a1a1a 64%, #ffffff 64%)"></i>Angers<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></strong><small>Ligue 1</small></span></a>
 </div>
-<button type="button" class="cta">Continuer <span>→</span></button>
+<button type="button" class="cta">Continuer <span class="go" aria-hidden="true"></span></button>
 </header>
 </div>
+</div>
+<div class="spec-group"><span class="label">.next-matches · selon la place : les joués réduits au score (.last-match.short)</span>
+<div style="display: flex">
+<div class="next-matches">
+<a class="last-match short V" href="#"><i class="kit-dot" style="background: linear-gradient(135deg, #1d4a9c 64%, #ffffff 64%)"></i><b>2–0</b></a>
+<a class="last-match short N" href="#"><i class="kit-dot" style="background: linear-gradient(135deg, #f8d000 64%, #e00000 64%)"></i><b>1–1</b></a>
+<a class="last-match short D" href="#"><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 64%, #ffffff 64%)"></i><b>0–1</b></a>
+<i class="bar-today"></i>
+<a class="next-match" href="#"><b>J-4</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e13327 64%, #1a1a1a 64%)"></i>Rennes</strong><small>Ligue 1</small></span></a>
+<a class="next-match" href="#"><b>J-8</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #e2001a 64%, #ffd100 64%)"></i>Rodez</strong><small class="cup">Coupe de France</small></span></a>
+<a class="next-match" href="#"><b>J-11</b><span><strong><i class="kit-dot" style="background: linear-gradient(135deg, #1a1a1a 64%, #ffffff 64%)"></i>Angers<svg class="away" viewBox="0 0 24 24" role="img" aria-label="Extérieur"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"></path></svg></strong><small>Ligue 1</small></span></a>
+</div>
+</div>
+<div class="spec-group"><span class="label">Précédent, Suivant · .history-nav · au repos, sous le pointeur, au bout de l’historique</span>
+<div class="spec-line"><div class="history-nav" role="group" aria-label="Historique"><button type="button" aria-label="Précédent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg></button><button type="button" aria-label="Suivant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg></button></div><div class="history-nav" role="group" aria-label="Historique"><button type="button" class="hover" aria-label="Précédent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg></button><button type="button" aria-label="Suivant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg></button></div><div class="history-nav" role="group" aria-label="Historique"><button type="button" aria-label="Précédent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg></button><button type="button" aria-label="Suivant" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg></button></div><div class="history-nav" role="group" aria-label="Historique"><button type="button" aria-label="Précédent" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg></button><button type="button" aria-label="Suivant" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg></button></div></div>
 </div>
 </section>
 
@@ -167,10 +202,17 @@
 <div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
 </div>
 </div>
-<div class="spec-group"><span class="label">Vues d’un onglet · .segmented.views · au bout de la rangée d’onglets, marquées de la couleur de l’onglet ouvert</span>
+<div class="spec-group"><span class="label">Dans la couleur du club · --club-fill, --club-ink · sur la page d’un club, d’une sélection, d’un joueur, d’une compétition</span>
+<div class="spec-line">
+<div class="segmented" role="group" aria-label="Colonnes" style="--club-fill: #2098c8; --club-ink: #111418"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
+<div class="segmented" role="group" aria-label="Colonnes" style="--club-fill: #0058c0; --club-ink: #ffffff"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
+<div class="segmented small" role="group" aria-label="Colonnes" style="--club-fill: #d01018; --club-ink: #ffffff"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div>
+</div>
+</div>
+<div class="spec-group"><span class="label">Vues d’un onglet · .segmented.views · au bout de la rangée d’onglets, l’ouverte dans la couleur de la page</span>
 <div class="spec-line">
 <nav class="segmented views" aria-label="Vues de l’historique"><a class="active" href="#">Vue d’ensemble</a><a href="#">Saisons</a><a class="hover" href="#">Joueurs</a><a href="#">Records</a></nav>
-<nav class="segmented views" aria-label="Vues de l’historique" style="--club: #e30613"><a href="#">Vue d’ensemble</a><a class="active" href="#">Éditions</a><a href="#">Joueurs</a><a href="#">Records</a></nav>
+<nav class="segmented views" aria-label="Vues de l’historique" style="--club-fill: #e30613; --club-ink: #ffffff"><a href="#">Vue d’ensemble</a><a class="active" href="#">Éditions</a><a href="#">Joueurs</a><a href="#">Records</a></nav>
 </div>
 </div>
 <div class="spec-row">
@@ -188,6 +230,16 @@
 <div class="spec-line"><span class="token">Flèches</span><span class="value">à la couleur du club ou de la sélection sur sa fiche, à l’encre ailleurs ; au bout de la série, à leur place, grisées</span></div>
 <div class="spec-line"><span class="token">Saison</span><span class="value">en chiffre clé ; elle ouvre la liste de toutes, la plus récente d’abord</span><span class="token" style="margin-left: 16px">Largeur</span><span class="value">celle du plus long libellé : les flèches ne bougent pas d’un pas à l’autre</span></div>
 </div>
+<div class="spec-group"><span class="label">Pas des formations · .season · en tête du terrain de la Composition, à gauche ; sa liste alignée à gauche, Perso après un trait</span>
+<div class="spec-line" style="align-items: flex-start; min-height: 290px">
+<div class="season" role="group" aria-label="Formation"><button type="button" aria-label="Formation précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg></button><details class="season-pick" open><summary style="--chars: 14">4-3-3<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></summary><div class="menu" role="menu" aria-label="Formations" style="left: 0; right: auto"><button type="button" role="menuitemradio" aria-checked="false">4-4-2 plat</button><button type="button" role="menuitemradio" aria-checked="false">4-4-2 diamant</button><button type="button" role="menuitemradio" aria-checked="false">4-4-2 offensif</button><button type="button" role="menuitemradio" aria-checked="true">4-3-3</button><button type="button" role="menuitemradio" aria-checked="false" class="hover">4-2-3-1</button><button type="button" role="menuitemradio" aria-checked="false">3-5-2</button><button type="button" role="menuitemradio" aria-checked="false">5-3-2</button><button type="button" role="menuitemradio" aria-checked="false">5-4-1</button><hr><button type="button" role="menuitemradio" aria-checked="false">Perso</button></div></details><button type="button" aria-label="Formation suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"></path></svg></button></div>
+</div></div>
+<div class="spec-group"><span class="label">Composition auto · .segmented · .check-option · un clic par action, le détail en infobulle</span>
+<div class="spec-line">
+<div class="segmented" role="group" aria-label="Composition auto"><button type="button">Meilleure</button><button type="button" class="active">Légère</button><button type="button" class="hover">Forte</button><button type="button">Complète</button></div>
+<button type="button" class="check-option" aria-pressed="true"><span class="check"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg></span>Jeunes</button>
+<button type="button" class="check-option hover" aria-pressed="false"><span class="check"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg></span>Formation</button>
+</div></div>
 <div class="spec-group"><span class="label">Infobulle · .tooltip · jamais le « title » du navigateur</span>
 <div class="spec-line" style="align-items: flex-end; gap: 32px">
 <div class="over"><span class="tooltip" role="tooltip">Recrutement des jeunes</span><div class="tile" style="flex: none"><span class="label">Recrutement</span><strong>17</strong></div></div>
@@ -227,7 +279,10 @@
 </div>
 </div>
 <div class="spec-group"><span class="label">.cta · 36, 40 dans la barre du haut · un seul par écran</span>
-<div class="spec-line gap"><button type="button" class="count" aria-label="2 messages à traiter" style="border: 0">2</button><button type="button" class="cta">Continuer <span>→</span></button></div>
+<div class="spec-line gap"><button type="button" class="count" aria-label="2 messages à traiter" style="border: 0">2</button><button type="button" class="cta">Continuer <span class="go" aria-hidden="true"></span></button></div>
+</div>
+<div class="spec-group"><span class="label">.go · ce qui mène plus loin finit sur un chevron dessiné, centré sur sa place ; dans une pastille sur l’action principale</span>
+<div class="spec-line gap"><a href="#" class="small strong">Voir le championnat <span class="go" aria-hidden="true"></span></a><a href="#" class="small strong hover">Voir <span class="go" aria-hidden="true"></span></a><button type="button" class="button small"><span class="go back" aria-hidden="true"></span> Précédent</button><button type="button" class="button small">Suivant <span class="go" aria-hidden="true"></span></button><button type="button" class="button primary">Accepter <span class="go" aria-hidden="true"></span></button></div>
 </div>
 <div class="spec-group"><span class="label">.field</span>
 <div class="spec-line gap">
@@ -242,7 +297,7 @@
 <h2>Carte, tableau, faits</h2>
 <div class="pair">
 <section class="card" style="flex: 1.7">
-<div class="card-head"><h2>Ligue 1 – 11e journée</h2><a href="#">Voir →</a></div>
+<div class="card-head"><h2>Ligue 1 – 11e journée</h2><a href="#">Voir <span class="go" aria-hidden="true"></span></a></div>
 <div class="table t-standings">
 <div class="tr head"><button type="button" class="center">#</button><button type="button">Club</button><button type="button" class="num sorted">Pts</button><button type="button" class="num">J</button><button type="button" class="num">V</button><button type="button" class="num">N</button><button type="button" class="num">D</button><button type="button" class="num">BP</button><button type="button" class="num">BC</button><button type="button" class="num">Diff.</button><button type="button">Forme</button></div>
 <div class="tr own"><span class="rank good">1</span><span class="cell strong"><i class="kit-dot" style="background: linear-gradient(135deg, #004170 64%, #da291c 64%)"></i><a href="#">Paris SG</a></span><span class="num strong">27</span><span class="num">11</span><span class="num">8</span><span class="num">3</span><span class="num">0</span><span class="num">27</span><span class="num">8</span><span class="num">+19</span><span class="form"><i class="V">V</i><i class="V">V</i><i class="N">N</i><i class="V">V</i><i class="V">V</i></span></div>
@@ -263,7 +318,7 @@
 </section>
 </div>
 <div class="spec-line"><span class="token">Sous le pointeur</span><span class="value">un seul fond, --panel-3 : ligne, fait, bouton, option, pas (Monaco, Plafond salarial, Actifs, 9)</span><span class="token" style="margin-left: 16px">Lien</span><span class="value">couleur du texte, non souligné ; souligné sous le pointeur, même couleur ; une pastille (score, compétition) souligne son texte, un drapeau seul ne change pas</span><span class="token" style="margin-left: 16px">Onglet</span><span class="value">--strong (Calendrier)</span></div>
-<div class="spec-line"><span class="token">Tri</span><span class="value">toutes les colonnes de tous les tableaux</span><span class="token" style="margin-left: 16px">Largeur</span><span class="value">fixe par colonne : la flèche se loge dans la marge de l’en-tête, un tri ne déplace rien</span></div>
+<div class="spec-line"><span class="token">Tri</span><span class="value">toutes les colonnes de tous les tableaux</span><span class="token" style="margin-left: 16px">Largeur</span><span class="value">celle de ce que la colonne tient au plus, le nom jusqu’à 200 ; ce qui reste, à parts égales entre les colonnes</span></div>
 </section>
 
 <section class="spec" style="grid-column: span 5">
@@ -339,7 +394,32 @@
 </section>
 
 <section class="spec" style="grid-column: span 12">
-<h2>Présentation d’un club · .tiles · .kits · .block-season · .watch-list · .season-moves · .leader-bars</h2>
+<h2>Page d’un club · .club-page · les couleurs de son bandeau pour toute la page</h2>
+<div class="pair">
+<div class="club-page" style="--club-fill: #2098c8; --club-ink: #111418; --club: #2098c8; flex: 1; padding: 12px; border-radius: var(--radius-card)">
+<section class="card">
+<nav class="tabs" aria-label="Sections"><a class="active" href="#">Effectif</a><a href="#">Composition</a><a href="#">Calendrier</a></nav>
+<div class="card-head"><h2>Équipe première · 16 joueurs</h2><div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div></div>
+<div class="section-title"><span class="label">Arrivées · 2</span></div>
+<div class="card-body stack"><div><div class="fact"><span>Budget transferts</span><strong>18 M€</strong></div><div class="fact"><span>Masse salariale</span><strong>900 k€</strong></div><div class="fact"><span>Plafond</span><strong>4.1 M€</strong></div></div><div class="section-title inset"><span class="label">Dernière journée</span></div></div>
+<ol class="leader-bars soft"><li><span>1</span><a href="#">Brian Madjo</a><i style="width:100%"></i><b>33</b></li><li><span>2</span><a href="#">Milan Verhoeven</a><i style="width:79%"></i><b>26</b></li></ol>
+</section>
+</div>
+<div class="plain-page" style="flex: 1; padding: 12px; border-radius: var(--radius-card)">
+<section class="card">
+<nav class="tabs" aria-label="Sections"><a class="active" href="#">Effectif</a><a href="#">Composition</a><a href="#">Calendrier</a></nav>
+<div class="card-head"><h2>Équipe première · 16 joueurs</h2><div class="segmented small" role="group" aria-label="Colonnes"><button type="button" class="active">Infos</button><button type="button">Attributs</button><button type="button">Jeu</button></div></div>
+<div class="section-title"><span class="label">Arrivées · 2</span></div>
+<div class="card-body stack"><div><div class="fact"><span>Budget transferts</span><strong>18 M€</strong></div><div class="fact"><span>Masse salariale</span><strong>900 k€</strong></div><div class="fact"><span>Plafond</span><strong>4.1 M€</strong></div></div><div class="section-title inset"><span class="label">Dernière journée</span></div></div>
+<ol class="leader-bars soft"><li><span>1</span><a href="#">Brian Madjo</a><i style="width:100%"></i><b>33</b></li><li><span>2</span><a href="#">Milan Verhoeven</a><i style="width:79%"></i><b>26</b></li></ol>
+</section>
+</div>
+</div>
+<div class="spec-line"><span class="token">Fond</span><span class="value">un souffle de la couleur du bandeau, plus marqué en haut ; les cartes restent blanches</span><span class="token" style="margin-left: 16px">Choix, onglet, intertitre</span><span class="value">dans ses couleurs ; ailleurs, le jaune</span><span class="token" style="margin-left: 16px">Barres d’un classement</span><span class="value">à la couleur du club ; ailleurs, le bleu</span><span class="token" style="margin-left: 16px">Intertitre en colonne</span><span class="value">.inset, arrondi, dans la largeur de sa colonne</span></div>
+</section>
+
+<section class="spec" style="grid-column: span 12">
+<h2>Présentation d’un club · .tiles · .kits · .block-season · .watch-list · .leader-bars</h2>
 <div class="spec-group"><span class="label">Rangée de tuiles · les compétitions, joueurs et âge moyen, tactique, entraînement et recrutement, personnalité, la valeur en dernier ; la largeur partagée, le contenu centré</span>
 <div class="tiles row"><div class="tile split"><div><span class="label"><a class="comp-link" href="#"><span class="comp">L1</span>Ligue 1</a></span><strong>1er <em class="muted">77 pts</em></strong></div><div><span class="label"><a class="comp-link" href="#"><span class="comp cup">CF</span>Coupe de France</a></span><strong>Finale</strong></div><div><span class="label"><a class="comp-link" href="#"><span class="comp europe">C1</span>Ligue des champions</a></span><strong>Demi-finales</strong></div></div>
 <div class="tile split"><div><span class="label">Joueurs</span><strong>23</strong></div><div><span class="label">Âge moyen</span><strong>24.6</strong></div></div><div class="tile"><span class="label">Tactique</span><strong>4-3-3</strong></div><div class="tile split"><div><span class="label">Entraînement</span><strong>16</strong></div><div><span class="label">Recrutement</span><strong>12</strong></div></div><div class="tile split"><div title="Appétit du risque sur 20 : plus il est haut, plus le club paie cher les joueurs qu’il recrute"><span class="label">Risque</span><strong>18</strong></div><div title="Préférence pour les jeunes sur 20 : plus elle est haute, plus le club fait jouer et progresser ses jeunes, et plus il recrute d’espoirs"><span class="label">Jeunes</span><strong>6</strong></div><div title="Patience en négociation sur 20 : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps"><span class="label">Patience</span><strong>14</strong></div></div><div class="tile"><span class="label">Valeur</span><strong>1 300 M€</strong></div></div>
@@ -366,10 +446,6 @@
 </div></section>
 <span class="value">Équipe-type · .pitch.spread : les lignes de sa formation sur toute la hauteur, l’attaque à 12 de la ligne d’en face, le bloc du gardien à 12 de la sienne, à égale distance entre elles ; sous le nom, les matches de la saison puis les buts et le ballon, en --series-1-soft ; pas de ballon sans but ; avant le premier match, la note au poste</span>
 <section class="card"><div class="card-head"><h2>À surveiller</h2></div><ul class="watch-list"><li><span class="position gk">GB</span><a href="#" class="strong">Unai Marrero</a><span class="watch-facts"><span class="rating graded" style="--hue:12">45 %</span></span></li><li><span class="position">DG</span><a href="#" class="strong">Luca Cecchetto</a><span class="watch-facts"><b class="bad">Contrat · 30 juin 2034</b><b class="bad">Blessé · 12 juil.</b></span></li><li><span class="position mid">MC</span><a href="#" class="strong">Holger Quintero</a><span class="watch-facts"><b class="warn">Suspendu · 1 match</b></span></li></ul></section>
-</div>
-<div class="stack">
-<section class="card"><div class="card-head"><h2>Mercato</h2><a href="#">Voir →</a></div><div class="section-title"><span class="label">Arrivées · 3</span><b>340 M€</b></div><ul class="season-moves"><li><span class="position att">BU</span><a href="#" class="strong">Francesco Camarda</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #6cabdd 64%, #ffffff 64%)"></i>Man City</span><b class="strong">300 M€</b></li><li><span class="position mid">MOC</span><a href="#" class="strong">Antoine Bourgault</a><span class="muted">Centre de formation</span><span class="muted">—</span></li></ul><div class="section-title"><span class="label">Départs · 9</span><b>300 M€</b></div><ul class="season-moves"><li><span class="position mid">MDC</span><a href="#" class="strong">Jadiel Pereira da Gama</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #7a263a 64%, #95bfe5 64%)"></i>Aston Villa</span><b class="strong">190 M€</b></li><li><span class="position mid">MOC</span><a href="#" class="strong">Mohamed Tawfik</a><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #f84000 64%, #080808 64%)"></i>Lorient</span><span class="muted">Prêt</span></li></ul></section>
-<span class="value">Arrivées puis départs, la plus grosse indemnité d’abord ; le total de chaque sens à droite, absent sans indemnité</span>
 </div>
 <div class="stack">
 <section class="card"><div class="card-head"><h2>Buteurs</h2><span class="card-hint">buts</span></div><ol class="leader-bars soft"><li><span>1</span><a href="#">Brian Madjo</a><i style="width:100%"></i><b>33</b></li><li><span>2</span><a href="#">Milan Verhoeven</a><i style="width:79%"></i><b>26</b></li><li><span>3</span><a href="#">Francesco Camarda</a><i style="width:73%"></i><b>24</b></li><li><span>4</span><a href="#">Mikkel Bro Hansen</a><i style="width:42%"></i><b>14</b></li></ol></section>
@@ -872,8 +948,14 @@
 <div class="spec-group"><span class="label">Case à cocher · .check · un bouton (aria-pressed)</span>
 <div class="spec-line"><button type="button" class="check" aria-pressed="false" aria-label="Non cochée"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="value">non cochée</span><button type="button" class="check hover" aria-pressed="false" aria-label="Sous le pointeur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="value">sous le pointeur</span><button type="button" class="check" aria-pressed="true" aria-label="Cochée"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button><span class="value">cochée</span></div>
 </div>
+<div class="spec-group"><span class="label">Nom de la sauvegarde · .slot-field · dans la barre, avant « Commencer »</span>
+<div class="spec-line"><label class="slot-field" aria-label="Nom de la sauvegarde"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v5h7V4M8 20v-6h8v6"></path></svg><input value="Lens" spellcheck="false"></label><span class="value">proposé</span></div>
+<div class="spec-line"><label class="slot-field focus" aria-label="Nom de la sauvegarde"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v5h7V4M8 20v-6h8v6"></path></svg><input value="Lens-carrière" spellcheck="false"></label><span class="value">écrit</span></div>
+<div class="spec-line"><label class="slot-field taken" aria-label="Nom de la sauvegarde"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"></path><path d="M8 4v5h7V4M8 20v-6h8v6"></path></svg><input value="rennes" spellcheck="false"></label><span class="tooltip">Remplace la sauvegarde « rennes »<span>Rennes · 14 mars 2028</span></span></div>
+</div>
 </div>
 <div class="spec-line"><span class="token">Ligne</span><span class="value">26 · la case, le drapeau et le nom, les divisions, les clubs</span><span class="token" style="margin-left: 16px">Divisions</span><span class="value">écrites comme leur pastille ; un clic fait la plus basse jouée</span><span class="token" style="margin-left: 16px">Écartée</span><span class="value">atténuée, drapeau gris, divisions éteintes, « — »</span></div>
+<div class="spec-line"><span class="token">Sauvegarde</span><span class="value">240 × 40, --panel-2, la disquette de « Reprendre » ; le nom du club choisi tant qu’on n’en écrit pas d’autre</span><span class="token" style="margin-left: 16px">Pris</span><span class="value">--bad-soft cerclé de --bad-line ; l’infobulle dit la sauvegarde remplacée, « Commencer » le confirme</span></div>
 </section>
 
 </div>
@@ -1082,7 +1164,7 @@
 <div class="tr head"><button type="button" class="center">#</button><button type="button" class="sorted asc">Club</button><button type="button" class="num">Pts</button><button type="button" class="num">J</button><button type="button" class="num">V</button><button type="button" class="num">N</button><button type="button" class="num">D</button><button type="button" class="num">BP</button><button type="button" class="num">BC</button><button type="button" class="num">Diff.</button><button type="button">Forme</button></div>
 <div class="tr head" style="border-bottom: 0"><button type="button" class="center">#</button><button type="button">Club</button><button type="button" class="num">Pts</button><button type="button" class="num">J</button><button type="button" class="num">V</button><button type="button" class="num">N</button><button type="button" class="num">D</button><button type="button" class="num sorted asc">BP</button><button type="button" class="num">BC</button><button type="button" class="num">Diff.</button><button type="button">Forme</button></div>
 </div></div>
-<div class="spec-line"><span class="token">Tri</span><span class="value">toutes les colonnes, dans tous les tableaux</span><span class="token" style="margin-left: 16px">Largeur</span><span class="value">fixe : la flèche se loge dans la marge de l’en-tête, trier ne déplace aucune colonne</span></div>
+<div class="spec-line"><span class="token">Tri</span><span class="value">toutes les colonnes, dans tous les tableaux</span><span class="token" style="margin-left: 16px">Flèche</span><span class="value">après le libellé de l’en-tête, avant lui dans la dernière colonne : elle ne prend pas de place, trier ne déplace aucune colonne</span></div>
 </section>
 
 <section class="spec" style="grid-column: span 5">
@@ -1120,6 +1202,20 @@
 </div>
 <div class="spec-line"><span class="token">Deux caractères</span><span class="value">Europe en noir plein · championnat en contour gris · coupe nationale en contour bleu</span><span class="token" style="margin-left: 16px">Coupe nationale</span><span class="value">C et l’initiale du pays ; deux pays peuvent partager un code</span><span class="token" style="margin-left: 16px">Nom</span><span class="value">après la pastille, un seul lien vers sa page ; le nom se souligne (Ligue des champions sous le pointeur)</span></div>
 <div class="spec-line"><span class="token">Lien</span><span class="value">vers la page de sa compétition ; aucun dans un filtre ni dans un autre lien</span></div>
+</section>
+
+<section class="spec" style="grid-column: span 12">
+<h2>Liste de joueurs</h2>
+<div class="card"><div class="table t-players">
+<div class="tr head"><button type="button" class="sorted asc">Poste</button><button type="button">Joueur</button><button type="button">Nat.</button><button type="button" class="num">Âge</button><button type="button">Niv.</button><button type="button">Pot.</button><button type="button" class="num">Valeur</button><button type="button" class="num">Salaire</button><button type="button">Contrat</button><button type="button">Forme</button><button type="button">Moral</button><button type="button" class="num">MJ</button><button type="button" class="num">Buts</button><button type="button" class="num">PD</button><button type="button" class="num">CJ</button><button type="button" class="num">CR</button><button type="button" class="num">Note</button></div>
+<div class="tr"><span><span class="position gk">GB</span></span><span class="strong"><a href="#">Unai Marrero</a></span><span><a class="nation" href="#"><img class="flag" src="../../web/flags/es.svg" alt="">ESP</a></span><span class="num">32</span><span><span class="rating graded" style="--hue: 80">127</span></span><span><span class="rating graded" style="--hue: 117">148</span></span><span class="num">600 k€</span><span class="num">59 k€</span><span>30 juin 2035</span><span><span class="rating graded" style="--hue: 0">−7 %</span></span><span><span class="rating graded" style="--hue: 13">45 %</span></span><span class="num">2</span><span class="num">0</span><span class="num">0</span><span class="num">0</span><span class="num">0</span><span class="num">5.90</span></div>
+<div class="tr"><span><span class="position">DC</span></span><span class="strong"><a href="#">Tylel Tati</a></span><span><a class="nation" href="#"><img class="flag" src="../../web/flags/sn.svg" alt="">SEN</a></span><span class="num">26</span><span><span class="rating graded" style="--hue: 120">154</span></span><span><span class="rating graded" style="--hue: 120">173</span></span><span class="num">75 M€</span><span class="num">620 k€</span><span>30 juin 2036</span><span><span class="rating graded" style="--hue: 120">+5 %</span></span><span><span class="rating graded" style="--hue: 120">84 %</span></span><span class="num">38 (10)</span><span class="num">5</span><span class="num">3</span><span class="num">6</span><span class="num">0</span><span class="num">6.90</span></div>
+<div class="tr"><span><span class="position mid">MDC</span></span><span class="strong"><a href="#">Keyliane Abdallah</a></span><span><a class="nation" href="#"><img class="flag" src="../../web/flags/fr.svg" alt="">FRA</a></span><span class="num">22</span><span><span class="rating graded" style="--hue: 96">136</span></span><span><span class="rating graded" style="--hue: 120">197</span></span><span class="num">55 M€</span><span class="num">160 k€</span><span>30 juin 2038</span><span><span class="rating graded" style="--hue: 120">+3 %</span></span><span><span class="rating graded" style="--hue: 92">72 %</span></span><span class="num">23 (24)</span><span class="num">3</span><span class="num">3</span><span class="num">11</span><span class="num">1</span><span class="num">6.52</span></div>
+<div class="tr"><span><span class="position mid">MOC</span></span><span class="strong"><a href="#">Milan Verhoeven</a></span><span><a class="nation" href="#"><img class="flag" src="../../web/flags/nl.svg" alt="">NED</a></span><span class="num">23</span><span><span class="rating graded" style="--hue: 120">173</span></span><span><span class="rating graded" style="--hue: 120">200</span></span><span class="num">230 M€</span><span class="num">2.4 M€</span><span>30 juin 2037</span><span><span class="rating neutral">+1 %</span></span><span><span class="rating graded" style="--hue: 120">84 %</span></span><span class="num">36 (12)</span><span class="num">26</span><span class="num">6</span><span class="num">8</span><span class="num">0</span><span class="num">6.86</span></div>
+<div class="tr"><span><span class="position att">BU</span></span><span class="strong"><a href="#">Brian Madjo</a></span><span><a class="nation" href="#"><img class="flag" src="../../web/flags/lu.svg" alt="">LUX</a></span><span class="num">25</span><span><span class="rating graded" style="--hue: 120">153</span></span><span><span class="rating graded" style="--hue: 120">173</span></span><span class="num">85 M€</span><span class="num">340 k€</span><span>30 juin 2035</span><span><span class="rating graded" style="--hue: 0">−6 %</span></span><span><span class="rating graded" style="--hue: 120">84 %</span></span><span class="num">39 (11)</span><span class="num">33</span><span class="num">10</span><span class="num">5</span><span class="num">0</span><span class="num">6.87</span></div>
+</div></div>
+<div class="spec-line"><span class="token">Colonnes</span><span class="value">les mêmes sur tous les écrans, chacune de ce qu’elle tient au plus : poste 36 · nationalité 54 · âge 24 · niveau, potentiel, note 32 · valeur, salaire 48 · contrat 78 · forme 46 · moral 72 · matches 40 · buts 30 · passes, cartons 16</span></div>
+<div class="spec-line"><span class="token">--w-name</span><span class="value">le nom, de 120 à 200 ; le tableau partage ce qui lui reste à parts égales entre ses colonnes : aucune n’est plus proche ni plus loin de sa voisine qu’une autre</span></div>
 </section>
 
 </div>
@@ -1325,6 +1421,34 @@
 </div>
 </section>
 
+
+<section class="spec" style="grid-column: span 12">
+<h2>Transferts d’un club · .mercatos · .tile.record · .tr.foot</h2>
+<div class="club-page" style="--club-fill: #d4001a; --club-ink: #ffffff; --club: #d4001a; display: flex; gap: 8px; align-items: flex-start; padding: 12px; border-radius: var(--radius-card)">
+<section class="card" style="width: 440px; flex: none"><div class="card-head"><h2>Mercatos</h2></div><div class="mercatos" role="group" aria-label="Mercatos"><div class="mercato-row mercato-key" aria-hidden="true"><span></span><span class="mercato-half spent"><b>Dépenses</b></span><span class="mercato-half earned"><b>Recettes</b></span></div><button type="button" class="mercato-season" aria-pressed="false"><span class="mercato-head"><span>2031 / 2032</span><b class="good">+65 M€</b></span><span class="mercato-row"><span class="mercato-window">Été</span><span class="mercato-half spent"><b>120 M€</b><i style="--share:0.323"></i></span><span class="mercato-half earned"><i style="--share:0.497"></i><b>185 M€</b></span></span><span class="mercato-row future"><span class="mercato-window">Hiver</span><span class="mercato-half spent"></span><span class="mercato-half earned"></span></span></button><button type="button" class="mercato-season picked" aria-pressed="true"><span class="mercato-head"><span>2030 / 2031</span><b class="bad">−140 M€</b></span><span class="mercato-row"><span class="mercato-window">Été</span><span class="mercato-half spent"><b>372 M€</b><i style="--share:1.000"></i></span><span class="mercato-half earned"><i style="--share:0.672"></i><b>250 M€</b></span></span><span class="mercato-row"><span class="mercato-window">Hiver</span><span class="mercato-half spent"><b>98 M€</b><i style="--share:0.263"></i></span><span class="mercato-half earned"><i style="--share:0.215"></i><b>80 M€</b></span></span></button><button type="button" class="mercato-season hover" aria-pressed="false"><span class="mercato-head"><span>2029 / 2030</span><b class="bad">−80 M€</b></span><span class="mercato-row"><span class="mercato-window">Été</span><span class="mercato-half spent"><b>210 M€</b><i style="--share:0.565"></i></span><span class="mercato-half earned"><i style="--share:0.323"></i><b>120 M€</b></span></span><span class="mercato-row"><span class="mercato-window">Hiver</span><span class="mercato-half spent"><b>35 M€</b><i style="--share:0.094"></i></span><span class="mercato-half earned"><i style="--share:0.121"></i><b>45 M€</b></span></span></button><button type="button" class="mercato-season" aria-pressed="false"><span class="mercato-head"><span>2028 / 2029</span><b class="good">+112 M€</b></span><span class="mercato-row"><span class="mercato-window">Été</span><span class="mercato-half spent"><b>60 M€</b><i style="--share:0.161"></i></span><span class="mercato-half earned"><i style="--share:0.403"></i><b>150 M€</b></span></span><span class="mercato-row"><span class="mercato-window">Hiver</span><span class="mercato-half spent"></span><span class="mercato-half earned"><i style="--share:0.059"></i><b>22 M€</b></span></span></button></div></section>
+<div class="stack" style="flex: 1">
+<div class="tiles row"><div class="tile split"><div><span class="label">Dépenses</span><strong>470 M€</strong></div><div><span class="label">Recettes</span><strong>330 M€</strong></div><div><span class="label">Balance</span><strong class="bad">−140 M€</strong></div></div>
+<div class="tile record"><span class="label">Plus grosse recrue</span><strong><a href="#">Mason Greenwood</a><small><span class="go back" aria-hidden="true"></span><i class="kit-dot" style="background: linear-gradient(135deg, #002d72 64%, #ffed00 64%)"></i>Fenerbahçe</small><b>240 M€</b></strong></div>
+<div class="tile record"><span class="label">Plus grosse vente</span><strong><a href="#">Vangelis Pavlidis</a><small><span class="go" aria-hidden="true"></span><i class="kit-dot" style="background: linear-gradient(135deg, #e30613 64%, #ffffff 64%)"></i>Benfica</small><b>70 M€</b></strong></div></div>
+<section class="card"><div class="card-head"><h2>Départs</h2></div>
+<div class="table" style="--cols: 40px 96px 32px 160px 24px 160px 68px">
+<div class="tr head" style="grid-template-columns: var(--cols)"><button type="button" class="sorted asc">Date</button><button type="button">Genre</button><button type="button" class="center">Poste</button><button type="button">Joueur</button><button type="button" class="num">Âge</button><button type="button">Club</button><button type="button" class="num">Montant</button></div>
+<div class="tr" style="grid-template-columns: var(--cols)"><span class="muted">03/07</span><span><span class="tag">Transfert</span></span><span class="center"><span class="position att">AC</span></span><span><a href="#">Vangelis Pavlidis</a></span><span class="num">27</span><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #e30613 64%, #ffffff 64%)"></i><a href="#">Benfica</a></span><span class="num">70 M€</span></div>
+<div class="tr" style="grid-template-columns: var(--cols)"><span class="muted">15/08</span><span><span class="tag info">Prêt</span></span><span class="center"><span class="position mid">MDC</span></span><span><a href="#">Kenzo Goudmijn</a></span><span class="num">23</span><span class="cell"><i class="kit-dot" style="background: linear-gradient(135deg, #1d4f91 64%, #ffffff 64%)"></i><a href="#">PEC Zwolle</a></span><span class="num">—</span></div>
+<div class="tr" style="grid-template-columns: var(--cols)"><span class="muted">30/06</span><span><span class="tag">Retraite</span></span><span class="center"><span class="position">DC</span></span><span><a href="#">Ron Vlaar</a></span><span class="num">36</span><span class="muted">—</span><span class="num">—</span></div>
+<div class="tr foot" style="grid-template-columns: var(--cols)"><span></span><span></span><span></span><span>3 joueurs</span><span></span><span></span><span class="num">70 M€</span></div>
+</div></section>
+</div>
+</div>
+<div class="spec-group" style="gap: 4px">
+<span><span class="token">Mercatos</span> <span class="value">un bloc par saison, la dernière en tête : son nom et sa balance en 16 --display, puis une ligne de 26 par fenêtre (Été, Hiver) ; pas de balance par fenêtre</span></span>
+<span><span class="token">Barres</span> <span class="value">12 de haut, de part et d’autre d’un axe --ink-2 : les dépenses vers la gauche en --series-1, les recettes vers la droite en --series-2, chacune à la mesure du plus gros montant de la partie</span></span>
+<span><span class="token">Montants</span> <span class="value">au bout de leur barre, en 400, dans le ton foncé de leur série (--series-1-deep, --series-2-deep) ; la légende au-dessus des barres, de part et d’autre de l’axe</span></span>
+<span><span class="token">Saison</span> <span class="value">un bloc ouvre sa saison ; celle montrée sur le lavis du club, marquée de sa couleur au bord ; une fenêtre pas encore ouverte garde son axe, en pointillé</span></span>
+<span><span class="token">Record</span> <span class="value">le joueur, le chevron (retourné pour une arrivée), le club après sa pastille, le montant au bout</span></span>
+<span><span class="token">Pied</span> <span class="value">les totaux sous leurs colonnes, sur --panel-2, un trait --head-line au-dessus, en 600 à l’encre forte</span></span>
+</div>
+</section>
 </div>
 </div>
 </body>

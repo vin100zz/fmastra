@@ -1,4 +1,4 @@
-import {api,escape as e,date,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable,fixtureRow,hasStorey} from './ui.js';
+import {api,escape as e,date,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable,fixtureRow,hasStorey,GO} from './ui.js';
 import {choiceLinks,listHref} from './listing.js';
 
 // The matches each division shows: its latest round, or on demand the next one.
@@ -24,7 +24,7 @@ function divisionCard(league,data,own){
  const played=Math.max(0,...data.standings.map(row=>row.played));
  const progress=played?`J${played}${league.rounds?` / ${league.rounds}`:''} `:'';
  const scorers=data.scorers.length?`<h3>Buteurs</h3>${table(['#','JOUEUR','CLUB','BUTS'],data.scorers.slice(0,SCORERS).map((row,index)=>[figure(index+1),`<span class="strong">${playerLink(row.id,row.name)}</span>`,clubLink(row.club),figure(`<b>${n(row.goals)}</b>`)]),undefined,undefined,undefined,['rank-column','','club-column','goals-column'])}`:'';
- return card(league.name,`${data.round?strip(data.round):''}${matchRows(data.matches,own)}${standingsTable({items:data.standings},'figures',false,own)}${scorers}`,`<a href="#/league/${league.id}" aria-label="Voir le championnat">${progress}→</a>`);
+ return card(league.name,`${data.round?strip(data.round):''}${matchRows(data.matches,own)}${standingsTable({items:data.standings},'figures',false,own)}${scorers}`,`<a href="#/league/${league.id}" aria-label="Voir le championnat">${progress}${GO}</a>`);
 }
 
 // One round of the cup: the latest played, or the first still to play, or the one picked among its rounds (`tour`).
@@ -33,7 +33,7 @@ function cupCard(cup,data,next,params,base,own,levels){
  const chosen=data.rounds.find(round=>round.number===Number(params.get('tour')))||data.rounds.find(round=>round.number===usual);
  const steps=`<nav class="segmented country-rounds" aria-label="Tours">${data.rounds.map(round=>`<a class="${round===chosen?'active':''}" href="${listHref(base,params,{tour:round.number})}"${round===chosen?' aria-current="true"':''} title="${e(round.label)}">${e(round.label.split(' ')[0])}</a>`).join('')}</nav>`;
  const ties=chosen.items.length?matchRows(chosen.items,own,levels):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir');
- return card(cup.name,`${steps}${strip(chosen)}${ties}`,`<a href="#/league/${cup.id}" aria-label="Voir la coupe">→</a>`);
+ return card(cup.name,`${steps}${strip(chosen)}${ties}`,`<a href="#/league/${cup.id}" aria-label="Voir la coupe">${GO}</a>`);
 }
 
 // A country: one column per division from the top down, then its cup. `own` is the club the user runs.

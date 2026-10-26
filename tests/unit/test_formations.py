@@ -49,7 +49,7 @@ def test_an_older_save_renames_its_4_4_2_the_flat_one_and_gains_the_diamond_and_
     rules["formations"] = {"4-4-2" if name == "4-4-2 plat" else name: roles
                            for name, roles in rules["formations"].items() if name not in ADDED_FORMATIONS}
     world["clubs"]["1"]["formation"] = world["submitted_lineups"]["7"]["formation"] = "4-4-2"
-    # The human club keeps its formation through schema 41; the other plays the one its squad fills best.
+    # The human club keeps its formation through schema 43; the other plays the one its squad fills best.
     world["controlled_club_id"] = 1
     write(path, payload)
     older = store.load("older")
@@ -84,13 +84,14 @@ def test_a_save_from_before_schema_22_codes_its_full_backs_dg_and_dd_and_gives_t
     assert store.load("older").config.formations.formations["4-4-2 offensif"] == ("GB", "DG", "DC", "DC", "DD", "MC", "MC", "MOC", "MOC", "BU", "BU")
 
 
-def test_a_save_from_before_schema_41_plays_the_formation_of_its_squad_and_its_human_club_keeps_its_own(config, tmp_path):
+def test_a_save_from_before_schema_43_plays_the_formation_of_its_squad_and_its_human_club_keeps_its_own(config, tmp_path):
     _, store, path, payload = saved_world(config, tmp_path)
-    payload["schema_version"] = 40
+    payload["schema_version"] = 42
     world = payload["world"]
     for introduced, (domain, section), _ in MIGRATION_DEFAULTS:
-        if introduced > 40: del world["config"][domain][section]
-    for club in world["clubs"].values(): del club["formation_squad"]
+        if introduced > 42: del world["config"][domain][section]
+    # A save omits the fields left at their default: an empty squad, as before the field existed.
+    for club in world["clubs"].values(): club.pop("formation_squad", None)
     world["clubs"]["1"]["formation"] = world["clubs"]["2"]["formation"] = "5-4-1"
     world["controlled_club_id"] = 1
     write(path, payload)

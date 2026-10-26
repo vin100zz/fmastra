@@ -157,3 +157,13 @@ def test_the_human_club_hears_when_a_rival_changes_formation_and_never_of_the_ch
     world.clubs[2].competition_id = None
     apply(world, FormationChosen(2, "4-3-3", squad))
     assert len(world.news) == 1
+
+
+def test_auto_mode_leaves_the_human_clubs_formation_to_him(config):
+    from core.world.human import ai_in_charge
+    world = mini_world(config)
+    world.controlled_club_id = 1
+    world.clubs[1].formation = "5-4-1"
+    with ai_in_charge():
+        for event in formation_events(world, margin=False): apply(world, event)
+    assert world.clubs[1].formation == "5-4-1" and world.clubs[1].formation_squad == ()

@@ -13,6 +13,15 @@ s'ouvre automatiquement sur la partie. Garder la fenêtre du serveur ouverte ;
 `Ctrl+C` arrête le jeu. Si le serveur tourne déjà, le lanceur ouvre simplement
 le jeu.
 
+Un fichier `.bat` ne peut pas avoir d'icône : double-cliquer une fois sur
+**shortcut.bat** crée sur le Bureau un raccourci « Football Manager », à l'icône
+du jeu (`web/favicon.ico`), qui s'épingle à la barre des tâches (clic droit,
+« Épingler à la barre des tâches »). Il lance `launcher.pyw` sans console : le
+jeu s'ouvre dans sa propre fenêtre Chrome (Edge si Chrome est absent), à
+l'icône du jeu, et le serveur s'arrête quand on la ferme. Le journal du serveur est dans
+`launcher.log`. Relancer `shortcut.bat` pour mettre à jour un raccourci créé
+auparavant.
+
 Python 3.12 est requis. Depuis ce dossier, dans PowerShell :
 
 ```powershell
@@ -151,8 +160,8 @@ recharger ou redémarrer le serveur en plein match : il est reconstruit à l'ide
 Voir `docs/ui.md` et `docs/architecture.md`.
 
 Les sauvegardes sont dans `saves/`. La partie s'enregistre automatiquement dans la
-sauvegarde dont elle vient, celle chargée ou la dernière enregistrée (`autosave` pour
-une nouvelle partie), après chaque commande d'avance (et à l'arrêt du mode Auto) et
+sauvegarde dont elle vient, celle chargée ou la dernière enregistrée (pour une
+nouvelle partie, celle nommée à sa création, d'après son club par défaut), après chaque commande d'avance (et à l'arrêt du mode Auto) et
 chaque changement de mois. Utiliser un autre nom dans « Ma partie » pour conserver
 plusieurs univers. Le chargement restitue la configuration de la sauvegarde, même si
 les JSON du dépôt ont changé.

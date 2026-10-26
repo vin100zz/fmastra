@@ -25,7 +25,7 @@ travail sur le moteur de match de Touchline. Il date du 25 octobre 2026.
   d'écriture », « Minutes »).
 - **La formation choisie par l'effectif** : un club de l'IA joue la formation que son effectif
   remplit le mieux, le mercato l'évalue dans la meilleure, une sélection appelle ses 23 pour la
-  sienne. Fait (schémas 41 et 42, branche `claude/trusting-keller-gy4hlu`), décrit dans
+  sienne. Fait (schémas 43 et 44, branche `claude/trusting-keller-gy4hlu`), décrit dans
   `docs/conception-formation-ia.md`.
 - **Chantier C, les consignes tactiques** : conception rédigée, décisions à valider
   (`TODO/conception-consignes-tactiques.md`, commits `c9792ff` et `a5cc6af`). Rien
@@ -85,7 +85,7 @@ Elles s'ajoutent à `CLAUDE.md`, que la conversation charge d'elle-même.
   vérifie dans `src/core/config/consistency.py`.
 - **Un changement de règle** atteint les sauvegardes existantes par une montée de
   schéma (`SCHEMA_VERSION` dans `src/infrastructure/persistence/store.py`,
-  actuellement 42). Trois tables y servent :
+  actuellement 44). Trois tables y servent :
   - `MIGRATION_DEFAULTS` : les clés ajoutées, avec leurs valeurs par version ;
   - `RETIRED_RULES` : les clés retirées. Le même chemin rend aussi, pour le contrôle
     d'empreinte, une règle modifiée avant le typage (la liste des attributs au
@@ -236,10 +236,12 @@ interface, migration (schéma 41) et documentation.
   C'est le plus gros manque de réalisme. D'après la maquette, le chantier C ne
   le comblera pas : sa décision 10 propose un chantier de calibrage dédié après C
   (sensibilité des duels aux écarts, sur de vrais championnats).
-- **Affiches de référence** (`match`, 3 000), depuis la formation choisie par l'effectif et
-  la cible de City – Burnley revue à 70 / 17 / 13 (`docs/benchmarks.md`, « Suite match ») :
-  14 critères sur 15. Reste deux équipes égales : 32.2 % de défaites à domicile (cible
-  ≤ 32 %), dans le bruit à 3 000 matchs ; à confirmer à 10 000.
+- **Affiches de référence** (`match`, 3 000), avec la formation choisie par l'effectif, les
+  duels porteur contre défenseur et la cible de City – Burnley revue à 70 / 17 / 13
+  (`docs/benchmarks.md`, « Suite match ») : 13 critères sur 15. Reste le Clasico, juste
+  au-dessus de sa cible : 50.7 % de victoires du Real (cible 39 à 49 %) et 23.0 % de
+  défaites (cible 24 à 34 %). Les duels plus marqués avantagent le plus fort ; sans la
+  formation choisie par l'effectif, `main` seul donnait 52.0 % et 21.0 %.
 - **Poids du gardien** : à valeur moyenne voisine, Arsenal bat Coventry (gardien 66) dans
   81 % des cas et Hull (gardien 77) dans 65 % (3 000 matchs). `occasion.sensibilite_tireur_gardien`
   (0.055, triplée le 18 septembre) fait peser un seul joueur très lourd : à revoir dans le

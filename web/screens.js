@@ -13,7 +13,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
+import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -30,7 +30,7 @@ async function leagueSummary(id){
 
 function leagueSummaryCard(league,data){
  const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>${roundTitle('Classement',data.standings.items)}</h3><div class="standings-scroll">${standingsTable(data.standings,'record')}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
- return `<section class="card"><div class="card-head"><h2>${nationFlag(league.nation)}${e(league.name)}</h2><a href="#/league/${league.id}">Voir le championnat →</a></div>${content}</section>`;
+ return `<section class="card"><div class="card-head"><h2>${nationFlag(league.nation)}${e(league.name)}</h2><a href="#/league/${league.id}">Voir le championnat ${GO}</a></div>${content}</section>`;
 }
 
 async function leagueSummariesSection(ordered){
@@ -101,9 +101,9 @@ export async function clubScreen(id,section,params){
  const lead=clubNavigation(neighbours,section,section==='squad'&&params.get('vue')?query({vue:params.get('vue')}):'');
  let content='',tools='';
  if(section==='overview'){
-  const [overview,season,squad,transfers,standings]=await Promise.all([api(`/clubs/${id}/apercu`),api(`/clubs/${id}/calendrier`),api(`/clubs/${id}/effectif`),api(`/clubs/${id}/transferts`),
+  const [overview,season,squad,standings]=await Promise.all([api(`/clubs/${id}/apercu`),api(`/clubs/${id}/calendrier`),api(`/clubs/${id}/effectif`),
    club.competition_id?api(`/competitions/${club.competition_id}/classement`):null]);
-  content=presentationContent(club,{overview,season,squad,transfers,standings,human});
+  content=presentationContent(club,{overview,season,squad,standings,human});
  }
  else if(section==='squad'){
   const data=await api(`/clubs/${id}/effectif?${params}`);
@@ -111,7 +111,7 @@ export async function clubScreen(id,section,params){
  }
  else if(section==='composition'&&human)content=await compositionContent(params,state);
  else if(section==='calendar'){const data=await api(`/clubs/${id}/calendrier?${year}`);content=calendarContent(club,data,params);tools=seasonSteps(data);}
- else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${year}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market,{club,market:state.market}):'')+movementsHistory(data,params);tools=seasonSteps(data);}
+ else if(section==='transfers'){const [data,market]=await Promise.all([api(`/clubs/${id}/transferts?${year}`),human?api('/ma-partie/transferts'):null]);content=(market?marketBlock(market,{club,market:state.market}):'')+movementsHistory(data);tools=seasonSteps(data);}
  else if(section==='finances'){const [data,squad]=await Promise.all([api(`/clubs/${id}/finances?${year}`),api(`/clubs/${id}/effectif`)]);content=financesContent(club,data,squad);tools=seasonSteps(data.history);}
  else {const view=historyView(CLUB_VIEWS,params);const data=await api(`/clubs/${id}/historique?${query({vue:view})}`);content=clubHistory(view,data,club,state.season??null);tools=viewChoice(CLUB_VIEWS,view,`#/club/${id}/history`);}
  return clubHero(club,{lead,menu,section,tools})+(!club.active?'<div class="notice">Club hors championnat simulé : peut participer à la coupe nationale.</div>':'')+content;
@@ -166,7 +166,7 @@ async function leagueContent(league,section,params,lead){
    content=`<form class="filters" data-filter><select name="type" aria-label="Statistique"><option value="">Toutes</option>${STATISTICS.map(([key,label])=>`<option value="${key}" ${category===key?'selected':''}>${label}</option>`).join('')}</select><button>Afficher</button></form>`+card('Les leaders',table(statisticHeaders(category),statisticRows(data,category,(data.page-1)*data.page_size))+pager(data));
   }else{
    const lists=await Promise.all(STATISTICS.map(([key])=>api(`/competitions/${id}/statistiques?type=${key}`)));
-   content=`<div class="stats-boards">${STATISTICS.map(([key,label],index)=>card(label,table(statisticHeaders(key),statisticRows({items:lists[index].items.slice(0,10)},key)),`<a href="#/league/${id}/stats?type=${key}">Voir tout →</a>`)).join('')}</div>`;
+   content=`<div class="stats-boards">${STATISTICS.map(([key,label],index)=>card(label,table(statisticHeaders(key),statisticRows({items:lists[index].items.slice(0,10)},key)),`<a href="#/league/${id}/stats?type=${key}">Voir tout ${GO}</a>`)).join('')}</div>`;
   }
  }
  else{const data=await api(`/competitions/${id}/historique?${params}`);content=`<div class="history-layout three"><div class="history-main">${card('Le palmarès',table(['SAISON','CHAMPION','MEILLEUR BUTEUR','BUTS'],data.items.map(row=>[season(row.season),clubLink(row.champion),row.scorer?playerLink(row.scorer.id,row.scorer.name):'—',row.scorer?.value??'—']))+pager(data))}${titlesCard('Titres par club',countTitles(data.items,row=>row.champion?.id,row=>clubLink(row.champion)))}</div><div class="history-leaders">${leadersCards(data.leaders)}</div><div class="history-archives">${seasonArchive(data.archive)}</div></div>`;}

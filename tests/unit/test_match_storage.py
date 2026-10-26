@@ -3,8 +3,9 @@ from random import Random
 
 from benchmarks.fixtures import synthetic_lineup
 from core.domain.clubs import Competition
+from core.domain.international import InternationalEdition, NationalTeam
 from core.domain.matches import (Match, MatchEvent, MatchResult, PlayerMatchStats, TeamStats, TRANSIENT_EVENT_KINDS,
-                                 REPLAY_EVENT_KINDS)
+                                 REPLAY_EVENT_KINDS, stored_events)
 from core.engine.match import PossessionEngine
 from core.randomness import stream
 from core.world.application import apply
@@ -28,6 +29,7 @@ def full_result(**changes) -> MatchResult:
 
 def test_applying_a_match_keeps_only_the_events_a_view_can_list(config):
     world = mini_world(config)
+    world.controlled_club_id = 1
     world.matches[10] = Match(10, 16, 2025, 1, world.date, 1, 2)
     result = full_result()
     apply(world, MatchPlayed(10, result, {}, {}, {}))
@@ -39,11 +41,33 @@ def test_applying_a_match_keeps_only_the_events_a_view_can_list(config):
     # Everything else the match page reads is untouched, and the survivors keep their order.
     assert [event.second for event in stored.events] == sorted(event.second for event in stored.events)
     assert stored.home_stats.corners == 2 and stored.player_stats[101].minutes == 90
-    assert stored.home_lineup == [(101, "GB")] and stored.temporary_players == {-1: "Renfort"}
+    assert stored.home_lineup == [(101, "GB")] and stored.temporary_players == {-1: "Renfort"} and stored.replay
+
+
+def test_a_match_the_users_club_did_not_play_keeps_only_its_facts(config):
+    world = mini_world(config)
+    world.controlled_club_id = 3
+    world.matches[10] = Match(10, 16, 2025, 1, world.date, 1, 2)
+    result = full_result()
+    # A penalty missed in play, its save, and a shoot-out kick, beside a shot from play and its save.
+    result.events += [MatchEvent(5000, 2, 30, "shot", 1, 101, possession_id=30, shot_id=1, detail="penalty"),
+                      MatchEvent(5001, 2, 31, "save", 2, 201, possession_id=30, shot_id=1),
+                      MatchEvent(5100, 2, 32, "shot", 1, 101, possession_id=31, shot_id=2, detail="frappe"),
+                      MatchEvent(5101, 2, 33, "save", 2, 201, possession_id=31, shot_id=2),
+                      MatchEvent(5400, 3, 34, "penalty_scored", 1, 101, 201, detail="1–0")]
+    apply(world, MatchPlayed(10, result, {}, {}, {}))
+    stored = world.matches[10].result
+    assert not stored.replay
+    assert [event.kind for event in stored.events] == ["kickoff", "goal", "yellow", "red", "injury", "substitution", "period_end",
+                                                       "shot", "save", "penalty_scored"]
+    assert {event.shot_id for event in stored.events if event.kind in ("shot", "save")} == {1}
+    # Its statistics and its sheet stay whole.
+    assert stored.home_stats.corners == 2 and stored.player_stats[101].minutes == 90 and stored.home_lineup == [(101, "GB")]
 
 
 def test_real_engine_log_loses_no_statistic_when_stored(config):
     world = mini_world(config)
+    world.controlled_club_id = 1
     world.rngs["states"] = Random(1)
     world.matches[10] = Match(10, 16, 2025, 1, world.date, 1, 2)
     result = PossessionEngine().simulate(synthetic_lineup(config, 1), synthetic_lineup(config, 2), config, stream(7))
@@ -95,6 +119,19 @@ def test_rollover_archives_every_kind_of_competition_and_keeps_the_knockout_outc
     assert world.matches[6].result is None
 
 
+def test_rollover_archives_the_matches_of_the_editions_over(config):
+    world = mini_world(config)
+    world.competitions = {16: Competition(16, "Ligue", "FRA", 1, [1, 2])}
+    over, under_way = InternationalEdition(2025, "nations"), InternationalEdition(2026, "world")
+    world.international.matches = {
+        7: Match(7, over.competition_id, 2025, 1, world.date, 1, 2, full_result()),
+        8: Match(8, under_way.competition_id, 2026, 1, world.date, 1, 2, full_result())}
+    current = world.international.matches[8].result
+    apply(world, SeasonOpened(2026, [], {}))
+    assert world.international.matches[7].result == MatchResult(1, 1, "archived")
+    assert world.international.matches[8].result is current
+
+
 def test_the_replay_trail_never_changes_the_match(config):
     """The replay follows the possession from the events alone: a run of passes kept where the ball stands or behind it,
     each move forward one zone and a long ball two, a restart where the play stopped, and a named server for every chance
@@ -127,3 +164,65 @@ def test_the_replay_trail_never_changes_the_match(config):
                 assert shot.kind == "shot" and shot.detail == event.detail and event.player_id not in (None, shot.player_id)
             elif event.detail in ("cross", "cutback", "through_ball", "corner", "crossed_free_kick"):
                 assert index and sequence[index - 1].kind == "delivery"
+
+
+def saved_world(config):
+    """A world a store accepts: its clubs in one league, its streams, two selections."""
+    world = mini_world(config)
+    world.competitions[-16] = Competition(-16, "Test", "FRA", 1, [1, 2])
+    for club in world.clubs.values(): club.competition_id = -16
+    world.rngs = {key: Random(1) for key in ("market", "matches", "states", "progression", "demography")}
+    world.international.nations = {nid: NationalTeam(nid, code, code, "Europe", 50, 50) for nid, code in ((-1, "FRA"), (-2, "ITA"))}
+    return world
+
+
+def test_a_save_leaves_out_defaults_the_journal_and_the_excluded_players_and_restores_the_world_whole(config, tmp_path):
+    import gzip
+    import json
+    from infrastructure.persistence.store import SaveStore
+    world = saved_world(config)
+    world.controlled_club_id = 1
+    world.matches[10] = Match(10, -16, 2025, 1, world.date, 1, 2)
+    apply(world, MatchPlayed(10, full_result(), {}, {}, {}))
+    world.excluded_player_ids = [7, 8]
+    store = SaveStore(tmp_path)
+    document = json.loads(gzip.decompress(store.save(world, "slot").read_bytes()))["world"]
+    assert "journal" not in document and "excluded_player_ids" not in document and "news" not in document
+    assert "injury" not in next(iter(document["players"].values())) and "replay" not in document["matches"]["10"]["result"]
+    restored = store.load("slot")
+    assert restored.journal == [] and restored.excluded_player_ids == []
+    assert restored.players == world.players and restored.matches == world.matches
+
+
+def test_a_save_from_before_schema_41_trims_the_replays_of_other_clubs_and_archives_the_editions_over(config, tmp_path, monkeypatch):
+    import gzip
+    import json
+    import infrastructure.persistence.store as module
+    from infrastructure.persistence.store import SaveStore
+    # Two bare editions, which a whole calendar alone would make valid.
+    monkeypatch.setattr(module, "validate_world", lambda world: None)
+    world = saved_world(config)
+    world.controlled_club_id = 1
+    world.season = 2026
+    world.matches = {10: Match(10, -16, 2026, 1, world.date, 1, 2, full_result())}
+    over, under_way = InternationalEdition(2024, "euro"), InternationalEdition(2026, "world")
+    world.international.editions = {2024: over, 2026: under_way}
+    world.international.matches = {
+        12: Match(12, over.competition_id, 2024, 1, world.date, -1, -2, full_result()),
+        13: Match(13, under_way.competition_id, 2026, 1, world.date, -1, -2, full_result())}
+    store = SaveStore(tmp_path)
+    payload = json.loads(gzip.decompress(store.save(world, "old").read_bytes()))
+    payload["schema_version"] = 40
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(payload).encode()))
+    migrated = store.load("old")
+    # The user's club's match keeps its replay; a selection's, never, and those of an edition over are archived.
+    kept = migrated.matches[10].result
+    assert kept.replay and kept.events == stored_events(world.matches[10].result.events)
+    assert migrated.international.matches[12].result == MatchResult(1, 1, "archived")
+    current = migrated.international.matches[13].result
+    assert not current.replay and not any(event.kind == "possession" for event in current.events)
+    # Without a club of his own, the user keeps no replay.
+    del payload["world"]["controlled_club_id"]
+    store.path_for("observer").write_bytes(gzip.compress(json.dumps(payload).encode()))
+    trimmed = store.load("observer").matches[10].result
+    assert not trimmed.replay and [event.kind for event in trimmed.events] == [event.kind for event in current.events]

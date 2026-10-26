@@ -49,8 +49,8 @@
       "_note": "Valeur de transfert selon la saison du joueur : la part de sa valeur due a son niveau actuel x (1 + poids_temps_de_jeu x (2 x part des minutes du joueur le plus utilise du club - 1) + poids_note x (note moyenne - note_reference) / ecart_note_plein, borne a +-1), entre facteur_min et facteur_max. Compte pleinement apres mercato.matchs_confiance_minutes matchs ; avant, le bilan de la saison precedente le complete. Neutre dans un club non simule. Ne s'applique pas au salaire attendu.",
       "poids_temps_de_jeu": 0.10,
       "poids_note": 0.20,
-      "note_reference": 6.5,
-      "ecart_note_plein": 0.5,
+      "note_reference": 6.8,
+      "ecart_note_plein": 0.75,
       "facteur_min": 0.75,
       "facteur_max": 1.30
     }
@@ -294,6 +294,7 @@
     "poids_forme": 1.0,
     "poids_fatigue": 1.0,
     "seuil_rotation_fatigue": 0.90,
-    "ecart_niveau_acceptable_rotation": 6.0
+    "ecart_niveau_acceptable_rotation": 6.0,
+    "poids_espoirs_rotation": 12.0
   }
 }

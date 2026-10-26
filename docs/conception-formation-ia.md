@@ -1,6 +1,6 @@
 # Formation choisie par l'effectif — conception
 
-Conçu le 25 octobre 2026, codé les 25 et 26 octobre 2026 (schémas 41 et 42). Les dix
+Conçu le 25 octobre 2026, codé les 25 et 26 octobre 2026 (schémas 43 et 44). Les dix
 décisions de la fin ont été validées telles que recommandées. La section « Avancement »
 dit, étape par étape, ce qui a changé à l'implémentation et ce qui a été mesuré ; le
 reste du document garde la conception telle qu'elle a été validée.
@@ -403,7 +403,7 @@ Les dix recommandations sont validées.
 
 Code : `core.ai.formation` (`best_formation`, `formation_value`), `core.world.formations`
 (`formation_events`), l'événement `FormationChosen`, le champ `Club.formation_squad`, la
-configuration `formations.choix`, la montée de schéma 41 (`_choose_formations`). Le manuel
+configuration `formations.choix`, la montée de schéma 43 (`_choose_formations`, numérotée 41 avant la fusion de `main`, qui avait pris les schémas 41 et 42). Le manuel
 (chapitre 06, « La formation »), `docs/ia-gestion.md`, `docs/benchmarks.md`,
 `docs/configuration.md` et `migrations/README.md` décrivent la règle.
 
@@ -515,7 +515,7 @@ deux tournaient en même temps sur la machine.
 Code : `core.world.international_selection` (`list_roles`, `selection_value`, `shortlist`,
 `reference_formation`, `initialize_formations`, `fill_camp`, `camp_lineup`, `preferences`), les champs
 `NationalTeam.formation` et `NationalTeam.reference_formation`, `best_formation` qui accepte une valeur
-du joueur au poste, la configuration `international.squad_list`, la montée de schéma 42. Le manuel
+du joueur au poste, la configuration `international.squad_list`, la montée de schéma 44. Le manuel
 (chapitre 15) décrit la règle.
 
 Ce qui a changé à l'implémentation :
@@ -523,7 +523,7 @@ Ce qui a changé à l'implémentation :
 - **Les clés de configuration** suivent la convention anglaise de `config/international.json` :
   `squad_list.pool_per_position` et `squad_list.min_affinity`, au lieu de `vivier_par_poste` et
   `affinite_min_liste`.
-- **Une montée de schéma de plus** (42) plutôt que de réutiliser la 41 : une sauvegarde faite avec le code
+- **Une montée de schéma de plus** (44) plutôt que de réutiliser la 43 : une sauvegarde faite avec le code
   de l'étape 1 reste lisible.
 - **La valeur d'un joueur pour la liste** reprend la note du sélectionneur (niveau au poste, forme,
   condition, aléa), multipliée par l'affinité comme pour les clubs ; elle est nulle sous l'affinité

@@ -10,7 +10,7 @@ from core.domain.matches import MatchResult
 from core.world.simulation import advance_day
 from core.world.validation import validate_world
 from infrastructure.importation.loader import import_world
-from infrastructure.persistence.store import SaveStore
+from infrastructure.persistence.store import SaveStore, UNSAVED_FIELDS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -115,6 +115,8 @@ def test_july_rollover_resume_archives_and_second_season(config, tmp_path):
             assert len(squad) >= config.management.guardrails.min_squad
             assert sum(player.position == 'GB' for player in squad) >= 2
     for field in fields(world):
+        if field.name in UNSAVED_FIELDS['world']:
+            continue
         if field.name == 'rngs':
             assert {key: rng.getstate() for key, rng in world.rngs.items()} == {key: rng.getstate() for key, rng in restored.rngs.items()}
         else:

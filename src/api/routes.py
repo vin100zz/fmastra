@@ -38,9 +38,11 @@ class Slot(Command):
 
 class NewGame(Command):
     # The divisions each nation plays down to (FRA: 3 plays its first three), the configuration's by default; the club the
-    # user takes charge of, chosen later when none is given. Without a seed, the game draws one.
+    # user takes charge of, chosen later when none is given. Without a seed, the game draws one. The slot it is saved in,
+    # `autosave` without one.
     nations: dict[str, int] | None = None
     club_id: int | None = None
+    slot: str = Field(default="autosave", pattern=r"^[\w-]{1,64}$")
     graine: int | None = Field(default=None, ge=0, le=2**63 - 1, strict=True)
 
 
@@ -267,15 +269,19 @@ def previous_lineup(world, match, context, formations: dict) -> dict | None:
     return None
 
 
-def club_next_matches(world, count: int = 3) -> list[dict]:
-    """The controlled club's next fixtures for the top bar, each flagged when it belongs to the club's own championship."""
+def club_bar_matches(world, count: int = 3) -> tuple[list[dict], list[dict]]:
+    """The controlled club's last fixtures played this season, in date order with V/N/D from its side, and its next ones,
+    for the top bar; each flagged when it belongs to the club's own championship."""
+    from .club_overview import outcome
     club_id = world.controlled_club_id
     if club_id is None:
-        return []
+        return [], []
     league = world.clubs[club_id].competition_id
-    upcoming = sorted((match for match in world.matches.values() if not match.result and club_id in (match.home_id, match.away_id)),
-                      key=lambda match: (match.date, match.id))[:count]
-    return [{**v.match_row(world, match), "league": match.competition_id == league} for match in upcoming]
+    own = sorted((match for match in world.matches.values() if club_id in (match.home_id, match.away_id)), key=lambda match: (match.date, match.id))
+    played = [match for match in own if match.result and match.season == world.season][-count:]
+    upcoming = [match for match in own if not match.result][:count]
+    row = lambda match: {**v.match_row(world, match), "league": match.competition_id == league}
+    return [{**row(match), "outcome": outcome(club_id, match)} for match in played], [row(match) for match in upcoming]
 
 
 def router(service: GameService) -> APIRouter:
@@ -292,6 +298,7 @@ def router(service: GameService) -> APIRouter:
             data = {"exists": world is not None, "job": service.active, "recovery_required": service.recovery_required,
                     "auto": service.auto_status()}
             if world and not service.recovery_required:
+                last, upcoming = club_bar_matches(world)
                 data.update({"date": world.date.iso(), "season": world.season, "seed": world.seed, "slot": service.slot,
                              "next_match": target_date(world, "journee").iso(), "market": market_window(world),
                              "players": len(world.players), "active_clubs": len(world.active_clubs()),
@@ -304,7 +311,7 @@ def router(service: GameService) -> APIRouter:
                              # What Continuer reads before it advances: the unread messages, then those awaiting an answer.
                              "news": news.summary(world) if world.controlled_club_id is not None else None,
                              "live_match_id": world.live_match.match_id if world.live_match else None,
-                             "club_next_matches": club_next_matches(world)})
+                             "club_last_matches": last, "club_next_matches": upcoming})
             return data
 
     @api.post("/monde/avancer", status_code=202)
@@ -358,7 +365,8 @@ def router(service: GameService) -> APIRouter:
             club = data["clubs"].get(command.club_id) if command.club_id is not None else None
             if command.club_id is not None and (club is None or not creation_views.played(club, levels)):
                 raise HTTPException(400, "Ce club ne joue aucune des divisions choisies.")
-        return service.submit("create", command.commande_id, {"seed": command.graine, "levels": levels, "club_id": command.club_id})
+        return service.submit("create", command.commande_id, {"seed": command.graine, "levels": levels, "club_id": command.club_id,
+                                                                   "slot": command.slot})
 
     @api.post("/partie/sauvegarder", status_code=202)
     def save(command: Slot) -> dict:
@@ -479,17 +487,26 @@ def router(service: GameService) -> APIRouter:
                     "default": default, "suggestions": suggestions}
 
     @api.get("/ma-partie/composition/suggestion")
-    def custom_lineup_suggestion(postes: str, match_id: int | None = None) -> dict:
-        """The best eleven and bench on the club's own tactic being built, `postes` listing its positions place by place."""
-        from core.ai.selection import select_lineup
+    def custom_lineup_suggestion(postes: str | None = None, formation: str | None = None, niveau: int = 0,
+                                 jeunes: bool = False, libre: bool = False, match_id: int | None = None) -> dict:
+        """The AI's eleven and bench on the tactic on screen: a `formation`, or the club's own tactic being built, `postes`
+        listing its positions place by place. `niveau` is the level of rotation (0, the best eleven, to 3, every outfield
+        starter rested), `jeunes` favours the prospects in it, `libre` lets the AI change the formation."""
+        from core.ai.selection import ROTATION_LEVELS, select_lineup
         from core.domain.players import Position
-        positions = postes.split(",")
+        positions = postes.split(",") if postes else None
         with service.reading() as world:
-            if (len(positions) != world.config.world.match_rules.players_on_pitch
-                    or any(position not in {item.value for item in Position} for position in positions)):
+            if (positions is not None and (len(positions) != world.config.world.match_rules.players_on_pitch
+                    or any(position not in {item.value for item in Position} for position in positions))):
                 raise HTTPException(400, "Tactique invalide.")
+            if positions is None and formation not in world.config.formations.formations:
+                raise HTTPException(400, "Tactique inconnue.")
+            if not 0 <= niveau <= ROTATION_LEVELS:
+                raise HTTPException(400, "Niveau de rotation inconnu.")
             _, _, context = lineup_context(world, match_id)
-            return lineup_suggestion(select_lineup(context, world.config, positions=positions))
+            lineup = select_lineup(context, world.config, None if positions else formation, positions,
+                                   adapt=libre, rotation=niveau, youth=jeunes)
+            return {"formation": lineup.formation, **lineup_suggestion(lineup)}
 
     @api.post("/partie/renouvellement")
     def respond_renewal(command: RenewalDecision) -> dict:

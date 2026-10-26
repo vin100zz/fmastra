@@ -3,7 +3,15 @@ from __future__ import annotations
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
-from core.config.types import FrozenMap, MODEL_CONFIG
+from core.config.types import FrozenDict, FrozenMap, MODEL_CONFIG
+
+# The rating scale shipped with schema 42 (see `EngineConfigPlayerRatings`), which an older save takes.
+DANGER = (0.007, 0.01, 0.0174, 0.0259)
+COUNTER_DANGER = (0.007, 0.0162, 0.0272, 0.0389)
+RECOVERY_DANGER = (0.0083, 0.0125, 0.0252, 0.03)
+SCALE = {"GB": 2.03, "DC": 2.72, "DG": 2.97, "DD": 2.97, "MDC": 2.86, "MC": 2.79, "MOC": 2.44, "AILG": 2.71, "AILD": 2.73, "BU": 1.94}
+EXPECTED = {"GB": 0.00213, "DC": -0.00017, "DG": -0.00028, "DD": -0.00051, "MDC": 0.00013, "MC": 0.00067, "MOC": 0.00132, "AILG": -0.0002, "AILD": -0.00011, "BU": 0.00241}
+
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class EngineConfigTiming:
@@ -252,6 +260,16 @@ class EngineConfigTransitions:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class EngineConfigDuels:
+    """Each try sets its carrier against a defender (see `zones.duel_edge`): who they are leans to the better players, and
+    each one's quality beyond what the draw expects at that place adds to the logit of the try."""
+    carrier_selection: float = Field(default=0.02, alias="selection_porteur")
+    defender_selection: float = Field(default=0.02, alias="selection_defenseur")
+    carrier_sensitivity: float = Field(default=0.02, alias="sensibilite_porteur")
+    defender_sensitivity: float = Field(default=0.02, alias="sensibilite_defenseur")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class EngineConfigDensity:
     reference: float = Field(alias="reference")
     exponent: float = Field(alias="exposant")
@@ -360,37 +378,27 @@ class EngineConfigAnalytical:
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class EngineConfigPlayerRatings:
+    """What a player's actions are worth, in goals: the danger his side holds where the ball is (`danger`, `counter_danger`,
+    by zone in the attacking side's frame), and what winning the ball at each zone of one's own frame gives
+    (`recovery_danger`); see `danger`. Each position turns the danger it adds into points at its own `scale`, and
+    `expected_per_minute` takes off what an ordinary player of that position adds."""
     base: float = Field(alias="base")
     min: float = Field(alias="min")
     max: float = Field(alias="max")
     goal: float = Field(alias="but")
     assist: float = Field(alias="passe_decisive")
-    saved_shot: float = Field(alias="tir_cadre_sans_but")
-    saving: float = Field(alias="arret")
-    keeper_conceded: float = Field(alias="but_encaisse_gardien")
     yellow: float = Field(alias="jaune")
     expulsion: float = Field(alias="expulsion")
     min_rating_minutes: int = Field(alias="minutes_minimum_note")
     quality_sensitivity: float = Field(default=0.05, alias="sensibilite_qualite")
-    progression: tuple[float, ...] = Field(default=(0.0, 0.01, 0.02, 0.04), alias="progression_par_zone")
-    recovery: tuple[float, ...] = Field(default=(0.07, 0.04, 0.025, 0.015), alias="recuperation_par_zone")
-    loss: tuple[float, ...] = Field(default=(-0.04, -0.03, -0.02, -0.01), alias="perte_par_zone")
-    dribbled: float = Field(default=-0.02, alias="defenseur_elimine")
-    key_pass: float = Field(default=0.1, alias="passe_cle")
-    build_up: float = Field(default=0.03, alias="participation_occasion")
-    off_target: float = Field(default=-0.03, alias="tir_non_cadre")
-    block: float = Field(default=0.05, alias="contre")
-    beaten: float = Field(default=-0.15, alias="defenseur_battu")
-    win: float = Field(default=0.1, alias="victoire")
-    clean_sheet: float = Field(default=0.25, alias="sans_encaisser")
-    clean_sheet_minutes: int = Field(default=60, alias="minutes_sans_encaisser")
-    expected_per_minute: float = Field(default=0.0055, alias="attendu_par_minute")
     foul: float = Field(default=-0.02, alias="faute")
-    offside: float = Field(default=0.0, alias="hors_jeu")
-    penalty_conceded: float = Field(default=-0.30, alias="penalty_concede")
-    penalty_won: float = Field(default=0.10, alias="penalty_obtenu")
-    penalty_missed: float = Field(default=-0.30, alias="penalty_manque")
-    penalty_saved: float = Field(default=0.30, alias="penalty_arrete")
+    danger: tuple[float, ...] = Field(default=DANGER, alias="danger_par_zone")
+    counter_danger: tuple[float, ...] = Field(default=COUNTER_DANGER, alias="danger_contre_par_zone")
+    recovery_danger: tuple[float, ...] = Field(default=RECOVERY_DANGER, alias="danger_recuperation_par_zone")
+    beaten_share: float = Field(default=1.0, alias="part_defenseur_battu")
+    shot_share: float = Field(default=0.3, alias="part_tir")
+    scale: FrozenMap[float] = Field(default_factory=lambda: FrozenDict(SCALE), alias="echelle_par_poste")
+    expected_per_minute: FrozenMap[float] = Field(default_factory=lambda: FrozenDict(EXPECTED), alias="attendu_par_minute_par_poste")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
@@ -400,6 +408,7 @@ class EngineConfig:
     stoppages: EngineConfigStoppages = Field(default_factory=EngineConfigStoppages, alias="arrets")
     penalty: EngineConfigPenalty = Field(default_factory=EngineConfigPenalty, alias="penalty")
     transitions: EngineConfigTransitions = Field(alias="transitions")
+    duels: EngineConfigDuels = Field(default_factory=EngineConfigDuels, alias="duels")
     density: EngineConfigDensity = Field(alias="densite")
     lanes: EngineConfigLanes = Field(alias="couloirs")
     chance: EngineConfigChance = Field(alias="occasion")

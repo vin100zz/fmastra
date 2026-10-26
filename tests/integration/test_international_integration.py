@@ -166,13 +166,13 @@ def test_actual_legacy_schema_without_national_config(config, tmp_path):
     store.save(world, 'legacy')
     document = json.loads(gzip.decompress(store.path_for('legacy').read_bytes()))
     document['schema_version'] = 14
-    document['world'].pop('international')
+    document['world'].pop('international', None)
     cfg = document['world']['config']
     cfg.pop('nations')
     cfg.pop('international')
     for player in document['world']['players'].values():
         for key in ('national_team','international_caps','international_goals','historical_caps','historical_goals','international_discipline'):
-            player.pop(key)
+            player.pop(key, None)
     document['config_hash'] = hashlib.sha256(json.dumps(cfg,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
     store.path_for('legacy').write_bytes(gzip.compress(json.dumps(document).encode()))
     loaded = store.load('legacy')

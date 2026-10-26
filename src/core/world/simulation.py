@@ -1,6 +1,7 @@
 """Advance coherent game days, applying each phase before dependent decisions."""
 from __future__ import annotations
 
+from contextlib import nullcontext
 from random import Random
 
 from core.ai.selection import LineupContext, select_lineup, to_lineup
@@ -18,7 +19,7 @@ from .events import DateAdvanced, FinancePosted, BudgetRenewed, SeasonOpened
 from .finances import structural_income, annual_funding_factor, daily_accounts
 from .prizes import came_down, cup_prizes, europe_prizes, league_place
 from .budgets import carried_shift
-from .human import is_human_club, pending_lineup_match
+from .human import ai_in_charge, is_controlled_club, pending_lineup_match
 from .news import daily_notices, draw_notices, morale_alerts, morale_levels
 from .player_states import absences, daily_player_events, monthly_player_events, match_event
 from .market import settle_offers, open_offers, ensure_minimums
@@ -123,18 +124,20 @@ def advance_day(world: World, auto: bool = False) -> bool:
     """No I/O, no clock reads; callers persist after this coherent boundary.
 
     Returns False if the day stopped before finishing: awaiting the human club's lineup (never
-    when `auto` is set: Auto mode falls back to an automatic lineup), or its match being played live."""
+    when `auto` is set: Auto mode falls back to an automatic lineup), or its match being played live.
+    Auto mode also leaves the human club's other decisions of the day to the AI (see `ai_in_charge`)."""
     if world.live_match is not None:
         return False
-    if world.pending_match_day is None:
-        open_day(world)
-        if pending_lineup_match(world) is not None and not auto:
-            world.pending_match_day = world.date
-            return False
-    elif pending_lineup_match(world) is not None and not auto:
-        return False  # resumed without a lineup submitted meanwhile: keep waiting instead of auto-picking one
-    simulate_matches(world)
-    close_day(world)
+    with ai_in_charge() if auto else nullcontext():
+        if world.pending_match_day is None:
+            open_day(world)
+            if pending_lineup_match(world) is not None and not auto:
+                world.pending_match_day = world.date
+                return False
+        elif pending_lineup_match(world) is not None and not auto:
+            return False  # resumed without a lineup submitted meanwhile: keep waiting instead of auto-picking one
+        simulate_matches(world)
+        close_day(world)
     return True
 
 
@@ -205,7 +208,7 @@ def match_lineups(world: World, match: Match) -> tuple[list[Lineup], dict[int, s
     lineups, temporary = [], {}
     is_cup = world.competitions[match.competition_id].kind in ("cup", "europe")
     for club_id in (match.home_id, match.away_id):
-        if is_human_club(world, club_id) and match.id in world.submitted_lineups:
+        if is_controlled_club(world, club_id) and match.id in world.submitted_lineups:
             lineups.append(to_lineup(world, world.submitted_lineups[match.id], match.competition_id, world.config))
         elif is_cup:
             lineup, names = cup_lineup(world, match, club_id)

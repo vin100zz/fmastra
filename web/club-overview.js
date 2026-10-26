@@ -1,5 +1,5 @@
 import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
- spreadLayout,level,levelHue,blockNote,averageNote,moraleCell} from './ui.js';
+ spreadLayout,level,levelHue,blockNote,averageNote,moraleCell,GO} from './ui.js';
 import {monthlySalary,monthlyAmount,monthlyMargin} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
@@ -30,7 +30,7 @@ const matchList=(matches,club,none)=>`<div class="club-matches">${matches.length
 // `link` lets another screen point the block elsewhere than the club's own tab.
 export function calendarBlock(club,data,link=`#/club/${club.id}/calendar`){
  // The API lists the played matches newest first; the block reads in date order, from the oldest to the next ones.
- return card('Calendrier',`<div class="card-body">${matchList([...[...data.last].reverse(),...data.next],club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir →</a>`);
+ return card('Calendrier',`<div class="card-body">${matchList([...[...data.last].reverse(),...data.next],club,'Aucun match programmé.')}</div>`,`<a href="${link}" aria-label="Voir le calendrier">Voir ${GO}</a>`);
 }
 
 // What is left to spend on transfers and in wages, the offers under way set aside; the wage margin as a ring filled to its
@@ -41,7 +41,7 @@ export function financesBlock(club,data,{balance=false}={}){
  const ring=`<span class="news-ring${left<=5?' full':''}" role="img" aria-label="${left} % du plafond salarial disponible"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle class="value" cx="32" cy="32" r="26" stroke-dasharray="${(left*1.6336).toFixed(1)} 163.4"/></svg><b>${left} %</b></span>`;
  const cash=balance?`<small>Trésorerie <b>${money(data.balance)}</b></small>`:'';
  return card('Finances',`<div class="card-body news-finances"><div class="news-figure"><span>Budget transferts</span><strong>${spendable(budget)}</strong>${cash}</div><div class="news-figure ring">${ring}<div><span>Marge salariale</span><strong>${monthlyMargin(margin)}</strong><small>sur ${money(monthlyAmount(data.wage_cap))}</small></div></div></div>`,
-  `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir →</a>`);
+  `<a href="#/club/${club.id}/finances" aria-label="Voir les finances">Voir ${GO}</a>`);
 }
 
 // `rows` of the club's league around its own (five by default, the whole league when it has room), titled with the
@@ -52,7 +52,7 @@ export function standingsExtract(club,standings,rows=5){
  const shown=Math.min(rows,items.length),at=items.findIndex(row=>row.club?.id===club.id),start=Math.max(0,Math.min(at-Math.floor((shown-1)/2),items.length-shown));
  const round=Math.max(0,...items.map(row=>row.played));
  const title=`${e(club.competition)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
- return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir →</a></div>${standingsTable({items:items.slice(start,start+shown)},'points',false,club.id)}</section>`;
+ return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir ${GO}</a></div>${standingsTable({items:items.slice(start,start+shown)},'points',false,club.id)}</section>`;
 }
 
 // The club's two outfits, home first, on the raised ground (a white kit would melt into the card); each opens its
@@ -97,27 +97,6 @@ export function watchCard(squad,rows=6){
  return card('À surveiller',`<ul class="watch-list">${listed.map(([player,shown])=>`<li>${position(player.position)}<span>${playerLink(player.id,player.name)}</span><span class="watch-facts">${shown.join('')}</span></li>`).join('')}</ul>`,'','watch-card');
 }
 
-// The season's movements, arrivals then departures, the biggest fees first, `rows` of them at most; each side tells how many
-// it holds and what its fees came to. A loan says so where a fee stands, a youth promoted comes from the academy.
-export function marketCard(club,data,rows=12){
- const groups=data?.sections;
- if(!groups)return '';
- const arrivals=[...groups.arrivals,...(groups.loans_in||[]),...groups.academy];
- const departures=[...groups.departures,...(groups.loans_out||[]),...groups.release,...groups.retirement,...groups.departure_unknown];
- if(!arrivals.length&&!departures.length)return '';
- const order=items=>[...items].sort((a,b)=>(b.fee||0)-(a.fee||0)||a.date.localeCompare(b.date)||a.player_id-b.player_id);
- const line=(row,incoming)=>{
-  const other=incoming?row.source:row.target;
-  const where=row.kind==='academy'?'<span class="muted">Centre de formation</span>':row.kind==='retirement'?'<span class="muted">—</span>':other?clubLink(other):'<span class="muted">Libre</span>';
-  const fee=row.kind==='transfer'?(row.fee?`<b>${price(row.fee)}</b>`:'<span class="muted">Libre</span>'):`<span class="muted">${row.kind==='loan'?'Prêt':'—'}</span>`;
-  return `<li>${row.position?position(row.position):'<span class="position">—</span>'}<span>${playerLink(row.player_id,row.player)}</span><span class="market-club">${where}</span>${fee}</li>`;
- };
- const fees=items=>items.reduce((sum,row)=>sum+(row.kind==='transfer'&&row.fee||0),0);
- const shownIn=order(arrivals).slice(0,rows),shownOut=order(departures).slice(0,Math.max(0,rows-shownIn.length));
- const side=(title,items,shown,incoming)=>items.length?`<h3 class="section-title"><span>${title} · ${items.length}</span>${fees(items)?`<b>${money(fees(items))}</b>`:''}</h3><ul class="season-moves">${shown.map(row=>line(row,incoming)).join('')}</ul>`:'';
- return card('Mercato',side('Arrivées',arrivals,shownIn,true)+side('Départs',departures,shownOut,false),`<a href="#/club/${club.id}/transfers" aria-label="Voir les transferts">Voir →</a>`,'season-market');
-}
-
 // Players ranked on one figure, as bars against the first of them, its unit in the head of the card. `format` writes the
 // figure; `soft` draws the bars in the pale blue.
 export function leaderBars(title,rows,key,unit,{format=n,soft=false}={}){
@@ -141,7 +120,7 @@ export function leadersCards(squad,rows=8){
 // less the page's bottom margin; a short window keeps what a laptop shows. Its lists take the rows of 26 it holds once the rest is drawn:
 // a card's head (34), the padding of a list (16), the gap between two cards (8), a heading (26); a table of the league has
 // rows of 27 under 68 of head; the kits stand 374 high in 12 of padding under their head.
-const PRESENTATION_TOP=273,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=432,FINANCES=139,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
+const PRESENTATION_TOP=273,ROW=26,HEAD=34,PADDING=16,GAP=8,KITS=432,WATCH_ROWS=6,TABLE_HEAD=68,TABLE_ROW=27,PITCH_MIN=440;
 export const presentationHeight=()=>Math.max(600,(typeof window==='undefined'?1080:window.innerHeight)-PRESENTATION_TOP);
 export const rowsIn=height=>Math.max(3,Math.floor(height/ROW));
 // The measures a selection's Présentation lays out its columns with too (web/international.js).
@@ -149,12 +128,12 @@ export const PRESENTATION={HEAD,PADDING,GAP,KITS,TABLE_HEAD,TABLE_ROW};
 // The columns of a Présentation under the row of its tiles, each a list of cards; a card left empty takes no room.
 export const presentationColumns=columns=>`<div class="club-presentation" data-fill>${columns.map(cards=>`<div class="presentation-column">${cards.filter(Boolean).join('')}</div>`).join('')}</div>`;
 
-// A club's Présentation: the row of its tiles, then four columns that fill the window. Its kits and its season's movements;
-// its équipe-type, what asks for a decision (the club run by the user) and its money; its calendar beside its league, which
-// share their rows (the next three matches at most, the latest played before them; the whole league when it has room);
-// its best scorers, providers and notes. `season` is its calendar of the season, `squad` its list, `transfers` its season's
-// movements, `standings` its league's table, `human` whether the user runs it.
-export function presentationContent(club,{overview,season,squad,transfers,standings,human}){
+// A club's Présentation: the row of its tiles, then four columns that fill the window. Its kits and its money; its
+// équipe-type and what asks for a decision (the club run by the user); its calendar beside its league, which share their
+// rows (the next three matches at most, the latest played before them; the whole league when it has room); its best
+// scorers, providers and notes. `season` is its calendar of the season, `squad` its list, `standings` its league's table,
+// `human` whether the user runs it.
+export function presentationContent(club,{overview,season,squad,standings,human}){
  const height=presentationHeight(),league=standings?.items?.length||0,players=squad?.items||[];
  const played=(season?.items||[]).filter(match=>match.score),upcoming=(season?.items||[]).filter(match=>!match.score).slice(0,3);
  // The league whole when five matches still fit beside it, else around the club; the calendar takes what is left.
@@ -162,10 +141,10 @@ export function presentationContent(club,{overview,season,squad,transfers,standi
  const matches=rowsIn(height-HEAD-PADDING-(table?GAP+TABLE_HEAD+table*TABLE_ROW:0));
  const calendar=played.length||upcoming.length?calendarBlock(club,{last:played.slice(-Math.max(0,matches-upcoming.length)).reverse(),next:upcoming}):'';
  const watching=human?Math.min(WATCH_ROWS,watched(players).length):0;
- const pitch=height-HEAD-PADDING-GAP-FINANCES-(watching?GAP+HEAD+watching*ROW:0);
+ const pitch=height-HEAD-PADDING-(watching?GAP+HEAD+watching*ROW:0);
  return clubTiles(club,season?.competitions||[])+presentationColumns([
-  [kitsCard(club),marketCard(club,transfers,rowsIn(height-KITS-GAP-HEAD-2*ROW))],
-  [elevenCard(club,overview.eleven,pitch),watching?watchCard(players,watching):'',financesBlock(club,overview.finances,{balance:true})],
+  [kitsCard(club),financesBlock(club,overview.finances,{balance:true})],
+  [elevenCard(club,overview.eleven,pitch),watching?watchCard(players,watching):''],
   [calendar,standingsExtract(club,standings,table)],
   [leadersCards(players,rowsIn((height-3*(HEAD+PADDING)-2*GAP)/3))]]);
 }
@@ -207,7 +186,7 @@ export function marketBlock(transfers,{club=null,market=null}={}){
   +`<ul>${group.offres.map(offer=>`<li><span class="market-club">${clubLink(offer.acheteur)}</span><b>${price(offer.indemnite)}</b><span class="market-actions">${offerButtons(offer)}</span></li>`).join('')}</ul></li>`);
  // Talks show where they stand; an older offer still in its auction shows the wage it proposes.
  const stage=offer=>({indemnite:'Contre-offre en cours',accord_club:`Réponse du joueur le ${date(offer.date_prevue)}`,salaire:'Contrat à négocier',signature:`Arrivée le ${date(offer.date_prevue)}`})[offer.etape]||monthlySalary(offer.salaire_propose);
- const outgoing=transfers.sortantes.map(offer=>`<li><div class="market-line">${who(offer.joueur_id,offer.joueur,offer.poste)}<b>${price(offer.indemnite)}</b></div><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}${offer.etape==='salaire'?` · <a href="#/player/${offer.joueur_id}">Négocier →</a>`:''}</small></li>`);
+ const outgoing=transfers.sortantes.map(offer=>`<li><div class="market-line">${who(offer.joueur_id,offer.joueur,offer.poste)}<b>${price(offer.indemnite)}</b></div><small>${offer.vendeur?clubLink(offer.vendeur):'Libre'} · ${stage(offer)}${offer.etape==='salaire'?` · <a href="#/player/${offer.joueur_id}">Négocier ${GO}</a>`:''}</small></li>`);
  const listed=transfers.liste.map(row=>`<li><div class="market-line">${who(row.joueur_id,row.joueur,row.poste)}<b>${price(row.indemnite)}</b></div></li>`);
  const loan=(row,arrow)=>`<li><div class="market-line"><span class="market-player">${playerLink(row.joueur_id,row.joueur)}<small>${arrow} ${clubLink(row.club)}</small></span><span class="muted">${shortDate(row.fin)}</span></div></li>`;
  const loans=[...(transfers.prets||[]).map(row=>loan(row,'→')),...(transfers.emprunts||[]).map(row=>loan(row,'←'))];

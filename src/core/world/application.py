@@ -3,12 +3,12 @@ from core.domain.date import Date, readable_duration
 from core.domain.players import Discipline, Loan
 from core.domain.clubs import ClubStatus
 from core.domain.world import World, JournalEntry, NewsLine, TransferRecord, SeasonRecord, MovementSnapshot
-from core.domain.matches import MatchResult, stored_events
+from core.domain.matches import MatchResult, store_events
 from core.engine.fitness import match_load
 from .age_records import note_club_match
 from .finances import book_cash, book_daily_cash
 from .formations import formation_notice
-from .human import record as add_news, report
+from .human import is_human_club, record as add_news, report
 from .shirts import assign
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
@@ -194,7 +194,8 @@ def apply(world: World, event: WorldEvent) -> bool:
             world.matches[match.id] = match
             world.competitions[match.competition_id].match_ids.append(match.id)
             world.next_id = max(world.next_id, match.id + 1)
-        for match in world.matches.values():
+        # A selection's matches are known by the year of their edition: those of an edition over before this season.
+        for match in (*world.matches.values(), *world.international.matches.values()):
             if match.season < event.year and match.result and match.result.engine != "archived":
                 match.result = _archived(match.result)
         for club in world.clubs.values():
@@ -238,8 +239,10 @@ def _apply_signing(world: World, event: PlayerSigned) -> bool:
         if event.source_id != event.target_id: return False
         club.wage_bill += event.contract.weekly_wage - old_wage
         player.contract = event.contract
-        # A demand turned down was about the contract he had.
+        # A demand turned down was about the contract he had; so is one pending when the AI extends him in the user's
+        # place (Auto mode). When the user signs, `renewals.sign` closes the demand with its message.
         world.refused_renewals.pop(player.id, None)
+        if not is_human_club(world, club.id): world.pending_renewals.pop(player.id, None)
         return True
     if event.source_id == event.target_id or club.squad_size >= guard.max_squad: return False
     if player.id in recent_arrival_ids(world): return False
@@ -349,8 +352,9 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
     match = world.matches[event.match_id]
     if match.result is not None: raise ValueError("A match cannot be applied twice")
     match.result = event.result
-    # Full engine logs made up most of a save; the views only list the kinds that remain.
-    event.result.events = stored_events(event.result.events)
+    # Full engine logs made up most of a save; the views only list the kinds that remain, and only the user's club's
+    # matches keep the build-up their replay draws.
+    store_events(event.result, world.controlled_club_id in (match.home_id, match.away_id))
     for club_id in (match.home_id, match.away_id):
         for pid in world.clubs[club_id].player_ids:
             discipline = world.players[pid].discipline.get(match.competition_id)

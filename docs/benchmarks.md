@@ -3,10 +3,11 @@
 Dernier réglage des matches avec les CSV actuels :
 [recalibration du 18 septembre 2026](calibration-2026-09-18.md), après le
 [diagnostic du 17 septembre](calibration-2026-09-17.md).
-Le réglage améliore les confrontations PSG–Toulouse et City–Burnley. Depuis la
-[formation choisie par l'effectif](conception-formation-ia.md), le Clasico et
-PSG–Toulouse passent ; la cible de City–Burnley a été revue le 26 octobre 2026 (voir
-« Suite match »). Les statistiques synthétiques et l'équilibre des formations passent
+Le réglage améliore les confrontations PSG–Toulouse et City–Burnley. Avec la
+[formation choisie par l'effectif](conception-formation-ia.md), les duels porteur contre
+défenseur et la cible de City–Burnley revue le 26 octobre 2026 (voir « Suite match »),
+13 critères sur 15 passent (3 000 matchs) ; le Clasico reste juste au-dessus de sa cible
+(50.7 % de victoires du Real pour 49 % au plus, 23.0 % de défaites pour 24 % au moins). Les statistiques synthétiques et l'équilibre des formations passent
 les critères mesurés.
 
 ## Statut des cibles
@@ -108,10 +109,13 @@ par équipe, 52 à 60 minutes de jeu effectif, 28 à 38 % de frappes de loin et 
 70 à 82 %.
 
 La note moyenne des titulaires de chaque poste du 4-3-3 symétrique (`rating_GB`,
-`rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`.
-La note nourrit la forme : un poste systématiquement mieux noté renforcerait ses
-joueurs match après match. Le levier est `attendu_par_minute` pour la moyenne
-générale, puis les tables par zone du barème pour l'écart entre postes.
+`rating_DC`…) reste entre `note_moyenne_poste_min` et `note_moyenne_poste_max`,
+et son écart-type (`rating_spread_GB`…) entre `ecart_type_note_poste_min` et
+`ecart_type_note_poste_max`. La note nourrit la forme : un poste
+systématiquement mieux noté renforcerait ses joueurs match après match, et un
+poste qui ne s'écarte jamais de la base ne pourrait pas briller. Les leviers sont
+`attendu_par_minute_par_poste` et `echelle_par_poste`, que
+`tools/calibrate_ratings.py` mesure avec les tables de danger.
 
 ## Suite formations
 

@@ -20,6 +20,7 @@ from pathlib import Path
 from core.config.model import Config
 from core.domain.players import ATTRIBUTE_INDEX
 from core.config.models.management import PLANNING_ROUNDS
+from core.config.models.engine import COUNTER_DANGER, DANGER, EXPECTED, RECOVERY_DANGER, SCALE
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
 from core.world.application import apply
@@ -39,15 +40,27 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 42
+SCHEMA_VERSION = 44
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
     # A selection calls up its 23 for the formation its candidates fill best (see `core.world.international_selection.initialize_formations`).
-    (42, ("international", "squad_list"), {"pool_per_position": 6, "min_affinity": 0.5}),
+    (44, ("international", "squad_list"), {"pool_per_position": 6, "min_affinity": 0.5}),
     # A club of the AI plays the formation its first team fills best, kept unless another does clearly better
     # (see `_choose_formations`).
-    (41, ("formations", "choix"), {"marge_changement": 0.25, "blessure_longue_jours": 30}),
+    (43, ("formations", "choix"), {"marge_changement": 0.25, "blessure_longue_jours": 30}),
+    # Each try is a duel between its carrier and a defender, and a rating counts the danger a player's actions add or take
+    # away, at his position's scale (see `_upgrade_ratings`).
+    (42, ("moteur_match", "duels"), {"selection_porteur": 0.02, "selection_defenseur": 0.02, "sensibilite_porteur": 0.02,
+                                     "sensibilite_defenseur": 0.02}),
+    (42, ("moteur_match", "notes_joueurs"), {
+         "danger_par_zone": list(DANGER), "danger_contre_par_zone": list(COUNTER_DANGER),
+         "danger_recuperation_par_zone": list(RECOVERY_DANGER), "part_defenseur_battu": 1.0, "part_tir": 0.3,
+         "echelle_par_poste": dict(SCALE), "attendu_par_minute_par_poste": dict(EXPECTED)}),
+    (42, ("benchmarks", "stats_match"), {"ecart_type_note_poste_min": 0.45, "ecart_type_note_poste_max": 1.0}),
+    # Youth given their margin when the automatic lineup rests players: shipped without its migration, so a save made
+    # before it, of schema 41 or older, receives it now.
+    (42, ("ia_gestion", "selection"), {"poids_espoirs_rotation": 12.0}),
     # A taker's quality from the spot is a composite of the attribute `penalty` and composure (see `_upgrade_penalties`).
     (40, ("attributs", "composites"), {"penalty": {"penalty": 0.75, "sang_froid": 0.25}}),
     # A failed action ends in a foul, the ball out of play, an offside or lost in play; corners and free kicks have a
@@ -81,9 +94,8 @@ MIGRATION_DEFAULTS = (
          "penalty": {"jaune": 0.25, "rouge": 0.08}}),
     (39, ("moteur_match", "occasion"), {"xg_base_rebond": 0.3}),
     (39, ("moteur_match", "turnover"), {"malus_contre_gardien": -0.5}),
-    (39, ("moteur_match", "notes_joueurs"), {
-         "faute": -0.02, "hors_jeu": 0.0, "penalty_concede": -0.3, "penalty_obtenu": 0.1, "penalty_manque": -0.3,
-         "penalty_arrete": 0.3}),
+    # Its rating rules for offsides and penalties were retired by schema 42.
+    (39, ("moteur_match", "notes_joueurs"), {"faute": -0.02}),
     (39, ("benchmarks", "stats_match"), {
          "fautes_par_equipe": {"min": 10.0, "max": 13.0}, "penaltys_par_equipe": {"min": 0.1, "max": 0.18}}),
     # A possession is a run of actions: what a side tries in each zone, how a defence opens, long balls, strikes from distance
@@ -206,15 +218,9 @@ MIGRATION_DEFAULTS = (
          "prime_appat_gain": 0.15, "appat_gain_note_basse": 7.5, "appat_gain_note_reference": 11.5, "appat_gain_note_haute": 15.5,
          "hausse_par_point_reputation": 0.01, "hausse_salaire_max": 0.30, "baisse_par_point_reputation": 0.01,
          "baisse_salaire_max": 0.15}),
-    # Ratings credited action by action: an older save keeps its older scale for goals, saves and cards,
-    # and rates tackles, losses, key passes and results from its next match on. Its dribble and blocked-shot shares, which
-    # change the play since schema 39, were moved then.
-    (18, ("moteur_match", "notes_joueurs"), {
-         "sensibilite_qualite": 0.05, "progression_par_zone": [0.0, 0.01, 0.02, 0.04],
-         "recuperation_par_zone": [0.07, 0.04, 0.025, 0.015], "perte_par_zone": [-0.04, -0.03, -0.02, -0.01],
-         "defenseur_elimine": -0.02, "passe_cle": 0.1, "participation_occasion": 0.03, "tir_non_cadre": -0.03, "contre": 0.05,
-         "defenseur_battu": -0.15, "victoire": 0.1, "sans_encaisser": 0.25, "minutes_sans_encaisser": 60,
-         "attendu_par_minute": 0.0055}),
+    # Ratings credited action by action, drawn among those involved. Its dribble and blocked-shot shares, which change the
+    # play since schema 39, were moved then; its scale of credits by action, and for the result, retired by schema 42.
+    (18, ("moteur_match", "notes_joueurs"), {"sensibilite_qualite": 0.05}),
     (18, ("benchmarks", "stats_match"), {"note_moyenne_poste_min": 6.4, "note_moyenne_poste_max": 6.6}),
     # Mentality chosen during a live match: an older save is given the block height shifts of its first live match.
     (17, ("formations", "hauteur_bloc"), {"mentalites": {"defensive": -0.4, "equilibree": 0.0, "offensive": 0.4}}),
@@ -286,6 +292,10 @@ PENALTY_OFFSETS = {"DC": -30, "DG": -23, "DD": -24, "MDC": -21, "MC": -16, "MOC"
 PENALTY_DECLINE_WEIGHT = 0.40
 # Level 6 spends ~2.5x the time of level 3 for a few percent of file size on large worlds; not worth it here.
 COMPRESSION_LEVEL = 3
+# What a save leaves out besides the values equal to their default, which loading gives back: the UI journal, which no view
+# reads any more, and the source players the import left out, which nothing needs once the world exists. Since schema 41;
+# a migration of a later schema cannot count on a key holding its default value.
+UNSAVED_FIELDS = {"world": {"journal", "excluded_player_ids"}}
 # A slot, or the copy a save keeps of the one it replaced, named after the date that one was made at: `Marseille-2033-05-30`.
 SLOT_NAME = re.compile(r"[\w-]{1,64}(?:-\d{4}-\d{2}-\d{2})?")
 DATED_COPY = r"-\d{4}-\d{2}-\d{2}"
@@ -321,7 +331,7 @@ class SaveStore:
         # Made while the new save is serialized: it is long ready when the new save replaces the slot.
         copying = self.rotation.submit(self._keep, slot, world.date.iso()) if self.rotation else None
         payload = SaveEnvelope(SCHEMA_VERSION, "0.1.0", platform.python_version(), config_fingerprint(world.config), world)
-        raw = ADAPTER.dump_json(payload, by_alias=True, warnings="error")
+        raw = ADAPTER.dump_json(payload, by_alias=True, exclude_defaults=True, exclude=UNSAVED_FIELDS, warnings="error")
         temporary = None
         try:
             with tempfile.NamedTemporaryFile(dir=self.directory, prefix=".save-", suffix=".tmp", delete=False) as handle:
@@ -426,8 +436,10 @@ class SaveStore:
             if version < 38: _upgrade_possessions(world)
             if version < 39: _upgrade_stoppages(world)
             if version < 40: _upgrade_penalties(world)
-            if version < 41: _choose_formations(world)
-            if version < 42: initialize_formations(world)
+            if version < 41: _trim_matches(world)
+            if version < 42: _upgrade_ratings(world)
+            if version < 43: _choose_formations(world)
+            if version < 44: initialize_formations(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -500,6 +512,12 @@ def _source_attributes(world: dict, source_path: Path, wanted: set[int], names: 
 # them back, with the values it held, to have its fingerprint checked (see `_config_matches`). A rule changed before typing,
 # like the attribute list of schema 40, is given back the same way.
 RETIRED_RULES = (
+    # A rating counts the danger an action adds or takes away, no longer a scale of its own for each action, nor the result.
+    (42, ("moteur_match", "notes_joueurs"), ("tir_cadre_sans_but", "arret", "but_encaisse_gardien", "progression_par_zone",
+                                              "recuperation_par_zone", "perte_par_zone", "defenseur_elimine", "passe_cle",
+                                              "participation_occasion", "tir_non_cadre", "contre", "defenseur_battu", "victoire",
+                                              "sans_encaisser", "minutes_sans_encaisser", "attendu_par_minute", "hors_jeu",
+                                              "penalty_concede", "penalty_obtenu", "penalty_manque", "penalty_arrete")),
     # The length of a possession is the sum of its actions; a counter follows where and how the ball was won.
     (38, ("moteur_match", "chronologie"), ("duree_possession_moyenne", "duree_possession_forme_gamma")),
     (38, ("moteur_match", "turnover"), ("zone_declenchant_contre", "probabilite_contre_depuis_zone_basse")),
@@ -533,7 +551,7 @@ def _upgrade_document(raw: bytes, version: int, source_path: Path) -> tuple[byte
     if version < 22: document["world"] = _rename_positions(document["world"], skip="config")
     if version < 23:
         world = document["world"]
-        world["trajectories"] = _monthly_trajectories(world["trajectories"], world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
+        world["trajectories"] = _monthly_trajectories(world.get("trajectories", {}), world["config"]["monde"]["dates_cles"]["bilan_demographique"]["mois"])
     _extend_attribute_vectors(document["world"], source_path)
     if version < 40: _list_penalty(document["world"]["config"], retired)
     return json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode("utf-8"), retired
@@ -556,8 +574,8 @@ def _rename_positions(node, skip: str | None = None):
 
 def _extend_attribute_vectors(world: dict, source_path: Path) -> None:
     """Schema 12 appended `centre` and `cpa` to every attribute vector, schema 40 `penalty`; vectors already extended are
-    left alone."""
-    players = world["players"].values()
+    left alone. A selection's campaign-only reinforcements have vectors too, and no source row."""
+    players = [*world["players"].values(), *world.get("international", {}).get("temporary", {}).values()]
     stale = {player["id"] for player in players if len(player["attributes"]["values"]) < len(ATTRIBUTE_INDEX)}
     imported = _source_attributes(world, source_path, stale, ("centre", "cpa", "penalty"))
     bounds = world["config"]["attributs"]["bornes"]
@@ -590,8 +608,28 @@ def _upgrade_penalties(world: World) -> None:
     world.config = decode_config(payload)
 
 
+def _upgrade_ratings(world: World) -> None:
+    """Schema 42: each try is a duel between its carrier and a defender, and a rating counts the danger a player's actions
+    add or take away (see `RATING_RECALIBRATED_RULES`). The matches already played keep the ratings they were given."""
+    world.config = _recalibrated(world.config, RATING_RECALIBRATED_RULES)
+
+
+def _trim_matches(world: World) -> None:
+    """Schema 41: only the user's club's matches keep the build-up of their replay, and a selection's matches are archived
+    once their edition is over, like a club's at the end of their season."""
+    from core.domain.matches import store_events
+    from core.world.application import _archived
+    for match in world.matches.values():
+        if match.result and match.result.engine != "archived":
+            store_events(match.result, world.controlled_club_id in (match.home_id, match.away_id))
+    for match in world.international.matches.values():
+        if match.result and match.result.engine != "archived":
+            if match.season < world.season: match.result = _archived(match.result)
+            else: store_events(match.result, False)
+
+
 def _choose_formations(world: World) -> None:
-    """Schema 41: a club of the AI no longer keeps the formation drawn for it at creation; it plays the one its first team
+    """Schema 43: a club of the AI no longer keeps the formation drawn for it at creation; it plays the one its first team
     fills best. The human club keeps its own."""
     for event in formation_events(world, margin=False): apply(world, event)
 
@@ -706,13 +744,12 @@ RECALIBRATED_RULES = (("management", "budgets", "accounting", "other_cost_share"
                       ("demography", "potential_estimate", None, "max_noise", 22.0, 10.0),
                       ("demography", "cohort", None, "sorting_reputation_weight", 0.0, 1.0))
 # Rules recalibrated by schema 31, in the same form: a slower recovery, a stronger link between fatigue and injuries,
-# an AI that rests its starters sooner, and a smaller credit per save now that a goalkeeper barely tires.
+# and an AI that rests its starters sooner. Its smaller credit per save was retired with the scale by schema 42.
 RECALIBRATED_FATIGUE_RULES = (("states", "fitness", None, "daily_recovery", 0.10, 0.24),
                               ("states", "fitness", None, "stamina_recovery", 0.05, 0.20),
                               ("states", "injuries", None, "fitness_factor", 1.9, 1.2),
                               ("states", "injuries", None, "possession_probability", 0.0025, 0.0065),
-                              ("management", "selection", None, "rotation_fitness", 0.65, 0.90),
-                              ("engine", "player_ratings", None, "saving", 0.10, 0.08))
+                              ("management", "selection", None, "rotation_fitness", 0.65, 0.90))
 # Rules recalibrated by schema 37, in the same form: the planning rounds replace chance reviews.
 MARKET_RECALIBRATED_RULES = (("management", "market", None, "daily_proposal_probability", 0.06, 0.0),)
 # Rules recalibrated by schema 38, in the same form: the duels of a possession built action after action, which weigh the
@@ -729,8 +766,8 @@ POSSESSION_RECALIBRATED_RULES = (("engine", "transitions", None, "progression_bi
                                  ("benchmarks", "stats_match", "set_piece_goal_share", "max", 0.3, 0.16))
 # Rules recalibrated by schema 39, in the same form: shorter actions now that the dead time comes from the stoppages,
 # fewer and less dangerous chances in open play now that set pieces give penalties, headers from free kicks and rebounds,
-# counters a little likelier since a dead ball gives none, a scale that keeps each position's mean rating, and set-piece
-# goals back to their target.
+# counters a little likelier since a dead ball gives none, and set-piece goals back to their target. Its scale that kept
+# each position's mean rating was retired by schema 42.
 STOPPAGE_RECALIBRATED_RULES = (("engine", "actions", "durations", "pass_", 3.2, 3.0),
                                ("engine", "actions", "durations", "progression", 4.2, 4.0),
                                ("engine", "actions", "durations", "long_ball", 4.0, 3.8),
@@ -744,13 +781,21 @@ STOPPAGE_RECALIBRATED_RULES = (("engine", "actions", "durations", "pass_", 3.2, 
                                ("engine", "chance", None, "cutback_xg", 0.16, 0.13),
                                ("engine", "set_pieces", None, "free_kick_xg", 0.05, 0.065),
                                ("engine", "turnover", None, "counter_probability_by_zone", (0.03, 0.06, 0.15, 0.31), (0.04, 0.08, 0.19, 0.38)),
-                               ("engine", "player_ratings", None, "saving", 0.08, 0.09),
-                               ("engine", "player_ratings", None, "key_pass", 0.1, 0.12),
-                               ("engine", "player_ratings", None, "progression", (0.0, 0.01, 0.02, 0.04), (0.0, 0.01, 0.02, 0.05)),
-                               ("engine", "player_ratings", None, "recovery", (0.07, 0.04, 0.025, 0.015), (0.06, 0.04, 0.025, 0.015)),
-                               ("engine", "player_ratings", None, "expected_per_minute", 0.0055, 0.0056),
                                ("benchmarks", "stats_match", "set_piece_goal_share", "min", 0.1, 0.25),
                                ("benchmarks", "stats_match", "set_piece_goal_share", "max", 0.16, 0.3))
+
+
+# Rules recalibrated by schema 42, in the same form: a rating centred higher and spread wider, with goals and assists worth
+# less beside the danger they come with, the form and the value that follow it, and the benchmarks that check it.
+RATING_RECALIBRATED_RULES = (("engine", "player_ratings", None, "base", 6.5, 6.8),
+                             ("engine", "player_ratings", None, "goal", 0.8, 0.4),
+                             ("engine", "player_ratings", None, "assist", 0.5, 0.3),
+                             ("states", "form", None, "reference_rating", 6.5, 6.8),
+                             ("states", "form", None, "rating_sensitivity", 0.06, 0.04),
+                             ("management", "valuation", "performance", "reference_rating", 6.5, 6.8),
+                             ("management", "valuation", "performance", "full_rating_gap", 0.5, 0.75),
+                             ("benchmarks", "stats_match", None, "min_position_rating", 6.4, 6.7),
+                             ("benchmarks", "stats_match", None, "max_position_rating", 6.6, 6.9))
 
 
 def _recalibrated(cfg: Config, recalibrated: tuple) -> Config:

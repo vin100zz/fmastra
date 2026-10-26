@@ -120,7 +120,7 @@ def squad_strip(live: LiveMatch, side: int, shorts: dict[int, str]) -> list[dict
                 "shirt": player.shirt, "starter": starter,
                 "state": "on" if player.id in playing else "bench" if player.id in waiting else "off",
                 "fitness": round(team.fitness.get(player.id, player.fitness), 3),
-                "rating": round(player_rating(team, live.teams[1 - side], player.id, live.cfg), 1) if played else None,
+                "rating": round(player_rating(team, player.id, live.cfg), 1) if played else None,
                 "goals": stats.goals if stats else 0, "yellows": stats.yellows if stats else 0,
                 "red": bool(stats and stats.red), "injured": player.id in team.injured}
     return [row(slot.player, True) for slot in initial.slots] + [row(player, False) for player in initial.bench]

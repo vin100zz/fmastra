@@ -90,3 +90,5 @@ Votre club obéit aux mêmes règles que les autres : même plafond salarial, m�
 - vous composez l'équipe et donnez vos ordres en direct ; si vous simulez le match, l'entraîneur IA le dirige avec votre composition, et en mode Auto il la choisit aussi (voir [L'entraîneur IA](#/aide/entraineur)) ;
 - une prolongation ou une offre reçue attend votre réponse, alors qu'un club de l'IA tranche seul ;
 - vous négociez vos achats tour par tour (voir [Vos achats et vos ventes](#/aide/transferts)), sans limite de dossiers ouverts ; un club de l'IA passe par des enchères et mène au plus {{ia_gestion.mercato.negociations_actives_max}} dossiers à la fois.
+
+En mode Auto, ces différences tombent jusqu'à la pause : l'IA dirige votre club comme les siens. Elle prolonge ou laisse partir vos joueurs, tranche les offres reçues, y compris celles qui attendaient votre réponse, recrute, prête et gère la réserve ; elle garde votre formation. Votre liste des transferts et vos joueurs intransférables n'ont plus d'effet ; ils le retrouvent à la pause. Vos actualités continuent de raconter ce qui arrive au club.

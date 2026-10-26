@@ -95,8 +95,8 @@ test('a band steps between peers with one control, the charter’s: a season’s
 test('a club’s dot and a match on a line of a list are drawn the same by the reference sheet and by the application’s',async()=>{
  for(const sheet of ['docs/charte/charte.css','web/charte.css']){
   const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
-  // The dot: a square of 14 at the charter's radius.
-  assert.match(body('.kit-dot'),/width:14px;height:14px;.*border-radius:var\(--radius\)/,sheet);
+  // The dot: a square of 14 at a badge's radius.
+  assert.match(body('.kit-dot'),/width:14px;height:14px;.*border-radius:var\(--radius-chip\)/,sheet);
   // The winner's name in 700, in the accent's ink; the other side's steps back to the running ink. The match of the
   // user's club is washed, and nothing there tells its winner another way.
   assert.match(body('.fixture-side.won'),/^font-weight:700;color:var\(--accent-text\)$/,sheet);
@@ -175,7 +175,7 @@ test('an attribute’s column holds the longest name of its section and its badg
 test('the history’s chart, runs, changes and views are drawn the same by the reference sheet and by the application’s',async()=>{
  const [reference,app]=await Promise.all(['docs/charte/charte.css','web/charte.css'].map(async sheet=>rules(await read(sheet))));
  const body=(said,selector)=>said.find(([found])=>found===selector)?.[1];
- for(const selector of ['.segmented.views>.active','.cc','.cc-scroll','.cc-rank','.cc-rank.title','.cc-rank.open','.cc-zone.europe','.cc-line.second','.cc-body',
+ for(const selector of ['.cc','.cc-scroll','.cc-rank','.cc-rank.title','.cc-rank.open','.cc-zone.europe','.cc-line.second','.cc-body',
   '.reached','.reached.semi','.reached.final','.reached.won','.rank.title','.delta','.delta.up','.delta.down','.honour-line']){
   assert.ok(body(reference,selector),selector);
   assert.equal(body(app,selector),body(reference,selector),selector);
@@ -184,3 +184,16 @@ test('the history’s chart, runs, changes and views are drawn the same by the r
  assert.match(body(reference,'.cc-scroll'),/overflow-x:auto;.*direction:rtl/);
 });
 
+
+test('a club’s mercatos are drawn the same by the reference sheet and by the application’s',async()=>{
+ const [reference,app]=await Promise.all(['docs/charte/charte.css','web/charte.css'].map(async sheet=>rules(await read(sheet))));
+ const body=(said,selector)=>said.find(([found])=>found===selector)?.[1];
+ for(const selector of ['.mercatos','.mercato-season','.mercato-season.picked','.mercato-head','.mercato-row','.mercato-half','.mercato-half.spent',
+  '.mercato-half>i','.mercato-half.spent>i','.mercato-half.earned>i','.mercato-half>b','.mercato-half.spent>b','.mercato-half.earned>b','.mercato-row.future .mercato-half.spent']){
+  assert.ok(body(reference,selector),selector);
+  assert.equal(body(app,selector),body(reference,selector),selector);
+ }
+ // Each amount beside its bar in the deep tone of its series, not in bold.
+ assert.equal(body(reference,'.mercato-half>b'),'font-weight:400;white-space:nowrap');
+ assert.equal(body(reference,'.mercato-half.spent>b'),'color:var(--series-1-deep)');
+});

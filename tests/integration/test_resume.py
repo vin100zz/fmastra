@@ -4,7 +4,7 @@ import pytest
 
 from core.world.simulation import advance_day
 from infrastructure.importation.loader import import_world
-from infrastructure.persistence.store import SaveStore
+from infrastructure.persistence.store import SaveStore, UNSAVED_FIELDS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,6 +20,8 @@ def test_resume_crosses_month_boundary_identically(config, tmp_path):
         advance_day(world)
         advance_day(restored)
     for field in fields(world):
+        if field.name in UNSAVED_FIELDS["world"]:
+            continue
         if field.name == "rngs":
             assert {key: value.getstate() for key, value in world.rngs.items()} == {key: value.getstate() for key, value in restored.rngs.items()}
         else:

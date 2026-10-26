@@ -1,7 +1,7 @@
 import {initNationLogos} from './nation-logos.js';
-import {initHeroCrests} from './club-hero.js';
+import {initHeroCrests,tintPage} from './club-hero.js';
 import {worldHistoryScreen} from './world-history.js';
-import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen} from './ui.js';
+import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen,GO} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
 import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
@@ -12,17 +12,18 @@ import {honoursScreen,pickClub} from './honours.js';
 import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
 import {homeScreen} from './home.js';
-import {newGameScreen,creationChoice,leaveCreation} from './new-game.js';
+import {newGameScreen,creationChoice,leaveCreation,SLOT,slotFor,savedUnder,replacedTip} from './new-game.js';
 import {newsScreen} from './news.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
-import {awayIcon,clubPreview} from './club-overview.js';
+import {awayIcon,clubPreview,outcomeLabels} from './club-overview.js';
 import {landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage} from './flow.js';
 import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
 import {initSearch} from './search.js';
 import {openPlayerMenu,showPlayerDialog} from './player-menu.js';
 import {initBudgetShare} from './budget-share.js';
+import {initColumns} from './columns.js';
 
 // Short tables are sorted in the browser: the choice follows the screen through the re-renders of auto mode.
 const tableSorts=new Map();
@@ -33,6 +34,8 @@ let refitted=false,previewVersion=0;
 const main=document.querySelector('#main');
 initNationLogos(main);
 initHeroCrests(main);
+// Every table shares what its columns leave over equally between their gaps, dialogs' too.
+initColumns(document.body);
 // The search of the whole game leads to pages: it needs a game and its club, and waits while a live match holds the screen.
 const showSearch=initSearch(()=>Boolean(state.exists)&&!state.recovery_required&&state.controlled_club_id!=null&&!state.live_match_id);
 // Guides the user straight through a scheduled match: Continuer → Match (go compose) → Jouer (play it, then see the round's results).
@@ -56,6 +59,19 @@ function showNews(){
  const pending=state.news?.pending.length||0,todo=document.querySelector('#advance-todo');
  todo.textContent=pending;todo.hidden=!pending||Boolean(state.live_match_id)||state.awaiting_lineup!=null;
 }
+// The name a new game is saved under, in the bar before Commencer: the club's until the user writes one. A name already
+// saved under is marked, its tooltip telling what Commencer would replace.
+function slotName(made){
+ const field=document.querySelector('#slot-field'),input=field.querySelector('input');
+ field.hidden=!made;
+ if(!made){input.value='';delete input.dataset.edited;delete input.dataset.club;return '';}
+ if(!input.dataset.edited&&made.club&&input.dataset.club!==String(made.club.id)){input.value=slotFor(made.club.name);input.dataset.club=made.club.id;}
+ const name=input.value.trim(),taken=savedUnder(name,made.saves);
+ field.classList.toggle('taken',Boolean(taken));
+ field.classList.toggle('invalid',name!==''&&!SLOT.test(name));
+ if(taken)field.dataset.tip=replacedTip(taken);else delete field.dataset.tip;
+ return name;
+}
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),simulate=document.querySelector('#simulate');
  showNews();
@@ -64,11 +80,13 @@ function updateAdvanceButton(){
  const made=onCreationScreen()?creationChoice():null;
  document.body.classList.toggle('creating',Boolean(made));
  document.querySelector('.advance-group').hidden=!made&&(!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);
+ if(!made)slotName(null);
  if(made){
   document.querySelector('#season-label').textContent=`SAISON ${season(made.season)}`;
   document.querySelector('#game-date').textContent=date(made.date,true);
-  button.innerHTML='Commencer <span>→</span>';
-  button.disabled=Boolean(polling)||submitting||Boolean(state.auto?.running)||!made.club;
+  const name=slotName(made);
+  button.innerHTML=`Commencer ${GO}`;
+  button.disabled=Boolean(polling)||submitting||Boolean(state.auto?.running)||!made.club||!SLOT.test(name);
   blockOn(button,[]);
   simulate.hidden=true;
   document.querySelector('#advance-todo').hidden=true;
@@ -76,7 +94,7 @@ function updateAdvanceButton(){
  }
  // During the live match the day waits: Continuer only closes it once the final whistle has gone.
  if(state.live_match_id){
-  button.innerHTML='Continuer <span>→</span>';
+  button.innerHTML=`Continuer ${GO}`;
   button.disabled||=liveStatus()!=='finished';
   // The header is hidden during the live match: its own Continuer mirrors this one.
   document.querySelectorAll('[data-live="continuer"]').forEach(copy=>copy.disabled=button.disabled);
@@ -85,7 +103,7 @@ function updateAdvanceButton(){
   return;
  }
  const jouer=state.awaiting_lineup&&onCompositionScreen();
- button.innerHTML=jouer?'Jouer <span>→</span>':state.awaiting_lineup?'Match <span>→</span>':'Continuer <span>→</span>';
+ button.innerHTML=`${jouer?'Jouer':state.awaiting_lineup?'Match':'Continuer'} ${GO}`;
  const issues=jouer?compositionIssues():[];
  blockOn(button,issues);
  blockOn(simulate,issues,'Passer directement au résultat du match');
@@ -112,17 +130,36 @@ const busyButtons=()=>{
 function reopenMenu(scroll){const menu=main.querySelector('.entity-menu');if(!menu)return;menu.open=true;menu.querySelector('.menu').scrollTop=scroll;}
 function routeParts(){const [path,search='']=location.hash.slice(1).split('?');return {parts:(path||'/').split('/').filter(Boolean),params:new URLSearchParams(search)};}
 function changeParams(values){const path=location.hash.split('?')[0]||'#/';location.hash=`${path}?${new URLSearchParams(values)}`;}
-// The controlled club's next three matches, left of Continuer: days to go, opponent (plane if away), competition (cups in blue).
-// Each opens the page of its opponent.
+// The controlled club's last matches and its next three, left of Continuer, in one band read in time (« Barre du haut »):
+// a played match by its score from the club's side on the badge of its outcome, a rule for today, then each match to come
+// by its days to go; under the opponent (plane if away), the competition (cups in blue). `short` keeps a played match to the
+// opponent's dot and the score. A played match opens its report, one to come the page of its opponent.
 const daysBetween=(from,to)=>Math.round((new Date(`${to}T12:00:00`)-new Date(`${from}T12:00:00`))/864e5);
-function nextMatchesHtml(){
+function barMatchesHtml(count,short){
  const club=state.controlled_club_id;
- return (state.club_next_matches||[]).map(match=>{
+ const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span>`;
+ const played=(state.club_last_matches||[]).slice(-count).map(match=>{
+  const home=match.home.id===club,opponent=home?match.away:match.home,ours=list=>(home?list:[...list].reverse()).join('–');
+  const title=`${outcomeLabels[match.outcome]}${short?` · ${opponent.name}`:''} · ${date(match.date)} · ${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${match.penalties?` · t.a.b. ${ours(match.penalties)}`:''}`;
+  return `<a class="last-match ${match.outcome}${short?' short':''}" href="#/match/${match.id}" title="${e(title)}">${short?kitDot(opponent):''}<span class="last-match-score">${ours(match.score)}</span>${short?'':body(match,home,opponent)}</a>`;
+ });
+ const coming=(state.club_next_matches||[]).map(match=>{
   const home=match.home.id===club,opponent=home?match.away:match.home,days=daysBetween(state.date,match.date);
-  return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span><span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span></a>`;
- }).join('');
+  return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span>${body(match,home,opponent)}</a>`;
+ });
+ return played.join('')+(played.length&&coming.length?'<i class="bar-today" aria-hidden="true"></i>':'')+coming.join('');
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+// As many played matches as the bar has room for: three while every name reads whole, then two, then the score alone. A
+// name cut only by its block's widest is not short of room: its block stands at that width.
+const BAR_STAGES=[[3,false],[2,false],[3,true],[2,true]];
+function drawBarMatches(){
+ const band=document.querySelector('#next-matches');
+ if(!state.exists||state.recovery_required){band.innerHTML='';return;}
+ const cut=()=>[...band.querySelectorAll('.last-match,.next-match')].some(block=>block.getBoundingClientRect().width<parseFloat(getComputedStyle(block).maxWidth)-1
+  &&[...block.querySelectorAll('.next-match-who b,.next-match-comp')].some(text=>text.scrollWidth>text.clientWidth));
+ for(const [count,short] of BAR_STAGES){band.innerHTML=barMatchesHtml(count,short);if(!cut())break;}
+}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}drawBarMatches();if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
  const dialog=document.querySelector('#confirm-dialog');
@@ -226,10 +263,12 @@ function draw(html,field,typing){
    sync(form,nodes[at],typing?field:null);
    [...main.childNodes].forEach(node=>{if(node!==form)node.remove();});
    form.before(...nodes.slice(0,at));form.after(...nodes.slice(at+1));
+   tintPage(main);
    return;
   }
  }
  main.innerHTML=html;
+ tintPage(main);
 }
 
 async function render(){const version=++renderVersion;const hash=rememberFilters(location.hash);if(hash!==location.hash)history.replaceState(history.state,'',hash);const {parts,params}=routeParts();
@@ -264,7 +303,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  const list=main.querySelector('[data-fit]');
  if(list&&refit(list)&&!refitted){refitted=true;return render();}
  refitted=false;
- }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;toast(error.message,true);}}
+ }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;tintPage(main);toast(error.message,true);}}
 
 // Actualités opens on a message (`msg` in the address): the one asked for, else the next one to read, else one awaiting an
 // answer, else the latest. Opening it marks it as read, and the menu and Continuer follow at once.
@@ -373,11 +412,19 @@ document.querySelector('#autoplay').addEventListener('click',async()=>{
 // Commencer, on the screen of a new game: the game is made with the divisions and the club chosen (a game under way is
 // replaced once the user agrees), then opens on its first day.
 async function startGame(){
- const made=creationChoice();
- if(!made?.club||polling||submitting)return;
- if(state.exists&&!state.recovery_required&&!(await confirmDialog({eyebrow:'NOUVELLE PARTIE',title:'Remplacer la partie en cours ?',text:'Elle reste telle que sa dernière sauvegarde l’a gardée.',confirmLabel:'Commencer'})))return;
- await command('/partie/creer',{nations:made.levels,club_id:made.club.id});
+ const made=creationChoice(),slot=slotName(made);
+ if(!made?.club||!SLOT.test(slot)||polling||submitting)return;
+ // One question for all the game replaces: the game under way, the save of the same name.
+ const playing=state.exists&&!state.recovery_required,taken=Boolean(savedUnder(slot,made.saves));
+ const replaced=`« ${slot} » sera remplacée par la nouvelle partie.`;
+ if((playing||taken)&&!(await confirmDialog({eyebrow:'NOUVELLE PARTIE',title:playing?'Remplacer la partie en cours ?':'Remplacer cette sauvegarde ?',
+  text:playing?`Elle reste telle que sa dernière sauvegarde l’a gardée.${taken?` ${replaced}`:''}`:replaced,confirmLabel:taken?'Remplacer':'Commencer',danger:taken})))return;
+ await command('/partie/creer',{nations:made.levels,club_id:made.club.id,slot});
 }
+// The name is the user's once written, whatever club is picked after. Enter starts the game.
+const slotInput=document.querySelector('#slot-name');
+slotInput.addEventListener('input',()=>{slotInput.dataset.edited='true';updateAdvanceButton();});
+slotInput.addEventListener('keydown',event=>{if(event.key==='Enter'&&!document.querySelector('#advance').disabled)startGame();});
 document.querySelector('#advance').addEventListener('click',()=>{
  if(onCreationScreen()&&creationChoice())return startGame();
  if(state.live_match_id){if(liveStatus()==='finished')command('/direct/terminer',{});return;}
@@ -429,7 +476,7 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
 const openLine=row=>{if(row.dataset.href)location.hash=row.dataset.href;else command('/partie/charger',{slot:row.dataset.slot});};
 main.addEventListener('click',event=>{const row=event.target.closest('tr[data-slot],tr[data-href]');if(row&&!event.target.closest('a,button'))openLine(row);});
 main.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches?.('tr[data-slot],tr[data-href]'))openLine(event.target);});
-// A card head with a single link ("Voir →") follows it wherever it is clicked.
+// A card head with a single link (« Voir ») follows it wherever it is clicked.
 main.addEventListener('click',event=>{const head=event.target.closest('.card-head');if(!head||event.target.closest('a,button,input,select,label,form'))return;const links=head.querySelectorAll(':scope>a[href]');if(links.length===1)links[0].click();});
 // Player actions open in a dialog kept inside the page, so each re-render closes it.
 main.addEventListener('click',event=>{const opener=event.target.closest('[data-open-dialog]');if(opener){main.querySelector(`#${opener.dataset.openDialog}`)?.showModal();return;}const closer=event.target.closest('[data-close-dialog]');if(closer)closer.closest('dialog')?.close();});
@@ -483,10 +530,18 @@ main.addEventListener('click',event=>{
  if(picked)params.set('sel',picked);else params.delete('sel');
  history.replaceState(history.state,'',`${location.hash.split('?')[0]}${params.size?`?${params}`:''}`);
 });
-// A new window size changes the rows that fit (a list, the columns of a club's Présentation) and whether the side panel has room.
+// A new window size changes the rows that fit (a list, the columns of a club's Présentation), whether the side panel has room
+// and how many played matches the bar holds.
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit],[data-fill]'))render();},250);});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit],[data-fill]'))render();else drawBarMatches();},250);});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.menu'),current=panel.querySelector('[aria-checked="true"]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
+// The bar's Précédent and Suivant walk the window's history, for the game's window that has no browser's arrows (app
+// window, full screen). Where the browser says how far it goes (the Navigation API of Chrome and Edge), an end greys out.
+const historyBack=document.querySelector('#history-back'),historyForward=document.querySelector('#history-forward');
+historyBack.addEventListener('click',()=>history.back());
+historyForward.addEventListener('click',()=>history.forward());
+const historyEnds=()=>{historyBack.disabled=!navigation.canGoBack;historyForward.disabled=!navigation.canGoForward;};
+if(window.navigation){navigation.addEventListener('currententrychange',historyEnds);historyEnds();}
 // A new page opens at the top; a new sort, filter or page of the same list keeps the scroll where it was.
 window.addEventListener('hashchange',event=>{const path=url=>new URL(url).hash.split('?')[0];render();if(path(event.oldURL)!==path(event.newURL))window.scrollTo({top:0});});
 document.addEventListener('lineup-change',updateAdvanceButton);

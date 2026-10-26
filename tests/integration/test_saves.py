@@ -29,12 +29,13 @@ def test_save_restore_rng_and_config(config, tmp_path):
     import json
     legacy = json.loads(gzip.decompress(store.path_for("test").read_bytes()))
     legacy["schema_version"] = 2
+    # A save leaves out the values equal to their default: some of these are not written to begin with.
     for name in ("finance_history", "finance_history_since", "movement_history_since", "custom_formation"):
-        legacy["world"].pop(name)
+        legacy["world"].pop(name, None)
     for player in legacy['world']['players'].values():
-        for name in ('source_current_ability', 'source_potential_ability', 'position_ratings'): player.pop(name)
+        for name in ('source_current_ability', 'source_potential_ability', 'position_ratings'): player.pop(name, None)
     for club in legacy['world']['clubs'].values():
-        for name in ('training_facilities', 'youth_recruitment'): club.pop(name)
+        for name in ('training_facilities', 'youth_recruitment'): club.pop(name, None)
     store.path_for("legacy").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("legacy")
     assert migrated.finance_history == {} and migrated.custom_formation == ()
@@ -222,7 +223,7 @@ def test_save_from_before_the_delivery_attributes_gains_them_from_the_source_or_
     legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     for player in legacy["world"]["players"].values():
         del player["attributes"]["values"][LEGACY_ATTRIBUTE_COUNT:]
-        del player["aggression"]
+        player.pop("aggression", None)
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     # Without the exact source file every player receives the level generation gives his position.
     fallback = store.load("old")
@@ -279,8 +280,8 @@ def test_save_from_before_the_age_records_rebuilds_them_and_keeps_the_strength_o
     store.save(world, "modern")
     legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
     legacy["schema_version"] = 35
-    legacy["world"].pop("age_records")
-    legacy["world"]["international"].pop("age_records")
+    legacy["world"].pop("age_records", None)
+    legacy["world"]["international"].pop("age_records", None)
     legacy["world"]["international"].pop("strength_history")
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
@@ -368,7 +369,7 @@ def test_save_from_before_the_shirt_numbers_numbers_every_squad_by_the_rules_of_
     store.save(world, "modern")
     legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
     legacy["schema_version"] = 34
-    for player in legacy["world"]["players"].values(): del player["shirt"]
+    for player in legacy["world"]["players"].values(): player.pop("shirt", None)
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
     for club in migrated.clubs.values():
@@ -468,7 +469,7 @@ def test_save_from_before_the_stoppages_drops_the_retired_rules_and_takes_the_re
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     migrated = store.load("old")
     # Every rule takes its new value, but the one the player had chosen.
-    assert len(STOPPAGE_RECALIBRATED_RULES) == 20
+    assert len(STOPPAGE_RECALIBRATED_RULES) == 15
     engine_rules = migrated.config.engine
     assert engine_rules.chance.cutback_xg == 0.17
     assert replace(engine_rules, chance=replace(engine_rules.chance, cutback_xg=config.engine.chance.cutback_xg)) == config.engine
@@ -487,9 +488,13 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     import hashlib
     import json
     import shutil
-    from core.domain.players import ATTRIBUTE_INDEX
+    from core.domain.players import ATTRIBUTE_INDEX, Position
+    from core.world.international_selection import reinforcement
     from infrastructure.persistence.store import DELIVERY_ATTRIBUTE_COUNT, MIGRATION_DEFAULTS, PENALTY_ESTIMATE
     world = import_world(ROOT / "data", config, 14)
+    # A selection's campaign-only reinforcement carries an attribute vector as well.
+    state = world.international
+    temporary = reinforcement(world, next(iter(state.editions.values())), next(iter(state.nations)), Position.STRIKER)
     saves = tmp_path / "saves"
     store = SaveStore(saves)
     store.save(world, "modern")
@@ -508,18 +513,20 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     del rules["demographie"]["progression"]["poids_declin_par_attribut"]["penalty"]
     raw_config = json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     legacy["config_hash"] = hashlib.sha256(raw_config.encode("utf-8")).hexdigest()
-    for player in legacy["world"]["players"].values():
+    for player in (*legacy["world"]["players"].values(), *legacy["world"]["international"]["temporary"].values()):
         del player["attributes"]["values"][DELIVERY_ATTRIBUTE_COUNT:]
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     # Without the exact source file every player receives the level his finishing and composure predict.
     fallback = store.load("old")
     bounds, (intercept, finishing, composure) = config.attributes.bounds, PENALTY_ESTIMATE
-    for player in fallback.players.values():
+    original = {**world.players, temporary.id: temporary}
+    assert set(fallback.international.temporary) == {temporary.id}
+    for player in (*fallback.players.values(), *fallback.international.temporary.values()):
         values = player.attributes.values
-        assert values[:DELIVERY_ATTRIBUTE_COUNT] == world.players[player.id].attributes.values[:DELIVERY_ATTRIBUTE_COUNT]
+        assert values[:DELIVERY_ATTRIBUTE_COUNT] == original[player.id].attributes.values[:DELIVERY_ATTRIBUTE_COUNT]
         expected = intercept + finishing * values[ATTRIBUTE_INDEX["finition"]] + composure * values[ATTRIBUTE_INDEX["sang_froid"]]
         assert player.attributes.get("penalty") == min(bounds.max, max(bounds.min, expected))
-        assert player.rating == world.players[player.id].rating
+        assert player.rating == original[player.id].rating
     attributes = fallback.config.attributes
     assert attributes.composites == config.attributes.composites and attributes.groups == config.attributes.groups
     profiles = attributes.generation_profiles.profiles
@@ -541,3 +548,42 @@ def test_save_from_before_the_penalty_attribute_gains_it_from_the_source_or_from
     store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     with pytest.raises(SaveError, match="configuration"):
         store.load("old")
+
+
+def test_save_from_before_the_duels_drops_the_retired_rating_scale_and_takes_the_recalibrated_one(config, tmp_path):
+    import gzip
+    import hashlib
+    import json
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    world = import_world(ROOT / "data", config, 14)
+    store = SaveStore(tmp_path)
+    store.save(world, "modern")
+    legacy = json.loads(gzip.decompress(store.path_for("modern").read_bytes()))
+    legacy["schema_version"] = 41
+    rules = legacy["world"]["config"]
+    for introduced, path, defaults in MIGRATION_DEFAULTS:
+        if introduced > 41:
+            for key in defaults: del rules[path[0]][path[1]][key]
+            if not rules[path[0]][path[1]]: del rules[path[0]][path[1]]
+    # As schema 41 shipped them, but for one rule the player had chosen.
+    rules["moteur_match"]["notes_joueurs"].update(
+        base=6.5, but=0.8, passe_decisive=0.6, tir_cadre_sans_but=0.05, arret=0.09, but_encaisse_gardien=-0.15,
+        progression_par_zone=[0.0, 0.01, 0.02, 0.05], recuperation_par_zone=[0.06, 0.04, 0.025, 0.015],
+        perte_par_zone=[-0.04, -0.03, -0.02, -0.01], defenseur_elimine=-0.02, passe_cle=0.12, participation_occasion=0.03,
+        tir_non_cadre=-0.03, contre=0.05, defenseur_battu=-0.15, victoire=0.1, sans_encaisser=0.25, minutes_sans_encaisser=60,
+        attendu_par_minute=0.0056, hors_jeu=0.0, penalty_concede=-0.3, penalty_obtenu=0.1, penalty_manque=-0.3, penalty_arrete=0.3)
+    rules["etats"]["forme"].update(note_reference=6.5, sensibilite_note=0.06)
+    rules["ia_gestion"]["valorisation"]["performance"].update(note_reference=6.5, ecart_note_plein=0.5)
+    rules["benchmarks"]["stats_match"].update(note_moyenne_poste_min=6.4, note_moyenne_poste_max=6.6)
+    legacy["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    store.path_for("old").write_bytes(gzip.compress(json.dumps(legacy).encode()))
+    migrated = store.load("old")
+    # Every rule takes its new value, but the one the player had chosen.
+    assert migrated.config.engine.player_ratings.assist == 0.6
+    assert replace(migrated.config.engine.player_ratings, assist=config.engine.player_ratings.assist) == config.engine.player_ratings
+    assert migrated.config.engine.duels == config.engine.duels
+    assert migrated.config.states.form == config.states.form
+    assert migrated.config.management.valuation == config.management.valuation
+    assert migrated.config.benchmarks == config.benchmarks
+    store.save(migrated, "upgraded")
+    assert store.load("upgraded").config == migrated.config

@@ -4,7 +4,7 @@
 
 Un match est une suite de **possessions** qui alternent entre les deux équipes, et chaque possession une suite d'actions. L'équipe qui a le ballon le garde par des passes, tente de le faire avancer de zone en zone, puis de créer une occasion, puis de marquer. Chaque passe et chaque tentative se jouent entre ce que vaut l'attaque et ce que vaut la défense à cet endroit du terrain. Une passe manquée ou une tentative ratée rend le plus souvent le ballon à l'adversaire ; elle peut aussi finir en faute, en touche, en corner ou en hors-jeu (voir « Arrêts de jeu »).
 
-Rien n'est décidé joueur contre joueur avant le tir : ce sont des notes de zone, calculées à partir des onze joueurs présents, de leurs postes et de leur état, qui s'affrontent. Le porteur du ballon choisit ce qu'il tente selon ses qualités, mais la réussite se décide entre notes de zone. Les autres joueurs nommés dans le résumé (celui qui récupère le ballon, celui qui le perd) sont désignés ensuite.
+L'essentiel se joue entre des notes de zone, calculées à partir des onze joueurs présents, de leurs postes et de leur état. Mais chaque tentative est aussi un **duel** entre le porteur du ballon et le défenseur qui lui fait face : les meilleurs joueurs touchent plus souvent le ballon et le défendent plus souvent, et le meilleur des deux pèse un peu sur l'issue. Le porteur choisit ce qu'il tente selon ses qualités ; celui qui perd le ballon est le porteur, celui qui le récupère le défenseur de son duel.
 
 ## Le terrain : zones et couloirs
 
@@ -67,7 +67,7 @@ Chaque passe réussie **ouvre** la défense adverse, qui doit bouger pour suivre
 
 ### Tenter
 
-Le porteur du ballon est désigné parmi les joueurs impliqués à cet endroit, puis il choisit ce qu'il tente. Ses qualités changent ce qu'il tente, jamais les chances qu'il a de réussir, qui se décident entre notes de zone.
+Le porteur du ballon est désigné parmi les joueurs impliqués à cet endroit, les meilleurs plus souvent (voir « Le duel »), puis il choisit ce qu'il tente. Ses qualités changent ce qu'il tente, et un peu ses chances de réussir, qui se décident surtout entre notes de zone.
 
 | Tentative | Où | Part des tentatives | Ce qui la fait varier |
 |---|---|---:|---|
@@ -100,6 +100,16 @@ Trois correctifs s'appliquent :
 - **L'avantage du terrain** aide l'équipe à domicile à avancer (deuxième colonne), jamais à créer ni à marquer. Il disparaît sur terrain neutre.
 - **Le relâchement** : une équipe qui mène de plus de {{moteur_match.transitions.avance_confortable}} buts gère son avance. Chaque but d'avance supplémentaire réduit son tempo : elle garde le ballon au lieu de tenter (avec trois buts d'avance, elle ne tente plus au milieu haut que dans {{pct(sigmoide(logit(moteur_match.actions.tempo_par_zone[2]) - moteur_match.transitions.relachement_par_but), 0)}} des pas, défense en place).
 - **Le contre** : voir plus bas.
+
+### Le duel
+
+Chaque tentative (progression, long ballon, création d'occasion) oppose le porteur à un défenseur, tiré parmi ceux qui défendent cet endroit. Dans ces deux tirages, un joueur pèse son implication multipliée par exp({{moteur_match.duels.selection_porteur}} × qualité) en attaque et exp({{moteur_match.duels.selection_defenseur}} × qualité) en défense : à implication égale, un joueur qui vaut 20 points de plus sur 200 est désigné {{n(exp(10 * moteur_match.duels.selection_porteur), 2)}} fois plus souvent. La qualité est le composite de la phase multiplié par la forme, le moral, l'affinité au poste et la condition.
+
+```
+duel = {{moteur_match.duels.sensibilite_porteur}} × (qualité du porteur − qualité attendue) − {{moteur_match.duels.sensibilite_defenseur}} × (qualité du défenseur − qualité attendue)
+```
+
+Le duel s'ajoute au logit de la tentative. La qualité attendue est celle du joueur que le tirage désigne en moyenne à cet endroit : le duel ne rend pas une équipe plus forte, il répartit ses réussites entre ses joueurs. À écart de zone nul, un porteur qui vaut 20 points de plus sur 200 que la moyenne avance dans {{pct(sigmoide(moteur_match.transitions.progression_bias + 10 * moteur_match.duels.sensibilite_porteur), 0)}} des cas au lieu de {{pct(sigmoide(moteur_match.transitions.progression_bias), 0)}}.
 
 ## Les tirs
 
@@ -287,35 +297,41 @@ En coupe, une égalité à la fin du temps réglementaire se règle directement 
 
 La note d'un joueur part de {{moteur_match.notes_joueurs.base}} et reste entre {{moteur_match.notes_joueurs.min}} et {{moteur_match.notes_joueurs.max}}. Il faut avoir joué {{moteur_match.notes_joueurs.minutes_minimum_note}} minutes pour être noté, sauf but, passe décisive ou expulsion.
 
-| Action | Effet sur la note |
+Une action vaut le **danger** qu'elle ajoute à son équipe ou retire à l'adversaire : la probabilité que la possession finisse en but, qui dépend de l'endroit où se trouve le ballon.
+
+| Danger | Défense | Milieu bas | Milieu haut | Zone de vérité |
+|---|---:|---:|---:|---:|
+| Possession | {{pct(moteur_match.notes_joueurs.danger_par_zone[0], 1)}} | {{pct(moteur_match.notes_joueurs.danger_par_zone[1], 1)}} | {{pct(moteur_match.notes_joueurs.danger_par_zone[2], 1)}} | {{pct(moteur_match.notes_joueurs.danger_par_zone[3], 1)}} |
+| Contre | {{pct(moteur_match.notes_joueurs.danger_contre_par_zone[0], 1)}} | {{pct(moteur_match.notes_joueurs.danger_contre_par_zone[1], 1)}} | {{pct(moteur_match.notes_joueurs.danger_contre_par_zone[2], 1)}} | {{pct(moteur_match.notes_joueurs.danger_contre_par_zone[3], 1)}} |
+| Ballon gagné en jeu à cet endroit | {{pct(moteur_match.notes_joueurs.danger_recuperation_par_zone[0], 1)}} | {{pct(moteur_match.notes_joueurs.danger_recuperation_par_zone[1], 1)}} | {{pct(moteur_match.notes_joueurs.danger_recuperation_par_zone[2], 1)}} | {{pct(moteur_match.notes_joueurs.danger_recuperation_par_zone[3], 1)}} |
+
+| Action | Danger |
+|---|---|
+| Faire avancer le ballon (passe, conduite, dribble, long ballon) | Le danger gagné, au porteur ; le défenseur de son duel en perd {{pct(moteur_match.notes_joueurs.part_defenseur_battu, 0)}} |
+| Créer une occasion | Son xG moins le danger de la possession, au porteur ; le défenseur de son duel en perd {{pct(moteur_match.notes_joueurs.part_defenseur_battu, 0)}} |
+| Perdre le ballon en jeu | Le danger de la possession, et celui de la possession qu'il donne à l'adversaire ; le défenseur qui le gagne les reçoit |
+| Le mettre dehors, ou être hors-jeu | Le danger de la possession ; le défenseur qui l'a poussé dehors le reçoit |
+| Dégager le ballon, le capter (gardien) | Le danger écarté |
+| Obtenir ou concéder un penalty | Ce que vaut le penalty de plus que l'action qu'il arrête |
+| Tir (tireur) | {{pct(moteur_match.notes_joueurs.part_tir, 0)}} de 1 − xG s'il marque ; {{pct(moteur_match.notes_joueurs.part_tir, 0)}} de son xG retirés sinon |
+| Tir cadré (gardien) | {{pct(moteur_match.notes_joueurs.part_tir, 0)}} de la part des tirs comparables qui entrent, moins 1 s'il encaisse |
+| Tir contré (défenseur) | {{pct(moteur_match.notes_joueurs.part_tir, 0)}} de son xG |
+
+Chaque poste convertit ce danger en points de note à sa propre échelle, et chaque minute jouée retire ce qu'un joueur ordinaire de son poste apporte, en points (buts, passes décisives, fautes et cartons compris). Un joueur qui fait son match sans plus finit autour de {{moteur_match.notes_joueurs.base}}, et chaque poste peut briller ou décevoir autant que les autres.
+
+| Poste | Points par but de danger | Attendu sur 90 minutes |
+|---|---:|---:|
+{{#chaque moteur_match.notes_joueurs.echelle_par_poste}}| {{cle}} | {{n(valeur, 2)}} | {{n(90 * moteur_match.notes_joueurs.attendu_par_minute_par_poste[cle], 2)}} |
+
+| En plus | Effet sur la note |
 |---|---:|
 | But | +{{moteur_match.notes_joueurs.but}} |
 | Passe décisive | +{{moteur_match.notes_joueurs.passe_decisive}} |
-| Dernière passe avant un tir | +{{moteur_match.notes_joueurs.passe_cle}} |
-| Participation à l'action d'un tir | +{{moteur_match.notes_joueurs.participation_occasion}} |
-| Faire avancer le ballon (selon la zone atteinte) | jusqu'à +{{moteur_match.notes_joueurs.progression_par_zone[3]}} |
-| Récupération (selon la zone, plus près de son but) | +{{moteur_match.notes_joueurs.recuperation_par_zone[3]}} à +{{moteur_match.notes_joueurs.recuperation_par_zone[0]}} |
-| Perte de balle (selon la zone, plus près de son but) | {{moteur_match.notes_joueurs.perte_par_zone[3]}} à {{moteur_match.notes_joueurs.perte_par_zone[0]}} |
-| Tir cadré arrêté | +{{moteur_match.notes_joueurs.tir_cadre_sans_but}} |
-| Tir non cadré | {{moteur_match.notes_joueurs.tir_non_cadre}} |
-| Tir contré (pour le défenseur) | +{{moteur_match.notes_joueurs.contre}} |
-| Arrêt (gardien) | +{{moteur_match.notes_joueurs.arret}} |
-| But encaissé (gardien) | {{moteur_match.notes_joueurs.but_encaisse_gardien}} |
-| Défenseur battu sur un but | {{moteur_match.notes_joueurs.defenseur_battu}} |
-| Défenseur dribblé | {{moteur_match.notes_joueurs.defenseur_elimine}} |
 | Faute commise | {{moteur_match.notes_joueurs.faute}} |
-| Penalty obtenu | +{{moteur_match.notes_joueurs.penalty_obtenu}} |
-| Penalty concédé | {{moteur_match.notes_joueurs.penalty_concede}} |
-| Penalty manqué | {{moteur_match.notes_joueurs.penalty_manque}} |
-| Penalty arrêté (gardien) | +{{moteur_match.notes_joueurs.penalty_arrete}} |
 | Carton jaune | {{moteur_match.notes_joueurs.jaune}} |
 | Expulsion | {{moteur_match.notes_joueurs.expulsion}} |
-| Victoire ou défaite (au prorata des minutes jouées) | ±{{moteur_match.notes_joueurs.victoire}} |
-| Match sans but encaissé, {{moteur_match.notes_joueurs.minutes_sans_encaisser}} minutes jouées | jusqu'à +{{moteur_match.notes_joueurs.sans_encaisser}}, selon le poids défensif du poste |
 
-Chaque minute jouée retire {{moteur_match.notes_joueurs.attendu_par_minute}} : c'est ce qu'un joueur ordinaire accumule en petites actions. Un joueur qui fait son match sans plus finit donc autour de {{moteur_match.notes_joueurs.base}}.
-
-Quand une action réussit, elle est attribuée de préférence aux meilleurs joueurs impliqués à cet endroit ; quand elle échoue, aux moins bons. Cette attribution se fait à part : les notes ne modifient jamais le déroulement du match. Elles comptent pourtant, car elles pilotent la [forme](#/aide/etats/la-forme).
+Le résultat ne compte pas en lui-même : une équipe qui gagne a des joueurs bien notés parce qu'elle a mieux joué, pas l'inverse. Une passe de conservation perdue, un dégagement ou un contre sont attribués parmi les joueurs impliqués, de préférence aux meilleurs pour une réussite et aux moins bons pour un échec. Les notes ne modifient jamais le déroulement du match ; elles comptent pourtant, car elles pilotent la [forme](#/aide/etats/la-forme).
 
 ## La possession et les passes
 

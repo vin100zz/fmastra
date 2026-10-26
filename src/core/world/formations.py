@@ -3,7 +3,7 @@ from core.ai.formation import best_formation
 from core.domain.clubs import Club
 from core.domain.world import NewsLine, World
 from .events import FormationChosen
-from .human import is_human_club, report
+from .human import is_controlled_club, report
 
 
 def _squad_ids(world: World, club: Club, today: int, days: int) -> tuple[int, ...]:
@@ -15,11 +15,12 @@ def _squad_ids(world: World, club: Club, today: int, days: int) -> tuple[int, ..
 
 def formation_events(world: World, margin: bool = True) -> list[FormationChosen]:
     """The clubs of the AI whose first team changed since their formation was chosen, each with the formation it fills
-    best; without `margin`, every club of the AI, whatever it played before. The human club chooses its own."""
+    best; without `margin`, every club of the AI, whatever it played before. The human club chooses its own, even on the
+    days the AI runs it (Auto mode): its formation, or its own tactic, waits for the user to take it back."""
     today, days = world.date.ordinal(), world.config.formations.choice.long_injury_days
     events = []
     for club in sorted(world.clubs.values(), key=lambda item: item.id):
-        if is_human_club(world, club.id): continue
+        if is_controlled_club(world, club.id): continue
         ids = _squad_ids(world, club, today, days)
         if margin and ids == club.formation_squad: continue
         formation = best_formation([world.players[pid] for pid in ids], world.config, club.formation if margin else None)

@@ -1,6 +1,6 @@
 # Vos achats et vos ventes
 
-Votre club achète et vend aux mêmes prix et sous les mêmes limites que les autres (voir [Le mercato des clubs](#/aide/mercato)). Ce qui change, c'est la manière : vous négociez en direct, et rien ne se fait sans votre accord. Prêter ou emprunter un joueur suit d'autres règles, plus simples (voir [Réserve et prêts](#/aide/reserve-et-prets/preter-et-emprunter)).
+Votre club achète et vend aux mêmes prix et sous les mêmes limites que les autres (voir [Le mercato des clubs](#/aide/mercato)). Ce qui change, c'est la manière : vous négociez en direct, et rien ne se fait sans votre accord, sauf en mode Auto, où l'IA mène votre club comme les siens (voir [Votre club et ceux de l'IA](#/aide/monde/votre-club-et-ceux-de-l-ia)). Prêter ou emprunter un joueur suit d'autres règles, plus simples (voir [Réserve et prêts](#/aide/reserve-et-prets/preter-et-emprunter)).
 
 ## Acheter un joueur
 

@@ -1,6 +1,6 @@
 // The home of the game (docs/charte-graphique.md, « Accueil »): two ways in, side by side and alike. Creating a game, the
 // main action, opens « Nouvelle partie »; resuming one lists the saves, the latest first, each line opening its game.
-import {api,escape as e,date,kitDot,table} from './ui.js';
+import {api,escape as e,date,kitDot,table,GO} from './ui.js';
 
 // The brand's mark reversed, as in the corner of the rail; resuming has a save drawn the same way.
 const BRAND='<svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="3"/><path d="M16 0v32M0 10h5v12H0M32 10h-5v12h5"/><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="2"/></svg>';
@@ -26,6 +26,6 @@ export function savesList(slots){
 
 export async function homeScreen(){
  const slots=await api('/partie/slots');
- return `<div class="doors"><a class="door main" href="#/nouvelle-partie">${BRAND}<h2>Créer une partie <span>→</span></h2></a>`
+ return `<div class="doors"><a class="door main" href="#/nouvelle-partie">${BRAND}<h2>Créer une partie ${GO}</h2></a>`
   +`<section class="door">${SAVE}<h2>Reprendre une partie</h2>${savesList(slots)}</section></div>`;
 }

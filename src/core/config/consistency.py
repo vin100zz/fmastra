@@ -164,10 +164,18 @@ def validate_consistency(cfg: Config) -> None:
     require(cfg.engine.chance.probability_min > 0 and cfg.engine.chance.probability_max < 1, "Logit bounds must be open")
     require(cfg.engine.chance.delivery_sensitivity >= 0, "Delivery sensitivity must be nonnegative")
     ratings = cfg.engine.player_ratings
-    require(all(len(table) == len(cfg.involvement.zones) for table in (ratings.progression, ratings.recovery, ratings.loss)),
-            "Rating tables need one value per zone")
+    require(all(len(table) == len(cfg.involvement.zones) and all(0 <= value <= 1 for value in table)
+                for table in (ratings.danger, ratings.counter_danger, ratings.recovery_danger)),
+            "Danger tables need one probability per zone")
+    require(0 <= ratings.beaten_share <= 1, "A beaten defender loses at most what the carrier gains")
+    require(all(position in ratings.scale and ratings.scale[position] > 0 and position in ratings.expected_per_minute
+                for position in cfg.involvement.attack),
+            "Every position needs a positive rating scale and its expected rating per minute")
     require(0 < cfg.engine.actions.dribble_share < 1, "The dribble share must be a probability")
-    require(ratings.quality_sensitivity >= 0 and ratings.clean_sheet_minutes >= 0, "Rating attribution scales must be nonnegative")
+    require(ratings.quality_sensitivity >= 0, "Rating attribution scales must be nonnegative")
+    duels = cfg.engine.duels
+    require(min(duels.carrier_selection, duels.defender_selection, duels.carrier_sensitivity, duels.defender_sensitivity) >= 0,
+            "Duels must lean to the better players, or not at all")
     injuries, contracts, cards = cfg.states.injuries, cfg.management.contracts, cfg.engine.cards
     for label, notes in (("Fragility", (injuries.fragility_source_low, injuries.fragility_source_reference, injuries.fragility_source_high)),
                          ("Ego", (contracts.ego_source_low, contracts.ego_source_reference, contracts.ego_source_high)),

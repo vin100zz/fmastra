@@ -196,7 +196,7 @@ def test_a_club_whose_wages_outgrew_its_income_lets_its_contracts_run_out(config
 
 
 def test_the_rules_of_the_new_economy_default_for_configurations_made_before_them(config):
-    from infrastructure.persistence.store import MIGRATION_DEFAULTS
+    from infrastructure.persistence.store import MIGRATION_DEFAULTS, RATING_RECALIBRATED_RULES, _recalibrated
     added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 29]
     assert {path for path, _ in added} == {("ia_gestion", "valorisation"), ("ia_gestion", "budgets"), ("ia_gestion", "mercato"),
                                            ("ia_gestion", "contrats"), ("demographie", "progression"), ("benchmarks", "economie")}
@@ -204,8 +204,9 @@ def test_the_rules_of_the_new_economy_default_for_configurations_made_before_the
     for (domain, section), defaults in added:
         for key in defaults: del raw[domain][section][key]
     older = decode_config(raw)
-    # The model defaults, the save migration and the shipped configuration describe the same rules.
-    assert older == config
+    # The model defaults, the save migration and the shipped configuration describe the same rules, once the rating
+    # reference moved by schema 42 is brought along.
+    assert _recalibrated(older, RATING_RECALIBRATED_RULES) == config
     restored = config_payload(older)
     for (domain, section), defaults in added:
         assert {key: restored[domain][section][key] for key in defaults} == defaults
@@ -244,8 +245,8 @@ def test_an_older_save_takes_the_recalibrated_rules_and_the_income_they_give(con
     rules["ia_gestion"]["garde_fous"]["solde_minimal_autorise"] = -5000000
     rules["demographie"]["estimation_potentiel"]["bruit_max"] = 22.0
     rules["demographie"]["cohorte"]["poids_reputation_tri"] = 0.5  # chosen by hand: kept
-    for club in payload["world"]["clubs"].values(): del club["prize_income"]
-    for player in payload["world"]["players"].values(): del player["past_performance"]
+    for club in payload["world"]["clubs"].values(): club.pop("prize_income", None)
+    for player in payload["world"]["players"].values(): player.pop("past_performance", None)
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("old")

@@ -2,8 +2,10 @@
    Tokens first, then the application frame, then the components. Names follow web/theme.css, which this sheet is to
    replace screen by screen. Its boards, docs/charte/index.html, draw every token and component with it. */
 :root{
- /* Surfaces and lines. */
- --bg:#fff;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--stripe:#f7f9fb;--line:#d6dce4;--row-line:#e6eaef;
+ /* Surfaces and lines: white panels on a pale ground; a line under a table's heading, none between its rows, one row in two
+    on a band. The track of a choice, the ground of an option under the pointer there, the wash of a section's title. */
+ --bg:#f0f2f5;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--stripe:#f5f7f9;--line:#d6dce4;--row-line:#edf0f3;--head-line:#e2e6eb;
+ --track:#e9ecf1;--track-hover:#ffffffa6;--title-wash:#fcf1c9;
  /* Inks. */
  --strong:#0b121a;--ink:#16202b;--ink-2:#34404e;--muted:#5d6a79;
  /* Accent: one yellow, the same under the pointer, the ink written on it, its form as text on white, its wash under a picked row. */
@@ -28,10 +30,17 @@
  --caps:.06em;
  /* Space: 4, 8, 12, 16, 24. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;
- /* Shape: one radius, or a full round; the mark of what is open is 3 px on a bar, 2 px on a control. */
- --radius:3px;--mark:3px;--mark-control:2px;
+ /* Shape: four radii, from a badge to a card, or a full round; the mark of what is open is 3 px on a bar, 2 px on a control. */
+ --radius-chip:4px;--radius:6px;--radius-box:8px;--radius-card:10px;--mark:3px;--mark-control:2px;
+ /* Depth: no border around a card, a field or a menu, but a shadow. A card stands on the ground, a field or a button on its
+    card, a menu above the page; the open option of a choice, the main action, each have theirs. */
+ --shadow-card:0 0 0 1px #1018280a,0 1px 2px #1018280f,0 2px 8px -3px #10182814;--shadow-field:0 0 0 1px #10182817,0 1px 2px #1018280d;
+ --shadow-float:0 0 0 1px #1018280d,0 16px 36px -10px #10182833,0 4px 12px -4px #1018281a;--shadow-thumb:0 1px 2px #1018282e,inset 0 -1px 0 #00000017;
+ --shadow-accent:inset 0 -1px 0 #7f620040,0 1px 2px #7f62002e,0 2px 6px -2px #7f620033;
  /* Heights. */
  --h-bar:56px;--h-bar-control:40px;--h-tabs:36px;--h-head:32px;--h-control:28px;--h-control-small:22px;--h-row:26px;--h-chip:18px;
+ /* Widths: a table's name column, as wide as this at most while its table has width left over for its gaps. */
+ --w-name:200px;
 }
 *{box-sizing:border-box}
 
@@ -55,9 +64,9 @@
 
 /* Frame: the rail on the left, the bar on top, the page below it. */
 .shell{display:grid;grid-template-columns:216px minmax(0,1fr);height:100vh;overflow:hidden}
-.sidebar{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);border-image:linear-gradient(var(--accent) var(--h-bar),var(--line) 0) 1;background:var(--panel)}
+.sidebar{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
 /* The brand, a corner on the accent: the game's mark reversed (a square of the ink, its drawing in the accent), then its
-   name on two lines. The rail's border takes the accent beside it. */
+   name on two lines. */
 .brand{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-bar);padding:0 var(--s4);border-bottom:var(--mark) solid var(--accent);background:var(--accent);color:var(--accent-ink)}
 .logo{flex:none;width:32px;height:32px;fill:none;stroke:var(--accent);stroke-width:2.5}
 .logo rect{fill:currentColor;stroke:none}
@@ -67,14 +76,14 @@
 .nav{display:flex;flex-direction:column}
 .nav .label{margin:var(--s3) 20px var(--s1)}
 .nav a{display:flex;align-items:center;gap:var(--s3);height:32px;margin:0 var(--s2);padding:0 var(--s3);border-radius:var(--radius);font-weight:600;color:var(--ink-2)}
-.nav a.active{background:var(--panel-2);color:var(--strong);box-shadow:inset var(--mark) 0 0 var(--accent)}
+.nav a.active{background:var(--own-row);color:var(--strong)}
 .nav svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .nav a.active svg{stroke:var(--accent-text)}
 .nav svg,.nav .kit-dot{margin:0 6px}
 .nav .kit-dot{width:16px;height:16px}
 .nav .flag{margin:0 6px}
 .nav .count{margin-left:auto}
-.sidebar-bottom{margin-top:auto;padding:var(--s2) 0 var(--s3);border-top:1px solid var(--line)}
+.sidebar-bottom{margin-top:auto;padding:var(--s2) 0 var(--s3)}
 .sidebar-tools{display:flex;gap:var(--s1);margin:0 var(--s2)}
 .sidebar-tools .button{flex:1;padding:0}
 .workspace{display:flex;flex-direction:column;min-width:0;min-height:0}
@@ -84,51 +93,73 @@
 .topbar::before,.topbar::after{content:"";position:absolute;inset:0 auto 0 0;width:64px;background:var(--accent);clip-path:polygon(0 0,40px 0,16px 100%,0 100%)}
 .topbar::after{clip-path:polygon(50px 0,56px 0,32px 100%,26px 100%)}
 .topbar .button.square{width:var(--h-bar-control);height:var(--h-bar-control)}
-.topbar .cta{height:var(--h-bar-control)}
+.topbar .cta{height:var(--h-bar-control);border-radius:var(--radius-box)}
 .date-block{display:flex;flex-direction:column;margin-right:auto}
+/* Précédent and Suivant, first in the bar: a grey band like the next matches, an arrow in each half, the line of the panel
+   between them. An end of the history greys its arrow. */
+.history-nav{display:flex;flex:none;border-radius:var(--radius-box);background:var(--panel-2);overflow:hidden}
+.history-nav>button{display:flex;align-items:center;justify-content:center;width:36px;height:var(--h-bar-control);padding:0;border:0;background:none;color:var(--ink-2)}
+.history-nav>button+button{border-left:1px solid var(--panel)}
+.history-nav>button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.history-nav>button:not(:disabled):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+.history-nav>button:disabled{color:var(--muted)}
+.history-nav>button:disabled svg{opacity:.35}
 .date-block strong{font:700 semi-condensed var(--fs-title)/22px var(--display);color:var(--strong)}
-.next-matches{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-.next-match{display:flex;align-items:center;gap:var(--s2);height:calc(var(--h-bar-control) - 2px);padding:0 var(--s3) 0 var(--s2)}
-.next-match+.next-match{border-left:1px solid var(--line)}
-.next-match:first-child{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+/* The club's matches, one band read in time: the last played on its grey, each by its score from the club's side on the
+   badge of its outcome (.short: the opponent's dot and the score alone), a turquoise rule for today, then those to come on
+   the turquoise's wash, the next one marked in it. */
+.next-matches{display:flex;border-radius:var(--radius-box);background:var(--panel-2);overflow:hidden}
+:is(.next-match,.last-match){display:flex;align-items:center;gap:var(--s2);height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2)}
+.next-match{max-width:170px;background:var(--c4-soft)}
+.last-match{max-width:180px}
+:is(.next-match,.last-match)+:is(.next-match,.last-match){border-left:1px solid var(--panel)}
+:is(.next-match:first-child,.bar-today+.next-match){box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--c4)}
 .next-match>b{min-width:30px;font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--muted)}
-.next-match:first-child>b{color:var(--accent-text)}
-.next-match>span{display:flex;flex-direction:column}
-.next-match strong{display:flex;align-items:center;gap:var(--s1);font-weight:600;line-height:16px;color:var(--strong)}
-.next-match small{font-size:var(--fs-small);line-height:14px;color:var(--muted)}
-.next-match small.cup{color:var(--info)}
+:is(.next-match:first-child,.bar-today+.next-match)>b{color:var(--c4)}
+:is(.next-match,.last-match)>span{display:flex;flex-direction:column}
+:is(.next-match,.last-match) strong{display:flex;align-items:center;gap:var(--s1);font-weight:600;line-height:16px;color:var(--strong)}
+:is(.next-match,.last-match) small{font-size:var(--fs-small);line-height:14px;color:var(--muted)}
+:is(.next-match,.last-match) small.cup{color:var(--info)}
+.bar-today{flex:none;width:var(--mark-control);background:var(--c4)}
+.last-match>b{display:grid;place-items:center;min-width:40px;height:var(--h-control-small);padding:0 var(--s1);border-radius:var(--radius-chip);font:700 semi-condensed var(--fs-figure)/1 var(--display);white-space:nowrap}
+.last-match.V>b{background:var(--good-soft);color:var(--good)}
+.last-match.N>b{background:var(--warn-soft);color:var(--warn)}
+.last-match.D>b{background:var(--bad-soft);color:var(--bad)}
+.last-match.short{gap:var(--s1);padding:0 var(--s2)}
+.last-match.short>b{min-width:36px}
 .page{flex:1;display:flex;flex-direction:column;gap:var(--s2);min-height:0;padding:var(--s2) var(--s4) var(--s3)}
 /* A page's title, its commands on the same line. */
 .page-heading{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-head)}
 .tools{display:flex;align-items:center;gap:var(--s2);margin-left:auto}
 
 /* Controls: 28 px, 22 px in a card's head or a table's row. */
-.button{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);flex:none;height:var(--h-control);padding:0 var(--s3);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);color:var(--ink);font:600 var(--fs-body)/1 var(--text);white-space:nowrap}
-.button.primary{background:var(--accent);border-color:var(--accent-text);color:var(--accent-ink)}
-.button.danger{background:none;border-color:var(--bad-line);color:var(--bad)}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);flex:none;height:var(--h-control);padding:0 var(--s3);border:1px solid transparent;border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow-field);color:var(--ink);font:600 var(--fs-body)/1 var(--text);white-space:nowrap}
+.button.primary{background:var(--accent) linear-gradient(#ffffff2e,#ffffff00);box-shadow:var(--shadow-accent);color:var(--accent-ink)}
+.button.danger{background:none;border-color:var(--bad-line);box-shadow:none;color:var(--bad)}
 .button:disabled{background:var(--panel);color:var(--muted);opacity:.6}
 .button.square{width:var(--h-control);padding:0}
 .button.small{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
 .button.small.square{width:var(--h-control-small);padding:0}
 .button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.cta{display:inline-flex;align-items:center;gap:var(--s3);flex:none;height:36px;padding:0 var(--s3) 0 var(--s4);border:1px solid var(--accent-text);border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-figure)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase}
-.field{height:var(--h-control);padding:0 var(--s2);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--ink)}
+.cta{display:inline-flex;align-items:center;gap:var(--s3);flex:none;height:36px;padding:0 var(--s3) 0 var(--s4);border:1px solid transparent;border-radius:var(--radius);background:var(--accent) linear-gradient(#ffffff2e,#ffffff00);box-shadow:var(--shadow-accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-figure)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase}
+.field{height:var(--h-control);padding:0 var(--s2);border:1px solid transparent;border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow-field);color:var(--ink)}
 
-/* What is open, at three levels: the tabs of a page, the choice of a view, the steps of a series. One mark: the accent. */
-.tabs{display:flex;gap:var(--s1);flex:none;height:var(--h-tabs);border-bottom:1px solid var(--line)}
-.tabs a{display:flex;align-items:center;margin-bottom:-1px;padding:0 var(--s4);border-bottom:var(--mark) solid transparent;font-weight:600;color:var(--muted);white-space:nowrap}
-.tabs a.active{color:var(--strong);border-bottom-color:var(--accent)}
-.segmented{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
-.segmented>*{display:flex;align-items:center;justify-content:center;height:calc(var(--h-control) - 2px);min-width:calc(var(--h-control) - 2px);padding:0 var(--s3);border:0;border-right:1px solid var(--line);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--muted);white-space:nowrap}
-.segmented>*:last-child{border-right:0}
-.segmented>.active{background:var(--panel-2);color:var(--strong);box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
-.segmented.small>*{height:calc(var(--h-control-small) - 2px);min-width:calc(var(--h-control-small) - 2px);padding:0 var(--s2);font-size:var(--fs-small)}
+/* What is open, at three levels: the tabs of a page, the choice of a view, the steps of a series. One mark: the accent, or
+   the colour of the club, the selection or the competition on its page. A tab is underlined with a bar rounded at its
+   top. A choice is a track with no line, the open option standing on it, filled with the accent (--club-fill on a page in
+   a club's colours, its ink --club-ink); an option is 24 high, 22 in a card's head, where the track is 26. */
+.tabs{display:flex;gap:var(--s1);flex:none;height:var(--h-tabs)}
+.tabs a{position:relative;display:flex;align-items:center;padding:0 var(--s4);font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs a.active{color:var(--strong)}
+.tabs a.active::after{content:"";position:absolute;left:var(--s3);right:var(--s3);bottom:0;height:var(--mark);border-radius:var(--mark) var(--mark) 0 0;background:var(--club,var(--accent))}
+.segmented{display:inline-flex;gap:2px;flex:none;padding:2px;border-radius:var(--radius-box);background:var(--track)}
+.segmented>*{display:flex;align-items:center;justify-content:center;height:calc(var(--h-control) - 4px);min-width:calc(var(--h-control) - 4px);padding:0 var(--s4);border:0;border-radius:var(--radius);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--muted);white-space:nowrap}
+.segmented>.active{background:var(--club-fill,var(--accent));color:var(--club-ink,var(--accent-ink));box-shadow:var(--shadow-thumb)}
+.segmented.small>*{height:var(--h-control-small);min-width:var(--h-control-small);padding:0 var(--s3);font-size:var(--fs-small)}
 /* The steps of a series shown whole, the rounds of a league: an arrow at each end. */
 .segmented.steps>*{padding:0}
 .segmented.steps>:is(:first-child,:last-child){font-size:var(--fs-figure)}
 .segmented>:is(:disabled,[aria-disabled="true"]){color:var(--muted);opacity:.6}
-/* The views of a tab, at the end of its row of tabs: the open one marked in the colour of the open tab. */
-.segmented.views>.active{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--club,var(--accent))}
 /* The steps through the seasons, or the editions of the selections: an arrow to each side of the one shown, which opens
    the list of them all. No border: a ground shows under the pointer only, and under the season while its list is open.
    The arrows take the colour of the club or the selection on its page (`--club`: the one under its open tab), the ink
@@ -152,15 +183,20 @@
 /* On a club's or a selection's page, the season steps close the row of tabs, under the last tile of the band. */
 .tabs>.tools{padding-right:var(--s2)}
 
-/* Cards. */
-.card{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden}
-.card-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex:none;height:var(--h-head);padding:0 var(--s3);border-bottom:1px solid var(--line)}
-.card-head h2{font:600 semi-condensed var(--fs-body)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted);white-space:nowrap}
+/* Cards. A card's title stops at its capitals, which then stand in the middle of its head, one pixel lower for the eye: the
+   shadow under the card draws it down, accents weigh on top. */
+.card{display:flex;flex-direction:column;min-width:0;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex:none;height:var(--h-head);padding:0 var(--s3)}
+.card-head h2{font:600 semi-condensed var(--fs-body)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--strong);white-space:nowrap;text-box:trim-both cap alphabetic;translate:0 1px}
 .card-head>a{font-size:var(--fs-small);font-weight:600;color:var(--muted)}
 .card-tools{display:flex;align-items:center;gap:var(--s2)}
 .card-body{padding:var(--s2) var(--s3)}
 .card>.tabs{padding:0 var(--s2);border-bottom:0}
-.section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* A section's title, on a wash of the accent with a bar of it at its edge, in the titles' type and the ink: the club's on its
+   page (--club-wash, --club). Across a card, a band; in a column (.inset), rounded, within the column's width. */
+.section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+.section-title>.label{font-family:var(--display);font-stretch:semi-condensed;font-weight:700;color:var(--ink)}
+.section-title.inset{padding:0 10px;border-radius:var(--radius)}
 /* A card that folds what is secondary: its whole head opens and closes it, a bare arrow at its end (the chevron of an icon,
    in the muted ink), turned over while it is open. Folded, what is secondary (.fold-more) takes no room. */
 .card-head.toggle{cursor:pointer}
@@ -168,20 +204,30 @@
 .card.fold.open .toggle-arrow{transform:rotate(180deg)}
 .card.fold:not(.open) .fold-more{display:none}
 
-/* Tables: 26 px headings and rows, figures on the right. A row is a grid; each table sets its columns. */
+/* Tables: 26 px headings and rows, figures on the right. A row is a grid; each table sets its columns, each as wide as
+   what it holds at most, a name up to --w-name; what the row has left over is shared equally between the gaps of its
+   columns, so that no two columns stand closer than two others. */
 .table{display:flex;flex-direction:column;min-width:0}
-.tr{display:grid;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.tr{display:grid;justify-content:space-between;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3)}
 .tr>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr:nth-child(even){background:var(--stripe)}
-.tr.head{background:var(--panel-2);border-bottom-color:var(--line);font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-/* Every column sorts, and no sort moves a column: each column has a set width, and the arrow of a heading stands in the
-   heading's right margin (the gap between two columns), where it takes no room. */
-.tr.head>*{position:relative;overflow:visible;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
-.tr.head>.num{text-align:right}
+/* The rows of a list follow a table's: no line between them, one in two on a band, under what a row's own state or the
+   pointer gives it. */
+:where(.honour-line:nth-child(even of .honour-line),.match-row:nth-child(even of .match-row),.fixture:nth-child(even of .fixture),.fact:nth-child(even of .fact),.attribute:nth-child(even of .attribute),.highlight-row:nth-child(even of .highlight-row),.nation-line:nth-child(even of .nation-line),.result:nth-child(even of .result),.watch-list>li:nth-child(even)){background:var(--stripe)}
+.tr.head{border-bottom:1px solid var(--head-line);font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+/* Every column sorts, and no sort moves a column: each column has a set width, and the arrow of a heading follows its
+   label, in the gap after it, where it takes no room; in the last column it comes before the label, inside the table. */
+.tr.head>*{position:relative;justify-self:start;overflow:visible;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left;text-overflow:clip;color:inherit;cursor:pointer}
+.tr.head>.num{justify-self:end;text-align:right}
+.tr.head>.center{justify-self:center}
 .tr.head>*::after{content:"";position:absolute;right:-7px;top:50%;margin-top:-2px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:4px solid currentColor;visibility:hidden}
 .tr.head>.sorted{color:var(--strong)}
 .tr.head>.sorted::after{visibility:visible}
 .tr.head>.sorted.asc::after{border-top:0;border-bottom:4px solid currentColor}
+.tr.head>:last-child::after{right:auto;left:-7px}
+/* A player list: the same columns on every screen, each as wide as its heading or its longest value; the name from 120
+   up to --w-name. */
+.t-players .tr{grid-template-columns:36px minmax(120px,var(--w-name)) 54px 24px 32px 32px 48px 48px 78px 46px 72px 40px 30px 16px 16px 16px 32px}
 .tr.own{background:var(--own-row)}
 .tr.chosen{background:var(--good-soft)}
 .tr.lent{background:var(--info-soft)}
@@ -193,7 +239,7 @@
    play-off; red: relegation, elimination). A rank out of the marked places is a bare figure on the same centre. Nothing
    runs along the row: the row of the user's club is the only one coloured. The legend of the places shows the same badge,
    a square of 12. */
-.rank{display:inline-grid;place-items:center;flex:none;width:24px;height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-small)/1 var(--text);color:var(--muted)}
+.rank{display:inline-grid;place-items:center;flex:none;width:24px;height:var(--h-chip);border-radius:var(--radius-chip);font:700 var(--fs-small)/1 var(--text);color:var(--muted)}
 .rank.good,.legend i.good{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .rank.info,.legend i.info{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .rank.warn,.legend i.warn{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
@@ -209,19 +255,18 @@
 .rank.title{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text);color:var(--accent-ink)}
 /* A run in a cup, a selection's finals: a chip of 18 with the round reached, plain; a semi-final ringed in blue, a final in
    green, a title on the accent with its star. */
-.reached{display:inline-flex;align-items:center;gap:var(--s1);flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);color:var(--ink-2);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
+.reached{display:inline-flex;align-items:center;gap:var(--s1);flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius-chip);background:var(--panel-2);color:var(--ink-2);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
 .reached.semi{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .reached.final{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .reached.won{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-text);color:var(--accent-ink)}
 .reached svg{width:10px;height:10px;fill:currentColor}
 /* A change, signed, after the value it moved: green up, red down, muted when nothing moved. */
-.delta{display:inline-grid;place-items:center;flex:none;min-width:40px;height:var(--h-chip);padding:0 5px;border-radius:var(--radius);background:var(--panel-2);color:var(--muted);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
+.delta{display:inline-grid;place-items:center;flex:none;min-width:40px;height:var(--h-chip);padding:0 5px;border-radius:var(--radius-chip);background:var(--panel-2);color:var(--muted);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
 .delta.up{background:var(--good-soft);color:var(--good)}
 .delta.down{background:var(--bad-soft);color:var(--bad)}
 .with-delta{display:flex;align-items:center;justify-content:flex-end;gap:var(--s2)}
 /* The titles, a line each: the competition's badge, the title, when it was won, the count. */
-.honour-line{display:grid;grid-template-columns:32px minmax(0,1fr) auto 24px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
-.honour-line:last-child{border-bottom:0}
+.honour-line{display:grid;grid-template-columns:32px minmax(0,1fr) auto 24px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
 .honour-line>b{font-weight:600;color:var(--strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .honour-line>small{font-size:var(--fs-small);color:var(--muted);white-space:nowrap}
 .honour-line>strong{text-align:right;color:var(--strong)}
@@ -243,7 +288,7 @@
 .run i.up{color:var(--good)}
 .run i.down{color:var(--bad)}
 /* A match on one line: its day, the other side, its score. */
-.match-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.match-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3)}
 .match-row.next{background:var(--own-row)}
 /* A match on a line of a list, face to face: the side at home, the score, the other side, each mark against the score; under
    each side its scorers. The winner's name is in bold, in the accent's ink, and the other side's steps back to the running
@@ -253,8 +298,7 @@
    to it (the aggregate, and a shoot-out's mark on the side of the one who won it, alone after a single match): the figures of the match then tell nothing apart, nor do a leg's, and a list
    where a match has a storey keeps its room on every line (.wide). A line alone has the height of a table's row; scorers
    or a storey give it a second one. In a cup, each club's division stands at the two ends of the line (.tie). */
-.fixture{display:grid;grid-template-columns:minmax(0,1fr) var(--score-column,56px) minmax(0,1fr);align-items:center;align-content:center;gap:0 var(--s2);min-height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
-.fixture:last-child{border-bottom:0}
+.fixture{display:grid;grid-template-columns:minmax(0,1fr) var(--score-column,56px) minmax(0,1fr);align-items:center;align-content:center;gap:0 var(--s2);min-height:var(--h-row);padding:0 var(--s3)}
 .fixture:is(.with-scorers,:has(.fixture-stack)){padding-top:var(--s1);padding-bottom:var(--s1)}
 .fixture.wide{--score-column:88px}
 .fixture.tie{grid-template-columns:22px minmax(0,1fr) var(--score-column,56px) minmax(0,1fr) 22px}
@@ -268,15 +312,15 @@
 .fixture-side.lost{color:var(--ink-2)}
 .fixture>small{font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);color:var(--muted)}
 .fixture>.away+small{text-align:right}
-.fixture-score{display:block;justify-self:center;min-width:48px;height:var(--h-control-small);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);font:700 semi-condensed var(--fs-figure)/var(--h-control-small) var(--display);text-align:center;color:var(--muted);white-space:nowrap}
+.fixture-score{display:block;justify-self:center;min-width:48px;height:var(--h-control-small);padding:0 var(--s2);border-radius:var(--radius-chip);background:var(--panel-2);font:700 semi-condensed var(--fs-figure)/var(--h-control-small) var(--display);text-align:center;color:var(--muted);white-space:nowrap}
 .fixture-score b{color:var(--strong)}
 .fixture-score.settled{color:var(--ink-2)}
 .fixture-score.pending{background:none;font:400 var(--fs-small)/var(--h-control-small) var(--text)}
 .fixture-stack{grid-row:span 2;align-self:start;justify-self:center;display:grid;min-width:80px}
-.fixture-stack>.fixture-score{justify-self:stretch;border-radius:var(--radius) var(--radius) 0 0}
-.fixture-floor{display:flex;align-items:center;justify-content:center;gap:var(--s1);height:var(--h-chip);padding:0 var(--s2);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);background:var(--panel);font:600 var(--fs-small)/1 var(--text);color:var(--muted);white-space:nowrap}
+.fixture-stack>.fixture-score{justify-self:stretch;border-radius:var(--radius-chip) var(--radius-chip) 0 0}
+.fixture-floor{display:flex;align-items:center;justify-content:center;gap:var(--s1);height:var(--h-chip);padding:0 var(--s2);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius-chip) var(--radius-chip);background:var(--panel);font:600 var(--fs-small)/1 var(--text);color:var(--muted);white-space:nowrap}
 .fixture-floor small{font:700 var(--fs-micro)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase}
-.fixture-score.pending+.fixture-floor{border-top:1px solid var(--line);border-radius:var(--radius)}
+.fixture-score.pending+.fixture-floor{border-top:1px solid var(--line);border-radius:var(--radius-chip)}
 .fixture-floor.home{justify-content:flex-start}
 .fixture-floor.away{justify-content:flex-end}
 .fixture-scorers{grid-row:2;align-self:start;font-size:var(--fs-small);line-height:14px;color:var(--muted)}
@@ -286,22 +330,22 @@
 .fixture.tie .fixture-scorers.away{grid-column:4}
 .legend{display:flex;align-items:center;gap:var(--s3);font-size:var(--fs-small);color:var(--muted)}
 .legend>span{white-space:nowrap}
-.legend i{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:var(--radius);vertical-align:-2px}
+.legend i{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:var(--radius-chip);vertical-align:-2px}
 
 /* Facts and tiles. */
-.fact{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);border-bottom:1px solid var(--row-line)}
+.fact{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row)}
 .fact>span{color:var(--muted)}
 .fact>strong{display:flex;align-items:center;gap:var(--s2);font-weight:600;color:var(--strong)}
 .tiles{display:flex;gap:var(--s2)}
-.tile{display:flex;flex-direction:column;justify-content:center;gap:2px;flex:1;min-width:96px;padding:6px var(--s3);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.tile{display:flex;flex-direction:column;justify-content:center;gap:2px;flex:1;min-width:96px;padding:6px var(--s3);border:1px solid transparent;border-radius:var(--radius-box);background:var(--panel-2)}
 .tile strong{display:flex;align-items:baseline;gap:6px;font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
 .tile em{font:600 var(--fs-small)/1 var(--text);font-style:normal}
 /* A tile grades its ground as the badge of its note does (a player's level, his potential). One tile holds several figures
    in columns, a line between two, each under its label: what a player did for his selection, its flag over its code, then
    his caps and his goals; his market value and the fee asked. Graded columns fill the tile, each on the ground of its own
    badge, the line between two in the panel's colour: his level and his potential. */
-.tile.graded,.tile.split>.graded{background:hsl(var(--hue) 62% 91%)}
-.tile.graded{border-color:hsl(var(--hue) 45% 80%)}
+.tile.graded,.tile.split>.graded{background:hsl(var(--hue) 70% 90%)}
+.tiles.row .tile{border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card)}
 :is(.tile.graded,.tile.split>.graded) :is(.label,strong){color:hsl(var(--hue) 65% 26%)}
 .tile.split{flex-direction:row;align-items:stretch;justify-content:flex-start;gap:var(--s3)}
 .tile.split>*{display:flex;flex-direction:column;justify-content:center;gap:2px}
@@ -319,7 +363,7 @@
    grid has as many as leave them that room, down to one. */
 .attributes-grid{--attribute-column:140px;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--attribute-column),1fr));column-gap:var(--s4);padding:0 var(--s3)}
 .composites-group .attributes-grid{--attribute-column:180px}
-.attribute{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);border-bottom:1px solid var(--row-line);white-space:nowrap}
+.attribute{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);white-space:nowrap}
 .attribute.key>span:first-child{font-weight:700}
 .attribute.key>span:first-child::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:middle}
 /* Attributes in columns, on a player's page: the Jeu section, then one column per section, its strip on one band with the
@@ -332,12 +376,11 @@
 .attribute-column+.attribute-column{border-left:1px solid var(--row-line)}
 .attribute-column>.section-title{border-top:0}
 .attribute-rows{padding:0 var(--s3)}
-.attribute-rows>.attribute:last-child{border-bottom:0}
 .others-column .attribute>span:first-child{color:var(--muted)}
 
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
    graded ground with its border, a competition an outline (a solid black for a European cup). */
-.position,.rating,.score,.tag,.comp{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px;border-radius:var(--radius);white-space:nowrap}
+.position,.rating,.score,.tag,.comp{display:inline-grid;place-items:center;flex:none;height:var(--h-chip);padding:0 5px;border-radius:var(--radius-chip);white-space:nowrap}
 /* A position is as wide whatever its code, so what follows it lines up; a word in its place (REMP, SORTI) is as wide as it reads. */
 .position{width:32px;padding:0;background:var(--def);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
 .position.gk{background:var(--gk)}
@@ -352,11 +395,11 @@
    inline, so the underline under the pointer reaches the name only. */
 .comp-link>.comp{margin-right:6px}
 .tile .label .comp-link>.comp{margin-right:var(--s2)}
-.rating{min-width:30px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font:600 var(--fs-small)/1 var(--text)}
-.rating.graded{background:hsl(var(--hue) 62% 91%);color:hsl(var(--hue) 65% 26%);border-color:hsl(var(--hue) 45% 80%)}
+.rating{min-width:30px;border:1px solid transparent;background:var(--panel-2);color:var(--ink);font:600 var(--fs-small)/1 var(--text)}
+.rating.graded{background:hsl(var(--hue) 78% 89%);color:hsl(var(--hue) 72% 26%)}
 .rating.neutral{color:var(--muted)}
 .h0{--hue:4}.h30{--hue:28}.h60{--hue:50}.h90{--hue:88}.h120{--hue:135}
-.cause{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius);background:var(--panel-3);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text)}
+.cause{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius-chip);background:var(--panel-3);color:var(--ink-2);font:700 var(--fs-micro)/1 var(--text)}
 .score{min-width:40px;background:var(--panel-2);color:var(--ink);font:700 var(--fs-small)/1 var(--text)}
 .score.V{background:var(--good-soft);color:var(--good)}
 .score.N{background:var(--warn-soft);color:var(--warn)}
@@ -367,16 +410,16 @@
 .tag.open{background:var(--good-soft);color:var(--good)}
 .tag.alert{background:var(--bad-soft);border-color:var(--bad-line);color:var(--bad);font-size:var(--fs-small);font-weight:600;letter-spacing:0;text-transform:none}
 /* Where a player stands, in a sentence: on the transfer list at its fee, on loan until a day, a counter-offer. */
-.pill{display:inline-flex;align-items:center;flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius);background:var(--good-soft);color:var(--good);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
+.pill{display:inline-flex;align-items:center;flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius-chip);background:var(--good-soft);color:var(--good);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}
 .form{display:inline-flex;gap:2px}
-.form i{display:grid;place-items:center;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius);font:700 var(--fs-micro)/1 var(--text)}
+.form i{display:grid;place-items:center;width:var(--h-chip);height:var(--h-chip);border-radius:var(--radius-chip);font:700 var(--fs-micro)/1 var(--text)}
 .form i.V{background:var(--good-soft);color:var(--good)}
 .form i.N{background:var(--warn-soft);color:var(--warn)}
 .form i.D{background:var(--bad-soft);color:var(--bad)}
 .count{display:inline-grid;place-items:center;min-width:var(--h-chip);height:var(--h-chip);padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font:700 var(--fs-micro)/1 var(--text)}
 /* A club's name always follows its dot, a country's its flag. The dot is a square at the charter's radius: the ground of the
    club's band (its first colour, or its second when the first is close to white), its other colour in a corner. */
-.kit-dot{display:inline-block;flex:none;width:14px;height:14px;border-radius:var(--radius);box-shadow:inset 0 0 0 1px #0000003d}
+.kit-dot{display:inline-block;flex:none;width:14px;height:14px;border-radius:var(--radius-chip);box-shadow:inset 0 0 0 1px #0000003d}
 .flag{display:inline-block;flex:none;width:16px;height:12px;box-shadow:0 0 0 1px #0a141e1f}
 .nation{display:inline-flex;align-items:center;gap:6px}
 /* In a European cup, where clubs of several countries meet, a club's name is followed by the flag of its country, 6 apart: a
@@ -396,7 +439,7 @@
    words of his page. Rows of 26: an action and, on its right in the muted ink, where it stands; a line between two groups;
    where nothing can be decided, the player's state alone. An action that cannot be taken stays in its place, dimmed, its
    reason in a tooltip. */
-.menu{display:inline-flex;flex-direction:column;min-width:216px;padding:var(--s1) 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:0 4px 12px #0a141e33;font:400 var(--fs-body)/18px var(--text);white-space:nowrap;color:var(--ink)}
+.menu{display:inline-flex;flex-direction:column;min-width:216px;padding:var(--s1) 0;border-radius:var(--radius-box);background:var(--panel);box-shadow:var(--shadow-float);font:400 var(--fs-body)/18px var(--text);white-space:nowrap;color:var(--ink)}
 .menu>:is(button,a){display:flex;align-items:center;justify-content:space-between;gap:var(--s6);flex:none;height:var(--h-row);padding:0 var(--s3);border:0;background:none;text-align:left}
 .menu>:is(button,a)>span,.menu>p{color:var(--muted)}
 /* The line of what is shown, in a list to pick one from: the wash of a picked row. */
@@ -476,6 +519,7 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 /* A club's header: the band in its colours, its tabs under it. Nothing stands over the name: what places it follows it
    on its line, smaller (a club's league after its flag, a player's club; a selection's flag, as high as its capitals). */
 .hero{position:relative;display:flex;align-items:center;gap:var(--s4);flex:none;height:88px;padding:0 var(--s4) 0 var(--s3);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 160% at 12% 0,#ffffff3d 0,#ffffff00 46%),linear-gradient(0deg,#00000029 0,#00000000 60%);box-shadow:inset 0 1px 0 #ffffff40;pointer-events:none}
 .hero-sash{position:absolute;inset:0;clip-path:polygon(54% 0,61% 0,53% 100%,46% 100%)}
 .hero-sash.thin{clip-path:polygon(62.5% 0,64% 0,56% 100%,54.5% 100%)}
 .hero>:not(.hero-sash){position:relative}
@@ -490,7 +534,7 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 /* A selection's flag follows its name: as high as its capitals (28 of its 40), on its baseline, 16 after it. */
 .hero-name>.hero-flag{flex:none;width:37px;height:28px;margin-left:var(--s1);object-fit:cover;box-shadow:0 0 0 1px #0a141e1f,0 1px 2px #0a141e59}
 .hero .tiles{margin-left:auto}
-.hero .tile{flex:none;border-color:transparent;box-shadow:0 1px 3px #0a141e2e}
+.hero .tile{flex:none;background:var(--panel);box-shadow:0 1px 2px #0a141e26,0 4px 12px -4px #0a141e33}
 /* A competition's header is a club's too. The emblem of a European cup, of the Euro or of the World Cup stands alone on
    the band, at its height, in a box as wide whatever the emblem: the name keeps its place from one competition to the
    next. A league or a national cup has the flag of its country on the disc, as its selection has. Its one tile names who
@@ -546,7 +590,7 @@ span.entity-step svg{opacity:.3}
 .match-facts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2)}
 
 /* The pitch: one grass, one set of lines, the side attacking upwards. */
-.pitch{position:relative;flex:none;border-radius:var(--radius);overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
+.pitch{position:relative;flex:none;border-radius:var(--radius-box);box-shadow:inset 0 0 0 1px #00000014,inset 0 0 120px #0000002e;overflow:hidden;background:repeating-linear-gradient(0deg,var(--pitch-a) 0 8.3333%,var(--pitch-b) 8.3333% 16.6667%)}
 .pitch::before{content:"";position:absolute;inset:8px;border:1.5px solid var(--pitch-line);background:linear-gradient(0deg,transparent calc(50% - .75px),var(--pitch-line) calc(50% - .75px) calc(50% + .75px),transparent calc(50% + .75px));pointer-events:none}
 .pitch::after{content:"";position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border:1.5px solid var(--pitch-line);border-radius:50%;pointer-events:none}
 .pitch-box{position:absolute;left:50%;bottom:8px;width:56%;height:15%;transform:translateX(-50%);border:1.5px solid var(--pitch-line);border-bottom:0;pointer-events:none}
@@ -602,7 +646,7 @@ span.entity-step svg{opacity:.3}
 /* The block under the shirt: lines of 16 on the dark of the label, as many for every player of a pitch, an empty one
    keeping its height. His name, then his note in its colour, lightened to read on the dark, and 8 further what he did, 4
    between two facts. Picked, the block takes the accent; unable to play, the red; an empty place has no ground. */
-.player-block{position:relative;display:grid;grid-auto-rows:16px;width:max-content;min-width:56px;border-radius:var(--radius);overflow:hidden;background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/16px var(--text);white-space:nowrap}
+.player-block{position:relative;display:grid;grid-auto-rows:16px;width:max-content;min-width:56px;border-radius:var(--radius-chip);overflow:hidden;background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/16px var(--text);white-space:nowrap}
 .player-block>span{display:flex;align-items:center;justify-content:center;gap:var(--s1);min-width:0;padding:0 var(--s1)}
 .player-block>.block-name{display:block;max-width:76px;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .block-note{font-weight:700;color:hsl(var(--hue) 80% 72%)}
@@ -621,13 +665,13 @@ span.entity-step svg{opacity:.3}
 .form-arrow.down{background:var(--bad)}.form-arrow.down::before{top:5px;border-top:5px solid #fff}
 /* The bench, under a pitch. */
 .bench{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s1)}
-.bench-slot{display:flex;align-items:center;gap:6px;min-width:0;height:var(--h-row);padding:0 var(--s2);border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);font-weight:600;color:var(--strong);white-space:nowrap;overflow:hidden}
+.bench-slot{display:flex;align-items:center;gap:6px;min-width:0;height:var(--h-row);padding:0 var(--s2);border-radius:var(--radius);background:var(--panel-2);font-weight:600;color:var(--strong);white-space:nowrap;overflow:hidden}
 
 /* Match report: under its header, what happened minute by minute and the two sides' figures face to face. Nothing names
    a side again: the one at home is on the left, as in the band. */
 /* A highlight is one line of 26, whatever the names: its marks at the side's edge (a second yellow card, a yellow then a
    red), the player by his short name, and after a goal's scorer the passer, smaller and muted, cut before him. */
-.highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.highlight-row{display:grid;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);align-items:center;height:var(--h-row);padding:0 var(--s3)}
 .highlight{display:flex;align-items:center;gap:var(--s2);min-width:0}
 .highlight.away{flex-direction:row-reverse}
 .highlight-names{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
@@ -719,7 +763,7 @@ span.entity-step svg{opacity:.3}
    command that deletes it shows under the pointer only. The mark of resuming is drawn as the brand's: a square of the ink,
    a save drawn in the ground. */
 .doors{display:grid;grid-template-rows:auto minmax(0,1fr);gap:var(--s2)}
-.door{display:grid;grid-template-columns:var(--h-bar-control) minmax(0,1fr);align-items:center;align-content:start;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius);background:var(--panel-2);color:var(--strong)}
+.door{display:grid;grid-template-columns:var(--h-bar-control) minmax(0,1fr);align-items:center;align-content:start;gap:var(--s4);min-width:0;padding:var(--s4);border-radius:var(--radius-box);background:var(--panel-2);color:var(--strong)}
 .door.main{background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .door>svg{width:var(--h-bar-control);height:var(--h-bar-control)}
 .door>.card{grid-column:1/-1}
@@ -729,15 +773,30 @@ span.entity-step svg{opacity:.3}
 .saves-list .tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 148px 156px var(--h-control-small);cursor:pointer}
 .saves-list .tr>.button{visibility:hidden}
 .saves-list .tr:is(:hover,.hover,:focus-within)>.button{visibility:visible}
+/* The name a new game is saved under, in the bar before Commencer: a field of 40 on the ground of the next matches, the save
+   of « Reprendre » at its head, its name in the figures' type. Written in, it turns white, ringed with the accent's text. A
+   name already saved under, or one a save cannot have, takes the bad wash and line, its save in red. */
+.slot-field{display:flex;align-items:center;gap:var(--s2);flex:none;width:240px;height:var(--h-bar-control);padding:0 var(--s3);border-radius:var(--radius-box);background:var(--panel-2)}
+.slot-field>svg{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linejoin:round}
+.slot-field>input{flex:1;min-width:0;height:100%;padding:0;border:0;border-radius:0;outline:0;background:none;box-shadow:none;font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong)}
+.slot-field:is(:focus-within,.focus){background:var(--panel);box-shadow:inset 0 0 0 1px var(--accent-text)}
+.slot-field:is(.taken,.invalid){background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad-line)}
+.slot-field:is(.taken,.invalid)>svg{stroke:var(--bad)}
+.slot-field.invalid>input{color:var(--bad)}
 /* A box to tick, a badge's 18: ticked, it takes the accent and its ink. */
-.check{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--accent-ink)}
+.check{display:inline-grid;place-items:center;flex:none;width:var(--h-chip);height:var(--h-chip);padding:0;border:1px solid var(--line);border-radius:var(--radius-chip);background:var(--panel);color:var(--accent-ink)}
 .check svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
 .check[aria-pressed="true"]{border-color:var(--accent-text);background:var(--accent)}
 .check[aria-pressed="true"] svg{visibility:visible}
+/* An option turned on or off by a word, the box before it, the details in its tooltip (`.check-option`): the options of
+   the Composition's automatic lineup. Under the pointer, the ground of a control. */
+.check-option{display:inline-flex;align-items:center;gap:6px;flex:none;height:var(--h-control);padding:0 var(--s2) 0 6px;border:0;border-radius:var(--radius);background:none;font:600 var(--fs-body)/1 var(--text);color:var(--ink);white-space:nowrap;cursor:pointer}
+.check-option[aria-pressed="true"]>.check{border-color:var(--accent-text);background:var(--accent)}
+.check-option[aria-pressed="true"]>.check svg{visibility:visible}
 /* A nation on one line of a list to choose from: the box that plays it, its flag and its name, the divisions it plays, its
    clubs. The divisions are a choice up to one (.segmented.range): every option down to the lowest played carries the mark
    of what is open. Left out, the nation is muted, its flag greyed, its divisions dimmed. */
-.nation-line{display:grid;grid-template-columns:var(--h-chip) minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+.nation-line{display:grid;grid-template-columns:var(--h-chip) minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
 .nation-line:last-child{border-bottom:0}
 .nation-line>.num{color:var(--muted)}
 .nation-line.off>.nation{color:var(--muted)}
@@ -754,7 +813,7 @@ span.entity-step svg{opacity:.3}
 .palette-head>svg{width:16px;height:16px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .palette-head>input{flex:1;min-width:0;height:100%;padding:0;border:0;outline:0;background:none;font-size:var(--fs-figure);color:var(--strong)}
 .results>p{height:var(--h-row);padding:0 var(--s3);line-height:var(--h-row);color:var(--muted)}
-.result{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line);color:var(--ink)}
+.result{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);color:var(--ink)}
 .result:last-child{border-bottom:0}
 .result>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .result>:first-child{display:grid;place-items:center;overflow:visible}
@@ -770,23 +829,19 @@ span.entity-step svg{opacity:.3}
 .tiles.row .label{white-space:nowrap}
 .presentation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:start}
 /* Its kits, home first, on the raised ground (a white kit would melt into the card); each named by its tooltip only. */
-.kits{display:flex;justify-content:center;gap:var(--s6);padding:var(--s3);background:var(--panel-2)}
+.kits{display:flex;justify-content:center;gap:var(--s6);padding:var(--s3);background:radial-gradient(110% 75% at 50% 18%,var(--panel) 0,var(--panel-2) 72%)}
 .kits>a{display:block;min-width:0}
 .kit-outfit{display:block;width:165px;max-width:100%;height:auto;aspect-ratio:320/725;object-fit:contain;filter:drop-shadow(0 1px 1px #00000066)}
 /* Under a name of its équipe-type, the season: his matches, his goals, the ball after them, in the pale blue of a series,
    which no note takes. */
 .block-season{display:inline-flex;align-items:center;gap:3px;color:var(--series-1-soft)}
-/* What asks for a decision and the season's movements: a line of 26 each; a side of the movements under a heading that
-   counts it and gives its fees on its right. */
-.watch-list,.season-moves{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
-.watch-list>li,.season-moves>li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3);border-bottom:1px solid var(--row-line)}
+/* What asks for a decision: a line of 26 each. */
+.watch-list{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.watch-list>li{display:grid;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
 .watch-list>li{grid-template-columns:32px minmax(0,1fr) auto}
-.season-moves>li{grid-template-columns:32px minmax(0,1fr) minmax(0,120px) 56px}
-:is(.watch-list,.season-moves)>li:last-child{border-bottom:0}
-:is(.watch-list,.season-moves)>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.season-moves>li>:last-child{text-align:right}
+.watch-list>li:last-child{border-bottom:0}
+.watch-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .watch-facts{display:flex;align-items:center;gap:var(--s3)}
-.section-title>b{margin-left:auto;font-weight:600;color:var(--strong)}
 /* Players ranked on one figure: a line of 26 each, his rank, his name, a bar of 8 against the first of the list (its end
    rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) on the
    lists of the Présentation. */
@@ -794,8 +849,10 @@ span.entity-step svg{opacity:.3}
 .leader-bars>li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row)}
 .leader-bars>li>:first-child{font-weight:600;text-align:right;color:var(--muted)}
 .leader-bars>li>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--strong)}
-.leader-bars i{display:block;height:8px;border-radius:0 4px 4px 0;background:var(--series-1)}
-.leader-bars.soft i{background:var(--series-1-soft)}
+.leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
+.club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
+.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leader-bars.soft i{background:var(--bar-soft)}
 .leader-bars b{text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
 
@@ -808,16 +865,20 @@ span.entity-step svg{opacity:.3}
 .prose a{color:var(--accent-text)}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
-:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.season-moves>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
 a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
+/* A match of the bar opens as a whole: a played one takes the ground, one to come, tinted, a veil of its turquoise. */
+.last-match:is(:hover,.hover){background:var(--panel-3)}
+.next-match:is(:hover,.hover){background:color-mix(in srgb,var(--c4) 12%,var(--c4-soft))}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
 .app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.hero,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
 /* A band that opens its page as a whole: the veil of its ink, its sash over it. */
 .app a.hero:is(:hover,.hover){box-shadow:inset 0 0 0 100vmax var(--hero-veil)}
-:is(.nav a,.segmented>a,.segmented>button,.button):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+:is(.nav a,.button):not(.active,.primary,.danger,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
+.segmented>:is(a,button):not(.active,:disabled,[aria-disabled="true"]):is(:hover,.hover){background:var(--track-hover);color:var(--strong)}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
    their colour. */
 :is(a.entity-step,.entity-menu:not([open])>summary):is(:hover,.hover){background:var(--hero-veil,var(--panel-3))}
@@ -825,11 +886,60 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 :is(.season>:is(button,a):not(:disabled,[aria-disabled="true"]),.season-pick:not([open])>summary):is(:hover,.hover){background:var(--panel-3)}
 .app :is(.season a,.menu>a):is(:hover,.hover){text-decoration:none}
 :is(.tabs a,.tr.head>*):is(:hover,.hover){color:var(--strong)}
-:is(.button.primary,.cta,.door.main):is(:hover,.hover){background:var(--accent-hover)}
+:is(.button.primary,.cta,.door.main):is(:hover,.hover){background-color:var(--accent-hover)}
 .check:not([aria-pressed="true"]):is(:hover,.hover){background:var(--panel-3)}
+.check-option:is(:hover,.hover){background:var(--panel-3);color:var(--strong)}
 .button.danger:is(:hover,.hover){background:var(--bad-soft)}
 /* On a pitch, a player's name is what underlines. */
 .pitch-player:is(:hover,.hover) .block-name{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+
+/* What leads on — « Voir », « Continuer », the next page — ends on a chevron, drawn and not a character, in the colour of
+   what carries it and centred on its place; on the main action, in a disc of its ink. Back, the same turned over. */
+.go{position:relative;display:inline-block;flex:none;width:.625em;height:1em;vertical-align:-.15em}
+.go::before,.go::after{position:absolute;left:50%;top:50%;translate:-50% -50%}
+.go::after{content:"";width:100%;height:100%;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2.75 3.5 7.25 8l-4.5 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 50% 50%/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2.75 3.5 7.25 8l-4.5 4.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 50% 50%/contain no-repeat}
+.go.back::after{scale:-1 1}
+:is(.cta,.button.primary) .go::before{content:"";width:1.5em;height:1.5em;border-radius:50%;background:#0b121a14}
+:is(.cta,.button.primary) .go::after{height:.9em}
+/* The page of a club, a selection, a player or a competition takes the colours of its band: --club-fill fills what is
+   open, --club-ink is written on it, --club is the colour that reads on a panel, --club-wash its wash. Its ground takes
+   a breath of the band's colour, stronger at the top. */
+.club-page{--club-wash:color-mix(in srgb,var(--club) 10%,var(--panel));background:linear-gradient(180deg,color-mix(in srgb,var(--club-fill) 12%,var(--bg)) 0,color-mix(in srgb,var(--club-fill) 6%,var(--bg)) 40%,color-mix(in srgb,var(--club-fill) 4%,var(--bg)) 100%)}
+
+/* The mercatos of a club (« Mercatos d'un club »): a block per season, the latest first, its name and its balance, then a
+   line per window. The spending runs left of an axis in the first series, the takings right of it in the second, each bar
+   its share of the largest amount of the game, each amount at its end in the deep tone of its series. The season shown is
+   washed in the page's colour and marked at its edge; a window not open yet keeps its axis, dashed. */
+.mercatos{display:flex;flex-direction:column;padding-bottom:var(--s2)}
+.mercato-season{display:block;width:100%;height:auto;padding:var(--s1) 0;border:0;border-radius:0;background:none;box-shadow:none;font:inherit;color:inherit;text-align:left}
+.mercato-season.picked{background:var(--club-wash,var(--own-row));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
+.mercato-head{display:flex;align-items:center;justify-content:space-between;height:var(--h-row);padding:0 var(--s3);font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong)}
+.mercato-head>b.good{color:var(--good)}
+.mercato-head>b.bad{color:var(--bad)}
+.mercato-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,1fr);align-items:center;height:var(--h-row);padding:0 var(--s3)}
+.mercato-window{color:var(--muted)}
+.mercato-half{display:flex;align-items:center;gap:var(--s2);height:100%}
+.mercato-half.spent{justify-content:flex-end;padding-right:var(--s1);box-shadow:inset -1px 0 0 var(--ink-2)}
+.mercato-half.earned{padding-left:var(--s1)}
+.mercato-half>i{display:block;flex:none;width:calc((100% - 64px)*var(--share));height:12px}
+.mercato-half.spent>i{border-radius:var(--radius-chip) 0 0 var(--radius-chip);background:var(--series-1)}
+.mercato-half.earned>i{border-radius:0 var(--radius-chip) var(--radius-chip) 0;background:var(--series-2)}
+.mercato-half>b{font-weight:400;white-space:nowrap}
+.mercato-half.spent>b{color:var(--series-1-deep)}
+.mercato-half.earned>b{color:var(--series-2-deep)}
+.mercato-key .mercato-half{box-shadow:none}
+.mercato-key .mercato-half>b{font-size:var(--fs-small);line-height:14px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase}
+.mercato-row.future .mercato-half.spent{box-shadow:inset -1px 0 0 var(--line)}
+.mercato-season:where(:not(.picked)):is(:hover,.hover){background:var(--panel-3)}
+/* A tile of a record: the player, the other club after a chevron, the amount at its end. */
+.tiles.row>.tile.record{flex:2 1 0;align-items:stretch;min-width:0;text-align:left}
+.tile.record strong{min-width:0;white-space:nowrap}
+.tile strong.good{color:var(--good)}
+.tile strong.bad{color:var(--bad)}
+.tile.record small{display:inline-flex;align-items:center;gap:var(--s1);min-width:0;font:400 var(--fs-body)/18px var(--text);color:var(--muted)}
+.tile.record b{margin-left:auto;font:inherit}
+/* The foot of a table: what its columns add up to, under them, on the ground of a tile, a pale line over it. */
+.tr.foot{border-top:1px solid var(--head-line);background:var(--panel-2);font-weight:600;color:var(--strong)}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

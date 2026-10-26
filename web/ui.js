@@ -313,6 +313,9 @@ export const halfEnd = events => events.find(event => event.kind === 'period_end
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
 export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
+// What leads on (« Voir », « Continuer », the next page) ends on the charter's chevron, drawn by its sheet (.go); « Précédent »
+// has it turned over.
+export const GO='<span class="go" aria-hidden="true"></span>',BACK='<span class="go back" aria-hidden="true"></span>';
 export const card = (title, content, action='', className='') => `<section class="card${className?` ${className}`:''}"><div class="card-head"><h2>${escape(title)}</h2>${action}</div>${content}</section>`;
 // A card that folds what is secondary (what `content` marks `fold-more`): its whole head opens and closes it, a bare arrow at
 // its end (app.js turns it). The choice is kept for each `key`, from one match to the next and across reloads.
@@ -385,7 +388,7 @@ export function sortTable(table, column, direction) {
 // The active column carries its direction, so a click never has to guess it from the URL; text columns start A→Z.
 // The arrow comes from the style sheet, like on the tables sorted in the browser.
 export const sortButton = (key, label, sorted, order, first='desc') => `<button data-first="${first}"${key===sorted?` data-order="${order}"`:''} data-sort="${key}">${label}</button>`;
-export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>← Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant →</button></div></div>`;}
+export function pager(data) {if(data.total<=data.page_size) return `<div class="pager">${number(data.total)} résultat${data.total>1?'s':''}</div>`;return `<div class="pager"><span>${(data.page-1)*data.page_size+1}–${Math.min(data.page*data.page_size,data.total)} sur ${number(data.total)}</span><div><button data-page="${data.page-1}" ${data.page<=1?'disabled':''}>${BACK} Précédent</button><button data-page="${data.page+1}" ${data.page*data.page_size>=data.total?'disabled':''}>Suivant ${GO}</button></div></div>`;}
 // The same pages from the head of a card: the range shown and two square steps; nothing for a list that fits on one page.
 export function headPager(data) {
  if(data.total<=data.page_size)return '';
@@ -582,15 +585,17 @@ export const query = values => {const result=new URLSearchParams();Object.entrie
 // The steps of a series read one at a time, a season or an edition: an arrow to the one before, the one shown, which opens
 // the list of them all, an arrow to the one after (docs/charte-graphique.md, « Pas de saison »). `items` is the series from
 // the latest to the oldest, each {value, label, note}; `shown` the value of the one on screen. A step puts its value in the
-// address under `param`; `href` builds a link instead, for a series the address keeps in its path. An arrow with nothing
-// beyond it stays in place, greyed; labels of different lengths share the width of the longest, so that the arrows keep
-// theirs. Every screen steps through its seasons with it.
+// address under `param`; `href` builds a link instead, for a series the address keeps in its path; `attribute` names the
+// data attribute of a series a screen handles itself (the Composition's formations). A series in its own order, not the
+// latest first, is `forward`: its first item is at the left end. An item `divided` follows a line in the list. An arrow
+// with nothing beyond it stays in place, greyed; labels of different lengths share the width of the longest, so that the
+// arrows keep theirs. Every screen steps through its seasons with it.
 const CHEVRONS={previous:'M14.5 6.5 9 12l5.5 5.5',next:'M9.5 6.5 15 12l-5.5 5.5',open:'M7 10l5 5 5-5'};
 const chevron=way=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${CHEVRONS[way]}"/></svg>`;
-export function steps(items,shown,{param='saison',name='Saison',href=null}={}){
+export function steps(items,shown,{param='saison',name='Saison',href=null,attribute=null,forward=false}={}){
  const index=items.findIndex(item=>item.value===shown);
  if(index<0)return '';
- const go=item=>href?`href="${escape(href(item.value))}"`:`data-param="${param}" data-param-value="${item.value}"`;
+ const go=item=>href?`href="${escape(href(item.value))}"`:attribute?`data-${attribute}="${escape(item.value)}"`:`data-param="${param}" data-param-value="${item.value}"`;
  const arrow=(item,way,told)=>{
   const said=`aria-label="${name} ${told}"`;
   if(href)return `<a ${said} ${item?go(item):'aria-disabled="true"'}>${chevron(way)}</a>`;
@@ -598,12 +603,12 @@ export function steps(items,shown,{param='saison',name='Saison',href=null}={}){
  };
  const line=item=>{
   const state=`role="menuitemradio" aria-checked="${item.value===shown}" ${go(item)}`,text=`${escape(item.label)}${item.note?`<span>${escape(item.note)}</span>`:''}`;
-  return href?`<a ${state}>${text}</a>`:`<button type="button" ${state}>${text}</button>`;
+  return (item.divided?'<hr>':'')+(href?`<a ${state}>${text}</a>`:`<button type="button" ${state}>${text}</button>`);
  };
- const lengths=items.map(item=>item.label.length),widest=Math.max(...lengths);
- return `<div class="season" role="group" aria-label="${name}">${arrow(items[index+1],'previous','précédente')}`
+ const lengths=items.map(item=>item.label.length),widest=Math.max(...lengths),[before,after]=forward?[items[index-1],items[index+1]]:[items[index+1],items[index-1]];
+ return `<div class="season" role="group" aria-label="${name}">${arrow(before,'previous','précédente')}`
   +`<details class="season-pick"><summary${lengths.some(length=>length!==widest)?` style="--chars:${widest}"`:''}>${escape(items[index].label)}${chevron('open')}</summary>`
-  +`<div class="menu" role="menu" aria-label="${name}s">${items.map(line).join('')}</div></details>${arrow(items[index-1],'next','suivante')}</div>`;
+  +`<div class="menu" role="menu" aria-label="${name}s">${items.map(line).join('')}</div></details>${arrow(after,'next','suivante')}</div>`;
 }
 // The steps of the seasons, from what the API tells: the one shown (`season`), the list of those to step through, the
 // latest first (`seasons`; its neighbours alone when the list is not given), and the one under way (`current_season`).

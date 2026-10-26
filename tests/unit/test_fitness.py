@@ -166,12 +166,11 @@ def test_an_older_save_takes_the_recalibrated_fatigue_rules_and_keeps_those_chos
     rules["moteur_match"]["notes_joueurs"]["arret"] = 0.10
     rules["ia_gestion"]["selection"]["seuil_rotation_fatigue"] = 0.7  # chosen by hand: kept
     payload["config_hash"] = hashlib.sha256(json.dumps(rules, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
-    for player in payload["world"]["players"].values(): del player["load"]
+    for player in payload["world"]["players"].values(): player.pop("load", None)
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("old")
     cfg = restored.config
     assert all(player.load == 0 for player in restored.players.values())
     assert cfg.states.fitness == config.states.fitness
     assert cfg.states.injuries == config.states.injuries
-    assert cfg.engine.player_ratings.saving == config.engine.player_ratings.saving
     assert cfg.management.selection.rotation_fitness == 0.7
