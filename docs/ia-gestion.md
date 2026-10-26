@@ -72,7 +72,7 @@ annule l'effet du temps de jeu et de l'attractivité.
 
 ## Utilité et effectif cible
 
-Le profil de titulaires vient de la formation : exactement onze places. Ajouter
+Le profil de titulaires vient d'une formation : exactement onze places. Ajouter
 les places de rotation et de doublure configurées, réparties pour couvrir ses
 postes, avec au moins deux gardiens. Aucun joueur ne remplit deux places d'un
 même profil. La polyvalence est une possibilité d'affectation, pas un doublon.
@@ -85,8 +85,22 @@ suivent les proportions de postes de la formation, avec départage stable par
 poste. La sélection des postes à couvrir n'est pas recalculée pour favoriser
 artificiellement chaque candidat évalué.
 
+La qualité d'effectif est la meilleure de ces qualités sur toutes les formations, pas
+celle de la formation jouée (`squad_quality`, `_best_assignment`) : un joueur vaut ce
+qu'il apporte au meilleur système possible, et une recrue qui rend une autre formation
+meilleure a de la valeur. Le statut d'un joueur (`squad_places`) se lit dans la formation
+de la meilleure affectation profonde, les besoins (`needs_for`) dans celle de la meilleure
+affectation. La formation jouée garde les décomptes : pénurie, réserve, prêts, renforts de
+coupe, numéros. Le calcul reste exact sans essayer toutes les formations : chacune a un
+plafond (les places de chaque poste remplies par ses meilleurs candidats, comme si un joueur
+pouvait tenir plusieurs postes), et les formations sont essayées du plus haut plafond au plus
+bas, jusqu'à ce qu'aucune ne puisse dépasser le meilleur score trouvé. Une recrue ajoute au
+plus sa meilleure valeur pondérée ; un départ ne fait rien gagner, et ne coûte rien dans une
+formation où le joueur n'a pas de place.
+
 - Recrutement : qualité(effectif + candidat) - qualité(effectif).
-- Conservation/renouvellement : qualité(effectif) - qualité(effectif sans joueur).
+- Conservation/renouvellement : le club ne prolonge que si la qualité baisse sans le joueur
+  (`loses_quality_without`).
 - Vente : prix selon le statut du joueur dans l'effectif (voir ci-dessous).
 
 Une bonne doublure a donc une utilité positive même si elle n'améliore pas le
@@ -595,7 +609,16 @@ l'utilisateur prête (`lend`, à un club de `takers`) et emprunte (`borrow`, un 
 
 ## Composition et remplacements
 
-Exclure blessés, suspendus et joueurs en réserve ; retenir la formation préférée si elle est
+La formation d'un club de l'IA (`Club.formation`) est celle que son équipe première remplit le
+mieux (`core.ai.formation.best_formation`) : moyenne par place de la meilleure affectation,
+niveau au poste × affinité, sans forme, condition ni moral. L'équipe première compte les
+joueurs empruntés, ni la réserve ni les blessés pour plus de `formations.choix.blessure_longue_jours`
+jours. Le choix est refait chaque jour avant les matches pour les clubs dont cette équipe a
+changé (`Club.formation_squad`, `core.world.formations.formation_events`) ; la formation ne
+change que pour un gain d'au moins `formations.choix.marge_changement` par place. Le club de
+l'utilisateur garde la sienne. Le mercato, la réserve et les prêts lisent cette formation.
+
+Exclure blessés, suspendus et joueurs en réserve ; retenir la formation du club si elle est
 remplissable, sinon la meilleure couverture. Optimiser une affectation unique
 joueur/poste, y compris pour les polyvalents et le banc. La qualité du poste
 comprend forme, fraîcheur, moral et affinité ; la rotation utilise les seuils

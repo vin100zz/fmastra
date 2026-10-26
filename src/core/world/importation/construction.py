@@ -118,7 +118,7 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
         active = row.division_id in leagues
         clubs[row.id] = Club(row.id, row.name, row.nation, row.division_id, row.division_id if active else None,
                              ClubStatus.ACTIVE if active else ClubStatus.DORMANT, row.capacity if row.capacity > 0 else None,
-                             reputation, academy, rng.choice(tuple(cfg.formations.formations)), personality,
+                             reputation, academy, next(iter(cfg.formations.formations)), personality,
                              training_facilities=row.training_facilities, youth_recruitment=row.youth_recruitment,
                              home_kit_id=row.home_kit_id, home_kit_major_color=row.home_kit_major_color,
                              home_kit_minor_color=row.home_kit_minor_color, home_kit_third_color=row.home_kit_third_color,
@@ -185,6 +185,10 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     corrections["shirts_assigned"] = number_squads(world)
     from core.world.squads import complete_squads
     corrections["squad_completion_players"] = complete_squads(world, [club.id for club in world.active_clubs()])
+    # Each club plays the formation its squad fills best (see `core.world.formations`).
+    from core.world.application import apply
+    from core.world.formations import formation_events
+    for event in formation_events(world, margin=False): apply(world, event)
     players = world.players
     from core.world.promotion import reserve_clubs
     for pool in cfg.world.promotion_relegation.reserves:
@@ -199,6 +203,8 @@ def construct_world(source_clubs: list[SourceClub], source_players: list[SourceP
     from core.world.international import initialize_international, initialize_strengths
     initialize_international(world)
     initialize_strengths(world)
+    from core.world.international_selection import initialize_formations
+    initialize_formations(world)
     for match in season_fixtures(world, season):
         world.matches[match.id] = match
         world.competitions[match.competition_id].match_ids.append(match.id)

@@ -201,7 +201,7 @@ moins large les widgets passent sur une colonne, puis sous le message.
 
 **Le fil**, à gauche, défile dans sa colonne : un message par ligne, du plus récent au plus ancien, avec le badge
 coloré de sa catégorie (Transfert, Prêt, Contrat, Moral, Blessure, Suspension, Sélection, Formation, Mercato, Saison,
-Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
+Tactique, Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
 lu dès qu'il est ouvert. Un point rouge marque un message qui attend une réponse, une coche celui qui l'a reçue. « Tout
 lire », au-dessus du fil, marque tout comme lu.
 
@@ -210,7 +210,7 @@ dernier) : son badge, sa date, ce qu'il attend ou la réponse donnée, son titre
 de club, de compétition ou de sélection est un lien vers sa page ; il n'y a pas de liens à part.
 
 Les événements d'un même genre le même jour font un seul message : les blessés d'un match, les suspendus, les
-convoqués, les fins de contrat, les jeunes promus. Un joueur seul tient dans le titre (« Weah blessé 3 semaines ») ;
+convoqués, les fins de contrat, les jeunes promus, les changements de formation. Un joueur seul tient dans le titre (« Weah blessé 3 semaines ») ;
 à plusieurs, le message liste chacun avec ce qui le concerne.
 
 | Message | Contenu |
@@ -224,6 +224,7 @@ convoqués, les fins de contrat, les jeunes promus. Un joueur seul tient dans le
 | Mercato qui ferme demain | Vos offres en cours, les joueurs dont une offre attend, budget de transferts, lien vers Joueurs |
 | Bilan du mercato (le lendemain de sa fermeture) | Les principaux transferts de la fenêtre, dans la division du club (un joueur arrivé dans un de ses clubs ou parti de l'un d'eux) puis dans le monde : les 5 plus grosses indemnités, puis les 3 joueurs libres du plus haut niveau. Par ligne : le joueur, le club quitté → le club rejoint, l'indemnité ; un joueur libre vient de « Libre » et porte sa pastille de niveau à la place du montant |
 | Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
+| Changement de formation (le prochain adversaire du club, ou un club de son championnat) | Le titre nomme le club et sa nouvelle formation (« Nice passe au 4-3-3 ») ; à plusieurs, une ligne par club, après sa pastille : la formation quittée → la nouvelle. Badge Tactique, famille Saison |
 | Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
 | Changements de numéro (1er juillet) | « Lago change de numéro », « 3 changements de numéro » ; une ligne par joueur : le maillot du club au numéro qu'il quitte, voilé, → celui au numéro qu'il prend (charte, « Terrain et maillot ») |
 | Arrivée d'un joueur (transfert, prêt, retour de prêt, jeune promu au centre de formation) | La phrase, sans numéro (« Haaland rejoint Marseille ») ; dessous, « Numéro » et le maillot du club au numéro qu'il prend. Plusieurs jeunes promus : une ligne par joueur, avec son maillot |
@@ -551,7 +552,7 @@ Bilan), les joueurs du dernier rassemblement et leur âge moyen, leur valeur. Pu
 |---|---|---|
 | Tenues | les deux tenues complètes, domicile d'abord, le logo de la sélection sur la poitrine ; leur nom en infobulle | le PNG |
 | Parcours | la place dans chaque édition jouée, la plus récente d'abord (celle du Bilan : « 1er du groupe D », « Éliminé · Quarts de finale », « ✦ Vainqueur »…) | chaque édition vers sa phase finale |
-| Équipe-type | celle d'un club pour l'édition où elle en est : à chaque place de la forme qu'elle y a le plus alignée, le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires dans l'édition ; ses matches et ses buts de l'édition sous son nom. Avant son premier match de l'édition, ses meilleurs joueurs du rassemblement à leur note au poste, aux places des sélectionneurs. Le poste sur le maillot ; un renfort temporaire en gris, sans lien | — |
+| Équipe-type | celle d'un club pour l'édition où elle en est : à chaque place de la forme qu'elle y a le plus alignée, le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires dans l'édition ; ses matches et ses buts de l'édition sous son nom. Avant son premier match de l'édition, ses meilleurs joueurs du rassemblement à leur note au poste, aux places de la formation du rassemblement. Le poste sur le maillot ; un renfort temporaire en gris, sans lien | — |
 | Groupe | sous l'équipe-type : le groupe de l'édition (celui de sa Ligue des nations, de ses qualifications, ou de la phase finale une fois tiré), en entier : rang, nation, points, différence. Les places qualificatives sont marquées (la première en qualifications, les deux premières en phase finale ; en Ligue des nations, en vert la place qui monte d'une division ou mène à la phase finale, en rouge celle qui descend) et la ligne de la sélection est teintée. Absent pour une nation que l'édition ne concerne pas | page de l'édition |
 | Calendrier | toute la colonne, toutes éditions confondues : les trois prochains matches au plus et les derniers joués avant eux. L'adversaire suit son drapeau ; un match d'une autre édition porte sa pastille (EU, CM, LN) ; un match sur terrain neutre n'a pas d'avion | onglet Calendrier |
 | Buteurs, Passeurs, Notes | les meilleurs de la sélection dans l'édition, joueurs partis compris, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |
@@ -598,7 +599,7 @@ d'onglets :
   division d'une Ligue des nations et où elle l'a menée, en vert une montée, en rouge une
   relégation), la phase finale atteinte, J, V, N, D, BP, BC, DIFF., le meilleur buteur et ses buts, la
   force à la fin de l'édition et son écart.
-- **Joueurs** : le onze type (4-3-3), plus de sélections, plus de buts et meilleures notes (sur 20
+- **Joueurs** : le onze type (formation de référence de la sélection), plus de sélections, plus de buts et meilleures notes (sur 20
   sélections au moins, moitié moins qu'en a le plus capé tant qu'il n'en a pas 40).
 - **Records** : ceux d'un club, l'édition à la place de la saison ; une note sur une édition compte
   sur 5 matches au moins.

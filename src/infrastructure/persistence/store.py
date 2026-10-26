@@ -23,10 +23,13 @@ from core.config.models.management import PLANNING_ROUNDS
 from core.config.models.engine import COUNTER_DANGER, DANGER, EXPECTED, RECOVERY_DANGER, SCALE
 from core.domain.world import NewsItem, World, history_level, history_month
 from core.world.contracts import brings_something
+from core.world.application import apply
+from core.world.formations import formation_events
 from core.world.demography import draw_position_ratings, initialize_targets, secondary_affinities
 from core.world.reputation import initialize_reputation
 from core.world.age_records import initialize_age_records
 from core.world.international import initialize_strengths
+from core.world.international_selection import initialize_formations
 from core.world.shirts import number_squads
 from core.world.transfer_rules import greed_trait
 from core.world.validation import validate_world
@@ -37,10 +40,15 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 42
+SCHEMA_VERSION = 44
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # A selection calls up its 23 for the formation its candidates fill best (see `core.world.international_selection.initialize_formations`).
+    (44, ("international", "squad_list"), {"pool_per_position": 6, "min_affinity": 0.5}),
+    # A club of the AI plays the formation its first team fills best, kept unless another does clearly better
+    # (see `_choose_formations`).
+    (43, ("formations", "choix"), {"marge_changement": 0.25, "blessure_longue_jours": 30}),
     # Each try is a duel between its carrier and a defender, and a rating counts the danger a player's actions add or take
     # away, at his position's scale (see `_upgrade_ratings`).
     (42, ("moteur_match", "duels"), {"selection_porteur": 0.02, "selection_defenseur": 0.02, "sensibilite_porteur": 0.02,
@@ -430,6 +438,8 @@ class SaveStore:
             if version < 40: _upgrade_penalties(world)
             if version < 41: _trim_matches(world)
             if version < 42: _upgrade_ratings(world)
+            if version < 43: _choose_formations(world)
+            if version < 44: initialize_formations(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -616,6 +626,12 @@ def _trim_matches(world: World) -> None:
         if match.result and match.result.engine != "archived":
             if match.season < world.season: match.result = _archived(match.result)
             else: store_events(match.result, False)
+
+
+def _choose_formations(world: World) -> None:
+    """Schema 43: a club of the AI no longer keeps the formation drawn for it at creation; it plays the one its first team
+    fills best. The human club keeps its own."""
+    for event in formation_events(world, margin=False): apply(world, event)
 
 
 def _assign_greed(world: World, source_path: Path) -> None:

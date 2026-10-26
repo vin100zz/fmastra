@@ -10,7 +10,7 @@ const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert',
  release:['Contrat','contract'],retirement:['Retraite','contract'],morale:['Moral','morale'],injury:['Blessure','injury'],injury_end:['Blessure','injury'],
  suspension:['Suspension','ban'],suspension_end:['Suspension','ban'],call_up:['Sélection','call-up'],academy:['Formation','call-up'],
  market_open:['Mercato','market'],market_close:['Mercato','market'],market_recap:['Mercato','market'],season:['Saison','season'],season_review:['Saison','season'],
- promotion:['Saison','season'],relegation:['Saison','season'],shirt_numbers:['Saison','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
+ promotion:['Saison','season'],relegation:['Saison','season'],shirt_numbers:['Saison','season'],formation_change:['Tactique','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
 const tag=kind=>{const [label,family]=TAGS[kind]||['Actualité','season'];return `<span class="news-tag ${family}">${label}</span>`;};
 // The kinds that ask for an answer: once it is given, their row says so.
 const ANSWERED=new Set(['offer_received','renewal_proposed','talks_open']);
@@ -102,6 +102,9 @@ function playersBody(message,club){
  return lines(players.map(row=>[`<span>${named(row.player)}</span>`,detail(row)]),kind==='academy'?'shirts':'');
 }
 
+// Clubs that changed formation: each after its badge, the formation it left and the one it plays now.
+const formationsBody=rows=>lines(rows.map(row=>[`<span>${clubLink(row.club)}</span>`,`<span>${e(row.before)}<small>→</small>${e(row.after)}</span>`]));
+
 // Contracts running out: each player with his wage and, when he would extend, the contract he asks for, ready to sign.
 function expiryBody(data){
  const row=item=>{
@@ -157,7 +160,7 @@ function messagePane(message,club){
  const status=message.pending?'<span class="news-status todo"><i class="news-todo" aria-hidden="true"></i>À traiter</span>':answered?`<span class="news-status">${answered}</span>`:'';
  const value=offers?.value!=null?`<div class="tile fee-value"><span>Valeur</span><strong>${price(offers.value)}</strong></div>`:'';
  const body=offers?offersBody(offers):renewal?renewalBody(renewal):talks?talksBody(talks):message.expiry?expiryBody(message.expiry)
-  :message.market?marketBody(message.market,club):message.recap?recapBody(message.recap):message.draw?drawBody(message.draw)
+  :message.market?marketBody(message.market,club):message.recap?recapBody(message.recap):message.draw?drawBody(message.draw):message.formations?formationsBody(message.formations)
   :message.review?reviewBody(message.review,club):message.shirt!=null?shirtBody(message.shirt,club):message.players?playersBody(message,club):'';
  return `<header class="news-message-head"><div class="news-message-meta">${tag(message.kind)}<small>${date(message.date,true)}</small>${status}</div><div class="news-title"><h2>${linked(message.segments)}</h2>${value}</div></header>${body?`<div class="news-body">${body}</div>`:''}`;
 }

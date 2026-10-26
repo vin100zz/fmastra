@@ -17,7 +17,7 @@
     {"id": "psg_ext_toulouse", "domicile": 886, "exterieur": 868,
      "victoire": 0.14, "nul": 0.24, "defaite": 0.62, "tolerance": [0.04, 0.04, 0.05]},
     {"id": "mancity_dom_burnley", "domicile": 679, "exterieur": 622,
-     "victoire": 0.78, "nul": 0.16, "defaite": 0.06, "tolerance": [0.05, 0.04, 0.03]},
+     "victoire": 0.70, "nul": 0.17, "defaite": 0.13, "tolerance": [0.05, 0.04, 0.04]},
     {"id": "clasico_dom", "domicile": 1736, "exterieur": 1708,
      "victoire": 0.44, "nul": 0.27, "defaite": 0.29, "tolerance": [0.05, 0.04, 0.05]},
     {"id": "egaux_dom", "domicile": "__NIVEAU_70__", "exterieur": "__NIVEAU_70__",

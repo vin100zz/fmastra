@@ -3,8 +3,15 @@
 
 def maximize_assignment(scores: list[list[float]]) -> list[int]:
     """Return one distinct column per row; O(rows² × columns)."""
+    return maximize_assignment_with_duals(scores)[0]
+
+
+def maximize_assignment_with_duals(scores: list[list[float]]) -> tuple[list[int], list[float], list[float]]:
+    """One distinct column per row, with a dual certificate: row values `r` and column values `c`, never negative, such
+    that r[i] + c[j] >= scores[i][j] everywhere and their sum is the best total. A column added later can therefore raise
+    the total by at most max(0, max over rows of score - r[i]); a column taken away lowers it by at least its c[j]."""
     if not scores:
-        return []
+        return [], [], []
     rows, columns = len(scores), len(scores[0])
     if rows > columns or any(len(row) != columns for row in scores):
         raise ValueError("Assignment requires a rectangular matrix with enough candidates")
@@ -43,4 +50,5 @@ def maximize_assignment(scores: list[list[float]]) -> list[int]:
     for column in range(1, columns + 1):
         if matched[column]:
             result[matched[column] - 1] = column - 1
-    return result
+    # The potentials minimise the negated scores; a column never reached keeps a nil potential.
+    return result, [-value for value in u[1:]], [-value for value in v[1:]]

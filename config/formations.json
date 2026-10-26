@@ -10,6 +10,11 @@
     "5-3-2":          ["GB","DG","DC","DC","DC","DD","MDC","MC","MC","BU","BU"],
     "5-4-1":          ["GB","DG","DC","DC","DC","DD","AILG","MC","MC","AILD","BU"]
   },
+  "choix": {
+    "_note": "Un club de l'IA joue la formation que ses joueurs remplissent le mieux (moyenne par place du niveau au poste x affinite, sans forme, condition ni moral), recalculee quand son equipe premiere change. Il ne change que pour un gain d'au moins marge_changement par place. Un blesse pour plus de blessure_longue_jours jours ne compte pas.",
+    "marge_changement": 0.25,
+    "blessure_longue_jours": 30
+  },
   "hauteur_bloc": {
     "min": -1.0, "max": 1.0, "defaut": 0.0,
     "bonus_zone_recuperation": 1.5,

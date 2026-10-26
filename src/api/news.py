@@ -135,6 +135,10 @@ def title(world: World, item: NewsItem) -> list[dict]:
         # A league phase gives several opponents: the message lists them.
         if len({line.club_id for line in lines}) > 1: return sentence((cup["name"], {"competition": cup}), f" : tirage de la {stage}")
         return sentence((cup["name"], {"competition": cup}), " : ", (rival["name"], {"club": rival["id"]}), f" en {stage}")
+    if kind == "formation_change" and lines:
+        if count > 1: return sentence(f"{count} adversaires changent de formation")
+        club = v.club_ref(world, lines[0].club_id)
+        return sentence((club["name"], {"club": club["id"]}), f" passe au {lines[0].text}")
     if kind == "season_review":
         season = item.date.year - 1
         return sentence(f"Bilan de la saison {season} / {season + 1}")
@@ -258,6 +262,11 @@ def recap_body(world: World, item: NewsItem) -> dict:
     return {"window": item.text, "scopes": list(scopes.values())}
 
 
+def formations_body(world: World, item: NewsItem) -> list[dict]:
+    """The clubs that changed formation: each with the one it left and the one it plays now."""
+    return [{"club": v.club_ref(world, line.club_id), "before": line.key, "after": line.text} for line in item.lines]
+
+
 def draw_body(world: World, item: NewsItem) -> dict:
     """The matches a cup drew for the human club, in the order it plays them: the opponent, the day and where."""
     return {"matches": [{"id": line.match_id, "opponent": v.club_ref(world, line.club_id), "date": line.until.iso(), "venue": line.text}
@@ -294,6 +303,7 @@ def message(world: World, index: int) -> dict:
     elif kind == "market_recap": data["recap"] = recap_body(world, item)
     elif kind == "cup_draw" and lines: data["draw"] = draw_body(world, item)
     elif kind == "season_review": data["review"] = review_body(world, item)
+    elif kind == "formation_change" and lines: data["formations"] = formations_body(world, item)
     # A player who comes to the club: the number he takes there, which the message shows on the club's shirt.
     elif kind in ("transfer", "loan", "loan_return"):
         data["shirt"] = next((line.amount for line in lines if line.amount is not None), None)

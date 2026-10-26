@@ -646,3 +646,40 @@ def test_each_competition_keeps_its_finals_titles_runs_and_players(world):
     assert moved.count("up") == moved.count("down") > 0
     assert nation_summary(world, euro.winner_id)["titles"]["euro"] == 1
     assert nation_summary(world, euro.winner_id)["last_edition"]["code"] == "EU"
+
+
+def test_a_nation_calls_up_its_23_for_the_formation_its_players_fill_best_and_keeps_it_through_the_camp(world):
+    team, players = real_players(world)
+    extra = [slot.player for slot in synthetic_lineup(world.config, 650).slots[:3]]
+    for player in extra:
+        player.club_id, player.nationalities, player.secondary_positions = None, (team.code,), {}
+        world.players[player.id] = player
+    players = players + extra
+    # Backs, centre-backs, midfielders and strikers, but no winger: the selection plays without one.
+    roles = ["GB", "DG", "DC", "DC", "DC", "DD", "MDC", "MC", "MC", "BU", "BU",
+             "DG", "DC", "DC", "DD", "MDC", "MC", "MC", "BU", "BU", "GB", "GB", "DC"]
+    for player, role in zip(players, roles):
+        player.position = Position(role)
+    world.date = Date(2026, 8, 31)
+    prepare_international_day(world)
+    camp = world.international.camps[team.id]
+    formation = world.config.formations.formations[team.formation]
+    assert "AILG" not in formation and "AILD" not in formation
+    called = [get_player(world, pid) for pid in camp.player_ids]
+    assert len(called) == 23 and sum(player.position == Position.GOALKEEPER for player in called) == 3
+    assert all(player.id >= 0 for player in called)
+    # An injured player is replaced in the formation of the camp.
+    called[0].injury = Injury(world.date, world.date.add_days(20), "minor")
+    world.date = world.date.add_days(1)
+    prepare_international_day(world)
+    assert world.config.formations.formations[team.formation] == formation
+    edition = world.international.editions[camp.edition]
+    assert camp_lineup(world, edition, team.id).formation == team.formation
+
+
+def test_a_list_holds_the_eleven_of_its_formation_a_backup_for_each_outfield_place_and_three_goalkeepers(config):
+    from core.world.international_selection import list_roles
+    for name, roles in config.formations.formations.items():
+        places = list_roles(name, config)
+        assert len(places) == 23 and places.count(Position.GOALKEEPER) == 3
+        assert all(places.count(Position(role)) == 2 * roles.count(role) for role in roles if role != "GB")

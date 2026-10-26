@@ -14,13 +14,17 @@ valeur à un poste = niveau recalculé avec les poids de ce poste × forme × co
 
 L'IA retient le onze dont la somme des valeurs est la plus haute, toutes combinaisons confondues : elle ne remplit pas les postes un par un.
 
-**La formation.** Chaque club de l'IA a reçu une formation au hasard à la création de la partie, parmi celles-ci, et la garde :
+**La formation.** Chaque club de l'IA joue, parmi celles-ci, la formation que ses joueurs remplissent le mieux :
 
 | Formation | Postes |
 |---|---|
 {{#chaque formations.formations}}| {{cle}} | {{liste(valeur)}} |
 
-Si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement étranger, l'IA essaie les autres formations et garde celle qui place le plus de joueurs à un poste qu'ils connaissent, puis la meilleure somme.
+Pour chaque formation, l'IA cherche le meilleur onze de son équipe première avec la valeur ci-dessus, mais sans forme, ni condition, ni moral : la formation décrit l'effectif, pas l'état du jour. Un joueur en réserve ou blessé pour plus de {{formations.choix.blessure_longue_jours}} jours ne compte pas ; un joueur prêté au club compte. Elle retient la formation dont le onze vaut le plus, en moyenne par place.
+
+Elle refait ce choix chaque fois que son équipe première change : arrivée, départ, prêt, réserve, blessure longue ou retour. Elle ne change de formation que si une autre fait mieux d'au moins {{formations.choix.marge_changement * 2}} points par place : un club ne change pas de système pour une recrue de complément. Quand votre prochain adversaire ou un club de votre championnat change de formation, une actualité vous le dit. Votre club joue la formation que vous choisissez ; à la création de la partie, c'est celle qui convient le mieux à son effectif.
+
+Le jour du match, si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement étranger, l'IA essaie les autres formations pour ce match et garde celle qui place le plus de joueurs à un poste qu'ils connaissent, puis la meilleure somme.
 
 **La rotation.** Un titulaire dont la condition est passée sous {{pct(ia_gestion.selection.seuil_rotation_fatigue, 0)}} cède sa place à un joueur plus frais, si celui-ci vaut à ce poste au moins son niveau moins {{ia_gestion.selection.ecart_niveau_acceptable_rotation * 2}} points. Quand le match suivant du club est européen, l'IA ménage aussi le titulaire qu'un match complet laisserait sous ce seuil le jour de ce match (voir [La condition physique](#/aide/etats/la-condition-physique)).
 
@@ -28,7 +32,7 @@ Si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement
 
 **L'équipe-type.** La Présentation d'un club montre son équipe-type : la forme qu'il a le plus souvent alignée dans la saison, toutes compétitions confondues, et à chaque place le joueur de son équipe première qui y a été le plus souvent titulaire. Un joueur parti ou placé en réserve n'y figure plus ; une place où aucun joueur restant n'a été titulaire revient au meilleur à ce poste. Avant son premier match de la saison, ou pour un club qui n'en joue pas, ce sont ses meilleurs joueurs aux places de sa formation, retenus comme le onze de départ, sur leur seule note au poste : sans forme, ni condition, ni moral.
 
-La Présentation d'une sélection montre la sienne de la même façon, pour l'édition où elle en est (celle de son prochain match, à défaut de son dernier) : la forme qu'elle y a le plus souvent alignée, et à chaque place le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires pour elle dans l'édition. Un joueur retiré depuis n'y figure plus. Avant son premier match de l'édition, ce sont les meilleurs joueurs de son dernier rassemblement à leur note au poste, aux places que jouent tous les sélectionneurs.
+La Présentation d'une sélection montre la sienne de la même façon, pour l'édition où elle en est (celle de son prochain match, à défaut de son dernier) : la forme qu'elle y a le plus souvent alignée, et à chaque place le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires pour elle dans l'édition. Un joueur retiré depuis n'y figure plus. Avant son premier match de l'édition, ce sont les meilleurs joueurs de son dernier rassemblement à leur note au poste, aux places de la formation de ce rassemblement (voir [Les sélections nationales](#/aide/selections/la-liste-des-23)).
 
 ## Le banc
 
@@ -72,6 +76,6 @@ Le contexte vaut 1 quand l'équipe mène d'au moins {{etats.remplacements.ecart_
 
 - **Simuler** : votre composition est jouée telle quelle, l'IA gère les remplacements et la hauteur du bloc.
 - **Fin du match**, en direct : l'IA reprend le match là où vous le laissez.
-- **Mode Auto** : l'IA compose aussi l'équipe, avec la formation attribuée à votre club à la création de la partie (colonne FORMATION de la liste des clubs), pas avec votre dernière tactique.
+- **Mode Auto** : l'IA compose aussi l'équipe, avec la formation de votre club (colonne FORMATION de la liste des clubs), pas avec votre dernière tactique.
 
 Dans un match en direct que vous dirigez, l'IA ne touche à rien de votre côté : ni remplacement automatique, ni remontée du bloc en fin de match.

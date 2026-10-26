@@ -159,9 +159,11 @@ def players(world: World, nid: int) -> dict:
             for pid, career in careers.items() if career["matches"]]
     threshold = r.note_threshold(max((row["matches"] for row in rows), default=0), NOTE_MATCHES)
     lookup = {row["player_id"]: row for row in rows}
-    roles = world.config.formations.formations[DEFAULT_FORMATION]
-    picks = r.eleven(roles, {row["player_id"]: row["matches"] for row in rows}, {pid: known[pid] for pid in lookup if known.get(pid)})
-    return {"formation": DEFAULT_FORMATION,
+    # The all-time eleven plays the selection's reference formation, revised with its strength.
+    formations, reference = world.config.formations.formations, world.international.nations[nid].reference_formation
+    shape = reference if reference in formations else DEFAULT_FORMATION
+    picks = r.eleven(formations[shape], {row["player_id"]: row["matches"] for row in rows}, {pid: known[pid] for pid in lookup if known.get(pid)})
+    return {"formation": shape,
             "eleven": [{"position": role, **({key: lookup[pid][key] for key in ("player_id", "player", "matches")} if pid else {})} for role, pid in picks],
             "matches": ranked(world, rows, lambda row: (-row["matches"], -row["goals"])),
             "goals": ranked(world, [row for row in rows if row["goals"]], lambda row: (-row["goals"], row["matches"])),

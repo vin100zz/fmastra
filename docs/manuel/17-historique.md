@@ -13,7 +13,7 @@ Pour une sélection, une édition dit où l'a laissée sa première phase (son r
 
 ## Le onze type
 
-Pour chaque place de la tactique du club (le 4-3-3 pour une sélection), le joueur de ce poste qui a joué le plus de matches pour lui. Quand plus personne de ce poste n'est disponible, la place va au joueur le plus utilisé d'un poste voisin : un latéral pour un défenseur central, un milieu défensif pour un milieu, un ailier de l'autre côté pour un ailier. Un joueur n'occupe qu'une place ; un gardien n'est jamais remplacé.
+Pour chaque place de la tactique du club (sa formation de référence pour une sélection), le joueur de ce poste qui a joué le plus de matches pour lui. Quand plus personne de ce poste n'est disponible, la place va au joueur le plus utilisé d'un poste voisin : un latéral pour un défenseur central, un milieu défensif pour un milieu, un ailier de l'autre côté pour un ailier. Un joueur n'occupe qu'une place ; un gardien n'est jamais remplacé.
 
 ## Les classements de joueurs
 

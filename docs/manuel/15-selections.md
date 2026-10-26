@@ -11,43 +11,40 @@ attrait = 0.3 × force de la nation − 2 × retard sur le dernier sélectionnab
 ```
 
 - **La force de la nation** attire : à chances égales, un joueur préfère la meilleure sélection.
-- **Le retard** compte bien davantage : s'il est moins bon que le dernier joueur que cette nation retiendrait à son poste, chaque point de retard (sur 200) lui coûte autant que 3.3 points de force. Un bon joueur barré dans une grande sélection choisit donc la plus petite, où il jouera.
+- **Le retard** compte bien davantage : s'il est moins bon que le dernier joueur que cette nation retiendrait à son poste, chaque point de retard (sur 200) lui coûte autant que 3.3 points de force. Un bon joueur barré dans une grande sélection choisit donc la plus petite, où il jouera. Le nombre de joueurs qu'une nation retient à un poste suit sa formation de référence (voir ci-dessous) : deux par place de champ, trois gardiens. Un poste que cette formation n'aligne pas n'est ouvert qu'au meilleur de la nation à ce poste.
 - **L'attachement** est une préférence personnelle fixe, de −2 à +2, propre à chaque joueur et à chaque nation.
 
 Les joueurs du fichier de départ qui ont déjà des sélections gardent leur nation.
 
 ## La liste des 23
 
-Une liste est annoncée trois jours avant le premier match de chaque rassemblement. Elle compte 23 joueurs, toujours avec la même répartition :
+Une liste est annoncée trois jours avant le premier match de chaque rassemblement. Elle compte 23 joueurs, choisis pour une [formation](#/aide/entraineur/le-onze-de-depart) :
 
-| Poste | Places |
-|---|---:|
-| GB | 3 |
-| DC | 4 |
-| DG, DD | 2 chacun |
-| MDC | 2 |
-| MC | 3 |
-| MOC | 2 |
-| AILG, AILD | 1 chacun |
-| BU | 3 |
+1. **Les candidats.** Pour chaque poste, le sélectionneur retient les {{international.squad_list.pool_per_position}} meilleurs joueurs disponibles qui y ont une affinité d'au moins {{international.squad_list.min_affinity * 20}} sur 20.
+2. **La formation.** Il choisit celle que ces candidats remplissent le mieux, comme l'entraîneur d'un club. Il garde celle du rassemblement précédent si une autre ne fait pas mieux d'au moins {{formations.choix.marge_changement * 2}} points par place.
+3. **La liste.** Le onze de cette formation, une doublure pour chaque place de champ, et trois gardiens. Une formation à deux défenseurs centraux en appelle donc quatre, une formation sans ailier n'en appelle aucun. La liste retenue est celle qui vaut le plus au total, toutes combinaisons confondues.
 
-Pour chaque place, le sélectionneur retient le meilleur joueur disponible parmi ceux qui ont une affinité d'au moins 10 sur 20 avec le poste :
+La valeur d'un joueur à une place :
 
 ```
-note = niveau à ce poste + 6 × (forme − 1) + 6 × (condition − 1) + aléa
+note = niveau à ce poste + 6 × (forme − 1) + 6 × (condition − 1) + aléa, multipliée par l'affinité au poste
 ```
 
-- **Le niveau prime.** Il est recalculé avec les poids du poste à pourvoir : un milieu peut être retenu comme arrière s'il y est assez à l'aise.
+- **Le niveau prime.** Il est recalculé avec les poids du poste à pourvoir : un milieu peut être retenu comme arrière s'il y est assez à l'aise, mais il y vaut moins.
 - **La forme et la condition** ne font que départager : une forme de 1.20 vaut 1.2 point de niveau, une condition de 80 % en coûte autant.
 - **L'aléa**, entre −{{international.selection_noise * 2}} et +{{international.selection_noise * 2}} points, tiré pour chaque joueur à chaque rassemblement, fait tourner les listes entre joueurs de niveau voisin.
 - **Un blessé** n'est pas appelé. **Un suspendu** peut l'être : sa suspension se purge pendant le rassemblement.
 - Ni le club, ni le temps de jeu en club, ni le moral, ni l'âge n'entrent dans le choix.
 
-Si un joueur se blesse pendant un rassemblement de Ligue des nations ou de qualification, il est remplacé. En phase finale (celle d'un tournoi comme celle de la Ligue des nations), les blessés ne sont remplacés qu'avant le premier match de la sélection ; ensuite, la liste est figée.
+Une place qu'aucun joueur de la nation ne peut tenir revient à un **renfort temporaire**, généré pour la campagne au niveau de la nation.
+
+**La formation de référence.** Une fois par an, à la révision des forces, chaque nation fixe la formation que l'ensemble de ses joueurs remplit le mieux, sans forme, ni condition, ni aléa. Elle ne sert qu'aux binationaux (voir plus haut).
+
+Si un joueur se blesse pendant un rassemblement de Ligue des nations ou de qualification, il est remplacé à sa place de la formation du rassemblement, qui ne change pas. En phase finale (celle d'un tournoi comme celle de la Ligue des nations), les blessés ne sont remplacés qu'avant le premier match de la sélection ; ensuite, la liste est figée.
 
 ## Le onze de la sélection
 
-Le sélectionneur compose son équipe comme l'[entraîneur IA](#/aide/entraineur) d'un club, sans tenir compte du temps de jeu en club. Toutes les sélections partent de la même formation, la première du tableau des [formations](#/aide/entraineur/le-onze-de-depart), et n'en changent que si elle oblige un joueur à occuper un poste qui lui est étranger. Le banc compte les douze autres joueurs de la liste.
+Le sélectionneur compose son équipe comme l'[entraîneur IA](#/aide/entraineur) d'un club, sans tenir compte du temps de jeu en club, dans la formation de sa liste. Il n'en change, pour un match, que si les absents l'obligent à placer un joueur à un poste qui lui est totalement étranger. Le banc compte les douze autres joueurs de la liste.
 
 ## Ce que la sélection change pour votre club
 

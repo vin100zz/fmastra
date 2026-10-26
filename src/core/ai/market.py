@@ -21,7 +21,7 @@ from core.world.events import PlayerSigned
 from core.world.human import is_human_club, listed_price, untouchable
 from core.world.transfer_rules import recent_arrival_ids, accepts_move, target_level, wants_to_leave
 from core.world.importation.synthesis import intrinsic_value, level_wage
-from .assignment import maximize_assignment
+from .assignment import maximize_assignment, maximize_assignment_with_duals
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,8 +59,10 @@ def wage_room(club: Club, cfg: Config, arrivals: int = 0) -> int:
     return club.wage_cap - club.wage_bill - unseen_wages(club, cfg, arrivals)
 
 
-def squad_roles(club: Club, cfg: Config) -> tuple[list[Position], list[float]]:
-    positions = [Position(role) for role in cfg.formations.formations[club.formation]]
+def squad_roles(club: Club, cfg: Config, formation: str | None = None) -> tuple[list[Position], list[float]]:
+    """The places of a club's squad profile in `formation` (its own by default): the eleven of the formation, then its
+    rotation and backup places, with their weights."""
+    positions = [Position(role) for role in cfg.formations.formations[formation or club.formation]]
     weights = [cfg.management.utility.starter_weight] * len(positions)
     counts = Counter(positions)
     priority = sorted(counts, key=lambda position: (position != Position.GOALKEEPER, -counts[position], position.value))
@@ -84,37 +86,197 @@ def squad_depth(club: Club, cfg: Config) -> int:
     return round(rules.min_squad_depth + share * (rules.max_squad_depth - rules.min_squad_depth))
 
 
-def _assign(players: list[Player], club: Club, cfg: Config, deep: bool) -> tuple[float, tuple[int, ...]]:
-    """Weighted assignment of a squad to the club's places: its score and the player index of each place.
+# Tables derived from a configuration, kept with it: the configuration itself is not hashable.
+_TABLES: dict[int, tuple[Config, dict]] = {}
+
+
+def _table(cfg: Config) -> dict:
+    entry = _TABLES.get(id(cfg))
+    if entry is None or entry[0] is not cfg:
+        if len(_TABLES) >= 16: _TABLES.clear()
+        entry = _TABLES[id(cfg)] = (cfg, {})
+    return entry[1]
+
+
+def _weighted_roles(club: Club, cfg: Config, deep: bool, formation: str | None = None) -> tuple[tuple[Position, ...], tuple[float, ...]]:
+    """The places of `squad_roles` and their weights, those of `deep` assignments raised (see `_assign`)."""
+    depth = squad_depth(club, cfg) if deep else None
+    key = ("roles", formation or club.formation, depth)
+    table = _table(cfg)
+    if key not in table:
+        roles, weights = squad_roles(club, cfg, formation)
+        if deep:
+            core = cfg.management.market.depth_sale_weight
+            weights = [max(weight, core) if index < depth else weight for index, weight in enumerate(weights)]
+        table[key] = tuple(roles), tuple(weights)
+    return table[key]
+
+
+def _signatures(players: list[Player]) -> tuple:
+    return tuple((player.attributes.values, player.position, tuple(player.secondary_positions.items())) for player in players)
+
+
+def _profiles(roles, cfg: Config) -> tuple:
+    """The overall weights of each position among `roles`, by attribute index."""
+    key, table = ("profiles", tuple(roles)), _table(cfg)
+    if key not in table:
+        table[key] = tuple((role, tuple((ATTRIBUTE_INDEX[name], value) for name, value in cfg.attributes.overall[role].items()))
+                           for role in dict.fromkeys(roles))
+    return table[key]
+
+
+def _quality(player: Player, position: Position, cfg: Config) -> float:
+    """A player's value at a position for the market: his level there, times his affinity to it (as `_assigned`)."""
+    penalty = cfg.attributes.out_of_position
+    affinity = 1 if player.position == position else player.secondary_positions.get(position, 0)
+    return overall(player.attributes, position, cfg) * (penalty.base + penalty.factor * affinity)
+
+
+def _assign(players: list[Player], club: Club, cfg: Config, deep: bool, formation: str | None = None,
+            signatures: tuple | None = None) -> Assignment:
+    """Weighted assignment of a squad to the club's places in `formation` (its own by default).
 
     Recruitment keeps the graded starter/rotation/backup weights. `deep` does not: the
     club plays its rotation players all season, so every place among its `squad_depth`
     best weighs at least `depth_sale_weight`, not the low rotation weight.
     """
-    roles, weights = squad_roles(club, cfg)
-    if deep:
-        depth = squad_depth(club, cfg)
-        core = cfg.management.market.depth_sale_weight
-        weights = [max(weight, core) if index < depth else weight for index, weight in enumerate(weights)]
-    unique_roles = tuple(dict.fromkeys(roles))
-    profiles = tuple((role, tuple((ATTRIBUTE_INDEX[key], value) for key, value in cfg.attributes.overall[role].items())) for role in unique_roles)
-    signatures = tuple((player.attributes.values, player.position, tuple(player.secondary_positions.items())) for player in players)
-    return _assigned(signatures, tuple(roles), tuple(weights), profiles,
-                     cfg.attributes.out_of_position.base, cfg.attributes.out_of_position.factor)
+    roles, weights = _weighted_roles(club, cfg, deep, formation)
+    return _assigned(signatures if signatures is not None else _signatures(players), roles, weights, _profiles(roles, cfg), cfg.attributes.out_of_position.base, cfg.attributes.out_of_position.factor)
 
 
-def squad_quality(players: list[Player], club: Club, cfg: Config) -> float:
-    return _assign(players, club, cfg, False)[0]
-
-
-def squad_places(players: list[Player], club: Club, cfg: Config) -> dict[int, int]:
-    """The place each player holds in his club's useful squad, by index of `squad_roles`; absent when he has none."""
-    assignment = _assign(players, club, cfg, True)[1]
-    return {players[index].id: place for place, index in enumerate(assignment) if index < len(players)}
+def _formations(club: Club, cfg: Config) -> list[str]:
+    """The formations a club could play, its own first, then in the order of the configuration."""
+    names = list(cfg.formations.formations)
+    if club.formation in names: names.insert(0, names.pop(names.index(club.formation)))
+    return names
 
 
 @lru_cache(maxsize=8192)
-def _assigned(players: tuple, roles: tuple, weights: tuple, profiles: tuple, base: float, factor: float) -> tuple[float, tuple[int, ...]]:
+def _ranked_qualities(players: tuple, profiles: tuple, base: float, factor: float) -> dict[Position, tuple[float, ...]]:
+    """Each position's qualities among the players, best first; memoized on immutable ability snapshots, like `_assigned`."""
+    return {role: tuple(sorted((sum(attributes[index] * weight for index, weight in coefficients)
+                                * (base + factor * (1 if primary == role else dict(secondary).get(role, 0)))
+                                for attributes, primary, secondary in players), reverse=True))
+            for role, coefficients in profiles}
+
+
+def _ranked(players: list[Player], cfg: Config) -> dict[Position, tuple[float, ...]]:
+    positions = sorted({Position(role) for roles in cfg.formations.formations.values() for role in roles})
+    return _ranked_qualities(_signatures(players), _profiles(positions, cfg), cfg.attributes.out_of_position.base,
+                             cfg.attributes.out_of_position.factor)
+
+
+def _ceilings(ranked: dict[Position, tuple[float, ...]], club: Club, cfg: Config, deep: bool) -> dict[str, float]:
+    """A score `_assign` cannot exceed in each formation, from each position's qualities best first (`_ranked`): each
+    position's places filled by its best candidates, the best place with the best one, as if a player could hold several
+    positions at once."""
+    ceilings = {}
+    for name in _formations(club, cfg):
+        roles, weights = _weighted_roles(club, cfg, deep, name)
+        by_position: dict[Position, list[float]] = defaultdict(list)
+        for role, weight in zip(roles, weights): by_position[role].append(weight)
+        ceilings[name] = sum(weight * quality for position, places in by_position.items()
+                             for weight, quality in zip(sorted(places, reverse=True), ranked[position]))
+    return ceilings
+
+
+@dataclass(frozen=True, slots=True)
+class SquadScores:
+    """What the market knows of a squad's assignment in each formation: its best score, exact; a ceiling for each
+    formation, exact for those worked out; for those, their assignment; and each position's qualities best first."""
+    best: float
+    ceilings: dict[str, float]
+    assignments: dict[str, "Assignment"]
+    ranked: dict[Position, tuple[float, ...]]
+
+
+def squad_scores(players: list[Player], club: Club, cfg: Config) -> SquadScores:
+    """The `SquadScores` of a squad: the formations are worked out from the highest ceiling down, until none is left above
+    the best score found."""
+    ranked = _ranked(players, cfg)
+    ceilings, signatures = _ceilings(ranked, club, cfg, False), _signatures(players)
+    best, assignments = None, {}
+    for name in sorted(ceilings, key=lambda name: -ceilings[name]):
+        if best is not None and ceilings[name] <= best: break
+        assignments[name] = _assign(players, club, cfg, False, name, signatures)
+        ceilings[name] = assignments[name].score
+        best = ceilings[name] if best is None else max(best, ceilings[name])
+    return SquadScores(best if best is not None else 0.0, ceilings, assignments, ranked)
+
+
+def _best_assignment(players: list[Player], club: Club, cfg: Config, deep: bool,
+                     ceilings: dict[str, float] | None = None) -> tuple[float, tuple[int, ...], str]:
+    """The assignment of `_assign` in the formation that gives the squad its best score, with that formation: a player is
+    worth what he brings to the best system the club could play.
+
+    The formations are tried from the highest of their `ceilings` (by default `_ceilings`, a score each cannot exceed)
+    down, until none is left above the best score found; a tie goes to the formation tried first, the club's own before
+    the others at an equal ceiling."""
+    ceilings = ceilings if ceilings is not None else _ceilings(_ranked(players, cfg), club, cfg, deep)
+    signatures = _signatures(players)
+    best = None
+    for name in sorted(_formations(club, cfg), key=lambda name: -ceilings[name]):
+        if best is not None and ceilings[name] <= best[0]: break
+        assigned = _assign(players, club, cfg, deep, name, signatures)
+        if best is None or assigned.score > best[0]: best = (assigned.score, assigned.places, name)
+    return best
+
+
+def squad_quality(players: list[Player], club: Club, cfg: Config, ceilings: dict[str, float] | None = None) -> float:
+    """The weighted assignment score of a squad in its best formation (see `_best_assignment`, and its `ceilings`)."""
+    return _best_assignment(players, club, cfg, False, ceilings)[0]
+
+
+def loses_quality_without(players: list[Player], player: Player, club: Club, cfg: Config, scores: SquadScores) -> bool:
+    """Whether the squad's `squad_quality` drops without `player`, given its `squad_scores`. Only a formation that reaches
+    the best score could keep it without him: it does if he holds no place there; it cannot if his dual value there is
+    positive; otherwise its assignment without him tells."""
+    index, rest = players.index(player), None
+    for name, ceiling in scores.ceilings.items():
+        if ceiling < scores.best: continue
+        assigned = scores.assignments.get(name)
+        if assigned is not None:
+            if index not in assigned.places: return False
+            if assigned.column_values[index] > 1e-9: continue
+        rest = rest if rest is not None else [item for item in players if item.id != player.id]
+        if _assign(rest, club, cfg, False, name).score >= scores.best: return False
+    return True
+
+
+def quality_with(players: list[Player], player: Player, club: Club, cfg: Config, scores: SquadScores) -> float:
+    """`squad_quality` of the squad with `player`, given the `squad_scores` of the squad without him. Each formation is
+    bounded by its ceiling with him among the candidates, and, when worked out, by its score plus the most he could add
+    over the dual value of a place."""
+    qualities = {position: _quality(player, position, cfg) for position in scores.ranked}
+    ranked = {position: tuple(sorted((*values, qualities[position]), reverse=True)) for position, values in scores.ranked.items()}
+    ceilings = _ceilings(ranked, club, cfg, False)
+    for name, assigned in scores.assignments.items():
+        roles, weights = _weighted_roles(club, cfg, False, name)
+        gain = max(0.0, max(weight * qualities[role] - value for role, weight, value in zip(roles, weights, assigned.row_values)))
+        ceilings[name] = min(ceilings[name], assigned.score + gain)
+    return squad_quality([*players, player], club, cfg, ceilings)
+
+
+def squad_places(players: list[Player], club: Club, cfg: Config) -> dict[int, int]:
+    """The place each player holds in his club's useful squad, by index of `squad_roles` in the formation of the squad's
+    best deep assignment; absent when he has none."""
+    assignment = _best_assignment(players, club, cfg, True)[1]
+    return {players[index].id: place for place, index in enumerate(assignment) if index < len(players)}
+
+
+@dataclass(frozen=True, slots=True)
+class Assignment:
+    """A squad's weighted assignment to the places of a profile: its score, the player index of each place (an index past
+    the squad is an empty place), and the dual values of the places and of the players (see
+    `maximize_assignment_with_duals`)."""
+    score: float
+    places: tuple[int, ...]
+    row_values: tuple[float, ...]
+    column_values: tuple[float, ...]
+
+
+@lru_cache(maxsize=65536)
+def _assigned(players: tuple, roles: tuple, weights: tuple, profiles: tuple, base: float, factor: float) -> Assignment:
     """Memoize immutable ability snapshots, never mutable Player or World objects."""
     qualities = {}
     for role, coefficients in profiles:
@@ -123,12 +285,13 @@ def _assigned(players: tuple, roles: tuple, weights: tuple, profiles: tuple, bas
                            for attributes, primary, secondary in players]
     scores = [[quality * weight for quality in qualities[role]] for role, weight in zip(roles, weights)]
     for row in scores: row.extend([0.0] * max(0, len(roles) - len(players)))
-    assignment = maximize_assignment(scores)
-    return sum(row[index] for row, index in zip(scores, assignment)), tuple(assignment)
-
+    assignment, rows, columns = maximize_assignment_with_duals(scores)
+    return Assignment(sum(row[index] for row, index in zip(scores, assignment)), tuple(assignment), tuple(rows), tuple(columns))
 
 def needs_for(club: Club, players: list[Player], cfg: Config) -> list[Need]:
-    roles, weights = squad_roles(club, cfg)
+    """The gap to the club's target level at each position of its squad profile, largest first, in the formation of the
+    squad's best assignment: the club looks for the players who would raise its best system."""
+    roles, weights = squad_roles(club, cfg, _best_assignment(players, club, cfg, False)[2])
     penalty = cfg.attributes.out_of_position
     levels = [[overall(player.attributes, role, cfg) * (penalty.base + penalty.factor * player.affinity(role))
                for player in players] for role in roles]
@@ -442,10 +605,13 @@ class Plan:
     covered: set[Position]
     urgent: bool
     missing_keeper: bool
+    # The `squad_scores` of `projected`, worked out when first needed.
+    scores: SquadScores | None = None
 
     def improved_quality(self, player: Player, cfg: Config) -> float | None:
         """The projected squad quality with the player, if he raises it by the minimum gain or fills a hard minimum."""
-        quality = squad_quality([*self.projected, player], self.club, cfg)
+        if self.scores is None: self.scores = squad_scores(self.projected, self.club, cfg)
+        quality = quality_with(self.projected, player, self.club, cfg, self.scores)
         required = (len(self.projected) < cfg.management.guardrails.min_squad
                     or self.missing_keeper and player.position == Position.GOALKEEPER)
         if (quality <= self.quality or quality - self.quality < cfg.management.market.minimum_quality_gain) and not required: return None
@@ -460,7 +626,7 @@ class Plan:
 
     def take(self, player: Player, fee: int, wage: int, quality: float) -> None:
         self.projected.append(player)
-        self.quality = quality
+        self.quality, self.scores = quality, None
         self.money -= fee
         self.wages -= wage
         self.slots -= 1
@@ -485,8 +651,9 @@ def recruitment_plan(world: World, club: Club, pending: list, slots: int, reinfo
     if len(projected) >= cfg.management.guardrails.min_squad:
         covered.update(position for position in reinforced if counts[position] >= max(1, required_counts[position]))
     missing_keeper = sum(player.position == Position.GOALKEEPER for player in projected) < cfg.management.guardrails.min_goalkeepers
-    return Plan(club, projected, squad_quality(projected, club, cfg), money, wages, slots, covered,
-                short_of_players(squad, cfg), missing_keeper)
+    scores = squad_scores(projected, club, cfg)
+    return Plan(club, projected, scores.best, money, wages, slots, covered,
+                short_of_players(squad, cfg), missing_keeper, scores)
 
 
 def offered_player_bids(world: World, player: Player, fee: int, rng: Random) -> list[Bid]:

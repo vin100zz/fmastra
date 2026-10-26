@@ -7,12 +7,13 @@ from core.domain.matches import MatchResult, store_events
 from core.engine.fitness import match_load
 from .age_records import note_club_match
 from .finances import book_cash, book_daily_cash
+from .formations import formation_notice
 from .human import is_human_club, record as add_news, report
 from .shirts import assign
 from .transfer_rules import recent_arrival_ids
 from .events import (WorldEvent, PlayerChanged, MatchPlayed, PlayerSigned, PlayerReleased, PlayerGenerated,
                      FinancePosted, BudgetRenewed, BudgetShifted, ReputationRevised, DivisionsChanged, SeasonOpened, DateAdvanced,
-                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded, ShirtsRenumbered)
+                     OffersUpdated, RenewalProposed, ReserveChanged, LoanStarted, LoanEnded, ShirtsRenumbered, FormationChosen)
 
 
 def movement_snapshot(world: World, player) -> MovementSnapshot:
@@ -131,6 +132,10 @@ def apply(world: World, event: WorldEvent) -> bool:
             player = world.players[pid]
             before, player.shirt = player.shirt, number
             report(world, "shirt_numbers", NewsLine(player_id=pid, amount=number, text="" if before is None else str(before)), event.club_id)
+    elif isinstance(event, FormationChosen):
+        club = world.clubs[event.club_id]
+        if event.notify: formation_notice(world, club, event.formation)
+        club.formation, club.formation_squad = event.formation, event.squad
     elif isinstance(event, FinancePosted):
         club = world.clubs[event.club_id]
         book_daily_cash(world, club, event.change, event.investment, event.unseen_wages)

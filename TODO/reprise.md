@@ -23,6 +23,10 @@ travail sur le moteur de match de Touchline. Il date du 25 octobre 2026.
   46′ à la reprise, puis 90+1′ (`matchMinute` dans `web/ui.js`, `goal_minute` dans
   `src/api/rounds.py`). Fait (commit `be7d141`), règle dans la charte (« Conventions
   d'écriture », « Minutes »).
+- **La formation choisie par l'effectif** : un club de l'IA joue la formation que son effectif
+  remplit le mieux, le mercato l'évalue dans la meilleure, une sélection appelle ses 23 pour la
+  sienne. Fait (schémas 43 et 44, branche `claude/trusting-keller-gy4hlu`), décrit dans
+  `docs/conception-formation-ia.md`.
 - **Chantier C, les consignes tactiques** : conception rédigée, décisions à valider
   (`TODO/conception-consignes-tactiques.md`, commits `c9792ff` et `a5cc6af`). Rien
   n'est codé.
@@ -81,7 +85,7 @@ Elles s'ajoutent à `CLAUDE.md`, que la conversation charge d'elle-même.
   vérifie dans `src/core/config/consistency.py`.
 - **Un changement de règle** atteint les sauvegardes existantes par une montée de
   schéma (`SCHEMA_VERSION` dans `src/infrastructure/persistence/store.py`,
-  actuellement 40). Trois tables y servent :
+  actuellement 44). Trois tables y servent :
   - `MIGRATION_DEFAULTS` : les clés ajoutées, avec leurs valeurs par version ;
   - `RETIRED_RULES` : les clés retirées. Le même chemin rend aussi, pour le contrôle
     d'empreinte, une règle modifiée avant le typage (la liste des attributs au
@@ -232,22 +236,28 @@ interface, migration (schéma 41) et documentation.
   C'est le plus gros manque de réalisme. D'après la maquette, le chantier C ne
   le comblera pas : sa décision 10 propose un chantier de calibrage dédié après C
   (sensibilité des duels aux écarts, sur de vrais championnats).
-- **Affiches de référence** (`match`, 3 000) :
-  - Clasico à domicile : 53.6 % de victoires pour le Real (cible 39 à 49 %) et
-    19.9 % de défaites (cible 24 à 34 %) ;
-  - City – Burnley : 72.8 % de victoires (cible ≥ 73 %) et 10.4 % de défaites pour
-    City (cible ≤ 9 %) ;
-  - PSG – Toulouse à domicile : 15.6 % de nuls (cible ≥ 16 %) ; deux équipes égales :
-    32.2 % de défaites à domicile (cible ≤ 32 %).
-- **Temps par match** : environ 22 ms pour un budget de 20 ms, sur la machine de
-  Vincent. À remesurer après l'attribut Penaltys (`performance`, machine au repos).
+- **Affiches de référence** (`match`, 3 000), avec la formation choisie par l'effectif, les
+  duels porteur contre défenseur et la cible de City – Burnley revue à 70 / 17 / 13
+  (`docs/benchmarks.md`, « Suite match ») : 13 critères sur 15. Reste le Clasico, juste
+  au-dessus de sa cible : 50.7 % de victoires du Real (cible 39 à 49 %) et 23.0 % de
+  défaites (cible 24 à 34 %). Les duels plus marqués avantagent le plus fort ; sans la
+  formation choisie par l'effectif, `main` seul donnait 52.0 % et 21.0 %.
+- **Poids du gardien** : à valeur moyenne voisine, Arsenal bat Coventry (gardien 66) dans
+  81 % des cas et Hull (gardien 77) dans 65 % (3 000 matchs). `occasion.sensibilite_tireur_gardien`
+  (0.055, triplée le 18 septembre) fait peser un seul joueur très lourd : à revoir dans le
+  chantier de calibrage.
+- **Temps par match** : 15.2 et 14.8 ms pour un budget de 20 ms, sur la machine de
+  Vincent au repos (26 octobre 2026, `performance`, 2 000 matchs).
+- **Temps d'une saison** : 183 à 189 s sur la machine de Vincent au repos (suite `world`,
+  une saison, sauvegardes comprises), pour un budget de 40 s. Les matchs n'en prennent
+  qu'environ 26 s (1 752 matchs à 15 ms) : le reste est le monde, l'IA et les sauvegardes.
+  Le budget est à réévaluer ou le goulot à chercher (`docs/benchmarks.md`, « Performance »).
 - **Scores**, cibles indicatives : 5.7 % de matchs sans but (cible 7 à 9 %) et
   32 % à quatre buts ou plus (cible 22 à 28 %).
 
 ### 3. Vérifications à faire chez Vincent
 
 - La migration 40 sur sa partie (`saves/autosave.json.gz`), comme décrit plus haut.
-- La suite `performance` sur une machine au repos.
 
 ### Points réglés ou écartés
 

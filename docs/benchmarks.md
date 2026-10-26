@@ -3,9 +3,12 @@
 Dernier réglage des matches avec les CSV actuels :
 [recalibration du 18 septembre 2026](calibration-2026-09-18.md), après le
 [diagnostic du 17 septembre](calibration-2026-09-17.md).
-Le réglage améliore les confrontations PSG–Toulouse et City–Burnley ; le Clasico
-reste hors cible. Les statistiques synthétiques et l'équilibre des formations
-passent les critères mesurés.
+Le réglage améliore les confrontations PSG–Toulouse et City–Burnley. Avec la
+[formation choisie par l'effectif](conception-formation-ia.md), les duels porteur contre
+défenseur et la cible de City–Burnley revue le 26 octobre 2026 (voir « Suite match »),
+13 critères sur 15 passent (3 000 matchs) ; le Clasico reste juste au-dessus de sa cible
+(50.7 % de victoires du Real pour 49 % au plus, 23.0 % de défaites pour 24 % au moins). Les statistiques synthétiques et l'équilibre des formations passent
+les critères mesurés.
 
 ## Statut des cibles
 
@@ -47,6 +50,20 @@ Ne pas mélanger la perspective du PSG et celle de l'équipe à domicile.
 Un intervalle statistique accompagne chaque fréquence ; un résultat proche de
 la limite appelle davantage de simulations, pas des changements de paramètres
 sur la seule base du bruit d'échantillonnage.
+
+Une cible décrit un rapport de forces, pas deux noms : quand les données changent ce
+rapport, la cible se revoit. City–Burnley visait 78 / 16 / 6, celle d'un club du haut
+du tableau contre un relégable. Dans les CSV actuels, Burnley n'est plus en Premier
+League et son onze vaut celui d'un club de bas de tableau qui s'y maintient (70.0, contre
+71.7 à 71.9 pour Leeds, Everton ou Brighton) ; l'écart avec City (environ 6 points de
+valeur moyenne du onze) est bien plus faible que celui de PSG–Toulouse (10.5), à qui la
+cible demandait pourtant moins. La cible est passée le 26 octobre 2026 à 70 / 17 / 13
+(tolérances 5, 4 et 4 points) : un club du haut du tableau reçoit un club de bas de
+tableau. Elle a été fixée après avoir mesuré le moteur (69.1 / 18.4 / 12.5 sur
+3 000 matchs) et en est donc proche. Un modèle logit ordonné ajusté sur les cibles des
+quatre autres affiches, sans le moteur, donnerait 62 / 23 / 15 pour cet écart : le
+moteur serait alors trop favorable à City. Les deux lectures sont à départager quand les
+cibles seront réétablies sur un corpus sourcé.
 
 La distribution des scores porte sur un panel fixe de confrontations équilibrées
 domicile/extérieur, dont le protocole et les poids figurent dans le rapport.
@@ -209,6 +226,12 @@ transferts entre régimes pour vérifier l'identité comptable des populations.
   saut annuel élevé et répété, signale une inertie insuffisante. Les mesures viennent de
   `reputation_row` (`benchmarks/world_suites.py`) ; les cibles sont dans `economie` de
   `config/benchmarks.json`.
+
+Les mêmes suites rapportent deux diagnostics sans cible, non bloquants : le nombre moyen
+de changements de formation par club actif et par saison (`formation_changes_per_club_season`),
+et la part moyenne de la formation la plus jouée parmi les clubs actifs
+(`formation_largest_share`). Le premier signale des bascules trop fréquentes, le second une
+formation qui écraserait les autres (`docs/manuel/06-entraineur.md`, « La formation »).
 
 La démographie et l'économie utilisent le monde complet, avec progression,
 contrats, minutes, états et événements nécessaires ; pas une substitution du

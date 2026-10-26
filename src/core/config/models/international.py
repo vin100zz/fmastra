@@ -14,6 +14,14 @@ class NationConfig:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class SquadListConfig:
+    # The candidates a selection weighs at each position before choosing its formation and its 23.
+    pool_per_position: int = Field(default=6, ge=1)
+    # The least affinity for a position at which a player can be called up there.
+    min_affinity: float = Field(default=0.5, ge=0, le=1)
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class InternationalConfig:
     first_euro: int = 2028
     first_world_cup: int = 2030
@@ -21,6 +29,7 @@ class InternationalConfig:
     qualification_noise: float = Field(default=2.0, ge=0, le=5)
     # Player ID -> nation code or configured nation name, for known historical allegiances.
     historical_nations: dict[int, str] = field(default_factory=dict)
+    squad_list: SquadListConfig = field(default_factory=SquadListConfig)
 
     @model_validator(mode="after")
     def check_years(self):

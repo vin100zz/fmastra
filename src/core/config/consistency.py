@@ -126,6 +126,7 @@ def validate_consistency(cfg: Config) -> None:
     for name, formation in cfg.formations.formations.items():
         require(len(formation) == cfg.world.match_rules.players_on_pitch, f"{name}: wrong lineup size")
         require(set(formation) <= positions and formation.count("GB") == 1, f"{name}: invalid positions")
+    require(cfg.formations.choice.change_margin >= 0 and cfg.formations.choice.long_injury_days >= 0, "Negative formation choice rule")
     guard = cfg.management.guardrails
     require(cfg.import_settings.squad_selection.max_players == guard.max_squad, "Import and squad caps disagree")
     require(cfg.import_settings.squad_selection.reserved_goalkeepers == guard.min_goalkeepers, "Goalkeeper minima disagree")

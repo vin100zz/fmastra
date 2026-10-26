@@ -80,6 +80,7 @@ def decode(value: Any) -> Any:
                 value["fields"].setdefault(name, None)
             for name in KIT_COMPONENT_FIELDS: value["fields"].setdefault(name, None)
             for name in ("loaned_ids", "borrowed_ids"): value["fields"].setdefault(name, [])
+            value["fields"].setdefault("formation_squad", {"$tuple": []})
         if cls is Player:
             for name, default in (("national_team", None), ("international_caps", 0), ("international_goals", 0),
                                   ("historical_caps", 0), ("historical_goals", 0), ("international_discipline", {"$map": []}),
@@ -92,6 +93,8 @@ def decode(value: Any) -> Any:
                 value["fields"].setdefault(name, default)
         if cls is World and "offers" not in value["fields"]:
             value["fields"]["offers"] = {"$map": []}
+        if cls is NationalTeam:
+            for name in ("formation", "reference_formation"): value["fields"].setdefault(name, "")
         if cls is InternationalState:
             value["fields"].setdefault("last_camps", {"$map": []})
         if cls is World:
