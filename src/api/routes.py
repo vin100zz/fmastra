@@ -927,8 +927,9 @@ def router(service: GameService) -> APIRouter:
             return history(world, club_id, vue)
 
     @api.get("/competitions/{competition_id}/classement")
-    def standings(competition_id: int, page: int = Query(1, ge=1)) -> dict:
-        with service.reading() as world: return v.paginate(v.table(world, competition_id), page)
+    def standings(competition_id: int, page: int = Query(1, ge=1),
+                  vue: Literal["general", "domicile", "exterieur", "derniers"] = "general") -> dict:
+        with service.reading() as world: return v.paginate(v.table(world, competition_id, view=vue), page)
 
     @api.get("/competitions/{competition_id}/calendrier")
     def calendar(competition_id: int, journee: int | None = Query(None, ge=1), page: int = Query(1, ge=1)) -> dict:

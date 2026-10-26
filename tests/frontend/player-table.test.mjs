@@ -177,6 +177,7 @@ test('a table without values sorts by what its cells show: a figure, an amount i
  assert.equal(sortValue('−3 %'),'-3');assert.equal(sortValue('+11 %'),'11');assert.equal(sortValue('12 (3)'),'12');assert.equal(sortValue('1\u202f263'),'1263');
  assert.equal(sortValue('7.81'),'7.81');assert.equal(sortValue('—'),'');assert.equal(sortValue(''),'');
  assert.ok(Number(sortValue('30 juin 2033'))>Number(sortValue('3 nov. 2030'))&&Number(sortValue('1er juil. 2031'))>Number(sortValue('30 juin 2031')));
+ assert.ok(Number(sortValue('juin 2033'))>Number(sortValue('sept. 2030'))&&Number(sortValue('juil. 2031'))>Number(sortValue('juin 2031')));
  assert.equal(sortValue('<a href="#/club/7" class="club-link">Lens</a>'),'Lens');assert.equal(sortValue('2 – 1'),'2 – 1');
 });
 
@@ -215,11 +216,13 @@ test('appearances show the substitute entries in brackets after the starts',()=>
  assert.equal(appearances(3,3),'0 (3)');
 });
 
-test('the player list shows the lowest fee a club accepts, sortable, or that it will not sell',()=>{
+test('the player list shows the lowest fee a club accepts, sortable, or a padlock where it will not sell',()=>{
  const html=playerTable({items:[{...player,asking_price:26000000,transferable:true},{...player,id:2,asking_price:null,transferable:false}],total:2,page_size:30},true,'asking_price','desc',{asking:true});
  assert.match(html,/data-sort="asking_price"/);assert.match(html,/data-order="desc" data-sort="asking_price">PRIX MIN\.</);
  assert.match(html,/26\sM€/);
- assert.match(html,/<span class="muted">Intransférable<\/span>/);
+ // The word stands in the padlock's tooltip, in the column « Listé »; no fee is asked.
+ assert.match(html,/<span class="locked" title="Intransférable"><svg/);
+ assert.doesNotMatch(html,/<span class="muted">Intransférable<\/span>/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
 });
 

@@ -114,6 +114,38 @@ export function highlightsCard(match,link=playerLink){
  return card('Les temps forts',rows?`<div class="highlights">${rows}</div>`:`<div class="card-body">${empty('Ni but, ni blessure, ni carton rouge.','Rien à signaler')}</div>`);
 }
 
+// The flow of the chances (docs/charte-graphique.md, « Fil du match »): each side's expected goals added up shot after shot,
+// a step at each, in its colour in a chart, against the minutes; a ball where a shot went in, the half time dashed, the
+// total of each side at the end of its line. Nothing for a match played before its shots were kept.
+export function flowCard(match){
+ const result=match.result,shots=result.shots||[];
+ if(!shots.length)return '';
+ const W=640,H=196,left=32,right=44,top=12,bottom=28,half=halfEnd(result.events),end=Math.max(result.duration||0,half+2700,...shots.map(shot=>shot.second));
+ const x=second=>left+(W-left-right)*second/end;
+ const sides=[match.home.id,match.away.id],totals=sides.map(team=>shots.filter(shot=>shot.team_id===team).reduce((sum,shot)=>sum+shot.xg,0));
+ const ceiling=Math.max(1,Math.ceil(Math.max(...totals))),y=value=>top+(H-top-bottom)*(1-value/ceiling);
+ const goals=result.events.filter(event=>event.kind==='goal'&&event.period<=2);
+ const colours=chartColours(match.home,match.away);
+ const grid=Array.from({length:ceiling+1},(_,value)=>`<line class="cc-grid" x1="${left}" x2="${W-right}" y1="${y(value)}" y2="${y(value)}"/><text class="cc-tick" x="${left-8}" y="${y(value)+4}" text-anchor="end">${value}</text>`).join('');
+ // The minutes of each half from its own kickoff: 45 stands on the whistle, the second half counts on from there.
+ const at=minute=>minute<=45?minute*60*half/2700:half+(minute-45)*60;
+ const ticks=[0,15,30,45,60,75,90].map(minute=>`<text class="cc-tick" x="${x(at(minute))}" y="${H-6}" text-anchor="middle">${minute}′</text>`).join('');
+ // The two totals stand at the end of their lines, 16 apart at least, the higher one above.
+ const labels=totals.map(y),gap=16-Math.abs(labels[0]-labels[1]);
+ if(gap>0){const upper=totals[0]>=totals[1]?0:1;labels[upper]-=gap/2;labels[1-upper]+=gap/2;}
+ const lines=sides.map((team,index)=>{
+  let sum=0;const points=[`${x(0)},${y(0)}`],balls=[];
+  for(const shot of shots.filter(shot=>shot.team_id===team)){
+   points.push(`${x(shot.second)},${y(sum)}`);sum+=shot.xg;points.push(`${x(shot.second)},${y(sum)}`);
+   if(goals.some(goal=>goal.team_id===team&&goal.second===shot.second))balls.push(`<circle class="cc-goal" cx="${x(shot.second)}" cy="${y(sum)}" r="5"/>`);
+  }
+  points.push(`${x(end)},${y(sum)}`);
+  return `<polyline class="cc-line flow" style="stroke:${colours[index]}" points="${points.join(' ')}"/>${balls.join('')}<text class="cc-value" x="${W-right+6}" y="${labels[index]+5}">${expectedGoals(sum)}</text>`;
+ }).join('');
+ const svg=`<svg class="club-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Buts attendus cumulés au fil du match">${grid}<line class="cc-half" x1="${x(half)}" x2="${x(half)}" y1="${top}" y2="${H-bottom}"/>${ticks}${lines}</svg>`;
+ return card('Fil du match',`<div class="cc-body">${svg}</div>`,'<span class="card-hint">buts attendus cumulés</span>','match-flow');
+}
+
 export async function matchScreen(id){
  const match=await api(`/matches/${id}`);
  const result=match.result;
@@ -134,5 +166,5 @@ export async function matchScreen(id){
  if(!result.home_stats)return header+line+card('Résultat archivé',empty('Le score est conservé. Les détails ne sont pas disponibles pour ce moteur ou cette saison archivée.','Score définitif'));
  const marks=playerEvents(result.events);
  return header+(result.status!=='played'?`<div class="notice">Résultat attribué par forfait (${e(result.status)}).</div>`:'')
-  +replay.panel+`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${line}${highlightsCard(match)}${statsCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;
+  +replay.panel+`<div class="match-layout"><div class="match-home">${lineupCard(match,'home',marks)}</div><div class="match-center">${line}${highlightsCard(match)}${statsCard(match)}${flowCard(match)}</div><div class="match-away">${lineupCard(match,'away',marks)}</div></div>`;
 }

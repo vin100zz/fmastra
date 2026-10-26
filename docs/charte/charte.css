@@ -709,6 +709,11 @@ span.entity-step svg{opacity:.3}
 .cc-value{font:700 semi-condensed var(--fs-figure)/1 var(--display);fill:var(--strong)}
 .cc-line{fill:none;stroke:var(--series-1);stroke-width:2;stroke-linejoin:round}
 .cc-line.dashed{stroke-dasharray:5 5}
+/* The flow of a match (« Fil du match »): each side's line in its colour in a chart, a step at each shot; the half time a
+   dashed line, a ball where a shot went in. */
+.cc-line.flow{stroke-linejoin:miter}
+.cc-half{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3}
+.cc-goal{fill:var(--panel);stroke:var(--strong);stroke-width:1.5}
 .cc-point{fill:var(--series-1);stroke:var(--panel);stroke-width:2}
 .cc-point.open{fill:var(--panel);stroke:var(--series-1)}
 /* A league rank season after season, or the stage of each edition of a selection: a column of 44 at least for each, a chart
@@ -744,10 +749,10 @@ span.entity-step svg{opacity:.3}
 .cc-rank.open{background:var(--panel);box-shadow:inset 0 0 0 2px var(--series-1),0 0 0 2px var(--panel);color:var(--strong)}
 .cc-year{transform:translateX(-50%);color:var(--muted);white-space:nowrap}
 .cc-year.now{font-weight:600;color:var(--strong)}
-/* A level month after month, drawn to the size of its card: the line of a series, 2 px; a dot in the club's colours where
-   a season opens and on the latest month; the level written at both ends as a figure; the ordinate and the dates in the
-   muted ink, as HTML text over the stretched drawing. */
-.level-chart{position:relative;flex:1;min-height:200px}
+/* A level month after month, drawn to the width of its card, 240 high, its ordinate 20 points at least: the line of a
+   series, 2 px; a dot in the club's colours where a season opens and on the latest month; the level written at both ends
+   as a figure; the ordinate and the dates in the muted ink, as HTML text over the stretched drawing. */
+.level-chart{position:relative;flex:1;height:240px}
 .plot{position:absolute;inset:var(--s6) var(--s6) calc(var(--s6) + var(--s1)) calc(2*var(--s6))}
 .plot-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .grid-line{stroke:var(--row-line);stroke-width:1}
@@ -857,10 +862,27 @@ span.entity-step svg{opacity:.3}
 .leader-bars>li>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--strong)}
 .leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
 .club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
-.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
-.leader-bars.soft i{background:var(--bar-soft)}
+.leader-bars>li>i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leader-bars.soft>li>i{background:var(--bar-soft)}
 .leader-bars b{text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
+/* Clubs ranked on one figure (« Classement de clubs »): the first one large, on the raised ground, its figure in the size of
+   a hero's and per match under it; then the lines of the players' ranking, the club after its dot, the bar in the club's
+   colour in a chart (--club-bar), the largest figure of the list filling it. The user's club washed. */
+.leader-lead{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:0 var(--s3) var(--s1);padding:var(--s2) var(--s3);border-radius:var(--radius-box);background:var(--panel-2)}
+.leader-lead>strong>a{display:inline-flex;align-items:center;gap:var(--s2)}
+.leader-lead>strong{min-width:0;overflow:hidden;white-space:nowrap;font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
+.leader-lead>strong .kit-dot{width:18px;height:18px}
+.leader-lead>span{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.leader-lead b{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong)}
+.leader-lead small{font:600 var(--fs-small)/14px var(--text);color:var(--muted)}
+.leader-bars.clubs>li{grid-template-columns:24px 170px minmax(0,1fr) 32px}
+.leader-bars.clubs>li>a{display:flex;align-items:center;gap:6px}
+.leader-bars.clubs>li>i{background:var(--club-bar)}
+.leader-bars>li.own{background:var(--own-row)}
+/* A player his club will not sell, in the column « Listé » of a list: a padlock of 14 in the muted ink. */
+.locked{display:inline-flex;vertical-align:middle}
+.locked svg{width:14px;height:14px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
 
 /* Under the pointer (.hover shows the state on a board). One ground for whatever is under it, --panel-3; what is open,
    picked or tinted keeps its own. Nothing else moves: no colour, no border, no shadow.

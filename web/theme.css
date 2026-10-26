@@ -956,8 +956,6 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .league-layout,.calendar-layout,.history-layout{display:grid;gap:10px;align-items:start}
 .league-layout{grid-template-columns:minmax(0,1fr) 360px}
 .league-layout .card,.calendar-layout .card,.history-layout .card,.stats-boards .card{margin-bottom:0}
-.league-tiles{display:flex;flex-direction:column;gap:10px}
-.league-tiles .stat-card{padding:10px 14px}.league-tiles .stat-card strong{margin:2px 0}
 .round-stepper{display:flex;align-items:center;gap:4px;margin-bottom:10px}
 .round-pills{display:flex;gap:3px;flex:1;min-width:0}
 .round-pills a,.round-step{display:grid;place-items:center;height:30px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--ink-2);font-size:13px;font-weight:400}

@@ -346,7 +346,11 @@ def match_row(world: World, match: Match) -> dict:
                             else f"Journée {match.round_number}")}
 
 
-def table(world: World, competition_id: int, season: int | None = None) -> list[dict]:
+# The views of a league's table: every match, the matches at home, away, the last five of each club.
+TABLE_VIEWS = {"general": {}, "domicile": {"side": "home"}, "exterieur": {"side": "away"}, "derniers": {"last": 5}}
+
+
+def table(world: World, competition_id: int, season: int | None = None, view: str = "general") -> list[dict]:
     competition = world.competitions[competition_id]
     if competition.kind == "cup":
         return []
@@ -362,6 +366,11 @@ def table(world: World, competition_id: int, season: int | None = None) -> list[
                  "movement": "direct" if index < rules.direct_places else
                              "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
                 for index, row in enumerate(standings(competition, matches, world.config))]
+    if view != "general":
+        # A partial table places nobody: no title, no cup, no relegation hangs on it.
+        return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1,
+                 "form": row.form[-5:], "movement": None, "europe": None}
+                for index, row in enumerate(standings(competition, matches, world.config, **TABLE_VIEWS[view]))]
     rows = standings(competition, matches, world.config)
     europe, by_rank = european_places(world, competition, [row.club_id for row in rows], season if season is not None else world.season)
     return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
@@ -839,7 +848,8 @@ def match_detail(world: World, match: Match) -> dict:
         return data
     detail = {"engine": result.engine, "status": result.status, "duration": result.duration, "replay": result.replay,
               "home_stats": asdict(result.home_stats) if result.home_stats else None,
-              "away_stats": asdict(result.away_stats) if result.away_stats else None}
+              "away_stats": asdict(result.away_stats) if result.away_stats else None,
+              "shots": [{"second": second, "team_id": team_id, "xg": xg} for second, team_id, xg in result.shots]}
     # Where room is short (the highlights, the pitch), a player goes by his short name, told apart within his side's squad.
     shorts = {match.home_id: side_short_names(world, match, "home"), match.away_id: side_short_names(world, match, "away")}
     detail["events"] = [{**asdict(event), "player": match_player_name(world, result, event.player_id),

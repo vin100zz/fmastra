@@ -326,6 +326,7 @@ def test_views_pagination_and_no_rng_leak(client):
     routes = ["/monde/etat", "/monde/palmares", "/partie/slots", "/clubs", "/clubs?statut=dormant&page=2", "/competitions",
               f"/clubs/{club_id}", *[f"/clubs/{club_id}/{section}" for section in ("effectif", "calendrier", "finances", "transferts", "historique", "apercu")],
               *[f"/competitions/{league_id}/{section}" for section in ("classement", "calendrier", "statistiques", "historique")],
+              *[f"/competitions/{league_id}/classement?vue={view}" for view in ("domicile", "exterieur", "derniers")],
               "/joueurs?page=2", "/joueurs?tri=contract_end&ordre=asc", f"/joueurs/{player_id}", f"/joueurs/{player_id}/historique", f"/matches/{match_id}"]
     for route in routes:
         response = client.get("/api" + route)
@@ -1077,3 +1078,15 @@ def test_the_search_finds_players_clubs_competitions_and_national_teams_by_name(
     assert find("") == [] and find("f") == [] and find("zzzzqqq") == []
     assert client.get("/api/recherche?q=fra&type=arbitres").status_code == 422
     assert {key: rng.getstate() for key, rng in world.rngs.items()} == states
+
+
+def test_a_partial_table_ranks_every_club_without_placing_any(client):
+    world = client.app.state.game.world
+    league_id = next(c.id for c in world.competitions.values() if c.kind == "league")
+    whole = client.get(f"/api/competitions/{league_id}/classement").json()["items"]
+    for view in ("domicile", "exterieur", "derniers"):
+        rows = client.get(f"/api/competitions/{league_id}/classement?vue={view}").json()["items"]
+        assert sorted(row["club"]["id"] for row in rows) == sorted(row["club"]["id"] for row in whole)
+        assert [row["rank"] for row in rows] == list(range(1, len(rows) + 1))
+        assert all(row["movement"] is None and row["europe"] is None for row in rows)
+    assert client.get(f"/api/competitions/{league_id}/classement?vue=autre").status_code == 422

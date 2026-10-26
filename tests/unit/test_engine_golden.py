@@ -66,10 +66,10 @@ def settled(value):
 
 
 def fingerprint(result) -> str:
-    # The numbers of the match sheet, and whether the result keeps its replay, are written by the world once the match is
-    # played, not by the engine.
+    # The numbers of the match sheet, whether the result keeps its replay and the shots kept from its events are written by
+    # the world once the match is played, not by the engine.
     data = asdict(result)
-    del data["shirts"], data["replay"]
+    del data["shirts"], data["replay"], data["shots"]
     return sha256(json.dumps(settled(data), sort_keys=True, default=repr).encode()).hexdigest()
 
 

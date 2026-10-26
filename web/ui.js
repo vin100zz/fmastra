@@ -99,6 +99,8 @@ export const COMPOSITE_SECTIONS=[
  {key:'defense',title:'Défense',composites:['progression_defense','occasion_defense']},
  {key:'goalkeeper',title:'Gardien',composites:['arret','sortie']}];
 export const date =(value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
+// The end of a contract in a list: its month, short, and its year (« juin 2029 », « sept. 2030 »), the whole date in its tooltip.
+export const contractEnd = value => value ? `<span title="${escape(date(value))}">${new Intl.DateTimeFormat('fr-FR',{month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`))}</span>` : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
@@ -192,6 +194,9 @@ const chartTone = colour => {const [L,C,h]=oklch(colour);return fromOklch([Math.
 export const legibleOn = (colour, surface) => contrastRatio(colour,surface)>=3?colour:oklch(colour)[1]>=.04?chartTone(colour):null;
 const chartCandidates = club => [club?.major_color,club?.minor_color].map(safeColor).filter(colour=>colour&&oklch(colour)[1]>=.04).map(chartTone);
 const colourDistance = (first, second) => {const [L1,C1,h1]=oklch(first),[L2,C2,h2]=oklch(second);return 100*Math.hypot(L1-L2,C1*Math.cos(h1)-C2*Math.cos(h2),C1*Math.sin(h1)-C2*Math.sin(h2));};
+// One club's colour in a chart where clubs stand side by side (a ranking of clubs): its first colour that is one, in its
+// chart tone; an ink grey for a club without one.
+export const chartColour = club => chartCandidates(club)[0]||'var(--ink-2)';
 // The two sides of a comparison: home keeps its first colour, away takes the first of its own that stands 15 apart from it
 // (OKLab × 100); a side without one takes an ink grey.
 export function chartColours(home, away){
@@ -341,9 +346,10 @@ export function sortValue(cell){
  if(!shown||shown==='—')return '';
  const figure=/^([+−-]?) ?(\d[\d ]*(?:\.\d+)?) ?(M€|k€|€|%)?(?: ?\(.*\))?$/.exec(shown);
  if(figure){const value=Number(figure[2].replace(/ /g,''))*({'M€':1e6,'k€':1e3}[figure[3]]||1);return String(figure[1]&&figure[1]!=='+'?-value:value);}
- const day=/^(?:[a-zé]+\.? )?(\d{1,2})(?:er)? ([a-zéû]+)\.? (\d{4})$/i.exec(shown);
+ // A date, its day left out for a month (the end of a contract: « juin 2029 »).
+ const day=/^(?:[a-zé]+\.? )?(?:(\d{1,2})(?:er)? )?([a-zéû]+)\.? (\d{4})$/i.exec(shown);
  const month=day?MONTHS.findIndex(name=>day[2].toLowerCase().startsWith(name)):-1;
- return month>=0?String(Date.UTC(Number(day[3]),month,Number(day[1]))):shown;
+ return month>=0?String(Date.UTC(Number(day[3]),month,Number(day[1]??1))):shown;
 }
 // `sort` gives the raw value behind each cell (see sortableTable); without it the table sorts by what its cells show, unless
 // the server sorts it (its headings are buttons already), headings stand over its columns, or `sort` is false.
@@ -407,6 +413,8 @@ export const mainNation = player => {const code=mainNationCode(player);return co
 export const loanTag = player => player.loan ? `<span class="tag loan" title="${escape(`Prêté par ${player.loan.parent?.name} à ${player.loan.club?.name} jusqu’au ${date(player.loan.end)}`)}">Prêt</span>` : '';
 // What a club would let a player go for, or what he would come for: a transfer, a loan, both, or `none`. `short` keeps
 // the initials, named in their tooltips, for the columns of a list.
+// A player his club will not sell, in the column of the lists: a padlock, its word in its tooltip.
+const LOCKED='<span class="locked" title="Intransférable"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>';
 export const marketTags = (transfer, loan, none='—', short=false) => transfer||loan ? `<span class="tags">${transfer?`<span class="tag"${short?' title="Transfert"':''}>${short?'T':'Transfert'}</span>`:''}${loan?`<span class="tag loan"${short?' title="Prêt"':''}>${short?'P':'Prêt'}</span>`:''}</span>` : none;
 const textColumns=['position','name','nation','club','academy_club'];
 const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA',penalty:'PEN'};
@@ -460,8 +468,8 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    nation:mainNation(player),
    age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
    caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
-   value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
-   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
+   value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false||player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
+   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:player.transferable===false?LOCKED:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${contractEnd(player.contract_end)}</span>`,
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}\u00a0%</span>`,
    form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
