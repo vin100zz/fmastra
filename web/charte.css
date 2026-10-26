@@ -1023,8 +1023,10 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .leader-bars li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);counter-increment:leader}
 .leader-bars li::before{content:counter(leader);text-align:right;font-weight:600;color:var(--muted)}
 .leader-bars li>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--series-1-soft),color-mix(in srgb,var(--series-1) 55%,var(--series-1-soft)))}
-.leaders-card.soft .leader-bars i{background:var(--series-1-soft)}
+.leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
+.club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
+.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leaders-card.soft .leader-bars i{background:var(--bar-soft)}
 .leader-bars b{font-weight:700;text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
 
