@@ -38,9 +38,11 @@ class Slot(Command):
 
 class NewGame(Command):
     # The divisions each nation plays down to (FRA: 3 plays its first three), the configuration's by default; the club the
-    # user takes charge of, chosen later when none is given. Without a seed, the game draws one.
+    # user takes charge of, chosen later when none is given. Without a seed, the game draws one. The slot it is saved in,
+    # `autosave` without one.
     nations: dict[str, int] | None = None
     club_id: int | None = None
+    slot: str = Field(default="autosave", pattern=r"^[\w-]{1,64}$")
     graine: int | None = Field(default=None, ge=0, le=2**63 - 1, strict=True)
 
 
@@ -358,7 +360,8 @@ def router(service: GameService) -> APIRouter:
             club = data["clubs"].get(command.club_id) if command.club_id is not None else None
             if command.club_id is not None and (club is None or not creation_views.played(club, levels)):
                 raise HTTPException(400, "Ce club ne joue aucune des divisions choisies.")
-        return service.submit("create", command.commande_id, {"seed": command.graine, "levels": levels, "club_id": command.club_id})
+        return service.submit("create", command.commande_id, {"seed": command.graine, "levels": levels, "club_id": command.club_id,
+                                                                   "slot": command.slot})
 
     @api.post("/partie/sauvegarder", status_code=202)
     def save(command: Slot) -> dict:

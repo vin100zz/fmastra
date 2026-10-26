@@ -147,6 +147,7 @@ où le fond est déjà jaune.
 | Pied du menu | `.sidebar-bottom`, `.sidebar-tools` | Ma partie, le mode Auto, le thème et le manuel du jeu : quatre boutons d'une icône, de même largeur, sur une ligne ; leur nom en infobulle. Auto montre ce que fait un clic (lecture, pause), sur fond d'accent tant qu'il tourne ; le thème, celui où il mène |
 | Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut. Elle finit sur un chevron dans une pastille (`.go`) |
 | Champ | `.field` | Recherche, liste déroulante : blancs, cerclés d'une ombre fine, sans bordure |
+| Nom de la sauvegarde | `.slot-field` | Dans la barre du haut de « Nouvelle partie », avant « Commencer » : 40 de haut, sur `--panel-2`. Voir « Nouvelle partie » |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
 | En-tête de club, de sélection | `.hero`, `.hero-logo`, `.hero-name`, `.hero-context`, `.hero-flag` | Bandeau de 88 aux couleurs du club ou de la sélection, son écusson seul, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
@@ -374,7 +375,7 @@ Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
 
 - **Barre du haut** : la date est le premier jour de la partie (« Saison 2026 / 2027 »,
   « mercredi 1 juillet 2026 ») ; l'action principale est « Commencer », grisée tant qu'aucun club
-  n'est choisi ; les prochains matches et le mercato de la partie en cours n'y sont pas. La graine
+  n'est choisi ou que le nom de la sauvegarde n'en est pas un ; les prochains matches et le mercato de la partie en cours n'y sont pas. La graine
   n'est écrite nulle part : la partie en tire une.
 - **Monde** : une carte, une ligne par nation (`.nation-line`, 26), dans l'ordre de
   `config/creation.json`. La case qui la joue (`.check`), son drapeau et son nom, ses divisions,
@@ -390,6 +391,14 @@ Un seul écran, de gauche à droite : le monde, ses clubs, le club choisi.
 - **Club choisi** : son bandeau (écusson, nom, drapeau et championnat à sa suite), sans tuile ;
   dessous, ses tuiles (réputation, niveau et potentiel gradués, plafond salarial mensuel), ses faits
   (stade, entraînement, recrutement des jeunes) et ses 16 meilleurs joueurs.
+- **Nom de la sauvegarde** (`.slot-field`) : dans la barre, juste avant « Commencer », un champ de
+  240 × 40 sur `--panel-2`, sans libellé : la disquette de « Reprendre » en tête, le nom en 16 dans
+  la police des titres (700, `--display`). Il prend le nom du club choisi (espaces et signes changés
+  en tirets) tant qu'on n'en écrit pas d'autre. Écrit, il passe en blanc cerclé de `--accent-text`.
+  Un nom déjà pris par une sauvegarde passe sur `--bad-soft` cerclé de `--bad-line`, la disquette en
+  `--bad` ; son infobulle dit ce qu'il remplacerait (son nom, son club, la date de sa partie) et
+  « Commencer » demande confirmation. Un nom qu'une sauvegarde ne peut pas porter (autre chose que
+  lettres, chiffres, `_` et `-`) prend le même rouge, son texte en `--bad`, et grise « Commencer ».
 - **Case à cocher** (`.check`) : 18, bordée, au rayon de la charte ; cochée, le fond de l'accent,
   sa bordure `--accent-text`, la coche à l'encre de l'accent. C'est un bouton (`aria-pressed`).
 

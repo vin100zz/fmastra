@@ -12,7 +12,7 @@ import {honoursScreen,pickClub} from './honours.js';
 import {manualScreen} from './manual.js';
 import {internationalScreen} from './international.js';
 import {homeScreen} from './home.js';
-import {newGameScreen,creationChoice,leaveCreation} from './new-game.js';
+import {newGameScreen,creationChoice,leaveCreation,SLOT,slotFor,savedUnder,replacedTip} from './new-game.js';
 import {newsScreen} from './news.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
@@ -59,6 +59,19 @@ function showNews(){
  const pending=state.news?.pending.length||0,todo=document.querySelector('#advance-todo');
  todo.textContent=pending;todo.hidden=!pending||Boolean(state.live_match_id)||state.awaiting_lineup!=null;
 }
+// The name a new game is saved under, in the bar before Commencer: the club's until the user writes one. A name already
+// saved under is marked, its tooltip telling what Commencer would replace.
+function slotName(made){
+ const field=document.querySelector('#slot-field'),input=field.querySelector('input');
+ field.hidden=!made;
+ if(!made){input.value='';delete input.dataset.edited;delete input.dataset.club;return '';}
+ if(!input.dataset.edited&&made.club&&input.dataset.club!==String(made.club.id)){input.value=slotFor(made.club.name);input.dataset.club=made.club.id;}
+ const name=input.value.trim(),taken=savedUnder(name,made.saves);
+ field.classList.toggle('taken',Boolean(taken));
+ field.classList.toggle('invalid',name!==''&&!SLOT.test(name));
+ if(taken)field.dataset.tip=replacedTip(taken);else delete field.dataset.tip;
+ return name;
+}
 function updateAdvanceButton(){
  const button=document.querySelector('#advance'),simulate=document.querySelector('#simulate');
  showNews();
@@ -67,11 +80,13 @@ function updateAdvanceButton(){
  const made=onCreationScreen()?creationChoice():null;
  document.body.classList.toggle('creating',Boolean(made));
  document.querySelector('.advance-group').hidden=!made&&(!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);
+ if(!made)slotName(null);
  if(made){
   document.querySelector('#season-label').textContent=`SAISON ${season(made.season)}`;
   document.querySelector('#game-date').textContent=date(made.date,true);
+  const name=slotName(made);
   button.innerHTML=`Commencer ${GO}`;
-  button.disabled=Boolean(polling)||submitting||Boolean(state.auto?.running)||!made.club;
+  button.disabled=Boolean(polling)||submitting||Boolean(state.auto?.running)||!made.club||!SLOT.test(name);
   blockOn(button,[]);
   simulate.hidden=true;
   document.querySelector('#advance-todo').hidden=true;
@@ -378,11 +393,19 @@ document.querySelector('#autoplay').addEventListener('click',async()=>{
 // Commencer, on the screen of a new game: the game is made with the divisions and the club chosen (a game under way is
 // replaced once the user agrees), then opens on its first day.
 async function startGame(){
- const made=creationChoice();
- if(!made?.club||polling||submitting)return;
- if(state.exists&&!state.recovery_required&&!(await confirmDialog({eyebrow:'NOUVELLE PARTIE',title:'Remplacer la partie en cours ?',text:'Elle reste telle que sa dernière sauvegarde l’a gardée.',confirmLabel:'Commencer'})))return;
- await command('/partie/creer',{nations:made.levels,club_id:made.club.id});
+ const made=creationChoice(),slot=slotName(made);
+ if(!made?.club||!SLOT.test(slot)||polling||submitting)return;
+ // One question for all the game replaces: the game under way, the save of the same name.
+ const playing=state.exists&&!state.recovery_required,taken=Boolean(savedUnder(slot,made.saves));
+ const replaced=`« ${slot} » sera remplacée par la nouvelle partie.`;
+ if((playing||taken)&&!(await confirmDialog({eyebrow:'NOUVELLE PARTIE',title:playing?'Remplacer la partie en cours ?':'Remplacer cette sauvegarde ?',
+  text:playing?`Elle reste telle que sa dernière sauvegarde l’a gardée.${taken?` ${replaced}`:''}`:replaced,confirmLabel:taken?'Remplacer':'Commencer',danger:taken})))return;
+ await command('/partie/creer',{nations:made.levels,club_id:made.club.id,slot});
 }
+// The name is the user's once written, whatever club is picked after. Enter starts the game.
+const slotInput=document.querySelector('#slot-name');
+slotInput.addEventListener('input',()=>{slotInput.dataset.edited='true';updateAdvanceButton();});
+slotInput.addEventListener('keydown',event=>{if(event.key==='Enter'&&!document.querySelector('#advance').disabled)startGame();});
 document.querySelector('#advance').addEventListener('click',()=>{
  if(onCreationScreen()&&creationChoice())return startGame();
  if(state.live_match_id){if(liveStatus()==='finished')command('/direct/terminer',{});return;}
