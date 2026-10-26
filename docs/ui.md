@@ -75,12 +75,18 @@ Barre persistante en tête d'application :
 - Précédent et Suivant, avant la date : l'historique de la fenêtre, pour le jeu en plein écran ou dans sa fenêtre
   d'application, qui n'ont pas les flèches du navigateur ; une flèche se grise au bout de l'historique
 - Date courante, saison, prochaine échéance
-- Les trois prochains matchs du club dirigé, dans un bandeau segmenté à gauche
-  de « Continuer » : pour chacun, le délai en gros (J-6, « Auj. »), puis
-  l'adversaire (avion si le match est à l'extérieur) et la compétition dessous,
-  en bleu pour une coupe. Le prochain match a son délai et un soulignement en
-  couleur d'accent ; deux matchs seulement sous 1400 px, aucun sous 1150 px, et la pastille du mercato
-  disparaît sous 1280 px. Chacun ouvre la fiche de l'adversaire
+- Les matchs du club dirigé, dans un bandeau segmenté à gauche de « Continuer »,
+  qui se lit dans le temps (`club_last_matches`, `club_next_matches` de
+  `/monde/etat`) : les derniers joués de la saison, chacun par son score du côté
+  du club sur la pastille de son issue (V, N, D), un trait sarcelle pour
+  aujourd'hui, puis les trois prochains sur le lavis sarcelle, chacun par son
+  délai en gros (J-6, « Auj. »). Pour tous, l'adversaire (avion si le match est
+  à l'extérieur) et la compétition dessous, en bleu pour une coupe. Le prochain
+  match a son délai et un soulignement en sarcelle. Selon la place : trois matchs
+  joués tant que tous les noms se lisent en entier, puis deux, puis le score
+  seul après la pastille de l'adversaire ; deux prochains seulement sous
+  1200 px, aucun match sous 950 px. Un match joué ouvre son compte rendu, un
+  match à venir la fiche de l'adversaire
 - Un bouton à la loupe, à gauche de ces matchs : la recherche globale (voir « Recherche globale »)
 - Bouton « Continuer », avec en pastille rouge le nombre de messages d'Actualités qui attendent une réponse ; la
   pastille ouvre le premier d'entre eux
@@ -1299,7 +1305,8 @@ signaler explicitement plutôt que d'afficher des sections vides.
 ```
 GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping),
                                           controlled_club, news : {unread, next_unread, pending: [id]} (messages non lus, le prochain à lire, ceux à traiter),
-                                          slot (sauvegarde où la partie s'enregistre)
+                                          slot (sauvegarde où la partie s'enregistre), club_last_matches (les 3 derniers joués de la saison,
+                                          par date, avec outcome V/N/D du côté du club), club_next_matches (les 3 prochains)
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}

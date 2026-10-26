@@ -16,7 +16,7 @@ import {newGameScreen,creationChoice,leaveCreation} from './new-game.js';
 import {newsScreen} from './news.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
-import {awayIcon,clubPreview} from './club-overview.js';
+import {awayIcon,clubPreview,outcomeLabels} from './club-overview.js';
 import {landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage} from './flow.js';
 import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
@@ -115,17 +115,36 @@ const busyButtons=()=>{
 function reopenMenu(scroll){const menu=main.querySelector('.entity-menu');if(!menu)return;menu.open=true;menu.querySelector('.menu').scrollTop=scroll;}
 function routeParts(){const [path,search='']=location.hash.slice(1).split('?');return {parts:(path||'/').split('/').filter(Boolean),params:new URLSearchParams(search)};}
 function changeParams(values){const path=location.hash.split('?')[0]||'#/';location.hash=`${path}?${new URLSearchParams(values)}`;}
-// The controlled club's next three matches, left of Continuer: days to go, opponent (plane if away), competition (cups in blue).
-// Each opens the page of its opponent.
+// The controlled club's last matches and its next three, left of Continuer, in one band read in time (« Barre du haut »):
+// a played match by its score from the club's side on the badge of its outcome, a rule for today, then each match to come
+// by its days to go; under the opponent (plane if away), the competition (cups in blue). `short` keeps a played match to the
+// opponent's dot and the score. A played match opens its report, one to come the page of its opponent.
 const daysBetween=(from,to)=>Math.round((new Date(`${to}T12:00:00`)-new Date(`${from}T12:00:00`))/864e5);
-function nextMatchesHtml(){
+function barMatchesHtml(count,short){
  const club=state.controlled_club_id;
- return (state.club_next_matches||[]).map(match=>{
+ const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span>`;
+ const played=(state.club_last_matches||[]).slice(-count).map(match=>{
+  const home=match.home.id===club,opponent=home?match.away:match.home,ours=list=>(home?list:[...list].reverse()).join('–');
+  const title=`${outcomeLabels[match.outcome]}${short?` · ${opponent.name}`:''} · ${date(match.date)} · ${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${match.penalties?` · t.a.b. ${ours(match.penalties)}`:''}`;
+  return `<a class="last-match ${match.outcome}${short?' short':''}" href="#/match/${match.id}" title="${e(title)}">${short?kitDot(opponent):''}<span class="last-match-score">${ours(match.score)}</span>${short?'':body(match,home,opponent)}</a>`;
+ });
+ const coming=(state.club_next_matches||[]).map(match=>{
   const home=match.home.id===club,opponent=home?match.away:match.home,days=daysBetween(state.date,match.date);
-  return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span><span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span></a>`;
- }).join('');
+  return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span>${body(match,home,opponent)}</a>`;
+ });
+ return played.join('')+(played.length&&coming.length?'<i class="bar-today" aria-hidden="true"></i>':'')+coming.join('');
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}document.querySelector('#next-matches').innerHTML=state.exists&&!state.recovery_required?nextMatchesHtml():'';if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+// As many played matches as the bar has room for: three while every name reads whole, then two, then the score alone. A
+// name cut only by its block's widest is not short of room: its block stands at that width.
+const BAR_STAGES=[[3,false],[2,false],[3,true],[2,true]];
+function drawBarMatches(){
+ const band=document.querySelector('#next-matches');
+ if(!state.exists||state.recovery_required){band.innerHTML='';return;}
+ const cut=()=>[...band.querySelectorAll('.last-match,.next-match')].some(block=>block.getBoundingClientRect().width<parseFloat(getComputedStyle(block).maxWidth)-1
+  &&[...block.querySelectorAll('.next-match-who b,.next-match-comp')].some(text=>text.scrollWidth>text.clientWidth));
+ for(const [count,short] of BAR_STAGES){band.innerHTML=barMatchesHtml(count,short);if(!cut())break;}
+}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}drawBarMatches();if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
  const dialog=document.querySelector('#confirm-dialog');
@@ -488,9 +507,10 @@ main.addEventListener('click',event=>{
  if(picked)params.set('sel',picked);else params.delete('sel');
  history.replaceState(history.state,'',`${location.hash.split('?')[0]}${params.size?`?${params}`:''}`);
 });
-// A new window size changes the rows that fit (a list, the columns of a club's Présentation) and whether the side panel has room.
+// A new window size changes the rows that fit (a list, the columns of a club's Présentation), whether the side panel has room
+// and how many played matches the bar holds.
 let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit],[data-fill]'))render();},250);});
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(main.querySelector('[data-fit],[data-fill]'))render();else drawBarMatches();},250);});
 main.addEventListener('toggle',event=>{const menu=event.target;if(!menu.matches?.('.entity-menu')||!menu.open)return;const panel=menu.querySelector('.menu'),current=panel.querySelector('[aria-checked="true"]');if(current&&!panel.scrollTop)panel.scrollTop=current.offsetTop-(panel.clientHeight-current.offsetHeight)/2;},true);
 // The bar's Précédent and Suivant walk the window's history, for the game's window that has no browser's arrows (app
 // window, full screen). Where the browser says how far it goes (the Navigation API of Chrome and Edge), an end greys out.

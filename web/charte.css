@@ -34,16 +34,31 @@ html{scrollbar-gutter:stable}
 @media(max-width:650px){.history-nav{display:none}}
 .topbar::before,.topbar::after{content:"";position:absolute;inset:0 auto 0 0;width:64px;background:var(--accent);clip-path:polygon(0 0,40px 0,16px 100%,0 100%)}
 .topbar::after{clip-path:polygon(50px 0,56px 0,32px 100%,26px 100%)}
+/* Short of room, the club's matches give way, not the day nor the actions around them. */
+.date-block,.time-controls>:not(.next-matches){flex:none}
+.time-controls{min-width:0}
 .date-block .eyebrow{font-size:var(--fs-small);line-height:14px}
 .date-block strong{line-height:22px;margin-top:0!important}
+/* The club's matches, one band read in time: the played on its grey, each by its score on the badge of its outcome, a
+   turquoise rule for today, then those to come on the turquoise's wash, the next one marked in it. */
 .next-matches{border:0;border-radius:var(--radius-box);background:var(--panel-2)}
-.next-match{height:var(--h-bar-control)}
-.next-match+.next-match{border-left-color:var(--panel)}
+.next-match{height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2);background:var(--c4-soft)}
+:is(.next-match,.last-match)+:is(.next-match,.last-match){border-left:1px solid var(--panel)}
+:is(.next-match:first-child,.bar-today+.next-match){box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--c4)}
+:is(.next-match:first-child,.bar-today+.next-match) .next-match-when{color:var(--c4)}
+.bar-today{flex:none;width:var(--mark-control);background:var(--c4)}
+.last-match{display:flex;align-items:center;gap:var(--s2);flex:0 1 auto;height:var(--h-bar-control);min-width:0;max-width:180px;padding:0 var(--s3) 0 var(--s2);line-height:1.15}
+.last-match.short{gap:var(--s1);padding:0 var(--s2)}
+.last-match>.kit-dot{flex:none;margin:0}
+.last-match-score{display:grid;place-items:center;flex:none;min-width:40px;height:var(--h-control-small);padding:0 var(--s1);border-radius:var(--radius-chip);font:700 semi-condensed var(--fs-figure)/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.last-match.short .last-match-score{min-width:36px}
+.last-match.V .last-match-score{background:var(--good-soft);color:var(--good)}
+.last-match.N .last-match-score{background:var(--warn-soft);color:var(--warn)}
+.last-match.D .last-match-score{background:var(--bad-soft);color:var(--bad)}
 .sidebar nav a{min-height:32px;font-size:var(--fs-body);font-weight:600}
 .sidebar nav a.active{background:var(--own-row);box-shadow:none}
 .sidebar nav a .flag{flex:none;width:16px;height:12px;margin:0 1px}
 .date-block strong{font-size:var(--fs-title)!important;font-weight:700}
-.next-match:first-child{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
 .next-match-who b{font-size:var(--fs-body)}
 .next-match-comp{font-size:var(--fs-small)}
 .sidebar-tools>*{height:var(--h-control);border-color:transparent;background:var(--panel-2)}
@@ -775,7 +790,7 @@ a{text-decoration-thickness:1px;text-underline-offset:2px}
 a:hover,a:focus-visible,.card-head:has(>a[href]):hover>a{text-decoration-line:underline}
 .manual-body a,.news-title a,.news-more{color:var(--accent-text)}
 /* A control is not a link, nor is a row that opens as a whole; on a pitch, a player's name is what underlines. */
-:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.pitch-player,.bracket-match,.club-hero-band,.next-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
+:is(nav,.sidebar,.segmented,.chips,.presets,.menu,.filter-menu,.season) a:is(:hover,:focus-visible),a:is(.button,.chip,.brand,.entity-step,.round-step,.news-row,.club-match,.pitch-player,.bracket-match,.club-hero-band,.next-match,.last-match,.result):is(:hover,:focus-visible){text-decoration-line:none}
 :is(a.pitch-player:is(:hover,:focus-visible),.pitch-player.targeted) .block-name{text-decoration:underline 1px;text-underline-offset:2px}
 /* What a player's open menu is about (.targeted) looks as it does under the pointer: his name underlined, his row or his
    line on the ground. */
@@ -795,10 +810,12 @@ tbody:where(:not(.career-gap)) tr:where(:not(.nation-head)):is(:hover,.targeted)
 /* A control with a ground or a border — button, option of a choice, step of a series, filter, entry of a menu, head that
    unfolds — takes the ground and the strong ink; the main action its own darker yellow; what is open, set or off keeps its
    own. */
-button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,.next-match:hover,.filter-menu .clear:hover,summary:hover,
+button:where(:not(.primary,.danger,.active,.on,[aria-pressed="true"],:disabled,.pitch-player,.position-row,.advance-todo,.replay-start,.replay-marker)):hover,a.button:where(:not(.primary)):hover,.chip:where(:not(.on)):hover,.round-step:hover,.last-match:hover,.filter-menu .clear:hover,summary:hover,
 :is(.chips,.presets,.round-pills,.manual-menu,.sidebar nav,.sidebar-bottom) a:where(:not(.active,[aria-current],[aria-disabled="true"])):hover,
 .calendar-filters button:where(:not(.active,[aria-pressed="true"],:disabled)):hover{background:var(--panel-3);color:var(--strong)}
 :is(.segmented,.tactics)>:is(a,button):where(:not(.active,[aria-current],[aria-pressed="true"],[aria-disabled="true"],:disabled)):hover{background:var(--track-hover);color:var(--strong)}
+/* A match to come in the bar is tinted: a veil of its turquoise. */
+.next-match:hover{background:color-mix(in srgb,var(--c4) 12%,var(--c4-soft))}
 /* The steps of a band stand on its colours, where that ground would not show: a veil of the band's ink, and they keep
    their colour. */
 a.entity-step:hover,.entity-menu>summary:hover{color:var(--step)}
@@ -1033,8 +1050,10 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .leader-bars li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);counter-increment:leader}
 .leader-bars li::before{content:counter(leader);text-align:right;font-weight:600;color:var(--muted)}
 .leader-bars li>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--series-1-soft),color-mix(in srgb,var(--series-1) 55%,var(--series-1-soft)))}
-.leaders-card.soft .leader-bars i{background:var(--series-1-soft)}
+.leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
+.club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
+.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leaders-card.soft .leader-bars i{background:var(--bar-soft)}
 .leader-bars b{font-weight:700;text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
 

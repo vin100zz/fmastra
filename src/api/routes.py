@@ -267,15 +267,19 @@ def previous_lineup(world, match, context, formations: dict) -> dict | None:
     return None
 
 
-def club_next_matches(world, count: int = 3) -> list[dict]:
-    """The controlled club's next fixtures for the top bar, each flagged when it belongs to the club's own championship."""
+def club_bar_matches(world, count: int = 3) -> tuple[list[dict], list[dict]]:
+    """The controlled club's last fixtures played this season, in date order with V/N/D from its side, and its next ones,
+    for the top bar; each flagged when it belongs to the club's own championship."""
+    from .club_overview import outcome
     club_id = world.controlled_club_id
     if club_id is None:
-        return []
+        return [], []
     league = world.clubs[club_id].competition_id
-    upcoming = sorted((match for match in world.matches.values() if not match.result and club_id in (match.home_id, match.away_id)),
-                      key=lambda match: (match.date, match.id))[:count]
-    return [{**v.match_row(world, match), "league": match.competition_id == league} for match in upcoming]
+    own = sorted((match for match in world.matches.values() if club_id in (match.home_id, match.away_id)), key=lambda match: (match.date, match.id))
+    played = [match for match in own if match.result and match.season == world.season][-count:]
+    upcoming = [match for match in own if not match.result][:count]
+    row = lambda match: {**v.match_row(world, match), "league": match.competition_id == league}
+    return [{**row(match), "outcome": outcome(club_id, match)} for match in played], [row(match) for match in upcoming]
 
 
 def router(service: GameService) -> APIRouter:
@@ -292,6 +296,7 @@ def router(service: GameService) -> APIRouter:
             data = {"exists": world is not None, "job": service.active, "recovery_required": service.recovery_required,
                     "auto": service.auto_status()}
             if world and not service.recovery_required:
+                last, upcoming = club_bar_matches(world)
                 data.update({"date": world.date.iso(), "season": world.season, "seed": world.seed, "slot": service.slot,
                              "next_match": target_date(world, "journee").iso(), "market": market_window(world),
                              "players": len(world.players), "active_clubs": len(world.active_clubs()),
@@ -304,7 +309,7 @@ def router(service: GameService) -> APIRouter:
                              # What Continuer reads before it advances: the unread messages, then those awaiting an answer.
                              "news": news.summary(world) if world.controlled_club_id is not None else None,
                              "live_match_id": world.live_match.match_id if world.live_match else None,
-                             "club_next_matches": club_next_matches(world)})
+                             "club_last_matches": last, "club_next_matches": upcoming})
             return data
 
     @api.post("/monde/avancer", status_code=202)

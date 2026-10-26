@@ -105,16 +105,28 @@
 .history-nav>button:disabled{color:var(--muted)}
 .history-nav>button:disabled svg{opacity:.35}
 .date-block strong{font:700 semi-condensed var(--fs-title)/22px var(--display);color:var(--strong)}
+/* The club's matches, one band read in time: the last played on its grey, each by its score from the club's side on the
+   badge of its outcome (.short: the opponent's dot and the score alone), a turquoise rule for today, then those to come on
+   the turquoise's wash, the next one marked in it. */
 .next-matches{display:flex;border-radius:var(--radius-box);background:var(--panel-2);overflow:hidden}
-.next-match{display:flex;align-items:center;gap:var(--s2);height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2)}
-.next-match+.next-match{border-left:1px solid var(--panel)}
-.next-match:first-child{box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--accent)}
+:is(.next-match,.last-match){display:flex;align-items:center;gap:var(--s2);height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2)}
+.next-match{max-width:170px;background:var(--c4-soft)}
+.last-match{max-width:180px}
+:is(.next-match,.last-match)+:is(.next-match,.last-match){border-left:1px solid var(--panel)}
+:is(.next-match:first-child,.bar-today+.next-match){box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--c4)}
 .next-match>b{min-width:30px;font:700 semi-condensed var(--fs-figure)/1 var(--display);text-align:center;color:var(--muted)}
-.next-match:first-child>b{color:var(--accent-text)}
-.next-match>span{display:flex;flex-direction:column}
-.next-match strong{display:flex;align-items:center;gap:var(--s1);font-weight:600;line-height:16px;color:var(--strong)}
-.next-match small{font-size:var(--fs-small);line-height:14px;color:var(--muted)}
-.next-match small.cup{color:var(--info)}
+:is(.next-match:first-child,.bar-today+.next-match)>b{color:var(--c4)}
+:is(.next-match,.last-match)>span{display:flex;flex-direction:column}
+:is(.next-match,.last-match) strong{display:flex;align-items:center;gap:var(--s1);font-weight:600;line-height:16px;color:var(--strong)}
+:is(.next-match,.last-match) small{font-size:var(--fs-small);line-height:14px;color:var(--muted)}
+:is(.next-match,.last-match) small.cup{color:var(--info)}
+.bar-today{flex:none;width:var(--mark-control);background:var(--c4)}
+.last-match>b{display:grid;place-items:center;min-width:40px;height:var(--h-control-small);padding:0 var(--s1);border-radius:var(--radius-chip);font:700 semi-condensed var(--fs-figure)/1 var(--display);white-space:nowrap}
+.last-match.V>b{background:var(--good-soft);color:var(--good)}
+.last-match.N>b{background:var(--warn-soft);color:var(--warn)}
+.last-match.D>b{background:var(--bad-soft);color:var(--bad)}
+.last-match.short{gap:var(--s1);padding:0 var(--s2)}
+.last-match.short>b{min-width:36px}
 .page{flex:1;display:flex;flex-direction:column;gap:var(--s2);min-height:0;padding:var(--s2) var(--s4) var(--s3)}
 /* A page's title, its commands on the same line. */
 .page-heading{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-head)}
@@ -827,8 +839,10 @@ span.entity-step svg{opacity:.3}
 .leader-bars>li{display:grid;grid-template-columns:24px 150px minmax(0,1fr) 40px;align-items:center;column-gap:var(--s2);height:var(--h-row)}
 .leader-bars>li>:first-child{font-weight:600;text-align:right;color:var(--muted)}
 .leader-bars>li>a{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--strong)}
-.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--series-1-soft),color-mix(in srgb,var(--series-1) 55%,var(--series-1-soft)))}
-.leader-bars.soft i{background:var(--series-1-soft)}
+.leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
+.club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
+.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leader-bars.soft i{background:var(--bar-soft)}
 .leader-bars b{text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
 
@@ -845,6 +859,9 @@ span.entity-step svg{opacity:.3}
 a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
+/* A match of the bar opens as a whole: a played one takes the ground, one to come, tinted, a veil of its turquoise. */
+.last-match:is(:hover,.hover){background:var(--panel-3)}
+.next-match:is(:hover,.hover){background:color-mix(in srgb,var(--c4) 12%,var(--c4-soft))}
 /* A control is not a link. With a ground or a border (button, option of a choice, step of a series, entry of the rail) it
    takes the ground and the strong ink; a tab or a column's heading, which have neither, the strong ink alone. */
 .app :is(.nav a,.tabs a,.segmented>a,a.button,a.cta,a.door,a.hero,a.tr,a.match-row,a.result,a.entity-step,.pitch-player):is(:hover,.hover){text-decoration:none}
