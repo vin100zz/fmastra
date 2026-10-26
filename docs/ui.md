@@ -980,6 +980,13 @@ message (« il vient d'arriver ») reste dans son infobulle.
   footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
   la reprise et le défenseur qui contrera la frappe font leur course pendant
   l'action.
+  Chaque joueur est une pastille de même taille, son numéro dessus ; son nom
+  court s'écrit au-dessus, sans la toucher, le temps de la touche où il joue :
+  celui que nomme la légende et celui qui a le ballon. Le chemin du ballon
+  s'efface dès qu'il arrive. Le terrain ne porte que la minute, en haut à
+  gauche : le score est celui du bandeau du match, qui suit la lecture et
+  revient au score final quand le résumé se replie. Au direct, sans bandeau,
+  le score et les deux camps restent à côté de la minute.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
