@@ -244,15 +244,18 @@ interface, migration (schéma 41) et documentation.
   81 % des cas et Hull (gardien 77) dans 65 % (3 000 matchs). `occasion.sensibilite_tireur_gardien`
   (0.055, triplée le 18 septembre) fait peser un seul joueur très lourd : à revoir dans le
   chantier de calibrage.
-- **Temps par match** : environ 22 ms pour un budget de 20 ms, sur la machine de
-  Vincent. À remesurer après l'attribut Penaltys (`performance`, machine au repos).
+- **Temps par match** : 15.2 et 14.8 ms pour un budget de 20 ms, sur la machine de
+  Vincent au repos (26 octobre 2026, `performance`, 2 000 matchs).
+- **Temps d'une saison** : 183 à 189 s sur la machine de Vincent au repos (suite `world`,
+  une saison, sauvegardes comprises), pour un budget de 40 s. Les matchs n'en prennent
+  qu'environ 26 s (1 752 matchs à 15 ms) : le reste est le monde, l'IA et les sauvegardes.
+  Le budget est à réévaluer ou le goulot à chercher (`docs/benchmarks.md`, « Performance »).
 - **Scores**, cibles indicatives : 5.7 % de matchs sans but (cible 7 à 9 %) et
   32 % à quatre buts ou plus (cible 22 à 28 %).
 
 ### 3. Vérifications à faire chez Vincent
 
 - La migration 40 sur sa partie (`saves/autosave.json.gz`), comme décrit plus haut.
-- La suite `performance` sur une machine au repos.
 
 ### Points réglés ou écartés
 

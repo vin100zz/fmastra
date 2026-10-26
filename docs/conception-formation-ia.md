@@ -503,8 +503,12 @@ deux tournaient en même temps sur la machine.
   qu'à l'étape 1 (104.5 s contre 106.2 s). Sur la suite `economy`, une saison prend
   10 % de plus, mesure faite sans machine au repos. La plus longue sauvegarde mensuelle
   (81 s contre 11 s) ne dépend pas du mercato : la machine était chargée. Le budget de
-  40 secondes est dépassé sur ce conteneur par les deux versions ; la mesure qui tranche
-  la décision 4 est la suite `performance` sur la machine de Vincent, au repos.
+  40 secondes est dépassé sur ce conteneur par les deux versions.
+- **Verdict de la décision 4** (26 octobre 2026, machine de Vincent au repos, suite `world`
+  sur une saison, deux passages alternés) : 197.7 et 189.3 s avec le code de l'étape 1,
+  188.6 et 183.5 s avec le code final, soit 4 % de moins, dans le bruit. L'option C ne
+  coûte rien : elle est gardée. Le temps d'un match y est de 15.2 et 14.8 ms (budget
+  20 ms).
 
 ### Étape 3, faite
 
