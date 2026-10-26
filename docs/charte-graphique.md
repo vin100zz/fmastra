@@ -621,7 +621,8 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
   ligne du match ne le répète pas après le vainqueur : elle tient sur sa ligne.
 - **Score** : en 40, sur une tuile là où les deux moitiés se rejoignent ; « VS »
   avant le match. Dessous, sur une ligne, ce qui a départagé : « Cumul 3 – 3 »,
-  « 4 – 2 t.a.b. ».
+  « 4 – 2 t.a.b. ». Résumé 2D ouvert, la tuile suit le score de la lecture ;
+  replié, elle revient au score final.
 - **Pas de barre** sous le bandeau : la ligne qu'elle prenait reste au terrain
   et au banc.
 - **Ligne du match** (`.page-heading`, `.match-facts`) : 32, en tête de la
