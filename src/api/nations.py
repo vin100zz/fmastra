@@ -105,6 +105,29 @@ def competition_colors(code: str | None, nation: str | None = None) -> dict[str,
     return {"major_color": major, "minor_color": minor, "ground_color": ground}
 
 
+# The codes the federations go by, for the nations the source file lists under a code of its own (X0R for the Central
+# African Republic): without them, a code would be made from the name and read « REP ».
+FIFA_CODES = {
+    "X00": "AFG", "X01": "AND", "X02": "ANG", "X03": "AIA", "X04": "ATG", "X05": "ARM", "X06": "ARU", "X07": "AZE", "X08": "BAH", "X09": "BHR",
+    "X0A": "BAN", "X0B": "BRB", "X0C": "BER", "X0D": "BHU", "X0E": "MYA", "X0F": "BLR", "X0G": "BOL", "X0H": "BOE", "X0I": "BOT", "X0J": "BRU",
+    "X0K": "BFA", "X0L": "BDI", "X0M": "BLZ", "X0N": "BEN", "X0O": "CAM", "X0P": "CPV", "X0Q": "CAY", "X0R": "CTA", "X0S": "CYP", "X0T": "COM",
+    "X0U": "CGO", "X0V": "COK", "X0W": "PRK", "X0X": "CRC", "X0Z": "CUB", "X10": "CUW", "X11": "DJI", "X12": "DMA", "X13": "UAE", "X14": "EST",
+    "X15": "SWZ", "X16": "FIJ", "X17": "FRO", "X18": "GAB", "X19": "GAM", "X1A": "GIB", "X1B": "GBR", "X1C": "GRN", "X1D": "GPE", "X1E": "GUM",
+    "X1F": "GUA", "X1G": "GUI", "X1H": "EQG", "X1I": "GNB", "X1J": "GUY", "X1K": "GUF", "X1L": "GEO", "X1M": "HAI", "X1N": "HON", "X1O": "HKG",
+    "X1P": "IND", "X1Q": "IDN", "X1R": "IRQ", "X1S": "JAM", "X1T": "JOR", "X1U": "KAZ", "X1V": "KEN", "X1W": "KGZ", "X1X": "KIR", "X1Y": "KUW",
+    "X1Z": "REU", "X20": "LAO", "X21": "LES", "X22": "LVA", "X23": "LBN", "X24": "LBR", "X25": "LBY", "X26": "LIE", "X27": "LTU", "X28": "LUX",
+    "X29": "MAC", "X2A": "MAD", "X2B": "MAS", "X2C": "MWI", "X2D": "MDV", "X2E": "MLT", "X2F": "NMI", "X2G": "MTQ", "X2H": "MTN", "X2I": "MYT",
+    "X2J": "FSM", "X2K": "MDA", "X2L": "MCO", "X2M": "MNG", "X2N": "MSR", "X2O": "MOZ", "X2P": "NAM", "X2Q": "NCA", "X2R": "NIG", "X2S": "NCL",
+    "X2T": "NEP", "X2U": "OMA", "X2V": "UGA", "X2W": "UZB", "X2X": "PAK", "X2Y": "PLE", "X2Z": "PAN", "X30": "PNG", "X32": "PHI", "X33": "PUR",
+    "X34": "COD", "X35": "GDR", "X36": "RWA", "X37": "DOM", "X38": "BLM", "X39": "SKN", "X3A": "SMR", "X3B": "SMN", "X3C": "SXM", "X3D": "SPM",
+    "X3E": "VIN", "X3F": "LCA", "X3G": "SOL", "X3H": "SLV", "X3I": "SAM", "X3J": "ASA", "X3K": "SEY", "X3L": "SLE", "X3M": "SIN", "X3N": "SOM",
+    "X3O": "SDN", "X3P": "SSD", "X3Q": "SRI", "X3R": "SUR", "X3S": "SYR", "X3T": "STP", "X3U": "TJK", "X3V": "TAH", "X3W": "TPE", "X3X": "TAN",
+    "X3Y": "CHA", "X3Z": "THA", "X40": "TLS", "X41": "TOG", "X42": "TGA", "X43": "TRI", "X44": "TKM", "X45": "TCA", "X46": "TUV", "X47": "VAN",
+    "X48": "VIE", "X49": "YEM", "X4A": "ZAM", "X4B": "ZAN", "X4C": "ZIM", "X4D": "ERI", "X4E": "ETH", "X4F": "MRI", "X4G": "VGB", "X4H": "VIR",
+    "X4I": "WLF",
+}
+
+
 def _letters(name: str) -> str:
     stripped = unicodedata.normalize("NFKD", name)
     return "".join(character for character in stripped.upper() if character.isalpha())
@@ -133,7 +156,7 @@ def build_nation_table(nation_names: dict[str, str]) -> dict[str, dict]:
     for code, name in sorted(nation_names.items()):
         if code in table:
             continue
-        display = _abbreviate(name, taken)
+        display = FIFA_CODES[code] if FIFA_CODES.get(code) not in (None, *taken) else _abbreviate(name, taken)
         taken.add(display)
         table[code] = {"name": name, "display_code": display, "flag": flag_code(code)}
     return table

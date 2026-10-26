@@ -152,6 +152,7 @@ où le fond est déjà jaune.
 | En-tête de club, de sélection | `.hero`, `.hero-logo`, `.hero-name`, `.hero-context`, `.hero-flag` | Bandeau de 88 aux couleurs du club ou de la sélection, son écusson seul, ses onglets dessous. Voir « Bandeau » et « Clubs et pays » |
 | En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent ; sans barre, la ligne du match au-dessus des temps forts. Voir « En-tête d'un match » |
+| Banc d'une composition | `.bench`, `.bench-slot` | Sous le terrain de la Composition : trois colonnes, une place de 26 sur `--panel-2`, le poste puis le nom court du joueur, entier ; une place vide en pointillés |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
 | Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
@@ -619,7 +620,8 @@ entre les deux camps : celui qui reçoit à gauche, l'autre à droite.
   son nom, en 24 × 18, du côté du score. Comme sur tout bandeau, il mène à la
   sélection de son pays ; un pays sans sélection garde son drapeau, sans lien. La
   ligne du match ne le répète pas après le vainqueur : elle tient sur sa ligne.
-- **Score** : en 40, sur une tuile là où les deux moitiés se rejoignent ; « VS »
+- **Score** : en 40, sur une tuile là où les deux moitiés se rejoignent, écrit
+  comme dans une liste, un tiret entre deux espaces (« 3 – 0 ») ; « VS »
   avant le match. Dessous, sur une ligne, ce qui a départagé : « Cumul 3 – 3 »,
   « 4 – 2 t.a.b. ».
 - **Pas de barre** sous le bandeau : la ligne qu'elle prenait reste au terrain
@@ -1246,6 +1248,14 @@ moyennes, buts attendus.
 Des buts attendus s'écrivent avec un chiffre après le point, même ronds : 2.0,
 pas 2.
 
+### Fin de contrat
+
+Dans une liste (effectif, Joueurs, « À surveiller », demandes de contrat), la fin
+d'un contrat s'écrit de son mois et de son année : « juin 2027 » ; le jour entier
+est dans l'infobulle. Sur une fiche, où la place ne manque pas, elle s'écrit en
+entier : « 30 juin 2027 ». À moins de 12 mois, elle passe à l'encre `--warn` ; à
+moins de 6 mois, à `--bad` (`contractCell`, `web/ui.js`).
+
 ### Saisons
 
 Une saison s'écrit de ses deux années entières, une barre entre deux espaces :
@@ -1332,6 +1342,10 @@ niveau en tient lieu. Dans la tuile d'un record, le joueur est suivi du
 chevron (`.go`), retourné pour une arrivée, puis du club après sa pastille.
 
 ### Classement
+
+Le titre d'une carte de classement nomme le championnat et la dernière journée
+jouée, un point médian entre les deux : « Ligue 1 · 11e journée » ; dans une
+carte qui nomme déjà le championnat, « Classement · 11e journée ».
 
 Les colonnes sont toujours dans cet ordre : PTS, J, V, N, D, BP, BC, DIFF. ; la
 forme vient après. Une version réduite retire des colonnes, jamais elle ne
@@ -1486,6 +1500,10 @@ sa pastille n'en est pas un (ci-dessus), ni :
 
 ### Tableaux
 
+- **Vide** : un tableau ou une liste sans ligne le dit en une ligne de 26, à
+  l'encre atténuée, au bord de ses lignes (`.empty`) : ce qui manque, et rien
+  d'autre (« Aucun transfert », « Aucun titre », « Tirage à venir »). Ni titre
+  au-dessus, ni phrase qui explique quand cela viendra.
 - Toutes les colonnes de tous les tableaux se trient.
 - Chaque colonne garde sa largeur : la flèche d'un en-tête suit son libellé,
   dans l'écart qui le sépare de la colonne suivante, où elle ne prend pas de

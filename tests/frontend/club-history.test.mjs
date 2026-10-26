@@ -47,7 +47,7 @@ test('the season reads in figures: spending, takings and balance on one tile, th
  // Without a paid transfer there is no record to show.
  const quiet=movementsHistory({season:2026,previous_season:2025,next_season:null,history_since:'2025-07-01',arrival_total:0,departure_total:0,sections:sections({arrivals:[],departures:[]})});
  assert.doesNotMatch(quiet,/Plus grosse|class="mercatos"/);assert.match(quiet,/<span>Balance<\/span><strong>0\s€<\/strong>/);
- assert.match(movements({arrivals:[],academy:[]}).split('aria-label="Départs"')[0],/Aucun mouvement enregistré pour cette saison/);
+ assert.match(movements({arrivals:[],academy:[]}).split('aria-label="Départs"')[0],/<p class="empty">Aucun transfert<\/p>/);
 });
 
 test('the mercatos show each window of every season, the amounts at the end of their bars, and open a season',()=>{

@@ -6,6 +6,7 @@ where it is written; a title is a list of segments, each plain or carrying its r
 from __future__ import annotations
 
 import re
+from collections import defaultdict
 
 from core.domain.date import Date, readable_duration
 from core.domain.offers import SIGNING
@@ -145,28 +146,66 @@ def title(world: World, item: NewsItem) -> list[dict]:
     return linked(headline(item.text), mentions(world, item))
 
 
-def row(world: World, index: int, item: NewsItem) -> dict:
-    segments = title(world, item)
+def groups(world: World) -> dict[int, list[int]]:
+    """The demands for a new contract a club received on one day make one message on the page: each of their indices
+    to all of that day's, oldest first. The newest stands for them (`head`)."""
+    days = defaultdict(list)
+    for index, item in enumerate(world.news):
+        if item.kind == "renewal_proposed": days[(item.club_id, item.date)].append(index)
+    return {index: indices for indices in days.values() if len(indices) > 1 for index in indices}
+
+
+def head(grouped: dict[int, list[int]], index: int) -> int:
+    return grouped[index][-1] if index in grouped else index
+
+
+def members(grouped: dict[int, list[int]], index: int) -> list[int]:
+    return grouped.get(index, [index])
+
+
+def shown(world: World, grouped: dict[int, list[int]]) -> list[int]:
+    """The messages as the page lists them, newest first: a day's demands once, at the newest."""
+    return [index for index in range(len(world.news) - 1, -1, -1) if head(grouped, index) == index]
+
+
+def row(world: World, index: int, item: NewsItem, grouped: dict[int, list[int]] | None = None) -> dict:
+    indices = members(grouped or {}, index)
+    if len(indices) > 1:
+        segments = sentence(f"{len(indices)} joueurs veulent un nouveau contrat")
+        read = all(world.news[member].read for member in indices)
+        pending = any(awaits_answer(world, world.news[member]) for member in indices)
+    else:
+        segments, read, pending = title(world, item), item.read, awaits_answer(world, item)
     return {"id": index, "date": item.date.iso(), "kind": item.kind, "title": "".join(segment["text"] for segment in segments),
-            "segments": segments, "read": item.read, "pending": awaits_answer(world, item)}
+            "segments": segments, "read": read, "pending": pending}
 
 
 def summary(world: World) -> dict:
     """What the top bar and the menu tell of the feed: the messages still to read, newest first, and those awaiting an answer."""
-    unread = [index for index in range(len(world.news) - 1, -1, -1) if not world.news[index].read]
-    pending = [index for index in range(len(world.news) - 1, -1, -1) if awaits_answer(world, world.news[index])]
+    grouped = groups(world)
+    order = shown(world, grouped)
+    unread = [index for index in order if not all(world.news[member].read for member in members(grouped, index))]
+    pending = [index for index in order if any(awaits_answer(world, world.news[member]) for member in members(grouped, index))]
     return {"unread": len(unread), "next_unread": unread[0] if unread else None, "pending": pending}
+
+
+def mark_read(world: World, ids: list[int] | None) -> None:
+    """Opening a message reads it, and with it the other demands of its day."""
+    grouped = groups(world)
+    targets = range(len(world.news)) if ids is None else [member for index in ids if 0 <= index < len(world.news) for member in members(grouped, index)]
+    for index in targets: world.news[index].read = True
 
 
 def feed(world: World, page: int | None, selected: int | None, size: int) -> dict:
     """A page of the feed, newest first: the page asked for, else the one showing the message `selected`."""
-    count = len(world.news)
+    grouped = groups(world)
+    order = shown(world, grouped)
     if page is None:
-        page = (count - 1 - selected) // size + 1 if selected is not None and 0 <= selected < count else 1
-    order = list(range(count - 1, -1, -1))
+        target = head(grouped, selected) if selected is not None and 0 <= selected < len(world.news) else None
+        page = order.index(target) // size + 1 if target is not None else 1
     data = v.paginate(order, page, size)
-    data["items"] = [row(world, index, world.news[index]) for index in data["items"]]
-    return {**data, "unread": sum(not item.read for item in world.news)}
+    data["items"] = [row(world, index, world.news[index], grouped) for index in data["items"]]
+    return {**data, "unread": sum(not all(world.news[member].read for member in members(grouped, index)) for index in order)}
 
 
 def squad_line(world: World, player_id: int, **fields) -> dict:
@@ -203,6 +242,31 @@ def renewal_body(world: World, item: NewsItem) -> dict:
                  "asked": {"wage": proposal.contract.weekly_wage, "end": proposal.contract.end.iso()}}
         state = PENDING
     return {"player": player_ref(world, item.player_id), **terms, "state": state}
+
+
+def renewals_body(world: World, indices: list[int]) -> list[dict]:
+    """The demands of a day, the highest wage asked first: each player with his position and level, his contract and the
+    one he asks for, and the answer."""
+    rows = []
+    for index in indices:
+        body = renewal_body(world, world.news[index])
+        player = world.players.get(body["player"]["id"])
+        rows.append({**body, "position": player.position.value if player else None, "rating": round(player.rating, 1) if player else None})
+    return sorted(rows, key=lambda entry: (-entry["asked"]["wage"], entry["player"]["name"]))
+
+
+def injury_body(world: World, item: NewsItem) -> dict:
+    """What an injury costs the club: the day each player is back, and the club's matches he misses until then."""
+    club_matches = sorted((match for match in world.matches.values()
+                           if item.club_id in (match.home_id, match.away_id) and match.date > item.date),
+                          key=lambda match: (match.date, match.id))
+    back = max(line.until for line in item.lines)
+    missed = [match for match in club_matches if match.date < back]
+    return {"back": back.iso(),
+            "matches": [{"id": match.id, "date": match.date.iso(), "competition": competition_ref(world, match.competition_id),
+                         "opponent": v.club_ref(world, match.away_id if match.home_id == item.club_id else match.home_id),
+                         "home": match.home_id == item.club_id, "played": match.result is not None} for match in missed],
+            "missed": {line.player_id: sum(match.date < line.until for match in missed) for line in item.lines}}
 
 
 def talks_body(world: World, item: NewsItem) -> dict:
@@ -292,10 +356,13 @@ def review_body(world: World, item: NewsItem) -> dict:
 
 def message(world: World, index: int) -> dict:
     """A message opened: its row, and what its kind tells."""
+    grouped = groups(world)
+    index = head(grouped, index)
     item = world.news[index]
-    data = row(world, index, item)
+    data = row(world, index, item, grouped)
     kind, lines = item.kind, item.lines
-    if kind == "offer_received" and lines: data["offers"] = offers_body(world, item)
+    if index in grouped: data["renewals"] = renewals_body(world, grouped[index])
+    elif kind == "offer_received" and lines: data["offers"] = offers_body(world, item)
     elif kind == "renewal_proposed" and (lines or data["pending"]): data["renewal"] = renewal_body(world, item)
     elif kind == "talks_open": data["talks"] = talks_body(world, item)
     elif kind == "contract_expiry" and lines: data["expiry"] = expiry_body(world, item)
@@ -311,8 +378,12 @@ def message(world: World, index: int) -> dict:
         if kind == "academy" and len(lines) == 1: data["shirt"] = lines[0].amount
         rival = opponent(world, item)
         data["match"] = {"id": item.match_id, "opponent": rival} if rival else None
+        injury = injury_body(world, item) if kind == "injury" and all(line.until for line in lines) else None
+        if injury: data["injury"] = {"back": injury["back"], "matches": injury["matches"]}
         data["players"] = [squad_line(world, line.player_id,
                                       days=line.until.ordinal() - item.date.ordinal() if kind == "injury" else None,
+                                      back=line.until.iso() if kind == "injury" else None,
+                                      missed=injury["missed"].get(line.player_id) if injury else None,
                                       matches=line.amount if kind == "suspension" else None,
                                       team={"id": int(line.key), "name": line.text} if kind == "call_up" else None,
                                       cause=line.text if kind == "morale" else None,

@@ -65,7 +65,7 @@ couleur), dans l'en-tête de la carte. La saison choisie est dans l'adresse
 monde, de l'Euro et de la Ligue des nations se parcourent ainsi sur la page de leur compétition.
 
 **Trois chiffres par ligne de joueur.** Âge, salaire, fin de contrat. Une
-échéance à moins de 12 mois passe en rouge. C'est la liste de tâches implicite,
+échéance à moins de 12 mois passe en orange, à moins de 6 mois en rouge. C'est la liste de tâches implicite,
 et elle remplace tous les écrans de gestion supprimés.
 
 ## Contrôle du temps
@@ -211,12 +211,16 @@ de club, de compétition ou de sélection est un lien vers sa page ; il n'y a pa
 
 Les événements d'un même genre le même jour font un seul message : les blessés d'un match, les suspendus, les
 convoqués, les fins de contrat, les jeunes promus, les changements de formation. Un joueur seul tient dans le titre (« Weah blessé 3 semaines ») ;
-à plusieurs, le message liste chacun avec ce qui le concerne.
+à plusieurs, le message liste chacun avec ce qui le concerne. Les demandes de nouveau contrat d'un même jour sont
+gardées une par une, mais le fil n'en montre qu'un message (« 17 joueurs veulent un nouveau contrat », `src/api/news.py`,
+`groups`) : l'ouvrir les lit toutes, il est à traiter tant que l'une attend sa réponse.
 
 | Message | Contenu |
 |---|---|
 | Offres pour un joueur (à traiter) | Sa valeur en tuile ; une ligne par offre du jour : club, indemnité, « Accepter » / « Contre-proposer » / « Refuser ». « Contre-proposer » ouvre une boîte de dialogue au prix demandé (l'offre par défaut) : le toast dit si le club a suivi. À plusieurs offres ouvertes, « Tout accepter » (le joueur choisit son club) et « Tout refuser » ; tant que le joueur est au club et sur le marché, « Déclarer intransférable » à leur suite. Une offre traitée garde sa réponse : Acceptée, Refusée, Relevée (le club a offert plus depuis : la nouvelle offre est dans le message de son jour), Non retenue, Sans suite. Un message qui ne porte que des offres relevées s'intitule « n offre(s) relevée(s) pour … » |
 | Un joueur veut un nouveau contrat (à traiter) | Salaire et fin de contrat, actuels et demandés ; « Accepter » / « Refuser » |
+| Plusieurs joueurs veulent un nouveau contrat, le même jour (à traiter) | Une ligne par joueur, le plus gros salaire demandé d'abord : poste, nom, niveau, salaire actuel, salaire demandé, fin du contrat demandé (« juin 2030 ») ; « Accepter » / « Refuser », ou la réponse donnée (Prolongé, Refusé, Sans suite) |
+| Blessure | Seul : la date de retour et le nombre de matches manqués ; à plusieurs, une ligne par joueur (absence, retour, matches manqués). Dessous, les matches du club jusqu'au dernier retour (date, compétition, adversaire, domicile ou extérieur), puis « Composition → » |
 | Un joueur est prêt à négocier son contrat (à traiter) | Indemnité convenue et club vendeur, salaire qu'il demande s'il l'a dit ; « Négocier le contrat » (la boîte de dialogue de sa fiche) et « Abandonner » |
 | Joueurs mécontents | Par joueur : ce qui pèse sur lui (temps de jeu, réserve, salaire, club trop petit, départ refusé à un joueur intransférable) et son moral |
 | Contrats qui expirent (à 6 mois, à 1 mois) | Par joueur : son salaire, et « Proposer un contrat », qui ouvre le contrat qu'il signerait ; grisé avec la raison en infobulle s'il ne veut pas prolonger |
@@ -1014,7 +1018,7 @@ message (« il vient d'arriver ») reste dans son infobulle.
 ### Composition
 
 L'onglet Composition du club dirigé : à gauche le pas des formations, au-dessus du terrain, puis le terrain
-et les remplaçants sur une ligne (autant de places que `bench_size`) ; au centre la liste de
+et les remplaçants sur trois colonnes (autant de places que `bench_size`, le poste puis le nom court) ; au centre la liste de
 l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, la composition auto
 et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition

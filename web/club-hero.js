@@ -209,7 +209,7 @@ export function matchHero(match,foot='',{flags=false}={}){
  const settled=[match.aggregate?`Cumul ${match.aggregate.join(' – ')}`:'',match.penalties?`${match.penalties.join(' – ')} t.a.b.`:''].filter(Boolean).join(' · ');
  return `<header class="club-hero match-hero" style="${sideColors(match.home)}"><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i>`
   +`<span style="${sideColors(match.away)}"><i class="field"></i><i></i><i class="thin"></i></span></div>`
-  +`<div class="club-hero-main">${side(match.home,false)}<div class="club-hero-tile match-score"><strong class="big-score">${match.score?match.score.join(' : '):'VS'}</strong>${settled?`<span>${settled}</span>`:''}</div>`
+  +`<div class="club-hero-main">${side(match.home,false)}<div class="club-hero-tile match-score"><strong class="big-score">${match.score?match.score.join(' – '):'VS'}</strong>${settled?`<span>${settled}</span>`:''}</div>`
   +`${side(match.away,true)}</div></div>${foot}</header>`;
 }
 

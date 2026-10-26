@@ -45,7 +45,7 @@ test('the chart writes each rank in its disc, a column for each season, the titl
  assert.match(chart,/<div class="cc-side left"[^>]*><span[^>]*>Ligue 1<\/span><span[^>]*>Réputation<\/span><\/div>/);
  assert.match(chart,/<span class="cc-label first"[^>]*>91\.5<\/span>/);assert.match(chart,/<span class="cc-label last"[^>]*>90<\/span>/);
  assert.match(chart,/<span class="cc-year now"[^>]*>27-28<\/span>/);
- assert.match(rankChart([],leagues,{}),/Aucune saison de championnat terminée/);
+ assert.match(rankChart([],leagues,{}),/Aucune saison terminée/);
 });
 
 test('a season in another division is drawn on its storey, and one out of the simulated leagues breaks the line',()=>{
@@ -69,7 +69,7 @@ test('the overview sets the chart beside the honours and the record',()=>{
  assert.match(html,/<section class="card history-record">[^]*<tfoot><tr[^>]*><td[^>]*>Toutes compétitions<\/td>/);
  assert.doesNotMatch(html,/undefined|NaN|<h2>Records<\/h2>/);
  const none=clubHistory('ensemble',summary({items:[],honours:[],record:{rows:[],total:{}},reputation:[]}),{},null);
- assert.match(none,/Palmarès vierge/);assert.match(none,/Pas encore de match/);
+ assert.match(none,/<p class="empty">Aucun titre<\/p>/);assert.match(none,/<p class="empty">Aucun match joué<\/p>/);
 });
 
 test('the seasons give the league line, the cups with their runs, the top scorer, then the reputation and its move',()=>{
@@ -85,7 +85,7 @@ test('the seasons give the league line, the cups with their runs, the top scorer
  // A season without its league line, its scorer or its European run keeps dashes.
  assert.match(html,/<span class="with-delta">91\.5<\/span>/);
  assert.doesNotMatch(html,/undefined|null|NaN/);
- assert.match(clubHistory('saisons',summary({items:[]}),club),/Pas encore de saison terminée/);
+ assert.match(clubHistory('saisons',summary({items:[]}),club),/Aucune saison terminée/);
 });
 
 const player=(player_id,name,matches,goals,extra={})=>({player_id,player:name,position:'MC',seasons:3,matches,goals,assists:0,note:null,...extra});
@@ -102,7 +102,7 @@ test('the players view puts the figure each list ranks on first, and the best el
  assert.match(html,/<h2>Onze type<\/h2><span class="card-hint">4-3-3<\/span>/);assert.match(html,/120 matches/);
  assert.match(html,/Aucun jeune promu n’a joué/);
  assert.match(html,/<h2>Plus-values<\/h2>[^]*<span class="delta up">\+4\sM€<\/span>/);
- assert.match(html,/Aucun transfert payant enregistré/);
+ assert.match(html,/Aucun transfert payant/);
 });
 
 test('the records view tells the widest scores to their match, the runs, the clubs met, the best seasons and the ages',()=>{
@@ -113,7 +113,7 @@ test('the records view tells the widest scores to their match, the runs, the clu
   ages:[{kind:'youngest',player_id:8,player:'Minot',position:'AILG',season:2026,date:'2026-09-12',years:16,months:3},{kind:'oldest',player_id:7,player:'Ancien',position:'GB',season:2025,date:'2026-05-02',years:38,months:0}]};
  const html=clubHistory('records',data,club);
  assert.match(html,/<a class="calendar-score V" href="#\/match\/41">5 – 0<\/a>/);
- assert.match(html,/Pas encore de résultat/);
+ assert.match(html,/<p class="empty">Aucun match<\/p>/);
  assert.match(html,/>Victoires<\/td><td[^>]*><span class="num"><b>9<\/b><\/span>/);
  assert.match(html,/<div class="section-title">En cours<\/div>[^]*>Sans défaite</);
  assert.match(html,/<span>Le plus affronté<\/span><strong>[^]*Lyon[^]*· 12 matches<\/strong>/);assert.doesNotMatch(html,/Le plus souvent battu/);
@@ -134,7 +134,7 @@ test('a selection’s chart sets the tournaments and the Nations League on their
  assert.match(chart,/<span class="cc-rank code open"[^>]*title="Coupe du monde 2030 : Qualifications \(en cours\)">CM<\/span>/);
  assert.match(chart,/<span[^>]*>Tournois<\/span><span[^>]*>Ligue des nations<\/span><span[^>]*>Force<\/span>/);
  assert.match(chart,/<span class="cc-year now"[^>]*>2030<\/span>/);
- assert.match(stageChart([],null,[]),/Pas encore d’édition terminée/);
+ assert.match(stageChart([],null,[]),/Aucune édition terminée/);
 });
 
 test('a selection’s history reads as a club’s: its editions, its players by caps, its records',()=>{

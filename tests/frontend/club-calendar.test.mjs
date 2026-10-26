@@ -84,7 +84,7 @@ test('beside the list, the record of each competition: its place, its wins, draw
  assert.match(html,/<p><b>3e<\/b><span>2 J · 1 V · 0 N · 1 D<\/span><\/p><span class="record-bar" role="img" aria-label="1 victoires, 0 nuls, 1 défaites"><i class="won" style="flex:1 1 0"><\/i><i class="lost" style="flex:1 1 0"><\/i><\/span><\/div><strong>3–3<\/strong>/);
  // A competition not played yet tells only where the club comes in.
  assert.match(html,/<p><b>32es de finale<\/b><\/p><\/div><strong><\/strong>/);
- assert.match(calendarContent(club,{items:[],competitions:[]},new URLSearchParams()),/Aucun match programmé pour cette saison/);
+ assert.match(calendarContent(club,{items:[],competitions:[]},new URLSearchParams()),/<p class="empty">Aucun match cette saison<\/p>/);
 });
 
 test('on a club’s page, the tabs read by season step through the seasons from their row and keep the one picked',async()=>{

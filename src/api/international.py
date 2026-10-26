@@ -436,7 +436,7 @@ def camp_rows(world, camp):
         row = v.player_row(world, player)
         if pid < 0:
             # A campaign-only reinforcement has neither a club nor a contract.
-            row.update({"value": None, "wage": None, "contract_end": None, "expiring": False})
+            row.update({"value": None, "wage": None, "contract_end": None, "expiring": False, "expiring_soon": False})
         rows.append({**row, "id": pid, "caps": player.international_caps, "international_goals": player.international_goals,
                      "suspension": discipline.suspended_matches if discipline else 0,
                      "appearances": record.matches if record else 0, "substitutes": 0,

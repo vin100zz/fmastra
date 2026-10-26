@@ -303,7 +303,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  const list=main.querySelector('[data-fit]');
  if(list&&refit(list)&&!refitted){refitted=true;return render();}
  refitted=false;
- }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message,'Une erreur est survenue'))+`<button id="retry">Réessayer</button>`;tintPage(main);toast(error.message,true);}}
+ }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message))+`<button id="retry">Réessayer</button>`;tintPage(main);toast(error.message,true);}}
 
 // Actualités opens on a message (`msg` in the address): the one asked for, else the next one to read, else one awaiting an
 // answer, else the latest. Opening it marks it as read, and the menu and Continuer follow at once.

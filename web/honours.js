@@ -46,8 +46,8 @@ function matrix(data,groups,params){
 function board(data,params){
  const search=fold(params.get('recherche')).trim(),picked=params.get('sel'),most=data.clubs[0]?.total||1;
  const clubs=data.clubs.map((row,index)=>({...row,rank:index+1})).filter(row=>!search||fold(row.club.name).includes(search));
- const content=!data.clubs.length?empty('Le premier vainqueur sera connu à la fin de la saison.','Pas encore de palmarès')
-  :!clubs.length?empty('Aucun club titré ne porte ce nom.','Aucun résultat')
+ const content=!data.clubs.length?empty('Aucun vainqueur')
+  :!clubs.length?empty('Aucun résultat')
   :table(['#','CLUB',...kindHeaders,'TOTAL'],clubs.map(row=>[figure(row.rank),`${nationFlag(row.nation)}<span class="strong">${clubLink(row.club)}</span>`,...kindCells(row),total(row.total,most)]),undefined,
    clubs.map(row=>String(row.club.id)===picked?'picked':''),undefined,['rank-column','',...kindClasses,'total-column'],undefined,clubs.map(row=>`data-honours-club="${row.club.id}"`));
  return card(`${n(data.clubs.length)} club${data.clubs.length>1?'s':''} titré${data.clubs.length>1?'s':''}`,content,'','honours-table');

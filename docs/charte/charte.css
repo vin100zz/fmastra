@@ -944,6 +944,8 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .tile strong.bad{color:var(--bad)}
 .tile.record small{display:inline-flex;align-items:center;gap:var(--s1);min-width:0;font:400 var(--fs-body)/18px var(--text);color:var(--muted)}
 .tile.record b{margin-left:auto;font:inherit}
+/* What a list without rows says: one line of 26 in the muted ink, flush with the rows it stands for; nothing explains why. */
+.empty{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);color:var(--muted)}
 /* The foot of a table: what its columns add up to, under them, on the ground of a tile, a pale line over it. */
 .tr.foot{border-top:1px solid var(--head-line);background:var(--panel-2);font-weight:600;color:var(--strong)}
 /* A table that scrolls in its box (.scroll, held to a height): its head stays at the top, its foot at the bottom, the rows
