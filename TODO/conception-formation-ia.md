@@ -538,8 +538,20 @@ Mesures au premier rassemblement (31 août 2026, graine par défaut), comparées
 | Niveau moyen des 23, France / Espagne / Angleterre | 75.2 / 76.2 / 76.5 | 75.6 / 76.9 / 76.7 |
 
 Les renforts ne baissent presque pas : les petites nations manquent de joueurs tout court, pas d'un
-poste (Andorre et Saint-Marin gardent 10 et 18 renforts). L'évolution des forces des nations sur une
-campagne reste à mesurer.
+poste (Andorre et Saint-Marin gardent 10 et 18 renforts).
+
+Sur deux saisons, jusqu'à l'Euro 2028 compris (452 rassemblements, 430 matches) :
+
+| Mesure | Étape 2 | Étape 3 |
+|---|---|---|
+| Part de renforts dans les listes | 12.4 % | 12.1 % |
+| Force moyenne des nations | 45.84 | 45.84 |
+| Buts par match | 2.91 | 2.77 |
+| Dix premières nations | Angleterre 86.1, Argentine, Brésil, Espagne, France 80.9, Portugal, Italie, Allemagne, Pays-Bas, Colombie | France 85.1, Argentine, Brésil, Angleterre 83.0, Espagne, Italie, Allemagne, Pays-Bas, Portugal, Colombie |
+| Vainqueurs 2027 et 2028 | Espagne, Angleterre | France, France |
+
+Les mêmes nations restent en tête ; l'ordre change avec les formations, ce qu'une seule graine ne
+suffit pas à juger.
 
 ## Décisions
 
