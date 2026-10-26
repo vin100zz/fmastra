@@ -1103,7 +1103,9 @@ notes de la Présentation d'un club ; l'Historique classe les siens en tableaux)
 - L'unité est dans l'en-tête de la carte, à droite, en 11 atténué (`.card-hint`) :
   buts, passes, note moyenne.
 - La barre est en `--series-1` ; en pâle (`.soft`, `--series-1-soft`) sur la
-  Présentation.
+  Présentation. Sur la page d'un club, d'une sélection ou d'un joueur
+  (`.club-page`), elle prend la couleur du club (`--club`), son pâle mêlé à
+  45 % au panneau.
 
 ### Jauge, anneau
 
