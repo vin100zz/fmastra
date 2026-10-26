@@ -142,7 +142,8 @@ def test_every_position_is_rated_around_the_base_with_the_same_spread(config):
 def test_rating_rules_default_for_configurations_made_before_them(config):
     from infrastructure.persistence.store import MIGRATION_DEFAULTS, RATING_RECALIBRATED_RULES, _recalibrated
     added = [(path, defaults) for introduced, path, defaults in MIGRATION_DEFAULTS if introduced == 42]
-    assert {path for path, _ in added} == {("moteur_match", "duels"), ("moteur_match", "notes_joueurs"), ("benchmarks", "stats_match")}
+    assert {path for path, _ in added} == {("moteur_match", "duels"), ("moteur_match", "notes_joueurs"), ("benchmarks", "stats_match"),
+                                           ("ia_gestion", "selection")}
     raw = config_payload(config)
     for (domain, section), defaults in added:
         for key in defaults: del raw[domain][section][key]

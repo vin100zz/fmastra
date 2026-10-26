@@ -50,6 +50,9 @@ MIGRATION_DEFAULTS = (
          "danger_recuperation_par_zone": list(RECOVERY_DANGER), "part_defenseur_battu": 1.0, "part_tir": 0.3,
          "echelle_par_poste": dict(SCALE), "attendu_par_minute_par_poste": dict(EXPECTED)}),
     (42, ("benchmarks", "stats_match"), {"ecart_type_note_poste_min": 0.45, "ecart_type_note_poste_max": 1.0}),
+    # Youth given their margin when the automatic lineup rests players: shipped without its migration, so a save made
+    # before it, of schema 41 or older, receives it now.
+    (42, ("ia_gestion", "selection"), {"poids_espoirs_rotation": 12.0}),
     # A taker's quality from the spot is a composite of the attribute `penalty` and composure (see `_upgrade_penalties`).
     (40, ("attributs", "composites"), {"penalty": {"penalty": 0.75, "sang_froid": 0.25}}),
     # A failed action ends in a foul, the ball out of play, an offside or lost in play; corners and free kicks have a
