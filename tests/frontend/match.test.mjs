@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {matchHero} from '../../web/club-hero.js';
-import {matchScreen} from '../../web/match.js';
+import {matchScreen,replayTeams} from '../../web/match.js';
 import {setNations,setFoldOpen,setCompetitions,matchMinute,halfEnd} from '../../web/ui.js';
 
 const home={id:1,name:'Real <Madrid>',major_color:'#F8F8F8',minor_color:'#F8C028'},away={id:2,name:'Marseille',major_color:'#F8F8F8',minor_color:'#2098C8'};
@@ -231,4 +231,19 @@ test('the flow of the match adds up each side’s expected goals shot after shot
  assert.match(flow,/class="cc-half"/);assert.match(flow,/>45′<\/text>/);assert.match(flow,/>90′<\/text>/);
  // A match played before its shots were kept has no such card.
  assert.doesNotMatch(await screen(report),/Fil du match/);
+});
+
+test('the 2D replay dresses each side in its shirt, unless it had to change colours to stand apart',()=>{
+ const juve={id:1,name:'Juventus',major_color:'#F8F8F8',minor_color:'#000000',shirt_url:'/kits/37.png?major=F8F8F8&minor=000000&third=F8A0D8'};
+ const inter={id:2,name:'Inter',major_color:'#2068E8',minor_color:'#000000',shirt_url:'/kits/8.png?major=2068E8&minor=000000&third=080808'};
+ const teams=replayTeams({home:juve,away:inter});
+ assert.equal(teams.home.shirt,juve.shirt_url);
+ assert.equal(teams.away.shirt,inter.shirt_url);
+ // Two white shirts: the away side wears its second colour, on a plain disc.
+ const clash=replayTeams({home:juve,away:{...juve,id:3,minor_color:'#C81018'}});
+ assert.equal(clash.home.shirt,juve.shirt_url);
+ assert.equal(clash.away.major,'#C81018');
+ assert.equal(clash.away.shirt,null);
+ // A side without colours keeps the neutral pair, without a shirt.
+ assert.equal(replayTeams({home:{id:4,name:'Sans couleurs'},away:inter}).home.shirt,null);
 });

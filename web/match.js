@@ -68,7 +68,9 @@ export function replayTeams(match){
  const home=kitOf(match.home,'home'),away=kitOf(match.away,'away'),[homeMajor,awayMajor]=barColors(home,away);
  const keeper=['#f2c94c','#40c4ff','#c77dff'].find(color=>contrastRatio(color,homeMajor)>=1.6&&contrastRatio(color,awayMajor)>=1.6)||'#f2c94c';
  const minor=(major,kit)=>major===kit.major?kit.minor:contrastText(major);
- return {home:{name:match.home.name,major:homeMajor,minor:minor(homeMajor,home),keeper},away:{name:match.away.name,major:awayMajor,minor:minor(awayMajor,away),keeper}};
+ // The discs wear the shirt itself, its pattern from the CSV, unless the side had to change colours to stand apart.
+ const shirt=(major,kit,team)=>major===kit.major&&safeColor(team.major_color)?team.shirt_url||null:null;
+ return {home:{name:match.home.name,major:homeMajor,minor:minor(homeMajor,home),keeper,shirt:shirt(homeMajor,home,match.home)},away:{name:match.away.name,major:awayMajor,minor:minor(awayMajor,away),keeper,shirt:shirt(awayMajor,away,match.away)}};
 }
 
 export function statsCard(match){

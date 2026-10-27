@@ -628,6 +628,10 @@ span.entity-step svg{opacity:.3}
    the dot's rule, which swaps a colour close to white, does not apply), the sleeves and the collar in its second
    (`--kit-body`, `--kit-sleeves`). Each fill draws its own edge in its colour, with round joins; a light outline and a
    shadow lift it from the grass. The position on it in the ink that reads on the body (`--kit-ink`). */
+/* A player on the 2D replay: his disc wears the shirt's pattern, his number white outlined in the darkest ink so that it
+   reads on any stripe (the light theme's --strong, written out: the pitch keeps its colours in the dark theme). The
+   keeper's disc stays plain, his number in the ink of its colour. */
+.replay-player .number.outlined{fill:#fff;paint-order:stroke;stroke:#0b121a;stroke-width:.45px;stroke-linejoin:round}
 .kit-shirt{position:relative;display:inline-grid;place-items:center;flex:none;width:32px;height:32px}
 .kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 1px 1px #00000066)}
 .kit-shirt :is(.kit-sleeves,.kit-body){stroke-width:1.6;stroke-linejoin:round}

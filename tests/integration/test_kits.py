@@ -9,7 +9,7 @@ import pytest
 
 from api.app import create_app
 from api.kit_images import render_kit
-from api.kits import kit_url
+from api.kits import kit_url, shirt_url
 
 
 @pytest.fixture(scope="module")
@@ -107,3 +107,12 @@ def test_the_browser_keeps_a_kit_whose_address_names_its_colours_but_nothing_els
     assert client.get("/kits/16.png", params={"major": "FFFFFF", "minor": "004170", "third": "DA291C"}).headers["cache-control"] == "private, max-age=86400"
     assert client.get("/").headers["cache-control"] == "no-cache"
     assert client.get("/api/game").headers["cache-control"] == "no-store"
+
+
+def test_the_2d_replay_disc_is_cut_from_the_shirt_alone(client):
+    club = SimpleNamespace(id=7, home_kit_id=3, home_kit_major_color="#f8f8f8",
+                           home_kit_minor_color="#000000", home_kit_third_color=None)
+    # Its pattern and its three colours, a missing one falling back as on the outfit; no crest on the chest.
+    assert shirt_url(club) == "/kits/3.png?major=F8F8F8&minor=000000&third=000000"
+    response = client.get(shirt_url(club))
+    assert response.status_code == 200 and response.content == render_kit(3, ("#F8F8F8", "#000000", "#000000"))

@@ -58,6 +58,10 @@ const clockLabel=(second,half)=>`${matchMinute(second,half)}′`;
 const seeded=seed=>()=>{seed=(seed+0x6d2b79f5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
 const SVG='http://www.w3.org/2000/svg';
 const svg=(tag,attributes={})=>{const node=document.createElementNS(SVG,tag);for(const [key,value] of Object.entries(attributes))node.setAttribute(key,value);return node;};
+// A disc cut from the chest of the side's shirt (/kits/{id}.png, as fractions of its square): below the collar, inside the
+// sleeves, the widest circle that stays on the fabric of all 57 templates, so the disc shows the shirt's own pattern.
+const CHEST={x:627/1254,y:620/1254,r:290/1254};
+let shirtFills=0;
 
 // The play a chance's trail goes through: runs of passes and moves forward, and the stoppages the side kept the ball
 // through (a foul it suffered, a throw-in, a free kick or a corner played short).
@@ -162,7 +166,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.shadow=svg('ellipse',{class:'replay-shadow',rx:1,ry:.6});
   this.ball=svg('circle',{class:'replay-ball',r:.95});
   this.banner=svg('text',{class:'replay-banner',x:W/2,y:H/2+3,'text-anchor':'middle'});
-  this.svg.append(lines,this.trail,this.players,this.shadow,this.ball,this.banner);
+  const defs=svg('defs');this.fills={};
+  for(const side of ['home','away']){
+   const url=this.teams[side].shirt;
+   if(!url)continue;
+   const id=`replay-shirt-${++shirtFills}`,size=1/(2*CHEST.r),fill=svg('pattern',{id,width:1,height:1,patternContentUnits:'objectBoundingBox'});
+   fill.append(svg('image',{href:url,x:.5-CHEST.x*size,y:.5-CHEST.y*size,width:size,height:size}));
+   defs.append(fill);this.fills[side]=`url(#${id}) ${this.teams[side].major}`;
+  }
+  this.svg.append(defs,lines,this.trail,this.players,this.shadow,this.ball,this.banner);
   stage.prepend(this.svg);
   const timeline=this.querySelector('.replay-timeline');
   timeline.querySelector('.replay-half').style.left=`${100*this.halfTime()/this.duration}%`;
@@ -262,10 +274,12 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    for(const player of this.rosters[side]){
     if(this.dots[side].has(player.id))continue;
     const node=svg('g',{class:`replay-player${player.position==='GB'?' keeper':''}`});
-    // His number on the disc, his name above it while he takes part in the play.
-    const fill=player.position==='GB'?kit.keeper:kit.major,number=svg('text',{class:'number','text-anchor':'middle',y:.62,fill:contrastText(fill)}),name=svg('text',{class:'name','text-anchor':'middle',y:-2.45});
+    // His number on the disc, his name above it while he takes part in the play. An outfield player's disc wears the
+    // shirt's pattern, his number white and outlined so that it reads on any stripe; the keeper's stays plain.
+    const keeper=player.position==='GB',patterned=!keeper&&this.fills[side],colour=keeper?kit.keeper:kit.major;
+    const number=svg('text',{class:`number${patterned?' outlined':''}`,'text-anchor':'middle',y:.62,...patterned?{}:{fill:contrastText(colour)}}),name=svg('text',{class:'name','text-anchor':'middle',y:-2.45});
     number.textContent=this.shirts?.get(player.id)??'';name.textContent=this.names.get(player.id)||'';
-    node.append(svg('circle',{r:1.9,fill,stroke:kit.minor}),number,name);
+    node.append(svg('circle',{r:1.9,fill:patterned||colour,stroke:kit.minor}),number,name);
     this.players.append(node);
     // A newcomer walks on from the touchline nearest to his spot.
     const spot=this.toPitch(side,player.u,player.v);
