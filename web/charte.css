@@ -382,8 +382,8 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 /* The crest of a club or a selection stands alone on its band, without the disc: the area of a square of 64, 72 high and 128
    wide at most, whatever its ratio (`--r`, read off the picture by `initHeroCrests`), under the kits' shadow. Without a crest
    the disc keeps its initials on the club's colours. A match's band keeps its discs. */
-.club-hero:not(.match-hero) .crest.club-hero-crest:has(>.crest-logo){width:auto;height:auto;border:0;border-radius:0;background:none;box-shadow:none;font-size:0}
-.club-hero:not(.match-hero) .club-hero-crest>.crest-logo{--r:1;position:static;width:64px;width:min(64px*sqrt(var(--r)),72px*var(--r),128px);height:auto;aspect-ratio:var(--r);filter:drop-shadow(0 1px 2px #0a141e59)}
+.club-hero .crest.club-hero-crest:has(>.crest-logo){width:auto;height:auto;border:0;border-radius:0;background:none;box-shadow:none;font-size:0}
+.club-hero .club-hero-crest>.crest-logo{--r:1;position:static;width:64px;width:min(64px*sqrt(var(--r)),72px*var(--r),128px);height:auto;aspect-ratio:var(--r);filter:drop-shadow(0 1px 2px #0a141e59)}
 /* A selection's flag follows its name, as high as its capitals (28 of its 40), 16 after it, under the crest's shadow. */
 .club-hero-name>.club-hero-flag{flex:none;width:37px;height:28px;margin-left:var(--s1);object-fit:cover;box-shadow:0 0 0 1px #0a141e1f,0 1px 2px #0a141e59}
 .club-hero-crest .crest-logo{inset:7px;width:calc(100% - 14px);height:calc(100% - 14px)}
