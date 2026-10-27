@@ -201,7 +201,7 @@ moins large les widgets passent sur une colonne, puis sous le message.
 
 **Le fil**, à gauche, défile dans sa colonne : un message par ligne, du plus récent au plus ancien, avec le badge
 coloré de sa catégorie (Transfert, Prêt, Contrat, Moral, Blessure, Suspension, Sélection, Formation, Mercato, Saison,
-Tactique, Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
+Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
 lu dès qu'il est ouvert. Un point rouge marque un message qui attend une réponse, une coche celui qui l'a reçue. « Tout
 lire », au-dessus du fil, marque tout comme lu.
 
@@ -228,7 +228,6 @@ gardées une par une, mais le fil n'en montre qu'un message (« 17 joueurs veule
 | Mercato qui ferme demain | Vos offres en cours, les joueurs dont une offre attend, budget de transferts, lien vers Joueurs |
 | Bilan du mercato (le lendemain de sa fermeture) | Les principaux transferts de la fenêtre, dans la division du club (un joueur arrivé dans un de ses clubs ou parti de l'un d'eux) puis dans le monde : les 5 plus grosses indemnités, puis les 3 joueurs libres du plus haut niveau. Par ligne : le joueur, le club quitté → le club rejoint, l'indemnité ; un joueur libre vient de « Libre » et porte sa pastille de niveau à la place du montant |
 | Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
-| Changement de formation (le prochain adversaire du club, ou un club de son championnat) | Le titre nomme le club et sa nouvelle formation (« Nice passe au 4-3-3 ») ; à plusieurs, une ligne par club, après sa pastille : la formation quittée → la nouvelle. Badge Tactique, famille Saison |
 | Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
 | Changements de numéro (1er juillet) | « Lago change de numéro », « 3 changements de numéro » ; une ligne par joueur : le maillot du club au numéro qu'il quitte, voilé, → celui au numéro qu'il prend (charte, « Terrain et maillot ») |
 | Arrivée d'un joueur (transfert, prêt, retour de prêt, jeune promu au centre de formation) | La phrase, sans numéro (« Haaland rejoint Marseille ») ; dessous, « Numéro » et le maillot du club au numéro qu'il prend. Plusieurs jeunes promus : une ligne par joueur, avec son maillot |
