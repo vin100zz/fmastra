@@ -46,6 +46,9 @@ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const lerpPoint=(from,to,k)=>({x:lerp(from.x,to.x,k),y:lerp(from.y,to.y,k)});
 const unit=(from,to)=>{const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);return length?{x:dx/length,y:dy/length}:{x:1,y:0};};
 const scale=(vector,k)=>({x:vector.x*k,y:vector.y*k});
+// A ball played along the grass is struck on it: still bouncing, it would drop and lose its pace at the bounce,
+// and stop short of whoever was sent to meet it.
+const grounded=point=>({x:point.x,y:point.y,z:0});
 const turn=(vector,angle)=>({x:vector.x*Math.cos(angle)-vector.y*Math.sin(angle),y:vector.x*Math.sin(angle)+vector.y*Math.cos(angle)});
 // Minutes as the match report gives them (`matchMinute`); `half` is when the first half ended.
 const clockLabel=(second,half)=>`${matchMinute(second,half)}′`;
@@ -716,7 +719,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  async pass(move,next,ahead){
   const to=move.to,receiver=this.dot(to);
   if(!receiver)return true;
-  const by=this.carrier,t0=this.start(),from=ballAt(this.ballPath,t0),height=move.lift==='lofted'?move.height:0,timing=point=>FLIGHT[move.lift](distance(from,point));
+  const by=this.carrier,t0=this.start(),height=move.lift==='lofted'?move.height:0,struck=ballAt(this.ballPath,t0),from=height?struck:grounded(struck),timing=point=>FLIGHT[move.lift](distance(from,point));
   // As far towards the spot as he can run while the ball travels there (a shorter pass gives him less time).
   const gap=distance(receiver,move.point);
   let share=1;
@@ -746,7 +749,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  async control(move,next,ahead){
   const by=move.who;
   if(!this.dot(by))return true;
-  const t0=this.start(),from=ballAt(this.ballPath,t0),skill=this.skill(by);
+  const t0=this.start(),struck=ballAt(this.ballPath,t0),from=struck.z>.3?struck:grounded(struck),skill=this.skill(by);
   const heading=turn(unit(from,ahead||this.toPitch(by.side,1,.5)),(this.random()-.5)*(1-skill)*.9),push=(move.carry?1.8:1.3)*(1.6-.8*skill);
   let duration=move.carry?480:lerp(640,440,skill),velocity;
   if(from.z>.3){
@@ -776,7 +779,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   const beaten=move.dribble!=null&&this.dots[other].has(move.dribble)?{side:other,id:move.dribble}:null,swerve=this.random()<.5?.6:-.6;
   if(beaten)this.pressLock={...beaten,until:this.time+interval*2.5};
   for(let touch=0;touch<14;touch++){
-   const t0=this.start(),from=ballAt(this.ballPath,t0),gap=distance(from,move.point),stride=pace*interval,last=gap<=stride*1.4;
+   const t0=this.start(),from=grounded(ballAt(this.ballPath,t0)),gap=distance(from,move.point),stride=pace*interval,last=gap<=stride*1.4;
    const direction=beaten&&touch===1&&!last?turn(unit(from,move.point),swerve):unit(from,move.point);
    const length=last?gap:stride,aim={x:from.x+direction.x*length,y:from.y+direction.y*length},dot=this.dot(by);
    // Long enough for him to get onto it at a sprint at most.
@@ -906,7 +909,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // defender who threw himself in front of it. A header is nodded down; a free kick clears the wall and dips.
  async shoot(move,sequence){
   const side=move.side,other=this.opponent(side),random=this.random,at=(u,v)=>this.toPitch(side,u,v),keeper=move.keeper;
-  const t0=this.start(),from=ballAt(this.ballPath,t0);
+  const t0=this.start();
+  let from=ballAt(this.ballPath,t0);
   const outcome=sequence.outcome?.kind,blocked=outcome==='off_target'&&sequence.outcome.detail==='blocked',spread=amount=>.5+(random()-.5)*2*amount;
   const post=outcome==='off_target'&&sequence.outcome.detail==='post',saved=outcome==='save'?sequence.outcome.detail:null;
   let target,height;
@@ -922,7 +926,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   // A header from far out is struck harder, so that it does not loop.
   const speed=move.header?Math.max(lerp(.012,.016,random()),distance(from,target)/1100):move.freeKick?lerp(.022,.027,random()):move.style==='placed'?lerp(.017,.021,random()):lerp(.025,.031,random());
   let duration=distance(from,target)/speed,velocity,options;
-  if(!height&&!move.header&&!move.freeKick)({velocity,duration}=rolled(from,target,duration));
+  if(!height&&!move.header&&!move.freeKick){from=grounded(from);({velocity,duration}=rolled(from,target,duration));}
   else{
    const gravity=move.freeKick&&!inWay?Math.min(GRAVITY*2.6,dip(from,target,duration,height,9.15,2.45)):GRAVITY;
    const bend=move.freeKick?(random()<.5?-1:1)*lerp(1,2.5,random()):move.style==='placed'?(random()-.5)*1.2:0;
