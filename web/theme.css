@@ -8,7 +8,7 @@
  --star:#e3a600;--star-soft:#7d8a99;--star-empty:#3a4656;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
  --text:"Segoe UI",system-ui,sans-serif;
- --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--caps:.06em;
+ --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--fs-goal:120px;--caps:.06em;
  /* Space: 4, 8, 12, 16, 24. Shape: four radii, from a badge to a card, or a full round; the mark of what is open is 3 px on a
     bar, 2 px on a control. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;--mark:3px;--mark-control:2px;

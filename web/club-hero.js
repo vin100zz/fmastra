@@ -200,18 +200,19 @@ const sideColors=team=>heroColors(team.major_color,team.minor_color)||PLAIN_SIDE
 // its colours with its sash, its crest (a selection's flag) and its name, a link to its page. The score stands on a tile
 // where they meet, over what settled a tie (the aggregate, the shoot-out). `foot` is what stands under the band. `flags`
 // follows each club's name with the flag of its country, on the side of the score, a link to its selection when the game
-// has one (a European cup).
-export function matchHero(match,foot='',{flags=false}={}){
+// has one (a European cup). Live (`clock`, the minute's chip), the band is compact, its names plain text: the screen
+// cannot be left until the final whistle.
+export function matchHero(match,foot='',{flags=false,clock=''}={}){
  const country=team=>{
   const flag=flags&&!team.national?nationFlag(team.nation,{link:false}):'';
   return !flag?'':team.nation_id==null?`<span class="match-hero-flag">${flag}</span>`:`<a class="match-hero-flag" href="#/international/nation/${team.nation_id}">${flag}</a>`;
  };
  const side=(team,away)=>`<div class="match-hero-side${away?' away':''}"${away?` style="${sideColors(team)}"`:''}><div class="crest club-hero-crest">${team.national?nationCrest(team):clubCrest(team)}</div>`
-  +`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a>${country(team)}</div>`;
+  +(clock?`<span class="match-hero-name">${e(team.name)}</span>`:`<a class="match-hero-name" href="#/${team.national?'international/nation':'club'}/${team.id}">${e(team.name)}</a>`)+`${country(team)}</div>`;
  const settled=[match.aggregate?`Cumul ${match.aggregate.join(' – ')}`:'',match.penalties?`${match.penalties.join(' – ')} t.a.b.`:''].filter(Boolean).join(' · ');
- return `<header class="club-hero match-hero" style="${sideColors(match.home)}"><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i>`
+ return `<header class="club-hero match-hero${clock?' live':''}" style="${sideColors(match.home)}"><div class="club-hero-band"><div class="club-hero-art" aria-hidden="true"><i></i><i class="thin"></i>`
   +`<span style="${sideColors(match.away)}"><i class="field"></i><i></i><i class="thin"></i></span></div>`
-  +`<div class="club-hero-main">${side(match.home,false)}<div class="club-hero-tile match-score"><strong class="big-score">${match.score?match.score.join(' – '):'VS'}</strong>${settled?`<span>${settled}</span>`:''}</div>`
+  +`<div class="club-hero-main">${side(match.home,false)}<div class="club-hero-tile match-score">${clock}<strong class="big-score">${clock?match.score.map(goals=>`<i>${goals}</i>`).join(' – '):match.score?match.score.join(' – '):'VS'}</strong>${settled?`<span>${settled}</span>`:''}</div>`
   +`${side(match.away,true)}</div></div>${foot}</header>`;
 }
 

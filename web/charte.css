@@ -650,12 +650,10 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .match-mark.booking{width:8px;height:11px;border-radius:1px}
 .match-mark.booking.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
 .match-mark.booking.red{background:var(--bad);box-shadow:none}
-.match-mark.injury,.live-player-marks .match-mark.injury{width:10px;height:10px;border-radius:0;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
+.match-mark.injury{width:10px;height:10px;border-radius:0;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
 .match-mark.injury::before,.match-mark.injury::after{content:none}
 .match-mark.sub-on{color:var(--good)}
 .match-mark.sub-off{color:var(--bad)}
-.live-player{gap:2px}
-.live-player-name{font-size:var(--fs-small)}
 
 /* Match report: under its header, the match's line, what happened minute by minute and the two sides' figures on shared
    bars, between the two line-ups, each with its bench under its pitch. Nothing names a side again: the one at home is on the
@@ -1164,6 +1162,149 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .slider input[type=range]::-webkit-slider-thumb{width:var(--h-chip);height:var(--h-chip);margin-top:calc((var(--s1) - var(--h-chip))/2);border:0;border-radius:50%;background:var(--panel);box-shadow:var(--shadow-field),var(--shadow-thumb);-webkit-appearance:none;appearance:none}
 .slider input[type=range]::-moz-range-thumb{width:var(--h-chip);height:var(--h-chip);border:0;border-radius:50%;background:var(--panel);box-shadow:var(--shadow-field),var(--shadow-thumb)}
 .slider output{min-width:5ch;font:600 var(--fs-body)/1 var(--text);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+
+/* Live match (docs/charte-graphique.md, « Match en direct »): the whole screen in the window, three columns; what grows
+   longer scrolls in its card. The page keeps no room for a scrollbar it never has. Under 1100 × 600 the page scrolls. */
+.live-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2)}
+@media(min-width:1100px) and (min-height:600px){
+ html:has(body.live-mode){scrollbar-gutter:auto;overflow:hidden}
+ main:has(>.live-layout){display:flex;flex-direction:column;height:100vh;padding:var(--s2) var(--s3)}
+ .live-layout{flex:1;min-height:0;grid-template-columns:clamp(300px,21vw,400px) minmax(0,1fr) clamp(340px,26vw,500px)}
+}
+.live-column{display:flex;flex-direction:column;gap:var(--s2);min-width:0;min-height:0}
+.live-column>*{flex:none}
+.live-squad,.live-others{flex:1 1 auto;min-height:0}
+.live-scroll,.live-table-scroll{flex:1;min-height:0;overflow-y:auto}
+.live-highlights{max-height:36%;overflow-y:auto}
+.live-team-pick{padding:var(--s2) var(--s3)}
+.live-team-pick .segmented>button{gap:6px}
+.live-tactic .card-body{padding-top:0}
+.live-squad .section-title{display:flex;align-items:center;padding-right:var(--s3)}
+.section-title .count-left{margin-left:auto;font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
+/* The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the tile before the score. */
+.match-hero.live .club-hero-band{min-height:64px}
+.match-hero.live .club-hero-main{gap:var(--s4)}
+.match-hero.live .match-hero-side{gap:var(--s3)}
+.match-hero.live .crest.club-hero-crest{width:40px;height:40px;border-width:2px;font-size:var(--fs-small)}
+.match-hero.live .club-hero-crest>.crest-logo{width:40px;width:min(40px*sqrt(var(--r)),48px*var(--r),80px)}
+.match-hero.live .match-hero-name{font-size:var(--fs-page)}
+.match-hero.live .club-hero-tile.match-score{flex-direction:row;gap:var(--s3);padding:var(--s1) var(--s3) var(--s1) var(--s1)}
+.match-hero.live .live-clock{display:grid;place-items:center;min-width:56px;height:40px;padding:0 var(--s2);border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 var(--fs-title)/1 var(--display);font-stretch:semi-condensed;font-variant-numeric:tabular-nums}
+.match-hero.live .live-clock.running{background:var(--panel-2);color:var(--strong)}
+.match-hero.live .big-score i{display:inline-block;font-style:normal}
+.match-hero.live .big-score i.flip{animation:score-flip .7s cubic-bezier(.3,1.6,.5,1)}
+.match-hero.live .match-score.scored{animation:score-ring 1.6s ease-out}
+@keyframes score-flip{from{transform:translateY(-60%);opacity:0}}
+@keyframes score-ring{0%,40%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 var(--accent)}}
+/* The pitch, as wide as the window's height leaves room for; the commentary under it, the whole match, the commands. */
+match-replay.live{display:flex;flex-direction:column;gap:var(--s2);width:min(100%,calc((100vh - 232px) * 111 / 74));min-height:0;margin-inline:auto;padding:0}
+match-replay.live .replay-stage{border-radius:var(--radius-box) var(--radius-box) 0 0}
+match-replay.live .replay-pitch{max-height:none}
+match-replay.live .replay-progress{justify-content:flex-end;padding-bottom:var(--s6);background:#0b0f1433}
+.live-formations{position:absolute;inset:0}
+.live-formations .pitch-player{transform:translate(-50%,-50%)}
+.formation-tag{position:absolute;top:var(--s2);padding:var(--s1) var(--s2);border-radius:var(--radius-chip);background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/14px var(--text)}
+.formation-tag.home{left:var(--s2)}
+.formation-tag.away{right:var(--s2)}
+/* The commentary: one line of 44 in the colours of the side that has the chance, its crest then the minute; neutral between
+   two chances, a bar running at its end. */
+.replay-caption.ticker{display:flex;align-items:center;gap:var(--s3);min-height:0;height:44px;margin:calc(-1*var(--s2)) 0 0;padding:0 var(--s3);border-radius:0 0 var(--radius-box) var(--radius-box);background:var(--team,var(--strong));color:var(--team-ink,#fff);transition:background-color .4s}
+.ticker-crest{flex:none;width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 1px #0006)}
+.ticker-minute{flex:none;font:700 var(--fs-figure)/1 var(--display);font-stretch:semi-condensed;font-variant-numeric:tabular-nums}
+.ticker-minute:empty{display:none}
+.ticker-text{min-width:0;overflow:hidden;font-size:var(--fs-figure);font-weight:600;line-height:20px;white-space:nowrap;text-overflow:ellipsis}
+.ticker-text strong{font-weight:700}
+.ticker-text small{margin-left:var(--s2);font-size:var(--fs-small);font-weight:400;opacity:.75}
+.ticker-run{display:none;flex:none;width:120px;height:4px;margin-left:auto;border-radius:2px;background:#ffffff33;overflow:hidden}
+.ticker.running .ticker-run{display:block}
+.ticker-run>i{display:block;width:35%;height:100%;border-radius:2px;background:var(--accent);animation:ticker-run 1.1s ease-in-out infinite}
+@keyframes ticker-run{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+/* The whole match on a line: the time played, the break dashed, the home side's marks above the line, the other's below. */
+.replay-timeline.frise{height:28px;margin:0 var(--s2);background:linear-gradient(var(--line),var(--line)) center/100% 2px no-repeat}
+.frise-played{position:absolute;left:0;top:12px;height:4px;border-radius:2px;background:var(--ink-2)}
+.frise .replay-half{top:6px;bottom:6px;width:0;border-left:1px dashed var(--muted);background:none}
+.frise .replay-cursor{top:4px;bottom:4px;background:var(--accent-text)}
+.frise-marks .match-mark{position:absolute;translate:-50% 0}
+.frise-marks .home{top:0}
+.frise-marks .away{bottom:0}
+.frise-marks .sub-on{font-size:var(--fs-micro)}
+/* Two paces, each slider after its icon: the ball for the chances, the stopwatch for the clock between them. */
+.slider-icon{flex:none;width:18px;height:18px;fill:none;stroke:var(--ink-2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+match-replay.live .replay-controls{margin-top:0}
+match-replay.live .replay-controls select{margin-left:0}
+match-replay.live .slider input[type=range]{width:96px}
+.live-actions{display:flex;gap:var(--s2);margin-left:auto}
+/* A goal holds the pitch: the scorer's colours cross it, B, U and T stamped one after the other, a light passing on them,
+   then his shirt and his name, the passer under it. */
+.goal-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e8c;pointer-events:none;animation:goal-veil 4.2s ease forwards}
+.goal-band{position:relative;display:grid;grid-template-columns:auto auto;align-items:center;column-gap:var(--s6);justify-content:center;width:100%;padding:var(--s6) 0;overflow:hidden;background:var(--team);color:var(--team-ink);box-shadow:0 0 0 2px var(--team-2),0 20px 40px -10px #0008;animation:goal-band .6s cubic-bezier(.2,.9,.2,1) both,goal-shake .3s 1s}
+.goal-band::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,#fff0 38%,#ffffff40 46%,#ffffffb3 50%,#ffffff40 54%,#fff0 62%) no-repeat;background-size:300% 100%;background-position:100% 0;pointer-events:none;animation:goal-glint 1s 1.15s ease-in-out both}
+.goal-word{grid-row:span 2;display:flex;align-items:center;gap:var(--s4);font:700 var(--fs-goal)/1 var(--display);font-stretch:semi-condensed;letter-spacing:var(--caps);text-transform:uppercase}
+.goal-crest{width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 2px 3px #0008)}
+.goal-letters>span{display:inline-block;animation:goal-stamp .35s cubic-bezier(.2,1.6,.4,1) both}
+.goal-letters>span:nth-child(1){animation-delay:.35s}
+.goal-letters>span:nth-child(2){animation-delay:.5s}
+.goal-letters>span:nth-child(3){animation-delay:.65s}
+.goal-scorer{display:flex;align-items:center;gap:var(--s3);font:700 var(--fs-hero)/1 var(--display);font-stretch:semi-condensed;text-transform:uppercase;animation:goal-rise .5s .35s both}
+.goal-scorer .kit-shirt{width:48px;height:48px}
+.goal-scorer .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.goal-assist{align-self:start;font:600 var(--fs-figure)/20px var(--text);opacity:.85;animation:goal-rise .5s .55s both}
+@keyframes goal-veil{0%{opacity:0}6%,86%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes goal-band{from{clip-path:polygon(0 0,0 0,0 100%,0 100%)}to{clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}}
+@keyframes goal-stamp{from{opacity:0;transform:scale(2.6) translateY(-10px)}}
+@keyframes goal-shake{25%{transform:translateY(4px)}50%{transform:translateY(-3px)}75%{transform:translateY(1px)}}
+@keyframes goal-glint{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes goal-rise{from{opacity:0;transform:translateY(10px)}}
+/* A side's players, a line of 30 each: shirt of 24, position, whole name, what he did, note; the user's side adds the
+   fatigue and the assistant's advice, the player he would take off on the wash of a warning. */
+.squad-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:30px;padding:0 var(--s3)}
+.squad-rows.mine .squad-row{grid-template-columns:24px minmax(0,1fr) auto 32px 72px 22px}
+.squad-row:nth-child(even){background:var(--stripe)}
+.squad-row .kit-shirt{width:24px;height:24px}
+.squad-row .kit-shirt.number b{margin-top:5px;font-size:var(--fs-small)}
+.squad-who{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.squad-name{min-width:0;overflow:hidden;font-weight:600;color:var(--strong);white-space:nowrap;text-overflow:ellipsis}
+.squad-row:is(.bench,.off) .squad-name{font-weight:400;color:var(--muted)}
+.squad-row .marks{gap:4px}
+.squad-row.advised,.squad-row.advised:nth-child(even){background:var(--warn-soft)}
+.fatigue{display:flex;align-items:center;gap:6px;font-size:var(--fs-small);color:var(--muted);white-space:nowrap}
+.fatigue .gauge{width:32px}
+.gauge.warn>i{background:var(--accent)}
+.gauge.bad>i{background:var(--bad)}
+button.advice{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--radius-chip);background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+button.advice.in{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* The goals, each with the score it made, the figure of the side that scored in bold, its minute by the ball. */
+.goal-rows{padding:0}
+.goal-row{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.goal-row:nth-child(even){background:var(--stripe)}
+.goal-row .highlight{justify-content:flex-end}
+.goal-row .highlight.away{flex-direction:row;justify-content:flex-start}
+.goal-row .fixture-score{min-width:56px;text-align:center;color:var(--ink-2)}
+.goal-row .minute{font:700 var(--fs-figure)/1 var(--display);font-stretch:semi-condensed;color:var(--accent-text)}
+.live-highlights .highlights{padding:0}
+.live-highlights .highlight-row{padding:0 var(--s3)}
+.live-highlights .highlight-row:nth-child(even){background:var(--stripe)}
+:is(.goal-row,.live-game).flash{animation:row-flash 2.4s ease-out}
+@keyframes row-flash{0%,30%{background:var(--own-row)}}
+/* Live, the bars of the figures slide to their new shares; a figure that changed lights up. */
+.live-stats .comparison-bar>i{transition:flex-grow .8s cubic-bezier(.2,.8,.2,1)}
+.live-stats .comparison>span{border-radius:var(--radius-chip)}
+.live-stats .comparison>span.bump{animation:figure-bump 1.2s ease-out}
+@keyframes figure-bump{from{background:var(--title-wash);color:var(--accent-text)}}
+/* The day's matches, the user's first, then the table as it stands, which scrolls in its card. */
+.live-games{padding-bottom:var(--s2)}
+.live-game{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.live-game:nth-child(even){background:var(--stripe)}
+.live-game.own{background:var(--own-row)}
+.live-game>span{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap}
+.live-game>span:first-child{justify-content:flex-end}
+.live-game .fixture-score{text-align:center}
+.live-table thead th{position:sticky;top:0;z-index:1;background:var(--panel)}
+.live-table .move{font:700 var(--fs-micro)/1 var(--text)}
+.live-table .move.up{color:var(--good)}
+.live-table .move.down{color:var(--bad)}
+@media(prefers-reduced-motion:reduce){.goal-burst,.goal-burst *,.goal-band::after,.live-stats .comparison-bar>i,.match-hero.live *,.ticker-run>i{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 /* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
    filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;

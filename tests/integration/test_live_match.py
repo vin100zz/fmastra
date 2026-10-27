@@ -110,6 +110,11 @@ def test_the_live_api_from_kick_off_to_the_end_of_the_day(config, tmp_path):
         opening = client.get("/api/direct").json()
         manager = opening["manager"]
         assert opening["status"] == "playing" and len(manager["active"]) == 11 and manager["windows_left"] == 3
+        # The other side as the screen shows it, and each player of the pitch with his place there.
+        opponent = opening["opponent"]
+        assert len([row for row in opponent["squad"] if row["state"] == "on" and row["role"]]) == 11
+        assert opponent["mentality"] and manager["formation"] in {*world.config.formations.formations, None}
+        assert all(row["role"] is None for row in manager["squad"] if row["state"] == "bench")
         while (segment := client.post("/api/direct/avancer", json={}).json())["status"] != "halftime":
             assert segment["result"]["events"]
         out, into = manager["active"][6], manager["bench"][4]

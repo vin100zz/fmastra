@@ -30,6 +30,8 @@
  --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
  --text:"Segoe UI",system-ui,sans-serif;
  --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;
+ /* The one exception to the scale: the word of a goal, in the live match. */
+ --fs-goal:120px;
  --caps:.06em;
  /* Space: 4, 8, 12, 16, 24. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;
@@ -998,6 +1000,69 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .career-gap{height:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}
 /* The rows of a section in a card made of sections (a player's column): 12 from the edges, flush with their band. */
 .rail-section{padding:0 var(--s3)}
+
+/* Live match (« Match en direct »). The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the
+   tile 12 before the score, on the accent during a chance, grey while the clock runs. */
+.hero.duel.compact{height:64px;gap:var(--s4)}
+.hero.compact h1{font-size:var(--fs-page)}
+.hero.compact .hero-logo{width:40px;height:40px;object-fit:contain}
+.hero.compact .tile.match-score{flex-direction:row;gap:var(--s3);padding:var(--s1) var(--s3) var(--s1) var(--s1)}
+.live-clock{display:grid;place-items:center;min-width:56px;height:40px;padding:0 var(--s2);border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-title)/1 var(--display)}
+.live-clock.running{background:var(--panel-2);color:var(--strong)}
+/* The commentary under the pitch: 44, in the colours of the side that has the chance, its crest and the minute first;
+   neutral between two chances, a bar of the accent running at its end. */
+.ticker{display:flex;align-items:center;gap:var(--s3);height:44px;padding:0 var(--s3);border-radius:0 0 var(--radius-box) var(--radius-box);background:var(--team,var(--strong));color:var(--team-ink,#fff)}
+.ticker>img{flex:none;width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 1px #0006)}
+.ticker>b{flex:none;font:700 semi-condensed var(--fs-figure)/1 var(--display)}
+.ticker>span{min-width:0;overflow:hidden;font:600 var(--fs-figure)/20px var(--text);white-space:nowrap;text-overflow:ellipsis}
+.ticker-run{flex:none;width:120px;height:var(--s1);margin-left:auto;border-radius:2px;background:#ffffff33;overflow:hidden}
+.ticker-run>i{display:block;width:35%;height:100%;border-radius:2px;background:var(--accent)}
+/* The whole match on a line of 28: the time played, the break dashed, the minute; the home side's marks above, the other's below. */
+.frise{position:relative;height:28px;background:linear-gradient(var(--line),var(--line)) center/100% 2px no-repeat}
+.frise-played{position:absolute;left:0;top:12px;height:var(--s1);border-radius:2px;background:var(--ink-2)}
+.frise-half{position:absolute;top:6px;height:16px;border-left:1px dashed var(--muted)}
+.frise-now{position:absolute;top:4px;width:2px;height:20px;margin-left:-1px;border-radius:1px;background:var(--accent-text)}
+.frise>.mark{position:absolute;translate:-50% 0}
+.frise>.home{top:0}.frise>.away{bottom:0}
+/* The icon before a slider, where two follow each other (the two paces of the live match). */
+.slider-icon{flex:none;width:18px;height:18px;fill:none;stroke:var(--ink-2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.slider:has(.slider-icon) input[type=range]{width:96px}
+/* A player of a side, a line of 30: shirt of 24 and its number, position, whole name, what he did, note; for the user's side,
+   his fatigue and the assistant's advice, the player he would take off on the wash of a warning. */
+.squad-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto 32px 72px 22px;align-items:center;column-gap:var(--s2);height:30px;padding:0 var(--s3)}
+.squad-row:nth-child(even){background:var(--stripe)}
+.squad-row .kit-shirt{width:24px;height:24px}
+.squad-row .kit-shirt.number b{margin-top:5px;font-size:var(--fs-small)}
+.squad-who{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.squad-who>span:last-child{min-width:0;overflow:hidden;font-weight:600;color:var(--strong);white-space:nowrap;text-overflow:ellipsis}
+.squad-row.bench .squad-who>span:last-child{font-weight:400;color:var(--muted)}
+.squad-row .marks{gap:var(--s1)}
+.squad-row.advised,.squad-row.advised:nth-child(even){background:var(--warn-soft)}
+.fatigue{display:flex;align-items:center;gap:6px;font-size:var(--fs-small);color:var(--muted)}
+.fatigue .gauge{width:32px}
+.advice{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--radius-chip);background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+.advice.in{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.section-title>.aside{margin-left:auto;font:600 var(--fs-small)/1 var(--text);color:var(--muted)}
+/* A goal on a line of 26 with the score it made, the figure of the side that scored in bold, its minute by the ball. */
+.goal-row{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.goal-row:nth-child(even){background:var(--stripe)}
+.goal-row>.highlight{justify-content:flex-end}
+.goal-row>.highlight.away{flex-direction:row;justify-content:flex-start}
+.goal-row>.fixture-score{min-width:56px;text-align:center;color:var(--ink-2)}
+.goal-row.flash{background:var(--own-row)}
+/* Live, a figure that has just changed: the wash of a section's title, the accent's ink. */
+.comparison>span.bump{border-radius:var(--radius-chip);background:var(--title-wash);color:var(--accent-text)}
+/* The goal: the scorer's colours across the pitch, ringed with his second colour; BUT in --fs-goal, his shirt of 48 and his
+   name in 40, the passer under it. A mockup shows it at rest: the screen stamps the letters and passes a light on them. */
+.goal-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e8c}
+.goal-band{position:relative;display:grid;grid-template-columns:auto auto;align-items:center;column-gap:var(--s6);justify-content:center;width:100%;padding:var(--s6) 0;overflow:hidden;background:var(--team);color:var(--team-ink);box-shadow:0 0 0 2px var(--team-2),0 20px 40px -10px #0008}
+.goal-word{grid-row:span 2;display:flex;align-items:center;gap:var(--s4);font:700 semi-condensed var(--fs-goal)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase}
+.goal-word img{width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 2px 3px #0008)}
+.goal-scorer{display:flex;align-items:center;gap:var(--s3);font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
+.goal-scorer .kit-shirt{width:48px;height:48px}
+.goal-scorer .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.goal-assist{align-self:start;font:600 var(--fs-figure)/20px var(--text);opacity:.85}
 
 /* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
    filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;

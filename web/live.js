@@ -1,8 +1,11 @@
-// The human club's match played live: the 2D pitch fed one segment at a time, the stats, the other matches of
-// the day with the table as it stands, and the Tactique panel. The screen is modal until the final whistle.
-import {api,escape as e,number as n,matchNote,card,roundTitle,kitDot,kitShirt,shirtLabel,playerBlock,matchNoteBadge,matchBlockNote,PITCH_BOXES,position,group,shortName,toast} from './ui.js';
+// The human club's match played live (docs/ui.md, « Match en direct »): the whole screen in the window, three columns.
+// On the left the players of either side, then the tactic; in the middle the match's band, the 2D pitch fed one segment
+// at a time with its commentary, the whole match on a line and the commands; on the right the highlights, the stats,
+// the other matches of the day and the table as it stands. The screen is modal until the final whistle.
+import {api,escape as e,matchNote,roundTitle,kitDot,kitShirt,shirtLabel,playerBlock,matchNoteBadge,matchBlockNote,PITCH_BOXES,position,group,shortName,toast,fact,empty,matchMinute,halfEnd} from './ui.js';
 import {liveReplay} from './match-replay.js';
-import {replayTeams,statsCard,highlightsCard} from './match.js';
+import {replayTeams,statsCard} from './match.js';
+import {matchHero} from './club-hero.js';
 import {pitchLayout,changeFormation} from './composition.js';
 
 const POSITIONS=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
@@ -26,6 +29,11 @@ export function liveTable(rows,games,points){
  }
  return [...table.values()].sort((x,y)=>y.points-x.points||(y.goals_for-y.goals_against)-(x.goals_for-x.goals_against)||y.goals_for-x.goals_for||x.club.name.localeCompare(y.club.name));
 }
+// How many places each club has gained (positive) or lost since the day began, by its id.
+export function tableMoves(before,now){
+ const rank=new Map(before.map((row,index)=>[row.club.id,index]));
+ return new Map(now.map((row,index)=>[row.club.id,(rank.get(row.club.id)??index)-index]));
+}
 
 // What the other matches show at `second`, and the viewer's own match at the score the pitch shows.
 function scoresAt(second){
@@ -33,47 +41,200 @@ function scoresAt(second){
  return [...others,{home:view.state.home,away:view.state.away,goals:view.score,own:true}];
 }
 
+// The day's matches, the viewer's first, then the table as it would stand now, scrolling in its card: a club that has
+// gained or lost places since the day began says so before its name; a score that has just changed lights up.
 function othersHtml(second=0){
  if(!view.others.matches.length&&!view.others.table)return '';
- const games=scoresAt(second);
- const rows=games.filter(game=>!game.own).map(game=>`<div class="live-game"><span>${kitDot(game.home)}${e(game.home.name)}</span><b>${game.goals[0]} – ${game.goals[1]}</b><span>${kitDot(game.away)}${e(game.away.name)}</span></div>`).join('');
+ const games=scoresAt(second),seen=view.seenScores??=new Map();
+ const row=game=>{
+  const key=game.own?'own':game.id,score=game.goals.join(' – '),changed=seen.has(key)&&seen.get(key)!==score;
+  seen.set(key,score);
+  return `<div class="live-game${game.own?' own':''}${changed?' flash':''}"><span>${e(game.home.name)}${kitDot(game.home)}</span><span class="fixture-score"><b>${score}</b></span><span>${kitDot(game.away)}${e(game.away.name)}</span></div>`;
+ };
+ const rows=[...games.filter(game=>game.own),...games.filter(game=>!game.own)].map(row).join('');
  const own=view.state.side==='home'?view.state.home.id:view.state.away.id;
- const standings=view.others.table&&liveTable(view.others.table,games,view.others.points);
- const table=standings?`<div class="table-scroll standings"><table class="live-table"><thead><tr><th class="rank-column">#</th><th>CLUB</th><th class="total-column">PTS</th><th class="count-column">V</th><th class="count-column">N</th><th class="count-column">D</th><th class="total-column">BP</th><th class="total-column">BC</th><th class="difference-column">DIFF.</th></tr></thead><tbody>${standings.map((row,index)=>`<tr class="${row.club.id===own?'own':''}"><td><span class="rank">${index+1}</span></td><td>${kitDot(row.club)}${e(row.club.name)}</td><td><b>${row.points}</b></td><td>${row.won}</td><td>${row.drawn}</td><td>${row.lost}</td><td>${row.goals_for}</td><td>${row.goals_against}</td><td>${row.goals_for-row.goals_against}</td></tr>`).join('')}</tbody></table></div>`:'';
- return card(standings?roundTitle(view.others.competition,standings):view.others.competition,`<div class="card-body">${rows}</div>${table}`,'','live-others');
+ const points=view.others.points,standings=view.others.table&&liveTable(view.others.table,games,points);
+ // Before the first round, nobody has a place to gain or lose.
+ const moves=standings&&view.others.table.some(row=>row.played)?tableMoves(liveTable(view.others.table,[],points),standings):new Map();
+ const move=id=>{const value=moves.get(id);return value>0?`<span class="move up" title="${value} place${value>1?'s':''} gagnée${value>1?'s':''}">▲${value}</span>`:value<0?`<span class="move down" title="${-value} place${value<-1?'s':''} perdue${value<-1?'s':''}">▼${-value}</span>`:'<span class="move"></span>';};
+ const table=standings?`<div class="live-table-scroll standings"><table class="live-table"><thead><tr><th class="rank-column">#</th><th></th><th>CLUB</th><th class="total-column">PTS</th><th class="count-column">V</th><th class="count-column">N</th><th class="count-column">D</th><th class="total-column">BP</th><th class="total-column">BC</th><th class="difference-column">DIFF.</th></tr></thead><tbody>${standings.map((row,index)=>{const difference=row.goals_for-row.goals_against;return `<tr class="${row.club.id===own?'own':''}"><td><span class="rank">${index+1}</span></td><td>${move(row.club.id)}</td><td>${kitDot(row.club)}${e(row.club.name)}</td><td><b>${row.points}</b></td><td>${row.won}</td><td>${row.drawn}</td><td>${row.lost}</td><td>${row.goals_for}</td><td>${row.goals_against}</td><td>${difference>0?`+${difference}`:difference}</td></tr>`;}).join('')}</tbody></table></div>`:'';
+ return `<div class="card-head"><h2>${e(standings?roundTitle(view.others.competition,standings):view.others.competition)}</h2></div><div class="live-games">${rows}</div>${table}`;
 }
 
-// Goals, injuries and red cards as far as the pitch has shown them: a goal once the score counts it.
+// What the pitch has shown so far of the goals, cards, injuries and penalties missed: a goal once the score counts it,
+// the rest once the clock has passed it.
 export function shownHighlights(events,second,score,homeId){
- const counted=[0,0];
+ const counted=[0,0],scored=new Set(events.filter(event=>event.kind==='goal').map(event=>event.shot_id));
  return events.filter(event=>{
-  if(event.period===3||!['goal','injury','red'].includes(event.kind))return false;
+  if(event.period===3)return false;
+  if(event.kind==='shot')return event.detail==='penalty'&&!scored.has(event.shot_id)&&event.second<=second;
+  if(!['goal','injury','red','yellow'].includes(event.kind))return false;
   if(event.kind!=='goal')return event.second<=second;
   const side=event.team_id===homeId?0:1;
   return counted[side]++<score[side];
  });
 }
-const highlightsHtml=()=>highlightsCard({...view.state,result:{events:shownHighlights(view.events,view.second??view.state.second,view.score,view.state.home.id)}},(id,name)=>e(name));
+const mark=(className,title,text='')=>`<span class="match-mark ${className}" title="${e(title)}">${text}</span>`;
+const named=(name,short,title=name)=>{const shown=shortName(name,short);return `<span${title&&shown!==title?` title="${e(title)}"`:''}>${e(shown)}</span>`;};
+// The highlights in two sections: the goals, each with the score it made, the figure of the side that scored in bold
+// and its minute by the ball; then the cards, injuries and penalties missed, the minute in the middle as on the report.
+function highlightsHtml(){
+ const events=shownHighlights(view.events,view.second??view.state.second,view.score,view.state.home.id);
+ if(!events.length)return `<div class="card-body">${empty('Ni but, ni carton, ni blessure')}</div>`;
+ const half=halfEnd(view.events),minute=event=>`${matchMinute(event.second,half,event.period)}′`,home=event=>event.team_id===view.state.home.id;
+ const score=[0,0],goals=events.filter(event=>event.kind==='goal').map(event=>{
+  const side=home(event)?0:1;score[side]++;
+  const passer=event.detail==='penalty'?'<small title="Sur penalty">pen.</small>':event.secondary?`<small title="${e(`Passe de ${event.secondary}`)}">${e(shortName(event.secondary,event.secondary_short))}</small>`:'';
+  const who=`<span class="highlight-names"><strong>${named(event.player||'—',event.player_short)}</strong>${passer}</span>`,ball=`<span class="marks">${mark('goal','But')}</span><span class="minute">${minute(event)}</span>`;
+  const figures=side?`${score[0]} – <b>${score[1]}</b>`:`<b>${score[0]}</b> – ${score[1]}`;
+  return `<div class="goal-row"><div class="highlight home">${side?'':who+ball}</div><span class="fixture-score">${figures}</span><div class="highlight away">${side?ball+who:''}</div></div>`;
+ });
+ const saved=new Set(view.events.filter(event=>event.kind==='save').map(event=>event.shot_id));
+ const others=events.filter(event=>event.kind!=='goal').map(event=>{
+  const marks=event.kind==='injury'?mark('injury','Blessure'):event.kind==='yellow'?mark('booking yellow','Carton jaune')
+   :event.kind==='shot'?mark('missed',saved.has(event.shot_id)?'Penalty arrêté':'Penalty manqué')
+   :event.detail==='second_yellow'?mark('booking yellow','Carton jaune')+mark('booking red','Deuxième carton jaune'):mark('booking red','Carton rouge');
+  const content=`<span class="marks">${marks}</span><span class="highlight-names"><strong>${named(event.player||'—',event.player_short)}</strong></span>`;
+  return `<div class="highlight-row"><div class="highlight home">${home(event)?content:''}</div><span class="minute">${minute(event)}</span><div class="highlight away">${home(event)?'':content}</div></div>`;
+ });
+ // A goal just shown lights its line up.
+ const fresh=goals.length>(view.goalsShown??goals.length);
+ view.goalsShown=goals.length;
+ if(fresh)goals[goals.length-1]=goals.at(-1).replace('class="goal-row"','class="goal-row flash"');
+ return `${goals.length?`<div class="section-title"><span class="label">Buts</span></div><div class="goal-rows">${goals.join('')}</div>`:''}`
+  +`${others.length?`<div class="section-title"><span class="label">Cartons, blessures, penaltys</span></div><div class="highlights">${others.join('')}</div>`:''}`;
+}
 
-// The human side's sheet under the pitch: rating, goals, cards, injury and fatigue of each player.
-function squadHtml(){
- const kit=replayTeams(view.state)[view.state.side];
- const item=player=>{
-  const tired=Math.round((1-player.fitness)*100);
-  const marks=['<span class="match-mark goal"></span>'.repeat(player.goals),
-   ...Array.from({length:player.red?Math.min(1,player.yellows):player.yellows},()=>'<span class="match-mark booking yellow"></span>'),
-   player.red?'<span class="match-mark booking red"></span>':'',player.injured?'<span class="match-mark injury"></span>':''].join('');
-  const title=`${player.name} · ${player.position}${player.rating!=null?` · note ${matchNote(player.rating)}`:''} · fatigue ${tired} %`;
-  return `<div class="live-player ${player.state}" title="${e(title)}">${kitShirt(kit.major,kit.minor,shirtLabel(player))}${matchNoteBadge(player.rating)}<span class="live-player-name">${e(shortName(player.name,player.short))}</span><span class="live-player-marks">${marks}</span><span class="fatigue-bar${tired>=30?' danger':''}"><i style="width:${Math.min(100,tired)}%"></i></span></div>`;
+// The assistant's advice: who he would take off (tired, booked and tiring, or having a bad match and tiring) and who he
+// would send on in his place, a substitute of the same position, else of the same line, the freshest. Nothing once the
+// changes are spent or the match is over.
+export function assistantAdvice(squad,changesLeft,status){
+ const out=new Map(),into=new Map();
+ if(changesLeft<=0||status==='finished')return {out,into};
+ const tired=player=>Math.round((1-player.fitness)*100);
+ const reasons=player=>{
+  const value=tired(player),list=[];
+  if(value>=70)list.push(`fatigue ${value} %`);
+  if(player.yellows&&value>=50)list.push(`averti, fatigue ${value} %`);
+  if(player.rating!=null&&player.rating<6&&value>=50)list.push(`note ${matchNote(player.rating)}`);
+  return list;
  };
- const squad=view.shown.manager.squad;
- return `${squad.filter(player=>player.starter).map(item).join('')}<span class="live-squad-gap"></span>${squad.filter(player=>!player.starter).map(item).join('')}`;
+ const candidates=squad.filter(player=>player.state==='on'&&!player.injured&&!player.red&&reasons(player).length).sort((a,b)=>tired(b)-tired(a));
+ const bench=squad.filter(player=>player.state==='bench'&&!player.injured);
+ for(const player of candidates){
+  if(out.size>=changesLeft)break;
+  const role=player.role??player.position,free=bench.filter(sub=>!into.has(sub.id)&&(sub.position==='GB')===(role==='GB'));
+  const fresher=list=>list.sort((a,b)=>b.fitness-a.fitness)[0];
+  const sub=fresher(free.filter(item=>item.position===role))??fresher(free.filter(item=>group(item.position)===group(role)));
+  if(!sub)continue;
+  out.set(player.id,{sub,reasons:reasons(player)});into.set(sub.id,player);
+ }
+ return {out,into};
+}
+
+const SWAP='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h9l-2.5-2.5M13 11H4l2.5 2.5"/></svg>';
+// What a player did, as far as the screen has shown it: a ball for each goal (not on the pitch, where they stand on his
+// shirt), his cards, his injury, the minute he came on or went off.
+function sheetMarks(player,{goals=true}={}){
+ const changes=view.changes?.get(player.id)??{};
+ return [goals?mark('goal',`${player.goals} but${player.goals>1?'s':''}`).repeat(player.goals):'',
+  mark('booking yellow','Carton jaune').repeat(player.red?Math.min(1,player.yellows):player.yellows),
+  player.red?mark('booking red','Carton rouge'):'',player.injured?mark('injury','Blessé'):'',
+  changes.on?mark('sub-on',`Entré à la ${changes.on}e minute`,`▲ ${changes.on}′`):'',changes.off?mark('sub-off',`Sorti à la ${changes.off}e minute`,`▼ ${changes.off}′`):''].join('');
+}
+// The minutes each player came on or went off, as the screen has shown them.
+function shownChanges(){
+ const changes=new Map(),half=halfEnd(view.events),second=view.second??view.state.second;
+ for(const event of view.events){
+  if(event.kind!=='substitution'||event.period===3||event.second>second)continue;
+  const at=matchMinute(event.second,half,event.period);
+  changes.set(event.player_id,{...changes.get(event.player_id),off:at});
+  if(event.secondary_id!=null)changes.set(event.secondary_id,{...changes.get(event.secondary_id),on:at});
+ }
+ return changes;
+}
+const sideOf=mine=>mine?view.state.side:view.state.side==='home'?'away':'home';
+const sheetOf=side=>side===view.state.side?view.shown.manager.squad:view.shown.opponent?.squad??[];
+
+// One side's players, a line each: those on the pitch, in the order of their places, then the substitutes, then those who
+// went off. The shirt and its number, the position, the whole name, what he did, his note; for the user's side, his
+// fatigue and the assistant's advice.
+function squadHtml(){
+ const mine=view.team!=='theirs',side=sideOf(mine),kit=replayTeams(view.state)[side],sheet=sheetOf(side);
+ view.changes=shownChanges();
+ const advice=mine?assistantAdvice(sheet,view.shown.manager.substitutions_left,view.status):{out:new Map(),into:new Map()};
+ const row=player=>{
+  const tired=Math.round((1-player.fitness)*100),out=advice.out.get(player.id),into=advice.into.get(player.id);
+  const tip=out?`L’adjoint ferait entrer ${out.sub.name} : ${out.reasons.join(', ')}`:into?`L’adjoint le ferait entrer à la place de ${into.name}`:'';
+  const chip=tip?`<button type="button" class="advice${into?' in':''}" data-live="tactique" title="${e(tip)}" aria-label="${e(tip)}">${SWAP}</button>`:'<span></span>';
+  const fatigue=mine?`<span class="fatigue" title="Fatigue ${tired} %"><span class="gauge${tired>=70?' bad':tired>=50?' warn':''}"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span>`:'';
+  return `<div class="squad-row ${player.state}${out?' advised':''}">${kitShirt(kit.major,kit.minor,shirtLabel(player,player.role??player.position))}`
+   +`<span class="squad-who">${position(player.role??player.position)}<span class="squad-name" title="${e(player.name)}">${e(player.name)}</span></span>`
+   +`<span class="marks">${sheetMarks(player)}</span>${matchNoteBadge(player.rating)||'<span></span>'}${mine?fatigue+chip:''}</div>`;
+ };
+ const order=player=>POSITIONS.indexOf(player.role);
+ const on=sheet.filter(player=>player.state==='on').sort((a,b)=>order(a)-order(b));
+ const rest=[...sheet.filter(player=>player.state==='bench'),...sheet.filter(player=>player.state==='off')];
+ const left=view.shown.manager.substitutions_left,formation=view.shown.opponent?.formation;
+ const count=mine?`${left} changement${left>1?'s':''} restant${left>1?'s':''}`:formation?e(formation):'';
+ const names=[view.state[view.state.side],view.state[sideOf(false)]];
+ const pick=`<div class="segmented small fill" role="group" aria-label="Équipe"><button type="button" data-live-team="mine" class="${mine?'active':''}" aria-pressed="${mine}">${kitDot(names[0])}${e(names[0].name)}</button><button type="button" data-live-team="theirs" class="${mine?'':'active'}" aria-pressed="${!mine}">${kitDot(names[1])}${e(names[1].name)}</button></div>`;
+ return `<div class="live-team-pick">${pick}</div><div class="live-scroll"><div class="section-title"><span class="label">Sur le terrain</span>${count?`<span class="count-left">${count}</span>`:''}</div>`
+  +`<div class="squad-rows ${mine?'mine':'theirs'}">${on.map(row).join('')}</div>${rest.length?`<div class="section-title"><span class="label">Remplaçants</span></div><div class="squad-rows ${mine?'mine':'theirs'}">${rest.map(row).join('')}</div>`:''}</div>`;
+}
+
+// The user's tactic: its formation and mentality; « Modifier » opens the Tactique panel.
+function tacticHtml(){
+ const manager=view.shown.manager,open=view.status!=='finished';
+ return `<div class="card-head"><h2>Tactique</h2>${open?'<button type="button" class="button small" data-live="tactique" title="Tactique (T)">Modifier</button>':''}</div>`
+  +`<div class="card-body">${fact('Formation',e(manager.formation||'—'))}${fact('Mentalité',e(MENTALITIES[manager.mentality]||manager.mentality))}</div>`;
+}
+
+// Between two chances the pitch shows both sides in their formation, the side at home on the left attacking to the
+// right: each player's shirt with his goals, his block with his name, his note and what else he did; at the top, each
+// side's formation and mentality.
+const FORMATION_DEPTH={gk:5,def:14,dm:22,cm:30,am:37,att:44};
+function formationsHtml(){
+ const teams=replayTeams(view.state);
+ const side=key=>{
+  const sheet=sheetOf(key).filter(player=>player.state==='on'&&player.role),places=pitchLayout(sheet.map(player=>player.role)),home=key==='home';
+  const players=sheet.map((player,index)=>{
+   // The upright layout laid down: its lines across the half, from the goal, its width down the pitch.
+   const place=places[index],depth=FORMATION_DEPTH[place.line],x=home?depth:100-depth,y=home?place.x:100-place.x;
+   return `<div class="pitch-player" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">${kitShirt(teams[key].major,teams[key].minor,shirtLabel(player,player.role),{goals:player.goals})}`
+    +`${playerBlock(e(shortName(player.name,player.short)),matchBlockNote(player.rating)+sheetMarks(player,{goals:false}))}</div>`;
+  }).join('');
+  const own=key===view.state.side,info=own?view.shown.manager:view.shown.opponent;
+  const tag=[info?.formation,MENTALITIES[info?.mentality]].filter(Boolean).map(e).join(' · ');
+  return `${players}${tag?`<span class="formation-tag ${key}">${tag}</span>`:''}`;
+ };
+ return side('home')+side('away');
+}
+
+// The match's band, compact, the minute on its tile: grey while the clock runs, on the accent while a chance is played.
+function heroHtml(state){
+ const clock=`<span class="live-clock${state.status==='playing'?' running':''}">${clockLabel(state.status,matchMinute(state.second,halfEnd(state.result.events))+'′')}</span>`;
+ return matchHero(state,'',{clock});
+}
+const clockLabel=(status,label)=>status==='halftime'?'MT':status==='finished'?'Fin':label;
+// The score of the band; a goal turns the figure of the side that scored.
+function heroScore(score){
+ const figures=document.querySelectorAll('.match-hero.live .big-score i');
+ score.forEach((goals,index)=>{
+  const figure=figures[index];
+  if(!figure||figure.textContent===String(goals))return;
+  const scored=Number(figure.textContent)<goals;
+  figure.textContent=goals;
+  if(!scored)return;
+  figure.classList.remove('flip');void figure.offsetWidth;figure.classList.add('flip');
+  const tile=figure.closest('.match-score');tile.classList.remove('scored');void tile.offsetWidth;tile.classList.add('scored');
+ });
 }
 
 // After the final whistle nothing is left to order: Continuer, on the pitch, closes the day.
 function actionsHtml(){
  if(view.status==='finished')return '';
- return `<button type="button" data-live="tactique">Tactique</button><button type="button" data-live="fin">Fin du match</button>`;
+ return '<button type="button" class="button" data-live="fin">Fin du match</button>';
 }
 
 // ---- Tactique: the Composition editor's look, on the players the match still has. ----
@@ -198,10 +359,37 @@ function showTactics(){
  if(!box.open)box.showModal();
 }
 
+
+// The stats card patched in place: each bar slides to its new share and a figure that changed lights up.
+function patchStats(slot,html){
+ const now=slot.querySelectorAll('.comparison');
+ if(!now.length){slot.innerHTML=html;return;}
+ const next=new DOMParser().parseFromString(html,'text/html').querySelectorAll('.comparison');
+ next.forEach((line,index)=>{
+  const current=now[index];
+  if(!current){slot.innerHTML=html;return;}
+  const [a,b]=[...current.children].filter(node=>node.tagName==='SPAN'),[c,d]=[...line.children].filter(node=>node.tagName==='SPAN');
+  for(const [old,fresh] of [[a,c],[b,d]]){
+   if(old.textContent!==fresh.textContent){old.textContent=fresh.textContent;old.classList.remove('bump');void old.offsetWidth;old.classList.add('bump');}
+   old.classList.toggle('lead',fresh.classList.contains('lead'));
+  }
+  const bars=current.querySelectorAll('.comparison-bar>i'),wanted=line.querySelectorAll('.comparison-bar>i');
+  bars.forEach((bar,at)=>{bar.style.flexGrow=wanted[at].style.flexGrow;});
+  current.querySelector('.comparison-bar')?.classList.toggle('none',line.querySelector('.comparison-bar').classList.contains('none'));
+ });
+}
+
 function refresh(parts=['actions']){
  const root=document.querySelector('.live-layout');if(!root)return;
- if(parts.includes('actions'))root.querySelector('.live-actions').innerHTML=actionsHtml();
- if(parts.includes('stats')){root.querySelector('.live-stats').innerHTML=statsCard(view.shown);root.querySelector('.live-squad').innerHTML=squadHtml();}
+ if(parts.includes('actions')){const slot=root.querySelector('.live-actions');if(slot)slot.innerHTML=actionsHtml();}
+ if(parts.includes('stats')){
+  patchStats(root.querySelector('.live-stats'),statsCard(view.shown));
+  const squad=root.querySelector('.live-squad'),scroll=squad.querySelector('.live-scroll')?.scrollTop;
+  squad.innerHTML=squadHtml();
+  if(scroll)squad.querySelector('.live-scroll').scrollTop=scroll;
+  root.querySelector('.live-tactic').innerHTML=tacticHtml();
+  const formations=root.querySelector('.live-formations');if(formations)formations.innerHTML=formationsHtml();
+ }
 }
 const replay=()=>document.querySelector('.live-layout match-replay');
 
@@ -246,14 +434,26 @@ function finished(){
 }
 function adopt(state){view.state=state;view.manager=state.manager;view.status=state.status;view.shown=state;view.score=[...state.score];view.events=[...state.result.events];}
 
+
 export async function liveScreen(){
  const [state,others]=await Promise.all([api('/direct'),api('/direct/multiplex')]);
  dialog()?.remove();
- view={state,others,manager:state.manager,status:state.status,shown:state,score:[...state.score],events:[...state.result.events],panel:false,decision:null,rewind:null,draft:null,minute:null,pending:null};
+ view={state,others,manager:state.manager,status:state.status,shown:state,score:[...state.score],events:[...state.result.events],panel:false,decision:null,rewind:null,draft:null,minute:null,pending:null,team:view?.team??'mine',second:state.second};
  const next=()=>api('/direct/avancer',{commande_id:crypto.randomUUID()});
- const context=`<div class="match-context"><span class="eyebrow">${e(state.competition)} · ${e(state.round_label||`Journée ${state.round}`)}</span></div>`;
- return `<div class="live-layout"><div><section class="card match-replay-card live-card">${context}${liveReplay(state,replayTeams(state),next)}<div class="live-squad">${squadHtml()}</div><div class="live-actions">${actionsHtml()}</div></section></div>
-<aside><div class="live-highlights">${highlightsHtml()}</div><div class="live-stats">${statsCard(state)}</div><div class="live-others-slot">${othersHtml(state.second)}</div></aside></div>`;
+ const teams=replayTeams(state);
+ // The commentary and the goal carry the crest of a club; a selection has none.
+ for(const side of ['home','away'])if(!state[side].national)teams[side].crest=`/crests/TCM1_${state[side].id}.png`;
+ // The replay builds itself once the page is drawn: its formations and its commands are filled then.
+ setTimeout(()=>{refresh(['actions','stats']);centreOwnRow();});
+ return `<div class="live-layout">
+<div class="live-column"><section class="card live-squad">${squadHtml()}</section><section class="card live-tactic">${tacticHtml()}</section></div>
+<div class="live-column live-centre">${heroHtml(state)}${liveReplay(state,teams,next)}</div>
+<div class="live-column"><section class="card live-highlights">${highlightsHtml()}</section><div class="live-stats">${statsCard(state)}</div><section class="card live-others">${othersHtml(state.second)}</section></div></div>`;
+}
+// The table opens on the user's club, in the middle of its card.
+function centreOwnRow(){
+ const box=document.querySelector('.live-table-scroll'),row=box?.querySelector('tr.own');
+ if(box&&row)box.scrollTop=row.offsetTop-box.clientHeight/2+row.offsetHeight/2;
 }
 
 // The replay tells how far the viewer has got; everything else on the screen follows it.
@@ -273,12 +473,28 @@ globalThis.document?.addEventListener('live-decision',event=>{
 });
 globalThis.document?.addEventListener('live-finished',()=>{if(!view)return;if(view.pending){view.shown=view.pending;view.pending=null;}finished();});
 globalThis.document?.addEventListener('live-error',event=>toast(event.detail.error?.message||'Le match ne peut pas continuer.',true));
+// Each minute the other matches, the table, the highlights and the players' sheet catch up with the clock.
 const updateOthers=second=>{
- const slot=document.querySelector('.live-others-slot');if(slot)slot.innerHTML=othersHtml(second);
+ const others=document.querySelector('.live-others');
+ if(others){const box=others.querySelector('.live-table-scroll'),scroll=box?.scrollTop;others.innerHTML=othersHtml(second);if(box)others.querySelector('.live-table-scroll').scrollTop=scroll;}
  const highlights=document.querySelector('.live-highlights');if(highlights)highlights.innerHTML=highlightsHtml();
 };
-globalThis.document?.addEventListener('replay-clock',event=>{if(!view)return;const minute=Math.floor(event.detail.second/60);view.second=event.detail.second;if(minute!==view.minute){view.minute=minute;updateOthers(event.detail.second);}});
-globalThis.document?.addEventListener('replay-score',event=>{if(!view)return;view.score=event.detail.score;updateOthers(view.second??0);});
+// The minute on the band: grey while the clock runs between chances, on the accent while one is played; MT at the break.
+const clockTile=()=>document.querySelector('.match-hero.live .live-clock');
+globalThis.document?.addEventListener('replay-phase',event=>{
+ if(!view)return;
+ const clock=clockTile(),phase=event.detail.phase;
+ clock?.classList.toggle('running',phase==='dead');
+ if(clock&&(phase==='halftime'||phase==='finished'))clock.textContent=clockLabel(phase,'');
+});
+globalThis.document?.addEventListener('replay-clock',event=>{
+ if(!view)return;
+ const minute=Math.floor(event.detail.second/60),clock=clockTile();
+ view.second=event.detail.second;
+ if(clock&&view.status!=='halftime'&&view.status!=='finished')clock.textContent=event.detail.label;
+ if(minute!==view.minute){view.minute=minute;updateOthers(event.detail.second);const squad=document.querySelector('.live-squad');if(squad&&shownChanges().size!==view.changes?.size)refresh(['stats']);}
+});
+globalThis.document?.addEventListener('replay-score',event=>{if(!view)return;view.score=event.detail.score;heroScore(view.score);updateOthers(view.second??0);});
 globalThis.document?.addEventListener('click',event=>{
  if(!view)return;
  if(view.draft&&event.target.closest?.('#live-tactics')){
@@ -286,6 +502,8 @@ globalThis.document?.addEventListener('click',event=>{
   if(mentality){view.draft={...view.draft,mentality:mentality.dataset.mentality};renderTactics();return;}
   if(formation){view.draft=formationInDraft(view.draft,view.manager.formations[formation.dataset.formation]);renderTactics();return;}
  }
+ const team=event.target.closest?.('.live-layout [data-live-team]');
+ if(team){view.team=team.dataset.liveTeam;refresh(['stats']);return;}
  const button=event.target.closest?.('.live-layout [data-live],#live-tactics [data-live]');
  if(!button)return;
  const action=button.dataset.live;
@@ -295,6 +513,15 @@ globalThis.document?.addEventListener('click',event=>{
  else if(action==='second-half'){view.status='playing';refresh();replay()?.resume();}
  else if(action==='fin')endMatch();
  else if(action==='continuer')document.querySelector('#advance')?.click();
+});
+// The keys of a player: Space plays and pauses, → runs the clock to the next chance, T opens the tactic.
+globalThis.document?.addEventListener('keydown',event=>{
+ if(!view||!document.querySelector('.live-layout')||event.ctrlKey||event.metaKey||event.altKey)return;
+ if(document.querySelector('dialog[open]')||event.target.closest?.('input,select,textarea,[contenteditable]'))return;
+ const press=selector=>{const button=document.querySelector(`.live-layout ${selector}`);if(button&&!button.hidden){event.preventDefault();button.click();}};
+ if(event.key===' '&&!event.target.closest?.('button,.card-head.toggle'))press('[data-replay="play"]');
+ else if(event.key==='ArrowRight')press('[data-replay="next"]');
+ else if((event.key==='t'||event.key==='T')&&view.status!=='finished'){event.preventDefault();openPanel();}
 });
 
 // Drag and drop in the Tactique panel, as on the Composition screen.
