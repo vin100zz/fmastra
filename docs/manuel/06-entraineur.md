@@ -22,7 +22,7 @@ L'IA retient le onze dont la somme des valeurs est la plus haute, toutes combina
 
 Pour chaque formation, l'IA cherche le meilleur onze de son équipe première avec la valeur ci-dessus, mais sans forme, ni condition, ni moral : la formation décrit l'effectif, pas l'état du jour. Un joueur en réserve ou blessé pour plus de {{formations.choix.blessure_longue_jours}} jours ne compte pas ; un joueur prêté au club compte. Elle retient la formation dont le onze vaut le plus, en moyenne par place.
 
-Elle refait ce choix chaque fois que son équipe première change : arrivée, départ, prêt, réserve, blessure longue ou retour. Elle ne change de formation que si une autre fait mieux d'au moins {{formations.choix.marge_changement * 2}} points par place : un club ne change pas de système pour une recrue de complément. Quand votre prochain adversaire ou un club de votre championnat change de formation, une actualité vous le dit. Votre club joue la formation que vous choisissez ; à la création de la partie, c'est celle qui convient le mieux à son effectif.
+Elle refait ce choix chaque fois que son équipe première change : arrivée, départ, prêt, réserve, blessure longue ou retour. Elle ne change de formation que si une autre fait mieux d'au moins {{formations.choix.marge_changement * 2}} points par place : un club ne change pas de système pour une recrue de complément. Votre club joue la formation que vous choisissez ; à la création de la partie, c'est celle qui convient le mieux à son effectif.
 
 Le jour du match, si son meilleur onze oblige un joueur à occuper un poste qui lui est totalement étranger, l'IA essaie les autres formations pour ce match et garde celle qui place le plus de joueurs à un poste qu'ils connaissent, puis la meilleure somme.
 

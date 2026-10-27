@@ -440,6 +440,7 @@ class SaveStore:
             if version < 42: _upgrade_ratings(world)
             if version < 43: _choose_formations(world)
             if version < 44: initialize_formations(world)
+            _forget_formation_news(world)
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -664,6 +665,11 @@ def _upgrade_news(world: World) -> None:
     world.news = [item if isinstance(item, NewsItem) else
                   NewsItem(item.date, item.kind, item.text, item.club_id, item.player_id, item.match_id, item.read)
                   for item in world.news if item.kind != "result"]
+
+
+def _forget_formation_news(world: World) -> None:
+    """The feed no longer tells the formation changes of the other clubs: a save that heard of some drops them."""
+    world.news = [item for item in world.news if item.kind != "formation_change"]
 
 
 def _upgrade_possessions(world: World) -> None:
