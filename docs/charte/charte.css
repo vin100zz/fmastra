@@ -22,6 +22,9 @@
  /* The ball of a goal: the pentagon in the middle, five cut at the rim, drawn to read at 10. */
  --ball:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3C/clipPath%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff'/%3E%3Cg clip-path='url(%23c)' fill='%230b121a'%3E%3Cpath d='M50 19L34.8 7.9L40.6-9.9L59.4-9.9L65.2 7.9ZM79.5 40.4L85.3 22.5L104.1 22.5L109.9 40.4L94.7 51.5ZM68.2 75.1L87 75.1L92.8 93L77.6 104L62.4 93ZM31.8 75.1L37.6 93L22.4 104L7.2 93L13 75.1ZM20.5 40.4L5.3 51.5L-9.9 40.4L-4.1 22.5L14.7 22.5Z'/%3E%3Cpath d='M50 33V19M66.2 44.7L79.5 40.4M60 63.8L68.2 75.1M40 63.8L31.8 75.1M33.8 44.7L20.5 40.4' stroke='%230b121a' stroke-width='6'/%3E%3C/g%3E%3Cpath d='M50 33L66.2 44.7L60 63.8H40L33.8 44.7Z' fill='%230b121a'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%230b121a' stroke-width='7'/%3E%3C/svg%3E");
  /* Series: the line of a curve, a second series beside it, and the pale form of each for what is free of a share. */
+ /* Stars: the gold of what is sure, the slate of what is only possible, an empty star; on the dark of a pitch's block, the
+    slate and the empty part lightened. */
+ --star:#c98300;--star-soft:#7d8a99;--star-empty:#dde2e8;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  --series-1:#2a78d6;--series-1-deep:#1b5299;--series-1-soft:#9ec5f4;--series-2:#eb6834;--series-2-deep:#b8481c;--series-2-soft:#f6ae8f;
  /* The veil over the page under a dialog. */
  --backdrop:#0f172a66;
@@ -1062,6 +1065,52 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .goal-scorer .kit-shirt{width:48px;height:48px}
 .goal-scorer .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
 .goal-assist{align-self:start;font:600 var(--fs-figure)/20px var(--text);opacity:.85}
+
+/* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
+   filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;
+   12 in a table, 16 on a tile (.big), 8 on a pitch, where the slate and the empty part lighten on the dark of the block. */
+.stars{--size:12px;display:inline-flex;gap:1px;flex:none;vertical-align:middle}
+.stars>i{width:var(--size);height:var(--size);background:linear-gradient(90deg,var(--star) calc(var(--f)*100%),var(--star-soft) calc(var(--f)*100%) calc(var(--u)*100%),var(--star-empty) calc(var(--u)*100%));-webkit-mask:var(--star-shape) center/contain no-repeat;mask:var(--star-shape) center/contain no-repeat}
+.stars{--star-shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.6l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.7l-6.4 3.5L7 14.1l-5.3-5 7.2-.9z'/%3E%3C/svg%3E")}
+.stars.big{--size:16px;gap:2px}
+.player-block .stars{--size:8px;gap:0;--star-soft:var(--star-soft-dark);--star-empty:var(--star-empty-dark)}
+.pitch-player.picked .player-block .stars{--star:var(--accent-ink);--star-empty:#11141833}
+.tile .stars{margin-top:5px}
+
+/* The affinity to a position (.fit): a disc filled at its share of 20, in the colour of its step; on a pitch only under 20. */
+.fit{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;background:conic-gradient(hsl(var(--hue) 65% 45%) calc(var(--p)*1%),var(--line) 0)}
+.player-block .fit{background:conic-gradient(hsl(var(--hue) 75% 60%) calc(var(--p)*1%),#ffffff3d 0)}
+
+/* A trait of a club's personality (.poles): neither good nor bad, five notches between two poles, its own filled. */
+.poles{display:inline-flex;gap:2px;flex:none}
+.poles>i{width:10px;height:6px;border-radius:2px;background:var(--line)}
+.poles>i.on{background:var(--ink-2)}
+
+/* A player's state in five steps, without a figure: his condition in notches (.cells), his form as an arrow turned by
+   45° a step (.arrow), his morale as a face (.face). */
+.cells{display:inline-flex;gap:1px;flex:none}
+.cells>i{width:6px;height:10px;border-radius:1px;background:var(--line)}
+.cells.good>i.on{background:var(--good)}.cells.warn>i.on{background:var(--accent)}.cells.bad>i.on{background:var(--bad)}
+.arrow{display:inline-grid;place-items:center;flex:none;width:16px;height:16px;border-radius:50%}
+.arrow svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.arrow.a2{background:var(--good);color:#fff}.arrow.a1{background:var(--good-soft);color:var(--good)}
+.arrow.a0{background:var(--panel-3);color:var(--muted)}
+.arrow.a-1{background:var(--bad-soft);color:var(--bad)}.arrow.a-2{background:var(--bad);color:#fff}
+.face{display:inline-block;flex:none;width:16px;height:16px}
+.face .head{fill:hsl(var(--hue) 65% 46%)}
+.face .eye{fill:#fff}
+.face path{fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round}
+.state{display:inline-flex;align-items:center;gap:var(--s1)}
+
+/* A trait of a club's personality on a tile: its word, its notch under it. */
+.trait{display:inline-flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-figure);line-height:20px}
+/* The level in stars month by month: a line a half star, dotted between two stars; the band its potential was read in, pale. */
+.level-chart .band{fill:var(--series-1-soft);opacity:.45}
+.level-chart .grid-line.half{stroke-dasharray:2 3}
+.point-value .stars{vertical-align:baseline}
+
+/* The debug mode, while it is on: a mark in the top bar; the exact values are in the tooltips. */
+.pill.debug{background:var(--warn-soft);color:var(--warn)}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

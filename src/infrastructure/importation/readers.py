@@ -144,6 +144,7 @@ def read_sources(directory: Path, cfg: Config) -> tuple[list[SourceClub], list[S
             international_caps=int(row.get("InternationalCaps") or 0),
             international_goals=int(row.get("InternationalGoals") or 0),
             world_reputation=bounded(row, "WorldReputation", 0, 10000) if row.get("WorldReputation") else 0,
+            reputation=bounded(row, "CurrentReputation", 0, 10000) if row.get("CurrentReputation") else None,
             shirt=shirt_number(row)))
     if len({club.id for club in clubs}) != len(clubs) or len({player.id for player in players}) != len(players):
         raise ValueError("Duplicate source ID")

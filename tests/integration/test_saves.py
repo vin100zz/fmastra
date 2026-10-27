@@ -8,6 +8,12 @@ from infrastructure.config.loader import config_fingerprint
 from core.engine.analytical import AnalyticalEngine
 from benchmarks.fixtures import fixture_lineup
 
+
+def without_exposure(players):
+    """Players but for what the world knows them by: a save from before schema 45 counts it again, from the source CSV
+    beside the saves, and without it from the caps alone."""
+    return {pid: replace(player, exposure=0.0) for pid, player in players.items()}
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -185,7 +191,8 @@ def test_old_save_receives_rotation_rules_without_accepting_tampered_config(conf
     store.path_for("rotation").write_bytes(gzip.compress(json.dumps(legacy).encode()))
     restored = store.load("rotation")
     assert restored.config.states.substitutions.playing_time_weight == 8
-    assert restored.players == world.players
+    assert without_exposure(restored.players) == without_exposure(world.players)
+    assert all(player.exposure == player.historical_caps for player in restored.players.values() if player.source_current_ability)
     assert restored.rngs["matches"].getstate() == world.rngs["matches"].getstate()
     store.save(restored, "upgraded")
     assert store.load("upgraded").config == restored.config
@@ -325,7 +332,7 @@ def test_save_from_before_the_generated_ratings_rates_its_regens_and_keeps_their
     assert kept.secondary_positions == {**outfield.secondary_positions, Position.GOALKEEPER: 0.6}
     # The players the source rated are left as they were.
     kept.position_ratings, kept.secondary_positions = outfield.position_ratings, outfield.secondary_positions
-    assert migrated.players == world.players
+    assert without_exposure(migrated.players) == without_exposure(world.players)
     store.save(migrated, "upgraded")
     assert store.load("upgraded").players == migrated.players
 

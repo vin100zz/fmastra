@@ -83,7 +83,7 @@ test('the équipe-type stands on a pitch spread over its height: matches and goa
  assert.match(flat,/style="--rows:5"/);assert.deepEqual(['Madjo','Verhoeven','Tounkara','Longoni'].map(name=>row(flat,name)),[0,1,2,4]);
  // Picked before any match, each player shows his note at his place; a short column narrows the pitch.
  const best=elevenCard(club,{...eleven,basis:'notes'},500);
- assert.match(best,/<b class="block-note" style="--hue:\d+" title="Note au poste GB : 150 sur 200">150<\/b>/);assert.doesNotMatch(best,/block-season/);
+ assert.match(best,/<span class="player-block"><span class="block-name">[^<]*<\/span><span><span class="stars" role="img" aria-label="4 étoiles">/);assert.doesNotMatch(best,/sur 200|block-note/);assert.doesNotMatch(best,/block-season/);
  assert.match(best,/class="pitch spread eleven-pitch"[^>]* style="--rows:\d;max-width:386px"/);
  // Never so narrow that the blocks of a line run into each other: the page scrolls a little instead.
  assert.match(elevenCard(club,eleven,200),/style="--rows:\d;max-width:340px"/);
@@ -105,7 +105,8 @@ test('À surveiller gathers what asks a decision of the user, a line for each pl
  assert.equal(lines.length,3);
  assert.match(lines.find(line=>line.includes('Cecchetto')),/<b class="warn">Contrat · juin 2034<\/b><b class="danger">Blessé · 12 juil\.<\/b>/);
  assert.match(lines.find(line=>line.includes('Quintero')),/<b class="news-ban">Suspendu · 1 match<\/b>/);
- assert.match(lines.find(line=>line.includes('Marrero')),/45 %/);
+ assert.match(lines.find(line=>line.includes('Marrero')),/<svg class="face"[^>]*aria-label="Moral bas"/);
+ assert.doesNotMatch(lines.find(line=>line.includes('Marrero')),/45 %/);
  // A player away on loan is not the club's to decide on; nobody to watch, no card.
  assert.doesNotMatch(html,/Parti/);assert.equal(watchCard([squadItems[0]]),'');
  assert.equal((watchCard(squadItems,2).match(/<li>/g)||[]).length,2);

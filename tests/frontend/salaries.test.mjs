@@ -68,7 +68,7 @@ test('a bound on wage demands keeps the players asking exactly that monthly amou
  assert.equal(salarySearchParams(new URLSearchParams()).has('pretentions_max'),false);
 });
 
-test('minimum levels are typed on the 1–200 scale',()=>{
- const result=salarySearchParams(new URLSearchParams('niveau_min=140&potentiel_min=161'));
- assert.equal(result.get('niveau_min'),'70');assert.equal(result.get('potentiel_min'),'80.5');
+test('levels and potentials are asked in stars, as the filters show them',()=>{
+ const result=salarySearchParams(new URLSearchParams('niveau_min=3.5&potentiel_min=4'));
+ assert.equal(result.get('niveau_min'),'3.5');assert.equal(result.get('potentiel_min'),'4');
 });

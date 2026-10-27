@@ -49,11 +49,6 @@ export function salarySearchParams(params){
  // A wage demand is a round monthly amount, raised to the next weekly euro: so is its bound, to keep the players asking just that.
  const demand=result.get('pretentions_max');
  if(demand!==null&&demand!=='')result.set('pretentions_max',String(Math.ceil(Number(demand)*12/weeksPerYear)));
- // Niveau and potentiel are shown on a 1–200 scale in the UI; the API works on the underlying 1–100 rating.
- for(const name of ['niveau_min','niveau_max','potentiel_min','potentiel_max']){
-  const level=result.get(name);
-  if(level!==null&&level!=='')result.set(name,String(Number(level)/2));
- }
  // Values and the max asking price are typed in millions of euros; the API filters on full euros.
  for(const name of ['valeur_min','valeur_max','prix_max']){
   const amount=result.get(name);

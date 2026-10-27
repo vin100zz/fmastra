@@ -21,6 +21,7 @@ from .international_calendar import (QUOTAS, DIVISION_GROUPS, GROUP_SIZE, LEAGUE
                                      group_fixtures, draw_final_groups)
 from .international_selection import (get_player, preferences, fill_camp, camp_lineup, revise_strengths)
 from .age_records import note_international_match
+from .estimates import match_weight
 
 
 def initialize_strengths(world: World) -> None:
@@ -313,6 +314,7 @@ def apply_international_result(world, edition, match, result, lineups):
         player.national_team = code
         player.international_caps += 1
         player.international_goals += stats.goals
+        player.exposure += stats.minutes / (cfg.engine.timing.match_seconds / 60) * match_weight(cfg, "international", 0)
         player.load += match_load(player.fitness - stats.final_fitness, cfg)
         player.fitness = stats.final_fitness
         player.monthly_minutes += stats.minutes

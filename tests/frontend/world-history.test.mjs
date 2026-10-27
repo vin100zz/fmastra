@@ -11,7 +11,7 @@ test('all movement tabs expose sortable columns and the selected direction',asyn
   for(const [type,sort,keys] of [
    ['transfer','fee',['date','position','name','nation','age','rating','source','target','fee','value']],
    ['retirement','name',['position','name','nation','age','source','league','rating','peak','matches','goals','assists','average','caps','caps_goals']],
-   ['academy','potential',['position','name','nation','age','academy_club','rating','level','progress','potential','worth']],
+   ['academy','potential',['position','name','nation','age','academy_club','rating','level','potential','worth']],
   ]){
    let requested;
    globalThis.fetch=async url=>{requested=url;return {ok:true,json:async()=>({...page,sort,order:'asc',total:1,items:[{date:'2027-07-01',player_id:1,player:'Joueur',kind:type,fee:30000,details:{id:1,name:'Joueur',nationalities:[],data_at:'unknown'}}]})};};
@@ -62,7 +62,7 @@ test('a transfer tells who the player is, from where to where, and its fee again
  const [paid,free,released]=rows;
  assert.equal(paid.length,11);
  assert.match(paid[1],/<span class="position att">BU<\/span>/);assert.match(paid[3],/flags\/ma\.svg[^>]*>MAR<\/span>$/);assert.doesNotMatch(paid[3],/Pays-Bas|\+1/);
- assert.equal(paid[4],'<span class="num">22</span>');assert.match(paid[5],/title="Niveau actuel sur 200">163</);
+ assert.equal(paid[4],'<span class="num">22</span>');assert.match(paid[5],/^<span class="stars" role="img" aria-label="4½ étoiles">/);
  assert.match(paid[6],/Como/);assert.match(paid[7],/→/);assert.match(paid[8],/Man City/);
  assert.match(paid[9],/<i style="width:100%"><\/i><\/i><b>350\sM€<\/b>/);assert.match(paid[10],/160\sM€/);
  assert.deepEqual([free[1],free[3],free[5]],['—','—','—']);assert.match(free[9],/Libre/);assert.equal(free[10],'<span class="num">—</span>');
@@ -103,7 +103,7 @@ test('a retirement tells the level, the career and the caps of who left, under t
  assert.equal(cells.length,14);
  assert.match(cells[0],/class="position def">DC</);assert.match(cells[2],/flags\/it\.svg/);assert.equal(cells[3],'<span class="num">32</span>');
  assert.match(cells[4],/Real Sociedad/);assert.equal(cells[5],'La Liga');
- assert.match(cells[6],/title="Niveau à la retraite sur 200">153</);assert.match(cells[7],/title="Meilleur niveau sur 200">156</);
+ assert.match(cells[6],/aria-label="4½ étoiles"/);assert.match(cells[7],/aria-label="4½ étoiles"/);assert.doesNotMatch(cells[6]+cells[7],/sur 200|title=/);
  assert.deepEqual(cells.slice(8).map(cell=>cell.replace(/<[^>]+>/g,'')),['154','13','1','6.90','34','2']);
  // Positions as chips, the age in a menu, internationals and the user's club as switches.
  assert.deepEqual([...html.matchAll(/class="chip (?:gk|def|mid|att) on"[^>]*>(\w+)</g)].map(match=>match[1]),['GB','DC']);
@@ -119,33 +119,34 @@ test('a retirement tells the level, the career and the caps of who left, under t
 
 const promoted={date:'2029-07-01',player_id:9,player:'Randal Hansen',kind:'academy',fee:0,age:16,source:null,target:{id:3,name:'Jong Holland',major_color:'#F8F8F8',minor_color:'#002080'},
  details:{id:9,name:'Randal Hansen',position:'MOC',age:16,nationalities:['FRA'],rating:40.5,potential:97.6,data_at:'promotion',club:{id:3,name:'Jong Holland'},
-  current:{id:9,name:'Randal Hansen',position:'MOC',age:17,nationalities:['FRA'],rating:49,potential:97.6,value:745166,club:{id:3,name:'Jong Holland'},wage_demand:80770,interested:true,
+  stars:{level:.5,potential:[3.5,5]},estimate:{lower:140,upper:190},
+  current:{id:9,name:'Randal Hansen',position:'MOC',age:17,nationalities:['FRA'],rating:49,potential:97.6,stars:{level:1,potential:[4,5]},value:745166,club:{id:3,name:'Jong Holland'},wage_demand:80770,interested:true,
    attributes:{passe:62,technique:70},composites:{tir:48},key_composites:['tir']}}};
 
-test('a promotion tells the level then and now, the way covered to the potential, and what a recruiter needs',async()=>{
- const {html,asked}=await screen('academy','saison=2029&niveau_min=80&potentiel_min=160&pays=FRA&interesse=oui',promoted,{controlled_club_id:7});
+test('a promotion tells the level then and now, the potential the world read that day, and what a recruiter needs',async()=>{
+ const {html,asked}=await screen('academy','saison=2029&niveau_min=1&potentiel_min=4&pays=FRA&interesse=oui',promoted,{controlled_club_id:7});
  const cells=[...html.match(/<tr class="">(.*?)<\/tr>/)[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]);
- assert.equal(cells.length,12);
- assert.match(cells[5],/title="Niveau à la promotion sur 200">81</);assert.match(cells[6],/title="Niveau actuel sur 200">98</);
- // 17 levels gained of the 114 between his level then and his potential.
- assert.match(cells[7],/<span class="bar-figure gain"><i class="mini-bar" aria-hidden="true"><i style="width:15%"><\/i><\/i><b>\+17<\/b><\/span>/);
- assert.match(cells[8],/title="Potentiel sur 200">195</);assert.match(cells[9],/750\sk€/);assert.match(cells[10],/350\sk€/);assert.equal(cells[11],'Oui');
+ assert.equal(cells.length,11);
+ assert.match(cells[5],/aria-label="½ étoile"/);assert.match(cells[6],/aria-label="1 étoile"/);
+ // His potential as the band the world read it in on the day of his promotion; no way covered to it, which would tell figures.
+ assert.match(cells[7],/aria-label="3½ à 5 étoiles"/);assert.match(cells[8],/750\sk€/);assert.match(cells[9],/350\sk€/);assert.equal(cells[10],'Oui');
+ assert.doesNotMatch(html,/PROGRESSION|bar-figure gain|sur 200/);
  assert.doesNotMatch(cells[4],/→/);
- // Levels and potentials go to the server on its scale; a class opens on its best prospects.
+ // Levels and potentials go to the server in stars; a class opens on its best prospects.
  const request=decodeURIComponent(asked[0]);
- assert.match(request,/niveau_min=40/);assert.match(request,/potentiel_min=80/);assert.match(request,/tri=potential/);assert.match(request,/pays=FRA/);
- assert.match(html,/<summary>Niveau <b>≥ 80<\/b>/);assert.match(html,/<summary>Potentiel <b>≥ 160<\/b>/);
+ assert.match(request,/niveau_min=1(&|$)/);assert.match(request,/potentiel_min=4(&|$)/);assert.match(request,/tri=potential/);assert.match(request,/pays=FRA/);
+ assert.match(html,/<summary>Niveau <b>≥ <span class="stars" role="img" aria-label="1 étoile">/);assert.match(html,/<summary>Potentiel <b>≥ <span class="stars" role="img" aria-label="4 étoiles">/);
  assert.match(html,/<select name="pays" aria-label="Pays" class="on"><option value="">Pays<\/option><option value="FRA" selected>France<\/option><option value="ITA" >Italie<\/option>/);
  assert.match(html,/<select name="interesse"[^>]*class="on">/);
  // Without a club, neither what he asks nor whether he would come; a player who left the club that trained him shows where he is.
  const moved={...promoted,details:{...promoted.details,current:{...promoted.details.current,club:{id:8,name:'Ajax'},rating:38}}};
  const plain=await screen('academy','',moved);
  const bare=[...plain.html.match(/<tr class="">(.*?)<\/tr>/)[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1]);
- assert.equal(bare.length,10);assert.match(bare[4],/Jong Holland.*→.*Ajax/);assert.match(bare[7],/<b>−5<\/b>/);
+ assert.equal(bare.length,9);assert.match(bare[4],/Jong Holland.*→.*Ajax/);
  assert.doesNotMatch(plain.html,/PRÉTENTIONS|INTÉRESSÉ|name="interesse"|Mon club/);
  // Once he has left the world, only the day of his promotion is left.
  const gone=await screen('academy','',{...promoted,details:{...promoted.details,current:null}});
- assert.deepEqual([...gone.html.match(/<tr class="">(.*?)<\/tr>/)[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1].replace(/<[^>]+>/g,'')).slice(5),['81','—','—','195','—']);
+ assert.deepEqual([...gone.html.match(/<tr class="">(.*?)<\/tr>/)[1].matchAll(/<td>(.*?)<\/td>/g)].map(cell=>cell[1].replace(/<[^>]+>/g,'')).slice(6),['—','','—']);
 });
 
 test('the promotions also read as the players are today: their attributes or their composites, sorted on today’s level',async()=>{
@@ -154,7 +155,7 @@ test('the promotions also read as the players are today: their attributes or the
  // The level column carries the sort the server names `level`.
  assert.match(html,/data-order="desc" data-sort="rating">NIV\.</);
  assert.match(html,/data-sort="passe"><span title="Passe">PAS<\/span>/);
- assert.match(html,/title="Niveau actuel sur 200">98</);
+ assert.match(html,/aria-label="1 étoile"/);
  // The age stays the one of the promotion and the club the one that trained him.
  assert.match(html,/<td><span class="num">16<\/span><\/td>/);assert.match(html,/Jong Holland/);
  assert.match(html,/data-view="attributs" aria-pressed="true"/);assert.match(html,/data-fit="transfers-academy-attributs"/);
@@ -190,16 +191,18 @@ test('the summary of the retirements counts them, their ages, and the clubs and 
  assert.doesNotMatch(empty,/class="card|NaN|null/);assert.match(empty,/Âge moyen<\/span><strong>—</);
 });
 
-test('the summary of the promotions counts potentials out of 200, the clubs that trained them and their countries',()=>{
+test('the summary of the promotions counts potentials in stars, the clubs that trained them and their countries',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ITA:{name:'Italie',display_code:'ITA',flag:'it'}});
- const html=academySummary({total:639,average_potential:66.6,best:{potential:97.6,player_id:9,player:'Randal Hansen'},average_progress:5.66,
-  bins:[{from:null,count:23},{from:100,count:41},{from:190,count:2}],
+ const html=academySummary({total:639,average_potential:66.6,best:{potential:97.6,player_id:9,player:'Randal Hansen'},
+  bins:[{stars:.5,count:23},{stars:3.5,count:41},{stars:5,count:2}],
   academies:[{club:{id:3,name:'Jong Holland',major_color:'#F8F8F8',minor_color:'#002080'},count:2,average_potential:80.3,best:{potential:97.6,player_id:9,player:'Randal Hansen'},youth_recruitment:18}],
   nations:[{code:'FRA',count:90,clubs:42,average_potential:65,best:83.5},{code:'ITA',count:45,clubs:44,average_potential:64.5,best:95.1}]});
- assert.deepEqual([...html.matchAll(/<span class="label">([^<]+)<\/span><strong>([^<]+)</g)].map(match=>`${match[1]}:${match[2]}`),['Promus:639','Pot. moyen:133','Meilleur:195','Progression:+11.3']);
- assert.deepEqual([...html.matchAll(/class="week" title="([^"]+)"/g)].map(match=>match[1]),['Moins de 100 : 23 joueurs','De 100 à 109 : 41 joueurs','De 190 à 200 : 2 joueurs']);
- assert.match(html,/Jong Holland.*<span class="num">2<\/span>.*>161<.*#\/player\/9">Randal Hansen<.*>195<.*>18</);
- assert.match(html,/title="France">.*France.*<i style="width:100%"><\/i><\/i><b>90<\/b>.*<span class="num">42<\/span>.*>130<.*>167</);
+ assert.deepEqual([...html.matchAll(/<span class="label">([^<]+)<\/span><strong>(?:<span class="stars big" role="img" aria-label="([^"]+)"|([^<]+))/g)].map(match=>`${match[1]}:${match[2]||match[3]}`),
+  ['Promus:639','Pot. moyen:3 étoiles','Meilleur:5 étoiles']);
+ assert.doesNotMatch(html,/Progression/);
+ assert.deepEqual([...html.matchAll(/class="week" title="([^"]+)"/g)].map(match=>match[1]),['½ ★ : 23 joueurs','3½ ★ : 41 joueurs','5 ★ : 2 joueurs']);
+ assert.match(html,/Jong Holland.*<span class="num">2<\/span>.*aria-label="4½ étoiles".*#\/player\/9">Randal Hansen<.*aria-label="5 étoiles".*>18</);
+ assert.match(html,/title="France">.*France.*<i style="width:100%"><\/i><\/i><b>90<\/b>.*<span class="num">42<\/span>.*aria-label="3 étoiles".*aria-label="5 étoiles"/);
  assert.match(html,/Italie.*<i style="width:50%"><\/i><\/i><b>45<\/b>/);
  const empty=academySummary({total:0,average_potential:null,best:null,average_progress:null,bins:[],academies:[],nations:[]});
  assert.doesNotMatch(empty,/class="card|NaN|null/);

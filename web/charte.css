@@ -328,7 +328,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
    club's band, its second colour in a corner. */
 .kit-dot{width:14px;height:14px;margin-right:6px;border-radius:var(--radius-chip);box-shadow:inset 0 0 0 1px #0000003d;vertical-align:-2px}
 #own-club .kit-dot{width:16px;height:16px}
-#own-club[hidden],.nav-count[hidden]{display:none}
+#own-club[hidden],.nav-count[hidden],#debug-badge[hidden]{display:none}
 .nation .flag,.flag{border-radius:0}
 .morale-cause{width:var(--h-chip);height:var(--h-chip);font-size:var(--fs-micro)}
 .fitness,.meter,.mini-bar,.gauge,.fatigue-bar,.force-bar{height:4px;border-radius:2px}
@@ -852,7 +852,11 @@ small{font-size:var(--fs-small)}
 .clubs-table .nom-column,.movements-table .name-column{min-width:120px}
 .player-table .nation-column{width:54px}
 .player-table :is(.age-column,.caps-column){width:24px}
-.player-table :is(.rating-column,.potential-column,.average-column){width:32px}
+.player-table .average-column{width:32px}
+/* Five stars of 12: a level, a potential, a composite (« Étoiles »). */
+.player-table :is(.rating-column,.potential-column,.progression_attaque-column,.occasion_attaque-column,.tir-column,.tete-column,
+ .progression_defense-column,.occasion_defense-column,.arret-column,.sortie-column){width:64px}
+.clubs-table :is(.niveau-column,.potentiel-column),.movements-table :is(.rating-column,.level-column,.potential-column,.peak-column){width:64px!important}
 .player-table :is(.value-column,.wage-column){width:48px}
 .player-table :is(.asking_price-column,.wage_demand-column,.fitness-column){width:80px}
 .player-table .listed-column{width:34px}
@@ -1301,3 +1305,51 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .live-table .move.up{color:var(--good)}
 .live-table .move.down{color:var(--bad)}
 @media(prefers-reduced-motion:reduce){.goal-burst,.goal-burst *,.goal-band::after,.live-stats .comparison-bar>i,.match-hero.live *,.ticker-run>i{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
+   filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;
+   12 in a table, 16 on a tile (.big), 8 on a pitch, where the slate and the empty part lighten on the dark of the block. */
+.stars{--size:12px;display:inline-flex;gap:1px;flex:none;vertical-align:middle}
+.stars>i{width:var(--size);height:var(--size);background:linear-gradient(90deg,var(--star) calc(var(--f)*100%),var(--star-soft) calc(var(--f)*100%) calc(var(--u)*100%),var(--star-empty) calc(var(--u)*100%));-webkit-mask:var(--star-shape) center/contain no-repeat;mask:var(--star-shape) center/contain no-repeat}
+.stars{--star-shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.6l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.7l-6.4 3.5L7 14.1l-5.3-5 7.2-.9z'/%3E%3C/svg%3E")}
+.stars.big{--size:16px;gap:2px}
+.player-block .stars{--size:8px;gap:0;--star-soft:var(--star-soft-dark);--star-empty:var(--star-empty-dark)}
+.pitch-player.picked .player-block .stars{--star:var(--accent-ink);--star-empty:#11141833}
+.tile .stars{margin-top:5px}
+
+/* The affinity to a position (.fit): a disc filled at its share of 20, in the colour of its step; on a pitch only under 20. */
+.fit{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;background:conic-gradient(hsl(var(--hue) 65% 45%) calc(var(--p)*1%),var(--line) 0)}
+.player-block .fit{background:conic-gradient(hsl(var(--hue) 75% 60%) calc(var(--p)*1%),#ffffff3d 0)}
+
+/* A trait of a club's personality (.poles): neither good nor bad, five notches between two poles, its own filled. */
+.poles{display:inline-flex;gap:2px;flex:none}
+.poles>i{width:10px;height:6px;border-radius:2px;background:var(--line)}
+.poles>i.on{background:var(--ink-2)}
+
+/* A player's state in five steps, without a figure: his condition in notches (.cells), his form as an arrow turned by
+   45° a step (.arrow), his morale as a face (.face). */
+.cells{display:inline-flex;gap:1px;flex:none}
+.cells>i{width:6px;height:10px;border-radius:1px;background:var(--line)}
+.cells.good>i.on{background:var(--good)}.cells.warn>i.on{background:var(--accent)}.cells.bad>i.on{background:var(--bad)}
+.arrow{display:inline-grid;place-items:center;flex:none;width:16px;height:16px;border-radius:50%}
+.arrow svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.arrow.a2{background:var(--good);color:#fff}.arrow.a1{background:var(--good-soft);color:var(--good)}
+.arrow.a0{background:var(--panel-3);color:var(--muted)}
+.arrow.a-1{background:var(--bad-soft);color:var(--bad)}.arrow.a-2{background:var(--bad);color:#fff}
+.face{display:inline-block;flex:none;width:16px;height:16px}
+.face .head{fill:hsl(var(--hue) 65% 46%)}
+.face .eye{fill:#fff}
+.face path{fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round}
+.state{display:inline-flex;align-items:center;gap:var(--s1)}
+
+/* A trait of a club's personality on a tile: its word, its notch under it. */
+.trait{display:inline-flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-figure);line-height:20px}
+/* The level in stars month by month: a line a half star, dotted between two stars; the band its potential was read in, pale. */
+.level-chart .band{fill:var(--series-1-soft);opacity:.45}
+.level-chart .grid-line.half{stroke-dasharray:2 3}
+.point-value .stars{vertical-align:baseline}
+
+/* The debug mode, while it is on: a mark in the top bar; the exact values are in the tooltips. */
+.pill.debug{background:var(--warn-soft);color:var(--warn)}
+/* A trait's word on a tile is a figure, not a label. */
+:is(.tile,.club-hero-tile) .trait{font:700 var(--fs-figure)/20px var(--display);font-stretch:semi-condensed;letter-spacing:0;text-transform:none;color:var(--strong)}

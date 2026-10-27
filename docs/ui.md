@@ -12,6 +12,17 @@ des routes d'action et une gestion de l'attente, en préservant les vues de lect
 
 ## Principes
 
+**Ce que l'on voit d'un joueur.** Le niveau et le potentiel d'un joueur ne s'écrivent
+jamais en chiffres : le serveur en donne les étoiles que le club dirigé en voit
+(`stars` : le niveau, le potentiel en fourchette), son estimation bruitée selon l'âge, ce que
+le joueur a joué et qui regarde (`core.world.estimates`, manuel « Ce que l'on voit d'un
+joueur »). Les attributs restent sur 20, en clair ; les composites, les notes au poste et
+les moyennes d'un club passent en étoiles sans bruit. Les listes trient et filtrent sur
+les étoiles, jamais sur la valeur cachée ; la valeur affichée est celle que donnent les
+estimations. Condition, forme et moral se lisent en cinq paliers, sans chiffre. Le mode
+debug (« Valeurs exactes », dans Ma partie, gardé par le navigateur) met les valeurs
+exactes, les estimations et leurs erreurs dans les infobulles (`estimate` des lignes).
+
 **Une charte graphique.** L'apparence est fixée par `docs/charte-graphique.md` :
 couleurs, typographie, mesures, composants, terrain et maillot, graphiques,
 écriture des nombres, des montants, des classements et des compétitions. Ce document-ci dit ce
@@ -339,7 +350,7 @@ ou `negociation`) : le menu dit toujours l'état du jour.
 | Onglet | Contenu |
 |---|---|
 | Présentation | le club en un écran : ses tuiles, ses tenues, son mercato de la saison, son équipe-type, ses finances, son calendrier, son classement, ses buteurs, passeurs et notes (voir « Présentation ») |
-| Effectif | la liste triable, sur toute la largeur (poste, nom, nationalité, âge, note, potentiel exact, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites sur 200) |
+| Effectif | la liste triable, sur toute la largeur (poste, nom, nationalité, âge, niveau et potentiel en étoiles, valeur, salaire, fin de contrat, état, forme, moral, matches, buts, passes, cartons, note moyenne ; ou, en vue Attributs, les attributs sur 20 ; ou, en vue Jeu, les composites en étoiles) |
 | Composition | le terrain du club dirigé, la liste de l'effectif et l'adversaire (voir « Composition ») |
 | Calendrier | une ligne par match d'une saison, buteurs compris, et le bilan de chaque compétition |
 | Finances | la répartition des budgets et deux chiffres clés, la trésorerie et les flux du mois en graphiques, les salaires, la répartition, le journal replié |
@@ -370,10 +381,10 @@ du club la mieux lisible sur le panneau du thème.
 sans défiler : ses listes prennent les lignes que la hauteur laisse et se redessinent quand elle change (charte,
 « Présentation d'un club »). En tête, une rangée de cases : la place dans chaque compétition de la saison (le
 rang et les points en championnat, le tour atteint en coupe ; `competitions` du calendrier de la saison), les
-joueurs et leur âge moyen, la tactique, l'entraînement et le recrutement des jeunes (sur 20, sur une même case),
-la personnalité du club sur une même case (Risque, Jeunes, Patience : son appétit du risque, sa préférence pour
-les jeunes et sa patience en négociation, sur 20 entre les bornes où ils sont tirés ; `personality` de la fiche du
-club), chaque infobulle disant ce que le trait fait faire au club, puis la valeur de l'effectif. L'agressivité
+joueurs et leur âge moyen, la tactique, l'entraînement et le recrutement des jeunes (en étoiles, une tous les quatre
+points sur 20, sur une même case), la personnalité du club sur une même case (Risque, Jeunes, Patience : son appétit
+du risque, sa préférence pour les jeunes et sa patience en négociation, chacun un mot et son cran de cinq entre deux
+pôles, charte « Étoiles » ; `personality` de la fiche du club), chaque infobulle disant ce que le trait fait faire au club, puis la valeur de l'effectif. L'agressivité
 salariale, que nulle règle ne lit, n'est pas montrée. Puis quatre colonnes, chaque carte avec « Voir → » vers ce qu'elle résume quand elle a une page :
 
 | Carte | Contenu | Lien |
@@ -502,7 +513,7 @@ sans prendre de place, et les listes en pages (joueurs, clubs, mercato mondial) 
 colonne ; la page garde sa position de défilement. Dans tous les tableaux, ce qui reste de
 largeur se partage à parts égales entre les colonnes (« Tableaux » dans la charte).
 
-Dans la vue Infos d'un effectif, FORME donne l'effet de la forme sur tout ce que fait le joueur en match, signé (1,11 se lit « +11 % »), en vert ou en rouge, en gris entre −2 % et +2 %. MORAL donne le moral sur 100, une flèche vers la cible qu'il rejoint peu à peu chaque semaine (à partir de 3 points d'écart) et, sous 70 %, ce qui le retient le plus : € pour le salaire, ◷ pour le temps de jeu, ★ pour un club en dessous de son niveau, ⊘ pour un départ refusé à un joueur déclaré intransférable (`morale_target` et `morale_cause` de la liste, tirés du calcul hebdomadaire des contrats). L'infobulle donne la cible et la satisfaction du joueur pour son salaire et son temps de jeu. L'écran Joueurs n'a pas ces colonnes.
+Dans la vue Infos d'un effectif, ÉTAT, FORME et MORAL se lisent en cinq paliers, sans chiffre (charte, « État, forme, moral ») : la condition en crans, la forme en flèche, le moral en visage, son mot en infobulle. MORAL ajoute une flèche vers la cible qu'il rejoint peu à peu chaque semaine (à partir de 3 points d'écart) et, sous 70 %, ce qui le retient le plus : € pour le salaire, ◷ pour le temps de jeu, ★ pour un club en dessous de son niveau, ⊘ pour un départ refusé à un joueur déclaré intransférable (`morale_target` et `morale_cause` de la liste, tirés du calcul hebdomadaire des contrats). En mode debug, l'infobulle donne le moral, la cible et la satisfaction du joueur pour son salaire et son temps de jeu. L'écran Joueurs n'a pas ces colonnes.
 
 Trois boutons en tête de la liste des joueurs d'un club et de l'écran Joueurs, « Infos »,
 « Attributs » et « Jeu », changent ses colonnes. La vue Attributs garde poste, nom, âge, niveau et potentiel
@@ -514,7 +525,7 @@ Technique, Vision) et Gardien (Réflexes, Relance, Sorties). Chaque colonne
 porte une abréviation de trois lettres, le nom complet en infobulle, et se trie côté serveur. Ce que
 la fiche joueur masque ou grise est en gris : le bloc Gardien d'un joueur de champ, Défense (sauf
 Placement) et Attaque d'un gardien. La vue Jeu garde les mêmes premières colonnes, puis donne les
-huit composites du moteur de match en badges sur 200, comme le niveau, sous trois intertitres :
+huit composites du moteur de match en étoiles, comme le niveau, sous trois intertitres :
 Attaque (Progression, Création, Frappe, Jeu aérien : PRO, CRÉ, FRA, AÉR), Défense (Défense au milieu,
 Défense de surface : DMI, DSU) et Gardien (Arrêts, Sorties aériennes : ARR, SAÉ). Les composites que
 le poste du joueur ne demande pas sont en gris (`key_composites` de la liste, voir la fiche joueur).
@@ -833,8 +844,8 @@ partie en cours (celle de la sauvegarde, ou celle du dépôt sans partie).
 - Une ligne qui commence par `{{#chaque expression}}` est écrite une fois par élément
   d'une liste (ses clés deviennent des noms, avec `element` et `i`) ou d'une table
   (`cle`, `valeur`) : c'est ainsi que s'écrivent les lignes d'un tableau.
-- Les écrans affichent le niveau sur 200 et les attributs sur 20 : un seuil interne se
-  convertit dans l'expression (`* 2`, `/ 5`).
+- Le manuel compte le niveau sur 200 (les écrans le montrent en étoiles) et les attributs
+  sur 20 : un seuil interne se convertit dans l'expression (`* 2`, `/ 5`).
 - Les liens entre chapitres s'écrivent `[texte](#/aide/chapitre/section)`, la section
   étant le titre `##` en minuscules, sans accents, mots séparés par des tirets.
 - Markdown reconnu : titres `##` et `###`, paragraphes, listes `-` et `1.`, tableaux
@@ -873,21 +884,21 @@ son nom, sa courbe et sa carrière.
 
 | Bloc | Contenu |
 |---|---|
-| En-tête · bandeau | aux couleurs du club du joueur, son écusson sur le disque (bandeau neutre, sans disque, pour un joueur libre). À gauche du disque, le bloc de navigation dans l'effectif. Son numéro de maillot, à la taille du nom et voilé (charte, « En-tête d'un joueur »), puis le nom du joueur, puis son club à sa suite, plus petit, lien vers sa fiche (« Libre » sans club). Ni ligne au-dessus du nom, ni poste : les postes se lisent sur le terrain. À droite, quatre tuiles : âge (date de naissance en infobulle) ; sélection ; niveau et potentiel exacts sur 200, deux colonnes d'une tuile colorées comme les badges ; valeur de marché et prix demandé, deux colonnes d'une tuile (prix « N/A » pour un joueur intransférable ou libre, la raison en infobulle) |
+| En-tête · bandeau | aux couleurs du club du joueur, son écusson sur le disque (bandeau neutre, sans disque, pour un joueur libre). À gauche du disque, le bloc de navigation dans l'effectif. Son numéro de maillot, à la taille du nom et voilé (charte, « En-tête d'un joueur »), puis le nom du joueur, puis son club à sa suite, plus petit, lien vers sa fiche (« Libre » sans club). Ni ligne au-dessus du nom, ni poste : les postes se lisent sur le terrain. À droite, quatre tuiles : âge (date de naissance en infobulle) ; sélection ; niveau et potentiel en étoiles, tels que le club dirigé les voit, deux colonnes d'une tuile sans fond gradué ; valeur de marché et prix demandé, deux colonnes d'une tuile (prix « N/A » pour un joueur intransférable ou libre, la raison en infobulle) |
 | En-tête · sélection | une tuile de trois colonnes : le drapeau de sa nation principale au-dessus de son code de trois lettres (celle de sa sélection, à défaut la première de ses nationalités ; lien vers la sélection du pays quand le jeu en a une), « Sél. » et son total, « Buts » dès qu'il a marqué. Le nom du pays n'est jamais écrit : il est en infobulle du drapeau |
 | En-tête · barre | sous le bandeau, à la place des onglets d'un club : à gauche les pastilles, à droite les boutons, par groupes (voir plus bas). Absente sans club dirigé |
-| Colonne · État | sous un bandeau de titre, en tête de la carte : condition, forme et moral, chacun avec une barre et sa valeur. La barre de la forme part de son milieu, entre les bornes de la configuration (`form_bounds` de la fiche) : verte vers la droite au-dessus de 1, rouge vers la gauche en dessous, vide entre −2 % et +2 % ; la valeur est l'effet signé, comme dans les listes (1,09 se lit « +9 % »). La barre du moral prend la couleur de son niveau ; devant elle, l'icône de ce qui le retient le plus (€ salaire, ◷ temps de jeu, ★ club en dessous de son niveau, ⊘ départ refusé), dès que le serveur nomme une cause (`morale_cause` de la fiche, même calcul que la liste de l'effectif), avec la cause en infobulle ; l'infobulle de la ligne donne la cible et la satisfaction pour le salaire et le temps de jeu. Puis la blessure (« Disponible » ou la date de retour), le total des cartons jaunes (détail par compétition en infobulle), une ligne par suspension en cours, avec sa compétition, et, pour un joueur qui en a, une ligne « Autre nationalité » (« Autres nationalités ») : le drapeau puis le code de trois lettres de chacune |
+| Colonne · État | sous un bandeau de titre, en tête de la carte : condition, forme et moral, chacun son icône de cinq paliers et son mot (charte, « État, forme, moral »), sans chiffre. Devant le visage du moral, l'icône de ce qui le retient le plus (€ salaire, ◷ temps de jeu, ★ club en dessous de son niveau, ⊘ départ refusé), dès que le serveur nomme une cause (`morale_cause` de la fiche, même calcul que la liste de l'effectif), avec la cause en infobulle ; en mode debug, l'infobulle de la ligne donne le moral, la cible et la satisfaction pour le salaire et le temps de jeu. Puis la blessure (« Disponible » ou la date de retour), le total des cartons jaunes (détail par compétition en infobulle), une ligne par suspension en cours, avec sa compétition, et, pour un joueur qui en a, une ligne « Autre nationalité » (« Autres nationalités ») : le drapeau puis le code de trois lettres de chacune |
 | Colonne · Caractère | sous un bandeau de titre, dans la même carte, entre l'état et le contrat, les quatre traits du caractère (manuel, « Le caractère ») de 1 à 20, dans l'ordre alphabétique (`aggression`, `ambition`, `greed` et `fragility` de la fiche, de 0 à 1, les trois premiers lus entre les bornes de la configuration : `agressivite_min` et `agressivite_max` des cartons, `ego_min` et `ego_max` des contrats, `fragilite_min` et `fragilite_max` des blessures). L'ambition et l'appât du gain, ni bons ni mauvais en soi, en badge neutre ; l'appât du gain gonfle les prétentions écrites dessous. L'agressivité et la fragilité, qui ne peuvent que coûter (cartons, blessures), en badge gradué à l'envers d'un attribut, rouge quand elles sont hautes. Chaque infobulle dit ce que le trait fait. Sans trait connu, pas de bandeau |
 | Colonne · Contrat | sous un bandeau de titre, dans la même carte : salaire mensuel, fin du contrat, et pour le joueur d'un autre club ses prétentions (le salaire qu'il demande pour rejoindre le club dirigé) |
-| Attributs | une colonne par section, de la même largeur, sous son bandeau de titre : les bandeaux forment une seule bande, comme l'en-tête d'un tableau, un trait entre deux colonnes (charte, « Attributs en colonnes »). Aucune colonne plus étroite que le plus long nom de sa section et son badge : quand la carte ne les tient pas toutes, la dernière passe à la ligne. La carte s'arrête à sa plus longue colonne, quelle que soit la hauteur du terrain à côté ; sur grand écran, la carrière vient juste dessous. En tête, la section Jeu : les composites du moteur de match en badges sur 200, les six d'un joueur de champ (Progression, Création, Frappe, Jeu aérien, Défense au milieu, Défense de surface) ou les deux d'un gardien (Arrêts, Sorties aériennes), avec leurs poids en infobulle. Ceux que le poste demande sont marqués d'un point, les autres en gris ; le poste lu est celui choisi sur la carte des aptitudes, le poste principal par défaut, et son bandeau le nomme. Puis les 16 attributs en badges de 1 à 20, chaque section dans l'ordre alphabétique de leurs noms. Quatre sections : Gardien (Réflexes, Relance, Sorties), Défense (Placement, Tacle), Attaque (Centres, Coups arrêtés, Finition, Jeu de tête, Penaltys, Sang-froid, Technique, Vision) et Général (Endurance, Passe, Vitesse). Un joueur de champ ne voit pas Gardien ; un gardien voit Gardien (Placement s'y ajoute, à son rang alphabétique) et Général, puis ses autres attributs dans une dernière colonne « Autres », leurs noms en gris et leurs badges neutres. Les sections gardent toujours le même ordre, quel que soit le poste (Jeu, Défense, Attaque, Général ; Jeu, Gardien, Général, Autres pour un gardien). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
-| Aptitudes par poste | carte de terrain, avec le maillot de la charte (« Terrain et maillot ») : aux seuls postes où son affinité atteint 10, le maillot de son club avec le poste écrit dessus, le poste principal entouré ; sous chaque maillot, un bloc d'une ligne : la note au poste sur 200 dans sa couleur (voir Composition), puis l'affinité sous 20. Le terrain a 280 px de large au plus, sans liste à côté. Les lignes de l'axe sont espacées d'au moins 14 % de la hauteur et les ailiers placés entre l'avant-centre et le meneur, pour qu'aucun maillot ni bloc ne chevauche le suivant. Cliquer un poste fait lire la section Jeu des attributs pour lui : son maillot est cerclé de jaune et son bloc passe en jaune |
-| Évolution du niveau | courbe mensuelle du niveau, sur 200, avec axes gradués, haute de 240 et son ordonnée large de 20 points au moins, centrée sur la courbe ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club où le joueur évoluait ce mois-là (celui où il le termine en cas de transfert dans le mois, neutre sans club) et son infobulle donne mois, club et niveau |
+| Attributs | une colonne par section, de la même largeur, sous son bandeau de titre : les bandeaux forment une seule bande, comme l'en-tête d'un tableau, un trait entre deux colonnes (charte, « Attributs en colonnes »). Aucune colonne plus étroite que le plus long nom de sa section et son badge : quand la carte ne les tient pas toutes, la dernière passe à la ligne. La carte s'arrête à sa plus longue colonne, quelle que soit la hauteur du terrain à côté ; sur grand écran, la carrière vient juste dessous. En tête, la section Jeu : les composites du moteur de match en étoiles, les six d'un joueur de champ (Progression, Création, Frappe, Jeu aérien, Défense au milieu, Défense de surface) ou les deux d'un gardien (Arrêts, Sorties aériennes), avec leurs poids en infobulle. Ceux que le poste demande sont marqués d'un point, les autres en gris ; le poste lu est celui choisi sur la carte des aptitudes, le poste principal par défaut, et son bandeau le nomme. Puis les 16 attributs en badges de 1 à 20, chaque section dans l'ordre alphabétique de leurs noms. Quatre sections : Gardien (Réflexes, Relance, Sorties), Défense (Placement, Tacle), Attaque (Centres, Coups arrêtés, Finition, Jeu de tête, Penaltys, Sang-froid, Technique, Vision) et Général (Endurance, Passe, Vitesse). Un joueur de champ ne voit pas Gardien ; un gardien voit Gardien (Placement s'y ajoute, à son rang alphabétique) et Général, puis ses autres attributs dans une dernière colonne « Autres », leurs noms en gris et leurs badges neutres. Les sections gardent toujours le même ordre, quel que soit le poste (Jeu, Défense, Attaque, Général ; Jeu, Gardien, Général, Autres pour un gardien). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
+| Aptitudes par poste | carte de terrain, avec le maillot de la charte (« Terrain et maillot ») : aux seuls postes où son affinité atteint 10, le maillot de son club avec le poste écrit dessus, le poste principal entouré ; sous chaque maillot, un bloc d'une ligne : la note au poste en étoiles (voir Composition), puis l'affinité sous 20, en disque. Le terrain a 280 px de large au plus, sans liste à côté. Les lignes de l'axe sont espacées d'au moins 14 % de la hauteur et les ailiers placés entre l'avant-centre et le meneur, pour qu'aucun maillot ni bloc ne chevauche le suivant. Cliquer un poste fait lire la section Jeu des attributs pour lui : son maillot est cerclé de jaune et son bloc passe en jaune |
+| Évolution du niveau | courbe mensuelle du niveau tel que le club dirigé le lisait, en étoiles, haute de 240, une ligne par demi-étoile, la fourchette du potentiel lue chaque mois en bande pâle au-dessus (`stars` et `band` de chaque point) ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club où le joueur évoluait ce mois-là (celui où il le termine en cas de transfert dans le mois, neutre sans club) et son infobulle donne mois et club (le niveau en mode debug) ; le premier et le dernier portent leurs étoiles |
 | Carrière | une seule carte, deux blocs : les clubs, puis la sélection, chacun son tableau, que la page tenue dans la fenêtre fait défiler sous son en-tête, son total toujours visible (charte, « Fiche d'un joueur »). D'abord les clubs, une ligne par saison et club : transfert, compétitions en pastilles (`competition_badges` : la division du championnat, précédée du drapeau de son pays, y compris la France, puis la coupe d'Europe ; pas de coupe nationale), matches, buts, passes, note, puis le total. Chaque saison ouverte dans un club a sa ligne, de celle où le joueur est entré dans la partie à la saison en cours, même sans match ni mouvement (joueur jamais aligné, club hors des championnats simulés) ; le club quitté dans la première moitié de la saison (mercato d'été) n'a de ligne que si le joueur y a joué. La division a toujours sa pastille, même pour une saison sans match de championnat, et c'est celle du club cette saison-là, pas celle d'aujourd'hui : « L » et son niveau en France, « D » et son niveau ailleurs (drapeau français, L1 puis C1 ; drapeau du pays, D1 puis C3), le nom du championnat en infobulle ; un club hors des championnats simulés a la pastille du niveau de sa division. La source ne donne pas ce niveau : un vivier de réserve est un niveau sous sa pyramide (c'est là qu'était, une saison sans match de championnat, un club qui joue aujourd'hui un championnat simulé), toute autre division un niveau sous la plus basse connue de son pays, donc D1 dans un pays sans championnat simulé. Dessous, pour un joueur déjà sélectionné, la sélection : le nom de la nation en tête de colonne (lien vers elle), une ligne par édition, son année après sa pastille (EU, CM : `code` de `international_records`), la plus récente d'abord, une ligne « Historique importé » pour les sélections d'avant la partie, et le total (`international_caps`, `international_goals`). Une bande vide sépare les clubs de la sélection. Le nom de la nation et la première cellule de ses lignes couvrent les quatre premières colonnes : matches, buts, passes et note restent dans les colonnes qu'ils ont pour les clubs. La note d'une édition est la moyenne de ses matches notés (`average` de `international_records`), « — » pour une édition jouée avant que le jeu ne les garde. |
 
 Les textes du graphe ont la même taille que le reste de l'interface. Les niveaux,
-potentiels, attributs et aptitudes par poste sont des badges dont la couleur va du
-rouge au jaune puis au vert : sur 200, rouge jusqu'à 70, jaune à 110, vert à partir
-de 150 ; sur 20, rouge jusqu'à 4, jaune à 10, vert à partir de 16.
+potentiels et composites sont des étoiles (charte, « Étoiles ») ; les attributs sont des
+badges dont la couleur va du rouge au jaune puis au vert : sur 20, rouge jusqu'à 4,
+jaune à 10, vert à partir de 16 ; les aptitudes par poste, des disques.
 
 Sur la fiche d'un joueur de son club, la barre sous le bandeau porte trois groupes de boutons,
 dans l'ordre de son menu : l'effectif, la vente, puis « Proposer un contrat », l'action principale,
@@ -1072,7 +1083,7 @@ composition envoyée au match et reste dans la sauvegarde ; elle est aussi propo
 Tactique du direct.
 
 Sur le terrain, sous le maillot de chaque titulaire, son bloc (charte, « Terrain et maillot ») : son
-nom, puis sa note au poste sur 200 dans sa couleur, la flèche ▲ ou ▼ d'une forme d'au moins ±5 % et,
+nom, puis sa note au poste en étoiles, la flèche ▲ ou ▼ d'une forme d'au moins ±5 % et,
 sous 20/20 seulement, son affinité au poste. Une place vide garde les deux lignes de son bloc, sans
 fond ; un joueur indisponible a son bloc en rouge, le poste choisi le sien en jaune. La note au poste est la moyenne des
 composites que ce poste demande, multipliée par le facteur hors poste du moteur (`malus_hors_poste`).
@@ -1209,7 +1220,7 @@ sélections, les tuiles âge, niveau et potentiel, puis État (condition, forme,
 et la blessure ou la suspension s'il y en a une), Contrat (avec ses prétentions et son
 intérêt quand l'utilisateur dirige un club), Postes (affinité et note, un clic lit la
 section Jeu pour ce poste), Jeu et Attributs : les attributs sur deux colonnes, Jeu sur
-une, ses plus longs noms et leurs badges sur 200 ne tenant pas sur deux. Au pied,
+une, ses plus longs noms et leurs étoiles ne tenant pas sur deux. Au pied,
 « Ouvrir la fiche » et les actions de la fiche (« Faire une offre », « Proposer un
 contrat », mise en vente), avec leurs boîtes de dialogue.
 
@@ -1317,14 +1328,13 @@ championnats, dont la barre se mesure aux seuls championnats simulés.
 
 Les promotions ont toutes lieu à l'ouverture de la saison : pas de colonne de date non
 plus, et la liste s'ouvre sur les meilleurs potentiels. Filtres : recherche, postes,
-âge à la promotion, niveau actuel et potentiel (sur 200), pays et championnat du club
+âge à la promotion, niveau actuel et potentiel (en étoiles), pays et championnat du club
 formateur, « Intérêt » pour un recruteur, et « Mon club ».
 
 Une promotion donne ce que le joueur était ce jour-là et ce qu'il est aujourd'hui :
 poste, joueur, nationalité, âge à la promotion, club formateur (suivi d'une flèche et de
 son club actuel quand il l'a quitté), niveau à la promotion (PROMO), niveau actuel,
-PROGRESSION (les niveaux gagnés depuis, avec une barre de la part du chemin parcouru
-vers son potentiel), potentiel, valeur actuelle, et pour un recruteur ses prétentions et
+potentiel (la fourchette que le monde lisait le jour de la promotion), valeur actuelle, et pour un recruteur ses prétentions et
 son intérêt. Un joueur qui a quitté le monde depuis ne garde que le jour de sa promotion.
 
 Les boutons « Infos », « Attributs » et « Jeu » de la liste Joueurs changent les
@@ -1463,7 +1473,7 @@ GET  /api/joueurs/{id}                    la fiche, avec interested et wage_dema
                                           avec competition (son nom) et code (EU, CM, LN ; null pour une édition que la partie n'a plus)
 GET  /api/joueurs/{id}/historique         carrière (chaque ligne : competition, competition_nation, et competition_badges, ce dont la page tire ses
                                           pastilles : le championnat puis les coupes d'Europe, {id, name, kind, code, nation, level}, sans id hors des
-                                          championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club}, du plus ancien au plus récent
+                                          championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club, stars, band}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
 GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection, et pour un club nation (son pays, comme tout club nommé par l'API) et nation_id (la sélection de ce pays | null) ; chaque fait donne le nom court de ses joueurs (player_short, secondary_short), chaque joueur des compositions le sien (short), distingués dans l'effectif de leur camp ; les buteurs d'une liste de matches, la composition et le direct donnent aussi short

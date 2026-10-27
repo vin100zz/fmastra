@@ -128,6 +128,9 @@ class Player:
     shirt: int | None = None
     # The day his last contract ended, while he has no club; None under contract, or for a player who never had one.
     free_since: Date | None = None
+    # The full first-team matches he played, weighted by their competition (see `core.world.estimates.match_weight`), and
+    # at the import what his reputation and caps were worth: the more he played, the better the world knows him.
+    exposure: float = 0.0
 
     @property
     def nation(self) -> str:

@@ -6,6 +6,7 @@ from core.domain.world import World, JournalEntry, NewsLine, TransferRecord, Sea
 from core.domain.matches import MatchResult, store_events
 from core.engine.fitness import match_load
 from .age_records import note_club_match
+from .estimates import match_weight
 from .finances import book_cash, book_daily_cash
 from .human import is_human_club, record as add_news, report
 from .shirts import assign
@@ -359,6 +360,9 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
             if discipline and discipline.suspended_matches > 0:
                 discipline.suspended_matches -= 1
     starters = {pid for pid, _ in event.result.home_lineup + event.result.away_lineup}
+    competition = world.competitions.get(match.competition_id)
+    weight = match_weight(world.config, competition.kind, competition.level) if competition else match_weight(world.config, "league", 1)
+    match_minutes = world.config.engine.timing.match_seconds / 60
     for pid, stats in event.result.player_stats.items():
         if pid in event.result.temporary_players:
             continue
@@ -371,6 +375,7 @@ def _apply_match(world: World, event: MatchPlayed) -> None:
         player.season_assists += stats.assists
         player.appearances += int(stats.minutes > 0)
         player.substitutes += int(stats.minutes > 0 and pid not in starters)
+        player.exposure += stats.minutes / match_minutes * weight
         if stats.rating is not None:
             player.rating_sum += stats.rating
             player.rating_count += 1

@@ -4,6 +4,8 @@
    The tokens are the charter's (docs/charte-graphique.md): its light theme below, and what does not depend on the theme here.
    tests/frontend/charte.test.mjs holds them equal to docs/charte/charte.css. */
 :root{
+ /* Stars, on the dark theme: brighter gold, the same slate, an empty star on the dark panels. */
+ --star:#e3a600;--star-soft:#7d8a99;--star-empty:#3a4656;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
  --text:"Segoe UI",system-ui,sans-serif;
  --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--fs-goal:120px;--caps:.06em;
@@ -373,6 +375,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  --good-soft:#e1f3e7;--good-line:#a9d9bb;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--warn-soft:#fdf4d8;--warn-line:#ecd69a;--own-row:#fff3c4;
  --gold-soft:#fbf0cf;--info-soft:#e3eefa;--att-soft:#fbe6e3;
  --c3:#7b46a4;--c3-soft:#f4edfc;--c4:#00646f;--c4-soft:#e0f5f8;
+ --star:#c98300;--star-soft:#7d8a99;--star-empty:#dde2e8;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  color-scheme:light
 }
 :root[data-theme="light"] .rating.graded{background:hsl(var(--hue) 78% 89%);color:hsl(var(--hue) 72% 26%);border-color:transparent}
@@ -750,7 +753,7 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .movements-table col.grouped{width:58px}.movements-table col.group-start{border-left:1px solid var(--line)}.movements-table th.column-group{text-align:center;text-transform:uppercase}
 .movements-table .league-column{width:104px}
 .movements-table .academy_club-column{width:170px}.movements-table .level-column,.movements-table .potential-column{width:34px}.movements-table .rating-column:has([data-sort=rating] span){width:46px}
-.movements-table .progress-column{width:130px}.movements-table .worth-column{width:60px}.movements-table .wage_demand-column{width:76px}.movements-table .interested-column{width:62px}
+.movements-table .worth-column{width:60px}.movements-table .wage_demand-column{width:76px}.movements-table .interested-column{width:62px}
 .movements-table .bar-figure.gain .mini-bar{width:80px}.bar-figure.gain .mini-bar>i{background:var(--good)}.movements-table .bar-figure.gain b{min-width:30px}
 /* Preview of the row picked in a list: the words of the player's or the club's page, in a narrow card. */
 .preview{display:flex;flex-direction:column;flex:1 0 auto!important;overflow:visible}
