@@ -187,6 +187,7 @@ où le fond est déjà jaune.
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
 | Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list` | Deux panneaux l'un sous l'autre : créer une partie, reprendre une partie. Voir « Accueil » |
 | Nouvelle partie | `.nation-line`, `.segmented.range`, `.check` | Le monde, ses clubs, le club choisi, sur un écran. Voir « Nouvelle partie » |
+| Curseur | `.slider` | Une valeur choisie sur une échelle de crans, écrite après lui. Voir « Curseur » |
 | Case à cocher | `.check` | 18, bordée ; cochée, l'accent et son encre |
 | Option d'un mot | `.check-option` | Une case puis un mot court, sans bordure ; le détail dans son infobulle. Voir « Composition auto » |
 | Menu d'un joueur | `.menu` | Voir « Menu d'un joueur » |
@@ -307,6 +308,23 @@ contraste sous 3 : un jaune, un bleu ciel sur le blanc) est ramenée à son ton
 dans un graphique (voir « La couleur d'un club dans un graphique ») ; sans
 couleur lisible (blanc et blanc), l'accent en texte (`--accent-text`) en tient
 lieu.
+
+### Curseur
+
+`.slider` : un `<input type="range">` puis sa valeur (`<output>`), dans un
+`<label>` qui porte son nom en infobulle (la vitesse de lecture du résumé d'un
+match).
+
+- Pour une valeur que l'on règle sans la saisir, sur une échelle de plus de
+  quatre crans ; quatre au plus, un choix (`.segmented`).
+- Une piste de 4 (`--s1`) et de 120 de long, sur `--track`, remplie de
+  l'accent jusqu'au pouce (`--fill`, posé par l'écran) ; sur la page d'un club,
+  de ses couleurs (`--club-fill`).
+- Le pouce est un rond blanc de 18, posé comme un champ (`--shadow-field`,
+  `--shadow-thumb`). Il se déplace aussi aux flèches.
+- La valeur s'écrit après, à 8, en 13 / 600, en chiffres de largeur fixe sur
+  une place de cinq caractères : rien ne bouge quand elle change. Un facteur
+  s'écrit avec son « × » et le point décimal (0.25×, 1.5×).
 
 ### Sous le pointeur
 

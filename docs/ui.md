@@ -991,6 +991,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   gauche : le score est celui du bandeau du match, qui suit la lecture et
   revient au score final quand le résumé se replie. Au direct, sans bandeau,
   le score et les deux camps restent à côté de la minute.
+  La vitesse de lecture se règle au curseur de la charte (`.slider`), de 0.25×
+  à 4× (0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4), 1× par défaut ; elle est retenue.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
