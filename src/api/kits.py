@@ -54,6 +54,13 @@ def kit_url(club: Club, side: str = "home", nation: str | None = None) -> str | 
     return f"/kits/{kit_id if kit_id is not None else 0}/outfit.png?{query}"
 
 
+def shirt_url(club: Club, side: str = "home") -> str:
+    """The picture of a club's shirt alone, without its crest: the 2D replay cuts its players' discs from it."""
+    major, minor, third = _palette(club, f"{side}_kit", NEUTRAL)
+    kit_id = getattr(club, f"{side}_kit_id", None)
+    return f"/kits/{kit_id if kit_id is not None else 0}.png?major={major[1:]}&minor={minor[1:]}&third={third[1:]}"
+
+
 @router.get("/kits/{kit_id}.png")
 def kit_image(kit_id: int, major: HexColor, minor: HexColor, third: HexColor):
     image = render_kit(PATTERNS.get(kit_id, 1), (major, minor, third))

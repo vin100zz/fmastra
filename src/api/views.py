@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, replace
 import unicodedata
+from types import SimpleNamespace
 
 from core.domain.clubs import Competition
 from core.domain.date import Date
@@ -15,7 +16,7 @@ from core.world.calendar import standings
 from core.world.finances import financial_season
 from core.world.cups import ROUND_NAMES
 from core.world.estimates import estimate_level, estimate_potential, stars_of
-from .kits import kit_url
+from .kits import kit_url, shirt_url
 
 
 def normalized(value: str) -> str:
@@ -891,6 +892,18 @@ def lineup_rows(world: World, match: Match, side: str, shorts: dict[int, str] | 
             for pid, position in getattr(result, f"{side}_lineup")]
 
 
+def side_shirt(world: World, match: Match, side: str) -> str | None:
+    """The shirt a side wears on the 2D replay: a club's home shirt, a selection's from ``data/nations.csv``."""
+    team_id = getattr(match, f"{side}_id")
+    if match.id in world.international.matches:
+        from .nations import nation_kit
+        team = world.international.nations.get(team_id)
+        kit = nation_kit(team.code) if team else {}
+        return shirt_url(SimpleNamespace(**kit)) if kit.get("home_kit_major_color") else None
+    club = world.clubs.get(team_id)
+    return shirt_url(club) if club else None
+
+
 def match_detail(world: World, match: Match) -> dict:
     data = match_row(world, match)
     if match.id in world.international.matches:
@@ -902,6 +915,8 @@ def match_detail(world: World, match: Match) -> dict:
         # The flag that follows a club's name in the band leads to its country's selection.
         for side in ("home", "away"):
             if data[side]: data[side] = {**data[side], "nation_id": selection_id(world, data[side]["nation"])}
+    for side in ("home", "away"):
+        if data[side]: data[side] = {**data[side], "shirt_url": side_shirt(world, match, side)}
     result = match.result
     if result is None:
         data["result"] = None

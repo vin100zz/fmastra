@@ -1162,6 +1162,19 @@ Un seul terrain et un seul joueur, sur tous les écrans.
 Les aptitudes d'un joueur n'ont pas de liste à côté de leur terrain : le bloc de
 chaque poste en tient lieu, sur un terrain de 280 de large.
 
+### Match en 2D
+
+Chaque joueur de champ est une pastille ronde taillée dans le torse de son
+maillot : le motif et les couleurs du CSV (`/kits/{id}.png`, sans écusson),
+rayures, cerceaux ou écharpe compris. Son numéro est blanc, cerné de `#0b121a`
+(`.replay-player .number.outlined`), pour se lire sur n'importe quelle bande ;
+le terrain garde ses couleurs dans le thème sombre, le trait aussi. Le gardien
+reste uni, à la couleur qui le distingue des deux camps, son numéro à l'encre
+de cette couleur. Un camp qui doit changer de couleur pour se distinguer de
+l'autre (deux maillots trop proches) repasse à une pastille unie de sa couleur
+de remplacement. Le cercle autour de la pastille reste à la seconde couleur du
+camp.
+
 ### Match en 3D
 
 La vue du match reprend les couleurs et les numéros des maillots dans un stade

@@ -70,7 +70,10 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
     team = live.teams[side]
     decision = next(({"kind": event.kind, "player_id": event.player_id, "player": names.get(event.player_id)}
                      for event in reversed(events or []) if event.kind in ("injury", "red") and event.team_id == team.club_id), None)
-    return {**v.match_row(world, match), "side": ("home", "away")[side], "status": live.status,
+    row = v.match_row(world, match)
+    for key in ("home", "away"):
+        if row[key]: row[key] = {**row[key], "shirt_url": v.side_shirt(world, match, key)}
+    return {**row, "side": ("home", "away")[side], "status": live.status,
             "second": round(live.log.second), "period": live.log.period,
             "score": [live.teams[0].goals, live.teams[1].goals], "decision": decision,
             "result": {"events": [event_row(event) for event in shown], "duration": round(live.log.second),
