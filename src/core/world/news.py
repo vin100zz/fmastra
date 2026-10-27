@@ -16,8 +16,6 @@ A message of one of these kinds has no sentence of its own: the pages write it f
 - `transfer`, `loan`, `loan_return`: a sentence, its line naming the club the player joined, or left for a loan return;
   for the club he comes to, `amount` is the number he takes there.
 - `call_up`: one line per player, `text` the national team and `key` its id.
-- `formation_change`: one line per club, the human club's next opponent or a club of its league, that changed formation:
-  `club_id` the club, `text` the formation it plays now and `key` the one it left (see `core.world.formations`).
 - `morale`: one line per player whose morale fell under the alert, `text` what weighs on him and `amount` his morale
   out of 100.
 - `contract_expiry` (its `text` the months left): one line per player, `amount` his weekly wage, `until` the end.
