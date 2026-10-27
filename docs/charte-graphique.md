@@ -60,6 +60,7 @@ la structure HTML des spécimens.
 | `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement »). La sarcelle marque aussi les matchs à venir du club dirigé dans la barre du haut |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
+| `--ball` | Ballon d'un but : blanc, le pentagone du centre et cinq pans coupés au bord, à l'encre `#0b121a` dans les deux thèmes ; dessiné pour 10 (pans larges, contour épais) |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
 | `--series-1`, `--series-2`, leur `-soft` et leur `-deep` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre ; en foncé, une troisième part de la même série |
 
@@ -784,8 +785,8 @@ gauche.
 
 - **Une ligne de 26 par fait**, quels que soient les noms : aucune ne passe sur
   deux lignes.
-- **Marques** (`.marks`), au bord : le ballon, la croix de la blessure, le
-  carton rouge ; un carton jaune puis le rouge pour un deuxième avertissement ;
+- **Marques** (`.marks`), au bord : le ballon (`--ball`), la croix de la
+  blessure, le carton rouge ; un carton jaune puis le rouge pour un deuxième avertissement ;
   le ballon barré de rouge (`.mark.missed`) pour un penalty manqué. Aucun libellé
   (« But », « Blessure ») : la marque le dit, son infobulle aussi.
 - **Joueur** : son nom court (voir « Joueurs »), en 600 à l'encre forte.
@@ -1045,9 +1046,8 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   numéro qu'un joueur y prend ; celui qu'il quitte est voilé à 45 %
   (`.kit-shirt.former`), une flèche atténuée entre les deux (`.shirt-change`).
 - **Buts** (`.kit-goals`) : en haut à droite du maillot, pas dans le bloc. Un
-  ballon de 10 par but, celui du gazon (blanc cerné de `--strong`, son centre
-  `--strong`) avec l'ombre du maillot. Le premier est posé sur le bout de la
-  manche droite, 5 sur le maillot et 4 au-dessus ; chaque suivant se glisse à
+  ballon de 10 par but (`--ball`) avec l'ombre du maillot. Le premier est
+  posé sur le bout de la manche droite, 5 sur le maillot et 4 au-dessus ; chaque suivant se glisse à
   sa droite, 3 derrière le précédent : le premier reste entier, devant.
 - **Bloc** (`.player-block`) : sous le maillot ; autour, rien que les buts. Des
   lignes de 16 sur l'étiquette sombre (`--pitch-label`, noir à 70 %), autant
