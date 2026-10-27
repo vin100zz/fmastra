@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {liveTable,shownHighlights,tacticsDraft,tacticsOrders,tacticsProblems,placeInDraft,benchInDraft,formationInDraft} from '../../web/live.js';
+import {liveTable,tableMoves,assistantAdvice,shownHighlights,tacticsDraft,tacticsOrders,tacticsProblems,placeInDraft,benchInDraft,formationInDraft} from '../../web/live.js';
 
 const club=(id,name)=>({id,name});
 const row=(id,name,points,goals_for=0,goals_against=0)=>({club:club(id,name),played:5,won:0,drawn:0,lost:0,goals_for,goals_against,points});
@@ -75,4 +75,32 @@ test('the highlights show a goal once the score counts it, other events once the
  assert.deepEqual(shownHighlights(events,650,[0,0],1),[]);
  assert.deepEqual(shownHighlights(events,750,[1,0],1).map(event=>event.kind),['goal','injury']);
  assert.equal(shownHighlights(events,950,[1,1],1).length,3);
+});
+
+test('the highlights also show the yellow cards and the penalties missed, once the clock has passed them',()=>{
+ const events=[{kind:'yellow',team_id:2,second:300,period:1},{kind:'shot',team_id:1,second:500,period:1,detail:'penalty',shot_id:4},
+  {kind:'shot',team_id:1,second:700,period:1,detail:'penalty',shot_id:5},{kind:'goal',team_id:1,second:700,period:1,shot_id:5}];
+ assert.deepEqual(shownHighlights(events,400,[0,0],1).map(event=>event.kind),['yellow']);
+ assert.deepEqual(shownHighlights(events,800,[1,0],1).map(event=>event.kind),['yellow','shot','goal']);
+});
+
+test('the table says how many places each club has gained or lost since the day began',()=>{
+ const before=[row(1,'Alpha',10),row(2,'Bravo',9),row(3,'Charlie',8)];
+ const now=[before[2],before[0],before[1]];
+ assert.deepEqual([...tableMoves(before,now)],[[3,2],[1,-1],[2,-1]]);
+});
+
+const sheet=(id,position,state,fitness,more={})=>({id,name:`Joueur ${id}`,position,role:state==='on'?position:null,state,fitness,yellows:0,red:false,injured:false,rating:6.5,...more});
+test('the assistant would take off the tired, the booked who tire and the poor who tire, for a fresh substitute of the same place',()=>{
+ const squad=[sheet(1,'GB','on',.9),sheet(2,'DC','on',.25),sheet(3,'MC','on',.45,{yellows:1}),sheet(4,'BU','on',.45,{rating:5.8}),sheet(5,'AILG','on',.6),
+  sheet(20,'DC','bench',1),sheet(21,'MDC','bench',.95),sheet(22,'BU','bench',1),sheet(23,'GB','bench',1),sheet(24,'MC','bench',1,{injured:true})];
+ const {out,into}=assistantAdvice(squad,3,'playing');
+ assert.deepEqual([...out].map(([id,advice])=>[id,advice.sub.id]),[[2,20],[3,21],[4,22]]);
+ assert.equal(into.get(21).id,3);
+ assert.match(out.get(2).reasons[0],/fatigue 75 %/);
+ // No more changes, or the final whistle: no advice.
+ assert.equal(assistantAdvice(squad,0,'playing').out.size,0);
+ assert.equal(assistantAdvice(squad,3,'finished').out.size,0);
+ // As many as the changes left, the most tired first.
+ assert.deepEqual([...assistantAdvice(squad,1,'playing').out.keys()],[2]);
 });

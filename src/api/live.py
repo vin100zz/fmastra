@@ -77,12 +77,27 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
                        "home_stats": asdict(live.teams[0].stats), "away_stats": asdict(live.teams[1].stats),
                        "home_lineup": lineup(live.home, live.teams[0]), "away_lineup": lineup(live.away, live.teams[1]),
                        "home_bench": bench(live.home, live.teams[0]), "away_bench": bench(live.away, live.teams[1])},
-            "manager": manager_view(world, live, side, shorts[team.club_id])}
+            "manager": manager_view(world, live, side, shorts[team.club_id]),
+            "opponent": opponent_view(world, live, 1 - side, shorts[live.teams[1 - side].club_id])}
 
 
 def team_short_names(world: World, team) -> dict[int, str]:
     """The short names of a side of the live match, told apart within its squad: its club's players and those of the match."""
     return v.squad_short_names(world, team.club_id, {pid: player.name for pid, player in team.players.items()})
+
+
+def formation_name(world: World, team) -> str | None:
+    """The name of the formation a side stands in now, when it is one of the game's (or the user's own)."""
+    roles = sorted(slot.position.value for slot in team.active)
+    named = {**world.config.formations.formations,
+             **({CUSTOM_FORMATION: [position for position, _, _ in world.custom_formation]} if world.custom_formation else {})}
+    return next((name for name, listed in named.items() if sorted(listed) == roles), None)
+
+
+def opponent_view(world: World, live: LiveMatch, side: int, shorts: dict[int, str]) -> dict:
+    """The other side as the live screen shows it: its sheet, its formation and its mentality."""
+    team = live.teams[side]
+    return {"squad": squad_strip(live, side, shorts), "formation": formation_name(world, team), "mentality": team.mentality}
 
 
 def manager_view(world: World, live: LiveMatch, side: int, shorts: dict[int, str]) -> dict:
@@ -102,7 +117,7 @@ def manager_view(world: World, live: LiveMatch, side: int, shorts: dict[int, str
             "substitutions_left": rules.max_substitutions - team.substituted,
             "windows_left": rules.substitution_windows - team.windows,
             "squad": squad_strip(live, side, shorts),
-            "mentality": team.mentality, "mentalities": list(cfg.formations.block_height.mentalities),
+            "formation": formation_name(world, team), "mentality": team.mentality, "mentalities": list(cfg.formations.block_height.mentalities),
             "formations": {**{name: list(roles) for name, roles in cfg.formations.formations.items()},
                            **({CUSTOM_FORMATION: [position for position, _, _ in world.custom_formation]} if world.custom_formation else {})}}
 
@@ -110,14 +125,14 @@ def manager_view(world: World, live: LiveMatch, side: int, shorts: dict[int, str
 def squad_strip(live: LiveMatch, side: int, shorts: dict[int, str]) -> list[dict]:
     """Every player of the human side's sheet, starters then substitutes, as the match leaves them now."""
     team, initial = live.teams[side], (live.home, live.away)[side]
-    playing = {slot.player.id for slot in team.active}
+    playing = {slot.player.id: slot.position.value for slot in team.active}
     waiting = {player.id for player in team.bench}
 
     def row(player, starter: bool) -> dict:
         stats = team.individual.get(player.id)
         played = stats is not None and player.id not in waiting
         return {"id": player.id, "name": player.name, "short": shorts.get(player.id), "position": player.position.value,
-                "shirt": player.shirt, "starter": starter,
+                "shirt": player.shirt, "starter": starter, "role": playing.get(player.id),
                 "state": "on" if player.id in playing else "bench" if player.id in waiting else "off",
                 "fitness": round(team.fitness.get(player.id, player.fitness), 3),
                 "rating": round(player_rating(team, player.id, live.cfg), 1) if played else None,

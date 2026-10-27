@@ -79,3 +79,5 @@ Le contexte vaut 1 quand l'équipe mène d'au moins {{etats.remplacements.ecart_
 - **Mode Auto** : l'IA compose aussi l'équipe, avec la formation de votre club (colonne FORMATION de la liste des clubs), pas avec votre dernière tactique.
 
 Dans un match en direct que vous dirigez, l'IA ne touche à rien de votre côté : ni remplacement automatique, ni remontée du bloc en fin de match.
+
+**Les conseils de votre adjoint.** En direct, votre adjoint signale d'un ⇄ jaune le joueur qu'il sortirait, et d'un ⇄ vert celui qu'il ferait entrer à sa place ; l'infobulle dit pourquoi. Il propose de sortir un joueur fatigué à 70 % ou plus, ou fatigué à 50 % ou plus s'il est averti ou noté sous 6. Il choisit le remplaçant le plus frais du même poste, sinon de la même ligne (un gardien pour un gardien). Il fait autant de propositions qu'il vous reste de changements, les joueurs les plus fatigués d'abord. Il ne change rien lui-même : c'est vous qui décidez, dans la fenêtre Tactique.
