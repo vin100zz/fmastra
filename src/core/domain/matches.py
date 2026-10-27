@@ -155,6 +155,9 @@ class MatchResult:
     shirts: dict[int, int] = field(default_factory=dict)
     # Whether its events keep the build-up of the chances the 2D replay draws: only the user's club's matches do.
     replay: bool = True
+    # Every shot of the match as [second, team id, xg], kept when its events are trimmed: the report draws the flow of the
+    # chances from them. Empty for a match played before they were kept.
+    shots: list[list] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -185,6 +188,10 @@ def stored_events(events: list[MatchEvent], replay: bool = True) -> list[MatchEv
 
 
 def store_events(result: MatchResult, replay: bool) -> None:
-    """Trims a played result to the events it keeps (see `stored_events`), with or without its replay."""
+    """Trims a played result to the events it keeps (see `stored_events`), with or without its replay, its shots first
+    written down."""
+    if not result.shots:
+        result.shots = [[event.second, event.team_id, round(event.xg, 3)] for event in result.events
+                        if event.kind == "shot" and event.xg is not None and event.period <= 2]
     result.events = stored_events(result.events, replay and result.replay)
     result.replay = replay and result.replay

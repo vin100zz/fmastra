@@ -1,5 +1,5 @@
 import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
- spreadLayout,level,levelHue,blockNote,averageNote,moraleCell,contractEnd,roundTitle,GO} from './ui.js';
+ spreadLayout,level,levelHue,blockNote,averageNote,moraleCell,contractEnd,roundTitle,GO,chartColour,isOwnClub} from './ui.js';
 import {monthlySalary,monthlyAmount,monthlyMargin} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
@@ -102,6 +102,18 @@ export function leaderBars(title,rows,key,unit,{format=n,soft=false}={}){
  const top=rows[0]?.[key]||1;
  const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur');
  return card(title,body,`<span class="card-hint">${unit}</span>`,`leaders-card ${key}${soft?' soft':''}`);
+}
+
+// Clubs ranked on one figure (docs/charte-graphique.md, « Classement de clubs »): the first one large, its figure per
+// match under it, then a bar each in the club's colour, the largest figure of the list filling it. `ascending` ranks the
+// lowest first (goals conceded). The user's club is washed.
+export function clubBars(title,items,key,unit,{ascending=false,rows=10}={}){
+ const ranked=[...items].sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.rank-b.rank).slice(0,rows);
+ if(!ranked.length)return card(title,empty('Aucun match joué pour l’instant.'),`<span class="card-hint">${unit}</span>`,'leaders-card clubs');
+ const top=Math.max(1,...ranked.map(row=>row[key])),first=ranked[0];
+ const lead=`<div class="leader-lead"><strong>${clubLink(first.club)}</strong><span><b>${n(first[key])}</b><small>${first.played?(first[key]/first.played).toFixed(1):'0.0'} par match</small></span></div>`;
+ const bars=ranked.map(row=>`<li${isOwnClub(row.club)?' class="own"':''}><span>${clubLink(row.club)}</span><i style="width:${Math.round(100*row[key]/top)}%;--club-bar:${chartColour(row.club)}"></i><b>${n(row[key])}</b></li>`).join('');
+ return card(title,`${lead}<ol class="leader-bars clubs">${bars}</ol>`,`<span class="card-hint">${unit}</span>`,'leaders-card clubs');
 }
 
 // The club's best scorers, providers and notes of the season, as bars, `rows` each. A note counts from half as many matches

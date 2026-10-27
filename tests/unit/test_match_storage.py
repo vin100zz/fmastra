@@ -65,6 +65,20 @@ def test_a_match_the_users_club_did_not_play_keeps_only_its_facts(config):
     assert stored.home_stats.corners == 2 and stored.player_stats[101].minutes == 90 and stored.home_lineup == [(101, "GB")]
 
 
+def test_every_match_keeps_its_shots_when_its_events_are_trimmed(config):
+    world = mini_world(config)
+    world.controlled_club_id = 3
+    world.matches[10] = Match(10, 16, 2025, 1, world.date, 1, 2)
+    result = full_result()
+    result.events += [MatchEvent(700, 1, 30, "shot", 1, 101, possession_id=30, shot_id=1, xg=0.123456, detail="frappe"),
+                      MatchEvent(4100, 2, 31, "shot", 2, 201, possession_id=31, shot_id=2, xg=0.4, detail="cross")]
+    apply(world, MatchPlayed(10, result, {}, {}, {}))
+    stored = world.matches[10].result
+    # The shots leave the events with the rest of the build-up, but each stays as its second, its side and its xg.
+    assert not any(event.kind == "shot" and event.xg for event in stored.events)
+    assert stored.shots == [[700, 1, 0.123], [4100, 2, 0.4]]
+
+
 def test_real_engine_log_loses_no_statistic_when_stored(config):
     world = mini_world(config)
     world.controlled_club_id = 1

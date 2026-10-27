@@ -215,3 +215,20 @@ test('a minute reads as on television: the minute in progress, added time after 
  assert.equal(halfEnd([{kind:'period_end',period:1,second:half}]),half);
  assert.equal(halfEnd([]),2700);
 });
+
+test('the flow of the match adds up each side’s expected goals shot after shot, a ball where one went in',async()=>{
+ const shots=[{second:600,team_id:1,xg:.3},{second:2400,team_id:1,xg:.5},{second:3500,team_id:2,xg:.2},{second:5000,team_id:1,xg:.4}];
+ const html=await screen({...report,result:{...report.result,shots}});
+ const flow=html.match(/<section class="card match-flow">[^]*?<\/section>/)?.[0];
+ assert.ok(flow,'the card stands under the figures');
+ assert.ok(html.indexOf('Le match en chiffres')<html.indexOf('Fil du match'));
+ assert.match(flow,/<h2>Fil du match<\/h2><span class="card-hint">buts attendus cumulés<\/span>/);
+ // A line a side, its total at its end; the goal of the 40th minute (second 2400) is a ball on the home line.
+ assert.equal((flow.match(/<polyline class="cc-line flow"/g)||[]).length,2);
+ assert.match(flow,/>1\.2<\/text>/);assert.match(flow,/>0\.2<\/text>/);
+ assert.equal((flow.match(/class="cc-goal"/g)||[]).length,1);
+ // Minutes under the axis, the half time dashed.
+ assert.match(flow,/class="cc-half"/);assert.match(flow,/>45′<\/text>/);assert.match(flow,/>90′<\/text>/);
+ // A match played before its shots were kept has no such card.
+ assert.doesNotMatch(await screen(report),/Fil du match/);
+});

@@ -70,16 +70,22 @@ class Standing:
         return self.goals_for - self.goals_against
 
 
-def standings(competition: Competition, matches: list[Match], cfg: Config) -> list[Standing]:
+def standings(competition: Competition, matches: list[Match], cfg: Config, side: str | None = None,
+              last: int | None = None) -> list[Standing]:
+    """`side` counts a club's matches at home ("home") or away ("away") only; `last` its latest matches only."""
     rows = {club_id: Standing(club_id) for club_id in competition.club_ids}
     played = [match for match in matches if match.result and match.competition_id == competition.id
               and (competition.kind != "europe" or match.round_number <= cfg.world.europe.league_rounds)]
-    for match in sorted(played, key=lambda item: (item.date, item.id)):
+    ordered = [match for match in sorted(played, key=lambda item: (item.date, item.id)) if match.result.status != "double_forfeit"]
+    counted = None if last is None else {
+        club_id: {match.id for match in [match for match in ordered if club_id in (match.home_id, match.away_id)][-last:]}
+        for club_id in rows}
+    for match in ordered:
         result = match.result
-        if result.status == "double_forfeit":
-            continue
-        for club_id, scored, conceded in ((match.home_id, result.home_goals, result.away_goals),
-                                          (match.away_id, result.away_goals, result.home_goals)):
+        for club_id, scored, conceded, at in ((match.home_id, result.home_goals, result.away_goals, "home"),
+                                              (match.away_id, result.away_goals, result.home_goals, "away")):
+            if (side is not None and at != side) or (counted is not None and match.id not in counted[club_id]):
+                continue
             row = rows[club_id]
             row.played += 1
             row.goals_for += scored

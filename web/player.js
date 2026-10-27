@@ -117,9 +117,12 @@ const calendar=({year,month})=>new Date(year,month-1,15);
 // that month (if any); seasons recorded before the monthly history have one point, at their opening. The abscissa is time, so such gaps
 // keep their length. A dot marks the first point of each season and the latest one.
 // Text and dots are HTML so they keep the size of the rest of the interface; only the gridlines and the curve are stretched SVG.
+// The ordinate spans 20 points at least, centred on the curve, so that a point gained does not read as a leap.
+const LEVEL_SPAN=20;
 export function levelChart(points) {
  const values=points.map(point=>point.level),months=points.map(point=>point.year*12+point.month-1);
- const low=Math.min(...values),high=Math.max(...values);
+ const centre=Math.round((Math.min(...values)+Math.max(...values))/2),half=Math.max(LEVEL_SPAN,Math.max(...values)-Math.min(...values))/2;
+ const low=Math.max(0,Math.min(Math.min(...values),centre-half)),high=Math.min(200,Math.max(Math.max(...values),centre+half));
  const step=[5,10,20,25,50].find(size=>(high-low)/size<=5)??50;
  const min=Math.floor(low/step)*step;
  let max=Math.ceil(high/step)*step;if(max===min)max+=step;

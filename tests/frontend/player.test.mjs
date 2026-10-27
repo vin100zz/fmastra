@@ -44,8 +44,11 @@ test('level chart labels the ordinate out of 200 with a gridline per tick, in HT
  assert.equal((html.match(/class="point-value/g)||[]).length,2);
  // Januaries on the abscissa, named by their year
  assert.deepEqual([...html.matchAll(/class="x-tick" style="left:([\d.]+)%">(\d+)</g)].map(match=>[match[1],match[2]]),[['25.00','2026'],['75.00','2027']]);
+ // A curve that hardly moves keeps 20 points of ordinate around it: a point gained reads as one.
  const flat=levelChart(seasons([[2025,120],[2026,120]]));
- assert.equal((flat.match(/class="grid-line"/g)||[]).length,2);assert.doesNotMatch(flat,/NaN|Infinity/);
+ assert.deepEqual([...flat.matchAll(/class="y-tick" style="top:[\d.]+%">(\d+)</g)].map(match=>Number(match[1])),[110,115,120,125,130]);assert.doesNotMatch(flat,/NaN|Infinity/);
+ const close=levelChart(seasons([[2025,169],[2026,170]]));
+ assert.deepEqual([...close.matchAll(/class="y-tick" style="top:[\d.]+%">(\d+)</g)].map(match=>Number(match[1])),[160,165,170,175,180]);
  const long=levelChart(seasons(Array.from({length:20},(_,index)=>[2000+index,80+2*index])));
  assert.doesNotMatch(long,/NaN|Infinity/);assert.deepEqual([...long.matchAll(/class="x-tick"[^>]*>(\d+)</g)].map(match=>match[1]),['2005','2010','2015']);
 });
