@@ -17,6 +17,8 @@
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in both themes. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  --pitch-line:#ffffffb3;--pitch-label:#0a141eb3;
+ /* The ball of a goal: the pentagon in the middle, five cut at the rim, drawn to read at 10. */
+ --ball:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3C/clipPath%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff'/%3E%3Cg clip-path='url(%23c)' fill='%230b121a'%3E%3Cpath d='M50 19L34.8 7.9L40.6-9.9L59.4-9.9L65.2 7.9ZM79.5 40.4L85.3 22.5L104.1 22.5L109.9 40.4L94.7 51.5ZM68.2 75.1L87 75.1L92.8 93L77.6 104L62.4 93ZM31.8 75.1L37.6 93L22.4 104L7.2 93L13 75.1ZM20.5 40.4L5.3 51.5L-9.9 40.4L-4.1 22.5L14.7 22.5Z'/%3E%3Cpath d='M50 33V19M66.2 44.7L79.5 40.4M60 63.8L68.2 75.1M40 63.8L31.8 75.1M33.8 44.7L20.5 40.4' stroke='%230b121a' stroke-width='6'/%3E%3C/g%3E%3Cpath d='M50 33L66.2 44.7L60 63.8H40L33.8 44.7Z' fill='%230b121a'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%230b121a' stroke-width='7'/%3E%3C/svg%3E");
  --bg:#0e1217;--rail:#0a0d11;--panel:#161b22;--panel-2:#1d242d;--panel-3:#222b36;--row-line:#1f2630;
  --accent:#f5c400;--accent-ink:#111418;--accent-soft:#f5c4001f;--accent-text:#f5c400;--accent-hover:#ffd633;
  --good:#5fd08a;--warn:#e3c34f;--bad:#ff7a72;--info:#7cc4ff;--gold-bright:#ffd23f;

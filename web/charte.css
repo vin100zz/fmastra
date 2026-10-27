@@ -610,7 +610,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
    sleeve (5 over the shirt, 4 above it), each next one to the right, 3 of it behind the one before; the ball of the grass,
    with the shirt's shadow. The first ball comes last in the reversed row, so it is drawn on top. */
 .kit-goals{position:absolute;left:calc(100% - 5px);top:-4px;display:flex;flex-direction:row-reverse;filter:drop-shadow(0 1px 1px #00000066)}
-.kit-goals i{flex:none;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.kit-goals i{flex:none;width:10px;height:10px;background:var(--ball) center/contain no-repeat}
 .kit-goals i+i{margin-right:-3px}
 /* Ringed in the accent when picked, in red when he cannot play; a player's main position, on his aptitudes, in a white veil. */
 .pitch-player.picked .kit-shirt::before,.pitch-player.invalid .kit-shirt::before,.pitch-player.main .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
@@ -644,8 +644,8 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 /* What happened to a player in a match. */
 .match-mark{font:700 var(--fs-micro)/1 var(--text)}
 .match-mark.goal{gap:2px}
-.match-mark.goal::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px #0b121a,inset 0 0 0 3.5px #fff,inset 0 0 0 5px #0b121a}
-.match-mark.missed{position:relative;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px #0b121a,inset 0 0 0 3.5px #fff,inset 0 0 0 5px #0b121a}
+.match-mark.goal::before{content:"";flex:none;width:10px;height:10px;background:var(--ball) center/contain no-repeat}
+.match-mark.missed{position:relative;width:10px;height:10px;background:var(--ball) center/contain no-repeat}
 .match-mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .match-mark.booking{width:8px;height:11px;border-radius:1px}
 .match-mark.booking.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
