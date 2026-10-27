@@ -1,7 +1,7 @@
 import {initNationLogos} from './nation-logos.js';
 import {initHeroCrests,tintPage} from './club-hero.js';
 import {worldHistoryScreen} from './world-history.js';
-import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen,GO} from './ui.js';
+import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen,setStarScale,debugMode,setDebugMode,GO} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
 import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
@@ -159,7 +159,7 @@ function drawBarMatches(){
   &&[...block.querySelectorAll('.next-match-who b,.next-match-comp')].some(text=>text.scrollWidth>text.clientWidth));
  for(const [count,short] of BAR_STAGES){band.innerHTML=barMatchesHtml(count,short);if(!cut())break;}
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}drawBarMatches();if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);setStarScale(state.star_scale);document.querySelector('#debug-badge').hidden=!debugMode();const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}drawBarMatches();if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
  const dialog=document.querySelector('#confirm-dialog');
@@ -231,7 +231,9 @@ async function counterOffer(payload){
 // The home (home.js): without a game the whole screen; with one, « Ma partie » sets the form that saves it above it.
 async function savesScreen(){const doors=await homeScreen();const notice=state.recovery_required?'<div class="notice">La simulation a été interrompue. Chargez une sauvegarde pour reprendre un état cohérent.</div>':'';if(!state.exists||state.recovery_required)return notice+doors;
 const saveForm=`<form id="save-game" class="filters"><input name="slot" aria-label="Nom de la sauvegarde" placeholder="Nom de la sauvegarde" required pattern="[A-Za-z0-9_\\-]{1,64}" value="${e(state.slot&&state.slot!=='autosave'?state.slot:'ma-partie')}"><button data-command="save">Enregistrer</button></form>`;
-return heading('Ma partie',saveForm)+doors;}
+// The debug mode, off by default: the tooltips then give the exact values behind the stars and the states.
+const debugToggle=`<button type="button" class="check-option" data-debug-mode aria-pressed="${debugMode()}" title="Les infobulles donnent les valeurs exactes des niveaux, potentiels et états"><span class="check"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg></span>Valeurs exactes</button>`;
+return heading('Ma partie',saveForm+debugToggle)+doors;}
 
 // Brings the element `current` to `next` while keeping the nodes they share: a field stays the same field, with its caret,
 // and a menu stays open or folded. The fields take their new value, but `typed`, whose text is the user's.
@@ -474,6 +476,7 @@ main.addEventListener('click',async event=>{const button=event.target.closest('b
  if(button.id==='retry')render();});
 // A line that opens as a whole: a save resumes its game, a club of a new game is picked; Enter does it from the keyboard.
 const openLine=row=>{if(row.dataset.href)location.hash=row.dataset.href;else command('/partie/charger',{slot:row.dataset.slot});};
+main.addEventListener('click',async event=>{const toggle=event.target.closest('[data-debug-mode]');if(!toggle)return;setDebugMode(!debugMode());document.querySelector('#debug-badge').hidden=!debugMode();await render();});
 main.addEventListener('click',event=>{const row=event.target.closest('tr[data-slot],tr[data-href]');if(row&&!event.target.closest('a,button'))openLine(row);});
 main.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches?.('tr[data-slot],tr[data-href]'))openLine(event.target);});
 // A card head with a single link (« Voir ») follows it wherever it is clicked.

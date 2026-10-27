@@ -40,10 +40,22 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 44
+SCHEMA_VERSION = 45
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # What a club sees of a player is read in stars, its error growing with his youth and shrinking with what he played
+    # (see `core.world.estimates` and `_expose_players`).
+    (45, ("demographie", "estimation_potentiel"), {
+         "ecarts_types_par_age": [{"age": 15, "ecart_type": 2.0}, {"age": 17, "ecart_type": 1.5}, {"age": 19, "ecart_type": 1.0},
+                                  {"age": 21, "ecart_type": 0.6}, {"age": 23, "ecart_type": 0.35}],
+         "ecart_type_min": 0.25, "part_niveau": 0.25, "moyenne_a_priori": 1.8, "ecart_type_a_priori": 1.15, "rappel": 0.5,
+         "demi_largeur_fourchette": 0.67, "facteur_propre_club": 0.4,
+         "exposition": {"matches_reference": 60.0, "reduction_max": 0.6, "poids_championnat_par_niveau": [1.0, 0.6, 0.4],
+                        "poids_coupe": 0.5, "poids_europe": 1.0, "poids_selection": 1.0, "reputation_inconnu": 3500.0,
+                        "reputation_connu": 8000.0}}),
+    (45, ("attributs", "etoiles"), {"seuils": [45.0, 50.0, 55.0, 59.0, 63.0, 67.0, 71.0, 76.0, 82.5], "plancher": 35.0,
+                                    "etoiles_au_maximum": 6.0}),
     # A selection calls up its 23 for the formation its candidates fill best (see `core.world.international_selection.initialize_formations`).
     (44, ("international", "squad_list"), {"pool_per_position": 6, "min_affinity": 0.5}),
     # A club of the AI plays the formation its first team fills best, kept unless another does clearly better
@@ -440,6 +452,7 @@ class SaveStore:
             if version < 42: _upgrade_ratings(world)
             if version < 43: _choose_formations(world)
             if version < 44: initialize_formations(world)
+            if version < 45: _expose_players(world, self.directory.parent / "data" / "players.csv")
             upgrade_history(world)
             initialize_reputation(world)
             initialize_targets(world)
@@ -512,6 +525,8 @@ def _source_attributes(world: dict, source_path: Path, wanted: set[int], names: 
 # them back, with the values it held, to have its fingerprint checked (see `_config_matches`). A rule changed before typing,
 # like the attribute list of schema 40, is given back the same way.
 RETIRED_RULES = (
+    # The error on a potential is read in stars, by age, exposure and observer (see `MIGRATION_DEFAULTS`).
+    (45, ("demographie", "estimation_potentiel"), ("bruit_max", "bruit_min", "demi_largeur_en_ecarts_types")),
     # A rating counts the danger an action adds or takes away, no longer a scale of its own for each action, nor the result.
     (42, ("moteur_match", "notes_joueurs"), ("tir_cadre_sans_but", "arret", "but_encaisse_gardien", "progression_par_zone",
                                               "recuperation_par_zone", "perte_par_zone", "defenseur_elimine", "passe_cle",
@@ -634,6 +649,30 @@ def _choose_formations(world: World) -> None:
     for event in formation_events(world, margin=False): apply(world, event)
 
 
+def _expose_players(world: World, source_path: Path) -> None:
+    """Schema 45: the world knows a player by the matches he played. A player of the import is worth what his reputation
+    in the exact source CSV and his caps then were; everyone adds what the game has recorded him playing since."""
+    from core.world.estimates import imported_exposure, match_weight
+    cfg = world.config
+    reputations = {}
+    if source_path.is_file():
+        raw = source_path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() == world.source_hashes.get("players.csv"):
+            source = cfg.import_settings.source_format
+            reader = csv.DictReader(io.StringIO(raw.decode(source.encoding)), delimiter=source.delimiter)
+            reputations = {int(row["UID"]): float(row["CurrentReputation"]) for row in reader if row.get("CurrentReputation")}
+    match_minutes = cfg.engine.timing.match_seconds / 60
+    for player in [*world.players.values(), *world.international.temporary.values()]:
+        player.exposure = imported_exposure(reputations.get(player.id), player.historical_caps, cfg) if player.source_current_ability else 0.0
+    for record in world.records.values():
+        player, competition = world.players.get(record.player_id), world.competitions.get(record.competition_id)
+        if player is not None and competition is not None:
+            player.exposure += record.minutes / match_minutes * match_weight(cfg, competition.kind, competition.level)
+    for record in world.international.records.values():
+        if (player := world.players.get(record.player_id)) is not None:
+            player.exposure += record.minutes / match_minutes * match_weight(cfg, "international", 0)
+
+
 def _assign_greed(world: World, source_path: Path) -> None:
     """Schema 19 gave players an appetite for money: from the exact source CSV's loyalty, drawn otherwise."""
     loyalties = {}
@@ -741,7 +780,6 @@ def _upgrade_configured_positions(world: World) -> None:
 # Rules recalibrated by schema 29, as (domain, section, inner section if any, key, value shipped before, value shipped since).
 RECALIBRATED_RULES = (("management", "budgets", "accounting", "other_cost_share", 0.15, 0.30),
                       ("management", "guardrails", None, "min_balance", -5000000, 0),
-                      ("demography", "potential_estimate", None, "max_noise", 22.0, 10.0),
                       ("demography", "cohort", None, "sorting_reputation_weight", 0.0, 1.0))
 # Rules recalibrated by schema 31, in the same form: a slower recovery, a stronger link between fatigue and injuries,
 # and an AI that rests its starters sooner. Its smaller credit per save was retired with the scale by schema 42.

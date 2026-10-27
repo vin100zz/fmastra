@@ -176,7 +176,6 @@ def squad_line(world: World, player_id: int, **fields) -> dict:
 def offers_body(world: World, item: NewsItem) -> dict:
     """The offers of a message, highest first, each with its answer; the value of the player and whether the club
     keeps him off the market (`untouchable`), both None once he has left it."""
-    from core.ai.market import market_value
     from core.world.human import untouchable
     player = world.players.get(item.player_id)
     own = player is not None and player.club_id == item.club_id
@@ -185,7 +184,7 @@ def offers_body(world: World, item: NewsItem) -> dict:
         if line.state != PENDING: return line.state
         offer = world.offers.get(line.key)
         return PENDING if offer is not None and offer.awaiting_review else "lapsed"
-    return {"player": player_ref(world, item.player_id), "value": market_value(player, world) if own else None,
+    return {"player": player_ref(world, item.player_id), "value": v.seen_value(world, player) if own else None,
             "untouchable": untouchable(world, player.id) if own else None,
             "offers": [{"key": line.key, "club": v.club_ref(world, line.club_id), "fee": line.amount, "state": state(line)}
                        for line in sorted(item.lines, key=lambda line: (-line.amount, line.key))]}

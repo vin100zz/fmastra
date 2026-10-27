@@ -25,18 +25,22 @@ def client(config, tmp_path_factory):
         yield client
 
 
-def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
+def test_player_lists_and_profiles_show_stars_and_sort_on_them(client):
     world = client.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}
     club_id = next(iter(world.active_clubs())).id
     squad = client.get(f'/api/clubs/{club_id}/effectif?tri=potential&ordre=desc').json()['items']
+    # The exact values stay for the debug mode; the stars are what the lists show and sort on.
     assert squad and all(row['potential'] == round(world.players[row['id']].potential, 1) for row in squad)
     assert 'potential_estimate' not in squad[0]
-    assert [row['potential'] for row in squad] == sorted((row['potential'] for row in squad), reverse=True)
+    middle = lambda row: (sum(row['stars']['potential']) / 2, row['stars']['level'])
+    assert all(row['stars']['level'] <= row['stars']['potential'][0] <= row['stars']['potential'][1] for row in squad)
+    assert [middle(row) for row in squad] == sorted((middle(row) for row in squad), reverse=True)
     ascending = client.get('/api/joueurs?tri=potential&ordre=asc').json()['items']
-    assert [row['potential'] for row in ascending] == sorted(row['potential'] for row in ascending)
-    top = client.get('/api/joueurs?tri=potential&ordre=desc').json()['items']
-    assert top[0]['potential'] == max(round(player.potential, 1) for player in world.players.values())
+    assert [middle(row) for row in ascending] == sorted(middle(row) for row in ascending)
+    levels = client.get('/api/joueurs?tri=rating&ordre=desc').json()['items']
+    assert [row['stars']['level'] for row in levels] == sorted((row['stars']['level'] for row in levels), reverse=True)
+    assert {'level', 'level_deviation', 'potential', 'lower', 'upper', 'deviation'} <= set(squad[0]['estimate'])
     player = world.players[squad[0]['id']]
     detail = client.get(f'/api/joueurs/{player.id}').json()
     assert detail['potential'] == round(player.potential, 1) and detail['rating'] <= detail['potential']
@@ -54,12 +58,15 @@ def test_player_lists_and_profiles_show_exact_potential_and_sort_by_it(client):
 def test_lists_take_a_page_size_several_positions_and_both_bounds_of_a_range(client):
     world = client.app.state.game.world
     states = {key: rng.getstate() for key, rng in world.rngs.items()}
-    page = client.get('/api/joueurs?taille=12&poste=GB,BU&niveau_max=60&potentiel_max=80&tri=rating').json()
+    page = client.get('/api/joueurs?taille=12&poste=GB,BU&niveau_max=3&potentiel_max=4&tri=rating').json()
     assert page['page_size'] == 12 and len(page['items']) == 12
     assert {row['position'] for row in page['items']} <= {'GB', 'BU'}
-    assert all(row['rating'] <= 60 and row['potential'] <= 80 for row in page['items'])
-    assert page['total'] == sum(player.position in ('GB', 'BU') and player.rating <= 60 and player.potential <= 80 for player in world.players.values())
-    floor = sorted(v.market_value(player, world) for player in world.players.values())[len(world.players) // 2]
+    # Bounds in stars, the potential at the middle of its band.
+    assert all(row['stars']['level'] <= 3 and sum(row['stars']['potential']) / 2 <= 4 for row in page['items'])
+    seen = {player.id: v.scouting(world, player)['stars'] for player in world.players.values() if player.position in ('GB', 'BU')}
+    assert page['total'] == sum(stars['level'] <= 3 and sum(stars['potential']) / 2 <= 4 for stars in seen.values())
+    assert client.get('/api/joueurs?niveau_min=6').status_code == 422
+    floor = sorted(v.seen_value(world, player) for player in world.players.values())[len(world.players) // 2]
     assert all(row['value'] >= floor for row in client.get(f'/api/joueurs?valeur_min={floor}&tri=value&ordre=asc').json()['items'])
     for bad in (5, 500): assert client.get(f'/api/joueurs?taille={bad}').status_code == 422
     # The season's figures sort the list of the world's players.
@@ -120,13 +127,14 @@ def test_retirements_and_promotions_take_their_filters_and_come_with_their_summa
     assert retired['type'] == 'retirement' and retired['sort'] == 'caps'
     assert client.get('/api/monde/transferts?type=retirement').json()['sort'] == 'rating'
     assert client.get('/api/monde/transferts?type=retirement&selectionnes=non').status_code == 422
-    promoted = client.get('/api/monde/transferts?type=academy&poste=MC&pays=FRA&niveau_min=20&niveau_max=90&potentiel_min=50&potentiel_max=100&interesse=oui&tri=progress').json()
-    assert promoted['type'] == 'academy' and promoted['sort'] == 'progress' and 'nations' in promoted
+    promoted = client.get('/api/monde/transferts?type=academy&poste=MC&pays=FRA&niveau_min=1&niveau_max=4.5&potentiel_min=2&potentiel_max=5&interesse=oui&tri=level').json()
+    assert promoted['type'] == 'academy' and promoted['sort'] == 'level' and 'nations' in promoted
+    assert client.get('/api/monde/transferts?type=academy&tri=progress').status_code == 422
     for sort in ('level', 'worth', 'wage_demand', 'interested', 'passe', 'tir'):
         assert client.get(f'/api/monde/transferts?type=academy&tri={sort}').json()['sort'] == sort
-    assert client.get('/api/monde/transferts?type=academy&niveau_min=101').status_code == 422
+    assert client.get('/api/monde/transferts?type=academy&niveau_min=6').status_code == 422
     for kind, keys in (('retirement', {'total', 'average_age', 'capped', 'oldest', 'ages', 'clubs', 'leagues'}),
-                       ('academy', {'total', 'average_potential', 'best', 'average_progress', 'bins', 'academies', 'nations'})):
+                       ('academy', {'total', 'average_potential', 'best', 'bins', 'academies', 'nations'})):
         summary = client.get(f'/api/monde/transferts/resume?type={kind}').json()
         assert summary['season'] == world.season and keys <= summary.keys()
     assert client.get('/api/monde/transferts/resume?type=invalid').status_code == 422
@@ -345,8 +353,8 @@ def test_views_pagination_and_no_rng_leak(client):
     cap = values[len(values) // 2]
     capped = client.get(f'/api/joueurs?valeur_max={cap}').json()
     assert capped['items'] and all(row['value'] <= cap for row in capped['items']) and capped['total'] < first['total']
-    promising = client.get('/api/joueurs?potentiel_min=75').json()
-    assert promising['items'] and all(row['potential'] >= 75 for row in promising['items']) and promising['total'] < first['total']
+    promising = client.get('/api/joueurs?potentiel_min=4').json()
+    assert promising['items'] and all(sum(row['stars']['potential']) / 2 >= 4 for row in promising['items']) and promising['total'] < first['total']
     # The asking price sorts and filters like the value; players their clubs will not sell come last, and never under a cap.
     priced = client.get('/api/joueurs?tri=asking_price&page=1').json()['items']
     prices = [row['asking_price'] or 0 for row in priced if row['transferable']]
@@ -825,7 +833,8 @@ def test_the_lineup_screen_scouts_the_next_opponent(played):
     rival = world.clubs[scout["club"]["id"]]
     assert scout["club"]["formation"] == rival.formation
     assert len(scout["key_players"]) <= 3
-    assert [player["rating"] for player in scout["key_players"]] == sorted((player["rating"] for player in scout["key_players"]), reverse=True)
+    # Its best as the user's club reads them, never by the hidden levels.
+    assert [player["estimate"]["level"] for player in scout["key_players"]] == sorted((player["estimate"]["level"] for player in scout["key_players"]), reverse=True)
     assert all(player["injured_until"] or player["suspension"] for player in scout["absent"])
     assert scout["record"]["venue"] == ("away" if scout["home"] else "home")
     venue = [match for match in world.matches.values() if match.season == world.season and match.result and match.competition_id == rival.competition_id

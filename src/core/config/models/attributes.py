@@ -39,6 +39,13 @@ class AttributesConfigGenerationProfiles:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class AttributesConfigStars:
+    thresholds: tuple[float, ...] = Field(default=(45.0, 50.0, 55.0, 59.0, 63.0, 67.0, 71.0, 76.0, 82.5), alias="seuils")
+    floor: float = Field(default=35.0, alias="plancher")
+    top: float = Field(default=6.0, alias="etoiles_au_maximum")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class AttributesConfigOutOfPosition:
     base: float = Field(alias="base")
     factor: float = Field(alias="facteur")
@@ -52,3 +59,4 @@ class AttributesConfig:
     overall: FrozenMap[FrozenMap[float]] = Field(alias="note_globale")
     generation_profiles: AttributesConfigGenerationProfiles = Field(alias="profils_generation")
     out_of_position: AttributesConfigOutOfPosition = Field(alias="malus_hors_poste")
+    stars: AttributesConfigStars = Field(default_factory=AttributesConfigStars, alias="etoiles")

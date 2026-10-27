@@ -61,9 +61,10 @@ la structure HTML des spécimens.
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
+| `--star`, `--star-soft`, `--star-empty` et `--star-soft-dark`, `--star-empty-dark` | Étoiles : l'or de ce qui est sûr, l'ardoise de ce qui n'est que possible, une étoile vide ; sur le noir d'un bloc de terrain, l'ardoise et le vide éclaircis (voir « Étoiles ») |
 | `--series-1`, `--series-2`, leur `-soft` et leur `-deep` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre ; en foncé, une troisième part de la même série |
 
-Trois familles de pastilles ne se ressemblent jamais :
+Trois familles de pastilles ne se ressemblent jamais, et les étoiles (voir « Étoiles ») sont à part de toutes, dans leur or :
 
 - **Note** : fond pâle gradué, sans bordure, du rouge (jusqu'à 70 sur 200, 4
   sur 20) au jaune (110 ; 10) puis au vert (à partir de 150 ; 16).
@@ -166,6 +167,11 @@ où le fond est déjà jaune.
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile n'a pas de bordure : grise dans une carte, blanche et en relief sur un bandeau, blanche et posée comme une carte dans une rangée (`.tiles.row`). Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau. Sur un bandeau et dans une rangée de tuiles, le contenu de chaque tuile est centré horizontalement, celui de chaque colonne dans la sienne |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Dans une section, les attributs suivent l'ordre alphabétique de leurs noms ; les composites, l'ordre des phases du jeu. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
 | Attributs en colonnes | `.attribute-columns`, `.attribute-column`, `.composites-column`, `.others-column`, `.attribute-rows` | Sur la fiche d'un joueur, une colonne par section, Jeu en tête : son bandeau `.section-title` sans trait au-dessus, les bandeaux formant une seule bande, un trait `--row-line` entre deux colonnes, ses lignes à 12 des bords. Les colonnes se partagent la largeur, aucune plus étroite que `--attribute-column` et ses marges ; la dernière passe à la ligne quand la carte ne les tient pas. La carte s'arrête à sa plus longue colonne. Ce que le poste n'emploie pas (`.others-column`) ferme la rangée, ses noms en `--muted`, ses pastilles neutres |
+| Étoiles | `.stars`, `.stars.big` | Niveau, potentiel, composite, note au poste, installations d'un club : cinq étoiles, demi-étoiles comprises, la fourchette d'une estimation en ardoise. Voir « Étoiles » |
+| Affinité à un poste | `.fit` | Un disque rempli à sa part de 20, à la couleur de son palier. Voir « Étoiles » |
+| Trait d'un club | `.trait`, `.poles` | Un mot et son cran, de cinq, entre deux pôles. Voir « Étoiles » |
+| État d'un joueur | `.cells`, `.arrow`, `.face`, `.state` | Condition, forme, moral en cinq paliers, sans chiffre. Voir « État, forme, moral » |
+| Mode debug | `.pill.debug` | Dans la barre du haut, tant que « Valeurs exactes » est cochée dans Ma partie. Voir « Étoiles » |
 | Pastilles | `.position`, `.rating`, `.comp`, `.score`, `.form`, `.tag`, `.count`, `.pill`, `.rank`, `.reached`, `.delta` | 18 de haut, aux coins de 4 ; un poste, 32 de large ; un rang, 24 ; `.pill` dit en une phrase où en est un joueur ; `.reached` le tour atteint dans une coupe, `.delta` un écart signé. Voir « Historique » |
 | Légende des places | `.legend` | La pastille du rang en carré de 12, devant ce qu'elle marque : une place, une coupe d'Europe. Voir « Classement » |
 | Club, pays | `.kit-dot`, `.crest`, `.flag`, `.nation`, `.club-flag` | Voir « Clubs et pays » |
@@ -566,9 +572,9 @@ neutre, sans écusson.
   poste n'y est pas : il se lit sur le terrain des aptitudes.
 - **Tuiles**, dans cet ordre : âge, sélection, niveau et potentiel, valeur et
   prix demandé.
-- **Niveau et potentiel** : une tuile de deux colonnes graduées
-  (`.tile.split > .graded`), chacune sur le fond et dans l'encre de sa
-  pastille, un trait du panneau entre les deux.
+- **Niveau et potentiel** : une tuile de deux colonnes (`.tile.split`), leurs
+  étoiles de 16 (`.stars.big`), sans fond gradué : la couleur dirait la
+  valeur que les étoiles arrondissent. Ni infobulle, ni « sur 200 ».
 - **Valeur et prix demandé** : une tuile de deux colonnes (`.tile.split`) ; le
   prix « N/A » quand personne ne peut le demander, la raison en infobulle.
 - **Sélection** (`.tile.split`) : une tuile de trois colonnes, un trait entre
@@ -1023,12 +1029,12 @@ Un seul terrain et un seul joueur, sur tous les écrans.
 
 | Écran | Première ligne | Seconde ligne |
 |---|---|---|
-| Composition | Nom | Note au poste sur 200, forme, affinité |
+| Composition | Nom | Note au poste en étoiles, forme, affinité |
 | Match | Nom | Note du match, faits du match |
 | Direct · tactique | Nom | Note du match, faits du match |
-| Joueur · aptitudes | Note au poste sur 200, affinité | — |
-| Présentation d'un club · équipe-type | Nom | Matches / buts et le ballon, en bleu pâle ; avant le premier match, note au poste sur 200 |
-| Présentation d'une sélection · équipe-type | Nom (le poste sur le maillot) | Matches / buts et le ballon, en bleu pâle ; avant le premier match de l'édition, note au poste sur 200 |
+| Joueur · aptitudes | Note au poste en étoiles, affinité | — |
+| Présentation d'un club · équipe-type | Nom | Matches / buts et le ballon, en bleu pâle ; avant le premier match, note au poste en étoiles |
+| Présentation d'une sélection · équipe-type | Nom (le poste sur le maillot) | Matches / buts et le ballon, en bleu pâle ; avant le premier match de l'édition, note au poste en étoiles |
 
 Les aptitudes d'un joueur n'ont pas de liste à côté de leur terrain : le bloc de
 chaque poste en tient lieu, sur un terrain de 280 de large.
@@ -1136,15 +1142,21 @@ trait seul est dessiné.
 
 ### Niveau au fil des mois
 
-`.level-chart` : le niveau d'un joueur, sur 200, mois après mois, dessiné à la
-taille de sa carte.
+`.level-chart` : le niveau d'un joueur, en étoiles, mois après mois, dessiné à
+la taille de sa carte.
 
-- Un trait de 2 en `--series-1`, un point par mois ; l'abscisse est le temps.
+- L'ordonnée en étoiles : une ligne `--row-line` par demi-étoile, pointillée
+  entre deux étoiles, le nombre d'étoiles (« 3 ★ ») à chaque étoile, jusqu'à cinq.
+- Un trait de 2 en `--series-1`, un point par mois : le niveau tel que le club
+  dirigé le lisait ce mois-là ; l'abscisse est le temps.
+- Au-dessus, la fourchette du potentiel en bande pâle (`.band`,
+  `--series-1-soft` voilé) : elle se resserre avec l'âge et à mesure qu'il joue.
 - La pastille du club où il jouait ce mois-là, en 12 (`.kit-dot`, grise
   sans club), cerné du fond, à l'ouverture de chaque saison et au dernier mois.
-- Le niveau s'écrit au premier et au dernier point, en 16 `--display`.
-- L'ordonnée, une ligne `--row-line` par graduation, et les dates sont en
-  `--muted`, en 13 : du texte, pas du dessin étiré.
+- Les étoiles du premier et du dernier point s'écrivent à côté d'eux, jamais un
+  chiffre ; le mode debug les donne dans l'infobulle des points.
+- L'ordonnée et les dates sont en `--muted`, en 13 : du texte, pas du dessin
+  étiré.
 
 ### Classement de joueurs
 
@@ -1164,12 +1176,14 @@ notes de la Présentation d'un club ; l'Historique classe les siens en tableaux)
 
 ### Jauge, anneau
 
-- **Jauge** (`.gauge`) : 40 × 4, à côté d'un chiffre (condition, fatigue, part
-  d'un plafond) ; verte, jaune (`.warn`) ou rouge (`.bad`), ou dans la couleur
-  de la note qu'elle dessine (`.graded` : le moral).
-- **Jauge signée** (`.gauge.signed`) : une valeur qui va dans les deux sens (la
-  forme) part du milieu de sa barre, marqué d'un trait : verte vers la droite,
-  rouge vers la gauche, vide quand elle ne change rien.
+- **Jauge** (`.gauge`) : 40 × 4, à côté d'un chiffre (part d'un plafond,
+  masse salariale) ; verte, jaune (`.warn`) ou rouge (`.bad`), ou dans la
+  couleur de la note qu'elle dessine (`.graded`). La condition, la forme et le
+  moral d'un joueur n'en ont plus : ils se lisent en paliers (voir « État,
+  forme, moral »).
+- **Jauge signée** (`.gauge.signed`) : une valeur qui va dans les deux sens part
+  du milieu de sa barre, marqué d'un trait : verte vers la droite, rouge vers la
+  gauche, vide quand elle ne change rien.
 - **Anneau** (`.ring`) : 56, rempli à la part d'un plafond qui reste libre,
   écrite en son centre ; rouge quand il en reste 5 % ou moins (`.ring.full`).
 
@@ -1236,6 +1250,63 @@ ouvre sa saison.
 - L'hiver de la saison en cours, pas encore ouvert, garde son axe, en
   pointillé (`--line`).
 
+### Étoiles
+
+Le niveau et le potentiel d'un joueur ne s'écrivent jamais en chiffres : le
+jeu les cache, chacun n'en voit qu'une estimation (le manuel, « Ce que l'on voit
+d'un joueur »). Ils se lisent en étoiles (`.stars`), comme les notes sans
+doute qu'on en rapproche : composites, note au poste, moyennes d'un club,
+installations.
+
+- **Cinq étoiles**, demi-étoiles comprises, de la demi-étoile aux cinq : chaque
+  demi-étoile est une classe de niveau, aux seuils de la configuration
+  (`attributs.etoiles`), plus serrés en haut de l'échelle.
+- **Couleurs** : l'or de ce qui est sûr (`--star`), l'ardoise de ce qui n'est
+  que possible (`--star-soft`), une étoile vide (`--star-empty`). L'or n'est ni
+  une note ni un poste : les étoiles ne prennent pas la couleur de leur note,
+  qui dirait la valeur qu'elles arrondissent.
+- **Fourchette** : le potentiel s'écrit en or jusqu'à sa borne basse, en
+  ardoise jusqu'à sa borne haute ; une estimation sans doute n'a que de l'or.
+- **Tailles** : 12 dans un tableau (cinq étoiles, un pixel entre deux, 64 de
+  large), 16 sur une tuile (`.big`, deux pixels entre deux), 8 sans écart sur un
+  terrain, où l'ardoise et le vide s'éclaircissent sur le noir du bloc
+  (`--star-soft-dark`, `--star-empty-dark`) ; sur le bloc d'un joueur choisi, à
+  l'encre de l'accent.
+- **Tri** : une colonne d'étoiles se trie sur ses étoiles, le potentiel sur le
+  milieu de sa fourchette, jamais sur la valeur cachée.
+- **Filtre** : une fourchette en demi-étoiles, Min. et Max. ; trois valeurs
+  toutes prêtes (« ★★★ et plus ») ; posé, le bouton lit ses étoiles.
+- **Infobulle** : aucune sur des étoiles, sauf en **mode debug** : coché dans
+  Ma partie (« Valeurs exactes »), une pastille `.pill.debug` dans la barre du
+  haut le rappelle, et l'infobulle donne l'estimation, la fourchette, la valeur
+  réelle et l'erreur type, sur 200.
+- **Installations d'un club** : sa note sur 20 en étoiles, une étoile tous les
+  quatre points, à la demi-étoile la plus proche.
+
+Deux mesures à part, qui ne sont pas des qualités :
+
+- **Affinité à un poste** (`.fit`) : un disque de 12 rempli à sa part de 20,
+  à la couleur de son palier, Naturel (20), Confirmé (15), Correct (10),
+  Hésitant (5), Maladroit ; le mot dans l'infobulle. Sur un terrain, sous 20
+  seulement.
+- **Trait de la personnalité d'un club** (`.trait`, `.poles`) : ni bon ni
+  mauvais, un mot, puis son cran de cinq entre deux pôles, plein à l'encre :
+  Risque (Frileux, Prudent, Mesuré, Audacieux, Flambeur), Jeunes (Fermé,
+  Réservé, Équilibré, Ouvert, Formateur), Patience (Pressé, Expéditif, Posé,
+  Patient, Inflexible).
+
+### État, forme, moral
+
+L'état d'un joueur se lit en cinq paliers, sans chiffre, chacun son icône ;
+dans une liste l'icône seule, le mot en infobulle ; sur sa fiche, l'icône et le
+mot. Le mode debug ajoute le chiffre à l'infobulle.
+
+| État | Icône | Paliers |
+|---|---|---|
+| Condition | `.cells` : cinq crans de 6 × 10, verts, jaunes ou rouges | Frais (95 %), Bon (85 %), Juste (75 %), Fatigué (60 %), Épuisé |
+| Forme | `.arrow` : une flèche dans un rond de 16, tournée de 45° par palier, verte, grise ou rouge | Excellente (+10 %), Bonne (+3 %), Normale, Mauvaise (−3 %), Très mauvaise (−10 %) |
+| Moral | `.face` : un visage de 16 à la couleur de son palier, la bouche de son humeur ; la flèche vers où il va et la cause après lui | Excellent (85 %), Bon (70 %), Correct (55 %), Bas (40 %), Au plus bas |
+
 ## Conventions d'écriture
 
 ### Nombres
@@ -1268,10 +1339,10 @@ marques des joueurs, buteurs sous un score, compteur du résumé et du direct
 |---|---|---|
 | Note d'un match | Un chiffre après le point | 7.8 |
 | Note moyenne d'une saison | Deux chiffres après le point | 7.81 |
-| Niveau, potentiel, note au poste | Entier, sur 200 | 168 |
+| Niveau, potentiel, note au poste, composite | En étoiles, jamais en chiffres (voir « Étoiles ») | ★★★½ |
 | Attribut, affinité | Entier, sur 20 | 14 |
 | Trait du caractère | Entier, sur 20 | 12 |
-| Forme | Effet signé, en pour cent | +6 % |
+| Condition, forme, moral | Cinq paliers, sans chiffre (voir « État, forme, moral ») | Juste |
 
 Un trait du caractère se lit selon ce qu'il coûte : l'ambition et l'appât du
 gain, ni bons ni mauvais, en pastille neutre ; l'agressivité et la fragilité, qui
@@ -1530,7 +1601,7 @@ sa pastille n'en est pas un (ci-dessus), ni :
 - **Liste de joueurs** : les mêmes colonnes sur tous les écrans (effectif,
   rassemblement, Joueurs, promotions du Mercato mondial), chacune de ce
   qu'elle tient, sans ses marges de 8 : poste 36 · nationalité 54 · âge,
-  sélections 24 · niveau, potentiel, note 32 · valeur, salaire 48 · prix
+  sélections 24 · note 32 · niveau, potentiel, composite 64 · valeur, salaire 48 · prix
   minimum, prétentions, état 80 · listé 34 · intéressé 60 · contrat 78 · forme
   46 · moral 72 · matches 40 · buts 30 · passes, cartons 16 · promotion 76 ·
   données 88 ; un attribut ou un composite, sa pastille de 32. À côté d'un
@@ -1557,6 +1628,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Terrain et maillot | `.pitch` et `.kit-shirt` sur la composition, le match, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), les buts en grappe au coin du maillot (`.kit-goals`), la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
+| Étoiles et états | Niveau, potentiel, composites, notes au poste et installations en étoiles (`stars`, `noteStars`, `levelStars`, `potentialStars`, `facilityRating`, `web/ui.js`) à la place des pastilles sur 200 et des notes sur 20 des installations ; la personnalité d'un club en mots et crans (`.trait`) ; l'affinité en disque (`affinityIcon`) ; condition, forme et moral en paliers (`conditionIcon`, `formIcon`, `moraleCell`, `moraleFace`) à la place des jauges et des pourcentages ; la courbe du niveau en étoiles ; le mode debug (`setDebugMode`) |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
 | Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`) et les finances sous elles (`financesBlock`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
@@ -1663,3 +1735,5 @@ La Présentation d'un club a la sienne (proposition C, « La saison d'abord », 
 <https://claude.ai/artifact/V9bTNBNEmjtxw9NA7VkDkh>.
 Les transferts d'un club ont la leur (proposition B, « Les mercatos en registre ») :
 <https://claude.ai/artifact/4i36yB8GTgitMjDNd4K7jK>.
+Les étoiles, les états en paliers et le mode debug ont la leur (couleurs « D », or foncé
+et ardoise) : <https://claude.ai/artifact/Kkbr8MeepmpbnckTAp2fsR>.

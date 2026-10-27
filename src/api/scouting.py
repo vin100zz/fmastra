@@ -21,18 +21,20 @@ def scouting(world: World, match: Match | None, club_id: int) -> dict | None:
               and item.competition_id == rival.competition_id and (item.away_id if home else item.home_id) == rival_id]
     letters = [outcome(rival_id, item) for item in played]
     first_team = [player for pid in rival.player_ids if (player := world.players[pid]).reserve_since is None]
-    best = sorted(first_team, key=lambda player: (-player.rating, player.id))[:KEY_PLAYERS]
+    # Its best as the user's club reads them, never by the levels it cannot see.
+    seen = {player.id: v.scouting(world, player)["estimate"]["level"] for player in first_team}
+    best = sorted(first_team, key=lambda player: (-seen[player.id], player.id))[:KEY_PLAYERS]
     out = [player for player in first_team if player.injury or any(item.suspended_matches for item in player.discipline.values())]
     meetings = [item for item in world.matches.values() if item.result and {item.home_id, item.away_id} == {club_id, rival_id}]
     last = max(meetings, key=lambda item: (item.date, item.id), default=None)
 
     def person(player) -> dict:
         row = v.player_row(world, player)
-        return {key: row[key] for key in ("id", "name", "position", "rating", "injured_until", "suspension")}
+        return {key: row[key] for key in ("id", "name", "position", "rating", "stars", "estimate", "injured_until", "suspension")}
     return {"match": v.match_row(world, match), "home": home,
             "club": {**v.club_ref(world, rival_id), "formation": rival.formation},
             "standing": {key: standing[key] for key in ("rank", "points", "form")} if standing else None,
             "record": {"venue": "away" if home else "home", "won": letters.count("V"), "drawn": letters.count("N"), "lost": letters.count("D")},
             "key_players": [person(player) for player in best],
-            "absent": [person(player) for player in sorted(out, key=lambda player: (-player.rating, player.id))],
+            "absent": [person(player) for player in sorted(out, key=lambda player: (-seen[player.id], player.id))],
             "last_meeting": {**v.match_row(world, last), "outcome": outcome(club_id, last)} if last else None}

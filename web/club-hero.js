@@ -1,5 +1,5 @@
 import {nationLogoUrl} from './nation-logos.js';
-import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,level,levelHue,date,money,price,competitionLink} from './ui.js';
+import {escape as e,number as n,safeColor,contrastRatio,bandColours,legibleOn,initials,nationFlag,nationHref,nationCode,nationName,mainNationCode,flagUrl,clubLink,noteStars,stars,facilityRating,PERSONALITY_WORDS,personalityNotch,poles,levelStars,potentialStars,date,money,price,competitionLink} from './ui.js';
 
 const DARK_INK='#111418',LIGHT_INK='#ffffff',DARK_PANEL='#161b22';
 const inkOn=background=>contrastRatio(background,DARK_INK)>=contrastRatio(background,LIGHT_INK)?DARK_INK:LIGHT_INK;
@@ -91,8 +91,8 @@ function tabs(base,menu,section,tools=''){
  return tools?`<div class="club-hero-foot">${nav}<div class="tools">${tools}</div></div>`:nav;
 }
 
-// A level or a potential out of 200 on a column graded as its badge; a dash without one.
-const grade=(label,value,title)=>value==null?column(label,'—'):column(label,level(value),title,levelHue(level(value)));
+// A mean level or potential in stars on a column, without doubt (« Étoiles »); a dash without one.
+const grade=(label,value)=>value==null?column(label,'—'):column(label,noteStars(value,label,true));
 
 // The header of a club page: its colours, its crest, its name and its league after it, then the level and the potential of
 // its 16 best players on one tile of two graded columns, and its reputation (with how far the last review moved it); the
@@ -107,15 +107,17 @@ export function clubHero(club,{lead='',menu,section,tools=''}){
   :context(`${flag&&selection?`<a href="${selection}">${flag}</a>`:flag}<a href="#/league/${club.competition_id}">${e(club.competition)}</a>`);
  return hero({colors:heroColors(club.major_color,club.minor_color),lead,name:club.name,foot:tabs(`#/club/${club.id}`,menu,section,tools),
   crest:clubCrest(club),after,
-  tiles:split(grade('Niveau',club.top_rating,'Niveau moyen des 16 meilleurs sur 200')+grade('Potentiel',club.top_potential,'Potentiel moyen des 16 meilleurs sur 200'))
+  tiles:split(grade('Niveau',club.top_rating)+grade('Potentiel',club.top_potential))
    +tile('Réputation',club.reputation==null?'—':n(club.reputation),change)});
 }
 
-// The three traits of a club's personality the market reads, out of 20, each tooltip saying what it makes the club do.
+// The three traits of a club's personality the market reads, each a word and its notch between two poles, the tooltip saying
+// what it makes the club do.
 const PERSONALITY=[
- ['risk_appetite','Risque','Appétit du risque sur 20 : plus il est haut, plus le club paie cher les joueurs qu’il recrute'],
- ['youth_preference','Jeunes','Préférence pour les jeunes sur 20 : plus elle est haute, plus le club fait jouer et progresser ses jeunes, et plus il recrute d’espoirs'],
- ['negotiation_patience','Patience','Patience en négociation sur 20 : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps']];
+ ['risk_appetite','Risque','Appétit du risque : plus il est haut, plus le club paie cher les joueurs qu’il recrute'],
+ ['youth_preference','Jeunes','Préférence pour les jeunes : plus elle est haute, plus le club fait jouer et progresser ses jeunes, et plus il recrute d’espoirs'],
+ ['negotiation_patience','Patience','Patience en négociation : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps']];
+const trait=(key,share)=>`<span class="trait">${PERSONALITY_WORDS[key][personalityNotch(share)-1]}${poles(share)}</span>`;
 
 // The row of tiles that opens a club's Présentation: its place in each competition of the season on one tile (`competitions`,
 // the record of its calendar: the rank in its league, else how far it went), its players and their mean age on another, its
@@ -128,9 +130,9 @@ export function clubTiles(club,competitions=[]){
  };
  const seasons=competitions.length?split(competitions.map(row=>`<div><span>${competitionLink(row,{badge:true})}</span><strong>${place(row)}</strong></div>`).join('')):'';
  return `<div class="club-tiles">${seasons}${split(column('Joueurs',club.squad_size==null?'—':n(club.squad_size))+column('Âge moyen',club.average_age==null?'—':n(club.average_age)))}`
-  +`${tile('Tactique',e(club.formation||'—'))}${split(column('Entraînement',club.training_facilities==null?'—':n(club.training_facilities),'Entraînement sur 20')
-   +column('Recrutement',club.youth_recruitment==null?'—':n(club.youth_recruitment),'Recrutement des jeunes sur 20'))}`
-  +(club.personality?split(PERSONALITY.map(([key,label,title])=>column(label,Math.round(1+club.personality[key]*19),title)).join('')):'')
+  +`${tile('Tactique',e(club.formation||'—'))}${split(column('Entraînement',facilityRating(club.training_facilities,true))
+   +column('Recrutement',facilityRating(club.youth_recruitment,true),'Recrutement des jeunes'))}`
+  +(club.personality?split(PERSONALITY.map(([key,label,title])=>column(label,trait(key,club.personality[key]),title)).join('')):'')
   +`${tile('Valeur',club.squad_value==null?'—':price(club.squad_value),'','Valeur de l’effectif')}</div>`;
 }
 
@@ -225,7 +227,7 @@ function selectionTile(player){
 
 // The header of a player's page is his club's: its colours on the band, its crest on the disc, his number before his name,
 // as large and veiled, and the club after it, smaller (a plain band and « Libre » without a club). On the right his age,
-// what he did for his selection, his level and his potential on one tile of two graded columns, his market value and the
+// what he did for his selection, his level and his potential in stars on one tile of two columns, his market value and the
 // fee asked for him (N/A when nobody can be asked) on another. `lead` steps through the squad; `foot` is what the user can
 // do with him, where a club has its tabs.
 export function playerHero(player,{lead='',foot=''}){
@@ -234,6 +236,6 @@ export function playerHero(player,{lead='',foot=''}){
  const number=club&&player.shirt!=null?`<span class="club-hero-number" title="Numéro de maillot">${n(player.shirt)}</span>`:'';
  return hero({colors:heroColors(club?.major_color,club?.minor_color),lead,name:player.name,foot,crest:club?clubCrest(club):'',before:number,
   after:club?context(e(club.name),`#/club/${club.id}`):context('Libre'),
-  tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${split(grade('Niveau',player.rating,'Niveau actuel sur 200')+grade('Potentiel',player.potential,'Potentiel sur 200'))}`
+  tiles:`${tile('Âge',player.age,'',`Né le ${date(player.born)}`)}${selectionTile(player)}${split(column('Niveau',levelStars(player,true))+column('Potentiel',potentialStars(player,true)))}`
    +split(column('Valeur',price(player.value),'Valeur de marché')+(unasked?column('Prix demandé','N/A',unasked):column('Prix demandé',price(player.asking_price))))});
 }

@@ -11,6 +11,7 @@ from core.domain.world import World
 from core.engine.abilities import overall
 from core.math import interpolate
 from core.randomness import stream
+from core.world.estimates import imported_exposure
 from core.world.finances import initial_finances
 from core.world.transfer_rules import greed_trait
 from .records import SourceClub, SourcePlayer
@@ -84,7 +85,8 @@ def create_player(row: SourcePlayer, cfg: Config, seed: int, date: Date, correct
                   greed=greed_trait(row.loyalty, cfg, seed, row.id),
                   international_caps=row.international_caps, international_goals=row.international_goals,
                   historical_caps=row.international_caps, historical_goals=row.international_goals,
-                  shirt=None if free else row.shirt)
+                  shirt=None if free else row.shirt,
+                  exposure=imported_exposure(row.reputation, row.international_caps, cfg))
 
 
 def construct_world(source_clubs: list[SourceClub], source_players: list[SourcePlayer], cfg: Config,

@@ -143,7 +143,8 @@ test('several players share a message: who, and what it says of each',async()=>{
  assert.match(html,/<a href="#\/international\/nation\/33">France<\/a>/);assert.match(html,/<li><span>Parti<\/span>/);
  const unhappy=people('morale','2 joueurs mécontents',[{player:{id:1,name:'Ada Un',gone:false},cause:'temps_de_jeu',morale:38},{player:{id:2,name:'Bob Deux',gone:false},cause:'reserve',morale:44}]);
  const mood=await screen([unhappy],unhappy,'msg=6');
- assert.match(mood,/<span>Mécontent de son temps de jeu<\/span><span class="rating graded" style="--hue:0" title="Moral">38 %<\/span>/);
+ assert.match(mood,/<span>Mécontent de son temps de jeu<\/span><span class="state" title="Moral"><svg class="face"[^>]*aria-label="Moral au plus bas"[^]*?<\/svg>Au plus bas<\/span>/);
+ assert.doesNotMatch(mood,/38 %/);
  assert.match(mood,/<span>Ne veut plus être en réserve<\/span>/);
 });
 
@@ -184,7 +185,7 @@ test('the recap of a window lists its main transfers, in the club’s division t
  assert.match(html,/<h2>Bilan du <a href="#\/transfers">mercato d’été<\/a><\/h2>/);
  assert.match(html,/<section><h3 class="section-title"><a href="#\/league\/3">Ligue 1<\/a><\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/1">Ada Un<\/a><\/span><span><a href="#\/club\/9" class="club-link">[^→]*Nice<\/a><small>→<\/small><a href="#\/club\/7" class="club-link">[^→]*Lens<\/a><\/span><b>35\sM€<\/b><\/li>/);
  // A free player comes from no club, and has his level where the fee would be.
- assert.match(html,/<a href="#\/player\/2">Bob Deux<\/a><\/span><span><span class="muted">Libre<\/span><small>→<\/small><a href="#\/club\/8" class="club-link">[^→]*Metz<\/a><\/span><span><span class="rating graded" style="--hue:120">150<\/span><\/span><\/li><\/ul><\/section>/);
+ assert.match(html,/<a href="#\/player\/2">Bob Deux<\/a><\/span><span><span class="muted">Libre<\/span><small>→<\/small><a href="#\/club\/8" class="club-link">[^→]*Metz<\/a><\/span><span><span class="stars" role="img" aria-label="4 étoiles">(<i[^>]*><\/i>){5}<\/span><\/span><\/li><\/ul><\/section>/);
  assert.match(html,/<section><h3 class="section-title">Monde<\/h3><ul class="news-lines recap"><li><span><a href="#\/player\/5">Eve Cinq<\/a><\/span>.*<b>80\sM€<\/b><\/li><\/ul><\/section>/);
 });
 

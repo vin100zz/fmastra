@@ -9,7 +9,7 @@ import {calendarContent} from './club-calendar.js';
 import {financesContent} from './club-finances.js';
 import {playerPreview} from './player.js';
 import {resetButton} from './filters.js';
-import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,choiceLinks,rangeMenu,choiceSelect} from './listing.js';
+import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,choiceLinks,rangeMenu,starRangeMenu,choiceSelect} from './listing.js';
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
@@ -65,7 +65,7 @@ export async function clubsScreen(params,leagues=[]){
  const cells=(club,index)=>[figure((data.page-1)*data.page_size+index+1),`<span class="strong">${clubLink(club)}</span>`,nationBadge(club.nation_code),club.competition?competitionLink({id:club.competition_id,name:club.competition}):'<span class="muted">Marché extérieur</span>',
   club.standing?rank(club.standing):'—',club.standing?form(club.standing.form):'—',`<span class="bar-figure">${miniBar(club.reputation/100)}<b>${n(club.reputation)}</b></span>`,
   scoreBadge(club.training_facilities,'Entraînement sur 20'),scoreBadge(club.youth_recruitment,'Recrutement des jeunes sur 20'),figure(club.squad_size),figure(club.average_age==null?'—':n(club.average_age)),
-  levelBadge(club.top_rating,'Moyenne des 16 meilleurs niveaux sur 200'),levelBadge(club.top_potential,'Moyenne des 16 meilleurs potentiels sur 200'),
+  levelBadge(club.top_rating,'Niveau'),levelBadge(club.top_potential,'Potentiel'),
   figure(club.squad_value?price(club.squad_value):'—'),figure(club.available_budget==null?'—':budget(club.available_budget)),wages(club)];
  const list=card(`${n(data.total)} clubs`,`<div class="clubs-table">${table(['#',...columns.map(([key,label,title])=>sortHeader(key,label,title))],data.items.map(cells),undefined,selected==null?undefined:data.items.map(club=>club.id===selected?'selected':''),undefined,['rang-column',...columns.map(([key])=>`${key}-column`)],undefined,selected==null?undefined:data.items.map(club=>`data-select="${club.id}"`))}</div>`,headPager(data));
  const side=selected==null?'':sidePanel('club',await clubPreview(selected));
@@ -182,11 +182,10 @@ export async function playersScreen(params){
  const [data,state]=await Promise.all([api(`/joueurs?${salarySearchParams(request)}`),api('/monde/etat')]);
  // With a club of his own, the user also reads and filters what a player asks to join it and whether he accepts to.
  const recruiting=state.controlled_club_id!=null,options={asking:true,recruiting,season:true};
- const level=(label,key,steps)=>rangeMenu(base,params,label,[[`${key}_min`,'min','min="1" max="200"'],[`${key}_max`,'max','min="1" max="200"']],{presets:steps.map(step=>[`≥ ${step}`,{[`${key}_min`]:step}])});
  const amount='min="0" step="any"';
  const toolbar=`<form class="toolbar" data-filter><h1>Joueurs</h1>${searchField(params,'Rechercher un joueur…')}${positionChips(base,params)}`
   +rangeMenu(base,params,'Âge',[['age_min','min','min="0" max="100"'],['age_max','max','min="0" max="100"']],{presets:[['≤ 21',{age_max:21}],['≤ 23',{age_max:23}],['24–28',{age_min:24,age_max:28}],['≥ 29',{age_min:29}]]})
-  +level('Niveau','niveau',[120,140,160])+level('Potentiel','potentiel',[160,170,180,190])
+  +starRangeMenu(base,params,'Niveau','niveau')+starRangeMenu(base,params,'Potentiel','potentiel')
   +rangeMenu(base,params,'Valeur',[['valeur_min','min',amount],['valeur_max','max',amount]],{unit:'M€',hint:'M€'})
   +rangeMenu(base,params,'Prix min.',[['prix_max','max',amount]],{unit:'M€',hint:'M€'})
   +rangeMenu(base,params,'Salaire',[['salaire_min','min','min="0"'],['salaire_max','max','min="0"']],{unit:'€',hint:'€'})

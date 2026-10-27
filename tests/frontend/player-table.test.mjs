@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,europeLegend,setNations,levelHue,levelBadge,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
+import {playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,europeLegend,setNations,levelHue,levelBadge,stars,starsOf,setDebugMode,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -43,7 +43,7 @@ test('a league tells the European cup of each place on its rank, dashed while th
  assert.equal(europeLegend(rows.slice(5)),'');
 });
 
-const player={id:1,name:'Test',position:'BU',age:20,nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};
+const player={id:1,name:'Test',position:'BU',age:20,stars:{level:3.5,potential:[4,5]},estimate:{level:142,level_deviation:.3,potential:168,lower:150,upper:180,deviation:1.2},nation:'FRA',nationalities:['FRA','ESP'],nationality_names:['France','Espagne'],rating:70,value:1314589,wage:12000,fitness:1,contract_end:'2028-06-30',appearances:3,minutes:131.6,goals:2,assists:1,yellows:2,reds:1,average:7.5};
 test('player list shows the main nation alone, and the value with selected sorting',()=>{
  setNations({FRA:{name:'France',display_code:'FRA',flag:'fr'},ESP:{name:'Espagne',display_code:'ESP',flag:'es'},POR:{name:'Portugal',display_code:'POR',flag:'pt'},XOP:{name:'Angola',display_code:'Angola',flag:'ao'}});
  const nation=html=>html.match(/<td[^>]*>(<span class="nation"[^]*?)<\/td>/)?.[1];
@@ -62,7 +62,7 @@ test('player list shows the main nation alone, and the value with selected sorti
 test('potential follows current level and academy columns preserve unknown data',()=>{
  const html=playerTable({items:[{...player,potential:90,promotion_date:'2025-07-01',academy_club:{id:1,name:'Centre'},data_at:'promotion'}],total:1,page_size:50},true,'','desc',{sortable:false,academy:true});
  assert.ok(html.indexOf('NIV.') < html.indexOf('POT.'));
- assert.match(html,/title="Potentiel sur 200">180</);assert.doesNotMatch(html,/POT\. EST\./);
+ assert.match(html,/aria-label="4 à 5 étoiles"/);assert.doesNotMatch(html,/POT\. EST\.|sur 200/);
  assert.match(html,/À la promotion/);assert.match(html,/CLUB FORMATEUR/);
  // Without the server's sorting the list still sorts, in the browser, by what its cells show.
  assert.doesNotMatch(html,/data-sort=/);assert.match(html,/<table data-sortable>/);
@@ -75,25 +75,34 @@ test('archived academy rows without a stored potential do not break the table',(
  assert.doesNotMatch(html,/NaN|undefined|null/);
 });
 
-test('exact potential is shown out of 200 and sortable in player and squad lists',()=>{
+test('the potential is shown as the band of stars the club reads it in, and sortable in player and squad lists',()=>{
  const players=playerTable({items:[{...player,potential:91.5,club:{id:1,name:'Club'}}],total:1,page_size:30},true,'potential','desc');
- assert.match(players,/data-order="desc" data-sort="potential">POT\.</);assert.match(players,/title="Potentiel sur 200">183</);
+ assert.match(players,/data-order="desc" data-sort="potential">POT\.</);
+ // The sure part in gold up to its lower bound, the possible one up to its upper bound.
+ assert.match(players,/<span class="stars" role="img" aria-label="4 à 5 étoiles"><i style="--f:1;--u:1"><\/i>(<i style="--f:1;--u:1"><\/i>){3}<i style="--f:0;--u:1"><\/i><\/span>/);
  const squad=playerTable({items:[{...player,potential:91.5}],total:1,page_size:30},false,'potential','asc');
  assert.ok(squad.indexOf('NIV.')<squad.indexOf('POT.')&&squad.indexOf('POT.')<squad.indexOf('VALEUR'));
- assert.match(squad,/data-order="asc" data-sort="potential">POT\.</);assert.match(squad,/title="Potentiel sur 200">183</);
+ assert.match(squad,/data-order="asc" data-sort="potential">POT\.</);
  assert.doesNotMatch(squad,/data-sort="club"/);
+ // No figure out of 200, no tooltip but in debug mode.
+ assert.doesNotMatch(players,/183|title="(Niveau|Potentiel)/);
 });
 
-test('level and potential badges share one red-yellow-green scale out of 200',()=>{
- assert.deepEqual([40,70,90,110,130,150,190].map(levelHue),[0,0,25,50,85,120,120]);
- const low=levelBadge(30,'Niveau actuel sur 200'),high=levelBadge(80,'Potentiel sur 200');
- assert.match(low,/class="rating graded" style="--hue:0" title="Niveau actuel sur 200">60</);
- assert.match(high,/style="--hue:120" title="Potentiel sur 200">160</);
+test('a note reads in stars on the scale of the configuration, half a star a class',()=>{
+ assert.deepEqual([30,45,49.9,50,63,76,82.5,99].map(starsOf),[.5,1,1,1.5,3,4.5,5,5]);
+ assert.match(levelBadge(63,'Note'),/^<span class="stars" role="img" aria-label="3 étoiles">/);
  assert.equal(levelBadge(null,'x'),'—');
+ assert.match(stars(.5),/aria-label="½ étoile"/);assert.match(stars(2.5,4),/aria-label="2½ à 4 étoiles"/);
  const html=playerTable({items:[{...player,rating:55,potential:80}],total:1,page_size:30},false);
- assert.match(html,/style="--hue:\d+" title="Niveau actuel sur 200">110</);
- assert.match(html,/style="--hue:\d+" title="Potentiel sur 200">160</);
- assert.equal((html.match(/class="rating graded"/g)||[]).length,2);
+ assert.match(html,/aria-label="3½ étoiles"/);assert.match(html,/aria-label="4 à 5 étoiles"/);
+ assert.doesNotMatch(html,/rating graded/);
+ // In debug mode, the estimates behind the stars, the exact values and the errors, in their tooltips.
+ setDebugMode(true);
+ try{
+  const told=playerTable({items:[{...player,rating:55,potential:80}],total:1,page_size:30},false);
+  assert.match(told,/title="Niveau\nEstimé 142\nRéel 110\nErreur type ± 0\.3 ★"/);
+  assert.match(told,/title="Potentiel\nFourchette 150 – 180\nEstimé 168\nRéel 160\nErreur type ± 1\.2 ★"/);
+ }finally{setDebugMode(false);}
 });
 
 test('the seasons are stepped through with one control: an arrow to each side of the one shown, which opens the list of them all',()=>{
@@ -192,11 +201,13 @@ test('sorting orders by raw values, keeps unknown ones last and ties in page ord
  table.head[0].dataset.first='asc';assert.equal(nextDirection(table,0),'asc');
 });
 
-test('figures stand on the right of their column, and the condition has its bar',()=>{
+test('figures stand on the right of their column, and the condition has its notches',()=>{
  const html=playerTable({items:[{...player,fitness:.77}],total:1,page_size:30});
  assert.match(html,/<td><span class="num">20<\/span><\/td>/);
  assert.match(html,/<span class="num">1\.3\sM€<\/span>/);
- assert.match(html,/<span class="status"><i class="mini-bar" aria-hidden="true"><i style="width:77%"><\/i><\/i>77\s%<\/span>/);
+ // Five steps, without a figure: 77 % is three notches, « Juste ».
+ assert.match(html,/<span class="status"><span class="cells warn" role="img" aria-label="Juste" title="Juste"><i class="on"><\/i><i class="on"><\/i><i class="on"><\/i><i><\/i><i><\/i><\/span><\/span>/);
+ assert.doesNotMatch(html,/77\s%/);
 });
 
 test('a list beside a preview marks the picked row and lets each row be picked; its pages can stand elsewhere',()=>{
@@ -274,7 +285,7 @@ test('the view switch marks the open view and carries the sort over only when th
 });
 
 const composites={progression_attaque:55,occasion_attaque:45.5,tir:78,tete:64.5,progression_defense:41,occasion_defense:32,arret:23.5,sortie:22};
-test('the game view lists the composites out of 200 by section, Attaque, Défense then Gardien, under their headings',()=>{
+test('the game view lists the composites in stars by section, Attaque, Défense then Gardien, under their headings',()=>{
  const html=playerTable({items:[{...player,composites,key_composites:['tir','occasion_attaque','tete']}],total:1,page_size:30},false,'tir','desc',{view:'jeu'});
  assert.deepEqual([...html.matchAll(/data-sort="(\w+)"/g)].map(match=>match[1]),
   ['position','name','age','rating','potential','progression_attaque','occasion_attaque','tir','tete','progression_defense','occasion_defense','arret','sortie']);
@@ -282,9 +293,8 @@ test('the game view lists the composites out of 200 by section, Attaque, Défens
  assert.equal((html.match(/<col class="grouped group-start">/g)||[]).length,3);
  assert.match(html,/data-order="desc" data-sort="tir"><span title="Frappe">FRA<\/span></);
  // Those the player's position asks for in colour, the others grey.
- assert.match(html,/<td><span class="rating graded" style="--hue:120" title="Frappe sur 200">156</);
- assert.deepEqual([...html.matchAll(/<span class="off-role"><span[^>]*title="([^"]+) sur 200"/g)].map(match=>match[1]),
-  ['Progression','Défense au milieu','Défense de surface','Arrêts','Sorties aériennes']);
+ assert.match(html,/<td><span class="stars" role="img" aria-label="4½ étoiles">/);
+ assert.equal((html.match(/<span class="off-role"><span class="stars"/g)||[]).length,5);
  assert.doesNotMatch(playerTable({items:[{...player,composites:undefined}],total:1,page_size:30},false,'position','asc',{view:'jeu'}),/NaN|undefined/);
 });
 
@@ -294,20 +304,22 @@ test('the view switch offers the game view beside the infos and the attributes',
  assert.doesNotMatch(playerViewSwitch('attributs','passe','desc'),/data-view="jeu"[^>]*data-view-sort/);
 });
 
-test('the squad shows form as its signed effect and morale with where it drifts and, when low, its cause',()=>{
+test('the squad shows form as its arrow and morale as its face with where it drifts and, when low, its cause',()=>{
  const rows=[{...player,form:1.111,morale:.63,morale_target:.66,morale_cause:'salaire',wage_satisfaction:.1,playing_time_satisfaction:1},
   {...player,id:2,form:.913,morale:.44,morale_target:.34,morale_cause:'temps_de_jeu',wage_satisfaction:.6,playing_time_satisfaction:.1},
   {...player,id:3,form:1.018,morale:.99,morale_target:1,morale_cause:null,wage_satisfaction:1,playing_time_satisfaction:1}];
  const html=playerTable({items:rows,total:3,page_size:30},false,'form','desc');
  assert.match(html,/data-order="desc" data-sort="form">FORME</);assert.match(html,/data-sort="morale">MORAL</);
- // +11 % in green, −9 % in red, grey within 2 %.
- assert.match(html,/<span class="rating graded form-badge" style="--hue:120" title="Forme 1\.11 : tout ce qu&#39;il fait en match compte 11 % de plus">\+11 %</);
- assert.match(html,/style="--hue:0" title="Forme 0\.91 : tout ce qu&#39;il fait en match compte 9 % de moins">−9 %</);
- assert.match(html,/<span class="rating form-badge neutral" title="Forme 1\.02 : il joue à son niveau">\+2 %</);
- // Morale: an arrow towards its target, the cause below 70 %, the detail in the tooltip.
- assert.match(html,/<span class="morale-cell" title="Moral 63 %, vers 66 % · pèse surtout : son salaire · salaire : 10 % de ce qu&#39;il attend · temps de jeu : 100 % de ce qu&#39;il attend"><span class="rating graded" style="--hue:\d+">63 %<\/span><span class="trend-slot"><span class="trend up">▲<\/span><\/span><span class="morale-cause">€<\/span>/);
- assert.match(html,/>44 %<\/span><span class="trend-slot"><span class="trend down">▼<\/span><\/span><span class="morale-cause">◷</);
- assert.match(html,/>99 %<\/span><span class="trend-slot"><\/span><\/span>/);
+ // An arrow at one of five orientations: excellent from +10 %, bad under −3 %, normal between.
+ assert.match(html,/<span class="arrow a2" role="img" aria-label="Forme excellente" title="Forme excellente">/);
+ assert.match(html,/<span class="arrow a-1" role="img" aria-label="Forme mauvaise" title="Forme mauvaise">/);
+ assert.match(html,/<span class="arrow a0" role="img" aria-label="Forme normale"/);
+ assert.doesNotMatch(html,/\+11 %|−9 %/);
+ // Morale: its face, an arrow towards its target, the cause below 70 %, its word in the tooltip.
+ assert.match(html,/<span class="morale-cell" title="Moral correct · pèse surtout : son salaire"><svg class="face"[^>]*aria-label="Moral correct"[^]*?<\/svg><span class="trend-slot"><span class="trend up">▲<\/span><\/span><span class="morale-cause">€<\/span>/);
+ assert.match(html,/aria-label="Moral bas"[^]*?<\/svg><span class="trend-slot"><span class="trend down">▼<\/span><\/span><span class="morale-cause">◷</);
+ assert.match(html,/aria-label="Moral excellent"[^]*?<\/svg><span class="trend-slot"><\/span><\/span>/);
+ assert.doesNotMatch(html,/63 %|44 %|99 %/);
  // Players lists of the whole world keep their columns.
  assert.doesNotMatch(playerTable({items:rows,total:3,page_size:30},true),/data-sort="(form|morale)"/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30}),/NaN|undefined/);

@@ -243,7 +243,8 @@ def test_an_older_save_takes_the_recalibrated_rules_and_the_income_they_give(con
             if not rules[config_path[0]][config_path[1]]: del rules[config_path[0]][config_path[1]]  # A section introduced whole is absent, not empty.
     rules["ia_gestion"]["budgets"]["comptabilite"]["part_revenus_autres_charges"] = 0.15
     rules["ia_gestion"]["garde_fous"]["solde_minimal_autorise"] = -5000000
-    rules["demographie"]["estimation_potentiel"]["bruit_max"] = 22.0
+    # The noise of an estimate as it was before schema 45 read it in stars.
+    rules["demographie"]["estimation_potentiel"].update({"bruit_max": 22.0, "bruit_min": 3.0, "demi_largeur_en_ecarts_types": 1.0})
     rules["demographie"]["cohorte"]["poids_reputation_tri"] = 0.5  # chosen by hand: kept
     for club in payload["world"]["clubs"].values(): club.pop("prize_income", None)
     for player in payload["world"]["players"].values(): player.pop("past_performance", None)
@@ -251,10 +252,10 @@ def test_an_older_save_takes_the_recalibrated_rules_and_the_income_they_give(con
     path.write_bytes(gzip.compress(json.dumps(payload).encode()))
     restored = store.load("old")
     cfg = restored.config
-    assert len(RECALIBRATED_RULES) == 4
+    assert len(RECALIBRATED_RULES) == 3
     assert cfg.management.budgets.accounting.other_cost_share == config.management.budgets.accounting.other_cost_share
     assert cfg.management.guardrails.min_balance == config.management.guardrails.min_balance == 0
-    assert cfg.demography.potential_estimate.max_noise == config.demography.potential_estimate.max_noise
+    assert cfg.demography.potential_estimate == config.demography.potential_estimate
     assert cfg.demography.cohort.sorting_reputation_weight == 0.5
     assert cfg.management.budgets.club_income == config.management.budgets.club_income
     budgets = cfg.management.budgets

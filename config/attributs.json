@@ -7,6 +7,12 @@
     "gardien": ["reflexes", "sorties", "relance"]
   },
   "bornes": {"min": 1, "max": 100},
+  "etoiles": {
+    "_note": "Niveau, potentiel et notes en etoiles, sur l'echelle des attributs (l'ecran les montre sur 200) : seuils de 1 a 5 etoiles par demi-etoile ; une demi-etoile sous le premier. En continu, plancher vaut une demi-etoile et le maximum des attributs etoiles_au_maximum, que l'affichage arrete a 5.",
+    "seuils": [45.0, 50.0, 55.0, 59.0, 63.0, 67.0, 71.0, 76.0, 82.5],
+    "plancher": 35.0,
+    "etoiles_au_maximum": 6.0
+  },
   "composites": {
     "_note": "La somme des poids de chaque composite doit valoir 1.0",
     "progression_attaque": {"passe": 0.45, "technique": 0.30, "vision": 0.15, "vitesse": 0.10},

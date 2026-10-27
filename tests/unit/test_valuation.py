@@ -199,8 +199,8 @@ def test_every_club_sees_the_players_who_want_to_leave_and_one_day_looks_for_a_p
                         world.date if purpose == "prospect_search" and club_id == buyer.id else None)
     bids = [bid for bid in propose_transfers(world, Random(2)) if bid.target_id == buyer.id]
     assert [bid.player_id for bid in bids] == [young.id] and bids[0].fee <= bids[0].limit
-    # Not for a player the world rates no higher than its own.
-    young.potential = 72.0
+    # Not for a player the world rates no higher than its own: one it has seen play enough to know.
+    young.potential, young.exposure = 66.0, config.demography.potential_estimate.exposure.reference_matches
     assert not [bid for bid in propose_transfers(world, Random(2)) if bid.target_id == buyer.id]
 
 

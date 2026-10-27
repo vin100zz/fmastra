@@ -254,6 +254,19 @@ def validate_consistency(cfg: Config) -> None:
     require(not cfg.states.suspensions.reset_after_threshold, "Cumulative yellow counters cannot reset at each threshold")
     require(cfg.engine.timing.match_seconds == 2 * cfg.world.match_rules.half_seconds, "Match durations disagree")
     require(cfg.demography.potential_estimate.convergence_age > cfg.demography.potential_estimate.start_age, "Invalid estimate convergence")
+    estimate = cfg.demography.potential_estimate
+    ages = [row.age for row in estimate.deviations_by_age]
+    require(ages and ages == sorted(set(ages)) and all(row.deviation > 0 for row in estimate.deviations_by_age),
+            "Estimate deviations need ages in increasing order and positive deviations")
+    require(0 < estimate.min_deviation and 0 < estimate.level_share and estimate.prior_deviation > 0 and 0 <= estimate.shrinkage <= 1
+            and estimate.band > 0 and 0 < estimate.own_club <= 1, "Invalid estimate rules")
+    exposure = estimate.exposure
+    require(exposure.reference_matches > 0 and 0 <= exposure.max_reduction < 1 and exposure.league_weights
+            and exposure.known_reputation > exposure.unknown_reputation, "Invalid exposure rules")
+    stars = cfg.attributes.stars
+    require(len(stars.thresholds) == 9 and list(stars.thresholds) == sorted(set(stars.thresholds))
+            and stars.floor < stars.thresholds[0] and stars.thresholds[-1] < cfg.attributes.bounds.max and stars.top >= 5,
+            "Stars need nine increasing thresholds between their floor and the attributes' maximum")
     require(cfg.demography.progression.monthly_reference_minutes > 0, "Playing time reference must be positive")
     growth = cfg.demography.progression
     require(growth.minutes_exponent > 0 and 0 <= growth.training_floor.lowest <= growth.training_floor.highest <= 1,

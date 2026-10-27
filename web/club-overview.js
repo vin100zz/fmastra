@@ -1,5 +1,5 @@
 import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
- spreadLayout,level,levelHue,blockNote,averageNote,moraleCell,GO} from './ui.js';
+ spreadLayout,level,noteStars,levelStars,potentialStars,averageNote,moraleCell,GO} from './ui.js';
 import {monthlySalary,monthlyAmount,monthlyMargin} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
@@ -73,10 +73,10 @@ export function elevenCard(club,eleven,height=null){
  const fit=height?`;max-width:${Math.floor(Math.max(PITCH_MIN,height)*68/88)}px`:'';
  const {rows,places}=spreadLayout(eleven.players.map(player=>player.position));
  const marks=eleven.players.map((player,index)=>{
-  const {x,row}=places[index],note=level(player.note);
+  const {x,row}=places[index];
   const facts=eleven.basis==='starts'?`<span class="block-season">${n(player.appearances)} m${player.goals?` / ${n(player.goals)}<span class="match-mark goal"></span>`:''}</span>`
-   :blockNote(note,levelHue(note),`Note au poste ${player.position} : ${note} sur 200`);
-  const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position} : ${note} sur 200`;
+   :noteStars(player.note,`Note au poste ${player.position}`);
+  const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position}`;
   const tag=player.temporary?'span':'a',link=player.temporary?'':` href="#/player/${player.id}"`;
   return `<${tag} class="pitch-player"${link} title="${e(player.name)} · ${e(told)}" style="left:${x}%;--row:${row}">${kitShirt(player.temporary?null:club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</${tag}>`;
  }).join('');
@@ -164,7 +164,7 @@ export async function clubPreview(id){
   +fact('Achats de la saison',money(books.season_spent))+fact('Ventes de la saison',money(books.season_sales));
  // The players the club has lent are not its to field.
  const best=squad.items.filter(player=>!player.away).slice(0,BEST_PLAYERS);
- const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential),figure(price(player.value))]))}</div>`:'';
+ const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelStars(player),potentialStars(player),figure(price(player.value))]))}</div>`:'';
  const tab=(key,label)=>`<a class="button" href="#/club/${club.id}/${key}">${label}</a>`;
  return `<div class="card preview"><div class="preview-head">${crest}<h2><a href="#/club/${club.id}">${e(club.name)}</a></h2></div>`
   +`<div class="preview-line"><span>${nationBadge(club.nation_code,{full:true})}</span><span class="muted">${club.competition?competitionLink({id:club.competition_id,name:club.competition}):'Marché extérieur'} · ${n(club.capacity)} places</span></div>`

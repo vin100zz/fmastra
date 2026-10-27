@@ -73,7 +73,7 @@ def build(root: Path) -> dict:
                                      "rating": player.rating, "potential": player.potential} for player in players]}
     names = world.nation_names
     defaults = default_levels(cfg, pyramids)
-    return {"pyramids": pyramids, "clubs": clubs, "date": world.date.iso(), "season": world.season,
+    return {"pyramids": pyramids, "clubs": clubs, "date": world.date.iso(), "season": world.season, "star_scale": v.star_scale(cfg),
             "flags": {code: row for code, row in build_nation_table(names).items() if code in order},
             "nations": [{"code": pyramid.nation, "name": names.get(pyramid.nation, pyramid.nation), "default": defaults[pyramid.nation],
                          "divisions": [{"level": index + 1, "name": division.name, "clubs": division.club_count}
@@ -97,7 +97,7 @@ def played(club: dict, levels: dict[str, int]) -> bool:
 
 
 def summary(data: dict) -> dict:
-    return {key: data[key] for key in ("date", "season", "flags", "nations")}
+    return {key: data[key] for key in ("date", "season", "flags", "nations", "star_scale")}
 
 
 def club_list(data: dict, levels: dict[str, int], pays: str, recherche: str, tri: str, ordre: str | None, page: int, size: int) -> dict:

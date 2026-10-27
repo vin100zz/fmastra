@@ -1,6 +1,6 @@
 // What the list screens share (Joueurs, Clubs, Mercato mondial): a list fitted to the window, a side panel on a wide
 // screen, and filters that are links (chips, switches) or fields folded in a menu.
-import {escape as e,number as n,group,nationFlag,nationName} from './ui.js';
+import {escape as e,number as n,group,nationFlag,nationName,stars} from './ui.js';
 
 // A row of a list with its border, until the screen has measured its own.
 const ROW=27;
@@ -96,6 +96,19 @@ export function rangeMenu(base, params, label, fields, {unit='',hint='',presets=
  const preset=([text,values])=>{const set=fields.every(([name])=>value(name)===String(values[name]??''));return `<a class="${set?'on':''}" href="${listHref(base,params,{...cleared,...values})}">${text}</a>`;};
  const reading=on?` <b>${rangeReading(low&&value(low[0]),high&&value(high[0]),unit)}</b><a class="clear" href="${listHref(base,params,cleared)}" aria-label="Retirer le filtre ${e(label)}" title="Retirer le filtre">×</a>`:'';
  return `<details class="filter-menu${on?' on':''}"><summary>${e(label)}${reading}</summary><div class="filter-panel"><div class="filter-fields">${fields.map(field).join('')}</div>${presets.length?`<div class="presets">${presets.map(preset).join('')}</div>`:''}</div></details>`;
+}
+
+// A range of stars folded behind a button (a level, a potential: « Étoiles »): Min. and Max. by half stars, and the
+// presets `from`, "N stars and more". Set, the button reads its stars and a cross takes it off.
+const HALF_STARS=[.5,1,1.5,2,2.5,3,3.5,4,4.5,5];
+const starText=value=>`${value%1?`${Math.floor(value)||''}½`:value} ★`;
+export function starRangeMenu(base, params, label, key, from=[3,4,4.5]){
+ const low=params.get(`${key}_min`)||'',high=params.get(`${key}_max`)||'',on=Boolean(low||high);
+ const cleared={[`${key}_min`]:'',[`${key}_max`]:''};
+ const field=(name,bound,value)=>`<label>${bound} <select name="${name}"><option value="">—</option>${HALF_STARS.map(step=>`<option value="${step}"${String(step)===value?' selected':''}>${starText(step)}</option>`).join('')}</select></label>`;
+ const preset=step=>`<a class="${low===String(step)&&!high?'on':''}" href="${listHref(base,params,{...cleared,[`${key}_min`]:step})}">${stars(step)} et plus</a>`;
+ const reading=on?` <b>${low&&high?`${stars(Number(low))} – ${stars(Number(high))}`:low?`≥ ${stars(Number(low))}`:`≤ ${stars(Number(high))}`}</b><a class="clear" href="${listHref(base,params,cleared)}" aria-label="Retirer le filtre ${e(label)}" title="Retirer le filtre">×</a>`:'';
+ return `<details class="filter-menu${on?' on':''}"><summary>${e(label)}${reading}</summary><div class="filter-panel"><div class="filter-fields">${field(`${key}_min`,'Min.',low)}${field(`${key}_max`,'Max.',high)}</div><div class="presets">${from.map(preset).join('')}</div></div></details>`;
 }
 
 // A list of the form as a select, marked when it filters: `items` are [value, label], the first option reads `label`.

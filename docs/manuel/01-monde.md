@@ -8,9 +8,9 @@ Ce manuel décrit ce que le jeu calcule sans le montrer : comment un match se jo
 
 Le moteur calcule sur une échelle interne de {{attributs.bornes.min}} à {{attributs.bornes.max}}. Les écrans la présentent autrement, et ce manuel parle comme les écrans :
 
-- le **niveau**, le **potentiel** et les **composites** sont affichés sur 200 (échelle interne × 2) ;
-- les **attributs** et les **aptitudes par poste** sont affichés sur 20 (échelle interne ÷ 5) ;
-- la **condition physique** et le **moral** sont des pourcentages ; la **forme** est un multiplicateur autour de 1.
+- le **niveau**, le **potentiel** et les **composites** sont affichés en étoiles (voir [Les joueurs](#/aide/joueurs/niveau-et-potentiel-en-etoiles)) ; ce manuel les compte sur 200 (échelle interne × 2) ;
+- les **attributs** sont affichés sur 20 (échelle interne ÷ 5), les **aptitudes par poste** par un disque, de « naturel » (20) à « maladroit » ;
+- la **condition physique**, la **forme** et le **moral** s'affichent en cinq paliers, sans chiffre ; ce manuel compte la condition et le moral en pourcentages, la forme comme un multiplicateur autour de 1.
 
 Sauf mention contraire, un « point » de niveau désigne donc un point sur 200.
 

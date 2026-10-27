@@ -88,8 +88,11 @@ def test_a_save_from_before_schema_43_plays_the_formation_of_its_squad_and_its_h
     _, store, path, payload = saved_world(config, tmp_path)
     payload["schema_version"] = 42
     world = payload["world"]
-    for introduced, (domain, section), _ in MIGRATION_DEFAULTS:
-        if introduced > 42: del world["config"][domain][section]
+    for introduced, (domain, section), defaults in MIGRATION_DEFAULTS:
+        if introduced > 42:
+            rules = world["config"][domain][section]
+            for key in defaults: del rules[key]
+            if not rules: del world["config"][domain][section]  # A section introduced whole is absent, not empty.
     # A save omits the fields left at their default: an empty squad, as before the field existed.
     for club in world["clubs"].values(): club.pop("formation_squad", None)
     world["clubs"]["1"]["formation"] = world["clubs"]["2"]["formation"] = "5-4-1"
