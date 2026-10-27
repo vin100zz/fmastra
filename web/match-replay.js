@@ -18,7 +18,9 @@ const CIRCULATION_SHOWN=6;
 // Which chances the summary plays, by the engine's xG (0.05 for a corner or free kick, up to about 0.25 for a
 // clean shot); goals are always shown. Remembered for the viewer between matches.
 const FILTERS=[['0','Toutes les occasions'],['0.1','Occasions nettes (xG ≥ 0,10)'],['0.2','Grosses occasions (xG ≥ 0,20)'],['goals','Buts seulement']];
-const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view';
+const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view',SPEED_KEY='touchline-replay-speed';
+// The paces of the speed slider, slowest first; 1 is the pace of life. Remembered for the viewer between matches.
+const SPEEDS=[.25,.5,.75,1,1.5,2,3,4];
 const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substitution:'Changement'};
 // Paces in pitch metres per ms of replay: the block shifts at a jog, the man closing the ball down a little faster.
 // A scripted run (a receiver meeting a pass, a scorer attacking a cross) is given time for REACH on average, a
@@ -120,7 +122,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.sequences=chanceSequences(this.events);
   this.others=this.events.filter(event=>event.kind in NOTABLE&&event.period!==3);
   this.duration=Math.max(this.duration||0,...this.events.map(event=>event.second));
-  this.speed=1;this.paused=true;
+  this.speed=(()=>{try{const saved=Number(localStorage.getItem(SPEED_KEY));return SPEEDS.includes(saved)?saved:1;}catch{return 1;}})();
+  this.paused=true;
   this.filter=(()=>{try{const saved=localStorage.getItem(FILTER_KEY);return FILTERS.some(([value])=>value===saved)?saved:'0.1';}catch{return '0.1';}})();
   this.run=0;this.time=0;
   this.dots={home:new Map(),away:new Map()};this.pressers={};
@@ -143,7 +146,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${board}</div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span>${this.live?'<button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps ${GO}</button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer ${GO}</button>':''}<ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
 <div class="replay-caption" aria-live="polite"></div>
 <div class="replay-timeline" role="group" aria-label="Occasions du match"><span class="replay-half"></span><span class="replay-cursor"></span></div>
-<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><span class="replay-speed" role="group" aria-label="Vitesse">${[1,2,4].map(speed=>`<button type="button" data-speed="${speed}" aria-pressed="${speed===1}">${speed}×</button>`).join('')}</span><button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
+<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><label class="slider" title="Vitesse"><input type="range" data-replay="speed" min="0" max="${SPEEDS.length-1}" step="1" aria-label="Vitesse"><output></output></label><button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
   const stage=this.stage=this.querySelector('.replay-stage');
   this.svg=svg('svg',{viewBox:`-3 -3 ${W+6} ${H+6}`,class:'replay-pitch',role:'img','aria-label':`Terrain vu de dessus : ${home.name} contre ${away.name}`});
   const lines=svg('g',{class:'replay-lines'});
@@ -181,11 +184,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(!button)return;
    if(button.classList.contains('replay-start')){button.remove();this.play();}
    else if(button.dataset.chance)this.jump(Number(button.dataset.chance));
-   else if(button.dataset.speed){this.speed=Number(button.dataset.speed);this.querySelectorAll('[data-speed]').forEach(item=>item.setAttribute('aria-pressed',item===button));}
    else if(button.dataset.replay==='play')this.paused?this.play():this.pause();
    else if(button.dataset.replay==='view')this.setView(!this.view3d,true);
    else if(button.dataset.replay==='previous')this.jump(this.previousIndex());
    else if(button.dataset.replay==='next')this.jump(this.nextIndex(this.current+1));
+  });
+  this.addEventListener('input',event=>{
+   if(event.target.dataset.replay!=='speed')return;
+   this.setSpeed(SPEEDS[Number(event.target.value)]);
+   try{localStorage.setItem(SPEED_KEY,String(this.speed));}catch{}
   });
   this.addEventListener('change',event=>{
    if(event.target.dataset.replay!=='filter')return;
@@ -193,7 +200,20 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    try{localStorage.setItem(FILTER_KEY,this.filter);}catch{}
    this.applyFilter();
   });
+  this.setSpeed(this.speed);
   this.applyFilter();
+ }
+
+ // The pace of the replay, and the slider set on the nearest of its stops.
+ setSpeed(speed){
+  this.speed=speed;
+  const slider=this.querySelector('[data-replay="speed"]');
+  if(!slider)return;
+  const index=SPEEDS.reduce((best,value,n)=>Math.abs(Math.log(value/speed))<Math.abs(Math.log(SPEEDS[best]/speed))?n:best,0);
+  slider.value=String(index);
+  slider.style.setProperty('--fill',`${100*index/(SPEEDS.length-1)}%`);
+  slider.setAttribute('aria-valuetext',`${speed}×`);
+  slider.nextElementSibling.value=`${speed}×`;
  }
 
  // The television view (replay-3d.js) is loaded on first use and reads this element's state at each frame;

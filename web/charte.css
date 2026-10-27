@@ -1148,3 +1148,15 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .warn{color:var(--warn)}
 /* What a list without rows says: one line of 26 in the muted ink, flush with the rows it stands for. */
 .empty{display:flex;align-items:center;min-height:var(--h-row);margin:0;padding:0 var(--s3);font-size:var(--fs-body);line-height:18px;text-align:left;color:var(--muted)}
+
+/* A slider: a value picked along a scale of stops (the pace of a replay), its value written after it. A track of 4 on
+   --track, filled with the accent up to the thumb (--fill, set by the screen); the thumb a white round of 18 standing on
+   it like a field; the value in figures of fixed width, so that nothing moves as it changes. */
+.slider{display:inline-flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-control)}
+.slider input[type=range]{width:calc(5*var(--s6));height:var(--h-chip);margin:0;padding:0;border:0;background:none;box-shadow:none;appearance:none;-webkit-appearance:none;cursor:pointer}
+.slider input[type=range]::-webkit-slider-runnable-track{height:var(--s1);border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--club-fill,var(--accent)) var(--fill,0%),var(--track) var(--fill,0%))}
+.slider input[type=range]::-moz-range-track{height:var(--s1);border-radius:var(--radius-chip);background:var(--track)}
+.slider input[type=range]::-moz-range-progress{height:var(--s1);border-radius:var(--radius-chip);background:var(--club-fill,var(--accent))}
+.slider input[type=range]::-webkit-slider-thumb{width:var(--h-chip);height:var(--h-chip);margin-top:calc((var(--s1) - var(--h-chip))/2);border:0;border-radius:50%;background:var(--panel);box-shadow:var(--shadow-field),var(--shadow-thumb);-webkit-appearance:none;appearance:none}
+.slider input[type=range]::-moz-range-thumb{width:var(--h-chip);height:var(--h-chip);border:0;border-radius:50%;background:var(--panel);box-shadow:var(--shadow-field),var(--shadow-thumb)}
+.slider output{min-width:5ch;font:600 var(--fs-body)/1 var(--text);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
