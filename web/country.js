@@ -32,7 +32,7 @@ function cupCard(cup,data,next,params,base,own,levels){
  const usual=next?(data.rounds.find(round=>!round.complete)||data.rounds.at(-1)).number:data.latest_round||1;
  const chosen=data.rounds.find(round=>round.number===Number(params.get('tour')))||data.rounds.find(round=>round.number===usual);
  const steps=`<nav class="segmented country-rounds" aria-label="Tours">${data.rounds.map(round=>`<a class="${round===chosen?'active':''}" href="${listHref(base,params,{tour:round.number})}"${round===chosen?' aria-current="true"':''} title="${e(round.label)}">${e(round.label.split(' ')[0])}</a>`).join('')}</nav>`;
- const ties=chosen.items.length?matchRows(chosen.items,own,levels):empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir');
+ const ties=chosen.items.length?matchRows(chosen.items,own,levels):empty('Tirage à venir');
  return card(cup.name,`${steps}${strip(chosen)}${ties}`,`<a href="#/league/${cup.id}" aria-label="Voir la coupe">${GO}</a>`);
 }
 

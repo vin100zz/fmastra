@@ -19,9 +19,9 @@ function block(group,compact,flags){
 // follows each club with the flag of its country (a European cup).
 export function roundContent(data,section,{figures=false,flags=false}={}){
  const round=data.round;
- if(!round)return `<section class="card">${section==='latest'?empty('Aucun match joué pour l’instant.','Pas encore de résultat'):empty('Aucun match programmé.','Pas de match à venir')}</section>`;
+ if(!round)return `<section class="card">${section==='latest'?empty('Aucun match joué'):empty('Aucun match à venir')}</section>`;
  const when=round.date?`<span class="muted">${date(round.date)}</span>`:'';
- if(!data.groups.length)return card(round.label,empty('Le tirage aura lieu à l’issue du tour précédent.','Tirage à venir'),when);
+ if(!data.groups.length)return card(round.label,empty('Tirage à venir'),when);
  // Several groups: each one with its own table, two groups a row (three in an international edition).
  const content=data.groups.length>1?`<div class="round-groups${figures?' stacked':''}">${data.groups.map(group=>`<section class="round-group"><h3>${e(group.name)}</h3>${block(group,figures?'figures':true,flags)}</section>`).join('')}</div>`:block(data.groups[0],false,flags);
  // An international edition adds its leading scorers in a column beside the groups.

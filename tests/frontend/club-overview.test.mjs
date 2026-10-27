@@ -46,7 +46,7 @@ test('a club opens on its Présentation: its tiles, then four columns that fill 
  const titles=part=>[...part.matchAll(/<h2>([^<]+)/g)].map(found=>found[1]);
  assert.deepEqual(titles(columns[0]),['Tenues','Finances']);
  assert.deepEqual(titles(columns[1]),['Équipe-type','À surveiller']);
- assert.deepEqual(titles(columns[2]),['Calendrier','Ligue 1 – 34']);
+ assert.deepEqual(titles(columns[2]),['Calendrier','Ligue 1 · 34e journée']);
  assert.deepEqual(titles(columns[3]),['Buteurs','Passeurs','Notes']);
  // What asks for a decision is the user's own business.
  assert.doesNotMatch(presentation(false),/À surveiller/);
@@ -103,7 +103,7 @@ test('À surveiller gathers what asks a decision of the user, a line for each pl
  const html=watchCard(squadItems);
  const lines=html.split('<li>').slice(1);
  assert.equal(lines.length,3);
- assert.match(lines.find(line=>line.includes('Cecchetto')),/<b class="danger">Contrat · 30 juin 2034<\/b><b class="danger">Blessé · 12 juil\.<\/b>/);
+ assert.match(lines.find(line=>line.includes('Cecchetto')),/<b class="warn">Contrat · juin 2034<\/b><b class="danger">Blessé · 12 juil\.<\/b>/);
  assert.match(lines.find(line=>line.includes('Quintero')),/<b class="news-ban">Suspendu · 1 match<\/b>/);
  assert.match(lines.find(line=>line.includes('Marrero')),/45 %/);
  // A player away on loan is not the club's to decide on; nobody to watch, no card.
@@ -140,7 +140,7 @@ const table=Array.from({length:10},(_,index)=>row(index+1,index===5?7:20+index,i
 
 test('the league widget shows five rows around the club, with the points then the goal difference, and the round in its title',()=>{
  const html=standingsExtract({...club,competition_id:16},{items:table});
- assert.match(html,/<h2>Ligue 1 – 18<span class="ordinal">e<\/span> journée<\/h2>/);
+ assert.match(html,/<h2>Ligue 1 · 18e journée<\/h2>/);
  assert.match(html,/href="#\/league\/16"/);
  const ranks=[...html.matchAll(/<span class="rank ?(?:first)?">(\d+)<\/span>/g)].map(match=>Number(match[1]));
  assert.deepEqual(ranks,[4,5,6,7,8]);
@@ -148,7 +148,7 @@ test('the league widget shows five rows around the club, with the points then th
  assert.doesNotMatch(html,/>J<\/th>/);assert.match(html,/<tr class="own"[^>]*>/);
  // At either end the five rows stay within the table.
  assert.deepEqual([...standingsExtract({...club,competition_id:16},{items:table.map((item,index)=>({...item,club:index===0?ref(7,'Lens'):ref(30+index,`C${index}`)}))}).matchAll(/<span class="rank ?(?:first)?">(\d+)<\/span>/g)].map(match=>Number(match[1])),[1,2,3,4,5]);
- assert.match(standingsExtract({...club,competition_id:16},{items:[row(1,7,'Lens',3,2,1)]}),/1<span class="ordinal">re<\/span> journée/);
+ assert.match(standingsExtract({...club,competition_id:16},{items:[row(1,7,'Lens',3,2,1)]}),/Ligue 1 · 1re journée/);
  assert.equal(standingsExtract(club,null),'');assert.equal(standingsExtract(club,{items:[]}),'');
 });
 

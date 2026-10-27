@@ -1144,3 +1144,7 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 #main.club-page::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--club-fill) 12%,transparent) 0,color-mix(in srgb,var(--club-fill) 6%,transparent) 40%,color-mix(in srgb,var(--club-fill) 4%,transparent) 100%)}
 #main>.match-hero::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,color-mix(in srgb,var(--hero-field) 10%,transparent) 0,transparent 55%)}
 #main>.match-hero .club-hero-art>span::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(270deg,color-mix(in srgb,var(--hero-field) 10%,transparent) 0,transparent 55%)}
+/* A deadline within a year (the end of a contract), in the orange of a warning; within six months, .danger's red. */
+.warn{color:var(--warn)}
+/* What a list without rows says: one line of 26 in the muted ink, flush with the rows it stands for. */
+.empty{display:flex;align-items:center;min-height:var(--h-row);margin:0;padding:0 var(--s3);font-size:var(--fs-body);line-height:18px;text-align:left;color:var(--muted)}

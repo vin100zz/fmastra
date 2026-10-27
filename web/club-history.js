@@ -20,7 +20,7 @@ function movementCard(title,rows,total,incoming){
  const foot=['','','',`${kept.length} joueur${kept.length>1?'s':''}`,'','',figure(money(total))];
  const columns=['date','kind','position','name','age','club','fee'].map(key=>`${key}-column`);
  const list=kept.length?`<div class="club-movements">${table(['DATE','GENRE','POSTE','JOUEUR','ÂGE','CLUB','MONTANT'],cells,foot,undefined,{values,ascending:[0]},columns)}</div>`
-  :empty('Aucun mouvement enregistré pour cette saison.','Rien à signaler');
+  :empty('Aucun transfert');
  return `<section class="card" aria-label="${title}"><div class="card-head"><h2>${title}</h2></div>${list}</section>`;
 }
 

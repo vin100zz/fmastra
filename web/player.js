@@ -412,7 +412,7 @@ function careerCard(player, career) {
  const block=table=>`<div class="career-block table-scroll"><table class="aligned">${table}</table></div>`;
  const clubs=rows.length?block(`<thead>${head}</thead><tbody>${rows.join('')}</tbody><tfoot>${total}</tfoot>`):'';
  const gap=clubs&&nation?'<div class="career-gap" aria-hidden="true"></div>':'';
- return card('Carrière',clubs||nation?`<div class="career-body">${clubs}${gap}${nation?block(nation):''}</div>`:empty(),'','career-card');
+ return card('Carrière',clubs||nation?`<div class="career-body">${clubs}${gap}${nation?block(nation):''}</div>`:empty('Aucun match'),'','career-card');
 }
 
 // Beside a list of players, the one picked in it: who he is, how he is, his contract and what he is worth on a pitch, in
@@ -427,7 +427,7 @@ export async function playerPreview(id, state) {
  const flags=nationFlags(player);
  const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${competitionLink({name:item.competition})} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
  const shape=`<h3>État</h3>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
- const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`],
+ const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring_soon?'danger':player.expiring?'warn':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),
   ...(player.transfer_listed||player.loan_listed?[['Listé',marketTags(player.transfer_listed,player.loan_listed)]]:[]),
   ...(player.interested!=null?[['Intéressé',marketTags(player.interested,player.loan_interested,'Non')]]:[]),...loanTerms(player)];
@@ -446,7 +446,7 @@ export async function playerPreview(id, state) {
 export async function playerScreen(id) {
  const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
  const points=history.trajectory;
- const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('La courbe se complète au début de chaque mois.'),'','level-card');
+ const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('Un seul relevé'),'','level-card');
  const story=`<div class="player-row history">${chart}${careerCard(player,history.career)}</div>`;
  // A retired player keeps his name and his history.
  if(player.retired)return `<div class="page-heading"><div class="identity"><div><span class="eyebrow">CARRIÈRE ARCHIVÉE</span><h1>${e(player.name)}</h1><p>Retraité</p></div></div></div>${story}`;

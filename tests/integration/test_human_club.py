@@ -593,3 +593,31 @@ def data_formations(client, match):
     """The tactics the Composition screen offers: the formations, and the club's own when it has one."""
     data = client.get(f"/api/ma-partie/composition?match_id={match.id}").json()
     return {*data["formations"], *(["Perso"] if data["custom"] else [])}
+
+
+def test_the_demands_of_a_day_make_one_message(client):
+    from dataclasses import replace
+    from core.domain.offers import RenewalProposal
+    from core.world.events import RenewalProposed
+    from core.world.application import apply
+    world = client.app.state.game.world
+    club_id = next(iter(world.active_clubs())).id
+    choose(client, club_id)
+    askers = [world.players[pid] for pid in world.clubs[club_id].player_ids[:3]]
+    for asker in askers:
+        asked = replace(asker.contract, weekly_wage=asker.contract.weekly_wage + 500, end=asker.contract.end.add_years(2))
+        apply(world, RenewalProposed(RenewalProposal(asker.id, club_id, asked, world.date)))
+    demands = [index for index, item in enumerate(world.news) if item.kind == "renewal_proposed"]
+    assert len(demands) == 3
+    feed = client.get("/api/ma-partie/actualites").json()
+    rows = [row for row in feed["items"] if row["kind"] == "renewal_proposed"]
+    assert [(row["id"], row["title"], row["pending"]) for row in rows] == [(demands[-1], "3 joueurs veulent un nouveau contrat", True)]
+    assert client.get("/api/monde/etat").json()["news"]["pending"] == [demands[-1]]
+    # Any of them opens the day's message, each demand on its line; reading it reads them all.
+    message = client.get(f"/api/ma-partie/actualites/{demands[0]}").json()
+    assert message["id"] == demands[-1] and {row["player"]["id"] for row in message["renewals"]} == {asker.id for asker in askers}
+    client.post("/api/partie/actualites-lues", json={"ids": [demands[-1]]})
+    assert all(world.news[index].read for index in demands)
+    assert client.post("/api/partie/renouvellement", json={"joueur_id": askers[0].id, "decision": "refuser"}).status_code == 200
+    states = {row["player"]["id"]: row["state"] for row in client.get(f"/api/ma-partie/actualites/{demands[-1]}").json()["renewals"]}
+    assert states[askers[0].id] == "refused" and states[askers[1].id] == "pending"

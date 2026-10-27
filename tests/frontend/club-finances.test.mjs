@@ -115,7 +115,7 @@ test('the best-paid players by month, the rest summed; the season split by sourc
 
 test('without accounts for the season, the charts give way to an explanation',()=>{
  const html=financesContent(club,data({history:history({available:false,since:'2031-08-01'})}),squad);
- assert.match(html,/Historique indisponible/);assert.match(html,/1 août 2031/);
+ assert.match(html,/<p class="empty">Comptes détaillés depuis le 1 août 2031<\/p>/);
  assert.doesNotMatch(html,/class="club-chart"|Journal financier/);
  assert.match(html,/<span>Budget transferts<\/span>/);
  assert.match(financesContent(club,data({history:history({partial:true})}),squad),/Historique partiel/);
