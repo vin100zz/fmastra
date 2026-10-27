@@ -1,7 +1,7 @@
 // The screen of a new game (docs/charte-graphique.md, « Nouvelle partie »): the world on the left, a line per nation with
 // the divisions it plays, the clubs of that world in the middle, the club picked on the right. Every choice is in the
 // address: `nations` (FRA:3,ENG:2, the divisions each nation plays down to), the filters, sort and page of the list, `club`.
-import {api,escape as e,number as n,date,money,query,table,sortButton,headPager,figure,levelBadge,level,levelHue,position,kitDot,nationFlag,nationName,setNations,fact,facilityRating,competitionBadge} from './ui.js';
+import {api,escape as e,number as n,date,money,query,table,sortButton,headPager,figure,levelBadge,noteStars,setStarScale,position,kitDot,nationFlag,nationName,setNations,fact,facilityRating,competitionBadge} from './ui.js';
 import {monthlyAmount} from './salaries.js';
 import {searchField,nationChips,fittedRows} from './listing.js';
 import {creationHero} from './club-hero.js';
@@ -57,8 +57,8 @@ const league=club=>`<span class="cell">${club.nation_code==='FRA'?'':nationFlag(
 // The club picked: its band, then its figures, its facts and the players its level is the mean of.
 function clubCards(club){
  if(!club)return '<section class="card"><div class="card-head"><h2>Club</h2></div><div class="empty"><strong>Aucun club choisi</strong></div></section>';
- const tile=(label,value,hue=null)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}><span>${label}</span><strong>${value}</strong></div>`;
- const graded=(label,value)=>value==null?tile(label,'—'):tile(label,level(value),levelHue(level(value)));
+ const tile=(label,value)=>`<div class="tile"><span>${label}</span><strong>${value}</strong></div>`;
+ const graded=(label,value)=>tile(label,noteStars(value,label,true));
  const squad=table(['POSTE','JOUEUR','ÂGE','NIVEAU','POTENTIEL'],club.squad.map(player=>[position(player.position),`<span class="strong">${e(player.name)}</span>`,figure(player.age),levelBadge(player.rating),levelBadge(player.potential)]));
  return `<section class="card">${creationHero(club)}<div class="rail-tiles">${tile('Réputation',n(club.reputation))}${graded('Niveau',club.top_rating)}${graded('Potentiel',club.top_potential)}${tile('Plafond salarial',money(monthlyAmount(club.wage_cap)))}</div>`
   +`<div class="card-body">${fact('Stade',club.capacity?`${n(club.capacity)} places`:'—')}${fact('Entraînement',facilityRating(club.training_facilities))}${fact('Recrutement des jeunes',facilityRating(club.youth_recruitment))}</div></section>`
@@ -67,6 +67,7 @@ function clubCards(club){
 
 export async function newGameScreen(params){
  const data=await creationData();
+ setStarScale(data.star_scale);
  // Without a game the page knows no country yet: those of a new game are enough here.
  if(data.nations.some(nation=>nationName(nation.code)===nation.code))setNations(data.flags);
  const levels=chosenLevels(params,data.nations),nations=levelsText(levels,data.nations),values=Object.fromEntries(params);

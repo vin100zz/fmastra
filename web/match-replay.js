@@ -5,7 +5,7 @@
 // played where it will be at that moment, by a player sent there in time. A pass goes along the grass or over the
 // lines; it is taken first time, or controlled then played, or carried on touch after touch. Players run at a
 // footballer's pace and speed up and brake like one. The 3D view (replay-3d.js) draws all of it as it is.
-import {escape as e,contrastText,matchMinute,shortName,GO} from './ui.js';
+import {escape as e,contrastText,matchMinute,shortName,kitShirt,GO} from './ui.js';
 import {GRAVITY,ballAt,dip,lofted,path,rolled} from './replay-physics.js';
 
 const W=105,H=68;
@@ -21,6 +21,13 @@ const FILTERS=[['0','Toutes les occasions'],['0.1','Occasions nettes (xG ≥ 0,1
 const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view',SPEED_KEY='touchline-replay-speed';
 // The paces of the speed slider, slowest first; 1 is the pace of life. Remembered for the viewer between matches.
 const SPEEDS=[.25,.5,.75,1,1.5,2,3,4];
+// Live, the play between two chances, where the clock runs, has its own pace, remembered apart: at 1× a match minute
+// takes MS_PER_MINUTE ms. A goal holds the pitch GOAL_HOLD_MS, whatever the paces.
+const DEAD_SPEEDS=[.5,1,2,4,8,16,32],DEAD_KEY='touchline-live-dead-speed',GOAL_HOLD_MS=4000;
+// The icons before the two sliders of the live match: the ball for the chances, the stopwatch for the clock between them.
+const SLIDER_ICONS={ball:'<svg class="slider-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="m10 6.2 3.2 2.3-1.2 3.8H8l-1.2-3.8Z"/></svg>',
+ clock:'<svg class="slider-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="11" r="6.5"/><path d="M10 7.5V11l2.2 1.6M8 2.5h4"/></svg>'};
+const remembered=(key,stops,fallback)=>{try{const saved=Number(localStorage.getItem(key));return stops.includes(saved)?saved:fallback;}catch{return fallback;}};
 const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substitution:'Changement'};
 // Paces in pitch metres per ms of replay: the block shifts at a jog, the man closing the ball down a little faster.
 // A scripted run (a receiver meeting a pass, a scorer attacking a cross) is given time for REACH on average, a
@@ -126,7 +133,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.sequences=chanceSequences(this.events);
   this.others=this.events.filter(event=>event.kind in NOTABLE&&event.period!==3);
   this.duration=Math.max(this.duration||0,...this.events.map(event=>event.second));
-  this.speed=(()=>{try{const saved=Number(localStorage.getItem(SPEED_KEY));return SPEEDS.includes(saved)?saved:1;}catch{return 1;}})();
+  this.speed=remembered(SPEED_KEY,SPEEDS,1);this.deadSpeed=remembered(DEAD_KEY,DEAD_SPEEDS,1);
   this.paused=true;
   this.filter=(()=>{try{const saved=localStorage.getItem(FILTER_KEY);return FILTERS.some(([value])=>value===saved)?saved:'0.1';}catch{return '0.1';}})();
   this.run=0;this.time=0;
@@ -143,14 +150,23 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
 
  build(){
   const {home,away}=this.teams;
-  // The clock in a corner of the pitch. The score is the match banner's, which follows the replay; live, where the
-  // screen has no banner, it stands by the clock as on television: full names, or three letters on a phone.
-  const team=side=>`<span class="replay-team"><i style="background:${side.major}"></i><span class="long">${e(side.name)}</span><abbr title="${e(side.name)}">${e(side.name.normalize('NFD').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase())}</abbr></span>`;
-  const board=this.live?`${team(home)}<strong class="replay-score">0 – 0</strong>${team(away)}`:'';
-  this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${board}</div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span>${this.live?'<button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps ${GO}</button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer ${GO}</button>':''}<ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
+  // The clock in a corner of the pitch. The score is the match banner's, which follows the replay.
+  const slider=(key,title,icon='')=>`<label class="slider" title="${title}">${icon}<input type="range" data-replay="${key}" min="0" max="${(key==='dead-speed'?DEAD_SPEEDS:SPEEDS).length-1}" step="1" aria-label="${title}"><output></output></label>`;
+  const filter=`<select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select>`;
+  const view='<button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button>';
+  // Live, the score and the clock are in the match's band above the pitch (live.js); under the pitch, the commentary in
+  // the colours of the side that has the chance, the whole match on a line, and two paces, the chances' and the clock's.
+  // Between two chances the pitch shows both sides in their formation (filled by live.js), the commands of the break
+  // and of the final whistle over it.
+  if(this.live)this.innerHTML=`<div class="replay-stage"><div class="replay-progress"><div class="live-formations"></div><button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps ${GO}</button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer ${GO}</button></div></div>
+<div class="replay-caption ticker" aria-live="polite"><img class="ticker-crest" alt="" hidden><b class="ticker-minute"></b><span class="ticker-text"></span><span class="ticker-run" aria-hidden="true"><i></i></span></div>
+<div class="replay-timeline frise" role="img" aria-label="Frise du match"><span class="frise-played"></span><span class="replay-half"></span><span class="frise-marks"></span><span class="replay-cursor"></span></div>
+<div class="replay-controls"><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Aller à l’occasion suivante" title="Aller à l’occasion suivante">⏭</button>${slider('speed','Vitesse des actions',SLIDER_ICONS.ball)}${slider('dead-speed','Vitesse des temps morts',SLIDER_ICONS.clock)}${view}${filter}<div class="live-actions"></div></div>`;
+  else this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span></div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span><ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
 <div class="replay-caption" aria-live="polite"></div>
 <div class="replay-timeline" role="group" aria-label="Occasions du match"><span class="replay-half"></span><span class="replay-cursor"></span></div>
-<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><label class="slider" title="Vitesse"><input type="range" data-replay="speed" min="0" max="${SPEEDS.length-1}" step="1" aria-label="Vitesse"><output></output></label><button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
+<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button>${slider('speed','Vitesse')}${view}${filter}</div>`;
+  this.querySelector('.ticker-crest')?.addEventListener('error',event=>{event.target.hidden=true;event.target.removeAttribute('src');});
   const stage=this.stage=this.querySelector('.replay-stage');
   this.svg=svg('svg',{viewBox:`-3 -3 ${W+6} ${H+6}`,class:'replay-pitch',role:'img','aria-label':`Terrain vu de dessus : ${home.name} contre ${away.name}`});
   const lines=svg('g',{class:'replay-lines'});
@@ -199,9 +215,14 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    else if(button.dataset.replay==='play')this.paused?this.play():this.pause();
    else if(button.dataset.replay==='view')this.setView(!this.view3d,true);
    else if(button.dataset.replay==='previous')this.jump(this.previousIndex());
-   else if(button.dataset.replay==='next')this.jump(this.nextIndex(this.current+1));
+   else if(button.dataset.replay==='next')this.live?this.skip():this.jump(this.nextIndex(this.current+1));
   });
   this.addEventListener('input',event=>{
+   if(event.target.dataset.replay==='dead-speed'){
+    this.setDeadSpeed(DEAD_SPEEDS[Number(event.target.value)]);
+    try{localStorage.setItem(DEAD_KEY,String(this.deadSpeed));}catch{}
+    return;
+   }
    if(event.target.dataset.replay!=='speed')return;
    this.setSpeed(SPEEDS[Number(event.target.value)]);
    try{localStorage.setItem(SPEED_KEY,String(this.speed));}catch{}
@@ -213,20 +234,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    this.applyFilter();
   });
   this.setSpeed(this.speed);
+  if(this.live)this.setDeadSpeed(this.deadSpeed);
   this.applyFilter();
  }
 
- // The pace of the replay, and the slider set on the nearest of its stops.
- setSpeed(speed){
-  this.speed=speed;
-  const slider=this.querySelector('[data-replay="speed"]');
-  if(!slider)return;
-  const index=SPEEDS.reduce((best,value,n)=>Math.abs(Math.log(value/speed))<Math.abs(Math.log(SPEEDS[best]/speed))?n:best,0);
-  slider.value=String(index);
-  slider.style.setProperty('--fill',`${100*index/(SPEEDS.length-1)}%`);
-  slider.setAttribute('aria-valuetext',`${speed}×`);
-  slider.nextElementSibling.value=`${speed}×`;
- }
+ // The pace of the replay, and the slider set on the nearest of its stops; live, that of the clock between two chances too.
+ setSpeed(speed){this.speed=speed;setSlider(this.querySelector('[data-replay="speed"]'),SPEEDS,speed);}
+ setDeadSpeed(speed){this.deadSpeed=speed;setSlider(this.querySelector('[data-replay="dead-speed"]'),DEAD_SPEEDS,speed);}
+ // Live, « ⏭ » runs the clock to the next chance at once; a chance being played is never cut short.
+ skip(){if(!this.inChance&&!this.paused)this.skipping=true;}
 
  // The television view (replay-3d.js) is loaded on first use and reads this element's state at each frame;
  // without WebGL its button goes away and the pitch stays top-down.
@@ -324,7 +340,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   let last=performance.now();
   const tick=now=>{
    if(!this.isConnected){this.frame=null;return;}
-   const dt=Math.min(64,now-last)*(this.paused?0:this.speed*(this.tempo||1));
+   const pace=this.action?.pace;
+   let dt=Math.min(64,now-last)*(this.paused?0:pace==='dead'?this.deadSpeed:pace==='real'?1:this.speed*(this.tempo||1));
+   // Skipping, the clock between two chances and its stops play out within the frame.
+   if(this.skipping&&!this.paused&&pace)dt=Math.max(dt,this.action.t0+this.action.duration-this.time);
    last=now;
    if(dt>0){this.time+=dt;this.step(dt);}
    this.frame=requestAnimationFrame(tick);
@@ -398,14 +417,78 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // The names written are those of the players in the touch being played: the one the caption names and whoever has the ball.
  highlight(ids=[]){this.named=ids;for(const side of ['home','away'])for(const [id,dot] of this.dots[side])dot.node.classList.toggle('on',ids.includes(id)||this.carrier?.side===side&&this.carrier.id===id);}
 
- showClock(second){this.displayed=second;this.clockText(this.minute(second));this.querySelector('.replay-cursor').style.left=`${100*clamp(second/this.duration,0,1)}%`;if(this.live)this.emit('replay-clock',{second});}
- clockText(label){this.querySelector('.replay-clock').textContent=label;this.querySelector('.replay-progress-clock').textContent=label;}
+ showClock(second){
+  this.displayed=second;
+  if(this.live){this.drawFrise();this.emit('replay-clock',{second,label:this.minute(second)});return;}
+  this.clockText(this.minute(second));this.querySelector('.replay-cursor').style.left=`${100*clamp(second/this.duration,0,1)}%`;
+ }
+ clockText(label){for(const node of this.querySelectorAll('.replay-clock,.replay-progress-clock'))node.textContent=label;}
+ // Live, the whole match on a line under the pitch: what is played, the break, and what the pitch has shown so far, the
+ // home side's marks above the line, the other's below; a goal once the score counts it.
+ drawFrise(){
+  const frise=this.querySelector('.frise');
+  if(!frise)return;
+  const half=this.halfTime(),second=this.displayed??0,end=Math.max(5400,Number.isFinite(half)?half+2700:0,second);
+  const at=value=>`${(100*clamp(value/end,0,1)).toFixed(2)}%`;
+  frise.querySelector('.replay-cursor').style.left=at(second);
+  frise.querySelector('.frise-played').style.width=at(second);
+  frise.querySelector('.replay-half').style.left=at(Number.isFinite(half)?half:2700);
+  const counted=[0,0],marks=this.events.filter(event=>{
+   if(event.period===3||!['goal','yellow','red','injury','substitution'].includes(event.kind)||event.second>second)return false;
+   if(event.kind!=='goal')return true;
+   const side=event.team_id===this.homeId?0:1;
+   return counted[side]++<this.score[side];
+  });
+  const key=`${marks.length}:${Number.isFinite(half)}`;
+  if(key===this.friseKey)return;
+  this.friseKey=key;
+  const kinds={goal:['goal','But'],yellow:['booking yellow','Carton jaune'],red:['booking red','Carton rouge'],injury:['injury','Blessure'],substitution:['sub-on','Changement']};
+  frise.querySelector('.frise-marks').innerHTML=marks.map(event=>{
+   const [className,label]=kinds[event.kind],side=this.side(event.team_id);
+   const who=event.kind==='substitution'&&event.secondary?`${event.player||'—'} ➜ ${event.secondary}`:event.player||'—';
+   return `<i class="match-mark ${className} ${side}" style="left:${at(event.second)}" title="${e(`${this.minute(event.second)} · ${label} · ${who}`)}">${event.kind==='substitution'?'▲':''}</i>`;
+  }).join('');
+ }
  emit(name,detail){this.dispatchEvent(new CustomEvent(name,{detail,bubbles:true}));}
  showScore(){
-  if(this.live){this.querySelector('.replay-score').textContent=`${this.score[0]} – ${this.score[1]}`;this.emit('replay-score',{score:[...this.score]});}
+  if(this.live){this.emit('replay-score',{score:[...this.score]});this.drawFrise();}
   else bannerScore(this.score);
  }
- caption(html,live=false){const node=this.querySelector('.replay-caption');node.innerHTML=html;node.classList.toggle('live',live);}
+ // Live, the commentary is one line in the colours of the side that has the chance, its crest and the minute first; between
+ // two chances, neutral, a bar running on it. The side's name and the minute that open a chance's caption are left out.
+ caption(html,live=false){
+  const node=this.querySelector('.replay-caption');
+  if(!this.live){node.innerHTML=html;node.classList.toggle('live',live);return;}
+  const said=this.said,title=said?.title;
+  if(title&&html.startsWith(title))html=html.slice(title.length).replace(/^ · /,'');
+  this.ticker(html.replace(/<span class="replay-dots">(.*)<\/span>/,'$1'),live?null:said);
+ }
+ ticker(html,said=null){
+  const node=this.querySelector('.replay-caption'),team=said&&this.teams[said.side],crest=node.querySelector('.ticker-crest');
+  node.classList.toggle('running',!team&&!this.stage.classList.contains('still'));
+  if(team){node.style.setProperty('--team',team.major);node.style.setProperty('--team-ink',contrastText(team.major));}
+  else{node.style.removeProperty('--team');node.style.removeProperty('--team-ink');}
+  const src=team?.crest||'';
+  if(src&&crest.getAttribute('src')!==src){crest.hidden=false;crest.src=src;}
+  else if(!src){crest.hidden=true;crest.removeAttribute('src');}
+  node.querySelector('.ticker-minute').textContent=said?.minute||'';
+  node.querySelector('.ticker-text').innerHTML=html;
+ }
+ // Live, a goal holds the pitch: the scorer's colours cross it, B, U, T stamped one after the other, a light passing on
+ // them, his shirt and his name, the passer under it. The score changes in the band above the pitch.
+ goalBurst(side,shot,outcome){
+  this.stage.querySelector('.goal-burst')?.remove();
+  const team=this.teams[side],ink=contrastText(team.major),shirt=this.shirts?.get(shot.player_id);
+  const assist=shot.detail==='penalty'?'Sur penalty':outcome?.secondary?`Passe de ${e(outcome.secondary)}`:'';
+  const burst=document.createElement('div');
+  burst.className='goal-burst';
+  burst.style.cssText=`--team:${team.major};--team-2:${team.minor};--team-ink:${ink}`;
+  burst.innerHTML=`<div class="goal-band"><div class="goal-word">${team.crest?`<img class="goal-crest" src="${e(team.crest)}" alt="">`:''}<span class="goal-letters" aria-label="But"><span>B</span><span>U</span><span>T</span></span></div>`
+   +`<div class="goal-scorer">${kitShirt(team.major,team.minor,shirt??'')}<span>${e(shot.player||'—')}</span></div>${assist?`<div class="goal-assist">${assist}</div>`:''}</div>`;
+  burst.querySelector('.goal-crest')?.addEventListener('error',event=>event.target.remove());
+  this.stage.append(burst);
+  setTimeout(()=>burst.remove(),GOAL_HOLD_MS+600);
+ }
  showBanner(text,side){this.banner.textContent=text;this.banner.setAttribute('class',`replay-banner${text?' on':''}`);this.banner.style.fill=side?this.teams[side].major:'';}
 
  // The kick-off shape: both sides in their half, the ball on the centre spot at the feet of `side`'s most advanced player.
@@ -447,7 +530,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.score=[played.filter(item=>item.team===this.homeId).length,played.filter(item=>item.team!==this.homeId).length];
   this.period=second>this.halfTime()?2:1;
   this.updateRosters(second);
-  this.trail.replaceChildren();this.faded=false;this.tempo=1;this.cursor=null;this.cues=[];
+  this.trail.replaceChildren();this.faded=false;this.tempo=1;this.cursor=null;this.cues=[];this.skipping=false;
+  this.stage.querySelector('.goal-burst')?.remove();
   this.stage.classList.remove('fast');
   this.showBanner('');this.showScore();this.showClock(second);
   const next=this.sequences[index];
@@ -587,7 +671,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // After the Tactique panel or at the start of the second half.
  resume(){
   if(!this.live||!this.hold||this.status==='finished')return;
-  this.hold=false;
+  this.hold=false;this.skipping=false;
   if(this.status==='halftime'){
    this.status='playing';this.period=2;
    this.updateRosters(this.clock);this.kickOff(this.kickOffSide(2));
@@ -599,19 +683,23 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // The clock stays on 45′ until the viewer kicks the second half off.
  showHalfTime(){
   this.status='halftime';
+  this.said=null;
   this.stage.classList.add('fast');
   this.progress('Mi-temps',true);
   this.caption(`<strong>Mi-temps</strong> · ${e(this.teams.home.name)} ${this.score[0]} – ${this.score[1]} ${e(this.teams.away.name)}`);
   this.clockText('45′');
   this.querySelector('.replay-second-half').hidden=false;
+  this.emit('replay-phase',{phase:'halftime'});
  }
  finishLive(notify=true){
   this.status='finished';this.hold=true;
+  this.said=null;
   this.stage.classList.add('fast');
   this.progress('Coup de sifflet final',true);
   this.caption(`<strong>Coup de sifflet final</strong> · ${e(this.teams.home.name)} ${this.score[0]} – ${this.score[1]} ${e(this.teams.away.name)}`);
   this.querySelector('.replay-second-half').hidden=true;this.querySelector('.replay-continue').hidden=false;
   this.pause();
+  this.emit('replay-phase',{phase:'finished'});
   if(notify)this.emit('live-finished');
   if(this.stopRequested)this.stopAt(null);
  }
@@ -623,30 +711,42 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.highlight([]);this.showBanner('');this.trail.replaceChildren();
   this.progress('Jeu en cours');
   const notes=this.querySelector('.replay-progress-notes');
-  notes.replaceChildren();
+  notes?.replaceChildren();
   this.stage.classList.add('fast');
+  this.said=null;
+  if(this.live)this.emit('replay-phase',{phase:'dead'});
   this.caption('<span class="replay-dots">Jeu en cours</span>',true);
+  // Live, the clock runs at the pace of the play between chances, and stops at the clock's own pace on what it meets.
+  const pace=this.live?'dead':undefined,stopPace=this.live?'real':undefined;
   const half=this.halfTime();
   const stops=[...this.others.filter(event=>event.second>from&&event.second<=to).map(event=>({second:event.second,event})),
                ...(from<half&&to>half?[{second:half,half:true}]:[])].sort((a,b)=>a.second-b.second);
   let clock=from;
   for(const stop of [...stops,{second:to}]){
-   if(stop.second>clock&&!(await this.wait(Math.max(120,(stop.second-clock)/60*MS_PER_MINUTE),{clock:[clock,stop.second]})))return false;
+   if(stop.second>clock&&!(await this.wait(Math.max(120,(stop.second-clock)/60*MS_PER_MINUTE),{clock:[clock,stop.second],pace})))return false;
    clock=Math.max(clock,stop.second);
    if(stop.event){
-    const event=stop.event,item=document.createElement('li');
-    item.innerHTML=`<b>${this.minute(event.second)}</b> ${NOTABLE[event.kind]} · ${e(event.player||'—')}${event.kind==='substitution'&&event.secondary?` ➜ ${e(event.secondary)}`:''}`;
-    item.style.setProperty('--team',this.teams[this.side(event.team_id)].major);
-    notes.prepend(item);
-    while(notes.children.length>3)notes.lastChild.remove();
-    if(!(await this.wait(450)))return false;
+    const event=stop.event,said=`${NOTABLE[event.kind]} · ${e(event.player||'—')}${event.kind==='substitution'&&event.secondary?` ➜ ${e(event.secondary)}`:''}`;
+    if(this.live){
+     this.ticker(said,{side:this.side(event.team_id),minute:this.minute(event.second)});
+     if(!(await this.wait(1400,{pace:stopPace})))return false;
+     this.ticker('Jeu en cours');
+    }
+    else{
+     const item=document.createElement('li');
+     item.innerHTML=`<b>${this.minute(event.second)}</b> ${said}`;
+     item.style.setProperty('--team',this.teams[this.side(event.team_id)].major);
+     notes.prepend(item);
+     while(notes.children.length>3)notes.lastChild.remove();
+     if(!(await this.wait(450)))return false;
+    }
    }
    if(stop.half){
     this.progress('Mi-temps',true);
     this.caption(`<strong>Mi-temps</strong> · ${e(this.teams.home.name)} ${this.score[0]} – ${this.score[1]} ${e(this.teams.away.name)}`);
-    if(!(await this.wait(1100)))return false;
+    if(!(await this.wait(1100,{pace:stopPace})))return false;
     this.period=2;
-    notes.replaceChildren();
+    notes?.replaceChildren();
     this.progress('Jeu en cours');
     this.caption('<span class="replay-dots">Jeu en cours</span>',true);
    }
@@ -665,7 +765,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.stage.classList.remove('cut');
   return this.wait(420);
  }
- progress(label,still=false){this.querySelector('.replay-progress-label').textContent=label;this.stage.classList.toggle('still',still);}
+ progress(label,still=false){const node=this.querySelector('.replay-progress-label');if(node)node.textContent=label;this.stage.classList.toggle('still',still);}
 
  // ---- The ball and the runs. Each touch is struck where the beat before it ended; whoever meets the ball next is
  // sent to where it will be by then, and told how he will take it. ----
@@ -1176,6 +1276,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   const note=(id,text)=>{this.highlight(id!=null?[id]:[]);this.caption(text);};
   const shot=sequence.shot,counter=sequence.start?.detail==='counter';
   const title=`<strong style="color:${team.major}">${e(team.name)}</strong> · ${this.minute(sequence.shot.second)}`;
+  if(this.live){this.said={side,title,minute:this.minute(sequence.shot.second)};this.skipping=false;this.emit('replay-phase',{phase:'action'});}
   const jitter=(value,amount)=>clamp(value+(this.random()-.5)*2*amount,.02,.98);
   // The move starts where the engine recovered the ball, where the shot before it in the possession left it (in the box
   // for a rebound), or just short of the shot for saves without a trail.
@@ -1222,11 +1323,12 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   if(outcome==='goal'){
    side==='home'?this.score[0]++:this.score[1]++;
    this.showScore();
-   this.showBanner('BUT !',side);
    const assist=sequence.outcome.secondary?` · passe de ${e(sequence.outcome.secondary)}`:'';
    this.caption(`${title} · <strong>But de ${name(shot)}${shot.detail==='penalty'?' sur penalty':''}</strong>${assist}${xg}`);
-   // The outcome is read at normal pace.
+   // The outcome is read at normal pace; live, the goal holds the pitch for its own time.
    this.tempo=1;
+   if(this.live){this.goalBurst(side,shot,sequence.outcome);return this.wait(GOAL_HOLD_MS,{pace:'real'});}
+   this.showBanner('BUT !',side);
    return this.wait(1700);
   }
   const keeperName=e(shot.secondary||'—'),detail=sequence.outcome?.detail;
@@ -1237,6 +1339,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.tempo=1;
   return this.wait(850);
  }
+}
+// A slider set on the stop of `stops` nearest to `value`, its value written after it.
+function setSlider(slider,stops,value){
+ if(!slider)return;
+ const index=stops.reduce((best,stop,n)=>Math.abs(Math.log(stop/value))<Math.abs(Math.log(stops[best]/value))?n:best,0);
+ slider.value=String(index);
+ slider.style.setProperty('--fill',`${100*index/(stops.length-1)}%`);
+ slider.setAttribute('aria-valuetext',`${value}×`);
+ slider.nextElementSibling.value=`${value}×`;
 }
 // Where a scripted run has him at `time`: a cubic from where he was, at the pace he had, to his spot at the pace he
 // is to reach it with; past it, he carries on at that pace.

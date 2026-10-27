@@ -15,6 +15,7 @@ from core.engine.abilities import weighted_rating
 from core.world.calendar import standings
 from core.world.finances import financial_season
 from core.world.cups import ROUND_NAMES
+from core.world.estimates import estimate_level, estimate_potential, stars_of
 from .kits import kit_url, shirt_url
 
 
@@ -112,19 +113,58 @@ def loan_ref(world: World, player: Player) -> dict | None:
     return {"parent": club_ref(world, loan.parent_id), "club": club_ref(world, player.club_id), "end": loan.end.iso()} if loan else None
 
 
+def star_scale(cfg) -> dict:
+    """The scale of stars on the attributes' 1-100, for the screens to show a value without doubt (a composite, a note at a
+    position, a mean) as the server shows the estimates."""
+    rules = cfg.attributes.stars
+    return {"thresholds": list(rules.thresholds)}
+
+
+def scouting(world: World, player: Player) -> dict:
+    """What the human club sees of a player (everyone, without one): his level and his potential in stars, the potential
+    as the band where it stands one time in two, never under his level; and, for the debug mode, the estimates behind
+    them out of 200 with their errors in stars. His value is the one those estimates give."""
+    club = world.clubs.get(world.controlled_club_id)
+    observer, reputation = (club.id, club.reputation) if club else (None, None)
+    cfg = world.config
+    level = estimate_level(player, world.date, world.seed, cfg, observer, reputation)
+    potential = estimate_potential(player, world.date, world.seed, cfg, observer, reputation)
+    shown = stars_of(level.center, cfg)
+    low = max(shown, stars_of(potential.lower, cfg))
+    return {"stars": {"level": shown, "potential": [low, max(low, stars_of(potential.upper, cfg))]},
+            "estimate": {"level": round(level.center * 2), "level_deviation": round(level.deviation, 2),
+                         "potential": round(potential.center * 2), "lower": round(potential.lower * 2),
+                         "upper": round(potential.upper * 2), "deviation": round(potential.deviation, 2)},
+            "value": market_value(player, world, seen=(level.center, potential.center))}
+
+
+def seen_value(world: World, player: Player) -> int:
+    """His value as the human club reads him: the one the screens show."""
+    return scouting(world, player)["value"]
+
+
+def star_sort(row: dict, key: str) -> tuple:
+    """How a list ranks players on what it shows of them: the level on its stars, the potential on the middle of its band,
+    then the other."""
+    stars = row["stars"]
+    middle = sum(stars["potential"]) / 2
+    return (stars["level"], middle) if key == "rating" else (middle, stars["level"])
+
+
 def player_row(world: World, player: Player) -> dict:
     contract = player.contract
+    seen = scouting(world, player)
     return {"id": player.id, "name": player.name, "position": player.position.value, "shirt": player.shirt,
             "loan": loan_ref(world, player), "reserve": player.reserve_since is not None,
             "age": player.born.age_on(world.date), "nation": player.nation, "rating": round(player.rating, 1),
-            "potential": round(player.potential, 1),
+            "potential": round(player.potential, 1), "stars": seen["stars"], "estimate": seen["estimate"],
             "attributes": dict(zip(ATTRIBUTE_NAMES, player.attributes.values)),
             "composites": {key: round(composite(player, key, world.config), 1) for key in COMPOSITES},
             "key_composites": list(COMPOSITES_BY_POSITION[player.position]),
             "nationalities": list(player.nationalities),
             "nationality_names": [world.nation_names.get(code, code) for code in player.nationalities],
             "national_team": player.national_team,
-            "value": market_value(player, world),
+            "value": seen["value"],
             "club": club_ref(world, player.club_id), "wage": contract.weekly_wage if contract else 0,
             "contract_end": contract.end.iso() if contract else None,
             "expiring": bool(contract and world.date.months_until(contract.end) < 12),
@@ -318,7 +358,7 @@ def player_detail(world: World, player: Player) -> dict:
                    # The page names what each composite weighs and, for the position picked on its pitch, which ones count there.
                    "composite_weights": {key: dict(getattr(world.config.attributes.composites, name)) for key, name in COMPOSITES.items()},
                    "composites_by_position": {position: list(keys) for position, keys in COMPOSITES_BY_POSITION.items()},
-                   "form": player.form, "morale": player.morale, "value": market_value(player, world),
+                   "form": player.form, "morale": player.morale,
                    "discipline": [{"competition": world.competitions[cid].name, **asdict(item)} for cid, item in player.discipline.items()]
                        + [{"competition": edition.name, **asdict(item)} for edition in world.international.editions.values()
                           if (item := player.international_discipline.get(edition.competition_id)) is not None]})
@@ -537,7 +577,8 @@ def transfer_row(world: World, row) -> dict:
             "nationalities": list(player.nationalities) if player else list(kept.nationalities) if kept else [],
             "national_team": player.national_team if player else None,
             "rating": round(player.rating, 1) if player else None,
-            "value": market_value(player, world) if player else None}
+            **({key: seen[key] for key in ("stars", "estimate", "value")} if (seen := player and scouting(world, player))
+               else {"stars": None, "estimate": None, "value": None})}
 
 
 def main_nation(row: dict) -> str | None:
@@ -556,6 +597,11 @@ def academy_player_row(world: World, row) -> dict:
                 "position": snapshot.position, "nationalities": snapshot.nationalities,
                 "nationality_names": [world.nation_names.get(code, code) for code in snapshot.nationalities],
                 "rating": snapshot.rating, "potential": None if potential is None else round(potential, 1),
+                # What the world saw of him that day: his level, and the band it read his potential in.
+                "stars": {"level": stars_of(snapshot.rating, world.config),
+                          "potential": [stars_of(max(snapshot.rating, snapshot.potential_lower), world.config),
+                                        stars_of(max(snapshot.rating, snapshot.potential_upper), world.config)]},
+                "estimate": {"lower": round(snapshot.potential_lower * 2), "upper": round(snapshot.potential_upper * 2)},
                 "wage": snapshot.weekly_wage, "value": snapshot.value, "contract_end": snapshot.contract_end.iso() if snapshot.contract_end else None,
                 "club": club_ref(world, row.target_id), "fitness": snapshot.fitness, "data_at": "promotion"}
     if row.player_id in world.players:
@@ -613,9 +659,21 @@ def club_league(world: World, club_id: int | None) -> Competition | None:
 def level_history(world: World, player_id: int) -> list[dict]:
     """The player's level out of 200 month by month, oldest first, each with the club he played for that month (the one he
     ended it at if he moved, None without a club); seasons played before the history became monthly have a single point,
-    at their opening."""
+    at their opening. Each point says it in continuous stars too, as the human club read him that month (`stars`), with
+    the band it read his potential in (`band`); a retired player's, without doubt."""
+    from core.world.estimates import to_stars
     moves = sorted((row for row in world.transfers if row.player_id == player_id), key=lambda row: row.date)
     player = world.players.get(player_id)
+    club = world.clubs.get(world.controlled_club_id)
+    observer, reputation = (club.id, club.reputation) if club else (None, None)
+    cfg = world.config
+    def seen(level: float, day: Date) -> dict:
+        if player is None: return {"stars": round(to_stars(level / 2, cfg), 3), "band": None}
+        then = replace(player, rating=level / 2)
+        shown = estimate_level(then, day, world.seed, cfg, observer, reputation)
+        band = estimate_potential(then, day, world.seed, cfg, observer, reputation)
+        return {"stars": round(to_stars(shown.center, cfg), 3),
+                "band": [round(to_stars(band.lower, cfg), 3), round(to_stars(band.upper, cfg), 3)]}
     # Before his earliest known movement he was where it took him from; without any, he never left his club.
     club_id = moves[0].source_id if moves else player.club_id if player else None
     points, done = [], 0
@@ -624,8 +682,9 @@ def level_history(world: World, player_id: int) -> list[dict]:
             year, month = divmod(index, 12)
             while done < len(moves) and (moves[done].date.year, moves[done].date.month) <= (year, month + 1):
                 club_id, done = moves[done].target_id, done + 1
-            points.append({"year": year, "month": month + 1, "season": financial_season(world, Date(year, month + 1, 1)), "level": level,
-                           "club": club_ref(world, club_id)})
+            day = Date(year, month + 1, 1)
+            points.append({"year": year, "month": month + 1, "season": financial_season(world, day), "level": level,
+                           "club": club_ref(world, club_id), **seen(level, day)})
     return points
 
 

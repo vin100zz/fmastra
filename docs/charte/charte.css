@@ -19,7 +19,12 @@
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  /* Pitch. */
  --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141eb3;
+ /* The ball of a goal: the pentagon in the middle, five cut at the rim, drawn to read at 10. */
+ --ball:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3C/clipPath%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff'/%3E%3Cg clip-path='url(%23c)' fill='%230b121a'%3E%3Cpath d='M50 19L34.8 7.9L40.6-9.9L59.4-9.9L65.2 7.9ZM79.5 40.4L85.3 22.5L104.1 22.5L109.9 40.4L94.7 51.5ZM68.2 75.1L87 75.1L92.8 93L77.6 104L62.4 93ZM31.8 75.1L37.6 93L22.4 104L7.2 93L13 75.1ZM20.5 40.4L5.3 51.5L-9.9 40.4L-4.1 22.5L14.7 22.5Z'/%3E%3Cpath d='M50 33V19M66.2 44.7L79.5 40.4M60 63.8L68.2 75.1M40 63.8L31.8 75.1M33.8 44.7L20.5 40.4' stroke='%230b121a' stroke-width='6'/%3E%3C/g%3E%3Cpath d='M50 33L66.2 44.7L60 63.8H40L33.8 44.7Z' fill='%230b121a'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%230b121a' stroke-width='7'/%3E%3C/svg%3E");
  /* Series: the line of a curve, a second series beside it, and the pale form of each for what is free of a share. */
+ /* Stars: the gold of what is sure, the slate of what is only possible, an empty star; on the dark of a pitch's block, the
+    slate and the empty part lightened. */
+ --star:#c98300;--star-soft:#7d8a99;--star-empty:#dde2e8;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  --series-1:#2a78d6;--series-1-deep:#1b5299;--series-1-soft:#9ec5f4;--series-2:#eb6834;--series-2-deep:#b8481c;--series-2-soft:#f6ae8f;
  /* The veil over the page under a dialog. */
  --backdrop:#0f172a66;
@@ -27,6 +32,8 @@
  --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
  --text:"Segoe UI",system-ui,sans-serif;
  --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;
+ /* The one exception to the scale: the word of a goal, in the live match. */
+ --fs-goal:120px;
  --caps:.06em;
  /* Space: 4, 8, 12, 16, 24. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;
@@ -523,9 +530,9 @@ svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 /* What happened to a player in a match. */
 .marks{display:inline-flex;align-items:center;gap:3px;flex:none}
 .mark{display:inline-block;flex:none;font:700 var(--fs-micro)/1 var(--text);font-style:normal}
-.mark.goal{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.mark.goal{width:10px;height:10px;background:var(--ball) center/contain no-repeat}
 /* A penalty missed: the ball, barred. */
-.mark.missed{position:relative;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.mark.missed{position:relative;width:10px;height:10px;background:var(--ball) center/contain no-repeat}
 .mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .mark.yellow,.mark.red{width:8px;height:11px;border-radius:1px}
 .mark.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
@@ -657,7 +664,7 @@ span.entity-step svg{opacity:.3}
    sleeve (5 over the shirt, 4 above it), each next one to the right, 3 of it behind the one before; the ball of the grass,
    with the shirt's shadow. The first ball comes last in the reversed row, so it is drawn on top. */
 .kit-goals{position:absolute;left:calc(100% - 5px);top:-4px;display:flex;flex-direction:row-reverse;filter:drop-shadow(0 1px 1px #00000066)}
-.kit-goals i{flex:none;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1.5px var(--strong),inset 0 0 0 3.5px #fff,inset 0 0 0 5px var(--strong)}
+.kit-goals i{flex:none;width:10px;height:10px;background:var(--ball) center/contain no-repeat}
 .kit-goals i+i{margin-right:-3px}
 /* Ringed in the accent when picked, in red when he cannot play; a player's main position, on his aptitudes, in a white
    veil. */
@@ -999,6 +1006,115 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .career-gap{height:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}
 /* The rows of a section in a card made of sections (a player's column): 12 from the edges, flush with their band. */
 .rail-section{padding:0 var(--s3)}
+
+/* Live match (« Match en direct »). The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the
+   tile 12 before the score, on the accent during a chance, grey while the clock runs. */
+.hero.duel.compact{height:64px;gap:var(--s4)}
+.hero.compact h1{font-size:var(--fs-page)}
+.hero.compact .hero-logo{width:40px;height:40px;object-fit:contain}
+.hero.compact .tile.match-score{flex-direction:row;gap:var(--s3);padding:var(--s1) var(--s3) var(--s1) var(--s1)}
+.live-clock{display:grid;place-items:center;min-width:56px;height:40px;padding:0 var(--s2);border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);font:700 semi-condensed var(--fs-title)/1 var(--display)}
+.live-clock.running{background:var(--panel-2);color:var(--strong)}
+/* The commentary under the pitch: 44, in the colours of the side that has the chance, its crest and the minute first;
+   neutral between two chances, a bar of the accent running at its end. */
+.ticker{display:flex;align-items:center;gap:var(--s3);height:44px;padding:0 var(--s3);border-radius:0 0 var(--radius-box) var(--radius-box);background:var(--team,var(--strong));color:var(--team-ink,#fff)}
+.ticker>img{flex:none;width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 1px 1px #0006)}
+.ticker>b{flex:none;font:700 semi-condensed var(--fs-figure)/1 var(--display)}
+.ticker>span{min-width:0;overflow:hidden;font:600 var(--fs-figure)/20px var(--text);white-space:nowrap;text-overflow:ellipsis}
+.ticker-run{flex:none;width:120px;height:var(--s1);margin-left:auto;border-radius:2px;background:#ffffff33;overflow:hidden}
+.ticker-run>i{display:block;width:35%;height:100%;border-radius:2px;background:var(--accent)}
+/* The whole match on a line of 28: the time played, the break dashed, the minute; the home side's marks above, the other's below. */
+.frise{position:relative;height:28px;background:linear-gradient(var(--line),var(--line)) center/100% 2px no-repeat}
+.frise-played{position:absolute;left:0;top:12px;height:var(--s1);border-radius:2px;background:var(--ink-2)}
+.frise-half{position:absolute;top:6px;height:16px;border-left:1px dashed var(--muted)}
+.frise-now{position:absolute;top:4px;width:2px;height:20px;margin-left:-1px;border-radius:1px;background:var(--accent-text)}
+.frise>.mark{position:absolute;translate:-50% 0}
+.frise>.home{top:0}.frise>.away{bottom:0}
+/* The icon before a slider, where two follow each other (the two paces of the live match). */
+.slider-icon{flex:none;width:18px;height:18px;fill:none;stroke:var(--ink-2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.slider:has(.slider-icon) input[type=range]{width:96px}
+/* A player of a side, a line of 30: shirt of 24 and its number, position, whole name, what he did, note; for the user's side,
+   his fatigue and the assistant's advice, the player he would take off on the wash of a warning. */
+.squad-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto 32px 72px 22px;align-items:center;column-gap:var(--s2);height:30px;padding:0 var(--s3)}
+.squad-row:nth-child(even){background:var(--stripe)}
+.squad-row .kit-shirt{width:24px;height:24px}
+.squad-row .kit-shirt.number b{margin-top:5px;font-size:var(--fs-small)}
+.squad-who{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.squad-who>span:last-child{min-width:0;overflow:hidden;font-weight:600;color:var(--strong);white-space:nowrap;text-overflow:ellipsis}
+.squad-row.bench .squad-who>span:last-child{font-weight:400;color:var(--muted)}
+.squad-row .marks{gap:var(--s1)}
+.squad-row.advised,.squad-row.advised:nth-child(even){background:var(--warn-soft)}
+.fatigue{display:flex;align-items:center;gap:6px;font-size:var(--fs-small);color:var(--muted)}
+.fatigue .gauge{width:32px}
+.advice{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--radius-chip);background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+.advice.in{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
+.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.section-title>.aside{margin-left:auto;font:600 var(--fs-small)/1 var(--text);color:var(--muted)}
+/* A goal on a line of 26 with the score it made, the figure of the side that scored in bold, its minute by the ball. */
+.goal-row{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.goal-row:nth-child(even){background:var(--stripe)}
+.goal-row>.highlight{justify-content:flex-end}
+.goal-row>.highlight.away{flex-direction:row;justify-content:flex-start}
+.goal-row>.fixture-score{min-width:56px;text-align:center;color:var(--ink-2)}
+.goal-row.flash{background:var(--own-row)}
+/* Live, a figure that has just changed: the wash of a section's title, the accent's ink. */
+.comparison>span.bump{border-radius:var(--radius-chip);background:var(--title-wash);color:var(--accent-text)}
+/* The goal: the scorer's colours across the pitch, ringed with his second colour; BUT in --fs-goal, his shirt of 48 and his
+   name in 40, the passer under it. A mockup shows it at rest: the screen stamps the letters and passes a light on them. */
+.goal-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e8c}
+.goal-band{position:relative;display:grid;grid-template-columns:auto auto;align-items:center;column-gap:var(--s6);justify-content:center;width:100%;padding:var(--s6) 0;overflow:hidden;background:var(--team);color:var(--team-ink);box-shadow:0 0 0 2px var(--team-2),0 20px 40px -10px #0008}
+.goal-word{grid-row:span 2;display:flex;align-items:center;gap:var(--s4);font:700 semi-condensed var(--fs-goal)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase}
+.goal-word img{width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 2px 3px #0008)}
+.goal-scorer{display:flex;align-items:center;gap:var(--s3);font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
+.goal-scorer .kit-shirt{width:48px;height:48px}
+.goal-scorer .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.goal-assist{align-self:start;font:600 var(--fs-figure)/20px var(--text);opacity:.85}
+
+/* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
+   filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;
+   12 in a table, 16 on a tile (.big), 8 on a pitch, where the slate and the empty part lighten on the dark of the block. */
+.stars{--size:12px;display:inline-flex;gap:1px;flex:none;vertical-align:middle}
+.stars>i{width:var(--size);height:var(--size);background:linear-gradient(90deg,var(--star) calc(var(--f)*100%),var(--star-soft) calc(var(--f)*100%) calc(var(--u)*100%),var(--star-empty) calc(var(--u)*100%));-webkit-mask:var(--star-shape) center/contain no-repeat;mask:var(--star-shape) center/contain no-repeat}
+.stars{--star-shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.6l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.7l-6.4 3.5L7 14.1l-5.3-5 7.2-.9z'/%3E%3C/svg%3E")}
+.stars.big{--size:16px;gap:2px}
+.player-block .stars{--size:8px;gap:0;--star-soft:var(--star-soft-dark);--star-empty:var(--star-empty-dark)}
+.pitch-player.picked .player-block .stars{--star:var(--accent-ink);--star-empty:#11141833}
+.tile .stars{margin-top:5px}
+
+/* The affinity to a position (.fit): a disc filled at its share of 20, in the colour of its step; on a pitch only under 20. */
+.fit{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;background:conic-gradient(hsl(var(--hue) 65% 45%) calc(var(--p)*1%),var(--line) 0)}
+.player-block .fit{background:conic-gradient(hsl(var(--hue) 75% 60%) calc(var(--p)*1%),#ffffff3d 0)}
+
+/* A trait of a club's personality (.poles): neither good nor bad, five notches between two poles, its own filled. */
+.poles{display:inline-flex;gap:2px;flex:none}
+.poles>i{width:10px;height:6px;border-radius:2px;background:var(--line)}
+.poles>i.on{background:var(--ink-2)}
+
+/* A player's state in five steps, without a figure: his condition in notches (.cells), his form as an arrow turned by
+   45° a step (.arrow), his morale as a face (.face). */
+.cells{display:inline-flex;gap:1px;flex:none}
+.cells>i{width:6px;height:10px;border-radius:1px;background:var(--line)}
+.cells.good>i.on{background:var(--good)}.cells.warn>i.on{background:var(--accent)}.cells.bad>i.on{background:var(--bad)}
+.arrow{display:inline-grid;place-items:center;flex:none;width:16px;height:16px;border-radius:50%}
+.arrow svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.arrow.a2{background:var(--good);color:#fff}.arrow.a1{background:var(--good-soft);color:var(--good)}
+.arrow.a0{background:var(--panel-3);color:var(--muted)}
+.arrow.a-1{background:var(--bad-soft);color:var(--bad)}.arrow.a-2{background:var(--bad);color:#fff}
+.face{display:inline-block;flex:none;width:16px;height:16px}
+.face .head{fill:hsl(var(--hue) 65% 46%)}
+.face .eye{fill:#fff}
+.face path{fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round}
+.state{display:inline-flex;align-items:center;gap:var(--s1)}
+
+/* A trait of a club's personality on a tile: its word, its notch under it. */
+.trait{display:inline-flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-figure);line-height:20px}
+/* The level in stars month by month: a line a half star, dotted between two stars; the band its potential was read in, pale. */
+.level-chart .band{fill:var(--series-1-soft);opacity:.45}
+.level-chart .grid-line.half{stroke-dasharray:2 3}
+.point-value .stars{vertical-align:baseline}
+
+/* The debug mode, while it is on: a mark in the top bar; the exact values are in the tooltips. */
+.pill.debug{background:var(--warn-soft);color:var(--warn)}
 
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

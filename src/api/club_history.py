@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from core.domain.date import Date
 from core.domain.players import ATTRIBUTE_NAMES
-from core.domain.world import World, history_level
+from core.domain.world import World
 from core.world.finances import financial_season
 from . import views as v
 
@@ -73,10 +73,10 @@ class MovementFilter:
     club_id: int | None = None
     nation: str | None = None  # the country of the club that trained the player
     capped: bool = False  # internationals only
-    rating_min: float = 0
-    rating_max: float = 100
-    potential_min: float = 0
-    potential_max: float = 100
+    rating_min: float = 0.5  # in stars, like the potential
+    rating_max: float = 5
+    potential_min: float = 0.5
+    potential_max: float = 5
     interested: str | None = None  # 'oui' or 'non'
 
 
@@ -167,10 +167,13 @@ def academy_kept(world: World, row, details: dict, chosen: MovementFilter) -> bo
     if chosen.competition_id is not None and (club is None or club.competition_id != chosen.competition_id): return False
     if chosen.club_id is not None and row.target_id != chosen.club_id: return False
     if chosen.nation and (club is None or club.nation != chosen.nation): return False
-    # The level is the one he has today, as the list shows it beside the one of his promotion.
-    rating, potential = player.rating if player else details.get('rating'), details.get('potential')
-    if (chosen.rating_min > 0 or chosen.rating_max < 100) and (rating is None or not chosen.rating_min <= rating <= chosen.rating_max): return False
-    if (chosen.potential_min > 0 or chosen.potential_max < 100) and (potential is None or not chosen.potential_min <= potential <= chosen.potential_max): return False
+    # The level is the one he has today, as the list shows it beside the one of his promotion; both in stars, the
+    # potential at the middle of the band it was read in.
+    stars = v.scouting(world, player)['stars'] if player else details.get('stars')
+    rating = stars['level'] if stars else None
+    potential = sum(details['stars']['potential']) / 2 if details.get('stars') else None
+    if (chosen.rating_min > 0.5 or chosen.rating_max < 5) and (rating is None or not chosen.rating_min <= rating <= chosen.rating_max): return False
+    if (chosen.potential_min > 0.5 or chosen.potential_max < 5) and (potential is None or not chosen.potential_min <= potential <= chosen.potential_max): return False
     if chosen.interested and world.controlled_club_id is not None and (player is None or v.interested(world, player) is not (chosen.interested == 'oui')): return False
     return aged(row, row.born, chosen)
 
@@ -181,7 +184,7 @@ RETIREMENT_SORTS = {'date', 'position', 'name', 'nation', 'age', 'source', 'leag
 # A promotion sorts on what the player was that day, and on what he is today: his level, what he gained, his value, what he
 # asks of the human club, his attributes and his composites.
 ACADEMY_SORTS = {'position', 'name', 'nation', 'age', 'rating', 'potential', 'club', 'value', 'wage', 'contract_end', 'fitness', 'promotion_date',
-                 'academy_club', 'data_at', 'level', 'progress', 'worth', 'wage_demand', 'interested', *ATTRIBUTE_NAMES, *v.COMPOSITES}
+                 'academy_club', 'data_at', 'level', 'worth', 'wage_demand', 'interested', *ATTRIBUTE_NAMES, *v.COMPOSITES}
 DEFAULT_SORTS = {'transfer': 'fee', 'retirement': 'rating', 'academy': 'promotion_date'}
 
 
@@ -211,14 +214,13 @@ def world_movements(world: World, season: int | None, kind: str, page: int, sort
         if player is None: return None
         if field == 'position': return v.position_rank(player.position)
         if field == 'nation': return player.main_nation
-        return player.rating if field == 'rating' else v.market_value(player, world)
+        return v.star_sort(v.scouting(world, player), 'rating') if field == 'rating' else v.seen_value(world, player)
     def promoted_today(row, details):
         """What a promoted player is today, for the sorts on it; None once he has left the world."""
         player = world.players.get(row.player_id)
         if player is None: return None
-        if sort == 'level': return player.rating
-        if sort == 'progress': return None if details.get('rating') is None else player.rating - details['rating']
-        if sort == 'worth': return v.market_value(player, world)
+        if sort == 'level': return v.star_sort(v.scouting(world, player), 'rating')
+        if sort == 'worth': return v.seen_value(world, player)
         if sort == 'wage_demand': return v.asked_wage(world, player)
         if sort == 'interested':
             keen = v.interested(world, player)
@@ -243,6 +245,8 @@ def world_movements(world: World, season: int | None, kind: str, page: int, sort
             return promoted_today(row, details)
         if sort == 'nation': return v.main_nation(details)
         if sort == 'club': return v.normalized(details['club']['name']) if details.get('club') else ('libre' if details.get('data_at') != 'unknown' else None)
+        if sort in ('rating', 'potential'):
+            return v.star_sort(details, sort) if details.get('stars') else None
         if sort == 'data_at': return {'promotion': 'a la promotion', 'current': 'actuelles', 'unknown': 'non archivees'}[details['data_at']]
         value = details.get(sort)
         return v.normalized(value) if isinstance(value, str) else value
@@ -347,23 +351,25 @@ def retirement_summary(world: World, season: int | None) -> dict:
                                for league_id, entry in leagues.items()), key=lambda entry: (entry['id'] is None, -entry['count']))}
 
 
-# The potentials of a class of promoted players are counted by ten levels out of 200, everything under 100 together.
-POTENTIAL_FLOOR, POTENTIAL_STEP, POTENTIAL_TOP = 100, 10, 200
+# The potentials of a class of promoted players are counted by the stars the world read them at, half a star a class.
+STAR_CLASSES = [step / 2 for step in range(1, 11)]
 
 
 def academy_summary(world: World, season: int | None) -> dict:
-    """A season's promotions in figures: how many, their potential and what they have gained since, then the clubs that
-    trained them and the countries of those clubs. A promotion archived without its potential counts for its club and
-    its country, not in the potentials."""
+    """A season's promotions in figures: how many and their potential, then the clubs that trained them and the countries
+    of those clubs. Each potential is the one the world read on the day, at the middle of its band (today's reading for
+    a promotion archived without it); a promotion archived without anything counts for its club and its country, not in
+    the potentials."""
+    from core.world.estimates import estimate_potential, stars_of
     nav = navigation(world, season)
     rows = season_movements(world, nav['season'], {'academy'})
-    potentials, gains, best = [], [], None
+    potentials, best = [], None
     clubs: dict[int, dict] = {}
     nations: dict[str, dict] = {}
     for row in rows:
         player, snapshot, club = world.players.get(row.player_id), row.snapshot, world.clubs.get(row.target_id)
-        potential = snapshot.potential if snapshot and snapshot.potential is not None else player.potential if player else None
-        if snapshot and player: gains.append(player.rating - snapshot.rating)
+        potential = ((snapshot.potential_lower + snapshot.potential_upper) / 2 if snapshot
+                     else estimate_potential(player, world.date, world.seed, world.config).center if player else None)
         books = [clubs.setdefault(club.id, {'count': 0, 'potentials': [], 'best': None}),
                  nations.setdefault(club.nation, {'count': 0, 'potentials': [], 'best': None, 'clubs': set()})] if club else []
         for entry in books: entry['count'] += 1
@@ -376,12 +382,9 @@ def academy_summary(world: World, season: int | None) -> dict:
             if entry['best'] is None or potential > entry['best'][0]: entry['best'] = (potential, row.player_id)
     def prospect(found) -> dict | None:
         return {'potential': round(found[0], 1), 'player_id': found[1], 'player': v.player_name(world, found[1])} if found else None
-    levels = [history_level(potential) for potential in potentials]
-    floors = range(POTENTIAL_FLOOR, POTENTIAL_TOP, POTENTIAL_STEP)
-    return {**nav, 'total': len(rows), 'average_potential': mean(potentials), 'best': prospect(best), 'average_progress': mean(gains, 2),
-            'bins': [{'from': None, 'count': sum(level < POTENTIAL_FLOOR for level in levels)},
-                     *({'from': floor, 'count': sum(floor <= level < floor + POTENTIAL_STEP or level == POTENTIAL_TOP == floor + POTENTIAL_STEP for level in levels)}
-                       for floor in floors)],
+    shown = [stars_of(potential, world.config) for potential in potentials]
+    return {**nav, 'total': len(rows), 'average_potential': mean(potentials), 'best': prospect(best),
+            'bins': [{'stars': stars, 'count': shown.count(stars)} for stars in STAR_CLASSES],
             # The clubs by their best prospect, then by the mean potential of their class.
             'academies': sorted(({'club': v.club_ref(world, club_id), 'count': entry['count'], 'average_potential': mean(entry['potentials']),
                                   'best': prospect(entry['best']), 'youth_recruitment': world.clubs[club_id].youth_recruitment}

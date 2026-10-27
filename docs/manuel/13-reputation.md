@@ -11,7 +11,7 @@ La réputation est le levier le plus puissant du jeu, parce qu'elle entre partou
 - **les joueurs qui acceptent de venir**, et ceux qui s'impatientent de rester (voir [Ce qu'un joueur accepte](#/aide/mercato/ce-qu-un-joueur-accepte)) ;
 - **les salaires demandés** : venir d'un club plus réputé se paie, y monter aussi ;
 - **le moral** des joueurs, pour une petite part ;
-- **la justesse du regard** porté sur le potentiel des jeunes (voir [Regens](#/aide/regens/ce-que-les-clubs-voient-du-potentiel)) ;
+- **la justesse du regard** porté sur le potentiel des jeunes (voir [Regens](#/aide/regens/ce-que-l-on-voit-d-un-joueur)) ;
 - **les tirages** : places en coupe nationale, montée depuis les divisions non simulées, chapeaux européens.
 
 ## La révision annuelle

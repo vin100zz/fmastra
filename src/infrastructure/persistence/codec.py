@@ -89,7 +89,7 @@ def decode(value: Any) -> Any:
             for name in ("source_current_ability", "source_potential_ability"):
                 value["fields"].setdefault(name, None)
             value["fields"].setdefault("position_ratings", {"$map": []})
-            for name, default in (("loan", None), ("reserve_since", None), ("reserve_days", 0), ("free_since", None)):
+            for name, default in (("loan", None), ("reserve_since", None), ("reserve_days", 0), ("free_since", None), ("exposure", 0.0)):
                 value["fields"].setdefault(name, default)
         if cls is World and "offers" not in value["fields"]:
             value["fields"]["offers"] = {"$map": []}

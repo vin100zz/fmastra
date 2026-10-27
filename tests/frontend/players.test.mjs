@@ -28,16 +28,20 @@ test('without a club the players list has neither the columns nor the filters of
 });
 
 test('the title and the filters stand on one line: positions as chips, ranges in menus, the rest in lists',async()=>{
- const {html,asked}=await render('poste=MC,BU&age_max=23&potentiel_min=180&valeur_min=10&contrat=libre&tri=goals&ordre=desc',7);
+ const {html,asked}=await render('poste=MC,BU&age_max=23&potentiel_min=4&valeur_min=10&contrat=libre&tri=goals&ordre=desc',7);
  assert.match(html,/^<form class="toolbar" data-filter><h1>Joueurs<\/h1><input name="recherche" type="search"/);
  assert.deepEqual([...html.matchAll(/class="chip \w+ on"[^>]*>(\w+)</g)].map(match=>match[1]),['MC','BU']);
  assert.deepEqual([...html.matchAll(/<details class="filter-menu( on)?"><summary>([^<]+?)(?: <b>([^<]*)<\/b>)?(?:<a|<\/summary)/g)].map(match=>[match[2],match[3]]),
-  [['Âge','≤ 23'],['Niveau',undefined],['Potentiel','≥ 180'],['Valeur','≥ 10 M€'],['Prix min.',undefined],['Salaire',undefined],['Prétentions',undefined]]);
- assert.deepEqual([...html.matchAll(/<select name="(\w+)"/g)].map(match=>match[1]),['contrat','statut_club','liste','interesse']);
+  [['Âge','≤ 23'],['Niveau',undefined],['Valeur','≥ 10 M€'],['Prix min.',undefined],['Salaire',undefined],['Prétentions',undefined]]);
+ // Level and potential in stars: Min. and Max. by half stars, presets of three; set, the button reads its stars.
+ assert.match(html,/<details class="filter-menu"><summary>Niveau<\/summary>/);
+ assert.match(html,/<details class="filter-menu on"><summary>Potentiel <b>≥ <span class="stars" role="img" aria-label="4 étoiles">/);
+ assert.match(html,/<select name="potentiel_min"><option value="">—<\/option>[^]*?<option value="4" selected>4 ★<\/option>/);
+ assert.deepEqual([...html.matchAll(/<select name="(\w+)"/g)].map(match=>match[1]),['niveau_min','niveau_max','potentiel_min','potentiel_max','contrat','statut_club','liste','interesse']);
  assert.match(html,/<button type="button" data-reset-filters >Réinitialiser<\/button><\/form>/);
  // Levels are asked on the server's scale, values in euros; without a window the server keeps its page size.
  const request=decodeURIComponent(asked.find(url=>url.includes('/joueurs?')));
- assert.match(request,/poste=MC,BU/);assert.match(request,/potentiel_min=90/);assert.match(request,/valeur_min=10000000/);
+ assert.match(request,/poste=MC,BU/);assert.match(request,/potentiel_min=4(&|$)/);assert.match(request,/valeur_min=10000000/);
  assert.doesNotMatch(request,/taille|sel=/);
 });
 

@@ -10,7 +10,14 @@ export const expectedGoals = value => new Intl.NumberFormat('fr-FR', {minimumFra
 // Matches played as starts, with the ones coming off the bench in brackets: "12 (3)", or just "12" without any.
 export const appearances = (total, substitutes=0) => substitutes ? `${number(total-substitutes)} (${number(substitutes)})` : number(total);
 export const minutes = value => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(value??0);
-export const facilityRating = value => value == null ? '—' : `${number(value)} / 20`;
+// A club's facilities, out of 20 in the game, in stars: a star every four points, the half star nearest (« Étoiles »).
+export const facilityStars = value => value == null ? null : Math.max(.5,Math.min(5,Math.round(value/2)/2));
+export const facilityRating = (value, big=false) => value == null ? '—' : stars(facilityStars(value),facilityStars(value),{big,title:`${number(value)} / 20`});
+// A trait of a club's personality from 0 to 1, neither good nor bad: one notch of five between two poles, and its word.
+export const PERSONALITY_WORDS={risk_appetite:['Frileux','Prudent','Mesuré','Audacieux','Flambeur'],youth_preference:['Fermé','Réservé','Équilibré','Ouvert','Formateur'],
+ negotiation_patience:['Pressé','Expéditif','Posé','Patient','Inflexible']};
+export const personalityNotch = share => Math.min(5,1+Math.floor(share*5));
+export const poles = share => {const notch=personalityNotch(share);return `<span class="poles" aria-hidden="true">${[1,2,3,4,5].map(index=>`<i${index===notch?' class="on"':''}></i>`).join('')}</span>`;};
 export const money = value => amount(value,2);
 // A transfer amount (a value, a fee, an asking price, an offer) on its nearest step; the server already puts an asking
 // price and an offer on theirs.
@@ -27,7 +34,44 @@ export const scoreHue = score => gradeHue(score,4,10,16);
 // A match's note, out of 10: red at 6 or less, yellow at 6.75, green from 7.5.
 export const noteHue = score => gradeHue(score,6,6.75,7.5);
 const gradedBadge = (text, hue, title) => `<span class="rating graded" style="--hue:${hue}"${title?` title="${escape(title)}"`:''}>${text}</span>`;
-export const levelBadge = (value, title) => value==null ? '—' : gradedBadge(level(value),levelHue(level(value)),title);
+// Level, potential and notes are shown in stars (docs/charte-graphique.md, « Étoiles »), never in figures: the half star a
+// value reaches on the scale of the configuration (`star_scale` of /monde/etat, on the attributes' 1-100), its thresholds
+// from one star. A note without doubt (a composite, a note at a position, a mean) is read here; a player's level and
+// potential come estimated by the server, as the user's club sees him (`stars`).
+let starThresholds=[45,50,55,59,63,67,71,76,82.5];
+export const setStarScale = scale => {if(scale?.thresholds?.length===9)starThresholds=scale.thresholds;};
+export const starsOf = value => value==null ? null : starThresholds.reduce((stars,threshold,index)=>value>=threshold?1+index/2:stars,.5);
+// The debug mode shows the exact values behind the stars and the states, in their tooltips; off by default, kept by the browser.
+let debug=false;
+try{debug=localStorage.getItem('fm-debug')==='1';}catch{}
+export const debugMode = () => debug;
+export const setDebugMode = on => {debug=Boolean(on);try{localStorage.setItem('fm-debug',debug?'1':'0');}catch{}};
+const starWord = value => value%1 ? `${Math.floor(value)||''}½` : String(value);
+// Five stars, the sure part in gold up to `low`, the possible one in slate up to `high`; 16 on a tile (`big`). Its tooltip
+// (`title`) only in debug mode.
+export function stars(low, high=low, {big=false,title=''}={}) {
+ if(low==null)return '—';
+ const top=Math.max(low,high??low);
+ const cells=[0,1,2,3,4].map(index=>`<i style="--f:${Math.min(1,Math.max(0,low-index))};--u:${Math.min(1,Math.max(0,top-index))}"></i>`).join('');
+ const label=top>low?`${starWord(low)} à ${starWord(top)} étoiles`:`${starWord(low)} étoile${low>1?'s':''}`;
+ return `<span class="stars${big?' big':''}" role="img" aria-label="${label}"${debug&&title?` title="${escape(title)}"`:''}>${cells}</span>`;
+}
+// A note without doubt in stars; in debug mode its figure out of 200 after `label`.
+export const noteStars = (value, label='Note', big=false) => value==null ? '—' : stars(starsOf(value),starsOf(value),{big,title:`${label} : ${level(value)}`});
+// What a player's level and potential are, as his row from /api tells them: the stars the user's club sees, and in debug mode
+// the estimates behind them, the exact values and the errors, out of 200 and in stars.
+const deviationText = value => `± ${String(value).replace(/0+$/,'').replace(/\.$/,'')} ★`;
+export const levelTitle = player => player?.estimate ? `Niveau\nEstimé ${player.estimate.level}${player.rating!=null?`\nRéel ${level(player.rating)}`:''}\nErreur type ${deviationText(player.estimate.level_deviation)}` : '';
+export const potentialTitle = player => {
+ const estimate=player?.estimate;
+ if(!estimate)return '';
+ return [`Potentiel`,`Fourchette ${estimate.lower} – ${estimate.upper}`,...(estimate.potential!=null?[`Estimé ${estimate.potential}`]:[]),
+  ...(player.potential!=null?[`Réel ${level(player.potential)}`]:[]),...(estimate.deviation!=null?[`Erreur type ${deviationText(estimate.deviation)}`]:[])].join('\n');
+};
+export const levelStars = (player, big=false) => player?.stars ? stars(player.stars.level,player.stars.level,{big,title:levelTitle(player)}) : player?.rating!=null ? noteStars(player.rating,'Niveau',big) : '—';
+export const potentialStars = (player, big=false) => player?.stars ? stars(...player.stars.potential,{big,title:potentialTitle(player)}) : player?.potential!=null ? noteStars(player.potential,'Potentiel',big) : '—';
+// Kept for the notes without doubt the screens still badge: in stars like the others.
+export const levelBadge = (value, title='Note') => noteStars(value,title);
 export const scoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(score),title);
 // A score out of 20 where more is worse (a player's fragility): the same scale, read the other way round.
 export const reverseScoreBadge = (score, title) => score==null ? '—' : gradedBadge(score,scoreHue(21-score),title);
@@ -40,22 +84,34 @@ export const matchBlockNote = (value, title='Note du match') => value==null ? ''
 // player page.
 const positionNoteTitle = (role, keys) => `Note au poste ${role} : ${keys.map(key=>COMPOSITES[key]).join(', ')}, affinité au poste comprise`;
 export const positionNote = (player, role, keys=[]) => player?.position_notes?.[role]==null ? ''
- : levelBadge(player.position_notes[role],positionNoteTitle(role,keys));
-export const positionBlockNote = (player, role, keys=[]) => {
- const value=player?.position_notes?.[role];
- return value==null ? '' : blockNote(level(value),levelHue(level(value)),positionNoteTitle(role,keys));
-};
+ : noteStars(player.position_notes[role],positionNoteTitle(role,keys));
+// On a pitch, the same stars, at the size of its blocks.
+export const positionBlockNote = (player, role, keys=[]) => positionNote(player,role,keys);
 // Form as its effect on all a player does in a match: 1.11 reads "+11 %"; within ±2 % it changes nothing (`neutral`).
 export const formReading = form => {
  const pct=Math.round((form-1)*100),neutral=Math.abs(pct)<=2,text=pct>0?`+${pct} %`:pct<0?`−${-pct} %`:'0 %';
  return {pct,neutral,text,title:`Forme ${form.toFixed(2)} : ${neutral?'il joue à son niveau':`tout ce qu'il fait en match compte ${Math.abs(pct)} % de ${pct>0?'plus':'moins'}`}`};
 };
-// In green or red; grey when neutral.
-export const formBadge = form => {
- if(form==null)return '—';
- const {pct,neutral,text,title}=formReading(form);
- return neutral?`<span class="rating form-badge neutral" title="${escape(title)}">${text}</span>`:gradedBadge(text,pct>0?120:0,title).replace('class="rating graded"','class="rating graded form-badge"');
+// A player's state in five steps, without a figure (docs/charte-graphique.md, « État, forme, moral »); its word in the
+// tooltip, and in debug mode the figure behind it.
+const CONDITIONS=[[.95,'Frais','good'],[.85,'Bon','good'],[.75,'Juste','warn'],[.6,'Fatigué','bad'],[-Infinity,'Épuisé','bad']];
+export const conditionReading = fitness => {const index=CONDITIONS.findIndex(([floor])=>fitness>=floor);return {step:5-index,word:CONDITIONS[index][1],tone:CONDITIONS[index][2]};};
+export const conditionIcon = fitness => {
+ if(fitness==null)return '—';
+ const {step,word,tone}=conditionReading(fitness);
+ return `<span class="cells ${tone}" role="img" aria-label="${word}" title="${escape(debug?`${word} · ${Math.round(fitness*100)} %`:word)}">${[1,2,3,4,5].map(index=>`<i${index<=step?' class="on"':''}></i>`).join('')}</span>`;
 };
+// Form from −2 (very bad) to 2 (excellent): within 3 % either way it changes nothing.
+const FORMS={2:'Excellente','1':'Bonne','0':'Normale','-1':'Mauvaise','-2':'Très mauvaise'};
+export const formStep = form => {const pct=Math.round((form-1)*100);return pct>=10?2:pct>=3?1:pct>-3?0:pct>-10?-1:-2;};
+export const formWord = form => FORMS[formStep(form)];
+export const formIcon = form => {
+ if(form==null)return '—';
+ const step=formStep(form),word=FORMS[step];
+ return `<span class="arrow a${step}" role="img" aria-label="Forme ${word.toLowerCase()}" title="${escape(debug?`Forme ${word.toLowerCase()} · ${formReading(form).text}`:`Forme ${word.toLowerCase()}`)}"><svg viewBox="0 0 10 10" aria-hidden="true" style="transform:rotate(${-45*step}deg)"><path d="M1.5 5h7M5.5 2l3 3-3 3"></path></svg></span>`;
+};
+// Kept for the lists that call it so: the arrow of the form.
+export const formBadge = formIcon;
 // An arrow for a form worth at least 5 % either way in a match, after the note at a position: in the lineup's list and in the
 // block of its pitch.
 export const formArrow = form => {
@@ -75,15 +131,32 @@ export function moraleReading(player, always=false) {
   ...(player.wage_satisfaction!=null?[`salaire : ${share(player.wage_satisfaction)}`,`temps de jeu : ${share(player.playing_time_satisfaction)}`]:[])].join(' · ');
  return {value,target,cause,title,hue:gradeHue(value,40,60,80)};
 }
-// Morale out of 100, an arrow towards where it drifts, and its main cause when low.
+// Morale in five steps, a face for each, from "au plus bas" to "excellent".
+const MORALES=[[.85,'Excellent',135,2.2],[.7,'Bon',88,1.1],[.55,'Correct',50,0],[.4,'Bas',28,-1.1],[-Infinity,'Au plus bas',4,-2.2]];
+export const moraleWord = morale => MORALES.find(([floor])=>morale>=floor)[1];
+export const moraleFace = morale => {
+ const [,word,hue,smile]=MORALES.find(([floor])=>morale>=floor);
+ return `<svg class="face" viewBox="0 0 16 16" role="img" aria-label="Moral ${word.toLowerCase()}" style="--hue:${hue}"><circle class="head" cx="8" cy="8" r="8"></circle><circle class="eye" cx="5.4" cy="6.2" r="1.1"></circle><circle class="eye" cx="10.6" cy="6.2" r="1.1"></circle><path d="M4.6 ${10.6-smile/2}Q8 ${10.6+smile} 11.4 ${10.6-smile/2}"></path></svg>`;
+};
+// Its face, an arrow towards where it drifts, and its main cause when low; the tooltip names them, the figures in debug mode.
 export function moraleCell(player) {
  if(player.morale==null)return '—';
- const {value,target,cause,title,hue}=moraleReading(player);
+ const {value,target,cause,title}=moraleReading(player);
  const trend=target==null||Math.abs(target-value)<3?'':target>value?'<span class="trend up">▲</span>':'<span class="trend down">▼</span>';
- return `<span class="morale-cell" title="${escape(title)}">${gradedBadge(`${value} %`,hue)}<span class="trend-slot">${trend}</span>${cause?`<span class="morale-cause">${cause[0]}</span>`:''}</span>`;
+ const told=debug?title:[`Moral ${moraleWord(player.morale).toLowerCase()}`,...(cause?[`pèse surtout : ${cause[1]}`]:[])].join(' · ');
+ return `<span class="morale-cell" title="${escape(told)}">${moraleFace(player.morale)}<span class="trend-slot">${trend}</span>${cause?`<span class="morale-cause">${cause[0]}</span>`:''}</span>`;
 }
 // The affinity to a position out of 20, only below 20: a round tag after the note at that position.
-export const affinityTag = (value, role) => value==null||value>=20 ? '' : `<i class="affinity-tag" style="--hue:${scoreHue(value)}" title="Affinité ${escape(role)} : ${value} / 20">${value}</i>`;
+// Five steps of affinity, from Naturel (20) to Maladroit; the disc fills at its share of 20.
+const FITS=[[20,'Naturel',135],[15,'Confirmé',88],[10,'Correct',50],[5,'Hésitant',28],[-Infinity,'Maladroit',4]];
+export const affinityWord = value => FITS.find(([floor])=>value>=floor)[1];
+export const affinityIcon = (value, role) => {
+ if(value==null)return '';
+ const [,word,hue]=FITS.find(([floor])=>value>=floor);
+ return `<i class="fit" style="--hue:${hue};--p:${Math.round(value*5)}" role="img" aria-label="${word}" title="${escape(`Affinité ${role} : ${word.toLowerCase()}${debug?` · ${value} / 20`:''}`)}"></i>`;
+};
+// On a pitch and after a note at a position: only under 20.
+export const affinityTag = (value, role) => value==null||value>=20 ? '' : affinityIcon(value,role);
 export const ATTRIBUTES={passe:'Passe',technique:'Technique',finition:'Finition',tacle:'Tacle',jeu_tete:'Jeu de tête',vision:'Vision',placement:'Placement',sang_froid:'Sang-froid',vitesse:'Vitesse',endurance:'Endurance',reflexes:'Réflexes',sorties:'Sorties',relance:'Relance',centre:'Centres',cpa:'Coups arrêtés',penalty:'Penaltys'};
 // What an attribute is for decides its section; inside it, the attributes come in the alphabetical order of their names.
 export const ATTRIBUTE_SECTIONS=[
@@ -344,7 +417,12 @@ export const heading = (title,extra='') => `<div class="page-heading"><div><h1>$
 const MONTHS=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
 // What a cell sorts by when its table gives no value for it: the figure it shows (an amount in its unit, a percentage, a
 // count before its brackets), a date as the screens write it, otherwise its text; nothing for an empty cell.
+// Stars sort on what they show: the middle of their band (« Étoiles »).
+const STARS_LABEL=/class="stars[^"]*" role="img" aria-label="([^"]+)"/;
+const starCount=word=>(word.startsWith('½')?0:parseInt(word,10))+(word.includes('½')?.5:0);
 export function sortValue(cell){
+ const told=STARS_LABEL.exec(String(cell??''));
+ if(told){const [low,high=low]=told[1].replace(/ étoiles?$/,'').split(' à ').map(starCount);return String((low+high)/2);}
  const shown=String(cell??'').replace(/<[^>]*>/g,'').replace(/&[a-z#0-9]+;/gi,' ').replace(/\s+/g,' ').trim();
  if(!shown||shown==='—')return '';
  const figure=/^([+−-]?) ?(\d[\d ]*(?:\.\d+)?) ?(M€|k€|€|%)?(?: ?\(.*\))?$/.exec(shown);
@@ -435,7 +513,7 @@ export const compositeHeader = key => `<span title="${COMPOSITES[key]}">${COMPOS
 // A composite out of 200, grey when the position does not ask for it (`wanted`: the composites of that position).
 export const compositeCell = (player, key, wanted=player.key_composites) => {
  const value=player.composites?.[key];if(value==null)return '—';
- const badge=levelBadge(value,`${COMPOSITES[key]} sur 200`);
+ const badge=noteStars(value,COMPOSITES[key]);
  return wanted&&!wanted.includes(key)?`<span class="off-role">${badge}</span>`:badge;
 };
 // A player list's columns, [key, header, heading over it]: contract, state and season by default, the attributes by section in the
@@ -469,11 +547,11 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
   const cells={
    position:player.position?position(player.position):'—',name:`<span class="strong">${playerLink(player.id,player.name)}</span>${loanTag(player)}`,
    nation:mainNation(player),
-   age:figure(player.age??'—'),rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
+   age:figure(player.age??'—'),rating:levelStars(player),potential:potentialStars(player),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
    caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
    value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false||player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
    wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:player.transferable===false?LOCKED:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:contractCell(player),
-   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${miniBar(player.fitness)}${Math.round(player.fitness*100)}\u00a0%</span>`,
+   fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${conditionIcon(player.fitness)}</span>`,
    form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
    appearances:figure(appearances(player.appearances,player.substitutes)),goals:figure(player.goals??'—'),assists:figure(player.assists??'—'),yellows:figure(player.yellows??'—'),reds:figure(player.reds??'—'),average:figure(player.average?averageNote(player.average):'—'),

@@ -4,9 +4,11 @@
    The tokens are the charter's (docs/charte-graphique.md): its light theme below, and what does not depend on the theme here.
    tests/frontend/charte.test.mjs holds them equal to docs/charte/charte.css. */
 :root{
+ /* Stars, on the dark theme: brighter gold, the same slate, an empty star on the dark panels. */
+ --star:#e3a600;--star-soft:#7d8a99;--star-empty:#3a4656;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  /* Type: two families, seven sizes, three weights (400, 600, 700), one tracking for capitals. */
  --text:"Segoe UI",system-ui,sans-serif;
- --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--caps:.06em;
+ --fs-micro:10px;--fs-small:11px;--fs-body:13px;--fs-figure:16px;--fs-title:20px;--fs-page:26px;--fs-hero:40px;--fs-goal:120px;--caps:.06em;
  /* Space: 4, 8, 12, 16, 24. Shape: four radii, from a badge to a card, or a full round; the mark of what is open is 3 px on a
     bar, 2 px on a control. */
  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s6:24px;--mark:3px;--mark-control:2px;
@@ -17,6 +19,8 @@
  /* Positions: four solid hues kept clear of the red-to-green scale of the notes, the same in both themes. */
  --gk:#0a7591;--def:#3d55b8;--mid:#7a45b5;--att:#b0347f;
  --pitch-line:#ffffffb3;--pitch-label:#0a141eb3;
+ /* The ball of a goal: the pentagon in the middle, five cut at the rim, drawn to read at 10. */
+ --ball:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3C/clipPath%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff'/%3E%3Cg clip-path='url(%23c)' fill='%230b121a'%3E%3Cpath d='M50 19L34.8 7.9L40.6-9.9L59.4-9.9L65.2 7.9ZM79.5 40.4L85.3 22.5L104.1 22.5L109.9 40.4L94.7 51.5ZM68.2 75.1L87 75.1L92.8 93L77.6 104L62.4 93ZM31.8 75.1L37.6 93L22.4 104L7.2 93L13 75.1ZM20.5 40.4L5.3 51.5L-9.9 40.4L-4.1 22.5L14.7 22.5Z'/%3E%3Cpath d='M50 33V19M66.2 44.7L79.5 40.4M60 63.8L68.2 75.1M40 63.8L31.8 75.1M33.8 44.7L20.5 40.4' stroke='%230b121a' stroke-width='6'/%3E%3C/g%3E%3Cpath d='M50 33L66.2 44.7L60 63.8H40L33.8 44.7Z' fill='%230b121a'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%230b121a' stroke-width='7'/%3E%3C/svg%3E");
  --bg:#0e1217;--rail:#0a0d11;--panel:#161b22;--panel-2:#1d242d;--panel-3:#222b36;--row-line:#1f2630;
  --accent:#f5c400;--accent-ink:#111418;--accent-soft:#f5c4001f;--accent-text:#f5c400;--accent-hover:#ffd633;
  --good:#5fd08a;--warn:#e3c34f;--bad:#ff7a72;--info:#7cc4ff;--gold-bright:#ffd23f;
@@ -371,6 +375,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
  --good-soft:#e1f3e7;--good-line:#a9d9bb;--bad-soft:#fbe7e5;--bad-line:#efc0bb;--warn-soft:#fdf4d8;--warn-line:#ecd69a;--own-row:#fff3c4;
  --gold-soft:#fbf0cf;--info-soft:#e3eefa;--att-soft:#fbe6e3;
  --c3:#7b46a4;--c3-soft:#f4edfc;--c4:#00646f;--c4-soft:#e0f5f8;
+ --star:#c98300;--star-soft:#7d8a99;--star-empty:#dde2e8;--star-soft-dark:#8d99a8;--star-empty-dark:#ffffff3d;
  color-scheme:light
 }
 :root[data-theme="light"] .rating.graded{background:hsl(var(--hue) 78% 89%);color:hsl(var(--hue) 72% 26%);border-color:transparent}
@@ -748,7 +753,7 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .movements-table col.grouped{width:58px}.movements-table col.group-start{border-left:1px solid var(--line)}.movements-table th.column-group{text-align:center;text-transform:uppercase}
 .movements-table .league-column{width:104px}
 .movements-table .academy_club-column{width:170px}.movements-table .level-column,.movements-table .potential-column{width:34px}.movements-table .rating-column:has([data-sort=rating] span){width:46px}
-.movements-table .progress-column{width:130px}.movements-table .worth-column{width:60px}.movements-table .wage_demand-column{width:76px}.movements-table .interested-column{width:62px}
+.movements-table .worth-column{width:60px}.movements-table .wage_demand-column{width:76px}.movements-table .interested-column{width:62px}
 .movements-table .bar-figure.gain .mini-bar{width:80px}.bar-figure.gain .mini-bar>i{background:var(--good)}.movements-table .bar-figure.gain b{min-width:30px}
 /* Preview of the row picked in a list: the words of the player's or the club's page, in a narrow card. */
 .preview{display:flex;flex-direction:column;flex:1 0 auto!important;overflow:visible}

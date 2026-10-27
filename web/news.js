@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyMargin} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,standingsTable,roundTitle,kitShirt,competitionBadge,contractEnd,GO} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,competitionBadge,contractEnd,GO} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -33,7 +33,8 @@ const linked=segments=>segments.map(part=>part.ref?`<a href="${refHref(part.ref)
 const named=player=>player.gone?e(player.name):`<a href="#/player/${player.id}">${e(player.name)}</a>`;
 const lines=(rows,modifier='')=>`<ul class="news-lines${modifier?` ${modifier}`:''}">${rows.map(cells=>`<li>${cells.join('')}</li>`).join('')}</ul>`;
 const absence=days=>days<7?`${days} jour${days>1?'s':''}`:days<30?`${Math.round(days/7)} semaine${Math.round(days/7)>1?'s':''}`:`${Math.max(1,Math.round(days/30))} mois`;
-const moraleBadge=value=>`<span class="rating graded" style="--hue:${moraleReading({morale:value/100}).hue}" title="Moral">${value} %</span>`;
+// A morale in a message as everywhere: its face and its word, the figure in debug mode.
+const moraleBadge=value=>`<span class="state" title="${e(debugMode()?`Moral ${value} %`:'Moral')}">${moraleFace(value/100)}${moraleWord(value/100)}</span>`;
 const MORALE={temps_de_jeu:'Mécontent de son temps de jeu',reserve:'Ne veut plus être en réserve',salaire:'Mécontent de son salaire',ambition:'Vise un club plus prestigieux',intransferable:'Veut partir, mais n’est pas à vendre'};
 const OFFER_STATES={accepted:['Acceptée','good'],refused:['Refusée',''],raised:['Relevée',''],declined:['Non retenue',''],lapsed:['Sans suite','']};
 

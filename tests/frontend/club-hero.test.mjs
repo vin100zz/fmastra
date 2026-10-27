@@ -93,12 +93,14 @@ test('the Présentation opens on the club\'s tiles: its competitions, its player
  assert.match(tiles[1],/^ split"><div><span><a class="competition-link" href="#\/league\/16"><span class="competition-code league" title="Ligue 1">[^<]*<\/span>Ligue 1<\/a><\/span><strong>1er<em>77 pts<\/em><\/strong><\/div><div><span><a class="competition-link" href="#\/league\/-3"><span class="competition-code cup"[^>]*>[^<]*<\/span>Coupe de France<\/a><\/span><strong>Finale<\/strong><\/div><\/div>$/);
  assert.match(tiles[2],/^ split"><div><span>Joueurs<\/span><strong>23<\/strong><\/div><div><span>Âge moyen<\/span><strong>24\.6<\/strong><\/div><\/div>$/);
  assert.match(tiles[3],/<span>Tactique<\/span><strong>4-3-3<\/strong>/);
- // Its training and its youth recruitment, out of 20, on one tile of two columns.
- assert.match(tiles[4],/^ split"><div title="Entraînement sur 20"><span>Entraînement<\/span><strong>16<\/strong><\/div><div title="Recrutement des jeunes sur 20"><span>Recrutement<\/span><strong>13<\/strong><\/div><\/div>$/);
- // Its personality out of 20, each tooltip telling what the trait makes it do.
- assert.deepEqual([...tiles[5].matchAll(/<div title="([^"]+)"><span>([^<]+)<\/span><strong>(\d+)</g)].map(match=>[match[2],match[3],match[1].split(' : ')[0]]),
-  [['Risque','18','Appétit du risque sur 20'],['Jeunes','6','Préférence pour les jeunes sur 20'],['Patience','1','Patience en négociation sur 20']]);
- assert.match(tiles[5],/title="Patience en négociation sur 20 : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps"/);
+ // Its training and its youth recruitment in stars, a star every four points out of 20, on one tile of two columns.
+ assert.match(tiles[4],/^ split"><div><span>Entraînement<\/span><strong><span class="stars big" role="img" aria-label="4 étoiles">/);
+ assert.match(tiles[4],/<div title="Recrutement des jeunes"><span>Recrutement<\/span><strong><span class="stars big" role="img" aria-label="3½ étoiles">/);
+ // Its personality as a word and its notch of five between two poles, each tooltip telling what the trait makes it do.
+ assert.deepEqual([...tiles[5].matchAll(/<div title="([^"]+)"><span>([^<]+)<\/span><strong><span class="trait">([^<]+)<span class="poles" aria-hidden="true">(.*?)<\/span>/g)]
+  .map(match=>[match[2],match[3],match[4].indexOf('class="on"')>=0?match[4].split('<i').findIndex(part=>part.startsWith(' class="on"')):0,match[1].split(' : ')[0]]),
+  [['Risque','Flambeur',5,'Appétit du risque'],['Jeunes','Réservé',2,'Préférence pour les jeunes'],['Patience','Pressé',1,'Patience en négociation']]);
+ assert.match(tiles[5],/title="Patience en négociation : plus elle est haute, plus le club vend cher, ouvre bas quand il achète et relance longtemps"/);
  assert.match(tiles[6],/title="Valeur de l’effectif"><span>Valeur<\/span><strong>1\s300\sM€<\/strong>/);
  assert.equal(tiles.length,7);
  // Without a personality (an older server), no tile for it.
@@ -121,10 +123,11 @@ test('the header names the club and its league after it, then the level and the 
  assert.match(unselected,/<span class="club-hero-context"><span class="nation" title="France"><img[^>]*><\/span><a href="#\/league\/16">Ligue 1<\/a><\/span>/);
  // The ground's capacity is not in the header.
  assert.doesNotMatch(html,/places|club-hero-league/);
- // The level and the potential of its 16 best on one tile of two graded columns, then its reputation; its tactic and its
- // facilities are on its Présentation, no league standing nor form in the header.
+ // The level and the potential of its 16 best in stars, without doubt, on one tile of two columns, then its reputation; its
+ // tactic and its facilities are on its Présentation, no league standing nor form in the header.
  const rated=clubHero({...club,top_rating:75.7,top_potential:92.5},{menu,section:'calendar'});
- assert.match(rated,/<div class="club-hero-tiles"><div class="club-hero-tile split"><div class="graded" style="--hue:120" title="Niveau moyen des 16 meilleurs sur 200"><span>Niveau<\/span><strong>151<\/strong><\/div><div class="graded" style="--hue:120" title="Potentiel moyen des 16 meilleurs sur 200"><span>Potentiel<\/span><strong>185<\/strong><\/div><\/div><div class="club-hero-tile"><span>Réputation<\/span>/);
+ assert.match(rated,/<div class="club-hero-tiles"><div class="club-hero-tile split"><div><span>Niveau<\/span><strong><span class="stars big" role="img" aria-label="4 étoiles">.*?<\/span><\/strong><\/div><div><span>Potentiel<\/span><strong><span class="stars big" role="img" aria-label="5 étoiles">.*?<\/span><\/strong><\/div><\/div><div class="club-hero-tile"><span>Réputation<\/span>/);
+ assert.doesNotMatch(rated,/sur 200|graded/);
  assert.match(html,/<span>Niveau<\/span><strong>—<\/strong>/);
  assert.doesNotMatch(html,/Tactique|Entraînement|Recrutement|\/ 20|Classement|class="form"/);
  assert.match(html,/<span>Réputation<\/span><strong>73\.1<em class="up">\+1\.2<\/em><\/strong>/);

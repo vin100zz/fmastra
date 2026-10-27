@@ -343,20 +343,23 @@ def performance_factor(player: Player, club: Club | None, world: World) -> float
     return confidence * season_performance(player, busiest, cfg) + (1 - confidence) * player.past_performance
 
 
-def market_value(player: Player, world: World, observer: Club | None = None, discounted: bool = True) -> int:
+def market_value(player: Player, world: World, observer: Club | None = None, discounted: bool = True,
+                 seen: tuple[float, float] | None = None) -> int:
     """What a player is worth, as `observer` sees him, or as everyone does without one.
 
     His level today has its value, which nobody disputes; what his potential adds to it is a matter of opinion (see
     `opinion_factor`). That is the value his wage follows. `discounted`, it is the value of a transfer: his season
     weighs on the first part, a club beneath him on the whole, and so does a contract near its end; nothing is owed
-    for a free agent.
+    for a free agent. `seen`, the level and the potential a club reads him at (see `core.world.estimates`), stand for
+    the true ones, the opinion already in them: the value the screens show.
     """
     cfg = world.config
     age = player.born.age_on(world.date)
-    proven = intrinsic_value(player.rating, age, player.position, cfg)
-    level = max(player.rating, player.potential * cfg.management.valuation.potential_weight)
+    rating, potential = seen or (player.rating, player.potential)
+    proven = intrinsic_value(rating, age, player.position, cfg)
+    level = max(rating, potential * cfg.management.valuation.potential_weight)
     promise = intrinsic_value(level, age, player.position, cfg) - proven
-    if promise > 0:
+    if promise > 0 and seen is None:
         promise *= opinion_factor(player, world.date, world.seed, cfg, observer.id if observer else None,
                                   observer.reputation if observer else None)
     if not discounted: return round(proven + promise)

@@ -76,16 +76,29 @@ La note RECRUTEMENT JEUNES et la réputation ne créent donc pas de talents : el
 
 La note ENTRAÎNEMENT du club est affichée à titre d'information. Elle n'a aucun effet : ni sur la progression des joueurs, ni sur les regens, ni sur les blessures.
 
-## Ce que les clubs voient du potentiel
+## Ce que l'on voit d'un joueur
 
-Vous voyez le potentiel exact de chaque joueur. Les clubs de l'IA décident à partir d'une estimation, d'autant plus floue que le joueur est jeune :
+Personne ne voit le niveau ni le potentiel exacts d'un joueur : ni vous, ni les clubs de l'IA. Les attributs, eux, sont connus. Chacun lit le reste en étoiles (voir [Les joueurs](#/aide/joueurs/niveau-et-potentiel-en-etoiles)), à travers une estimation dont l'erreur, comptée en étoiles, dépend de trois choses.
 
-- à {{demographie.estimation_potentiel.age_debut_convergence}} ans, l'erreur type est de {{demographie.estimation_potentiel.bruit_max * 2}} points ; elle se réduit régulièrement jusqu'à {{demographie.estimation_potentiel.age_convergence}} ans, où elle n'est plus que de {{demographie.estimation_potentiel.bruit_min * 2}} points ;
-- un club réputé voit plus juste : l'erreur est multipliée par {{demographie.estimation_potentiel.facteur_observateur_base}} − {{demographie.estimation_potentiel.facteur_reputation_observateur}} × réputation ÷ 100 ;
-- chaque club a sa propre opinion de chaque joueur, qui ne saute jamais : {{pct(ia_gestion.valorisation.opinion.part_stable, 0)}} de ce qu'il pense d'un joueur lui reste d'une année à l'autre, le reste est retiré chaque année, et l'opinion glisse de mois en mois vers le tirage de l'année ;
-- aucune opinion ne s'écarte de plus de {{n(ia_gestion.valorisation.opinion.ecarts_types_max, 0)}} erreurs types.
+**L'âge.** Plus un joueur est jeune, moins on sait ce qu'il deviendra. L'erreur type sur son potentiel vaut, avant tout le reste :
 
-C'est cette estimation qui décide si l'IA fait jouer un jeune, le place en réserve, le prête ou le recrute comme espoir. Dans la valeur qu'un club donne à un joueur, la même opinion ne déplace que la prime de potentiel, dans des bornes étroites (voir [La valeur marchande](#/aide/contrats/la-valeur-marchande)). L'IA surpaie donc parfois un jeune ordinaire et laisse passer un futur grand joueur ; votre vue exacte du potentiel est un avantage réel sur le marché des jeunes.
+| Âge | Erreur type |
+|---|---:|
+{{#chaque demographie.estimation_potentiel.ecarts_types_par_age}}| {{age}} ans | ± {{n(ecart_type, 2)}} ★ |
+
+Entre deux âges, elle passe de l'une à l'autre en ligne droite ; au-delà du dernier, elle ne baisse plus.
+
+**Ce qu'il a joué.** Un joueur qui joue en équipe première se montre. Chaque match complet compte selon sa compétition : {{n(demographie.estimation_potentiel.exposition.poids_championnat_par_niveau[0], 1)}} en première division, {{n(demographie.estimation_potentiel.exposition.poids_championnat_par_niveau[1], 1)}} en deuxième, {{n(demographie.estimation_potentiel.exposition.poids_championnat_par_niveau[2], 1)}} plus bas, {{n(demographie.estimation_potentiel.exposition.poids_coupe, 1)}} en coupe nationale, {{n(demographie.estimation_potentiel.exposition.poids_europe, 1)}} en coupe d'Europe, {{n(demographie.estimation_potentiel.exposition.poids_selection, 1)}} en sélection. L'erreur est multipliée par 1 − {{n(demographie.estimation_potentiel.exposition.reduction_max, 1)}} × (matches ÷ {{n(demographie.estimation_potentiel.exposition.matches_reference, 0)}}), jusqu'à {{n(demographie.estimation_potentiel.exposition.matches_reference, 0)}} matches : au mieux, elle tombe à {{pct(1 - demographie.estimation_potentiel.exposition.reduction_max, 0)}} de ce qu'elle était. À la création de la partie, un joueur est connu pour sa réputation, qui vaut de 0 match (réputation {{n(demographie.estimation_potentiel.exposition.reputation_inconnu, 0)}} sur 10 000) à {{n(demographie.estimation_potentiel.exposition.matches_reference, 0)}} (à partir de {{n(demographie.estimation_potentiel.exposition.reputation_connu, 0)}}), et pour ses sélections. Un jeune déjà titulaire dans un grand club est donc presque aussi bien connu qu'un joueur fait ; un jeune qui n'a jamais joué reste un pari.
+
+**Qui regarde.** Les joueurs de votre club, ou de n'importe quel club pour ses propres joueurs, sont mieux connus : l'erreur est multipliée par {{n(demographie.estimation_potentiel.facteur_propre_club, 1)}}. Un club réputé voit plus juste : elle est multipliée par {{demographie.estimation_potentiel.facteur_observateur_base}} − {{demographie.estimation_potentiel.facteur_reputation_observateur}} × réputation ÷ 100. Elle ne descend jamais sous {{n(demographie.estimation_potentiel.ecart_type_min, 2)}} étoile.
+
+Chaque club se fait sa propre opinion de chaque joueur, qui ne saute jamais : {{pct(ia_gestion.valorisation.opinion.part_stable, 0)}} de ce qu'il pense d'un joueur lui reste d'une année à l'autre, le reste est retiré chaque année, et l'opinion glisse de mois en mois vers le tirage de l'année. Aucune opinion ne s'écarte de plus de {{n(ia_gestion.valorisation.opinion.ecarts_types_max, 0)}} erreurs types.
+
+**La prudence.** Comme il y a bien plus de joueurs ordinaires que de grands joueurs, une estimation très haute est souvent une erreur. Un recruteur prudent ramène son estimation vers ce que vaut un jeune ordinaire ({{n(demographie.estimation_potentiel.moyenne_a_priori, 1)}} étoile, à ± {{n(demographie.estimation_potentiel.ecart_type_a_priori, 2)}} près) d'autant plus que son erreur est grande ; l'estimation fait {{pct(demographie.estimation_potentiel.rappel, 0)}} de ce chemin. La fourchette montrée vaut l'estimation ± {{n(demographie.estimation_potentiel.demi_largeur_fourchette, 2)}} erreur type : le vrai potentiel y est une fois sur deux. Le potentiel affiché ne descend jamais sous le niveau.
+
+**Le niveau** s'estime de même, avec {{pct(demographie.estimation_potentiel.part_niveau, 0)}} de l'erreur du potentiel et sans prudence : il se voit davantage.
+
+Un jeune de 15 ans affiché cinq étoiles, que personne n'a vu jouer, n'en vaut donc souvent que trois ou quatre : rien ne permet d'acheter les yeux fermés. C'est la même estimation qui décide si l'IA fait jouer un jeune, le place en réserve, le prête ou le recrute comme espoir : elle aussi surpaie parfois un jeune ordinaire et laisse passer un futur grand joueur. La valeur affichée d'un joueur est celle que donnent le niveau et le potentiel que vous en voyez (voir [La valeur marchande](#/aide/contrats/la-valeur-marchande)).
 
 ## Les joueurs de complément
 

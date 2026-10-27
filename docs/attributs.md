@@ -133,7 +133,7 @@ comp_arret = 0.70*reflexes + 0.30*placement
 
 ### Affichage et note au poste
 
-Les écrans montrent les huit composites sur 200, comme le niveau (fiche joueur, vue Jeu des listes
+Les écrans montrent les huit composites en étoiles, comme le niveau (fiche joueur, vue Jeu des listes
 et de la composition). Pour chaque poste, l'API retient ceux qu'il demande surtout, d'après
 l'implication du poste dans chaque phase (`implications.json`) et le choix du tireur
 (`COMPOSITES_BY_POSITION` dans `src/api/views.py`, liste d'affichage qu'aucun match ne lit). La note

@@ -75,7 +75,7 @@ test('the editor starts from the previous lineup and flags unavailable players',
   assert.match(html,/class="pitch-player lineup-slot def invalid" data-slot="1" data-player="2"/);
   assert.match(html,/lineup-icon injury/);assert.match(html,/lineup-icon suspension" title="Suspendu \(2 matchs\)"/);
   assert.match(html,/Joueur 2 est blessé/);
-  for(const label of ['COMPO','POSTE','JOUEUR','NIV.','POT.','FATIGUE','MJ','BUTS','PD','NOTE'])assert.ok(html.includes(`>${label}`),label);
+  for(const label of ['COMPO','POSTE','JOUEUR','NIV.','POT.','ÉTAT','MJ','BUTS','PD','NOTE'])assert.ok(html.includes(`>${label}`),label);
  }finally{globalThis.fetch=previous;}
 });
 
@@ -118,8 +118,9 @@ test('under each starter\'s shirt, his block: his name, then his note at his pos
  globalThis.fetch=async()=>({ok:true,json:async()=>data});
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
-  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>GB<\/b><\/span><span class="player-block"><span class="block-name">[^<]+<\/span><span><b class="block-note" style="--hue:\d+" title="Note au poste GB : Arrêts, Sorties aériennes, affinité au poste comprise">141<\/b><\/span><\/span>/);
-  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MDC<\/b><\/span><span class="player-block"><span class="block-name">[^<]+<\/span><span><b class="block-note"[^>]*>73<\/b><i class="affinity-tag" style="--hue:0" title="Affinité MDC : 1 \/ 20">1<\/i><\/span><\/span>/);
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>GB<\/b><\/span><span class="player-block"><span class="block-name">[^<]+<\/span><span><span class="stars" role="img" aria-label="3½ étoiles">(<i[^>]*><\/i>){5}<\/span><\/span><\/span>/);
+  assert.match(html,/data-slot="5" data-player="2"[^>]*><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MDC<\/b><\/span><span class="player-block"><span class="block-name">[^<]+<\/span><span><span class="stars" role="img" aria-label="½ étoile">(<i[^>]*><\/i>){5}<\/span><i class="fit" style="--hue:4;--p:5" role="img" aria-label="Maladroit" title="Affinité MDC : maladroit"><\/i><\/span><\/span>/);
+  assert.doesNotMatch(html,/sur 200|block-note/);
   // An empty place keeps the two lines of a block, without a ground; nothing stands beside a shirt.
   assert.match(html,/data-slot="1"[^>]*><span class="kit-shirt empty">[^]*?<\/span><span class="player-block"><span class="block-name">—<\/span><span><\/span><\/span>/);
   assert.doesNotMatch(html,/position-note|<small>/);
@@ -204,12 +205,14 @@ test('the lineup shows form: an arrow after the note in the block from ±5 %, th
  try{
   const html=await compositionContent(new URLSearchParams(),{awaiting_lineup:null});
   // Whatever its neighbours, a note stays under its shirt, the arrow after it.
-  const block=id=>html.match(new RegExp(`data-player="${id}"[^>]*><span class="kit-shirt plain"><svg[^]*?</svg><b>D[GC]</b></span><span class="player-block"><span class="block-name">[^<]+</span><span>(.*?)</span></span>`))[1];
-  assert.match(block(1),/^<b class="block-note"[^>]*>120<\/b><i class="form-arrow up" title="Forme \+11 %"><\/i>$/);
-  assert.match(block(2),/^<b class="block-note"[^>]*>120<\/b><i class="form-arrow down" title="Forme −5 %"><\/i>$/);
-  assert.match(block(3),/^<b class="block-note"[^>]*>120<\/b>$/);
+  const block=id=>html.match(new RegExp(`data-player="${id}"[^>]*><span class="kit-shirt plain"><svg[^]*?</svg><b>D[GC]</b></span><span class="player-block"><span class="block-name">[^<]+</span><span>(.*?)</span></span></div>`))[1];
+  const note='<span class="stars" role="img" aria-label="2½ étoiles">(<i[^>]*><\\/i>){5}<\\/span>';
+  assert.match(block(1),new RegExp(`^${note}<i class="form-arrow up" title="Forme \\+11 %"><\\/i>$`));
+  assert.match(block(2),new RegExp(`^${note}<i class="form-arrow down" title="Forme −5 %"><\\/i>$`));
+  assert.match(block(3),new RegExp(`^${note}$`));
   assert.match(html,/data-lineup-sort="form">FORME</);
-  assert.match(html,/<td><span class="rating graded form-badge" style="--hue:120"[^>]*>\+11 %</);
+  // The column of the form, its arrow at one of five orientations.
+  assert.match(html,/<td><span class="arrow a2" role="img" aria-label="Forme excellente" title="Forme excellente">/);
  }finally{globalThis.fetch=previous;}
 });
 

@@ -25,7 +25,7 @@ Un joueur a seize attributs. Le moteur de match ne lit jamais le niveau global :
 
 ## Le niveau
 
-Le niveau affiché (NIV.) est une moyenne pondérée des attributs, propre au **poste principal** du joueur :
+Le niveau (NIV.) est une moyenne pondérée des attributs, propre au **poste principal** du joueur :
 
 | Poste | Poids des attributs dans le niveau |
 |---|---|
@@ -70,7 +70,21 @@ La **note au poste**, affichée sous les maillots sur le terrain de la compositi
 
 Le potentiel (POT.) est le niveau maximal qu'un joueur peut atteindre. Il est fixé une fois pour toutes, à l'import ou à la naissance du regen, et ne change jamais. Le niveau ne peut pas le dépasser.
 
-Vous voyez le potentiel exact. Les clubs de l'IA, eux, n'en voient qu'une **estimation** (voir [Regens](#/aide/regens/ce-que-les-clubs-voient-du-potentiel)).
+## Niveau et potentiel en étoiles
+
+Le niveau et le potentiel ne s'affichent jamais en chiffres : ils se lisent en étoiles, de une demi-étoile à cinq. Chaque demi-étoile est une classe de niveau, plus serrée en haut de l'échelle, où se tiennent les joueurs qui comptent :
+
+| Étoiles | À partir de (sur 200) |
+|---|---:|
+{{#chaque attributs.etoiles.seuils}}| {{n(1 + i / 2, 1)}} | {{n(element * 2, 0)}} |
+
+Sous le premier seuil, une demi-étoile. Cinq étoiles désignent les meilleurs joueurs du monde.
+
+Ce que montrent les étoiles est une **estimation** : ni vous ni les clubs de l'IA ne voyez le niveau et le potentiel exacts (voir [Regens](#/aide/regens/ce-que-l-on-voit-d-un-joueur)). Le potentiel s'affiche comme une fourchette : les étoiles pleines jusqu'à sa borne basse, les étoiles grises jusqu'à sa borne haute. Plus la fourchette est large, moins on en sait. Les listes se trient sur ces étoiles, jamais sur les valeurs cachées.
+
+Les composites et la note au poste se lisent aussi en étoiles, sans erreur : ils se déduisent des attributs, que tout le monde voit.
+
+Le mode debug, dans **Ma partie** (« Valeurs exactes »), donne dans les infobulles les valeurs exactes, les estimations et leurs erreurs.
 
 ## Le caractère
 

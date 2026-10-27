@@ -33,54 +33,61 @@ const seasons=list=>list.map(([season,level,club])=>({year:season,month:7,season
 const monthly=(season,levels)=>levels.map((level,index)=>{const month=6+index,year=season+Math.floor(month/12);
  return {year,month:month%12+1,season:month%12<6?year-1:year,level};});
 
-test('level chart labels the ordinate out of 200 with a gridline per tick, in HTML text',()=>{
+test('level chart labels the ordinate in stars, a gridline a half star, in HTML text',()=>{
  const html=levelChart(seasons([[2025,110],[2026,120],[2027,145]]));
- const ticks=[...html.matchAll(/class="y-tick" style="top:[\d.]+%">(\d+)</g)].map(match=>Number(match[1]));
- assert.deepEqual(ticks,[110,120,130,140,150]);
- assert.equal((html.match(/class="grid-line"/g)||[]).length,5);
+ const ticks=[...html.matchAll(/class="y-tick" style="top:[\d.]+%">(\d) ★</g)].map(match=>Number(match[1]));
+ assert.deepEqual(ticks,[1,2,3,4,5]);
+ assert.equal((html.match(/class="grid-line/g)||[]).length,9);assert.equal((html.match(/class="grid-line half"/g)||[]).length,4);
  assert.doesNotMatch(html,/<text|font-size/);
- assert.match(html,/class="point-value first" style="left:0.00%;top:[\d.]+%">110</);
- assert.match(html,/class="point-value last" style="left:100.00%;top:[\d.]+%">145</);
- assert.equal((html.match(/class="point-value/g)||[]).length,2);
+ // The stars of the first and of the latest point, never their figure.
+ assert.match(html,/class="point-value first" style="left:0.00%;top:[\d.]+%"><span class="stars" role="img" aria-label="2 étoiles">/);
+ assert.match(html,/class="point-value last" style="left:100.00%;top:[\d.]+%"><span class="stars" role="img" aria-label="4 étoiles">/);
+ assert.equal((html.match(/class="point-value/g)||[]).length,2);assert.doesNotMatch(html,/>(110|145)</);
  // Januaries on the abscissa, named by their year
  assert.deepEqual([...html.matchAll(/class="x-tick" style="left:([\d.]+)%">(\d+)</g)].map(match=>[match[1],match[2]]),[['25.00','2026'],['75.00','2027']]);
  // A curve that hardly moves keeps 20 points of ordinate around it: a point gained reads as one.
  const flat=levelChart(seasons([[2025,120],[2026,120]]));
- assert.deepEqual([...flat.matchAll(/class="y-tick" style="top:[\d.]+%">(\d+)</g)].map(match=>Number(match[1])),[110,115,120,125,130]);assert.doesNotMatch(flat,/NaN|Infinity/);
- const close=levelChart(seasons([[2025,169],[2026,170]]));
- assert.deepEqual([...close.matchAll(/class="y-tick" style="top:[\d.]+%">(\d+)</g)].map(match=>Number(match[1])),[160,165,170,175,180]);
+ assert.doesNotMatch(flat,/NaN|Infinity/);
  const long=levelChart(seasons(Array.from({length:20},(_,index)=>[2000+index,80+2*index])));
  assert.doesNotMatch(long,/NaN|Infinity/);assert.deepEqual([...long.matchAll(/class="x-tick"[^>]*>(\d+)</g)].map(match=>match[1]),['2005','2010','2015']);
 });
 
+test('level chart draws the level the club read and the band of the potential above it',()=>{
+ const points=monthly(2025,[110,112,114]).map((point,index)=>({...point,stars:2.2+index/10,band:[3+index/10,4.8]}));
+ const html=levelChart(points);
+ assert.match(html,/<polygon class="band" points="0.00,[\d.]+ 50.00,[\d.]+ 100.00,[\d.]+ 100.00,[\d.]+ 50.00,[\d.]+ 0.00,[\d.]+"\/>/);
+ assert.match(html,/class="point-value last"[^>]*><span class="stars" role="img" aria-label="2 étoiles">/);
+ assert.match(html,/aria-label="Évolution mensuelle du niveau, en étoiles"/);
+});
+
 test('level chart draws every month but marks only the opening of each season and the latest month',()=>{
  const html=levelChart(monthly(2025,[110,111,111,112,113,113,114,115,115,116,117,118,118,119]));
- assert.equal(html.match(/points="([^"]*)"/)[1].split(' ').length,14);
+ assert.equal(html.match(/polyline class="curve" points="([^"]*)"/)[1].split(' ').length,14);
  assert.deepEqual([...html.matchAll(/class="chart-point" style="left:([\d.]+)%[^"]*" title="([^"]*)"/g)].map(match=>[match[1],match[2]]),
-  [['0.00','juillet 2025 · niveau 110'],['92.31','juillet 2026 · niveau 118'],['100.00','août 2026 · niveau 119']]);
- assert.match(html,/class="point-value last"[^>]*>119</);
+  [['0.00','juillet 2025'],['92.31','juillet 2026'],['100.00','août 2026']]);
+ assert.match(html,/class="point-value last"[^>]*><span class="stars"/);
  // Every half year on the abscissa for a year and a month: July by its name, January by its year
  assert.deepEqual([...html.matchAll(/class="x-tick"[^>]*>([^<]+)</g)].map(match=>match[1]),['juil.','2026','juil.']);
  const short=levelChart(monthly(2025,[110,111,112,113]));
  assert.deepEqual([...short.matchAll(/class="x-tick"[^>]*>([^<]+)</g)].map(match=>match[1]),['juil.','août','sept.','oct.']);
  const years=levelChart(monthly(2025,Array.from({length:31},(_,index)=>100+index)));
  assert.deepEqual([...years.matchAll(/class="x-tick"[^>]*>([^<]+)</g)].map(match=>match[1]),['2026','2027','2028']);
- assert.match(html,/aria-label="Évolution mensuelle du niveau, sur 200"/);
+ assert.match(html,/aria-label="Évolution mensuelle du niveau, en étoiles"/);
 });
 
 test('level chart keeps time proportional across the seasons recorded before the monthly history',()=>{
  const html=levelChart([...seasons([[2024,100]]),...monthly(2025,[110,111,112,113])]);
  assert.deepEqual([...html.matchAll(/class="chart-point" style="left:([\d.]+)%/g)].map(match=>match[1]),['0.00','80.00','100.00']);
- assert.equal(html.match(/points="([^"]*)"/)[1].split(' ')[1].split(',')[0],'80.00');
+ assert.equal(html.match(/polyline class="curve" points="([^"]*)"/)[1].split(' ')[1].split(',')[0],'80.00');
 });
 
 test('level chart points take the colours of the club played for, and stay neutral without one',()=>{
  const html=levelChart(seasons([[2025,110,{id:9,name:'Olympique de Marseille',major_color:'#ffffff',minor_color:'#2faee0'}],[2026,120]]));
  const [first,second]=html.split('class="chart-point"').slice(1);
- assert.match(first,/title="juillet 2025 · Olympique de Marseille · niveau 110"/);
+ assert.match(first,/title="juillet 2025 · Olympique de Marseille"/);
  // the club's dot: the ground of its band (a kit close to white gives way to its second colour), the other colour in a corner
  assert.match(first,/class="kit-dot" style="background:linear-gradient\(135deg,#2faee0 64%,#ffffff 64%\)"/);
- assert.match(second,/title="juillet 2026 · niveau 120"/);assert.match(second,/class="kit-dot neutral"/);
+ assert.match(second,/title="juillet 2026"/);assert.match(second,/class="kit-dot neutral"/);
  const unsafe=levelChart(seasons([[2025,110,{name:'X',major_color:'red;background:url(x)',minor_color:'#000000'}],[2026,120]]));
  assert.doesNotMatch(unsafe,/url\(x\)/);assert.match(unsafe,/kit-dot neutral/);
 });
@@ -88,10 +95,11 @@ test('level chart points take the colours of the club played for, and stay neutr
 test('position pitch places ratings of 10 or more on the field and outlines the main position',()=>{
  const html=positionPitch({GB:1,DD:20,MC:12,MDC:10,DC:9,BU:null},'DD');
  assert.equal((html.match(/class="kit-shirt/g)||[]).length,3);
- assert.match(html,/<button type="button" class="pitch-player main picked" data-composite-role="DD" aria-pressed="true" style="left:85%;top:70%" title="DD : 20 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DD<\/b><\/span>/);
+ assert.match(html,/<button type="button" class="pitch-player main picked" data-composite-role="DD" aria-pressed="true" style="left:85%;top:70%" title="DD : naturel"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>DD<\/b><\/span>/);
  assert.equal((html.match(/pitch-player main/g)||[]).length,1);
- // The position is written on the shirt; an affinity below 20 stands in the block under it, nothing on the shirt.
- assert.match(html,/title="MC : 12 \/ 20"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MC<\/b><\/span><span class="player-block"><span><i class="affinity-tag" style="--hue:\d+" title="Affinité MC : 12 \/ 20">12<\/i><\/span><\/span><\/button>/);assert.match(html,/title="MDC : 10 \/ 20">/);
+ // The position is written on the shirt; an affinity below 20 stands in the block under it as its disc, nothing on the shirt.
+ assert.match(html,/title="MC : correct"><span class="kit-shirt plain"><svg[^]*?<\/svg><b>MC<\/b><\/span><span class="player-block"><span><i class="fit" style="--hue:50;--p:60" role="img" aria-label="Correct" title="Affinité MC : correct"><\/i><\/span><\/span><\/button>/);assert.match(html,/title="MDC : correct">/);
+ assert.doesNotMatch(html,/\/ 20/);
  // Without a note nor an affinity below 20 to tell, no block.
  assert.match(html,/<b>DD<\/b><\/span><\/button>/);
  assert.doesNotMatch(html,/<b>(GB|DC|BU)</);assert.doesNotMatch(html,/<small>/);
@@ -103,10 +111,10 @@ const BY_POSITION={GB:['arret','sortie'],DD:['progression_defense','progression_
 const playing={...detail,composites:COMPOSITE_VALUES,composites_by_position:BY_POSITION,position_notes:{DD:48.5,MC:43.1,BU:62.7},
  composite_weights:{occasion_attaque:{vision:.5,technique:.3,passe:.2}}};
 
-test('under each shirt of the pitch of aptitudes, a block: the note out of 200 in its colour, then the affinity; the main one starts picked',()=>{
+test('under each shirt of the pitch of aptitudes, a block: the note in stars, then the affinity as its disc; the main one starts picked',()=>{
  const html=positionPitch({DD:20,MC:12,GB:1},'DD',playing);
- assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="kit-shirt[^]*?<b>DD<\/b><\/span><span class="player-block"><span><b class="block-note" style="--hue:\d+" title="Note au poste DD : Défense au milieu, Progression, Défense de surface, affinité au poste comprise">97<\/b><\/span><\/span><\/button>/);
- assert.match(html,/data-composite-role="MC" aria-pressed="false"[^>]*>.*?<span class="player-block"><span><b class="block-note"[^>]*>86<\/b><i class="affinity-tag"[^>]*>12<\/i><\/span><\/span>/);
+ assert.match(html,/data-composite-role="DD" aria-pressed="true"[^>]*><span class="kit-shirt[^]*?<b>DD<\/b><\/span><span class="player-block"><span><span class="stars" role="img" aria-label="1 étoile">(<i[^>]*><\/i>){5}<\/span><\/span><\/span><\/button>/);
+ assert.match(html,/data-composite-role="MC" aria-pressed="false"[^>]*>.*?<span class="player-block"><span><span class="stars" role="img" aria-label="½ étoile">(<i[^>]*><\/i>){5}<\/span><i class="fit"[^>]*aria-label="Correct"/);
  assert.doesNotMatch(html,/position-note|block-name/);
  assert.equal(positionPitch({DD:20},'DD',playing,'MC').match(/aria-pressed="true"/g),null);
  // Without notes (an older server), the shirts stand alone.
@@ -125,7 +133,7 @@ test('the list of positions ranks them by note, with affinity and note, and pick
  const html=positionList({DD:20,MC:12,BU:11,GB:1},playing);
  assert.deepEqual([...html.matchAll(/data-composite-role="(\w+)" aria-pressed="(\w+)"/g)].map(match=>[match[1],match[2]]),[['BU','false'],['DD','true'],['MC','false']]);
  assert.match(html,/^<div class="positions-list"><div class="position-row head" aria-hidden="true"><span>POSTE<\/span><span>AFFINITÉ<\/span><span>NOTE<\/span><\/div>/);
- assert.match(html,/<button type="button" class="position-row picked" data-composite-role="DD" aria-pressed="true"><span><span class="position def">DD<\/span><\/span><span><span class="rating graded" style="--hue:120" title="Affinité DD sur 20">20<\/span><\/span><span><span class="rating graded"[^>]*>97<\/span><\/span><\/button>/);
+ assert.match(html,/<button type="button" class="position-row picked" data-composite-role="DD" aria-pressed="true"><span><span class="position def">DD<\/span><\/span><span class="state"><i class="fit" style="--hue:135;--p:100" role="img" aria-label="Naturel" title="Affinité DD : naturel"><\/i>Naturel<\/span><span><span class="stars" role="img" aria-label="1 étoile">(<i[^>]*><\/i>){5}<\/span><\/span><\/button>/);
  assert.doesNotMatch(html,/Jeu demandé|JEU/);
  // Another position picked; and no list without notes (an older server).
  assert.match(positionList({DD:20,MC:12},playing,'MC'),/class="position-row picked" data-composite-role="MC"/);
@@ -145,8 +153,9 @@ test('the Jeu section leads the attributes: an outfield player\'s six composites
   [['progression_attaque',true],['occasion_attaque',false],['tir',false],['tete',false],['progression_defense',true],['occasion_defense',true]]);
  const html=compositesGroup(playing);
  assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
- assert.match(html,/<div class="attribute key" title="Progression"><span>Progression<\/span><span class="rating graded" style="--hue:\d+">110</);
- assert.match(html,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Création<\/span><span class="off-role"><span class="rating graded"[^>]*>91</);
+ assert.match(html,/<div class="attribute key" title="Progression"><span>Progression<\/span><span class="stars" role="img" aria-label="2 étoiles">/);
+ assert.match(html,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Création<\/span><span class="off-role"><span class="stars" role="img" aria-label="1 étoile">/);
+ assert.doesNotMatch(html,/rating graded|sur 200/);
  // Another position picked on the pitch reads the section for it.
  assert.deepEqual(compositeItems(playing,'BU').filter(item=>item.wanted).map(item=>item.key),['occasion_attaque','tir','tete']);
  assert.match(compositesGroup(playing,'BU'),/<h3>Jeu <span class="position att">BU<\/span>/);
@@ -160,7 +169,7 @@ test('the Jeu section is the first column of the attributes card, ahead of the a
  const attributes=html.slice(html.indexOf('>Attributs<'),html.indexOf('Aptitudes par poste'));
  assert.match(attributes,/<div class="attribute-columns"><div class="attribute-column composites-column" data-composites="column"><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="attribute-rows">/);
  assert.ok(attributes.indexOf('data-composites')<attributes.indexOf('>Attaque</h3>'));
- assert.match(html,/class="block-note"/);
+ assert.match(html,/<span class="player-block"><span><span class="stars"/);
 });
 
 test('player page is one screen without tabs or stat cards: the header of his club, a rail, the profile, then the history',async()=>{
@@ -229,7 +238,7 @@ test('level chart points use the club of their own month, not the latest club of
  history.trajectory=[{year:2025,month:7,season:2025,level:110,club:lyon},{year:2026,month:1,season:2025,level:115,club:lyon},{year:2026,month:2,season:2025,level:116,club:marseille}];
  try{
   const {html}=await render();
-  assert.deepEqual([...html.matchAll(/class="chart-point"[^>]*title="([^"]*)"/g)].map(match=>match[1]),['juillet 2025 · Lyon · niveau 110','février 2026 · Marseille · niveau 116']);
+  assert.deepEqual([...html.matchAll(/class="chart-point"[^>]*title="([^"]*)"/g)].map(match=>match[1]),['juillet 2025 · Lyon','février 2026 · Marseille']);
  }finally{history.career.items=items;history.trajectory=trajectory;}
 });
 
@@ -251,8 +260,10 @@ test('career competition column shows the flag of the league country, and none f
 test('the header shows the age on a tile, the birth date in its tooltip, then the level and the potential as graded columns of one tile',async()=>{
  const head=header((await render()).html);
  assert.match(head,/<div class="club-hero-tile" title="Né le 1 janv\. 2005"><span>Âge<\/span><strong>19<\/strong>/);
- assert.match(head,/<div class="club-hero-tile split"><div class="graded" style="--hue:\d+" title="Niveau actuel sur 200"><span>Niveau<\/span><strong>140<\/strong><\/div><div class="graded" style="--hue:120" title="Potentiel sur 200"><span>Potentiel<\/span><strong>183<\/strong><\/div><\/div>/);
- assert.match(header((await render({...detail,rating:null})).html),/<div class="club-hero-tile split"><div><span>Niveau<\/span><strong>—<\/strong><\/div><div class="graded"/);
+ // Level and potential in stars, without a figure nor a graded ground: the colour would tell what the stars round off.
+ assert.match(head,/<div class="club-hero-tile split"><div><span>Niveau<\/span><strong><span class="stars big" role="img" aria-label="3½ étoiles">(<i[^>]*><\/i>){5}<\/span><\/strong><\/div><div><span>Potentiel<\/span><strong><span class="stars big" role="img" aria-label="5 étoiles">(<i[^>]*><\/i>){5}<\/span><\/strong><\/div><\/div>/);
+ assert.doesNotMatch(head,/sur 200|class="graded"/);
+ assert.match(header((await render({...detail,rating:null,potential:null})).html),/<div class="club-hero-tile split"><div><span>Niveau<\/span><strong>—<\/strong><\/div><div><span>Potentiel<\/span><strong>—/);
  // The positions are read on the pitch, not under the name.
  assert.doesNotMatch(head.slice(head.indexOf('</h1>')),/class="position|secondary-positions/);
 });
@@ -263,7 +274,7 @@ test('his selection has one tile between his age and his level: its flag over it
  try{
   const flag=(name,file)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
   const linked=(name,file,id)=>`<a class="nation" href="#/international/nation/${id}" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
-  const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile split"><div class="graded"/)[1];
+  const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile split"><div><span>Niveau/)[1];
   const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><h3>Contrat/)?.slice(1);
   const base={...detail,nationalities:['FRA','SEN'],national_team:'SEN',national_team_id:-12,international_caps:12,international_goals:3};
   const capped=(await render(base)).html;
@@ -290,7 +301,7 @@ test('his selection has one tile between his age and his level: its flag over it
   assert.match(three[1],/<span class="nation" title="Mali">/);
   // An older server tells no cap, and a player without any nationality has no tile.
   assert.equal(tile((await render(detail)).html),`<a href="#/international/nation/-1"><span>${flag('France','fr')}</span></span><strong>FRA</strong></a>`);
-  assert.match((await render({...detail,nationalities:[]})).html,/<strong>19<\/strong><\/div><div class="club-hero-tile split"><div class="graded"/);
+  assert.match((await render({...detail,nationalities:[]})).html,/<strong>19<\/strong><\/div><div class="club-hero-tile split"><div><span>Niveau/);
  }finally{setNations({});}
 });
 
@@ -336,21 +347,19 @@ test('under the band of another club’s player: the loan, then the offer as the
  assert.match(agreed,/^<div class="hero-pills"><span class="pill">Arrivée le 1 juil\. 2026 · [^<]*<\/span><\/div><div class="hero-commands"><button type="button" disabled/);
 });
 
-test('the rail draws condition, form and morale as bars, and names what weighs on the morale',async()=>{
+test('the rail draws condition, form and morale in five steps, and names what weighs on the morale',async()=>{
  const state=html=>{const side=rail(html);return side.slice(side.indexOf('>État<'),side.indexOf('>Contrat<'));};
  const fit={...detail,fitness:.83,form:1.09,form_bounds:[.7,1.3],morale:.61,morale_target:.5,morale_cause:'temps_de_jeu',wage_satisfaction:1,playing_time_satisfaction:.4};
  const html=state((await render(fit)).html);
- assert.match(html,/<span>Condition<\/span><strong><i class="gauge" aria-hidden="true"><i style="width:83%"><\/i><\/i><b>83 %<\/b>/);
- // Form runs from the middle of its bar: +9 % of the 30 % it may reach is 15 % of the bar, to the right.
- assert.match(html,/title="Forme 1\.09 : [^"]*"><span>Forme<\/span><strong><i class="gauge signed" aria-hidden="true"><i class="up" style="left:50%;width:15\.0%"><\/i><\/i><b>\+9 %<\/b>/);
- assert.match(html,/title="Moral 61 %, vers 50 % · pèse surtout : son temps de jeu · salaire : 100 % de ce qu&#39;il attend · temps de jeu : 40 % de ce qu&#39;il attend"><span>Moral<\/span><strong><span class="morale-cause" title="Pèse surtout : son temps de jeu">◷<\/span><i class="gauge graded" style="--hue:\d+" aria-hidden="true"><i style="width:61%"><\/i><\/i><b>61 %<\/b>/);
+ // Five steps each, an icon and its word, without a figure.
+ assert.match(html,/<span>Condition<\/span><strong><span class="cells warn" role="img" aria-label="Juste" title="Juste">(<i class="on"><\/i>){3}<i><\/i><i><\/i><\/span><b>Juste<\/b>/);
+ assert.doesNotMatch(html,/83 %|61 %|\+9 %/);
+ // Form as an arrow turned a step per 45°; morale as a face, with an arrow towards where it drifts.
+ assert.match(html,/<span>Forme<\/span><strong><span class="arrow a1" role="img" aria-label="Forme bonne" title="Forme bonne">[^]*?<\/span><b>Bonne<\/b>/);
+ assert.match(html,/<span>Moral<\/span><strong><span class="morale-cause" title="Pèse surtout : son temps de jeu">◷<\/span><svg class="face"[^>]*aria-label="Moral correct"[^]*?<\/svg><span class="trend down">▼<\/span><b>Correct<\/b>/);
  assert.match(html,/<span>Blessure<\/span><strong><span class="available">Disponible<\/span>/);
- const low=state((await render({...fit,form:.88})).html);
- assert.match(low,/<i class="down" style="right:50%;width:20\.0%"><\/i><\/i><b>−12 %<\/b>/);
- // Within ±2 % form changes nothing and its bar stays empty; an older server gives no bounds, hence no bar.
- assert.match(state((await render({...fit,form:1.01})).html),/<i class="gauge signed" aria-hidden="true"><\/i><b>\+1 %<\/b>/);
- assert.match(state((await render({...fit,form_bounds:undefined})).html),/<span>Forme<\/span><strong><b>\+9 %<\/b>/);
- // A cause is named whatever the morale, as soon as the server gives one; without one the bar stands alone.
+ assert.match(state((await render({...fit,form:.88})).html),/<span class="arrow a-2"[^>]*>[^]*?<b>Très mauvaise<\/b>/);
+ assert.match(state((await render({...fit,form:1.01})).html),/<span class="arrow a0"[^>]*>[^]*?<b>Normale<\/b>/);
  assert.match(state((await render({...fit,morale:.9,morale_cause:'salaire'})).html),/class="morale-cause" title="Pèse surtout : son salaire">€</);
  assert.doesNotMatch(state((await render({...fit,morale_cause:null})).html),/morale-cause/);
 });
@@ -534,7 +543,7 @@ test('beside a list of players, the picked one is previewed in the words of his 
  assert.match(html,/18 sél - 3 buts/);
  // Condition, form and morale, then the contract with what he asks to join the user's club.
  for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3>${title}</h3>`),title);
- assert.match(html,/<span>Forme<\/span>.*−9 %/);assert.match(html,/<span>Prétentions<\/span><strong>93\sk€<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
+ assert.match(html,/<span>Forme<\/span>.*Mauvaise/);assert.match(html,/<span>Prétentions<\/span><strong>93\sk€<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
  assert.doesNotMatch(html,/Blessure|Cartons/);
  // His positions, best note first, then what the engine reads of him and his attributes.
  assert.match(html,/class="position-row picked" data-composite-role="DD"/);

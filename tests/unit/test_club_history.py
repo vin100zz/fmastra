@@ -243,7 +243,7 @@ def test_a_promotion_tells_what_the_player_was_and_what_he_is_today(config):
     world = promoted_world(config)
     S = world.season
     states = {name: rng.getstate() for name, rng in world.rngs.items()}
-    data = world_movements(world, S, 'academy', 1, 'progress')
+    data = world_movements(world, S, 'academy', 1, 'level')
     assert data['nations'] == ['FRA', 'ITA'] and data['total'] == 3
     assert [row['player_id'] for row in data['items']] == [999, 998, 997]
     grown, gone = data['items'][0]['details'], data['items'][2]['details']
@@ -259,9 +259,14 @@ def test_a_promotion_tells_what_the_player_was_and_what_he_is_today(config):
         assert listed(sort)[-1] == 997 or sort in ('wage_demand', 'interested')
         assert len(listed(sort)) == 3
     assert listed(nation='ITA') == [998] and listed(competition_id=16) == [999, 997] and listed(club_id=2) == [998]
-    # The level filtered on is today's; a promotion without archive has neither level nor potential.
-    assert listed(rating_min=45) == [999] and listed(rating_max=45) == [998]
-    assert listed(potential_min=80) == [999] and listed(potential_max=80) == [998]
+    # The level filtered on is today's, in the stars the list shows; the potential the band read on the day, at its middle.
+    # A promotion without archive has neither level nor potential.
+    from api.views import scouting
+    levels = {pid: scouting(world, world.players[pid])['stars']['level'] for pid in (999, 998)}
+    bands = {row['player_id']: sum(row['details']['stars']['potential']) / 2 for row in data['items'] if row['details'].get('stars')}
+    for stars in (1, 1.5, 2):
+        assert listed(rating_min=stars) == [pid for pid in (999, 998) if levels[pid] >= stars]
+        assert listed(potential_min=stars + 2) == [pid for pid in (999, 998) if bands[pid] >= stars + 2]
     assert listed(age_min=17, age_max=17) == [999, 998] and listed(positions=frozenset({'GB'})) == []
     assert listed(search='jeune 998') == [998]
     # The interest is the human club's: without one the filter is left aside.
@@ -269,27 +274,29 @@ def test_a_promotion_tells_what_the_player_was_and_what_he_is_today(config):
     assert {name: rng.getstate() for name, rng in world.rngs.items()} == states
 
 
-def test_academy_summary_counts_potentials_progress_clubs_and_countries(config):
+def test_academy_summary_counts_potentials_clubs_and_countries(config):
     from api.club_history import academy_summary
+    from core.world.estimates import stars_of
     world = promoted_world(config)
     S = world.season
     summary = academy_summary(world, S)
-    assert (summary['total'], summary['average_potential'], summary['average_progress']) == (3, 80.0, 3.0)
-    assert summary['best'] == {'potential': 90.0, 'player_id': 999, 'player': 'Jeune 999'}
-    # Potentials are counted by ten levels out of 200: 90 reads 180, 70 reads 140.
-    assert [item['from'] for item in summary['bins']] == [None, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190]
-    assert {item['from']: item['count'] for item in summary['bins'] if item['count']} == {140: 1, 180: 1}
+    # Each potential is the one the world read on the day, at the middle of its band; never the hidden one.
+    read = {row.player_id: round((row.snapshot.potential_lower + row.snapshot.potential_upper) / 2, 1) for row in world.transfers if row.snapshot}
+    assert summary['total'] == 3 and summary['average_potential'] == round((read[999] + read[998]) / 2, 1)
+    best = max(read, key=read.get)
+    assert summary['best'] == {'potential': read[best], 'player_id': best, 'player': f'Jeune {best}'}
+    assert 'average_progress' not in summary
+    # Counted by the stars they show, half a star a class.
+    assert [item['stars'] for item in summary['bins']] == [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+    shown = [stars_of(read[999], config), stars_of(read[998], config)]
+    assert {item['stars']: item['count'] for item in summary['bins'] if item['count']} == {stars: shown.count(stars) for stars in shown}
     assert [(entry['club']['id'], entry['count'], entry['average_potential'], entry['best']['player_id'], entry['youth_recruitment']) for entry in summary['academies']] == [
-        (1, 2, 90.0, 999, 18), (2, 1, 70.0, 998, 7)]
-    assert summary['nations'] == [{'code': 'FRA', 'count': 2, 'clubs': 1, 'average_potential': 90.0, 'best': 90.0},
-                                  {'code': 'ITA', 'count': 1, 'clubs': 1, 'average_potential': 70.0, 'best': 70.0}]
-    # The best potential of all stands in the last class, up to 200.
-    world.players[999].potential = 100.0
-    world.transfers = [replace(row, snapshot=replace(row.snapshot, potential=100.0)) if row.player_id == 999 else row for row in world.transfers]
-    assert {item['from']: item['count'] for item in academy_summary(world, S)['bins'] if item['count']} == {140: 1, 190: 1}
+        (1, 2, read[999], 999, 18), (2, 1, read[998], 998, 7)]
+    assert summary['nations'] == [{'code': 'FRA', 'count': 2, 'clubs': 1, 'average_potential': read[999], 'best': read[999]},
+                                  {'code': 'ITA', 'count': 1, 'clubs': 1, 'average_potential': read[998], 'best': read[998]}]
     world.transfers = []
     empty = academy_summary(world, S)
-    assert (empty['total'], empty['average_potential'], empty['best'], empty['average_progress'], empty['academies'], empty['nations']) == (0, None, None, None, [], [])
+    assert (empty['total'], empty['average_potential'], empty['best'], empty['academies'], empty['nations']) == (0, None, None, [], [])
 
 
 def test_academy_sort_uses_archived_values_before_pagination_and_keeps_unknown_last(config):

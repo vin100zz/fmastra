@@ -28,10 +28,13 @@ L'opinion (`opinion`) est un tirage normal borné à `opinion.ecarts_types_max`,
 couple observateur et joueur : une part `opinion.part_stable` de sa variance est
 gardée pour de bon, le reste est retiré chaque année, et l'opinion glisse de mois en
 mois du tirage de l'an passé vers celui de l'année. Elle ne saute donc jamais d'un
-jour à l'autre. La même opinion, multipliée par l'erreur type de l'âge
-(`estimation_potentiel`), donne le potentiel estimé (`estimate_potential`) dont se
-servent le temps de jeu, la réserve, les prêts, le statut d'espoir et la recherche
-d'espoirs : ces décisions n'emploient jamais le potentiel réel.
+jour à l'autre. La même opinion, multipliée par l'erreur type (`estimation_potentiel` : en étoiles,
+selon l'âge, les matches joués, le club qui regarde et sa réputation), puis ramenée
+d'une part vers ce que vaut un jeune ordinaire, donne le potentiel estimé
+(`estimate_potential`) dont se servent le temps de jeu, la réserve, les prêts, le statut
+d'espoir et la recherche d'espoirs : ces décisions n'emploient jamais le potentiel réel.
+C'est aussi l'estimation que voit l'utilisateur (manuel, « Ce que l'on voit d'un
+joueur »). Le niveau, lui, reste exact pour l'IA.
 
 La **valeur de transfert** (`discounted`, celle des écrans, du prix demandé et du
 prix maximum) ajoute trois facteurs. La forme de la saison (`performance_factor`)

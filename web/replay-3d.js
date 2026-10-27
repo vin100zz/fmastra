@@ -399,10 +399,10 @@ export class Pitch3D{
   keeper.dive={start:action.t0,duration:action.duration*.92,distance:Math.abs(lateral),side:Math.sign(lateral)||1,
    height:action.keeperHeight??.6,yaw};
  }
- // The goal banner is up: the side that scored celebrates, on the pitch and in the stands.
+ // The goal banner is up (live, the goal's band): the side that scored celebrates, on the pitch and in the stands.
  cheering(){
   const replay=this.replay,sequence=replay.sequences?.[replay.current];
-  return replay.banner?.classList.contains('on')&&sequence?replay.side(sequence.team):null;
+  return (replay.banner?.classList.contains('on')||replay.stage?.querySelector('.goal-burst'))&&sequence?replay.side(sequence.team):null;
  }
  // The 2D replay flies the ball in real metres; the scene draws its players and goals a size up, and the height of
  // the ball with them, so that a header is met with the head and a shot under the bar stays under it.

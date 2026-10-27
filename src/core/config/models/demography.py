@@ -71,15 +71,45 @@ class DemographyConfigProgression:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class DemographyConfigPotentialEstimateAge:
+    age: int = Field(alias="age")
+    deviation: float = Field(alias="ecart_type")
+
+
+AGE_DEVIATIONS = ((15, 2.0), (17, 1.5), (19, 1.0), (21, 0.6), (23, 0.35))
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class DemographyConfigPotentialEstimateExposure:
+    reference_matches: float = Field(default=60.0, alias="matches_reference")
+    max_reduction: float = Field(default=0.6, alias="reduction_max")
+    league_weights: tuple[float, ...] = Field(default=(1.0, 0.6, 0.4), alias="poids_championnat_par_niveau")
+    cup_weight: float = Field(default=0.5, alias="poids_coupe")
+    europe_weight: float = Field(default=1.0, alias="poids_europe")
+    selection_weight: float = Field(default=1.0, alias="poids_selection")
+    unknown_reputation: float = Field(default=3500.0, alias="reputation_inconnu")
+    known_reputation: float = Field(default=8000.0, alias="reputation_connu")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class DemographyConfigPotentialEstimate:
-    max_noise: float = Field(alias="bruit_max")
-    min_noise: float = Field(alias="bruit_min")
     start_age: int = Field(alias="age_debut_convergence")
     convergence_age: int = Field(alias="age_convergence")
     observer_reputation_factor: float = Field(alias="facteur_reputation_observateur")
     observer_base: float = Field(alias="facteur_observateur_base")
     refresh: str = Field(alias="actualisation")
-    interval_width: float = Field(alias="demi_largeur_en_ecarts_types")
+    deviations_by_age: tuple[DemographyConfigPotentialEstimateAge, ...] = Field(
+        default=tuple(DemographyConfigPotentialEstimateAge(age, deviation) for age, deviation in AGE_DEVIATIONS),
+        alias="ecarts_types_par_age")
+    min_deviation: float = Field(default=0.25, alias="ecart_type_min")
+    level_share: float = Field(default=0.25, alias="part_niveau")
+    prior_mean: float = Field(default=1.8, alias="moyenne_a_priori")
+    prior_deviation: float = Field(default=1.15, alias="ecart_type_a_priori")
+    shrinkage: float = Field(default=0.5, alias="rappel")
+    band: float = Field(default=0.67, alias="demi_largeur_fourchette")
+    own_club: float = Field(default=0.4, alias="facteur_propre_club")
+    exposure: DemographyConfigPotentialEstimateExposure = Field(
+        default_factory=DemographyConfigPotentialEstimateExposure, alias="exposition")
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)

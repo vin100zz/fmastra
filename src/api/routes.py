@@ -141,6 +141,8 @@ def squad_sort_key(world, column: str):
     if column in ATTRIBUTE_INDEX: return lambda row: row["attributes"][column]
     if column in v.COMPOSITES: return lambda row: row["composites"][column]
     if column == "name": return lambda row: v.normalized(row["name"])
+    # On the stars the club sees, never on the hidden values behind them.
+    if column in ("rating", "potential"): return lambda row: (v.star_sort(row, column), v.normalized(row["name"]))
     if column == "contract_end": return lambda row: row["contract_end"] or ""
     if column == "fitness":
         # The cell reads "Blessé", then "N matchs" of suspension, then a percentage.
@@ -304,7 +306,7 @@ def router(service: GameService) -> APIRouter:
                              "players": len(world.players), "active_clubs": len(world.active_clubs()),
                              "played": sum(match.result is not None and match.season == world.season for match in world.matches.values()),
                              "fixtures": sum(match.season == world.season for match in world.matches.values()),
-                             "controlled_club_id": world.controlled_club_id,
+                             "controlled_club_id": world.controlled_club_id, "star_scale": v.star_scale(world.config),
                              "controlled_club": v.club_ref(world, world.controlled_club_id),
                              "awaiting_lineup": pending_lineup_match(world),
                              "news_count": len(world.news),
@@ -713,7 +715,7 @@ def router(service: GameService) -> APIRouter:
                        for offer in world.offers.values() if offer.target_id == club_id]
             incoming = dict.fromkeys(offer.player_id for offer in world.offers.values() if offer.source_id == club_id and offer.awaiting_review)
             entrantes = [{"joueur_id": player_id, "joueur": v.player_name(world, player_id), "poste": position(player_id),
-                          "valeur": v.market_value(world.players[player_id], world) if player_id in world.players else None,
+                          "valeur": v.seen_value(world, world.players[player_id]) if player_id in world.players else None,
                           "offres": v.incoming_offers(world, player_id)}
                         for player_id in incoming]
             listed = [{"joueur_id": player_id, "joueur": world.players[player_id].name, "poste": position(player_id), "indemnite": fee}
@@ -778,8 +780,8 @@ def router(service: GameService) -> APIRouter:
                          recherche: str = "", fenetre: Literal["ete", "hiver"] | None = None, nature: Literal["payant", "libre", "pret"] | None = None,
                          competition: int | None = None, poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
                          montant_min: int = Query(0, ge=0), club: int | None = None, pays: str = "", selectionnes: Literal["oui"] | None = None,
-                         niveau_min: float = Query(0, ge=0, le=100), niveau_max: float = Query(100, ge=0, le=100),
-                         potentiel_min: float = Query(0, ge=0, le=100), potentiel_max: float = Query(100, ge=0, le=100),
+                         niveau_min: float = Query(0.5, ge=0.5, le=5), niveau_max: float = Query(5, ge=0.5, le=5),
+                         potentiel_min: float = Query(0.5, ge=0.5, le=5), potentiel_max: float = Query(5, ge=0.5, le=5),
                          interesse: Literal["oui", "non"] | None = None) -> dict:
         from .club_history import MovementFilter, world_movements
         chosen = MovementFilter(v.normalized(recherche), fenetre, nature, competition, frozenset(name for name in (poste or "").split(",") if name),
@@ -969,8 +971,8 @@ def router(service: GameService) -> APIRouter:
 
     @api.get("/joueurs")
     def players(recherche: str = "", poste: str | None = None, age_min: int = Query(0, ge=0), age_max: int = Query(100, le=100),
-                niveau_min: float = Query(1, ge=1, le=100), niveau_max: float = Query(100, ge=1, le=100),
-                potentiel_min: float = Query(1, ge=1, le=100), potentiel_max: float = Query(100, ge=1, le=100),
+                niveau_min: float = Query(0.5, ge=0.5, le=5), niveau_max: float = Query(5, ge=0.5, le=5),
+                potentiel_min: float = Query(0.5, ge=0.5, le=5), potentiel_max: float = Query(5, ge=0.5, le=5),
                 nation: str | None = None, club: int | None = None,
                 statut_club: Literal["actif", "dormant"] | None = None, contrat: Literal["libre", "sous_contrat"] | None = None,
                 salaire_min: int = Query(0, ge=0), salaire_max: int | None = Query(None, ge=0),
@@ -1001,6 +1003,15 @@ def router(service: GameService) -> APIRouter:
             def demand(player) -> int | None:
                 if player.id not in demands: demands[player.id] = v.asked_wage(world, player)
                 return demands[player.id]
+            # What the human club sees of each player, his stars and the value they give: read once a player.
+            seen = {}
+            def look(player) -> dict:
+                if player.id not in seen: seen[player.id] = v.scouting(world, player)
+                return seen[player.id]
+            def stars(player) -> tuple[float, float]:
+                """His level's stars and the middle of his potential's band, as the lists show them."""
+                shown = look(player)["stars"]
+                return shown["level"], sum(shown["potential"]) / 2
             # Whether a club would let a player go, for good or on loan, and whether he would come on loan.
             flags = v.MarketFlags(world)
             def keen(player) -> bool:
@@ -1012,13 +1023,13 @@ def router(service: GameService) -> APIRouter:
                 owner = world.clubs.get(player.club_id)
                 if (search not in v.normalized(player.name) or (positions and player.position not in positions)
                     or not age_min <= player.born.age_on(world.date) <= age_max
-                    or not niveau_min <= player.rating <= niveau_max or not potentiel_min <= player.potential <= potentiel_max
+                    or not niveau_min <= stars(player)[0] <= niveau_max or not potentiel_min <= stars(player)[1] <= potentiel_max
                     or (nation and nation not in player.nationalities) or (club is not None and player.club_id != club)
                     or (statut_club and (owner is None or (owner.competition_id is not None) != (statut_club == "actif")))
                     or (contrat and (player.contract is None) != (contrat == "libre"))
                     or wage < salaire_min or (salaire_max is not None and wage > salaire_max)
-                    or (valeur_min and v.market_value(player, world) < valeur_min)
-                    or (valeur_max is not None and v.market_value(player, world) > valeur_max)
+                    or (valeur_min and look(player)["value"] < valeur_min)
+                    or (valeur_max is not None and look(player)["value"] > valeur_max)
                     or (prix_max is not None and (fee(player) is None or fee(player) > prix_max))
                     or (recruiting and interesse and not keen(player))
                     or (liste == "transfert" and not flags.transfer_listed(player)) or (liste == "pret" and not flags.loan_listed(player))
@@ -1026,7 +1037,9 @@ def router(service: GameService) -> APIRouter:
                 selected.append(player)
             codes = build_nation_table(world.nation_names) if tri == 'nation' else {}
             def sort_key(player) -> tuple:
-                if tri == 'value': return v.market_value(player, world), player.id
+                if tri == 'value': return look(player)["value"], player.id
+                if tri == 'rating': return stars(player), v.normalized(player.name), player.id
+                if tri == 'potential': return stars(player)[::-1], v.normalized(player.name), player.id
                 if tri == 'nation': return codes.get(player.main_nation, {}).get("display_code", player.main_nation), player.id
                 if tri == 'asking_price': return fee(player) or 0, player.id
                 if tri == 'wage_demand': return demand(player) or 0, player.id

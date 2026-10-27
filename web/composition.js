@@ -1,4 +1,4 @@
-import {api,query,toast,escape as e,position,group,levelBadge,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout,steps} from './ui.js';
+import {api,query,toast,escape as e,position,group,levelStars,potentialStars,conditionIcon,debugMode,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout,steps} from './ui.js';
 import {outcomeLabels,shortDate} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
@@ -154,7 +154,7 @@ const slotBlock=(player,role)=>player?playerBlock(`${unavailableIcon(player)}${e
 function slotHtml(id,role,cell,index,byId){
  const player=byId.get(id);
  const classes=`pitch-player lineup-slot ${group(role)}${player?'':' empty'}${player?.unavailable?' invalid':''}${index===editor.picked?' picked':''}`;
- const title=player?`${player.name} · ${player.position} · niveau ${number(player.rating)}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
+ const title=player?`${player.name} · ${player.position}${debugMode()?` · niveau ${Math.round(player.rating*2)}`:''}${player.unavailable?player.unavailable==='injured'?' · blessé':' · suspendu':''}`:`${role} inoccupé`;
  // A starter wears the club's kit and his number; an empty place keeps the outline of a shirt, its position on it.
  const shirt=kitShirt(editor.data.club?.major_color,editor.data.club?.minor_color,shirtLabel(player,role),{empty:!player});
  return `<div class="${classes}" data-slot="${index}"${player?` data-player="${player.id}"`:''} draggable="true" style="left:${COLUMN_X[cell.column]}%;top:${LINE_Y[cell.line]}%" title="${e(title)}">${shirt}${slotBlock(player,role)}</div>`;
@@ -185,7 +185,7 @@ export function recentStrip(player,matches=[],threshold=null){
  return `<span class="recent${loaded?' loaded':''}" title="${e(title)}">${'<i class="none"></i>'.repeat(Math.max(0,5-recent.length))}${recent.map(bar).join('')}</span>`;
 }
 
-const INFO_COLUMNS=[['potential','POT.'],['fatigue','FATIGUE'],['recent','5 DERNIERS'],['form','FORME'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
+const INFO_COLUMNS=[['potential','POT.'],['fatigue','ÉTAT'],['recent','5 DERNIERS'],['form','FORME'],['appearances','MJ'],['goals','BUTS'],['assists','PD'],['average','NOTE']];
 // The composites by section, a line opening each section.
 const GAME_COLUMNS=COMPOSITE_SECTIONS.flatMap(section=>section.composites.map((key,index)=>[key,compositeHeader(key),index===0]));
 // The squad list's columns, [key, header, opens a section]: with a position picked on the pitch (`role`), everyone's note there
@@ -198,6 +198,9 @@ function sortValue(player,key){
  if(key==='selected')return spot?spot.kind==='slot'?spot.index:100+spot.index:1000+POSITION_ORDER.indexOf(player.position)*1000-player.rating;
  if(key==='position')return POSITION_ORDER.indexOf(player.position);
  if(key==='fatigue')return fatigue(player);
+ // On the stars the club sees, never on what is hidden behind them.
+ if(key==='rating')return player.stars?player.stars.level*10+(player.stars.potential[0]+player.stars.potential[1])/20:player.rating;
+ if(key==='potential')return player.stars?(player.stars.potential[0]+player.stars.potential[1])*5+player.stars.level/10:player.potential;
  if(key==='recent')return player.load??0;
  if(key==='name')return player.name;
  if(key==='fit')return player.position_notes?.[pickedRole()]??-1;
@@ -213,13 +216,11 @@ function squadHtml(byId){
  const head=shown.map(item=>{const [column,label]=item,classes=headClass(item);return `<th${classes?` class="${classes}"`:''}${column===key?` aria-sort="${direction==='asc'?'ascending':'descending'}"`:''}><button type="button" data-lineup-sort="${column}">${label}</button></th>`;}).join('');
  const body=rows.map(player=>{
   const spot=where(editor,player.id);
-  const tired=fatigue(player);
   const cells={
    selected:spot?spot.kind==='slot'?position(roles()[spot.index]):'<span class="position bench">REMP</span>':'',
    fit:role?fitAt(player,role):'',position:position(player.position),
    name:`<span class="lineup-name">${unavailableIcon(player)}<a href="#/player/${player.id}" draggable="false">${e(player.name)}</a></span>`,
-   rating:levelBadge(player.rating,'Niveau actuel sur 200'),potential:levelBadge(player.potential,'Potentiel sur 200'),
-   fatigue:`<span class="fatigue-cell${tired>=30?' danger':''}" title="Condition physique : ${100-tired} %"><span class="fatigue-bar"><i style="width:${Math.min(100,tired)}%"></i></span>${tired} %</span>`,
+   rating:levelStars(player),potential:potentialStars(player),fatigue:conditionIcon(player.fitness),
    recent:recentStrip(player,editor.data.recent_matches,editor.data.load_threshold),
    form:formBadge(player.form),appearances:appearances(player.appearances,player.substitutes),goals:player.goals,assists:player.assists,average:player.average?averageNote(player.average):'—'};
   const cell=([column,,opens])=>{const classes=[column==='name'?'strong':'',opens?'group-start':''].filter(Boolean).join(' ');
@@ -236,7 +237,7 @@ export function scoutingHtml(scout){
  const {club,match,standing,record}=scout;
  const major=safeColor(club.major_color)||'#8a9193',minor=safeColor(club.minor_color)||major;
  const crest=`<span class="crest mini-crest" style="background:linear-gradient(155deg,${major} 55%,${minor} 55%)"><img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></span>`;
- const person=player=>`<li>${position(player.position)}<a href="#/player/${player.id}">${e(player.name)}</a>${levelBadge(player.rating)}</li>`;
+ const person=player=>`<li>${position(player.position)}<a href="#/player/${player.id}">${e(player.name)}</a>${levelStars(player)}</li>`;
  const out=player=>`<li>${player.injured_until?`<span class="status danger" title="Retour le ${e(date(player.injured_until))}">✚ ${e(shortDate(player.injured_until))}</span>`:`<span class="status ban">${player.suspension} match${player.suspension>1?'s':''}</span>`}<a href="#/player/${player.id}">${e(player.name)}</a></li>`;
  const last=scout.last_meeting;
  const meeting=last?`<a class="scout-meeting" href="#/match/${last.id}"><span>${e(last.round_label)} · ${e(last.home.name)} – ${e(last.away.name)}</span><span class="club-match-score ${last.outcome}" title="${outcomeLabels[last.outcome]}">${last.score.join(' – ')}</span></a>`:'';

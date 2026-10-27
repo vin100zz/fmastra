@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount,roundFee} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,levelHue,levelBadge,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -49,7 +49,7 @@ const characterFacts=player=>CHARACTER.filter(({key})=>player[key]!=null).map(({
  return fact(label,cost?reverseScoreBadge(score,`${title} : ${cost}`):`<span class="rating" title="${e(help?`${title} : ${help}`:title)}">${score}</span>`);
 }).join('');
 
-// The composites the engine plays with, out of 200 like the level: a goalkeeper's two, or the six of an outfield player. Those
+// The composites the engine plays with, in stars like the level: a goalkeeper's two, or the six of an outfield player. Those
 // the position `role` asks for are marked like key attributes, the others grey.
 export function compositeItems(player, role=player.position) {
  const keys=player.position==='GB'?['arret','sortie']:COMPOSITE_SECTIONS.filter(section=>section.key!=='goalkeeper').flatMap(section=>section.composites);
@@ -64,7 +64,7 @@ const weighting=weights=>Object.entries(weights||{}).map(([key,weight])=>`${ATTR
 export function compositesGroup(player, role=player.position, column=false) {
  const items=compositeItems(player,role);
  if(!items.length)return '';
- const item=({key,value,wanted})=>{const badge=levelBadge(value),weights=weighting(player.composite_weights?.[key]);
+ const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]),weights=weighting(player.composite_weights?.[key]);
   return `<div class="attribute${wanted?' key':''}" title="${e(weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key])}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
  return column?attributeColumn(`Jeu ${position(role)}`,items.map(item).join(''),'composites-column" data-composites="column')
   :`<div class="attribute-group composites-group" data-composites><h3>Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
@@ -88,8 +88,8 @@ const PITCH={GB:[50,90],DC:[50,76],DG:[15,70],DD:[85,70],MDC:[50,59],MC:[50,42],
 // Only the roles the player can actually fill are drawn; without any, there is no pitch at all.
 const MIN_RATING=10;
 
-// Under each shirt, a block of one line: the player's note at that position (`player`, from /api/joueurs) in its colour, then
-// his affinity below 20. A click on a position reads the Jeu section of the attributes for it (`picked`): its shirt is ringed
+// Under each shirt, a block of one line: the player's note at that position (`player`, from /api/joueurs) in stars, then
+// his affinity below 20 as its disc. A click on a position reads the Jeu section of the attributes for it (`picked`): its shirt is ringed
 // and its block takes the accent.
 export function positionPitch(ratings, main, player=null, picked=main) {
  const roles=Object.entries(PITCH).filter(([role])=>ratings[role]>=MIN_RATING);
@@ -97,16 +97,16 @@ export function positionPitch(ratings, main, player=null, picked=main) {
  // Each position in the shirt of his club; the main one is ringed.
  const shirt=role=>kitShirt(player?.club?.major_color,player?.club?.minor_color,role);
  const block=role=>{const line=positionBlockNote(player,role,player?.composites_by_position?.[role])+affinityTag(ratings[role],role);return line?playerBlock(null,line):'';};
- return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${PITCH_BOXES}${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%" title="${role} : ${ratings[role]} / 20">${shirt(role)}${block(role)}</button>`).join('')}</div>`;
+ return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${PITCH_BOXES}${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%" title="${role} : ${affinityWord(ratings[role]).toLowerCase()}${debugMode()?` · ${ratings[role]} / 20`:''}">${shirt(role)}${block(role)}</button>`).join('')}</div>`;
 }
 
-// The same positions as a list, best note first: position, affinity out of 20, note out of 200, in a player's preview, which
-// has no pitch; a row picks its position as a shirt does. Without notes (an older server) there is no list.
+// The same positions as a list, best note first: position, affinity as its disc and its word, note in stars, in a player's
+// preview, which has no pitch; a row picks its position as a shirt does. Without notes (an older server) there is no list.
 export function positionList(ratings, player, picked=player.position) {
  const notes=player.position_notes||{};
  const roles=Object.keys(PITCH).filter(role=>ratings[role]>=MIN_RATING&&notes[role]!=null).sort((a,b)=>notes[b]-notes[a]||ratings[b]-ratings[a]);
  if(!roles.length)return '';
- const row=role=>`<button type="button" class="position-row${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}"><span>${position(role)}</span><span>${scoreBadge(ratings[role],`Affinité ${role} sur 20`)}</span><span>${positionNote(player,role,player.composites_by_position?.[role])}</span></button>`;
+ const row=role=>`<button type="button" class="position-row${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}"><span>${position(role)}</span><span class="state">${affinityIcon(ratings[role],role)}${affinityWord(ratings[role])}</span><span>${positionNote(player,role,player.composites_by_position?.[role])}</span></button>`;
  return `<div class="positions-list"><div class="position-row head" aria-hidden="true"><span>POSTE</span><span>AFFINITÉ</span><span>NOTE</span></div>${roles.map(row).join('')}</div>`;
 }
 
@@ -115,36 +115,41 @@ const calendar=({year,month})=>new Date(year,month-1,15);
 
 // `points` run month by month from the oldest to the latest, each with its level out of 200, its season and the club played for
 // that month (if any); seasons recorded before the monthly history have one point, at their opening. The abscissa is time, so such gaps
-// keep their length. A dot marks the first point of each season and the latest one.
-// Text and dots are HTML so they keep the size of the rest of the interface; only the gridlines and the curve are stretched SVG.
-// The ordinate spans 20 points at least, centred on the curve, so that a point gained does not read as a leap.
-const LEVEL_SPAN=20;
+// keep their length. The ordinate is in stars, a line a half star: the level as the user's club read him that month (`stars`,
+// continuous), and above it the band it read his potential in (`band`), which narrows as he ages and as he is seen play. No
+// figure but in debug mode: a dot marks the first point of each season and the latest one, the stars of the first and the
+// latest stand beside them.
+// Text and dots are HTML so they keep the size of the rest of the interface; only the gridlines, the band and the curve are stretched SVG.
 export function levelChart(points) {
- const values=points.map(point=>point.level),months=points.map(point=>point.year*12+point.month-1);
- const centre=Math.round((Math.min(...values)+Math.max(...values))/2),half=Math.max(LEVEL_SPAN,Math.max(...values)-Math.min(...values))/2;
- const low=Math.max(0,Math.min(Math.min(...values),centre-half)),high=Math.min(200,Math.max(Math.max(...values),centre+half));
- const step=[5,10,20,25,50].find(size=>(high-low)/size<=5)??50;
- const min=Math.floor(low/step)*step;
- let max=Math.ceil(high/step)*step;if(max===min)max+=step;
+ const top=5,clip=value=>Math.max(.5,Math.min(top,value));
+ const values=points.map(point=>clip(point.stars??starsAt(point.level))),bands=points.map(point=>point.band?point.band.map(clip):null);
+ const months=points.map(point=>point.year*12+point.month-1);
+ const low=Math.min(...values,...bands.filter(Boolean).map(band=>band[0]));
+ const min=Math.max(.5,Math.floor(low-.25)),max=top;
  const first=months[0],span=Math.max(1,months.at(-1)-first);
  const across=month=>((month-first)*100/span).toFixed(2);
  const down=value=>((max-value)*100/(max-min)).toFixed(2);
- const ticks=[];for(let value=min;value<=max;value+=step)ticks.push(value);
+ const halves=[];for(let value=min;value<=max;value+=.5)halves.push(value);
  // At most five dates on the abscissa: months over two years at most, then Januaries named by their year.
  const every=[1,2,3,6,12,24,36,60,120].find(size=>span/size<=4)??120;
  const dates=[];for(let month=Math.ceil(first/every)*every;month<=months.at(-1);month+=every)dates.push(month);
- const lines=`<svg class="plot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${ticks.map(value=>`<line class="grid-line" x1="0" x2="100" y1="${down(value)}" y2="${down(value)}" vector-effect="non-scaling-stroke"/>`).join('')}<polyline class="curve" points="${values.map((value,index)=>`${across(months[index])},${down(value)}`).join(' ')}" vector-effect="non-scaling-stroke"/></svg>`;
- const axis=ticks.map(value=>`<span class="y-tick" style="top:${down(value)}%">${value}</span>`).join('')
+ const banded=points.map((point,index)=>[index,bands[index]]).filter(([,band])=>band);
+ const band=banded.length>1?`<polygon class="band" points="${[...banded.map(([index,band])=>`${across(months[index])},${down(band[1])}`),...banded.reverse().map(([index,band])=>`${across(months[index])},${down(band[0])}`)].join(' ')}"/>`:'';
+ const lines=`<svg class="plot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${halves.map(value=>`<line class="grid-line${value%1?' half':''}" x1="0" x2="100" y1="${down(value)}" y2="${down(value)}" vector-effect="non-scaling-stroke"/>`).join('')}${band}<polyline class="curve" points="${values.map((value,index)=>`${across(months[index])},${down(value)}`).join(' ')}" vector-effect="non-scaling-stroke"/></svg>`;
+ const axis=halves.filter(value=>value%1===0).map(value=>`<span class="y-tick" style="top:${down(value)}%">${value} ★</span>`).join('')
   +dates.map(month=>`<span class="x-tick" style="left:${across(month)}%">${month%12?MONTH.format(calendar({year:Math.floor(month/12),month:month%12+1})):month/12}</span>`).join('');
+ const shown=value=>Math.max(.5,Math.min(top,Math.floor(value*2+1e-9)/2));
  const marks=points.map((point,index)=>{
   const last=index===points.length-1;
   if(index&&!last&&point.season===points[index-1].season)return '';
   const at=`left:${across(months[index])}%;top:${down(values[index])}%`,edge=index===0?'first':last?'last':'';
-  const label=`${MONTH_YEAR.format(calendar(point))}${point.club?` · ${point.club.name}`:''} · niveau ${values[index]}`;
-  return `<span class="chart-point" style="${at}" title="${e(label)}">${kitDot(point.club)||'<i class="kit-dot neutral" aria-hidden="true"></i>'}</span>${edge?`<span class="point-value ${edge}" style="${at}">${values[index]}</span>`:''}`;
+  const label=`${MONTH_YEAR.format(calendar(point))}${point.club?` · ${point.club.name}`:''}${debugMode()?` · niveau ${point.level}${point.band?` · potentiel ${point.band.map(value=>value.toFixed(1)).join(' – ')} ★`:''}`:''}`;
+  return `<span class="chart-point" style="${at}" title="${e(label)}">${kitDot(point.club)||'<i class="kit-dot neutral" aria-hidden="true"></i>'}</span>${edge?`<span class="point-value ${edge}" style="${at}">${stars(shown(values[index]))}</span>`:''}`;
  }).join('');
- return `<div class="level-chart" role="img" aria-label="Évolution mensuelle du niveau, sur 200"><div class="plot">${lines}${axis}${marks}</div></div>`;
+ return `<div class="level-chart" role="img" aria-label="Évolution mensuelle du niveau, en étoiles"><div class="plot">${lines}${axis}${marks}</div></div>`;
 }
+// A point of an older server, without its stars: its level out of 200 on the scale of stars, without doubt.
+const starsAt=level=>starsOf(level/2);
 
 const dialogButtons=confirm=>`<div class="actions"><button type="button" data-close-dialog>Annuler</button>${confirm}</div>`;
 
@@ -296,25 +301,18 @@ export async function playerMenu(player, state, scope) {
 
 // A line of the rail whose tooltip says more than its value.
 const told=(label,value,title)=>`<div class="fact"${title?` title="${e(title)}"`:''}><span>${label}</span><strong>${value}</strong></div>`;
-// A thin bar beside a figure of the rail, filled from the left: green, or in the colour of the grade `hue`.
-const gauge=(share,hue)=>`<i class="gauge${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`} aria-hidden="true"><i style="width:${Math.round(Math.max(0,Math.min(1,share))*100)}%"></i></i>`;
 
-// Form is an effect either way, drawn from the middle of its bar between the bounds it keeps (`form_bounds`; an older server
-// gives none, and the figure stands alone). Within ±2 % it changes nothing: the bar stays empty.
-function formFact(player) {
- if(player.form==null)return '';
- const {pct,neutral,text,title}=formReading(player.form),[low,high]=player.form_bounds||[];
- const reach=Math.max(1-low,high-1)*100;
- const fill=neutral?'':`<i class="${pct>0?'up':'down'}" style="${pct>0?'left':'right'}:50%;width:${Math.min(50,Math.abs(pct)*50/reach).toFixed(1)}%"></i>`;
- return told('Forme',`${reach>0?`<i class="gauge signed" aria-hidden="true">${fill}</i>`:''}<b>${text}</b>`,title);
-}
+// His state in five steps, each its icon and its word, never a figure but in debug mode (« État, forme, moral »).
+const conditionFact=player=>player.fitness==null?'':told('Condition',`${conditionIcon(player.fitness)}<b>${conditionReading(player.fitness).word}</b>`);
+const formFact=player=>player.form==null?'':told('Forme',`${formIcon(player.form)}<b>${formWord(player.form)}</b>`,debugMode()?formReading(player.form).title:'');
 
-// Morale with what weighs most on it ahead of its bar, whenever the server names a cause.
+// Morale with what weighs most on it ahead of its face, whenever the server names a cause, and an arrow towards where it drifts.
 function moraleFact(player) {
  if(player.morale==null)return '';
- const {value,cause,title,hue}=moraleReading(player,true);
+ const {value,target,cause,title}=moraleReading(player,true);
  const why=cause?`<span class="morale-cause" title="${e(`Pèse surtout : ${cause[1]}`)}">${cause[0]}</span>`:'';
- return told('Moral',`${why}${gauge(player.morale,hue)}<b>${value} %</b>`,title);
+ const trend=target==null||Math.abs(target-value)<3?'':target>value?'<span class="trend up">▲</span>':'<span class="trend down">▼</span>';
+ return told('Moral',`${why}${moraleFace(player.morale)}${trend}<b>${moraleWord(player.morale)}</b>`,debugMode()?title:'');
 }
 
 // Yellow cards add up over his competitions, each named in the tooltip; a suspension names the competition it holds in.
@@ -353,7 +351,7 @@ const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.pa
 function rail(player) {
  const others=nationCodes(player).slice(1);
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
- const state=`${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}`
+ const state=`${conditionFact(player)}${formFact(player)}${moraleFact(player)}${fact('Blessure',injury)}${disciplineFacts(player)}`
   +(others.length?fact(others.length>1?'Autres nationalités':'Autre nationalité',others.map(code=>nationBadge(code)).join('')):'');
  const character=characterFacts(player);
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
@@ -422,11 +420,10 @@ export async function playerPreview(id, state) {
  if(player.retired)return '';
  shown=player;
  const actions=await playerActions(player,state);
- const tile=(label,value,hue)=>`<div class="tile${hue==null?'':' graded'}"${hue==null?'':` style="--hue:${hue}"`}><span>${label}</span><strong>${value}</strong></div>`;
- const grade=(label,value)=>value==null?tile(label,'—'):tile(label,level(value),levelHue(level(value)));
+ const tile=(label,value)=>`<div class="tile"><span>${label}</span><strong>${value}</strong></div>`;
  const flags=nationFlags(player);
  const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${competitionLink({name:item.competition})} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
- const shape=`<h3>État</h3>${told('Condition',`${gauge(player.fitness)}<b>${Math.round(player.fitness*100)} %</b>`)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
+ const shape=`<h3>État</h3>${conditionFact(player)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring_soon?'danger':player.expiring?'warn':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),
   ...(player.transfer_listed||player.loan_listed?[['Listé',marketTags(player.transfer_listed,player.loan_listed)]]:[]),
@@ -436,7 +433,7 @@ export async function playerPreview(id, state) {
  const attributes=sections.flatMap(section=>section.items).map(attributeItem).join('');
  return `<div class="card preview"><div class="preview-head">${flags.main}<h2><a href="#/player/${player.id}">${e(player.name)}</a></h2>${position(player.position)}</div>`
   +`<div class="preview-line">${clubLink(player.club)}${caps(player)}</div>`
-  +`<div class="rail-tiles">${tile('Âge',player.age)}${grade('Niveau',player.rating)}${grade('Potentiel',player.potential)}</div>${feeTiles(player)}`
+  +`<div class="rail-tiles">${tile('Âge',player.age)}${tile('Niveau',levelStars(player,true))}${tile('Potentiel',potentialStars(player,true))}</div>${feeTiles(player)}`
   +shape+`<h3>Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
   +(roles?`<h3>Postes</h3>${roles}`:'')+compositesGroup(player)
   +`<h3>Attributs</h3><div class="attributes-grid">${attributes}</div>`

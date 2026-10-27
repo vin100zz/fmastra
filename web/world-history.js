@@ -1,7 +1,7 @@
-import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,price,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query,competitionLink} from './ui.js';
+import {api,escape as e,number as n,averageNote,date,seasonSteps,card,table,sortableTable,headPager,playerLink,clubLink,money,price,playerTable,playerViewSwitch,sortButton,position,level,levelBadge,noteStars,stars,levelStars,starsOf,scoreBadge,mainNation,nationBadge,nationName,figure,miniBar,query,competitionLink} from './ui.js';
 import {monthlySalary} from './salaries.js';
 import {resetButton} from './filters.js';
-import {wideScreen,fittedRows,sidePanel,searchField,positionChips,choiceLinks,toggleLink,rangeMenu,choiceSelect} from './listing.js';
+import {wideScreen,fittedRows,sidePanel,searchField,positionChips,choiceLinks,toggleLink,rangeMenu,starRangeMenu,choiceSelect} from './listing.js';
 import {LEAGUE_ORDER} from './screens.js';
 
 const LABELS={transfer:'Transferts',retirement:'Retraites',academy:'Promotions des centres'};
@@ -86,21 +86,20 @@ export function retirementSummary(summary){
 // The countries shown beside the promotions: those that promoted the most players.
 const LISTED_NATIONS=12;
 
-// Beside the promotions: how many, their potential and what they gained since, then the clubs that trained them (they
-// scroll within their card) and the countries of those clubs.
+// Beside the promotions: how many and the potential the world read them at, then the clubs that trained them (they scroll
+// within their card) and the countries of those clubs.
+const starLabel=value=>`${value%1?`${Math.floor(value)||''}½`:value} ★`;
 export function academySummary(summary){
- const gain=summary.average_progress==null?'—':`${summary.average_progress>0?'+':''}${n(summary.average_progress*2)}`;
- const head=tiles([['Promus',n(summary.total)],['Pot. moyen',summary.average_potential==null?'—':level(summary.average_potential)],['Meilleur',summary.best?level(summary.best.potential):'—',summary.best?.player||''],['Progression',gain,'Niveaux gagnés en moyenne depuis la promotion']]);
+ const head=tiles([['Promus',n(summary.total)],['Pot. moyen',summary.average_potential==null?'—':noteStars(summary.average_potential,'Potentiel',true)],['Meilleur',summary.best?noteStars(summary.best.potential,'Potentiel',true):'—',summary.best?.player||'']]);
  if(!summary.total)return head;
- const chart=card('Potentiel des promus',countChart(summary.bins.map(item=>item.from==null?['&lt; 100',item.count,`Moins de 100 : ${n(item.count)} joueur${item.count>1?'s':''}`]
-  :[item.from,item.count,`De ${item.from} à ${item.from+(item.from===190?10:9)} : ${n(item.count)} joueur${item.count>1?'s':''}`]),'Promus par potentiel'),'','activity-card');
+ const chart=card('Potentiel des promus',countChart(summary.bins.map(item=>[starLabel(item.stars),item.count,`${starLabel(item.stars)} : ${n(item.count)} joueur${item.count>1?'s':''}`]),'Promus par potentiel'),'','activity-card');
  const academies=card('Centres de formation',summaryTable('academies',['CLUB','PROMUS','<span title="Potentiel moyen de ses promus">POT. MOY.</span>','MEILLEUR','POT.','<span title="Recrutement des jeunes">JEUNES</span>'],
   summary.academies.map(entry=>[`<span class="strong">${clubLink(entry.club)}</span>`,figure(n(entry.count)),levelBadge(entry.average_potential),entry.best?playerLink(entry.best.player_id,entry.best.player):'—',levelBadge(entry.best?.potential),scoreBadge(entry.youth_recruitment)]),
-  summary.academies.map(entry=>[entry.club.name,entry.count,entry.average_potential??'',entry.best?.player??'',entry.best?.potential??'',entry.youth_recruitment??''])),'','clubs-summary');
+  summary.academies.map(entry=>[entry.club.name,entry.count,starsOf(entry.average_potential)??'',entry.best?.player??'',starsOf(entry.best?.potential)??'',entry.youth_recruitment??''])),'','clubs-summary');
  const listed=summary.nations.slice(0,LISTED_NATIONS),most=Math.max(1,...listed.map(entry=>entry.count));
  const nations=card('Pays',summaryTable('nations',['PAYS','PROMUS','CLUBS','POT. MOY.','<span title="Meilleur potentiel">MEILLEUR</span>'],
   listed.map(entry=>[`<span class="strong">${nationBadge(entry.code,{full:true})}</span>`,counted(entry.count,most),figure(n(entry.clubs)),levelBadge(entry.average_potential),levelBadge(entry.best)]),
-  listed.map(entry=>[nationName(entry.code),entry.count,entry.clubs,entry.average_potential??'',entry.best??''])),'','leagues-summary');
+  listed.map(entry=>[nationName(entry.code),entry.count,entry.clubs,starsOf(entry.average_potential)??'',starsOf(entry.best)??''])),'','leagues-summary');
  return head+chart+academies+nations;
 }
 const SUMMARIES={transfer:marketSummary,retirement:retirementSummary,academy:academySummary};
@@ -117,7 +116,7 @@ function transfersTable(data, summary){
  const columns=[['date','DATE'],['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE'],['rating','NIV.'],['source','PROVENANCE'],['arrow',''],['target','DESTINATION'],['fee','MONTANT'],['value','VALEUR']];
  const record=Math.max(1,summary?.record?.fee||0,...data.items.map(row=>row.fee||0));
  const fee=row=>row.kind==='loan'?'<span class="num muted">Prêt</span>':row.kind==='release'?'<span class="num muted">Fin de contrat</span>':row.kind==='departure_unknown'?'<span class="num muted">Motif non archivé</span>':row.fee?`<span class="bar-figure">${miniBar(row.fee/record)}<b>${price(row.fee)}</b></span>`:'<span class="num muted">Libre</span>';
- return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),levelBadge(row.rating,'Niveau actuel sur 200'),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':price(row.value))]));
+ return movementsTable(columns,data,data.items.map(row=>[date(row.date),row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),levelStars(row),clubLink(row.source),'<span class="move-arrow" aria-hidden="true">→</span>',clubLink(row.target),fee(row),figure(row.value==null?'—':price(row.value))]));
 }
 
 // A retirement tells who left: his level on the day and the best of his history, his career in the game and his caps. The
@@ -129,26 +128,22 @@ function retirementsTable(data){
   ['caps','SÉL.','Sélections','Sélection'],['caps_goals','BUTS','Buts en sélection','Sélection']];
  const count=value=>figure(n(value??0));
  return movementsTable(columns,data,data.items.map(row=>[row.position?position(row.position):'—',playerCell(row),mainNation(row),figure(row.age??'—'),clubLink(row.source),
-  row.league?competitionLink(row.league):row.source?external:'—',levelBadge(row.rating,'Niveau à la retraite sur 200'),levelBadge(row.peak,'Meilleur niveau sur 200'),
+  row.league?competitionLink(row.league):row.source?external:'—',noteStars(row.rating,'Niveau'),noteStars(row.peak,'Niveau'),
   count(row.matches),count(row.goals),count(row.assists),figure(row.average?averageNote(row.average):'—'),figure(row.caps?n(row.caps):'—'),figure(row.caps?n(row.caps_goals):'—')]));
 }
 
-// A promotion tells what the player was that day and what he is today: the level he had, the one he has, how far that took
-// him towards his potential, his value, and for a recruiter what he asks and whether he would come. The club is the one that
+// A promotion tells what the player was that day and what he is today: the level he had, the one he has, the potential the
+// world read him at that day, his value, and for a recruiter what he asks and whether he would come. The club is the one that
 // trained him, followed by his club of today when he has left it.
 function promotionsTable(data, recruiting){
  const columns=[['position','POSTE'],['name','JOUEUR'],['nation','NAT.'],['age','ÂGE','Âge à la promotion'],['academy_club','CLUB FORMATEUR'],['rating','PROMO','Niveau à la promotion'],['level','NIV.','Niveau actuel'],
-  ['progress','PROGRESSION','Niveaux gagnés depuis la promotion, sur le chemin de son potentiel'],['potential','POT.'],['worth','VALEUR','Valeur actuelle'],
+  ['potential','POT.','Potentiel à la promotion'],['worth','VALEUR','Valeur actuelle'],
   ...(recruiting?[['wage_demand','PRÉTENTIONS'],['interested','INTÉRESSÉ']]:[])];
- const progress=(then,now)=>{
-  if(!now||then.rating==null)return figure('—');
-  const gain=level(now.rating)-level(then.rating),room=then.potential==null?0:level(then.potential)-level(then.rating);
-  return `<span class="bar-figure gain">${room>0?miniBar(gain/room):''}<b>${gain>0?'+':gain<0?'−':''}${Math.abs(gain)}</b></span>`;
- };
  const clubs=(row,now)=>`${clubLink(row.target)}${now&&now.club?.id!==row.target?.id?` <span class="muted">→</span> ${clubLink(now.club)}`:''}`;
  return movementsTable(columns,data,data.items.map(row=>{const then=row.details||{},now=then.current;
   return [then.position?position(then.position):'—',playerCell(row),mainNation(then),figure(then.age??'—'),clubs(row,now),
-   levelBadge(then.rating,'Niveau à la promotion sur 200'),levelBadge(now?.rating,'Niveau actuel sur 200'),progress(then,now),levelBadge(then.potential,'Potentiel sur 200'),figure(now?price(now.value):'—'),
+   noteStars(then.rating,'Niveau à la promotion'),now?levelStars(now):'—',
+   then.stars?stars(...then.stars.potential,{title:`Potentiel à la promotion\nFourchette ${then.estimate?.lower} – ${then.estimate?.upper}${then.potential!=null?`\nRéel ${level(then.potential)}`:''}`}):noteStars(then.potential,'Potentiel'),figure(now?price(now.value):'—'),
    ...(recruiting?[figure(now?.wage_demand==null?'—':monthlySalary(now.wage_demand)),now?.interested==null?'—':now.interested?'Oui':'<span class="muted">Non</span>']:[])];}));
 }
 
@@ -170,8 +165,6 @@ export async function worldHistoryScreen(section,params,leagues=[],state={}){
  // The lowest fee is typed in millions of euros; the API filters on full euros.
  if(request.get('montant_min'))request.set('montant_min',String(Math.round(Number(request.get('montant_min'))*1e6)));
  if(type==='academy'){
-  // Levels and potentials are typed out of 200; the API works on the rating out of 100.
-  ['niveau_min','niveau_max','potentiel_min','potentiel_max'].forEach(key=>{if(request.get(key))request.set(key,String(Number(request.get(key))/2));});
   // A class of promoted players opens on its best prospects.
   if(!request.get('tri'))request.set('tri',today?'level':'potential');
   else if(today&&request.get('tri')==='rating')request.set('tri','level');
@@ -182,7 +175,6 @@ export async function worldHistoryScreen(section,params,leagues=[],state={}){
  const heading=`<div class="toolbar"><h1>Mercato mondial</h1>${nav}<div class="tools">${seasonSteps(data)}</div></div>`;
  const divisions=choiceSelect(params,'competition','Championnat',leagues.filter(item=>item.kind==='league').sort((a,b)=>LEAGUE_ORDER.indexOf(a.nation)-LEAGUE_ORDER.indexOf(b.nation)||a.level-b.level).map(item=>[item.id,e(item.name)]));
  const mine=recruiting?toggleLink(base,params,'club',state.controlled_club_id,'Mon club'):'';
- const grade=(label,key,steps)=>rangeMenu(base,params,label,[[`${key}_min`,'min','min="1" max="200"'],[`${key}_max`,'max','min="1" max="200"']],{presets:steps.map(step=>[`≥ ${step}`,{[`${key}_min`]:step}])});
  const narrowing={
   transfer:()=>choiceLinks(base,params,'fenetre',[['','Saison'],['ete','Été'],['hiver','Hiver']],'Fenêtre')
    +choiceLinks(base,params,'nature',[['','Tous'],['payant','Payants'],['libre','Libres'],['pret','Prêts']],'Type')+divisions
@@ -192,7 +184,7 @@ export async function worldHistoryScreen(section,params,leagues=[],state={}){
   retirement:()=>positionChips(base,params)+ageMenu(base,params,[['≤ 32',{age_max:32}],['33–34',{age_min:33,age_max:34}],['≥ 35',{age_min:35}]])+divisions
    +toggleLink(base,params,'selectionnes','oui','Internationaux')+mine,
   academy:()=>positionChips(base,params)+ageMenu(base,params,[['≤ 16',{age_max:16}],['17',{age_min:17,age_max:17}],['≥ 18',{age_min:18}]])
-   +grade('Niveau','niveau',[80,100,120])+grade('Potentiel','potentiel',[140,150,160,170])
+   +starRangeMenu(base,params,'Niveau','niveau',[2,2.5,3])+starRangeMenu(base,params,'Potentiel','potentiel',[3.5,4,4.5])
    +choiceSelect(params,'pays','Pays',(data.nations||[]).map(code=>[code,nationName(code)]).sort((a,b)=>a[1].localeCompare(b[1],'fr')).map(([code,name])=>[code,e(name)]))+divisions
    +(recruiting?choiceSelect(params,'interesse','Intérêt',[['oui','Joueurs intéressés'],['non','Joueurs non intéressés']]):'')+mine,
  }[type]();
