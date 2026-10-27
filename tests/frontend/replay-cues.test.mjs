@@ -66,6 +66,16 @@ test('a pass supplies its actual receiver target and retains his control while s
  assert.equal(replay.dot(receiver).gesture.style,'shot');
 });
 
+test('a ground pass struck off a bouncing ball reaches the spot its receiver runs to',async()=>{
+ const replay=fixture(),point={x:90,y:40};
+ replay.ballPath=path({x:80,y:34,z:.35},{x:0,y:0,z:0},1000);
+ await replay.pass({type:'pass',lift:'ground',then:'two',to:receiver,point},{type:'control',who:receiver},{x:105,y:34});
+ const action=replay.action,arrived=ballAt(replay.ballPath,action.t0+action.duration),run=replay.runs.get('home:10');
+ assert.ok(Math.hypot(arrived.x-point.x,arrived.y-point.y)<.01,`the ball stops ${Math.hypot(arrived.x-point.x,arrived.y-point.y).toFixed(2)} m short`);
+ assert.ok(Math.hypot(run.to.x-arrived.x,run.to.y-arrived.y)<1);
+ assert.equal(run.t1,action.t0+action.duration);
+});
+
 test('a cross identifies the kicker and prepares a directed header without changing its flight',async()=>{
  const replay=fixture(),move={type:'cross',side:'home',by:shooter,to:receiver,style:'floated',height:2.1,bend:0};
  await replay.cross(move);
