@@ -760,9 +760,9 @@ def router(service: GameService) -> APIRouter:
         # A reading flag only, outside the simulation: allowed while the auto mode runs, unlike `mutating`.
         with service.reading() as world:
             if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
-            targets = world.news if command.ids is None else [world.news[index] for index in command.ids if 0 <= index < len(world.news)]
-            for item in targets: item.read = True
-            return {"unread": sum(not item.read for item in world.news), "news": news.summary(world)}
+            news.mark_read(world, command.ids)
+            summary = news.summary(world)
+            return {"unread": summary["unread"], "news": summary}
 
     @api.get("/manuel")
     @api.get("/manuel/{chapitre}")
@@ -929,8 +929,9 @@ def router(service: GameService) -> APIRouter:
             return history(world, club_id, vue)
 
     @api.get("/competitions/{competition_id}/classement")
-    def standings(competition_id: int, page: int = Query(1, ge=1)) -> dict:
-        with service.reading() as world: return v.paginate(v.table(world, competition_id), page)
+    def standings(competition_id: int, page: int = Query(1, ge=1),
+                  vue: Literal["general", "domicile", "exterieur", "derniers"] = "general") -> dict:
+        with service.reading() as world: return v.paginate(v.table(world, competition_id, view=vue), page)
 
     @api.get("/competitions/{competition_id}/calendrier")
     def calendar(competition_id: int, journee: int | None = Query(None, ge=1), page: int = Query(1, ge=1)) -> dict:

@@ -125,14 +125,12 @@
     }
     document.querySelector('#restart').addEventListener('click', () => playScene(selected));
     document.querySelector('#pace').addEventListener('change', event => {
-      replay.speed = Number(event.target.value);
-      replay.querySelectorAll('[data-speed]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === replay.speed)));
+      replay.setSpeed(Number(event.target.value));
     });
     pauseShot.addEventListener('change', () => { pauseOnce = false; });
     if (params.has('speed')) {
-      replay.speed = Math.min(4, Math.max(.1, Number(params.get('speed')) || 1));
+      replay.setSpeed(Math.min(4, Math.max(.1, Number(params.get('speed')) || 1)));
       document.querySelector('#pace').value = String(replay.speed);
-      replay.querySelectorAll('[data-speed]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === replay.speed)));
     }
     playScene(selected);
     if (params.get('autoplay') === '0') replay.pause();

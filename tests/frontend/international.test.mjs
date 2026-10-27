@@ -145,7 +145,7 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
   assert.match(rows[3],/^ coming" data-competition="-102030">/);assert.doesNotMatch(rows[3],/Prochain/);
   // Beside the matches: the whole group in the charter's columns, then the record in each edition.
   const side=html.split('<aside class="calendar-side">')[1];
-  assert.match(side,/^<section class="card standings-card"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
+  assert.match(side,/^<section class="card standings-card"><div class="card-head"><h2>Groupe D · 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
   assert.match(side,/NATION<.*PTS<.*>J<.*>V<.*>N<.*>D<.*BP<.*BC<.*DIFF\.</s);assert.match(side,/<tr class="promoted own"/);
   assert.ok(side.indexOf('Groupe D')<side.indexOf('<h2>Bilan</h2>'));
   assert.match(side,/COMPÉTITION<.*PLACE<.*>J<.*>V<.*>N<.*>D<.*BP<.*BC</s);
@@ -177,7 +177,7 @@ test('a calendar of the finals writes its rounds in full and flies nowhere on ne
   assert.match(html,/<td[^>]*>Demi-finales<\/td>/);
   globalThis.fetch=serving(page(),{edition:null,editions:[],items:[],group:null,competitions:[]});
   const empty=await internationalScreen('nation','-1001','calendar');
-  assert.match(empty,/Calendrier vide/);assert.doesNotMatch(empty,/class="season"/);
+  assert.match(empty,/Aucun match programmé/);assert.doesNotMatch(empty,/class="season"/);
   // The other tabs read no edition: nothing closes their row.
   globalThis.fetch=serving(page());
   assert.doesNotMatch(await internationalScreen('nation','-1001'),/class="tools"/);
@@ -237,7 +237,7 @@ test('a competition’s page opens on its header, steps to the other competition
   // A World Cup none of whose editions is drawn says when its first one is; nobody holds its title.
   const world=await internationalScreen('coupe-du-monde');
   assert.match(world,/<h1>Coupe du monde<\/h1>/);assert.match(world,/<div class="club-hero-tiles"><\/div>/);assert.doesNotMatch(world,/class="season"/);
-  assert.match(world,/Première édition en 2030/);assert.match(world,/Elle sera tirée le 1 août 2028\./);
+  assert.match(world,/Première édition en 2030 · tirage le 1 août 2028/);
  }finally{globalThis.fetch=previous;setNations({});}
 });
 
@@ -303,7 +303,7 @@ test('a selection opens on its Présentation, a club’s: its tiles, its kits an
   const titles=part=>[...part.matchAll(/<h2>([^<]+)/g)].map(found=>found[1]);
   assert.match(html,/<div class="club-presentation" data-fill>/);assert.equal(columns.length,4);
   assert.deepEqual(titles(columns[0]),['Tenues','Parcours']);
-  assert.deepEqual(titles(columns[1]),['Équipe-type','Groupe D – 8']);
+  assert.deepEqual(titles(columns[1]),['Équipe-type','Groupe D · 8']);
   assert.deepEqual(titles(columns[2]),['Calendrier']);
   assert.deepEqual(titles(columns[3]),['Buteurs','Passeurs','Notes']);
   // Its two outfits, home first, named by their tooltip.
@@ -322,7 +322,7 @@ test('a selection opens on its Présentation, a club’s: its tiles, its kits an
   assert.match(eleven,/<span class="block-season">2 m \/ 3<span class="match-mark goal"><\/span><\/span>/);
   assert.doesNotMatch(eleven,/>null<|undefined/);
   // Under it, its group: the place that qualifies and its own row marked, the points and the difference.
-  assert.match(columns[1],/<section class="card standings-card standings-extract"><div class="card-head"><h2>Groupe D – 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
+  assert.match(columns[1],/<section class="card standings-card standings-extract"><div class="card-head"><h2>Groupe D · 8<span class="ordinal">e<\/span> journée<\/h2><a href="#\/international\/coupe-du-monde\/qualifications\?edition=2030" aria-label="Voir le groupe">Voir <span class="go" aria-hidden="true"><\/span><\/a>/);
   assert.match(columns[1],/NATION<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th><th class="difference-column"[^>]*><button class="sort-toggle" data-table-sort>DIFF\.<\/button><\/th><\/tr>/);
   assert.match(columns[1],/<tr class="promoted own"[^>]*><td[^>]*><span class="rank first">1<\/span>/);
   // Its matches, every edition included, oldest first: the other side after its flag, another edition's badge, no plane
@@ -437,7 +437,7 @@ test('Sélections nationales sets a column for each competition, then the nation
   assert.match(columns[1],/<span>Prochaine journée<\/span><strong>J1 · 18 mars 2031<\/strong>/);
   // Then its finals; a competition without one says so.
   assert.match(columns[1],/<h3 class="section-title">Palmarès<\/h3><div class="finals-table">.*<small title="Tirs au but 4 – 3">\(TAB\)<\/small>1 – 1/s);
-  assert.match(columns[0],/Pas encore de vainqueur/);
+  assert.match(columns[0],/Aucun vainqueur/);
   // The nations: their strength, their titles in each competition by its badge, their last edition.
   const nations=html.split('<h2>Nations actives</h2>')[1];
   assert.match(nations,/^<div class="segmented small" role="group" aria-label="Fédérations"><a class="active" href="#\/international">Toutes · 2<\/a><a class="" href="#\/international\?federation=Asie">Asie · 1<\/a><a class="" href="#\/international\?federation=Europe">Europe · 1<\/a><\/div>/);

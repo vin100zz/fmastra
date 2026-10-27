@@ -80,12 +80,10 @@ class ShirtsRenumbered:
 
 @dataclass(frozen=True, slots=True)
 class FormationChosen:
-    """The formation a club plays, chosen for the first-team players `squad` (see `core.world.formations`); `notify` tells
-    the human club when its next opponent or a rival of its league changes formation."""
+    """The formation a club plays, chosen for the first-team players `squad` (see `core.world.formations`)."""
     club_id: int
     formation: str
     squad: tuple[int, ...]
-    notify: bool = True
 
 
 @dataclass(frozen=True, slots=True)

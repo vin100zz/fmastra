@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyMargin} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,GO} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,competitionBadge,contractEnd,GO} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -10,7 +10,7 @@ const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert',
  release:['Contrat','contract'],retirement:['Retraite','contract'],morale:['Moral','morale'],injury:['Blessure','injury'],injury_end:['Blessure','injury'],
  suspension:['Suspension','ban'],suspension_end:['Suspension','ban'],call_up:['Sélection','call-up'],academy:['Formation','call-up'],
  market_open:['Mercato','market'],market_close:['Mercato','market'],market_recap:['Mercato','market'],season:['Saison','season'],season_review:['Saison','season'],
- promotion:['Saison','season'],relegation:['Saison','season'],shirt_numbers:['Saison','season'],formation_change:['Tactique','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
+ promotion:['Saison','season'],relegation:['Saison','season'],shirt_numbers:['Saison','season'],cup_draw:['Tirage','season'],cup_winner:['Trophée','season'],europe_winner:['Trophée','season']};
 const tag=kind=>{const [label,family]=TAGS[kind]||['Actualité','season'];return `<span class="news-tag ${family}">${label}</span>`;};
 // The kinds that ask for an answer: once it is given, their row says so.
 const ANSWERED=new Set(['offer_received','renewal_proposed','talks_open']);
@@ -72,6 +72,17 @@ function renewalBody(data){
  const actions=data.state==='pending'?`<div class="news-actions"><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${data.player.id}">Accepter</button><button class="danger" data-command="renouvellement" data-decision="refuser" data-player="${data.player.id}">Refuser</button></div>`:'';
  return terms+actions;
 }
+// The demands of a day in one message: each player, the wage he has and the one he asks for, until when, and his answer.
+const RENEWAL_STATES={accepted:['Prolongé','good'],refused:['Refusé',''],lapsed:['Sans suite','']};
+function renewalsBody(rows){
+ const answer=row=>row.state==='pending'?`<span class="market-actions"><button class="primary" data-command="renouvellement" data-decision="accepter" data-player="${row.player.id}">Accepter</button><button data-command="renouvellement" data-decision="refuser" data-player="${row.player.id}">Refuser</button></span>`
+  :`<span class="news-state ${RENEWAL_STATES[row.state]?.[1]||''}">${RENEWAL_STATES[row.state]?.[0]||''}</span>`;
+ const head=`<li class="news-lines-head"><span></span><span>Joueur</span><span>Niv.</span><span>Salaire</span><span>Demandé</span><span>Jusqu’à</span><span></span></li>`;
+ return `<ul class="news-lines renewals">${head}${rows.map(row=>`<li>${row.position?position(row.position):'<span></span>'}<span>${named(row.player)}</span><span>${levelBadge(row.rating)}</span>`
+  +`<span>${monthlySalary(row.current.wage)}</span><b>${monthlySalary(row.asked.wage)}</b><span>${contractEnd(row.asked.end)}</span>${answer(row)}</li>`).join('')}</ul>`;
+}
+// Once every demand is answered: how many were signed.
+const renewalsStatus=rows=>{if(rows.some(row=>row.state==='pending'))return '';const signed=rows.filter(row=>row.state==='accepted').length;return `${signed} prolongé${signed>1?'s':''} sur ${rows.length}`;};
 const renewalStatus=data=>data.state==='accepted'?`Prolongé jusqu’au ${date(data.asked.end)}`:data.state==='refused'?'Demande refusée':'Sans suite';
 
 // A player whose club agreed the fee waits for a wage: the dialog of his page opens here, and the talks can be given up.
@@ -92,6 +103,7 @@ const shirtBody=(number,club)=>lines([[`<span class="muted">Numéro</span>`,club
 // change of number: the shirt he leaves and the one he takes.
 function playersBody(message,club){
  const {kind,players}=message;
+ if(kind==='injury'&&message.injury)return injuryBody(message,club);
  if(kind==='shirt_numbers')return lines(players.map(row=>[`<span>${named(row.player)}</span>`,
   `<span class="shirt-change">${row.before==null?'':`${clubShirt(club,row.before,true)}<small>→</small>`}${clubShirt(club,row.shirt)}</span>`]),'shirts');
  if(kind==='morale')return players.length>1?lines(players.map(row=>[`<span>${named(row.player)}</span>`,`<span>${MORALE[row.cause]||'Mécontent'}</span>`,moraleBadge(row.morale)]),'morale')
@@ -103,8 +115,15 @@ function playersBody(message,club){
  return lines(players.map(row=>[`<span>${named(row.player)}</span>`,detail(row)]),kind==='academy'?'shirts':'');
 }
 
-// Clubs that changed formation: each after its badge, the formation it left and the one it plays now.
-const formationsBody=rows=>lines(rows.map(row=>[`<span>${clubLink(row.club)}</span>`,`<span>${e(row.before)}<small>→</small>${e(row.after)}</span>`]));
+// An injury: when each player is back, then the club's matches he misses until then, and the way to the lineup.
+function injuryBody(message,club){
+ const {players,injury}=message,one=players.length===1;
+ const facts=one?`<div class="news-facts">${fact('Retour',date(players[0].back,true))}${fact('Matches manqués',n(players[0].missed??0))}</div>`
+  :lines(players.map(row=>[`<span>${named(row.player)}</span>`,`<span>${absence(row.days)}</span>`,`<span>${shortDate(row.back)}</span>`,`<span>${n(row.missed??0)} match${(row.missed??0)>1?'s':''}</span>`]),'injuries');
+ const matches=injury.matches.length?lines(injury.matches.map(match=>[`<span>${shortDate(match.date)}</span>`,`<span class="cell">${competitionBadge(match.competition)}${clubLink(match.opponent)}</span>`,`<span class="muted">${match.home?'Domicile':'Extérieur'}</span>`]),'missed'):'';
+ return `${facts}${matches}<a class="news-more" href="#/club/${club.id}/composition">Composition ${GO}</a>`;
+}
+
 
 // Contracts running out: each player with his wage and, when he would extend, the contract he asks for, ready to sign.
 function expiryBody(data){
@@ -156,19 +175,19 @@ function reviewBody(data,club){
 // The message opened: its badge and date, what it still asks or how it was answered, its title with each name linked, then
 // what its kind tells.
 function messagePane(message,club){
- const {offers,renewal,talks}=message;
- const answered=offers?offersStatus(offers):renewal?renewalStatus(renewal):talks?talksStatus(talks):'';
+ const {offers,renewal,renewals,talks}=message;
+ const answered=offers?offersStatus(offers):renewals?renewalsStatus(renewals):renewal?renewalStatus(renewal):talks?talksStatus(talks):'';
  const status=message.pending?'<span class="news-status todo"><i class="news-todo" aria-hidden="true"></i>À traiter</span>':answered?`<span class="news-status">${answered}</span>`:'';
  const value=offers?.value!=null?`<div class="tile fee-value"><span>Valeur</span><strong>${price(offers.value)}</strong></div>`:'';
- const body=offers?offersBody(offers):renewal?renewalBody(renewal):talks?talksBody(talks):message.expiry?expiryBody(message.expiry)
-  :message.market?marketBody(message.market,club):message.recap?recapBody(message.recap):message.draw?drawBody(message.draw):message.formations?formationsBody(message.formations)
+ const body=offers?offersBody(offers):renewals?renewalsBody(renewals):renewal?renewalBody(renewal):talks?talksBody(talks):message.expiry?expiryBody(message.expiry)
+  :message.market?marketBody(message.market,club):message.recap?recapBody(message.recap):message.draw?drawBody(message.draw)
   :message.review?reviewBody(message.review,club):message.shirt!=null?shirtBody(message.shirt,club):message.players?playersBody(message,club):'';
  return `<header class="news-message-head"><div class="news-message-meta">${tag(message.kind)}<small>${date(message.date,true)}</small>${status}</div><div class="news-title"><h2>${linked(message.segments)}</h2>${value}</div></header>${body?`<div class="news-body">${body}</div>`:''}`;
 }
 
 function standingsBlock(club,standings){
- if(!standings)return card('Classement',empty('Votre club ne dispute pas de championnat simulé.','Pas de classement'));
- return card(roundTitle('Classement',standings.items),standingsTable(standings,'record',false,club.id),`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir ${GO}</a>`,'standings-card');
+ if(!standings)return card('Classement',empty('Aucun championnat simulé'));
+ return card(roundTitle(club.competition,standings.items),standingsTable(standings,'record',false,club.id),`<a href="#/league/${club.competition_id}" aria-label="Voir le classement complet">Voir ${GO}</a>`,'standings-card');
 }
 
 // The first-team players who cannot play: injured, with the day they are back, or suspended.
@@ -199,7 +218,7 @@ export async function newsScreen(params){
   shown!=null?api(`/ma-partie/actualites/${shown}`):null]);
  const standings=club.competition_id?await api(`/competitions/${club.competition_id}/classement`):null;
  const list=feed.items.length?`<ul class="news-rows">${feed.items.map(item=>listRow(item,shown)).join('')}</ul>${feed.total>feed.page_size?pager(feed):''}`
-  :empty('Rien à signaler pour l’instant.','Le calme avant la tempête');
+  :empty('Aucun message');
  const widgets=`<div>${standingsBlock(club,standings)}${unavailableBlock(club,squad)}</div><div>${calendarBlock(club,overview.calendar)}${leadersBlock(club,squad)}${financesBlock(club,overview.finances)}</div>`;
  return `<div class="page-heading news-heading"><div><h1>Actualités</h1></div><button type="button" data-news-read="all"${feed.unread?'':' disabled'}>Tout lire</button></div>`
   +`<div class="news"><section class="card news-list" aria-label="Messages">${list}</section><section class="card news-message" aria-label="Message">${message?messagePane(message,club):''}</section><aside class="news-widgets" aria-label="Votre club">${widgets}</aside></div>`;

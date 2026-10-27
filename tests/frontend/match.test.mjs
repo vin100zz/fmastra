@@ -13,15 +13,15 @@ test('a match’s header shares one band between the two sides, the home one fir
  assert.match(html,/<span style="--hero-field:#2098C8;[^"]*"><i class="field"><\/i><i><\/i><i class="thin"><\/i><\/span>/);
  assert.match(html,/<div class="match-hero-side"><div class="crest club-hero-crest">R&lt;<img class="crest-logo" src="\/crests\/TCM1_1\.png"[^>]*><\/div><a class="match-hero-name" href="#\/club\/1">Real &lt;Madrid&gt;<\/a><\/div>/);
  assert.match(html,/<div class="match-hero-side away" style="--hero-field:#2098C8;[^"]*"><div class="crest club-hero-crest">M<img[^>]*><\/div><a class="match-hero-name" href="#\/club\/2">Marseille<\/a><\/div>/);
- assert.match(html,/<div class="club-hero-tile match-score"><strong class="big-score">3 : 1<\/strong><\/div>/);
- assert.ok(html.indexOf('Real &lt;Madrid&gt;')<html.indexOf('3 : 1')&&html.indexOf('3 : 1')<html.indexOf('>Marseille<'));
+ assert.match(html,/<div class="club-hero-tile match-score"><strong class="big-score">3 – 1<\/strong><\/div>/);
+ assert.ok(html.indexOf('Real &lt;Madrid&gt;')<html.indexOf('3 – 1')&&html.indexOf('3 – 1')<html.indexOf('>Marseille<'));
  assert.doesNotMatch(html,/<Madrid>/);
  assert.match(html,/<div class="club-hero-bar"><\/div><\/header>$/);
 });
 
 test('what settled a tie stands under the score; a match to come has no score',()=>{
- assert.match(matchHero({home,away,score:[1,0],aggregate:[2,2],penalties:[4,5]}),/<strong class="big-score">1 : 0<\/strong><span>Cumul 2 – 2 · 4 – 5 t\.a\.b\.<\/span>/);
- assert.match(matchHero({home,away,score:[0,0],penalties:[5,3]}),/<strong class="big-score">0 : 0<\/strong><span>5 – 3 t\.a\.b\.<\/span>/);
+ assert.match(matchHero({home,away,score:[1,0],aggregate:[2,2],penalties:[4,5]}),/<strong class="big-score">1 – 0<\/strong><span>Cumul 2 – 2 · 4 – 5 t\.a\.b\.<\/span>/);
+ assert.match(matchHero({home,away,score:[0,0],penalties:[5,3]}),/<strong class="big-score">0 – 0<\/strong><span>5 – 3 t\.a\.b\.<\/span>/);
  assert.match(matchHero({home,away,score:null}),/<strong class="big-score">VS<\/strong><\/div>/);
 });
 
@@ -59,7 +59,7 @@ test('the badge of the match’s line leads to its competition: a European cup, 
 test('the band has no bar: the match’s line, over the highlights, says which match it is, then holds the first leg and the summary',async()=>{
  const html=await screen(report);
  assert.match(html,/^<header class="club-hero match-hero"/);
- assert.match(html,/<strong class="big-score">3 : 1<\/strong><span>Cumul 4 – 3<\/span><\/div>/);
+ assert.match(html,/<strong class="big-score">3 – 1<\/strong><span>Cumul 4 – 3<\/span><\/div>/);
  assert.doesNotMatch(html,/club-hero-bar|hero-commands/);
  assert.match(html,/<div class="match-center"><div class="page-heading match-line"><div class="match-facts"><span class="competition-code" title="Ligue des champions">LdC<\/span><strong>Barrages · retour<\/strong><span class="muted">mercredi 17 septembre 2031<\/span><span>Vainqueur : <a href="#\/club\/1" class="club-link">/);
  assert.match(html,/<div class="tools"><a class="button" href="#\/match\/8">Match aller<\/a><button type="button" class="replay-toggle"[^]*?<\/button><\/div><\/div><section class="card"><div class="card-head"><h2>Les temps forts<\/h2>/);
@@ -214,4 +214,21 @@ test('a minute reads as on television: the minute in progress, added time after 
  assert.equal(matchMinute(half,half,2),'46');
  assert.equal(halfEnd([{kind:'period_end',period:1,second:half}]),half);
  assert.equal(halfEnd([]),2700);
+});
+
+test('the flow of the match adds up each side’s expected goals shot after shot, a ball where one went in',async()=>{
+ const shots=[{second:600,team_id:1,xg:.3},{second:2400,team_id:1,xg:.5},{second:3500,team_id:2,xg:.2},{second:5000,team_id:1,xg:.4}];
+ const html=await screen({...report,result:{...report.result,shots}});
+ const flow=html.match(/<section class="card match-flow">[^]*?<\/section>/)?.[0];
+ assert.ok(flow,'the card stands under the figures');
+ assert.ok(html.indexOf('Le match en chiffres')<html.indexOf('Fil du match'));
+ assert.match(flow,/<h2>Fil du match<\/h2><span class="card-hint">buts attendus cumulés<\/span>/);
+ // A line a side, its total at its end; the goal of the 40th minute (second 2400) is a ball on the home line.
+ assert.equal((flow.match(/<polyline class="cc-line flow"/g)||[]).length,2);
+ assert.match(flow,/>1\.2<\/text>/);assert.match(flow,/>0\.2<\/text>/);
+ assert.equal((flow.match(/class="cc-goal"/g)||[]).length,1);
+ // Minutes under the axis, the half time dashed.
+ assert.match(flow,/class="cc-half"/);assert.match(flow,/>45′<\/text>/);assert.match(flow,/>90′<\/text>/);
+ // A match played before its shots were kept has no such card.
+ assert.doesNotMatch(await screen(report),/Fil du match/);
 });

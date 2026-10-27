@@ -172,6 +172,10 @@ export const COMPOSITE_SECTIONS=[
  {key:'defense',title:'Défense',composites:['progression_defense','occasion_defense']},
  {key:'goalkeeper',title:'Gardien',composites:['arret','sortie']}];
 export const date =(value, full=false) => value ? new Intl.DateTimeFormat('fr-FR', full ? {weekday:'long',day:'numeric',month:'long',year:'numeric'} : {day:'numeric',month:'short',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
+// The end of a contract, in a list: its month and its year (juin 2027), the whole day in its tooltip; in the orange of a
+// warning within a year, in red within six months.
+export const contractEnd = value => value ? new Intl.DateTimeFormat('fr-FR', {month:'long',year:'numeric'}).format(new Date(`${value}T12:00:00`)) : '—';
+export const contractCell = player => player.contract_end ? `<span class="${player.expiring_soon?'danger':player.expiring?'warn':''}" title="Fin du contrat : ${escape(date(player.contract_end))}">${contractEnd(player.contract_end)}</span>` : '—';
 export const season = value => `${value} / ${value+1}`;
 export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : null;
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
@@ -265,6 +269,9 @@ const chartTone = colour => {const [L,C,h]=oklch(colour);return fromOklch([Math.
 export const legibleOn = (colour, surface) => contrastRatio(colour,surface)>=3?colour:oklch(colour)[1]>=.04?chartTone(colour):null;
 const chartCandidates = club => [club?.major_color,club?.minor_color].map(safeColor).filter(colour=>colour&&oklch(colour)[1]>=.04).map(chartTone);
 const colourDistance = (first, second) => {const [L1,C1,h1]=oklch(first),[L2,C2,h2]=oklch(second);return 100*Math.hypot(L1-L2,C1*Math.cos(h1)-C2*Math.cos(h2),C1*Math.sin(h1)-C2*Math.sin(h2));};
+// One club's colour in a chart where clubs stand side by side (a ranking of clubs): its first colour that is one, in its
+// chart tone; an ink grey for a club without one.
+export const chartColour = club => chartCandidates(club)[0]||'var(--ink-2)';
 // The two sides of a comparison: home keeps its first colour, away takes the first of its own that stands 15 apart from it
 // (OKLab × 100); a side without one takes an ink grey.
 export function chartColours(home, away){
@@ -385,7 +392,8 @@ export const matchMinute = (second, halfEnd, period) => {
 export const halfEnd = events => events.find(event => event.kind === 'period_end' && event.period === 1)?.second ?? 2700;
 export const initials = value => escape(value.split(/\s+/).map(part=>part[0]).slice(0,2).join(''));
 export const form = value => `<span class="form">${[...value].map(letter=>`<i class="${letter}">${letter}</i>`).join('')}</span>`;
-export const empty = (text='Les données apparaîtront au fil de la saison.', title='L’histoire reste à écrire') => `<div class="empty"><strong>${escape(title)}</strong>${escape(text)}</div>`;
+// What a list without rows says: one line of the muted ink, what is missing and nothing more (« Aucun transfert »).
+export const empty = (text='Aucune donnée') => `<p class="empty">${escape(text)}</p>`;
 // What leads on (« Voir », « Continuer », the next page) ends on the charter's chevron, drawn by its sheet (.go); « Précédent »
 // has it turned over.
 export const GO='<span class="go" aria-hidden="true"></span>',BACK='<span class="go back" aria-hidden="true"></span>';
@@ -419,9 +427,10 @@ export function sortValue(cell){
  if(!shown||shown==='—')return '';
  const figure=/^([+−-]?) ?(\d[\d ]*(?:\.\d+)?) ?(M€|k€|€|%)?(?: ?\(.*\))?$/.exec(shown);
  if(figure){const value=Number(figure[2].replace(/ /g,''))*({'M€':1e6,'k€':1e3}[figure[3]]||1);return String(figure[1]&&figure[1]!=='+'?-value:value);}
- const day=/^(?:[a-zé]+\.? )?(\d{1,2})(?:er)? ([a-zéû]+)\.? (\d{4})$/i.exec(shown);
+ // A date, its day left out for a month (the end of a contract: « juin 2029 »).
+ const day=/^(?:[a-zé]+\.? )?(?:(\d{1,2})(?:er)? )?([a-zéû]+)\.? (\d{4})$/i.exec(shown);
  const month=day?MONTHS.findIndex(name=>day[2].toLowerCase().startsWith(name)):-1;
- return month>=0?String(Date.UTC(Number(day[3]),month,Number(day[1]))):shown;
+ return month>=0?String(Date.UTC(Number(day[3]),month,Number(day[1]??1))):shown;
 }
 // `sort` gives the raw value behind each cell (see sortableTable); without it the table sorts by what its cells show, unless
 // the server sorts it (its headings are buttons already), headings stand over its columns, or `sort` is false.
@@ -485,6 +494,8 @@ export const mainNation = player => {const code=mainNationCode(player);return co
 export const loanTag = player => player.loan ? `<span class="tag loan" title="${escape(`Prêté par ${player.loan.parent?.name} à ${player.loan.club?.name} jusqu’au ${date(player.loan.end)}`)}">Prêt</span>` : '';
 // What a club would let a player go for, or what he would come for: a transfer, a loan, both, or `none`. `short` keeps
 // the initials, named in their tooltips, for the columns of a list.
+// A player his club will not sell, in the column of the lists: a padlock, its word in its tooltip.
+const LOCKED='<span class="locked" title="Intransférable"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>';
 export const marketTags = (transfer, loan, none='—', short=false) => transfer||loan ? `<span class="tags">${transfer?`<span class="tag"${short?' title="Transfert"':''}>${short?'T':'Transfert'}</span>`:''}${loan?`<span class="tag loan"${short?' title="Prêt"':''}>${short?'P':'Prêt'}</span>`:''}</span>` : none;
 const textColumns=['position','name','nation','club','academy_club'];
 const ATTRIBUTE_SHORT={passe:'PAS',technique:'TEC',finition:'FIN',tacle:'TAC',jeu_tete:'TÊT',vision:'VIS',placement:'PLA',sang_froid:'SFR',vitesse:'VIT',endurance:'END',reflexes:'RÉF',sorties:'SOR',relance:'REL',centre:'CEN',cpa:'CPA',penalty:'PEN'};
@@ -538,8 +549,8 @@ export function playerTable(data, withClub=false, sorted='rating', order='desc',
    nation:mainNation(player),
    age:figure(player.age??'—'),rating:levelStars(player),potential:potentialStars(player),club:player.data_at==='unknown'||player.id<0?'—':clubLink(player.club),
    caps:figure(player.caps??'—'),international_goals:figure(player.international_goals??'—'),
-   value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false?'<span class="muted">Intransférable</span>':player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
-   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:`<span class="${player.expiring?'danger':''}">${date(player.contract_end)}</span>`,
+   value:figure(player.value==null?'—':price(player.value)),asking_price:figure(player.transferable===false||player.asking_price==null?'—':price(player.asking_price)),wage:figure(player.wage==null?'—':monthlySalary(player.wage)),
+   wage_demand:figure(player.wage_demand==null?'—':monthlySalary(player.wage_demand)),listed:player.transferable===false?LOCKED:marketTags(player.transfer_listed,player.loan_listed,'—',true),interested:player.interested==null&&player.loan_interested==null?'—':marketTags(player.interested,player.loan_interested,'<span class="muted">Non</span>',true),contract_end:contractCell(player),
    fitness:player.fitness==null?'—':player.injured_until?`<span class="status danger" title="Retour le ${escape(date(player.injured_until))}">✚ ${duration(player.injured_until)}</span>`:player.suspension?`<span class="status danger">▰ ${player.suspension} match${player.suspension>1?'s':''}</span>`:`<span class="status">${conditionIcon(player.fitness)}</span>`,
    form:formBadge(player.form),morale:moraleCell(player),
    promotion_date:date(player.promotion_date),academy_club:clubLink(player.academy_club),data_at:({promotion:'À la promotion',current:'Actuelles',unknown:'Non archivées'})[player.data_at],
@@ -637,7 +648,7 @@ export function fixtureRow(match,{own=ownClub,levels=null,wide=false,flags=false
 // Whether a match of a list has a storey under its score: every line of that list then keeps its room.
 export const hasStorey = matches => matches.some(storey);
 // The matches of `data.items`, each on its line; `flags` (on `data`) follows each club with the flag of its country.
-export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé pour cette sélection.');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide,flags:data.flags})}`;}).join('');}
+export function fixtures(data, showDates=false) {if(!data.items.length)return empty('Aucun match programmé');const wide=hasStorey(data.items);let previous='';return data.items.map(match=>{const label=showDates&&previous!==match.date?`<div class="fixture-date">${date(match.date)}${match.competition?` · ${escape(match.competition)}`:''} · ${escape(match.round_label||`Journée ${match.round}`)}</div>`:'';previous=match.date;return `${label}${fixtureRow(match,{wide,flags:data.flags})}`;}).join('');}
 // The line-up of a match on an upright pitch, shortened to 68 × 76 (`.pitch.short`): each player in his side's kit (`kit`:
 // {major, minor}; a match-only player in grey) with his position on it and his goals at its top right (`goals(player)`), his
 // block under it: his name (his short name when `compact`), then his note of the match and what else he did (`marks(player)`).
@@ -707,13 +718,13 @@ export function seasonArchive(archive){
 // `nations` gives each player the nation he plays for, his flag then its code, in a competition of the selections.
 export function leadersCards(leaders,note='',{nations=false}={}){
  const columns=row=>[`<span class="strong">${playerLink(row.player_id,row.player)}</span>`,...(nations?[row.nation?nationBadge(row.nation):'—']:[]),number(row.matches),number(row.goals)];
- const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR',...(nations?['NATION']:[]),'MATCHS','BUTS'],rows.map((row,index)=>[index+1,...columns(row)])):empty('Aucun joueur pour l’instant.','Pas encore de statistiques'))}</section>`;
+ const list=(title,rows)=>`<section aria-label="${escape(title)}">${card(`${title} · ${rows.length}`,rows.length?table(['#','JOUEUR',...(nations?['NATION']:[]),'MATCHS','BUTS'],rows.map((row,index)=>[index+1,...columns(row)])):empty('Aucun joueur'))}</section>`;
  return `${note?`<p class="muted">${escape(note)}</p>`:''}<div class="transfer-columns">${list('Joueurs les plus utilisés',leaders.matches)}${list('Meilleurs buteurs',leaders.goals)}</div>`;
 }
 
 // The titles won, most first: `entries` is a list of [label, count], shown as bars against the leader's count.
 export function titlesCard(title,entries){
  const rows=entries.filter(([,count])=>count>0).sort((a,b)=>b[1]-a[1]).slice(0,8),top=rows[0]?.[1]||1;
- return card(title,rows.length?table(['',''].map((_,index)=>index?'TITRES':title.replace('Titres par ','').toUpperCase()),rows.map(([label,count])=>[label,`<span class="bar-figure">${miniBar(count/top)}<b>${count}</b></span>`])):empty('Aucun titre pour l’instant.','Pas encore de vainqueur'));
+ return card(title,rows.length?table(['',''].map((_,index)=>index?'TITRES':title.replace('Titres par ','').toUpperCase()),rows.map(([label,count])=>[label,`<span class="bar-figure">${miniBar(count/top)}<b>${count}</b></span>`])):empty('Aucun titre'));
 }
 export const countTitles=(items,key,label)=>{const found=new Map();items.forEach(row=>{const k=key(row);if(k==null)return;const entry=found.get(k)||[label(row),0];entry[1]++;found.set(k,entry);});return [...found.values()];};

@@ -110,6 +110,8 @@ def decode(value: Any) -> Any:
             value["fields"].setdefault("read", False)
         if cls is MovementSnapshot:
             value["fields"].setdefault("potential", None)
+        if cls is MatchResult:
+            value["fields"].setdefault("shots", [])
         if cls is TransferRecord:
             value["fields"].setdefault("born", None)
             value["fields"].setdefault("snapshot", None)

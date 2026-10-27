@@ -42,8 +42,8 @@ export function editionSection(edition,section){
 const MIN_RATED_MATCHES=3;
 function statistics(data){
  const records=data.records;
- if(!records.length)return card('Statistiques de l’édition',empty('Les statistiques apparaîtront après les premiers matchs.'));
- const panel=(title,headers,rows,note='')=>`<section class="card stats-panel"><div class="card-head"><h2>${e(title)}</h2>${note}</div><div class="stats-scroll">${rows.length?table(headers,rows):empty('Aucun joueur pour l’instant.','Pas encore de statistiques')}</div></section>`;
+ if(!records.length)return card('Statistiques de l’édition',empty('Aucun match joué'));
+ const panel=(title,headers,rows,note='')=>`<section class="card stats-panel"><div class="card-head"><h2>${e(title)}</h2>${note}</div><div class="stats-scroll">${rows.length?table(headers,rows):empty('Aucun joueur')}</div></section>`;
  const listed=(list,figure)=>list.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.name)}</span>`,clubLink(row.nation),row.matches,...figure(row)]);
  const byGoals=records.filter(row=>row.goals>0).sort((a,b)=>b.goals-a.goals||a.matches-b.matches);
  const byAssists=records.filter(row=>row.assists>0).sort((a,b)=>b.assists-a.assists||a.matches-b.matches);
@@ -68,7 +68,7 @@ function finalsContent(data){
  // A Nations League's finals are its semi-finals and its final alone, empty boxes until they are drawn.
  if(isLeague(data))return tree();
  const groups=data.final_groups;
- if(!groups.length)return card('Phase finale',empty('Les groupes seront tirés à la fin des qualifications.'));
+ if(!groups.length)return card('Phase finale',empty('Tirage à la fin des qualifications'));
  const knockout=tree();
  const days=group=>[1,2,3].map(day=>{const items=groupMatches(group,data.matches,GROUP_ROUNDS+day);return items.length?`<div class="fixture-date">Journée ${day} · ${date(items[0].date)}</div>${fixtures({items})}`:'';}).join('');
  return knockout+`<div class="intl-groups intl-groups-4">${groups.map(group=>card(`Groupe ${group.name}`,internationalStandings(group.rows,2)+days(group))).join('')}</div>`;
@@ -88,7 +88,7 @@ function roundResults(data,day){
  return card('Résultats par journée',`<div class="day-pills">${pills}</div><div class="day-groups">${blocks}</div>`,`<span class="muted">${date(items[0].date)}</span>`);
 }
 function qualificationsContent(data,day){
- if(!data.qualification_groups.length)return card('Qualifications',empty('Les groupes seront tirés à la fin des qualifications.'));
+ if(!data.qualification_groups.length)return card('Qualifications',empty('Tirage à venir'));
  const top=data.records.filter(row=>row.goals>0).sort((a,b)=>b.goals-a.goals||a.matches-b.matches).slice(0,10);
  const rail=(top.length?card('Meilleurs buteurs',table(['#','JOUEUR','NATION','MJ','BUTS'],top.map((row,index)=>[index+1,`<span class="strong">${playerLink(row.player_id,row.name)}</span>`,clubLink(row.nation),row.matches,`<b>${row.goals}</b>`]))):'')
   +card('Classement des deuxièmes',internationalStandings(data.best_seconds,data.second_places));
@@ -120,7 +120,7 @@ export function campDays(start,end){
 }
 // The list of a camp, a club's squad list: the same views, sorted by the server on the column picked in the address.
 function squadCard(data,params){
- if(!data.camp)return card('Sélection',empty('La prochaine liste de 23 sera annoncée au début du rassemblement.','Aucun rassemblement en cours'));
+ if(!data.camp)return card('Sélection',empty('Aucun rassemblement en cours'));
  const view=params.get('vue'),sorted=params.get('tri')||'position',order=params.get('ordre')||'asc',count=data.squad.length;
  const title=`${data.camp.upcoming?'Rassemblement':'Dernier rassemblement'} ${campDays(data.camp.start,data.camp.end)} · ${count} joueur${count>1?'s':''}`;
  return card(title,playerTable({items:data.squad},true,sorted,order,{view,pager:false,selection:true}),`<div class="card-tools">${playerViewSwitch(view,sorted,order,true,{selection:true})}</div>`);
@@ -131,7 +131,7 @@ function squadCard(data,params){
 function groupCard(group,own,extract=false){
  if(!group)return '';
  const round=Math.max(0,...group.rows.map(row=>row.played));
- const title=`Groupe ${e(group.name)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
+ const title=`Groupe ${e(group.name)}${round?` · ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
  const tab=group.finals?'finals':group.stage==='Phase de ligue'?'league':'qualifications';
  return `<section class="card standings-card${extract?' standings-extract':''}"><div class="card-head"><h2>${title}</h2><a href="${editionHref(group.code,group.year,tab)}" aria-label="Voir le groupe">Voir ${GO}</a></div>${internationalStandings(group.rows,group.places,{extract,own})}</section>`;
 }
@@ -156,7 +156,7 @@ const runsCard=(rows,shown)=>card('Parcours',`<div class="edition-records">${sta
 // side. The edition is stepped through from the row of tabs (`edition` in the address; the one under way by default).
 // Beside the matches, the group of that edition in full and the record in each edition played.
 function calendarContent(nation,data){
- if(!data.items.length)return `<section class="card">${empty('Aucun match programmé pour cette sélection.','Calendrier vide')}</section>`;
+ if(!data.items.length)return `<section class="card">${empty('Aucun match programmé')}</section>`;
  const competitions=new Map(data.competitions.map(row=>[row.id,row]));
  return `<div class="calendar-layout club-calendar selection-calendar"><section class="card calendar-card"><div class="card-head"><h2>Matches</h2></div>`
   +`${calendarRows(data.items,nation,competitions,{written:date,round:editionRound})}</section><aside class="calendar-side">${groupCard(data.group,nation.id)}${recordCard(data.competitions)}</aside></div>`;
@@ -208,7 +208,7 @@ function competitionHeader(competition,editions,year,section){
 // The finals of a competition, the latest first: the edition, its winner, the final's score from the winner's side (a
 // shoot-out's mark before it, its figures in the tooltip), a link to the match, and the finalist.
 function finalsTable(competition,finals){
- if(!finals.length)return empty('Le palmarès s’ouvrira avec la première finale.','Pas encore de vainqueur');
+ if(!finals.length)return empty('Aucun vainqueur');
  const score=final=>`<a class="final-score" href="#/match/${final.match_id}">${final.penalties?`<small title="Tirs au but ${final.penalties.join(' – ')}">(TAB)</small>`:''}${final.score.join(' – ')}</a>`;
  return `<div class="finals-table">${sortableTable(['ÉDITION','VAINQUEUR','FINALE','FINALISTE'],finals.map(final=>[`<a class="strong" href="${editionHref(competition.code,final.year,'finals')}">${final.year}</a>`,
   `<span class="strong">${clubLink(final.winner)}</span>`,score(final),clubLink(final.runner_up)]),finals.map(final=>[final.year,final.winner.name,final.score[0]-final.score[1],final.runner_up.name]))}</div>`;
@@ -231,12 +231,12 @@ function runCell(run){
 function competitionHistory(competition,data){
  const league=competition.kind==='nations';
  const titles=data.titles.length?`<div class="titles-table">${sortableTable(['NATION','TITRES','FINALES'],data.titles.map(row=>[`<span class="strong">${clubLink(row.nation)}</span>`,`<b>${row.titles}</b>`,row.finals]),
-  data.titles.map(row=>[row.nation.name,row.titles,row.finals]))}</div>`:empty('Aucun titre pour l’instant.','Pas encore de vainqueur');
+  data.titles.map(row=>[row.nation.name,row.titles,row.finals]))}</div>`:empty('Aucun titre');
  const cells=data.runs.map(row=>row.runs.map(runCell));
  const runs=data.runs.length?`<div class="runs-table">${sortableTable(['NATION',...(league?[]:['PART.']),...data.editions.map(String)],
   data.runs.map((row,index)=>[`<span class="strong">${clubLink(row.nation)}</span>`,...(league?[]:[row.played]),...cells[index].map(([cell])=>cell)]),
   data.runs.map((row,index)=>[row.nation.name,...(league?[]:[row.played]),...cells[index].map(([,value])=>value)]))}</div>`
-  :empty('Les parcours apparaîtront à la fin de la première édition.','L’histoire reste à écrire');
+  :empty('Aucun parcours');
  return `<div class="history-layout three"><div class="history-main">${card('Les vainqueurs',finalsTable(competition,data.finals))}${card('Titres par nation',titles)}</div>`
   +`<div class="history-leaders">${leadersCards(data.leaders,'',{nations:true})}</div><div class="history-archives">${card('Parcours des nations',runs)}</div></div>`;
 }
@@ -251,7 +251,7 @@ async function competitionScreen(data,competition,year,section,day){
  const summary=data.competitions?.find(item=>item.kind===competition.kind),next=summary?.next;
  let content;
  if(section==='history')content=competitionHistory(competition,await api(`/international/competitions/${competition.slug}/historique`));
- else if(year==null)content=card(competition.name,empty(next?`Elle sera tirée le ${date(next.draw)}.`:'Elle sera tirée avec la prochaine campagne.',`Première édition en ${next?.year??'préparation'}`));
+ else if(year==null)content=card(competition.name,empty(next?`Première édition en ${next.year} · tirage le ${date(next.draw)}`:'Première édition à venir'));
  else{
   const [edition,round]=await Promise.all([api(`/international/editions/${year}`),isRoundTab(section)?api(`/international/editions/${year}/${roundPath(section)}`):null]);
   content=editionContent(edition,section,round,day);

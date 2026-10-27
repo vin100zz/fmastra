@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,europeLegend,setNations,levelHue,levelBadge,stars,starsOf,setDebugMode,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
+import {contractEnd,contractCell,playerTable,playerViewSwitch,minutes,seasonArchive,seasonSteps,steps,standingsTable,europeLegend,setNations,levelHue,levelBadge,stars,starsOf,setDebugMode,sortableTable,sortTable,nextDirection,compareValues,appearances,table,sortValue} from '../../web/ui.js';
 
 test('standings show promotion and relegation places from the API',()=>{
  const rows=[{rank:1,movement:'promotion'},{rank:4,movement:null},{rank:8,movement:'relegation'}].map(row=>({...row,club:{id:row.rank,name:'Club'},played:0,points:0,difference:0,form:''}));
@@ -186,6 +186,7 @@ test('a table without values sorts by what its cells show: a figure, an amount i
  assert.equal(sortValue('−3 %'),'-3');assert.equal(sortValue('+11 %'),'11');assert.equal(sortValue('12 (3)'),'12');assert.equal(sortValue('1\u202f263'),'1263');
  assert.equal(sortValue('7.81'),'7.81');assert.equal(sortValue('—'),'');assert.equal(sortValue(''),'');
  assert.ok(Number(sortValue('30 juin 2033'))>Number(sortValue('3 nov. 2030'))&&Number(sortValue('1er juil. 2031'))>Number(sortValue('30 juin 2031')));
+ assert.ok(Number(sortValue('juin 2033'))>Number(sortValue('sept. 2030'))&&Number(sortValue('juil. 2031'))>Number(sortValue('juin 2031')));
  assert.equal(sortValue('<a href="#/club/7" class="club-link">Lens</a>'),'Lens');assert.equal(sortValue('2 – 1'),'2 – 1');
 });
 
@@ -226,11 +227,13 @@ test('appearances show the substitute entries in brackets after the starts',()=>
  assert.equal(appearances(3,3),'0 (3)');
 });
 
-test('the player list shows the lowest fee a club accepts, sortable, or that it will not sell',()=>{
+test('the player list shows the lowest fee a club accepts, sortable, or a padlock where it will not sell',()=>{
  const html=playerTable({items:[{...player,asking_price:26000000,transferable:true},{...player,id:2,asking_price:null,transferable:false}],total:2,page_size:30},true,'asking_price','desc',{asking:true});
  assert.match(html,/data-sort="asking_price"/);assert.match(html,/data-order="desc" data-sort="asking_price">PRIX MIN\.</);
  assert.match(html,/26\sM€/);
- assert.match(html,/<span class="muted">Intransférable<\/span>/);
+ // The word stands in the padlock's tooltip, in the column « Listé »; no fee is asked.
+ assert.match(html,/<span class="locked" title="Intransférable"><svg/);
+ assert.doesNotMatch(html,/<span class="muted">Intransférable<\/span>/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30},true),/PRIX MIN/);
 });
 
@@ -323,4 +326,12 @@ test('the squad shows form as its arrow and morale as its face with where it dri
  // Players lists of the whole world keep their columns.
  assert.doesNotMatch(playerTable({items:rows,total:3,page_size:30},true),/data-sort="(form|morale)"/);
  assert.doesNotMatch(playerTable({items:[player],total:1,page_size:30}),/NaN|undefined/);
+});
+
+test('a contract ends on its month and year, the day in its tooltip, orange within a year and red within six months',()=>{
+ assert.equal(contractEnd('2027-06-30'),'juin 2027');
+ assert.equal(contractCell({contract_end:'2029-06-30'}),'<span class="" title="Fin du contrat : 30 juin 2029">juin 2029</span>');
+ assert.match(contractCell({contract_end:'2027-06-30',expiring:true}),/^<span class="warn"/);
+ assert.match(contractCell({contract_end:'2027-01-31',expiring:true,expiring_soon:true}),/^<span class="danger"/);
+ assert.equal(contractCell({contract_end:null}),'—');
 });

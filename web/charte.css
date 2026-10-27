@@ -171,7 +171,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .card.fold.open .toggle-arrow{transform:rotate(180deg)}
 .card.fold:not(.open) .fold-more{display:none}
 .card-body{padding:var(--s2) var(--s3)}
-.grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.league-tiles,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
+.grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
 .club-hero,.club-overview,.stat-grid,.match-replay-card,.finance-figures,.finance-row,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
 /* A section's title, in the titles' type and the ink, on a wash of the accent with a bar of it at its edge (the club's on
@@ -337,7 +337,7 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 /* Figures: the label over the figure, at 20 px. */
 .stat-card{padding:6px var(--s3)}
 .stat-card .label,.tile span,.club-hero-tile span,.finance-figure>span,.balance-end>span,.news-figure span,.scout-facts span{font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-.stat-card strong,.tile strong,.preview .tile strong,.club-hero-tile strong,.finance-figure>strong,.balance-end>strong,.news-figure strong,.news-figure.ring strong,.scout-facts strong,.finance-split p strong,.news-title .tile strong,.side-inner .stat-card strong,.league-tiles .stat-card strong{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-title);font-weight:700;line-height:24px;letter-spacing:0}
+.stat-card strong,.tile strong,.preview .tile strong,.club-hero-tile strong,.finance-figure>strong,.balance-end>strong,.news-figure strong,.news-figure.ring strong,.scout-facts strong,.finance-split p strong,.news-title .tile strong,.side-inner .stat-card strong{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-title);font-weight:700;line-height:24px;letter-spacing:0}
 .stat-card strong{margin:2px 0 0}
 .finance-figure{gap:2px;padding:var(--s2) var(--s3);border-radius:var(--radius-box)}
 .finance-figure>strong em{font-size:var(--fs-small)}
@@ -382,8 +382,8 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 /* The crest of a club or a selection stands alone on its band, without the disc: the area of a square of 64, 72 high and 128
    wide at most, whatever its ratio (`--r`, read off the picture by `initHeroCrests`), under the kits' shadow. Without a crest
    the disc keeps its initials on the club's colours. A match's band keeps its discs. */
-.club-hero:not(.match-hero) .crest.club-hero-crest:has(>.crest-logo){width:auto;height:auto;border:0;border-radius:0;background:none;box-shadow:none;font-size:0}
-.club-hero:not(.match-hero) .club-hero-crest>.crest-logo{--r:1;position:static;width:64px;width:min(64px*sqrt(var(--r)),72px*var(--r),128px);height:auto;aspect-ratio:var(--r);filter:drop-shadow(0 1px 2px #0a141e59)}
+.club-hero .crest.club-hero-crest:has(>.crest-logo){width:auto;height:auto;border:0;border-radius:0;background:none;box-shadow:none;font-size:0}
+.club-hero .club-hero-crest>.crest-logo{--r:1;position:static;width:64px;width:min(64px*sqrt(var(--r)),72px*var(--r),128px);height:auto;aspect-ratio:var(--r);filter:drop-shadow(0 1px 2px #0a141e59)}
 /* A selection's flag follows its name, as high as its capitals (28 of its 40), 16 after it, under the crest's shadow. */
 .club-hero-name>.club-hero-flag{flex:none;width:37px;height:28px;margin-left:var(--s1);object-fit:cover;box-shadow:0 0 0 1px #0a141e1f,0 1px 2px #0a141e59}
 .club-hero-crest .crest-logo{inset:7px;width:calc(100% - 14px);height:calc(100% - 14px)}
@@ -484,6 +484,9 @@ span.entity-step svg{opacity:.3}
 .preview .attributes-grid{grid-template-columns:repeat(auto-fill,minmax(max(var(--attribute-column),calc((100% - var(--s4))/2)),1fr))}
 .preview .attribute{height:var(--h-row)}
 .player-row>.attributes-card{align-self:start}
+/* The level month after month (« Niveau au fil des mois »): a chart of 240, whatever room the page leaves under the pitch. */
+.player-main .level-card{align-self:start}
+.level-chart{flex:1;height:240px;min-height:0}
 .attributes-card .attribute{height:var(--h-row);margin:0;white-space:nowrap}
 .attribute-column>.section-title{display:flex;align-items:center;gap:var(--s2);height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
 /* Attributes in columns, on a player's page: the Jeu section, then one column per section, its strip on one band with the
@@ -772,6 +775,11 @@ th.rank-col{text-align:center}
 .cc-rule{height:1px;background:var(--row-line)}
 .cc-lines{left:0;top:0;width:100%;overflow:visible}
 .cc-line.second{stroke:var(--series-2)}
+/* The flow of a match (« Fil du match »): each side's line in its colour in a chart, a step at each shot; the half time a
+   dashed line, a ball where a shot went in. */
+.cc-line.flow{stroke-linejoin:miter}
+.cc-half{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3}
+.cc-goal{fill:var(--panel);stroke:var(--strong);stroke-width:1.5}
 .cc-plot>.cc-dot{width:8px;height:8px;border-radius:50%;background:var(--series-2);box-shadow:0 0 0 2px var(--panel);transform:translate(-50%,-50%)}
 .cc-label{font:700 semi-condensed var(--fs-figure)/1 var(--display);color:var(--strong);white-space:nowrap}
 .cc-label.first{transform:translate(calc(-1*var(--s1)),calc(-100% - var(--s2)))}
@@ -1069,10 +1077,31 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .leader-bars li>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .leader-bars{--bar:var(--series-1);--bar-soft:var(--series-1-soft)}
 .club-page .leader-bars{--bar:var(--club);--bar-soft:color-mix(in srgb,var(--club) 45%,var(--panel))}
-.leader-bars i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
-.leaders-card.soft .leader-bars i{background:var(--bar-soft)}
+.leader-bars li>i{display:block;height:8px;border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--bar-soft),color-mix(in srgb,var(--bar) 55%,var(--bar-soft)))}
+.leaders-card.soft .leader-bars li>i{background:var(--bar-soft)}
 .leader-bars b{font-weight:700;text-align:right;color:var(--strong)}
 .card-hint{font-size:var(--fs-small);color:var(--muted)}
+/* A player his club will not sell (« Joueurs »): a padlock of 14 in the muted ink, in the column « Listé ». */
+.locked{display:inline-flex;vertical-align:middle}
+.locked svg{width:14px;height:14px;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+/* Clubs ranked on one figure (« Classement de clubs »): the first one large, on the raised ground, its figure in the size of
+   a hero's and per match under it; then the lines of the players' ranking, the club after its dot, the bar in the club's
+   colour in a chart (--club-bar), the largest figure of the list filling it. The user's club washed. */
+.leader-lead{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:0 var(--s3) var(--s1);padding:var(--s2) var(--s3);border-radius:var(--radius-box);background:var(--panel-2)}
+.leader-lead>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
+.leader-lead>strong .kit-dot{width:18px;height:18px}
+.leader-lead>span{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.leader-lead b{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong)}
+.leader-lead small{font:600 var(--fs-small)/14px var(--text);color:var(--muted)}
+.leader-bars.clubs li{grid-template-columns:24px 170px minmax(0,1fr) 32px}
+.leader-bars.clubs li>i{background:var(--club-bar)}
+.leader-bars li.own{background:var(--own-row)}
+/* A league's table (« Classement d'une ligue »): the table, then its attacks and its defences in two columns as high, the
+   scorers and the providers under them on the same two columns. */
+.league-layout{grid-template-columns:minmax(0,680px) repeat(2,minmax(0,1fr))}
+.league-layout>.league-table{grid-row:span 2}
+.league-players{grid-column:2/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
+@media(max-width:1329px){.league-layout{grid-template-columns:repeat(2,minmax(0,1fr))}.league-layout>.league-table{grid-column:1/-1;grid-row:auto}.league-players{grid-column:1/-1}}
 
 /* The look of the surfaces (« Fondations », « Composants »). The page's ground is the root's (theme.css): a page in a club's
    colours lays its breath between the two. */
@@ -1119,6 +1148,22 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 #main.club-page::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,color-mix(in srgb,var(--club-fill) 12%,transparent) 0,color-mix(in srgb,var(--club-fill) 6%,transparent) 40%,color-mix(in srgb,var(--club-fill) 4%,transparent) 100%)}
 #main>.match-hero::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,color-mix(in srgb,var(--hero-field) 10%,transparent) 0,transparent 55%)}
 #main>.match-hero .club-hero-art>span::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(270deg,color-mix(in srgb,var(--hero-field) 10%,transparent) 0,transparent 55%)}
+/* A deadline within a year (the end of a contract), in the orange of a warning; within six months, .danger's red. */
+.warn{color:var(--warn)}
+/* What a list without rows says: one line of 26 in the muted ink, flush with the rows it stands for. */
+.empty{display:flex;align-items:center;min-height:var(--h-row);margin:0;padding:0 var(--s3);font-size:var(--fs-body);line-height:18px;text-align:left;color:var(--muted)}
+
+/* A slider: a value picked along a scale of stops (the pace of a replay), its value written after it. A track of 4 on
+   --track, filled with the accent up to the thumb (--fill, set by the screen); the thumb a white round of 18 standing on
+   it like a field; the value in figures of fixed width, so that nothing moves as it changes. */
+.slider{display:inline-flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-control)}
+.slider input[type=range]{width:calc(5*var(--s6));height:var(--h-chip);margin:0;padding:0;border:0;background:none;box-shadow:none;appearance:none;-webkit-appearance:none;cursor:pointer}
+.slider input[type=range]::-webkit-slider-runnable-track{height:var(--s1);border-radius:var(--radius-chip);background:linear-gradient(90deg,var(--club-fill,var(--accent)) var(--fill,0%),var(--track) var(--fill,0%))}
+.slider input[type=range]::-moz-range-track{height:var(--s1);border-radius:var(--radius-chip);background:var(--track)}
+.slider input[type=range]::-moz-range-progress{height:var(--s1);border-radius:var(--radius-chip);background:var(--club-fill,var(--accent))}
+.slider input[type=range]::-webkit-slider-thumb{width:var(--h-chip);height:var(--h-chip);margin-top:calc((var(--s1) - var(--h-chip))/2);border:0;border-radius:50%;background:var(--panel);box-shadow:var(--shadow-field),var(--shadow-thumb);-webkit-appearance:none;appearance:none}
+.slider input[type=range]::-moz-range-thumb{width:var(--h-chip);height:var(--h-chip);border:0;border-radius:50%;background:var(--panel);box-shadow:var(--shadow-field),var(--shadow-thumb)}
+.slider output{min-width:5ch;font:600 var(--fs-body)/1 var(--text);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
 
 /* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
    filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;

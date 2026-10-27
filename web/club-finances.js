@@ -74,7 +74,7 @@ function salariesCard(squad){
  const shown=players.slice(0,SALARIES),rest=players.slice(SALARIES),top=shown[0]?.wage||1;
  const rows=shown.map(player=>`<li><span>${playerLink(player.id,player.name)}</span><i style="width:${Math.round(100*player.wage/top)}%" title="${e(`${player.name} : ${monthlySalary(player.wage)}`)}"></i><b>${monthlySalary(player.wage)}</b></li>`).join('');
  const more=rest.length?`<p class="muted">+ ${rest.length} autre${rest.length>1?'s':''} · ${money(monthlyAmount(rest.reduce((sum,player)=>sum+player.wage,0)))}</p>`:'';
- return card('Salaires',rows?`<div class="card-body"><ul class="salary-bars">${rows}</ul>${more}</div>`:empty('Aucun salaire à payer.','Effectif vide'),'','salaries-card');
+ return card('Salaires',rows?`<div class="card-body"><ul class="salary-bars">${rows}</ul>${more}</div>`:empty('Aucun salaire'),'','salaries-card');
 }
 
 // A key figure of the tab: its label, its amount and a line or a bar under it.
@@ -146,7 +146,7 @@ export function financesContent(club,data,squad){
   +figure('Balance des transferts',signedMoney(balance),`<small>Achats <b>${money(data.season_spent)}</b> · Ventes <b>${money(data.season_sales)}</b></small>`,balance>0?'good':balance<0?'bad':'')
   +`</div>`;
  const note=history.partial?`<div class="notice">Historique partiel : seuls les flux enregistrés depuis le ${date(history.since)} sont inclus.</div>`:'';
- if(!history.available)return figures+card('Trésorerie',empty(`Les comptes détaillés sont enregistrés depuis le ${date(history.since)}. Aucune écriture disponible pour cette saison.`,'Historique indisponible'));
+ if(!history.available)return figures+card('Trésorerie',empty(`Comptes détaillés depuis le ${date(history.since)}`));
  const legend='<div class="cc-legend"><span><i class="revenue"></i>Revenus</span><span><i class="expense"></i>Dépenses</span></div>';
  const journal=sortableTable(['PÉRIODE / DATE','OPÉRATION','REVENUS','DÉPENSES'],history.entries.map(row=>[row.monthly?e(monthLong(row.date)):date(row.date),e(row.label)+(row.player_id?` · ${playerLink(row.player_id,row.player)}`:''),row.revenue?euros(row.revenue):'—',row.expense?euros(row.expense):'—']),history.entries.map(row=>[row.date,row.label,row.revenue,row.expense]));
  return figures+note

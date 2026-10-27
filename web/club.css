@@ -177,9 +177,11 @@
 /* The step of the formations, on one line as high as the list's toolbar; at the left of the card, its list opens to the right. */
 .composition-card .lineup-field>.field-head{display:flex;align-items:center;height:var(--h-control);margin-bottom:6px}
 .composition-card .field-head .season-pick>.menu{left:0;right:auto}
-.composition-card .lineup-bench{grid-template-columns:repeat(var(--bench,9),minmax(0,1fr))}
-.composition-card .bench-slot{flex-direction:column;justify-content:center;gap:3px;min-height:52px;padding:5px 2px;text-align:center}
-.composition-card .bench-slot>span:last-child{max-width:100%;font-size:10px;letter-spacing:0}
+/* The bench under the pitch, the charter's (.bench): three columns, a place of 26 each, its position then the player's
+   short name, whole. */
+.composition-card .lineup-bench{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s1)}
+.composition-card .bench-slot{flex-direction:row;justify-content:flex-start;gap:6px;height:var(--h-row);min-height:0;padding:0 var(--s2);text-align:left}
+.composition-card .bench-slot>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .composition-card .lineup-list{min-width:0;display:flex;flex-direction:column;gap:6px}
 .composition-card .lineup-toolbar{padding:0;border:0;justify-content:flex-end}
 .composition-card .lineup-toolbar{flex-wrap:nowrap;gap:var(--s2)}

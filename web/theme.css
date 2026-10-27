@@ -620,7 +620,8 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .career-block table{table-layout:fixed}
 .career-card th,.career-card td{padding-left:5px!important;padding-right:5px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .career-card th:first-child,.career-card td:first-child{padding-left:12px!important}
-.career-block tr>:first-child:nth-last-child(8),.career-block tr>:nth-child(4):nth-last-child(5){width:96px}
+.career-block tr>:first-child:nth-last-child(8){width:108px}
+.career-block tr>:nth-child(4):nth-last-child(5){width:96px}
 .career-block tr>:nth-child(3):nth-last-child(6){width:84px}
 .career-block tr>:nth-last-child(-n+4){width:52px}
 .career-block tr>:is(:nth-last-child(4),:nth-last-child(2)){width:68px}
@@ -740,7 +741,7 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .clubs-table .reputation-column{width:96px}.clubs-table .entrainement-column{width:40px}.clubs-table .recrutement-column{width:48px}.clubs-table .effectif-column{width:30px}.clubs-table .age-column{width:34px}
 .clubs-table .niveau-column,.clubs-table .potentiel-column{width:50px}.clubs-table .valeur-column{width:60px}.clubs-table .budget-column{width:64px}.clubs-table .masse_salariale-column{width:100px}
 .clubs-table .bar-figure .mini-bar{width:40px}
-.movements-table .date-column{width:76px}.movements-table .position-column{width:40px}.movements-table .name-column{width:auto}.movements-table .nation-column{width:66px}.movements-table .age-column{width:30px}
+.movements-table .date-column{width:92px}.movements-table .position-column{width:40px}.movements-table .name-column{width:auto}.movements-table .nation-column{width:66px}.movements-table .age-column{width:30px}
 .movements-table .rating-column{width:34px}.movements-table .source-column,.movements-table .target-column{width:160px}.movements-table .arrow-column{width:14px;padding:0!important}
 .movements-table .fee-column{width:132px}.movements-table .value-column{width:60px}.movements-table .bar-figure .mini-bar{width:56px}.movements-table .bar-figure b{min-width:58px}
 .move-arrow{display:block;margin:0 -8px;text-align:center;color:var(--muted)}
@@ -959,8 +960,6 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .league-layout,.calendar-layout,.history-layout{display:grid;gap:10px;align-items:start}
 .league-layout{grid-template-columns:minmax(0,1fr) 360px}
 .league-layout .card,.calendar-layout .card,.history-layout .card,.stats-boards .card{margin-bottom:0}
-.league-tiles{display:flex;flex-direction:column;gap:10px}
-.league-tiles .stat-card{padding:10px 14px}.league-tiles .stat-card strong{margin:2px 0}
 .round-stepper{display:flex;align-items:center;gap:4px;margin-bottom:10px}
 .round-pills{display:flex;gap:3px;flex:1;min-width:0}
 .round-pills a,.round-step{display:grid;place-items:center;height:30px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--ink-2);font-size:13px;font-weight:400}
@@ -1061,6 +1060,12 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-lines.recap .club-link{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .news-lines.draw li{grid-template-columns:minmax(0,1fr) 96px 104px;min-height:var(--h-row)}
 .news-lines.draw li>:nth-child(2){text-align:left}
+.news-lines.renewals li{grid-template-columns:32px minmax(0,1fr) 32px 48px 52px 72px auto;gap:8px;min-height:var(--h-row)}
+.news-lines.renewals li>:nth-child(2){text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.news-lines.renewals .news-lines-head{font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+.news-lines.injuries li{grid-template-columns:minmax(0,1fr) 80px 64px 72px;min-height:var(--h-row)}
+.news-lines.missed li{grid-template-columns:64px minmax(0,1fr) 80px;min-height:var(--h-row)}
+.news-lines.missed li>:nth-child(2){display:flex;align-items:center;gap:var(--s2);text-align:left}
 .news-body .section-title{margin:0 0 var(--s1)}
 .news-lines .market-actions{width:auto}
 .news-lines button,.news-actions button{padding:5px 12px;font-size:13px;white-space:nowrap}

@@ -1,5 +1,5 @@
 import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
- spreadLayout,level,noteStars,levelStars,potentialStars,averageNote,moraleCell,GO} from './ui.js';
+ spreadLayout,level,noteStars,levelStars,potentialStars,averageNote,moraleCell,contractEnd,roundTitle,GO,chartColour,isOwnClub} from './ui.js';
 import {monthlySalary,monthlyAmount,monthlyMargin} from './salaries.js';
 import {clubTiles} from './club-hero.js';
 
@@ -50,8 +50,7 @@ export function standingsExtract(club,standings,rows=5){
  const items=standings?.items||[];
  if(!items.length)return '';
  const shown=Math.min(rows,items.length),at=items.findIndex(row=>row.club?.id===club.id),start=Math.max(0,Math.min(at-Math.floor((shown-1)/2),items.length-shown));
- const round=Math.max(0,...items.map(row=>row.played));
- const title=`${e(club.competition)}${round?` – ${round}<span class="ordinal">${round===1?'re':'e'}</span> journée`:''}`;
+ const title=e(roundTitle(club.competition,items));
  return `<section class="card standings-card standings-extract"><div class="card-head"><h2>${title}</h2><a href="#/league/${club.competition_id}" aria-label="Voir le classement">Voir ${GO}</a></div>${standingsTable({items:items.slice(start,start+shown)},'points',false,club.id)}</section>`;
 }
 
@@ -84,7 +83,7 @@ export function elevenCard(club,eleven,height=null){
 }
 
 // Each player of the squad who asks for a decision, with what he asks it for.
-const watched=squad=>squad.filter(player=>!player.away).map(player=>[player,[player.expiring?`<b class="danger">Contrat · ${date(player.contract_end)}</b>`:'',
+const watched=squad=>squad.filter(player=>!player.away).map(player=>[player,[player.expiring?`<b class="${player.expiring_soon?'danger':'warn'}">Contrat · ${contractEnd(player.contract_end)}</b>`:'',
  player.injured_until?`<b class="danger">Blessé · ${shortDate(player.injured_until)}</b>`:'',
  player.suspension?`<b class="news-ban">Suspendu · ${player.suspension} match${player.suspension>1?'s':''}</b>`:'',
  player.morale!=null&&Math.round(player.morale*100)<70?moraleCell(player):''].filter(Boolean)]).filter(([,shown])=>shown.length);
@@ -101,8 +100,20 @@ export function watchCard(squad,rows=6){
 // figure; `soft` draws the bars in the pale blue.
 export function leaderBars(title,rows,key,unit,{format=n,soft=false}={}){
  const top=rows[0]?.[key]||1;
- const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur pour l’instant.','Pas encore de statistiques');
+ const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur');
  return card(title,body,`<span class="card-hint">${unit}</span>`,`leaders-card ${key}${soft?' soft':''}`);
+}
+
+// Clubs ranked on one figure (docs/charte-graphique.md, « Classement de clubs »): the first one large, its figure per
+// match under it, then a bar each in the club's colour, the largest figure of the list filling it. `ascending` ranks the
+// lowest first (goals conceded). The user's club is washed.
+export function clubBars(title,items,key,unit,{ascending=false,rows=10}={}){
+ const ranked=[...items].sort((a,b)=>(ascending?a[key]-b[key]:b[key]-a[key])||a.rank-b.rank).slice(0,rows);
+ if(!ranked.length)return card(title,empty('Aucun match joué pour l’instant.'),`<span class="card-hint">${unit}</span>`,'leaders-card clubs');
+ const top=Math.max(1,...ranked.map(row=>row[key])),first=ranked[0];
+ const lead=`<div class="leader-lead"><strong>${clubLink(first.club)}</strong><span><b>${n(first[key])}</b><small>${first.played?(first[key]/first.played).toFixed(1):'0.0'} par match</small></span></div>`;
+ const bars=ranked.map(row=>`<li${isOwnClub(row.club)?' class="own"':''}><span>${clubLink(row.club)}</span><i style="width:${Math.round(100*row[key]/top)}%;--club-bar:${chartColour(row.club)}"></i><b>${n(row[key])}</b></li>`).join('');
+ return card(title,`${lead}<ol class="leader-bars clubs">${bars}</ol>`,`<span class="card-hint">${unit}</span>`,'leaders-card clubs');
 }
 
 // The club's best scorers, providers and notes of the season, as bars, `rows` each. A note counts from half as many matches

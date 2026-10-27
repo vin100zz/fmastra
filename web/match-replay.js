@@ -5,7 +5,7 @@
 // played where it will be at that moment, by a player sent there in time. A pass goes along the grass or over the
 // lines; it is taken first time, or controlled then played, or carried on touch after touch. Players run at a
 // footballer's pace and speed up and brake like one. The 3D view (replay-3d.js) draws all of it as it is.
-import {escape as e,matchMinute,shortName,GO} from './ui.js';
+import {escape as e,contrastText,matchMinute,shortName,GO} from './ui.js';
 import {GRAVITY,ballAt,dip,lofted,path,rolled} from './replay-physics.js';
 
 const W=105,H=68;
@@ -18,7 +18,9 @@ const CIRCULATION_SHOWN=6;
 // Which chances the summary plays, by the engine's xG (0.05 for a corner or free kick, up to about 0.25 for a
 // clean shot); goals are always shown. Remembered for the viewer between matches.
 const FILTERS=[['0','Toutes les occasions'],['0.1','Occasions nettes (xG ≥ 0,10)'],['0.2','Grosses occasions (xG ≥ 0,20)'],['goals','Buts seulement']];
-const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view';
+const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view',SPEED_KEY='touchline-replay-speed';
+// The paces of the speed slider, slowest first; 1 is the pace of life. Remembered for the viewer between matches.
+const SPEEDS=[.25,.5,.75,1,1.5,2,3,4];
 const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substitution:'Changement'};
 // Paces in pitch metres per ms of replay: the block shifts at a jog, the man closing the ball down a little faster.
 // A scripted run (a receiver meeting a pass, a scorer attacking a cross) is given time for REACH on average, a
@@ -38,12 +40,17 @@ const BOARD_X=6,BOARD_Y=5;
 const CHAIN_MS=300,EXTEND_MS=150;
 // Between chances the clock runs at this many ms of replay per match minute; chances play at this pace, 1 being life-like.
 const MS_PER_MINUTE=90,CHANCE_TEMPO=1;
+// How long the way of a ball that has arrived takes to fade, as match-replay.css has it.
+const TRAIL_FADE_MS=400;
 const clamp=(value,low,high)=>Math.min(high,Math.max(low,value));
 const lerp=(a,b,k)=>a+(b-a)*k;
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const lerpPoint=(from,to,k)=>({x:lerp(from.x,to.x,k),y:lerp(from.y,to.y,k)});
 const unit=(from,to)=>{const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);return length?{x:dx/length,y:dy/length}:{x:1,y:0};};
 const scale=(vector,k)=>({x:vector.x*k,y:vector.y*k});
+// A ball played along the grass is struck on it: still bouncing, it would drop and lose its pace at the bounce,
+// and stop short of whoever was sent to meet it.
+const grounded=point=>({x:point.x,y:point.y,z:0});
 const turn=(vector,angle)=>({x:vector.x*Math.cos(angle)-vector.y*Math.sin(angle),y:vector.x*Math.sin(angle)+vector.y*Math.cos(angle)});
 // Minutes as the match report gives them (`matchMinute`); `half` is when the first half ended.
 const clockLabel=(second,half)=>`${matchMinute(second,half)}′`;
@@ -115,7 +122,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.sequences=chanceSequences(this.events);
   this.others=this.events.filter(event=>event.kind in NOTABLE&&event.period!==3);
   this.duration=Math.max(this.duration||0,...this.events.map(event=>event.second));
-  this.speed=1;this.paused=true;
+  this.speed=(()=>{try{const saved=Number(localStorage.getItem(SPEED_KEY));return SPEEDS.includes(saved)?saved:1;}catch{return 1;}})();
+  this.paused=true;
   this.filter=(()=>{try{const saved=localStorage.getItem(FILTER_KEY);return FILTERS.some(([value])=>value===saved)?saved:'0.1';}catch{return '0.1';}})();
   this.run=0;this.time=0;
   this.dots={home:new Map(),away:new Map()};this.pressers={};
@@ -131,12 +139,14 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
 
  build(){
   const {home,away}=this.teams;
-  // The scoreboard in a corner of the pitch, as on television: full names, or three letters on a phone.
+  // The clock in a corner of the pitch. The score is the match banner's, which follows the replay; live, where the
+  // screen has no banner, it stands by the clock as on television: full names, or three letters on a phone.
   const team=side=>`<span class="replay-team"><i style="background:${side.major}"></i><span class="long">${e(side.name)}</span><abbr title="${e(side.name)}">${e(side.name.normalize('NFD').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase())}</abbr></span>`;
-  this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${team(home)}<strong class="replay-score">0 – 0</strong>${team(away)}</div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span>${this.live?'<button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps ${GO}</button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer ${GO}</button>':''}<ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
+  const board=this.live?`${team(home)}<strong class="replay-score">0 – 0</strong>${team(away)}`:'';
+  this.innerHTML=`<div class="replay-stage"><div class="replay-bug"><span class="replay-clock">0′</span>${board}</div><div class="replay-progress"><strong class="replay-progress-clock" aria-hidden="true">0′</strong><span class="replay-progress-bar" aria-hidden="true"><i></i></span><span class="replay-progress-label" aria-hidden="true">Jeu en cours</span>${this.live?'<button type="button" class="primary cta replay-second-half" data-live="second-half" hidden>2e mi-temps ${GO}</button><button type="button" class="primary cta replay-continue" data-live="continuer" hidden>Continuer ${GO}</button>':''}<ul class="replay-progress-notes" aria-hidden="true"></ul></div><button type="button" class="replay-start"><span>▶</span>Voir le résumé<small></small></button></div>
 <div class="replay-caption" aria-live="polite"></div>
 <div class="replay-timeline" role="group" aria-label="Occasions du match"><span class="replay-half"></span><span class="replay-cursor"></span></div>
-<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><span class="replay-speed" role="group" aria-label="Vitesse">${[1,2,4].map(speed=>`<button type="button" data-speed="${speed}" aria-pressed="${speed===1}">${speed}×</button>`).join('')}</span><button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
+<div class="replay-controls"><button type="button" data-replay="previous" aria-label="Occasion précédente" title="Occasion précédente">⏮</button><button type="button" data-replay="play" aria-label="Lecture" title="Lecture">▶</button><button type="button" data-replay="next" aria-label="Occasion suivante" title="Occasion suivante">⏭</button><label class="slider" title="Vitesse"><input type="range" data-replay="speed" min="0" max="${SPEEDS.length-1}" step="1" aria-label="Vitesse"><output></output></label><button type="button" data-replay="view" aria-pressed="false" aria-label="Vue 3D" title="Vue 3D">3D</button><select data-replay="filter" aria-label="Occasions montrées">${FILTERS.map(([value,label])=>`<option value="${value}"${value===this.filter?' selected':''}>${label}</option>`).join('')}</select></div>`;
   const stage=this.stage=this.querySelector('.replay-stage');
   this.svg=svg('svg',{viewBox:`-3 -3 ${W+6} ${H+6}`,class:'replay-pitch',role:'img','aria-label':`Terrain vu de dessus : ${home.name} contre ${away.name}`});
   const lines=svg('g',{class:'replay-lines'});
@@ -174,11 +184,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(!button)return;
    if(button.classList.contains('replay-start')){button.remove();this.play();}
    else if(button.dataset.chance)this.jump(Number(button.dataset.chance));
-   else if(button.dataset.speed){this.speed=Number(button.dataset.speed);this.querySelectorAll('[data-speed]').forEach(item=>item.setAttribute('aria-pressed',item===button));}
    else if(button.dataset.replay==='play')this.paused?this.play():this.pause();
    else if(button.dataset.replay==='view')this.setView(!this.view3d,true);
    else if(button.dataset.replay==='previous')this.jump(this.previousIndex());
    else if(button.dataset.replay==='next')this.jump(this.nextIndex(this.current+1));
+  });
+  this.addEventListener('input',event=>{
+   if(event.target.dataset.replay!=='speed')return;
+   this.setSpeed(SPEEDS[Number(event.target.value)]);
+   try{localStorage.setItem(SPEED_KEY,String(this.speed));}catch{}
   });
   this.addEventListener('change',event=>{
    if(event.target.dataset.replay!=='filter')return;
@@ -186,7 +200,20 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    try{localStorage.setItem(FILTER_KEY,this.filter);}catch{}
    this.applyFilter();
   });
+  this.setSpeed(this.speed);
   this.applyFilter();
+ }
+
+ // The pace of the replay, and the slider set on the nearest of its stops.
+ setSpeed(speed){
+  this.speed=speed;
+  const slider=this.querySelector('[data-replay="speed"]');
+  if(!slider)return;
+  const index=SPEEDS.reduce((best,value,n)=>Math.abs(Math.log(value/speed))<Math.abs(Math.log(SPEEDS[best]/speed))?n:best,0);
+  slider.value=String(index);
+  slider.style.setProperty('--fill',`${100*index/(SPEEDS.length-1)}%`);
+  slider.setAttribute('aria-valuetext',`${speed}×`);
+  slider.nextElementSibling.value=`${speed}×`;
  }
 
  // The television view (replay-3d.js) is loaded on first use and reads this element's state at each frame;
@@ -235,8 +262,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    for(const player of this.rosters[side]){
     if(this.dots[side].has(player.id))continue;
     const node=svg('g',{class:`replay-player${player.position==='GB'?' keeper':''}`});
-    node.append(svg('circle',{class:'ring',r:2.7}),svg('circle',{r:1.55,fill:player.position==='GB'?kit.keeper:kit.major,stroke:kit.minor}),svg('text',{y:-2.4,'text-anchor':'middle'}));
-    node.lastChild.textContent=this.names.get(player.id)||'';
+    // His number on the disc, his name above it while he takes part in the play.
+    const fill=player.position==='GB'?kit.keeper:kit.major,number=svg('text',{class:'number','text-anchor':'middle',y:.62,fill:contrastText(fill)}),name=svg('text',{class:'name','text-anchor':'middle',y:-2.45});
+    number.textContent=this.shirts?.get(player.id)??'';name.textContent=this.names.get(player.id)||'';
+    node.append(svg('circle',{r:1.9,fill,stroke:kit.minor}),number,name);
     this.players.append(node);
     // A newcomer walks on from the touchline nearest to his spot.
     const spot=this.toPitch(side,player.u,player.v);
@@ -334,9 +363,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.ballAt={x:ball.x,y:ball.y};this.ballZ=ball.z;
   this.drawBall();
   if(action?.path&&k<1){const points=action.path.getAttribute('points');action.path.setAttribute('points',`${points} ${ball.x.toFixed(2)},${ball.y.toFixed(2)}`);}
-  if(action&&k>=1)this.settle(true);
+  // The ball's way fades as soon as it arrives: only the touch being played is drawn.
+  if(action&&k>=1){if(action.path){const line=action.path;line.classList.add('gone');setTimeout(()=>line.remove(),TRAIL_FADE_MS);}this.settle(true);}
   const holding=this.carrier?`${this.carrier.side}:${this.carrier.id}`:'';
-  if(holding!==this.holding){this.holding=holding;for(const side of ['home','away'])for(const [id,dot] of this.dots[side])dot.node.classList.toggle('carrier',this.carrier?.side===side&&this.carrier.id===id);}
+  if(holding!==this.holding){this.holding=holding;this.highlight(this.named);}
  }
  // A ball that leaves the pitch comes back off the boards, slowly.
  rebound(ball,time){
@@ -351,12 +381,16 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.ball.classList.toggle('faded',!!this.faded);
  }
  drawDots(){for(const team of ['home','away'])for(const dot of this.dots[team].values())dot.node.setAttribute('transform',`translate(${dot.x.toFixed(2)} ${dot.y.toFixed(2)})`);}
- highlight(ids){for(const side of ['home','away'])for(const [id,dot] of this.dots[side]){dot.node.classList.toggle('on',ids.includes(id));dot.node.classList.toggle('carrier',this.carrier?.side===side&&this.carrier.id===id);}}
+ // The names written are those of the players in the touch being played: the one the caption names and whoever has the ball.
+ highlight(ids=[]){this.named=ids;for(const side of ['home','away'])for(const [id,dot] of this.dots[side])dot.node.classList.toggle('on',ids.includes(id)||this.carrier?.side===side&&this.carrier.id===id);}
 
  showClock(second){this.displayed=second;this.clockText(this.minute(second));this.querySelector('.replay-cursor').style.left=`${100*clamp(second/this.duration,0,1)}%`;if(this.live)this.emit('replay-clock',{second});}
  clockText(label){this.querySelector('.replay-clock').textContent=label;this.querySelector('.replay-progress-clock').textContent=label;}
  emit(name,detail){this.dispatchEvent(new CustomEvent(name,{detail,bubbles:true}));}
- showScore(){this.querySelector('.replay-score').textContent=`${this.score[0]} – ${this.score[1]}`;if(this.live)this.emit('replay-score',{score:[...this.score]});}
+ showScore(){
+  if(this.live){this.querySelector('.replay-score').textContent=`${this.score[0]} – ${this.score[1]}`;this.emit('replay-score',{score:[...this.score]});}
+  else bannerScore(this.score);
+ }
  caption(html,live=false){const node=this.querySelector('.replay-caption');node.innerHTML=html;node.classList.toggle('live',live);}
  showBanner(text,side){this.banner.textContent=text;this.banner.setAttribute('class',`replay-banner${text?' on':''}`);this.banner.style.fill=side?this.teams[side].major:'';}
 
@@ -705,7 +739,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  async pass(move,next,ahead){
   const to=move.to,receiver=this.dot(to);
   if(!receiver)return true;
-  const by=this.carrier,t0=this.start(),from=ballAt(this.ballPath,t0),height=move.lift==='lofted'?move.height:0,timing=point=>FLIGHT[move.lift](distance(from,point));
+  const by=this.carrier,t0=this.start(),height=move.lift==='lofted'?move.height:0,struck=ballAt(this.ballPath,t0),from=height?struck:grounded(struck),timing=point=>FLIGHT[move.lift](distance(from,point));
   // As far towards the spot as he can run while the ball travels there (a shorter pass gives him less time).
   const gap=distance(receiver,move.point);
   let share=1;
@@ -735,7 +769,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  async control(move,next,ahead){
   const by=move.who;
   if(!this.dot(by))return true;
-  const t0=this.start(),from=ballAt(this.ballPath,t0),skill=this.skill(by);
+  const t0=this.start(),struck=ballAt(this.ballPath,t0),from=struck.z>.3?struck:grounded(struck),skill=this.skill(by);
   const heading=turn(unit(from,ahead||this.toPitch(by.side,1,.5)),(this.random()-.5)*(1-skill)*.9),push=(move.carry?1.8:1.3)*(1.6-.8*skill);
   let duration=move.carry?480:lerp(640,440,skill),velocity;
   if(from.z>.3){
@@ -765,7 +799,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   const beaten=move.dribble!=null&&this.dots[other].has(move.dribble)?{side:other,id:move.dribble}:null,swerve=this.random()<.5?.6:-.6;
   if(beaten)this.pressLock={...beaten,until:this.time+interval*2.5};
   for(let touch=0;touch<14;touch++){
-   const t0=this.start(),from=ballAt(this.ballPath,t0),gap=distance(from,move.point),stride=pace*interval,last=gap<=stride*1.4;
+   const t0=this.start(),from=grounded(ballAt(this.ballPath,t0)),gap=distance(from,move.point),stride=pace*interval,last=gap<=stride*1.4;
    const direction=beaten&&touch===1&&!last?turn(unit(from,move.point),swerve):unit(from,move.point);
    const length=last?gap:stride,aim={x:from.x+direction.x*length,y:from.y+direction.y*length},dot=this.dot(by);
    // Long enough for him to get onto it at a sprint at most.
@@ -895,7 +929,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // defender who threw himself in front of it. A header is nodded down; a free kick clears the wall and dips.
  async shoot(move,sequence){
   const side=move.side,other=this.opponent(side),random=this.random,at=(u,v)=>this.toPitch(side,u,v),keeper=move.keeper;
-  const t0=this.start(),from=ballAt(this.ballPath,t0);
+  const t0=this.start();
+  let from=ballAt(this.ballPath,t0);
   const outcome=sequence.outcome?.kind,blocked=outcome==='off_target'&&sequence.outcome.detail==='blocked',spread=amount=>.5+(random()-.5)*2*amount;
   const post=outcome==='off_target'&&sequence.outcome.detail==='post',saved=outcome==='save'?sequence.outcome.detail:null;
   let target,height;
@@ -911,7 +946,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   // A header from far out is struck harder, so that it does not loop.
   const speed=move.header?Math.max(lerp(.012,.016,random()),distance(from,target)/1100):move.freeKick?lerp(.022,.027,random()):move.style==='placed'?lerp(.017,.021,random()):lerp(.025,.031,random());
   let duration=distance(from,target)/speed,velocity,options;
-  if(!height&&!move.header&&!move.freeKick)({velocity,duration}=rolled(from,target,duration));
+  if(!height&&!move.header&&!move.freeKick){from=grounded(from);({velocity,duration}=rolled(from,target,duration));}
   else{
    const gravity=move.freeKick&&!inWay?Math.min(GRAVITY*2.6,dip(from,target,duration,height,9.15,2.45)):GRAVITY;
    const bend=move.freeKick?(random()<.5?-1:1)*lerp(1,2.5,random()):move.style==='placed'?(random()-.5)*1.2:0;
@@ -1124,8 +1159,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.trail.replaceChildren();this.showBanner('');
   // The clock stops on the minute of the shot while the chance plays out, as the highlights show it.
   this.showClock(sequence.shot.second);
-  const involved=[];
-  const note=(id,text)=>{if(id!=null)involved.push(id);this.highlight(involved);this.caption(text);};
+  const note=(id,text)=>{this.highlight(id!=null?[id]:[]);this.caption(text);};
   const shot=sequence.shot,counter=sequence.start?.detail==='counter';
   const title=`<strong style="color:${team.major}">${e(team.name)}</strong> · ${this.minute(sequence.shot.second)}`;
   const jitter=(value,amount)=>clamp(value+(this.random()-.5)*2*amount,.02,.98);
@@ -1165,9 +1199,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    const move=moves[index],next=moves[index+1],ahead=moves.slice(index+1).find(item=>item.point)?.point;
    if(move.note)note(...move.note);
    if(move.type==='shot'){
-    if(move.keeper)involved.push(move.keeper.id);
-    if(move.blocker)involved.push(move.blocker.id);
-    this.highlight(involved);
+    this.highlight([...this.named,move.keeper?.id,move.blocker?.id].filter(id=>id!=null));
     if(!(await this.shoot(move,sequence)))return false;
    }
    else if(!(await this[{free_kick:'freeKick'}[move.type]??move.type](move,next,ahead)))return false;
@@ -1268,5 +1300,13 @@ globalThis.document?.addEventListener('click',event=>{
   panel.append(replay);
   replay.play?.();
  }
- else if(!open)replay?.pause?.();
+ else if(open)replay.showScore?.();
+ else{replay?.pause?.();bannerScore(null);}
 });
+// Open, the summary writes its score in the match banner as it goes; folded, the banner shows the final score again.
+function bannerScore(score){
+ const tile=document.querySelector('.match-hero .big-score');
+ if(!tile)return;
+ tile.dataset.final??=tile.textContent;
+ tile.textContent=score?score.join(' : '):tile.dataset.final;
+}

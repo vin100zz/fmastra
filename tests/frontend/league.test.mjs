@@ -20,14 +20,28 @@ async function withApi(answer,run){
 const api=url=>url.endsWith('/navigation')?null:url.includes('/classement')?standings:url.includes('/statistiques')?leaders(new URL(url,'http://x').searchParams.get('type')):
  url.includes('/calendrier')?{total:2,page:1,page_size:30,round:12,rounds:[1,2,3,12,13],items:[match(1,true),match(2,false)]}:{};
 
-test('the league table keeps its points first and sits beside the four leaders it does not show',async()=>{
- const {html}=await withApi(api,()=>leagueScreen(16,'table',new URLSearchParams(),[league]));
+test('the league table keeps its points first, its views in the head of its card, its attacks and defences beside it',async()=>{
+ const {html,urls}=await withApi(api,()=>leagueScreen(16,'table',new URLSearchParams(),[league]));
  assert.match(html,/<th class="rank-column"[^>]*><button class="sort-toggle" data-table-sort>#<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>CLUB<\/button><\/th><th class="total-column"[^>]*><button class="sort-toggle" data-table-sort>PTS<\/button><\/th>/);
  assert.match(html,/class="league-layout"/);
- assert.match(html,/Meilleure attaque[^]*Club 4[^]*24 buts/);
- assert.match(html,/Meilleure défense[^]*Club 4[^]*26 buts encaissés/);
- assert.match(html,/Meilleur buteur[^]*Joueur 0/);
- assert.match(html,/Meilleur passeur/);
+ // The whole table opens; the other views go by the address.
+ assert.match(html,/<nav class="segmented small" aria-label="Vues du classement"><a class="active" aria-current="page" href="#\/league\/16\/table">Général<\/a><a href="#\/league\/16\/table\?vue=domicile">Domicile<\/a><a href="#\/league\/16\/table\?vue=exterieur">Extérieur<\/a><a href="#\/league\/16\/table\?vue=derniers">5 derniers<\/a><\/nav>/);
+ assert.ok(urls.some(url=>url.endsWith('/competitions/16/classement?')));
+ // The best attack first, large, its goals per match under it; the best defence is the one that conceded the least.
+ assert.match(html,/<h2>Attaques<\/h2><span class="card-hint">buts marqués<\/span><\/div><div class="leader-lead"><strong><a href="#\/club\/4" class="club-link">Club 4<\/a><\/strong><span><b>24<\/b><small>2\.0 par match<\/small><\/span><\/div>/);
+ assert.match(html,/<h2>Défenses<\/h2><span class="card-hint">buts encaissés<\/span><\/div><div class="leader-lead"><strong><a href="#\/club\/4" class="club-link">Club 4<\/a><\/strong><span><b>26<\/b>/);
+ assert.equal((html.match(/<ol class="leader-bars clubs">/g)||[]).length,2);
+ // The scorers and the providers under them, five each.
+ assert.match(html,/<div class="league-players"><section class="card leaders-card value soft"><div class="card-head"><h2>Buteurs<\/h2>/);
+ assert.equal((html.match(/<div class="league-players">[^]*$/)[0].match(/<li>/g)||[]).length,10);
+});
+
+test('a partial view of the table asks the server for it and keeps the whole table for its own',async()=>{
+ const {html,urls}=await withApi(api,()=>leagueScreen(16,'table',new URLSearchParams('vue=domicile'),[league]));
+ assert.ok(urls.some(url=>url.endsWith('/competitions/16/classement?vue=domicile')));
+ assert.match(html,/<a class="active" aria-current="page" href="#\/league\/16\/table\?vue=domicile">Domicile<\/a>/);
+ const unknown=await withApi(api,()=>leagueScreen(16,'table',new URLSearchParams('vue=nimporte'),[league]));
+ assert.ok(unknown.urls.some(url=>url.endsWith('/competitions/16/classement?')));
 });
 
 test('a league opens on a competition’s header: its country’s kit and flag, its name, who holds its title, its tabs',async()=>{

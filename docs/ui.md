@@ -76,7 +76,7 @@ couleur), dans l'en-tête de la carte. La saison choisie est dans l'adresse
 monde, de l'Euro et de la Ligue des nations se parcourent ainsi sur la page de leur compétition.
 
 **Trois chiffres par ligne de joueur.** Âge, salaire, fin de contrat. Une
-échéance à moins de 12 mois passe en rouge. C'est la liste de tâches implicite,
+échéance à moins de 12 mois passe en orange, à moins de 6 mois en rouge. C'est la liste de tâches implicite,
 et elle remplace tous les écrans de gestion supprimés.
 
 ## Contrôle du temps
@@ -212,7 +212,7 @@ moins large les widgets passent sur une colonne, puis sous le message.
 
 **Le fil**, à gauche, défile dans sa colonne : un message par ligne, du plus récent au plus ancien, avec le badge
 coloré de sa catégorie (Transfert, Prêt, Contrat, Moral, Blessure, Suspension, Sélection, Formation, Mercato, Saison,
-Tactique, Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
+Tirage, Trophée, Retraite), sa date et son titre. Un message non lu est en gras sur fond teinté, avec un point ; il est marqué
 lu dès qu'il est ouvert. Un point rouge marque un message qui attend une réponse, une coche celui qui l'a reçue. « Tout
 lire », au-dessus du fil, marque tout comme lu.
 
@@ -222,12 +222,16 @@ de club, de compétition ou de sélection est un lien vers sa page ; il n'y a pa
 
 Les événements d'un même genre le même jour font un seul message : les blessés d'un match, les suspendus, les
 convoqués, les fins de contrat, les jeunes promus, les changements de formation. Un joueur seul tient dans le titre (« Weah blessé 3 semaines ») ;
-à plusieurs, le message liste chacun avec ce qui le concerne.
+à plusieurs, le message liste chacun avec ce qui le concerne. Les demandes de nouveau contrat d'un même jour sont
+gardées une par une, mais le fil n'en montre qu'un message (« 17 joueurs veulent un nouveau contrat », `src/api/news.py`,
+`groups`) : l'ouvrir les lit toutes, il est à traiter tant que l'une attend sa réponse.
 
 | Message | Contenu |
 |---|---|
 | Offres pour un joueur (à traiter) | Sa valeur en tuile ; une ligne par offre du jour : club, indemnité, « Accepter » / « Contre-proposer » / « Refuser ». « Contre-proposer » ouvre une boîte de dialogue au prix demandé (l'offre par défaut) : le toast dit si le club a suivi. À plusieurs offres ouvertes, « Tout accepter » (le joueur choisit son club) et « Tout refuser » ; tant que le joueur est au club et sur le marché, « Déclarer intransférable » à leur suite. Une offre traitée garde sa réponse : Acceptée, Refusée, Relevée (le club a offert plus depuis : la nouvelle offre est dans le message de son jour), Non retenue, Sans suite. Un message qui ne porte que des offres relevées s'intitule « n offre(s) relevée(s) pour … » |
 | Un joueur veut un nouveau contrat (à traiter) | Salaire et fin de contrat, actuels et demandés ; « Accepter » / « Refuser » |
+| Plusieurs joueurs veulent un nouveau contrat, le même jour (à traiter) | Une ligne par joueur, le plus gros salaire demandé d'abord : poste, nom, niveau, salaire actuel, salaire demandé, fin du contrat demandé (« juin 2030 ») ; « Accepter » / « Refuser », ou la réponse donnée (Prolongé, Refusé, Sans suite) |
+| Blessure | Seul : la date de retour et le nombre de matches manqués ; à plusieurs, une ligne par joueur (absence, retour, matches manqués). Dessous, les matches du club jusqu'au dernier retour (date, compétition, adversaire, domicile ou extérieur), puis « Composition → » |
 | Un joueur est prêt à négocier son contrat (à traiter) | Indemnité convenue et club vendeur, salaire qu'il demande s'il l'a dit ; « Négocier le contrat » (la boîte de dialogue de sa fiche) et « Abandonner » |
 | Joueurs mécontents | Par joueur : ce qui pèse sur lui (temps de jeu, réserve, salaire, club trop petit, départ refusé à un joueur intransférable) et son moral |
 | Contrats qui expirent (à 6 mois, à 1 mois) | Par joueur : son salaire, et « Proposer un contrat », qui ouvre le contrat qu'il signerait ; grisé avec la raison en infobulle s'il ne veut pas prolonger |
@@ -235,7 +239,6 @@ convoqués, les fins de contrat, les jeunes promus, les changements de formation
 | Mercato qui ferme demain | Vos offres en cours, les joueurs dont une offre attend, budget de transferts, lien vers Joueurs |
 | Bilan du mercato (le lendemain de sa fermeture) | Les principaux transferts de la fenêtre, dans la division du club (un joueur arrivé dans un de ses clubs ou parti de l'un d'eux) puis dans le monde : les 5 plus grosses indemnités, puis les 3 joueurs libres du plus haut niveau. Par ligne : le joueur, le club quitté → le club rejoint, l'indemnité ; un joueur libre vient de « Libre » et porte sa pastille de niveau à la place du montant |
 | Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
-| Changement de formation (le prochain adversaire du club, ou un club de son championnat) | Le titre nomme le club et sa nouvelle formation (« Nice passe au 4-3-3 ») ; à plusieurs, une ligne par club, après sa pastille : la formation quittée → la nouvelle. Badge Tactique, famille Saison |
 | Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
 | Changements de numéro (1er juillet) | « Lago change de numéro », « 3 changements de numéro » ; une ligne par joueur : le maillot du club au numéro qu'il quitte, voilé, → celui au numéro qu'il prend (charte, « Terrain et maillot ») |
 | Arrivée d'un joueur (transfert, prêt, retour de prêt, jeune promu au centre de formation) | La phrase, sans numéro (« Haaland rejoint Marseille ») ; dessous, « Numéro » et le maillot du club au numéro qu'il prend. Plusieurs jeunes promus : une ligne par joueur, avec son maillot |
@@ -619,7 +622,7 @@ d'onglets :
 
 | Onglet | Contenu |
 |---|---|
-| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche, le rang d'une place européenne à la couleur de sa coupe et la légende des coupes dans l'en-tête de la carte (charte, « Classement ») ; à droite, quatre tuiles : meilleure attaque, meilleure défense, meilleur buteur et meilleur passeur. Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
+| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche, le rang d'une place européenne à la couleur de sa coupe et les codes des coupes dans l'en-tête de la carte (charte, « Classement ») ; au bout de cet en-tête, le choix des vues : Général, Domicile, Extérieur, 5 derniers (`vue` de l'adresse et de l'endpoint), une vue partielle classant les clubs sur leurs seuls matches à domicile, à l'extérieur ou sur leurs cinq derniers, sans place ni légende. À droite, côte à côte et de même hauteur, les attaques (le plus de buts marqués) et les défenses (le moins de buts encaissés) de la vue montrée, les dix premières, la première en grand avec ce qu'elle vaut par match ; dessous, sur les deux mêmes colonnes, les cinq meilleurs buteurs et passeurs de la saison (charte, « Classement d'une ligue »). Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
 | Calendrier | une journée à la fois : une pastille par journée au-dessus (la journée affichée allumée, une flèche de chaque côté), puis les matches de la journée en deux colonnes, chacun avec ses buteurs et leurs minutes, la date en tête ; à droite, le classement réduit (#, points, J, différence), les codes des coupes d'Europe en légende, et les 5 meilleurs buteurs |
 | Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement et des 10 meilleurs buteurs |
 | Prochains matches | la prochaine journée ou le prochain tour, à côté du classement et des 10 meilleurs buteurs |
@@ -889,7 +892,7 @@ son nom, sa courbe et sa carrière.
 | Colonne · Contrat | sous un bandeau de titre, dans la même carte : salaire mensuel, fin du contrat, et pour le joueur d'un autre club ses prétentions (le salaire qu'il demande pour rejoindre le club dirigé) |
 | Attributs | une colonne par section, de la même largeur, sous son bandeau de titre : les bandeaux forment une seule bande, comme l'en-tête d'un tableau, un trait entre deux colonnes (charte, « Attributs en colonnes »). Aucune colonne plus étroite que le plus long nom de sa section et son badge : quand la carte ne les tient pas toutes, la dernière passe à la ligne. La carte s'arrête à sa plus longue colonne, quelle que soit la hauteur du terrain à côté ; sur grand écran, la carrière vient juste dessous. En tête, la section Jeu : les composites du moteur de match en étoiles, les six d'un joueur de champ (Progression, Création, Frappe, Jeu aérien, Défense au milieu, Défense de surface) ou les deux d'un gardien (Arrêts, Sorties aériennes), avec leurs poids en infobulle. Ceux que le poste demande sont marqués d'un point, les autres en gris ; le poste lu est celui choisi sur la carte des aptitudes, le poste principal par défaut, et son bandeau le nomme. Puis les 16 attributs en badges de 1 à 20, chaque section dans l'ordre alphabétique de leurs noms. Quatre sections : Gardien (Réflexes, Relance, Sorties), Défense (Placement, Tacle), Attaque (Centres, Coups arrêtés, Finition, Jeu de tête, Penaltys, Sang-froid, Technique, Vision) et Général (Endurance, Passe, Vitesse). Un joueur de champ ne voit pas Gardien ; un gardien voit Gardien (Placement s'y ajoute, à son rang alphabétique) et Général, puis ses autres attributs dans une dernière colonne « Autres », leurs noms en gris et leurs badges neutres. Les sections gardent toujours le même ordre, quel que soit le poste (Jeu, Défense, Attaque, Général ; Jeu, Gardien, Général, Autres pour un gardien). Un point marque les attributs pesant au moins 14 % de cette note, avec leur poids en infobulle (`attribute_weights` de la fiche, tiré de `note_globale`) |
 | Aptitudes par poste | carte de terrain, avec le maillot de la charte (« Terrain et maillot ») : aux seuls postes où son affinité atteint 10, le maillot de son club avec le poste écrit dessus, le poste principal entouré ; sous chaque maillot, un bloc d'une ligne : la note au poste en étoiles (voir Composition), puis l'affinité sous 20, en disque. Le terrain a 280 px de large au plus, sans liste à côté. Les lignes de l'axe sont espacées d'au moins 14 % de la hauteur et les ailiers placés entre l'avant-centre et le meneur, pour qu'aucun maillot ni bloc ne chevauche le suivant. Cliquer un poste fait lire la section Jeu des attributs pour lui : son maillot est cerclé de jaune et son bloc passe en jaune |
-| Évolution du niveau | courbe mensuelle du niveau tel que le club dirigé le lisait, en étoiles, une ligne par demi-étoile, la fourchette du potentiel lue chaque mois en bande pâle au-dessus (`stars` et `band` de chaque point) ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club où le joueur évoluait ce mois-là (celui où il le termine en cas de transfert dans le mois, neutre sans club) et son infobulle donne mois et club (le niveau en mode debug) ; le premier et le dernier portent leurs étoiles |
+| Évolution du niveau | courbe mensuelle du niveau tel que le club dirigé le lisait, en étoiles, haute de 240, une ligne par demi-étoile, la fourchette du potentiel lue chaque mois en bande pâle au-dessus (`stars` et `band` de chaque point) ; l'abscisse est le temps (mois sur deux ans au plus, puis années), les saisons antérieures à l'historique mensuel n'y ont qu'un point, à leur ouverture. Un point marque l'ouverture de chaque saison et le dernier mois : il reprend les couleurs du club où le joueur évoluait ce mois-là (celui où il le termine en cas de transfert dans le mois, neutre sans club) et son infobulle donne mois et club (le niveau en mode debug) ; le premier et le dernier portent leurs étoiles |
 | Carrière | une seule carte, deux blocs : les clubs, puis la sélection, chacun son tableau, que la page tenue dans la fenêtre fait défiler sous son en-tête, son total toujours visible (charte, « Fiche d'un joueur »). D'abord les clubs, une ligne par saison et club : transfert, compétitions en pastilles (`competition_badges` : la division du championnat, précédée du drapeau de son pays, y compris la France, puis la coupe d'Europe ; pas de coupe nationale), matches, buts, passes, note, puis le total. Chaque saison ouverte dans un club a sa ligne, de celle où le joueur est entré dans la partie à la saison en cours, même sans match ni mouvement (joueur jamais aligné, club hors des championnats simulés) ; le club quitté dans la première moitié de la saison (mercato d'été) n'a de ligne que si le joueur y a joué. La division a toujours sa pastille, même pour une saison sans match de championnat, et c'est celle du club cette saison-là, pas celle d'aujourd'hui : « L » et son niveau en France, « D » et son niveau ailleurs (drapeau français, L1 puis C1 ; drapeau du pays, D1 puis C3), le nom du championnat en infobulle ; un club hors des championnats simulés a la pastille du niveau de sa division. La source ne donne pas ce niveau : un vivier de réserve est un niveau sous sa pyramide (c'est là qu'était, une saison sans match de championnat, un club qui joue aujourd'hui un championnat simulé), toute autre division un niveau sous la plus basse connue de son pays, donc D1 dans un pays sans championnat simulé. Dessous, pour un joueur déjà sélectionné, la sélection : le nom de la nation en tête de colonne (lien vers elle), une ligne par édition, son année après sa pastille (EU, CM : `code` de `international_records`), la plus récente d'abord, une ligne « Historique importé » pour les sélections d'avant la partie, et le total (`international_caps`, `international_goals`). Une bande vide sépare les clubs de la sélection. Le nom de la nation et la première cellule de ses lignes couvrent les quatre premières colonnes : matches, buts, passes et note restent dans les colonnes qu'ils ont pour les clubs. La note d'une édition est la moyenne de ses matches notés (`average` de `international_records`), « — » pour une édition jouée avant que le jeu ne les garde. |
 
 Les textes du graphe ont la même taille que le reste de l'interface. Les niveaux,
@@ -947,7 +950,7 @@ message (« il vient d'arriver ») reste dans son infobulle.
   coupe d'Europe, le drapeau du pays de chaque club après son nom, du côté du score, lien vers sa sélection
 - Le nom des deux camps n'est écrit que dans le bandeau : sur le reste de l'écran, ce qui est à gauche est au
   camp qui reçoit
-- Trois colonnes : la composition d'un camp, les temps forts et les chiffres, la composition de l'autre
+- Trois colonnes : la composition d'un camp, les temps forts, les chiffres et le fil du match, la composition de l'autre
 - La ligne du match, en tête de la colonne du milieu au-dessus des temps forts (seule sous le bandeau avant le
   match) : la compétition, le tour, le jour, un terrain neutre et le vainqueur, puis « Match aller » et
   « Résumé 2D » à son bout. La capacité du stade n'est pas écrite
@@ -959,6 +962,10 @@ message (« il vient d'arriver ») reste dans son infobulle.
   couleur (charte, « Graphiques »). La carte est repliée sur les buts attendus, les tirs, les tirs cadrés et
   la possession ; son en-tête entier montre les corners, les coups francs et les cartons (charte, « Carte
   repliable »), et le choix est gardé d'un match à l'autre
+- Fil du match, sous les chiffres : les buts attendus de chaque camp ajoutés tir après tir, en marches dans sa
+  couleur, un ballon où un tir est entré, la mi-temps en pointillé et le total de chaque camp au bout de son
+  trait (charte, « Fil du match »). Tout match garde ses tirs pour cela (`shots` de `match_detail` : seconde,
+  club, xG), même quand ses événements sont réduits à ses faits ; un match joué avant n'a pas la carte
 - Compositions des deux équipes sur le terrain de la charte raccourci à 68 × 76 (l'attaque dans la surface
   d'en face), sans titre : le numéro que le joueur portait ce jour-là sur son maillot (`shirt` de `match_detail`, le
   poste pour un renfort temporaire ou le joueur d'une sélection), ses buts en haut à droite du maillot (un ballon par but, en
@@ -987,6 +994,15 @@ message (« il vient d'arriver ») reste dans son infobulle.
   footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
   la reprise et le défenseur qui contrera la frappe font leur course pendant
   l'action.
+  Chaque joueur est une pastille de même taille, son numéro dessus ; son nom
+  court s'écrit au-dessus, sans la toucher, le temps de la touche où il joue :
+  celui que nomme la légende et celui qui a le ballon. Le chemin du ballon
+  s'efface dès qu'il arrive. Le terrain ne porte que la minute, en haut à
+  gauche : le score est celui du bandeau du match, qui suit la lecture et
+  revient au score final quand le résumé se replie. Au direct, sans bandeau,
+  le score et les deux camps restent à côté de la minute.
+  La vitesse de lecture se règle au curseur de la charte (`.slider`), de 0.25×
+  à 4× (0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4), 1× par défaut ; elle est retenue.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
@@ -1025,7 +1041,7 @@ message (« il vient d'arriver ») reste dans son infobulle.
 ### Composition
 
 L'onglet Composition du club dirigé : à gauche le pas des formations, au-dessus du terrain, puis le terrain
-et les remplaçants sur une ligne (autant de places que `bench_size`) ; au centre la liste de
+et les remplaçants sur trois colonnes (autant de places que `bench_size`, le poste puis le nom court) ; au centre la liste de
 l'effectif, triable, avec au-dessus d'elle le premier problème de la composition, la composition auto
 et « Infos » / « Jeu » ; à droite l'adversaire (sous 1400 px, il passe sous les deux). On
 glisse un joueur sur un poste ou sur le banc ; le menu d'un joueur (clic droit) le sort de la composition
@@ -1194,7 +1210,9 @@ Transferts et prêts se lisent par deux initiales, nommées en infobulle : T (tr
 en vert) et P (prêt, en bleu). La colonne LISTÉ, après le prix minimum, dit ce que le
 club du joueur est prêt à faire (`transfer_listed`, `loan_listed`) : T pour un joueur de
 la liste des transferts de l'utilisateur ou en surnombre dans un club de l'IA, P pour un
-joueur que son club est prêt à prêter, un tiret sinon. La colonne INTÉRESSÉ dit ce que le
+joueur que son club est prêt à prêter, un tiret sinon ; un cadenas, « Intransférable » en
+infobulle, pour un joueur que son club refuse de vendre, dont le prix minimum est un tiret.
+La colonne INTÉRESSÉ dit ce que le
 joueur accepte : T pour un transfert chez l'utilisateur, P pour un prêt (`interested`,
 `loan_interested`), « Non » s'il n'accepte ni l'un ni l'autre. Dans l'aperçu, les lignes
 « Listé » et « Intéressé » l'écrivent en toutes lettres. La liste « Listés » filtre sur
@@ -1379,7 +1397,7 @@ GET  /api/clubs/{id}/historique?vue=ensemble|saisons|joueurs|records
 GET  /api/competitions                    chacune : clubs, rounds (journées de son calendrier, tours d'une coupe), et ce que montre son
                                           en-tête : major_color, minor_color, ground_color (son fond, pour une coupe d'Europe), nation_id (la
                                           sélection de son pays | null), winner et holder de la saison en cours (voir /coupe)
-GET  /api/competitions/{id}/classement
+GET  /api/competitions/{id}/classement?vue=general|domicile|exterieur|derniers
 GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (avec scorers, comme journee/derniere), numéros des journées
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison)}]}
 GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification, de phase finale

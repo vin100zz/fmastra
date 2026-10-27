@@ -3,7 +3,7 @@ import {cupScreen} from './cups.js';
 import {europeScreen} from './europe.js';
 import {movementsHistory} from './club-history.js';
 import {CLUB_VIEWS,historyView,viewChoice,clubHistory} from './history.js';
-import {clubPreview,marketBlock,presentationContent} from './club-overview.js';
+import {clubPreview,marketBlock,presentationContent,clubBars,leaderBars} from './club-overview.js';
 import {clubHero,competitionHero} from './club-hero.js';
 import {calendarContent} from './club-calendar.js';
 import {financesContent} from './club-finances.js';
@@ -13,7 +13,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,stat,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
+import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -29,7 +29,7 @@ async function leagueSummary(id){
 }
 
 function leagueSummaryCard(league,data){
- const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat pour l’instant.','La saison démarre')}</div><div><h3>${roundTitle('Classement',data.standings.items)}</h3><div class="standings-scroll">${standingsTable(data.standings,'record')}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
+ const content=`<div class="league-summary-grid"><div><h3>Dernière journée</h3>${data.lastRound?fixtures(data.lastRound):empty('Aucun résultat')}</div><div><h3>${roundTitle('Classement',data.standings.items)}</h3><div class="standings-scroll">${standingsTable(data.standings,'record')}</div><h3>Buteurs</h3>${table(['#','JOUEUR','BUTS'],data.scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),n(row.value)]))}</div></div>`;
  return `<section class="card"><div class="card-head"><h2>${nationFlag(league.nation)}${e(league.name)}</h2><a href="#/league/${league.id}">Voir le championnat ${GO}</a></div>${content}</section>`;
 }
 
@@ -131,11 +131,17 @@ const STATISTICS=[['buteurs','Meilleurs buteurs'],['passeurs','Meilleurs passeur
 const statisticRows=(data,category,start=0)=>data.items.map((row,index)=>[start+index+1,row.id?playerLink(row.id,row.name):clubLink(row.club),...(category==='clean_sheets'?[]:[clubLink(row.club)]),`<b>${category==='notes'?averageNote(row.value):n(row.value)}</b>`]);
 const statisticHeaders=category=>['#',category==='clean_sheets'?'CLUB':'JOUEUR',...(category==='clean_sheets'?[]:['CLUB']),'TOTAL'];
 
-// The standings beside the four leaders they do not show: best attack and defence, top scorer and top provider.
-function leagueTiles(standings,scorers,assists){
- const clubs=standings.items,attack=[...clubs].sort((a,b)=>b.goals_for-a.goals_for)[0],defence=[...clubs].sort((a,b)=>a.goals_against-b.goals_against)[0],scorer=scorers.items[0],provider=assists.items[0];
- const club=row=>row?.club?.name||'—';
- return `<aside class="league-tiles">${attack?stat('Meilleure attaque',club(attack),`${attack.goals_for} buts`):''}${defence?stat('Meilleure défense',club(defence),`${defence.goals_against} buts encaissés`):''}${scorer?stat('Meilleur buteur',scorer.name,`${club(scorer)} · ${n(scorer.value)} buts`):''}${provider?stat('Meilleur passeur',provider.name,`${club(provider)} · ${n(provider.value)} passes`):''}</aside>`;
+// The views of a league's table, a choice in the head of its card: every match, at home, away, the last five of each club.
+// Only the whole table places the clubs; the others rank them without a colour.
+const TABLE_VIEWS=[['general','Général'],['domicile','Domicile'],['exterieur','Extérieur'],['derniers','5 derniers']];
+const tableViews=(id,shown)=>`<nav class="segmented small" aria-label="Vues du classement">${TABLE_VIEWS.map(([key,label])=>
+ `<a${key===shown?' class="active" aria-current="page"':''} href="#/league/${id}/table${key==='general'?'':`?vue=${key}`}">${label}</a>`).join('')}</nav>`;
+// Beside the table, the attacks and the defences of the view shown, side by side and as high; under them the scorers and
+// the providers of the season.
+function leagueLeaders(standings,scorers,assists){
+ const players=list=>list.items.slice(0,5).map(row=>({player_id:row.id,player:row.name,value:row.value}));
+ return clubBars('Attaques',standings.items,'goals_for','buts marqués')+clubBars('Défenses',standings.items,'goals_against','buts encaissés',{ascending:true})
+  +`<div class="league-players">${leaderBars('Buteurs',players(scorers),'value','buts',{soft:true})}${leaderBars('Passeurs',players(assists),'value','passes',{soft:true})}</div>`;
 }
 
 // Every round as a button, the shown one lit, with an arrow to each side.
@@ -149,13 +155,14 @@ async function leagueContent(league,section,params,lead){
  const id=league.id;section=section||'table';
  let content='';
  if(section==='table'){
-  const [data,scorers,assists]=await Promise.all([api(`/competitions/${id}/classement?${params}`),api(`/competitions/${id}/statistiques?type=buteurs`),api(`/competitions/${id}/statistiques?type=passeurs`)]);
-  content=`<div class="league-layout">${card('Classement général',standingsTable(data),europeLegend(data.items))}${leagueTiles(data,scorers,assists)}</div>`;
+  const view=TABLE_VIEWS.some(([key])=>key===params.get('vue'))?params.get('vue'):'general';
+  const [data,scorers,assists]=await Promise.all([api(`/competitions/${id}/classement?${query({vue:view==='general'?'':view})}`),api(`/competitions/${id}/statistiques?type=buteurs`),api(`/competitions/${id}/statistiques?type=passeurs`)]);
+  content=`<div class="league-layout">${card('Classement',standingsTable(data),`${view==='general'?europeLegend(data.items,true):''}${tableViews(id,view)}`,'league-table')}${leagueLeaders(data,scorers,assists)}</div>`;
  }
  else if(section==='calendar'){
   const [data,standings,scorers]=await Promise.all([api(`/competitions/${id}/calendrier?${params}`),api(`/competitions/${id}/classement`),api(`/competitions/${id}/statistiques?type=buteurs`)]);
   const day=data.items[0]?.date;
-  const matches=data.items.length?`<div class="fixture-grid">${data.items.map(match=>`<div class="fixture-card">${fixtures({items:[match]})}</div>`).join('')}</div>`:empty('Aucun match programmé pour cette journée.');
+  const matches=data.items.length?`<div class="fixture-grid">${data.items.map(match=>`<div class="fixture-card">${fixtures({items:[match]})}</div>`).join('')}</div>`:empty('Aucun match programmé');
   content=roundStepper(`#/league/${id}/calendar`,data)+`<div class="calendar-layout"><section class="calendar-matches"><h3 class="round-heading">Journée ${data.round}${day?` · ${date(day,true)}`:''}</h3>${matches}</section><div class="calendar-side">${card('Classement',standingsTable(standings,true),europeLegend(standings.items,true))}${card('Buteurs',table(['#','JOUEUR','CLUB','BUTS'],scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club),`<b>${n(row.value)}</b>`])))}</div></div>`;
  }
  else if(isRoundTab(section))content=roundContent(await api(`/competitions/${id}/${roundPath(section)}`),section);
