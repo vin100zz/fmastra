@@ -249,7 +249,7 @@ test('beside the list, the opponent: its standing and form, its tactic, its reco
  assert.match(html,/14e · 19 pts <span class="form"><i class="N">N<\/i>/);
  assert.match(html,/<span>Tactique<\/span><strong>3-5-2<\/strong>/);
  assert.match(html,/<span>À l’extérieur<\/span><strong>1 V · 3 N · 5 D<\/strong>/);
- assert.match(html,/<h3>Joueurs clés<\/h3>.*Bamba Dieng/);
+ assert.match(html,/<h3 class="section-title">Joueurs clés<\/h3>.*Bamba Dieng/);
  assert.match(html,/✚ 1 févr\.<\/span><a href="#\/player\/62">Théo Le Bris/);assert.match(html,/1 match<\/span><a href="#\/player\/63">Igor Silva/);
  assert.match(html,/href="#\/match\/40"><span>Journée 2 · Lorient – Lens<\/span><span class="club-match-score N"/);
  assert.equal(scoutingHtml(null),'');

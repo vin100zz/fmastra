@@ -8,7 +8,7 @@ const SCORERS=5;
 // The matches of a round, each on the line of a list (fixtureRow): the winner in bold, the match of the user's club (`own`)
 // washed. In a cup, `levels` names the division of each club at the two ends of its line.
 const matchRows=(matches,own,levels)=>{const wide=hasStorey(matches);return matches.map(match=>fixtureRow(match,{own,levels,wide})).join('');};
-const strip=round=>`<h3>${e(round.label)}${round.date?` · ${date(round.date)}`:''}</h3>`;
+const strip=round=>`<h3 class="section-title">${e(round.label)}${round.date?` · ${date(round.date)}`:''}</h3>`;
 
 // A division's latest or next round with the table it counts for and its leading scorers. Without such a round (before the
 // first one, after the last), the table and the scorers are asked for on their own.
@@ -23,7 +23,7 @@ async function division(id,next){
 function divisionCard(league,data,own){
  const played=Math.max(0,...data.standings.map(row=>row.played));
  const progress=played?`J${played}${league.rounds?` / ${league.rounds}`:''} `:'';
- const scorers=data.scorers.length?`<h3>Buteurs</h3>${table(['#','JOUEUR','CLUB','BUTS'],data.scorers.slice(0,SCORERS).map((row,index)=>[figure(index+1),`<span class="strong">${playerLink(row.id,row.name)}</span>`,clubLink(row.club),figure(`<b>${n(row.goals)}</b>`)]),undefined,undefined,undefined,['rank-column','','club-column','goals-column'])}`:'';
+ const scorers=data.scorers.length?`<h3 class="section-title">Buteurs</h3>${table(['#','JOUEUR','CLUB','BUTS'],data.scorers.slice(0,SCORERS).map((row,index)=>[figure(index+1),`<span class="strong">${playerLink(row.id,row.name)}</span>`,clubLink(row.club),figure(`<b>${n(row.goals)}</b>`)]),undefined,undefined,undefined,['rank-column','','club-column','goals-column'])}`:'';
  return card(league.name,`${data.round?strip(data.round):''}${matchRows(data.matches,own)}${standingsTable({items:data.standings},'figures',false,own)}${scorers}`,`<a href="#/league/${league.id}" aria-label="Voir le championnat">${progress}${GO}</a>`);
 }
 

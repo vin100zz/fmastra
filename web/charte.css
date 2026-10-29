@@ -161,7 +161,7 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .card,.stat-card{border-color:transparent;border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
 .card{margin-bottom:var(--s2)}
 .card-head{min-height:var(--h-head);padding:0 var(--s3)!important;gap:var(--s3);border-bottom-color:transparent!important}
-.card-head h2,.club-overview .card-head h2,.round-heading,.finance-journal>summary span{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-body)!important;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--strong)}
+.card-head h2,.club-overview .card-head h2,.round-heading,.finance-journal>summary span{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-body)!important;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink)}
 .card-head h2{text-box:trim-both cap alphabetic;translate:0 1px}
 .card-head a{font-size:var(--fs-small);font-weight:600}
 /* A card that folds what is secondary (foldCard): its whole head opens and closes it, a bare arrow at its end (the chevron of
@@ -174,9 +174,33 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .grid,.grid.equal,.club-overview,.match-layout,.match-center,.transfer-columns,.league-summaries,.stat-grid,.club-squad-layout,.club-widgets,.club-calendar,.finance-figures,.finance-row,.news,.news-widgets,.country,.intl-groups,.intl-split,.intl-rail,.stats-panels,.nations-split,.nations-side,.league-layout,.calendar-layout,.calendar-side,.fixture-grid,.stats-boards,.history-layout,.history-main,.history-archives,.honours,.honours-main,.honours-lists,.split,.side-inner,.player-page,.player-main,.player-row,.manual,.live-layout{gap:var(--s2)}
 .club-hero,.club-overview,.stat-grid,.match-replay-card,.finance-figures,.finance-row,.match-layout .card{margin-bottom:var(--s2)}
 .news-widgets .card{margin:0 0 var(--s2)}
-/* A section's title, in the titles' type and the ink, on a wash of the accent with a bar of it at its edge (the club's on
-   its page): across a card a band, in a column (below) a rounded band within the column's width. */
-.section-title,.country h3,.preview h3,.player-rail>h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-small);font-weight:700;letter-spacing:var(--caps);text-transform:uppercase;color:var(--ink)}
+/* A section's title, the same on every page (« Intertitre »): the titles' indigo on a wash of it that fades to white on
+   the right, from one edge of its card or column to the other, its text 12 inside like the rows it opens. No mark, no
+   rounded corner, neither the accent's yellow nor a club's colours. A count follows its label, muted (.section-tally), or
+   in the red badge (.count) when it calls for an action; an aside stands at its end. */
+:is(h3,div).section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);margin:0;padding:0 var(--s3);border:0;border-radius:0;background:linear-gradient(90deg,var(--title-wash) 35%,color-mix(in srgb,var(--title-wash) 12%,var(--panel)));box-shadow:none;font:700 semi-condensed var(--fs-small)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink);white-space:nowrap}
+.section-title>.label{display:flex;align-items:center;gap:var(--s2);font:inherit;letter-spacing:inherit;color:inherit}
+.section-title a{color:inherit}
+.section-tally{font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
+.section-title>.count{letter-spacing:0;text-transform:none}
+.section-title>.aside{margin-left:auto;font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
+/* A section's title that follows another section stands 12 below it (--s3): white closes the section above before its
+   band opens the next. At the head of a column, or under a card's head, nothing above it; under a card's body, its
+   padding gives part of the 12 (8). */
+:is(h3,div).section-title:not(:first-child,.card-head+*){margin-top:var(--s3)}
+:is(h3,div).section-title:is(.card-body+*){margin-top:var(--s1)}
+.attribute-group:not(:first-child)>.section-title:first-child{margin-top:var(--s3)}
+/* Sections side by side in a card (« Colonnes d'une carte »): columns 8 apart, no line between them, two rows of them 12
+   apart; in each, its title, its rows and their stripes reach the column's edges, their text 12 inside. */
+.sections{display:grid;grid-template-columns:repeat(var(--columns,2),minmax(0,1fr));gap:var(--s3) var(--s2);padding:0 0 var(--s2)}
+.sections>*{min-width:0}
+/* The application's groups side by side, as the charter's columns of a card: 8 apart, no line between them. */
+.card>.intl-groups{gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
+.round-groups,.day-groups{gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
+:is(.round-group,.day-group){border:0!important}
+.round-with-rail{column-gap:var(--s2)}
+.round-rail{border:0!important}
+.history-runs :is(th,td):first-child{padding-left:var(--s3)!important}
 .activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 
 /* Tables: 26 px headings and rows, 13 px cells, capitals at 11 px over them. */
@@ -186,6 +210,7 @@ td,.player-table td,.league-summary-grid td{height:var(--h-row);padding-top:0!im
 td{border-bottom-color:transparent!important}
 tfoot td,.career-card tr.total td{background:var(--panel-2)!important;border-top:1px solid var(--head-line)!important;font-weight:600;color:var(--strong)}
 .career-card .career-gap td{background:var(--bg)!important}
+.league-summary-grid{gap:var(--s3) var(--s2);padding:0 0 var(--s2)}
 .league-summary-grid table{font-size:var(--fs-body)}
 .manual-body td{height:auto;padding-top:4px!important;padding-bottom:4px!important}
 /* A cell of figures stays a cell: `.num` is also the figure set in a line of text, which is a block. */
@@ -322,8 +347,8 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .movement-kind{background:var(--panel-2);color:var(--ink-2)}
 .news-tag{background:var(--own-row);color:var(--accent-text)}
 .pill{padding:2px var(--s2);border:0;border-radius:var(--radius-chip);background:var(--good-soft);color:var(--good);font-size:var(--fs-small);font-weight:600}
-.nav-count,.market-count,.time-controls .advance-todo,.affinity-tag,.honours-live{border-radius:999px}
-.nav-count,.market-count{display:inline-grid;place-items:center;min-width:var(--h-chip);height:var(--h-chip);font:700 var(--fs-micro)/1 var(--text)}
+.nav-count,.time-controls .advance-todo,.affinity-tag,.honours-live{border-radius:999px}
+.nav-count{display:inline-grid;place-items:center;min-width:var(--h-chip);height:var(--h-chip);font:700 var(--fs-micro)/1 var(--text)}
 /* A club's name always follows its dot, a country's its flag. The dot is a square at a badge's radius: the ground of the
    club's band, its second colour in a corner. */
 .kit-dot{width:14px;height:14px;margin-right:6px;border-radius:var(--radius-chip);box-shadow:inset 0 0 0 1px #0000003d;vertical-align:-2px}
@@ -469,18 +494,16 @@ span.entity-step svg{opacity:.3}
 
 /* A player's page: under his header, a card of facts saying how he is, then what his contract holds; beside it his
    attributes and his positions, then his career and his level over time. Rows and strips of 26, as a table's. */
-.player-rail{margin-bottom:0}
-.player-rail>h3,.preview h3{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);border:0;background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
-/* No head: the first section's band opens the card, at its corners. */
-.player-rail>h3:first-child{border-radius:var(--radius-card) var(--radius-card) 0 0}
-.rail-section{padding:0 var(--s3)}
+.player-rail{gap:var(--s2);margin-bottom:0}
+.player-rail>.card{margin:0}
+.rail-section{padding:0 var(--s3) var(--s2)}
 .rail-section .fact{min-height:var(--h-row)}
 .gauge{width:40px}
 /* Attributes (docs/charte-graphique.md, « Attributs »): a column holds the longest name of its section and its badge, the
    composites' out of 200 more than the attributes'. Two columns in a preview, where the composites take one. On the page,
    no taller than its columns, whatever the height of the pitch beside it. */
 .attributes-grid{--attribute-column:140px}
-.composites-group .attributes-grid{--attribute-column:180px}
+.composites-group .attributes-grid{--attribute-column:204px}
 .preview .attributes-grid{grid-template-columns:repeat(auto-fill,minmax(max(var(--attribute-column),calc((100% - var(--s4))/2)),1fr))}
 .preview .attribute{height:var(--h-row)}
 .player-row>.attributes-card{align-self:start}
@@ -488,16 +511,14 @@ span.entity-step svg{opacity:.3}
 .player-main .level-card{align-self:start}
 .level-chart{flex:1;height:240px;min-height:0}
 .attributes-card .attribute{height:var(--h-row);margin:0;white-space:nowrap}
-.attribute-column>.section-title{display:flex;align-items:center;gap:var(--s2);height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
 /* Attributes in columns, on a player's page: the Jeu section, then one column per section, its strip on one band with the
    others' and a hairline between two columns, read like a table. The columns share the width, none narrower than its
    longest name and its badge (--attribute-column, inside its 12 on each side); they wrap when the card cannot hold them
    all. The attributes a goalkeeper makes no use of close the row, their names greyed. */
-.attribute-columns{display:flex;flex-wrap:wrap}
+.attribute-columns{display:flex;flex-wrap:wrap;column-gap:var(--s2);padding-bottom:var(--s2)}
 .attribute-column{--attribute-column:140px;flex:1 1 0;min-width:calc(var(--attribute-column) + 2*var(--s3))}
-.attribute-column.composites-column{--attribute-column:180px}
-.attribute-column+.attribute-column{border-left:1px solid var(--row-line)}
-.attribute-rows{padding:0 var(--s3)}
+.attribute-column.composites-column{--attribute-column:204px}
+.attribute-rows>.attribute{padding:0 var(--s3)}
 .others-column .attribute>span:first-child{color:var(--muted)}
 .career-card .competition{gap:var(--s1)}
 /* His level month after month: the line of a series, a dot in the club's colours where a season opens and on the latest
@@ -729,7 +750,6 @@ th.date-col{width:108px}
 th.rank-col{text-align:center}
 :is(.history-leaders,.history-best) td:first-child{text-align:center;color:var(--muted)}
 .history-record tfoot td{font-weight:600}
-.history-runs .section-title{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
 .history-scores svg.away{flex:none;width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
 /* A run in a cup, a chip of 18: the round reached, plain; a semi-final ringed in blue, a final in green, a title on the
    accent with its star. A title in a league reads the same: its rank on the accent. */
@@ -847,7 +867,7 @@ th button:hover{background:none}
 /* Small things the scales leave no room for. */
 b,strong{font-weight:700}
 small{font-size:var(--fs-small)}
-.position,.rating,.nav-count,.market-count,.news-ring b,.competition-code{letter-spacing:0}
+.position,.rating,.nav-count,.news-ring b,.competition-code{letter-spacing:0}
 /* A player list: each column as wide as what it holds at most, its heading or its longest value, the same on every
    screen; the player's name and a club's from 120 up to --w-name, then the gaps share what is left (« Tableaux »). */
 .player-table .position-column{width:36px}
@@ -899,7 +919,6 @@ a.club-hero-band:is(:hover,:focus-visible){box-shadow:inset 0 0 0 100vmax var(--
 .selection-competition .card-body{padding:var(--s1) var(--s3)}
 .selection-competition .fact{min-height:var(--h-row);padding:0}
 .selection-competition .fact:last-child{border-bottom:0}
-.card>.section-title{display:flex;align-items:center;height:var(--h-row);margin:0;padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
 .nations-table .force{justify-content:flex-end}
 .nations-table :is(th,td):nth-child(n+3):nth-child(-n+6),.titles-table :is(th,td):not(:first-child){text-align:right}
 .finals-table :is(th,td):nth-child(3){text-align:center}
@@ -1117,22 +1136,6 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .table-scroll tfoot td{position:sticky;bottom:0;z-index:1}
 .legend i{border-radius:var(--radius-chip)}
 .comparison-bar>i:only-child{border-radius:4px}
-/* A section's title in a column: a band of 26 within the column's width, rounded, its text 10 from the edge. Drawn under
-   the title, the band reaches into the margins above and under it: nothing around it moves. */
-:is(.section-title,.country h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title){position:relative;isolation:isolate;padding-left:10px!important}
-:is(.section-title,.country h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title)::before{content:"";position:absolute;inset:-6px 0 -4px;z-index:-1;border-radius:var(--radius);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
-/* A section's title that follows another section stands 12 below it (--s3): white closes the section above before its
-   band opens the next. At the head of a card or of a column, or under a card's head, nothing above it. A band across a
-   card is the title's own box; a rounded band reaches 6 above its title, which stands as much lower. */
-:is(.card>.section-title,.player-rail>h3,.preview h3,.history-runs .section-title):not(:first-child,.card-head+*),.preview .composites-group>h3{margin-top:var(--s3)}
-:is(.section-title,.country h3,.round-group h3,.day-group h3,.round-rail h3,.league-summary-grid h3,.club-overview h3,.news-widgets h3,.market-card h3,.market-column h3,.scout-card h3,.lineup-field>h3):not(.player-rail>h3,.attribute-column>.section-title,.history-runs .section-title,.card>.section-title):not(:first-child){margin-top:calc(var(--s3) + 6px)}
-/* In a body whose gap already makes the 12, the title only stands lower by the reach of its band; in a grid of sections,
-   the rows stand as far apart as the 12 and that reach. */
-.scout-card .card-body>h3:not(:first-child){margin-top:6px}
-.news-leaders{row-gap:calc(var(--s3) + 6px)}
-/* Under a card's body, its padding gives part of the 12 (8, 4 under a competition's band). */
-.card>.card-body+.section-title{margin-top:var(--s1)}
-.selection-competition>.card-body+.section-title{margin-top:var(--s2)}
 /* What leads on — « Voir », « Continuer », the next page — ends on a chevron, drawn and not a character, in the colour of
    what carries it and centred on its place; on the main action, in a disc of its ink. Back, the same turned over. */
 .go{position:relative;display:inline-block;flex:none;width:.625em;height:1em;vertical-align:-.15em}
@@ -1183,8 +1186,6 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .live-team-pick{padding:var(--s2) var(--s3)}
 .live-team-pick .segmented>button{gap:6px}
 .live-tactic .card-body{padding-top:0}
-.live-squad .section-title{display:flex;align-items:center;padding-right:var(--s3)}
-.section-title .count-left{margin-left:auto;font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
 /* The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the tile before the score. */
 .match-hero.live .club-hero-band{min-height:64px}
 .match-hero.live .club-hero-main{gap:var(--s4)}
@@ -1295,7 +1296,7 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .live-stats .comparison-bar>i{transition:flex-grow .8s cubic-bezier(.2,.8,.2,1)}
 .live-stats .comparison>span{border-radius:var(--radius-chip)}
 .live-stats .comparison>span.bump{animation:figure-bump 1.2s ease-out}
-@keyframes figure-bump{from{background:var(--title-wash);color:var(--accent-text)}}
+@keyframes figure-bump{from{background:var(--own-row);color:var(--accent-text)}}
 /* The day's matches, the user's first, then the table as it stands, which scrolls in its card. */
 .live-games{padding-bottom:var(--s2)}
 .live-game{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}

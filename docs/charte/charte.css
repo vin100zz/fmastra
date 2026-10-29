@@ -3,9 +3,11 @@
    replace screen by screen. Its boards, docs/charte/index.html, draw every token and component with it. */
 :root{
  /* Surfaces and lines: white panels on a pale ground; a line under a table's heading, none between its rows, one row in two
-    on a band. The track of a choice, the ground of an option under the pointer there, the wash of a section's title. */
+    on a band. The track of a choice, the ground of an option under the pointer there. */
  --bg:#f0f2f5;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--stripe:#f5f7f9;--line:#d6dce4;--row-line:#edf0f3;--head-line:#e2e6eb;
- --track:#e9ecf1;--track-hover:#ffffffa6;--title-wash:#fcf1c9;
+ --track:#e9ecf1;--track-hover:#ffffffa6;
+ /* Titles: the indigo ink of a card's title and of a section's, the wash of a section's title. The same on every page. */
+ --title-ink:#262a6b;--title-wash:#e2e3f6;
  /* Inks. */
  --strong:#0b121a;--ink:#16202b;--ink-2:#34404e;--muted:#5d6a79;
  /* Accent: one yellow, the same under the pointer, the ink written on it, its form as text on white, its wash under a picked row. */
@@ -205,22 +207,31 @@
    shadow under the card draws it down, accents weigh on top. */
 .card{display:flex;flex-direction:column;min-width:0;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);overflow:hidden}
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex:none;height:var(--h-head);padding:0 var(--s3)}
-.card-head h2{font:600 semi-condensed var(--fs-body)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--strong);white-space:nowrap;text-box:trim-both cap alphabetic;translate:0 1px}
+.card-head h2{font:600 semi-condensed var(--fs-body)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink);white-space:nowrap;text-box:trim-both cap alphabetic;translate:0 1px}
 .card-head>a{font-size:var(--fs-small);font-weight:600;color:var(--muted)}
 .card-tools{display:flex;align-items:center;gap:var(--s2)}
 .card-body{padding:var(--s2) var(--s3)}
 .card>.tabs{padding:0 var(--s2);border-bottom:0}
-/* A section's title, on a wash of the accent with a bar of it at its edge, in the titles' type and the ink: the club's on its
-   page (--club-wash, --club). Across a card, a band; in a column (.inset), rounded, within the column's width. */
-.section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);padding:0 var(--s3);background:var(--club-wash,var(--title-wash));box-shadow:inset var(--mark) 0 0 var(--club,var(--accent))}
-.section-title>.label{font-family:var(--display);font-stretch:semi-condensed;font-weight:700;color:var(--ink)}
-.section-title.inset{padding:0 10px;border-radius:var(--radius)}
+/* A section's title, the same on every page: the titles' indigo on a wash of it that fades to white on the right (full
+   over a third, 12 % at the end), from one edge of its card or column to the other, its text 12 inside like the rows it
+   opens. No mark, no rounded corner, neither the accent's yellow (the club managed, the main action) nor a club's colours.
+   A count follows its label, muted (.section-tally), or in the red badge (.count) when it calls for an action; an aside
+   stands at its end. */
+.section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);margin:0;padding:0 var(--s3);background:linear-gradient(90deg,var(--title-wash) 35%,color-mix(in srgb,var(--title-wash) 12%,var(--panel)));font:700 semi-condensed var(--fs-small)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink);white-space:nowrap}
+.section-title>.label{display:flex;align-items:center;gap:var(--s2);font:inherit;letter-spacing:inherit;color:inherit}
+.section-tally{font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
+.section-title>.count{letter-spacing:0;text-transform:none}
 /* A section's title that follows another section stands 12 below it: white closes the section above before its band
-   opens the next. At the head of a card or of a column, or under a card's head, nothing above it; in a stack, its gap
-   makes 8 of the 12, under a card's body its padding. A card made of sections has no head: the first band opens it, at
-   its corners. */
+   opens the next. At the head of a column, or under a card's head, nothing above it; in a stack, its gap makes 8 of the
+   12, under a card's body its padding. A card never opens on a section's title: it has its head. */
 .section-title:not(:first-child,.card-head+*){margin-top:var(--s3)}
 .stack>.section-title:not(:first-child),.card-body+.section-title{margin-top:var(--s1)}
+/* Sections side by side in a card (« Colonnes d'une carte »): columns 8 apart, no line between them, two rows of them 12
+   apart. In each, its title, its rows and their stripes reach the column's edges, their text 12 inside: two titles side
+   by side never touch. */
+.sections{display:grid;grid-template-columns:repeat(var(--columns,2),minmax(0,1fr));gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
+.sections>*{min-width:0}
+.sections :is(.fact,.list-row){padding:0 var(--s3)}
 /* A card that folds what is secondary: its whole head opens and closes it, a bare arrow at its end (the chevron of an icon,
    in the muted ink), turned over while it is open. Folded, what is secondary (.fold-more) takes no room. */
 .card-head.toggle{cursor:pointer}
@@ -386,20 +397,18 @@
    A column holds the longest name of its section and its badge, the composites' out of 200 more than the attributes': a
    grid has as many as leave them that room, down to one. */
 .attributes-grid{--attribute-column:140px;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--attribute-column),1fr));column-gap:var(--s4);padding:0 var(--s3)}
-.composites-group .attributes-grid{--attribute-column:180px}
+.composites-group .attributes-grid{--attribute-column:204px}
 .attribute{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);height:var(--h-row);white-space:nowrap}
 .attribute.key>span:first-child{font-weight:700}
 .attribute.key>span:first-child::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:middle}
-/* Attributes in columns, on a player's page: the Jeu section, then one column per section, its strip on one band with the
-   others' and a hairline between two columns, read like a table. The columns share the width, none narrower than its
+/* Attributes in columns, on a player's page: the Jeu section, then one column per section under its title, 8 apart as
+   every column of a card, its rows from one edge of it to the other. The columns share the width, none narrower than its
    longest name and its badge (--attribute-column, inside its 12 on each side); they wrap when the card cannot hold them
    all. The attributes a goalkeeper makes no use of close the row, their names greyed. */
-.attribute-columns{display:flex;flex-wrap:wrap}
+.attribute-columns{display:flex;flex-wrap:wrap;column-gap:var(--s2);padding-bottom:var(--s2)}
 .attribute-column{--attribute-column:140px;flex:1 1 0;min-width:calc(var(--attribute-column) + 2*var(--s3))}
-.attribute-column.composites-column{--attribute-column:180px}
-.attribute-column+.attribute-column{border-left:1px solid var(--row-line)}
-.attribute-column>.section-title{border-top:0}
-.attribute-rows{padding:0 var(--s3)}
+.attribute-column.composites-column{--attribute-column:204px}
+.attribute-rows>.attribute{padding:0 var(--s3)}
 .others-column .attribute>span:first-child{color:var(--muted)}
 
 /* Badges: 18 px. Three families that never look alike: a position is a solid colour with white letters, a note a pale
@@ -1005,7 +1014,7 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .career-body{display:grid;grid-template-rows:minmax(0,max-content) auto minmax(0,max-content);flex:0 1 auto;min-height:0}
 .career-gap{height:var(--s3);border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}
 /* The rows of a section in a card made of sections (a player's column): 12 from the edges, flush with their band. */
-.rail-section{padding:0 var(--s3)}
+.rail-section{padding:0 var(--s3) var(--s2)}
 
 /* Live match (« Match en direct »). The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the
    tile 12 before the score, on the accent during a chance, grey while the clock runs. */
@@ -1049,7 +1058,9 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .advice{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--radius-chip);background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 .advice.in{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.section-title>.aside{margin-left:auto;font:600 var(--fs-small)/1 var(--text);color:var(--muted)}
+.section-title>.aside{margin-left:auto;font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
+/* The squad's card opens on the choice of a side. */
+.live-team-pick{padding:var(--s2) var(--s3)}
 /* A goal on a line of 26 with the score it made, the figure of the side that scored in bold, its minute by the ball. */
 .goal-row{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
 .goal-row:nth-child(even){background:var(--stripe)}
@@ -1057,8 +1068,8 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .goal-row>.highlight.away{flex-direction:row;justify-content:flex-start}
 .goal-row>.fixture-score{min-width:56px;text-align:center;color:var(--ink-2)}
 .goal-row.flash{background:var(--own-row)}
-/* Live, a figure that has just changed: the wash of a section's title, the accent's ink. */
-.comparison>span.bump{border-radius:var(--radius-chip);background:var(--title-wash);color:var(--accent-text)}
+/* Live, a figure that has just changed: the wash of the club managed, the accent's ink. */
+.comparison>span.bump{border-radius:var(--radius-chip);background:var(--own-row);color:var(--accent-text)}
 /* The goal: the scorer's colours across the pitch, ringed with his second colour; BUT in --fs-goal, his shirt of 48 and his
    name in 40, the passer under it. A mockup shows it at rest: the screen stamps the letters and passes a light on them. */
 .goal-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e8c}

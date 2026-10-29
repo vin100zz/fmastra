@@ -50,7 +50,7 @@ la structure HTML des spécimens.
 | `--row-line` | Trait entre deux colonnes (attributs, tuile à colonnes), dans un menu |
 | `--head-line` | Sous l'en-tête d'un tableau |
 | `--track`, `--track-hover` | La piste d'un choix ; une option sous le pointeur, sur elle |
-| `--title-wash` | Le bandeau d'un intertitre |
+| `--title-ink`, `--title-wash` | L'indigo des titres : l'encre du titre d'une carte et d'un intertitre ; le lavis du bandeau d'un intertitre. Le même sur toutes les pages, celle d'un club comprise |
 | `--strong`, `--ink`, `--ink-2`, `--muted` | Encres, de la plus forte au libellé atténué |
 | `--accent`, `--accent-ink` | Le jaune de l'application et l'encre écrite dessus : action principale, marque de ce qui est ouvert |
 | `--accent-hover` | L'action principale sous le pointeur |
@@ -92,11 +92,11 @@ capitales ; `--text` (Segoe UI) pour tout le reste.
 | `--fs-title` | 20 / 24 | 700 | Chiffre clé, date du jour, ce qui suit un nom dans son bandeau |
 | `--fs-figure` | 16 / 20 | 700 | Action principale, délai, saison montrée par son pas |
 | `--fs-figure` | 16 / 20 | 400 | Saisie de la recherche globale |
-| `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`, `--strong`) |
+| `--fs-body` | 13 / 16 | 600 | Titre de carte (capitales, `--display`, `--title-ink`) |
 | `--fs-body` | 13 / 18 | 400, 600 | Texte, cellule, onglet, bouton |
 | `--fs-body` | 13 / 13 | 700 | Numéro sur un maillot |
 | `--fs-small` | 11 / 14 | 400, 600 | En-tête de colonne, libellé, légende |
-| `--fs-small` | 11 / 14 | 700 | Intertitre (capitales, `--display`, `--ink`) |
+| `--fs-small` | 11 / 14 | 700 | Intertitre (capitales, `--display`, `--title-ink`) |
 | `--fs-micro` | 10 / 10 | 700 | Pastille, poste sur un maillot |
 | `--fs-goal` | 120 / 120 | 700 | Le mot « BUT » sur la bande d'un but, au direct : la seule taille hors de l'échelle |
 
@@ -107,11 +107,11 @@ espacées (`--caps`, 0.06 em). Les chiffres sont tabulaires.
 
 | | Valeurs |
 |---|---|
-| Espacements | 4, 8, 12, 16, 24 (`--s1` à `--s6`) : 8 entre deux cartes, 8 et 12 dans une carte, 12 au-dessus d'un intertitre qui suit une section, marges de page 8, 16, 12 |
+| Espacements | 4, 8, 12, 16, 24 (`--s1` à `--s6`) : 8 entre deux cartes et entre deux colonnes d'une carte, 8 et 12 dans une carte, 12 au-dessus d'un intertitre qui suit une section, marges de page 8, 16, 12 |
 | Hauteurs | Barre du haut 56, ce qui s'y tient 40 (`--h-bar-control`) · onglets 36 · titre de carte 32 · contrôle 28, 22 dans une carte ou une ligne · choix d'une vue : piste 28 et options 24, piste 26 et options 22 dans l'en-tête d'une carte · ligne et en-tête de tableau, intertitre 26 · pastille 18 |
 | Largeurs | Le nom d'un tableau, 200 au plus (`--w-name`) : il prend la largeur de son plus long, puis ce qui reste se partage entre les écarts des colonnes. Voir « Tableaux » |
-| Formes | Quatre rayons : 4 pour une pastille, le point d'un club, une case (`--radius-chip`) ; 6 pour un contrôle, une option, un intertitre (`--radius`) ; 8 pour ce qui en tient d'autres, piste d'un choix, menu, tuile, terrain (`--radius-box`) ; 10 pour une carte et un bandeau (`--radius-card`). Ou rond (points, écussons) |
-| Traits | Peu : une carte, un bouton, un champ, un menu n'ont pas de bordure ; un tableau a un trait sous son en-tête, aucun entre ses lignes. Ce qui est ouvert porte l'accent : 3 sur la barre, sous l'onglet ouvert en trait aux bouts arrondis, au bord d'un intertitre (`--mark`) ; 2 sous le prochain match, sous un pas de saison ouvert (`--mark-control`) ; l'option ouverte d'un choix en est remplie |
+| Formes | Quatre rayons : 4 pour une pastille, le point d'un club, une case (`--radius-chip`) ; 6 pour un contrôle, une option (`--radius`) ; 8 pour ce qui en tient d'autres, piste d'un choix, menu, tuile, terrain (`--radius-box`) ; 10 pour une carte et un bandeau (`--radius-card`). Ou rond (points, écussons) |
+| Traits | Peu : une carte, un bouton, un champ, un menu n'ont pas de bordure ; un tableau a un trait sous son en-tête, aucun entre ses lignes. Ce qui est ouvert porte l'accent : 3 sur la barre, sous l'onglet ouvert en trait aux bouts arrondis (`--mark`) ; 2 sous le prochain match, sous un pas de saison ouvert (`--mark-control`) ; l'option ouverte d'un choix en est remplie |
 | Profondeur | Une ombre plutôt qu'une bordure : une carte sur le fond (`--shadow-card`), un bouton ou un champ sur sa carte (`--shadow-field`), un menu au-dessus de la page (`--shadow-float`), l'option ouverte sur sa piste (`--shadow-thumb`), l'action principale éclairée d'en haut (`--shadow-accent`) |
 | Défilement | La page garde à droite la place de sa barre de défilement sur tous les écrans, qu'elle défile ou non : rien ne se décale d'un écran court à un écran long. Sur un grand écran, une page faite pour tenir sur un écran (la fiche d'un joueur) s'arrête au bas de la fenêtre : ce qui s'allonge défile dans sa carte (voir « Fiche d'un joueur »). Le match en direct n'a pas de barre de défilement du tout, ni sa place : tout tient dans la fenêtre, et ce qui s'allonge défile dans sa carte (voir « Match en direct ») |
 
@@ -164,13 +164,14 @@ où le fond est déjà jaune.
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
 | Compétition des sélections en colonne | `.hero.narrow` | Son bandeau en tête de sa colonne, sur Sélections nationales : il ouvre sa page. Voir « Compétitions des sélections » |
 | Finale, parcours d'une nation | `.final-score`, `.run` | Une finale du côté de son vainqueur ; le parcours d'une nation, une colonne par édition. Voir « Finales et parcours » |
-| Carte | `.card`, `.card-head`, `.card-body` | Blanche, sans bordure, posée sur le fond par une ombre (`--shadow-card`), aux coins de 10. En-tête de 32 sans trait dessous : le titre en capitales à l'encre forte, sa boîte arrêtée à ses capitales, qui se centrent ainsi dans l'en-tête, un pixel plus bas pour l'œil (l'ombre de la carte l'allonge vers le bas, les accents chargent le haut) ; lien ou commandes à droite |
-| Intertitre | `.section-title`, `.section-title.inset` | Le titre d'une section : capitales de 11 dans la police des titres, en 700, à l'encre, sur un bandeau de 26 lavé de jaune (`--title-wash`), un trait de l'accent (3) à son bord gauche ; dans les couleurs du club sur sa page. Sur toute la largeur d'une carte, un bandeau ; dans une colonne (`.inset`), aux coins de 6, dans la largeur de la colonne, son texte à 10 du bord. Ainsi, il ne se confond pas avec un en-tête de colonne. Il se tient à 12 sous ce qui le précède (`--s3`) : un blanc ferme la section d'avant avant que son bandeau n'ouvre la sienne ; en tête d'une carte ou d'une colonne, ou sous l'en-tête d'une carte, rien au-dessus. Une carte faite de sections n'a pas d'en-tête : le bandeau de la première l'ouvre, à ses coins (la colonne d'un joueur) |
+| Carte | `.card`, `.card-head`, `.card-body` | Blanche, sans bordure, posée sur le fond par une ombre (`--shadow-card`), aux coins de 10. Toute carte a son en-tête, ou ce qui en tient lieu (le bandeau d'une compétition, l'en-tête d'un message) : un bloc a toujours un titre, et ne s'ouvre jamais sur un intertitre. En-tête de 32 sans trait dessous : le titre en capitales à l'encre indigo des titres (`--title-ink`), sa boîte arrêtée à ses capitales, qui se centrent ainsi dans l'en-tête, un pixel plus bas pour l'œil (l'ombre de la carte l'allonge vers le bas, les accents chargent le haut) ; lien ou commandes à droite |
+| Intertitre | `.section-title`, `.section-tally`, `.count`, `.aside` | Le titre d'une section, le même partout : capitales de 11 dans la police des titres, en 700, à l'encre indigo des titres (`--title-ink`), sur un bandeau de 26 lavé d'indigo (`--title-wash`) qui s'éclaircit vers la droite jusqu'au blanc (le lavis plein sur un tiers, puis 12 % au bout). Ni trait, ni coins arrondis, ni jaune (il est au club dirigé et à l'action), ni couleur du club : il ne change pas d'une page à l'autre. Le bandeau va d'un bord à l'autre de sa carte ou de sa colonne, son texte à 12, comme les lignes qu'il ouvre. Un compte suit le libellé à 8, en chiffres atténués (`.section-tally`), en pastille rouge s'il appelle une action (`.count`) ; une précision se met au bout (`.aside`). Il se tient à 12 sous ce qui le précède (`--s3`) : un blanc ferme la section d'avant avant que son bandeau n'ouvre la sienne ; sous l'en-tête d'une carte ou en tête d'une colonne, rien au-dessus. Ainsi, il ne se confond ni avec un en-tête de colonne, ni avec la ligne du club dirigé |
+| Colonnes d'une carte | `.sections` | Des sections côte à côte dans une carte : des colonnes à 8 l'une de l'autre (`--s2`), sans trait entre elles, deux rangées à 12 (`--s3`). Dans chaque colonne, l'intertitre, les lignes et leurs bandes vont d'un bord à l'autre, leur texte à 12 : deux intertitres voisins ne se touchent pas |
 | Carte repliable | `.card.fold`, `.card-head.toggle`, `.toggle-arrow`, `.fold-more` | L'en-tête entier montre ou cache ce qui est secondaire. Voir « Carte repliable » |
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile n'a pas de bordure : grise dans une carte, blanche et en relief sur un bandeau, blanche et posée comme une carte dans une rangée (`.tiles.row`). Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau. Sur un bandeau et dans une rangée de tuiles, le contenu de chaque tuile est centré horizontalement, celui de chaque colonne dans la sienne |
-| Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Dans une section, les attributs suivent l'ordre alphabétique de leurs noms ; les composites, l'ordre des phases du jeu. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 180 pour les composites sur 200) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
-| Attributs en colonnes | `.attribute-columns`, `.attribute-column`, `.composites-column`, `.others-column`, `.attribute-rows` | Sur la fiche d'un joueur, une colonne par section, Jeu en tête : son bandeau `.section-title` sans trait au-dessus, les bandeaux formant une seule bande, un trait `--row-line` entre deux colonnes, ses lignes à 12 des bords. Les colonnes se partagent la largeur, aucune plus étroite que `--attribute-column` et ses marges ; la dernière passe à la ligne quand la carte ne les tient pas. La carte s'arrête à sa plus longue colonne. Ce que le poste n'emploie pas (`.others-column`) ferme la rangée, ses noms en `--muted`, ses pastilles neutres |
+| Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Dans une section, les attributs suivent l'ordre alphabétique de leurs noms ; les composites, l'ordre des phases du jeu. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 204 pour les composites et leurs étoiles) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
+| Attributs en colonnes | `.attribute-columns`, `.attribute-column`, `.composites-column`, `.others-column`, `.attribute-rows` | Sur la fiche d'un joueur, une colonne par section, Jeu en tête : son intertitre `.section-title` sous l'en-tête de la carte, les colonnes à 8 l'une de l'autre comme toutes les colonnes d'une carte (voir « Colonnes d'une carte »), ses lignes d'un bord à l'autre de la colonne, leur texte à 12. Les colonnes se partagent la largeur, aucune plus étroite que `--attribute-column` et ses marges ; la dernière passe à la ligne quand la carte ne les tient pas. La carte s'arrête à sa plus longue colonne. Ce que le poste n'emploie pas (`.others-column`) ferme la rangée, ses noms en `--muted`, ses pastilles neutres |
 | Étoiles | `.stars`, `.stars.big` | Niveau, potentiel, composite, note au poste, installations d'un club : cinq étoiles, demi-étoiles comprises, la fourchette d'une estimation en ardoise. Voir « Étoiles » |
 | Affinité à un poste | `.fit` | Un disque rempli à sa part de 20, à la couleur de son palier. Voir « Étoiles » |
 | Trait d'un club | `.trait`, `.poles` | Un mot et son cran, de cinq, entre deux pôles. Voir « Étoiles » |
@@ -540,8 +541,9 @@ compétition prend les couleurs de son bandeau pour toute la page (`.club-page`)
   côté de la page.
 - **Ce qui est ouvert** : l'option ouverte d'un choix est remplie de la couleur
   du bandeau (`--club-fill`), écrite de son encre (`--club-ink`). L'onglet
-  ouvert, le trait et le lavis d'un intertitre prennent la couleur du club qui
-  se lit sur un panneau (`--club`, `--club-wash` à 10 %).
+  ouvert prend la couleur du club qui se lit sur un panneau (`--club`), la
+  saison montrée d'un mercato son lavis (`--club-wash` à 10 %). Les titres
+  (d'une carte, d'une section) restent indigo : ils sont les mêmes partout.
 - **Ailleurs**, et pour un club sans couleurs, l'accent. L'action principale et
   l'entrée ouverte du menu restent jaunes : elles sont celles du jeu, pas de la
   page.
@@ -623,10 +625,9 @@ neutre, sans écusson.
 Sous l'en-tête, la colonne à gauche (280), puis attributs et carrière, enfin
 aptitudes et courbe du niveau (voir `docs/ui.md`, « Joueur »).
 
-- **Colonne** (`.player-rail`) : une carte faite de sections, sans en-tête :
-  État, Caractère, Contrat, chacune sous son intertitre, le premier à ses coins,
-  les suivants à 12 de la section d'avant. Elle s'arrête à son dernier fait,
-  quelle que soit la hauteur de la page.
+- **Colonne** (`.player-rail`) : trois cartes l'une sous l'autre, à 8 :
+  État, Caractère, Contrat, chacune sous son en-tête. Elle s'arrête à son
+  dernier fait, quelle que soit la hauteur de la page.
 - **Tenir dans la fenêtre** : à partir de 1728 de large et 860 de haut, la page
   s'arrête au bas de la fenêtre, sans défiler. Les aptitudes gardent leur
   terrain de 280 ; la courbe prend ce qu'il laisse dessous. La carrière vient
@@ -858,15 +859,15 @@ ou 600 de haut, la page défile.
   l'adversaire ne se lit pas.
 - **Tactique** : sous l'équipe, la formation et la mentalité, « Modifier » à
   droite.
-- **Temps forts** : une carte faite de deux sections. « Buts » : une ligne de
+- **Temps forts** : une carte sous son en-tête, faite de deux sections. « Buts » : une ligne de
   26 par but (`.goal-row`), le score qu'il fait au milieu (`.fixture-score`,
   56), le chiffre du camp qui marque en gras ; le buteur et son passeur, le
   ballon et la minute du côté du score. Puis « Cartons, blessures, penaltys » :
   les lignes du compte rendu, cartons jaunes compris. Un but qui vient d'être
   montré lave sa ligne de `--own-row`, un instant.
 - **Le match en chiffres** : chaque part glisse vers sa nouvelle valeur (0.8 s)
-  et le chiffre qui change passe un instant sur le lavis de l'intertitre, à
-  l'encre de l'accent.
+  et le chiffre qui change passe un instant sur le lavis du club dirigé
+  (`--own-row`), à l'encre de l'accent.
 - **Journée** : le match du joueur en tête, sur `--own-row`, puis les autres ;
   un score qui change s'allume. Le classement tel qu'il serait à la minute
   montrée, son en-tête fixé, ouvert sur la ligne du club ; devant le club, les
@@ -1840,7 +1841,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pas de saison | `.season` partout où une saison ou une édition se choisit (`steps`, `seasonSteps`, `web/ui.js`) : flèches à la couleur du club (`--club`, depuis `--hero-accent`), saison en chiffre clé qui ouvre la liste de toutes (`seasons`, `current_season` de l'API). Au bout de la rangée d'onglets sur Calendrier, Finances et Transferts d'un club, sur Calendrier d'une sélection, sur le tableau d'une coupe nationale et sur une coupe d'Europe (`tools` de `clubHero`, `nationHero` et `competitionHero`), au bout de la ligne du titre sur Mercato mondial, dans l'en-tête de la carte du classement archivé d'un championnat. Ni liste déroulante, ni rangée d'éditions, ni classements repliés. La couleur sous l'onglet ouvert est ramenée à son ton de graphique quand elle se lirait mal (`legibleOn`) |
 | Compte rendu d'un match | Tout sur un écran : le bandeau sans barre, la ligne du match (`.match-line`) au-dessus des temps forts avec « Match aller » et « Résumé 2D », plus de capacité du stade (ni à l'écran, ni dans `match_detail`) ; le terrain raccourci à 68 × 76 (`.pitch.short`, `pitch`, `web/ui.js`) ; le banc sous son terrain en deux colonnes de noms courts (`benchHalves`, `web/match.js` ; `.halves`, `web/charte.css`). Le bandeau partagé (`matchHero`, `web/club-hero.js`) à la place de la bannière du score ; les compositions sans titre, les temps forts et les chiffres sans ligne qui nomme les camps, les temps forts de chaque camp à son bord ; une sélection y porte son maillot (`match_detail`). Les temps forts sur une ligne de 26 chacun, sans libellé : les marques, le nom court du joueur, le passeur en petit (`highlightsCard`, `web/match.js` ; `short_names`, `src/api/views.py`, aussi au direct) |
 | Noms courts | Le nom de famille, et l'initiale ou les lettres du prénom devant un homonyme de l'effectif (`short_names`, `squad_short_names`, `src/api/views.py` ; `shortName`, `web/ui.js`) : temps forts, buteurs sous un match, terrain du compte rendu, résumé 2D, composition, direct |
-| Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne en sections sous leurs intertitres, État compris, sans en-tête de carte, à la hauteur de ses faits (`rail`), ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU, CM et LN pour une édition), en deux tableaux alignés qui défilent, en-tête et total visibles (`careerCard` ; `.aligned`, `web/columns.js`) ; la courbe du niveau en `--series-1` ; la page tenue dans la fenêtre sur grand écran, le terrain des aptitudes à 280 |
+| Fiche d'un joueur | L'en-tête de son club (`playerHero`, `web/club-hero.js`) : son nom et son club, ses tuiles, sa sélection en trois colonnes ; ses commandes dans la barre sous le bandeau (`playerBar`, `web/player.js`) ; la colonne en trois cartes, État, Caractère et Contrat, chacune sous son en-tête, à la hauteur de ses faits (`rail`), ses autres nationalités en drapeau et code ; lignes et bandeaux de 26, jauges de 40 ; la carrière en pastilles de compétition (`competition_badges`, EU, CM et LN pour une édition), en deux tableaux alignés qui défilent, en-tête et total visibles (`careerCard` ; `.aligned`, `web/columns.js`) ; la courbe du niveau en `--series-1` ; la page tenue dans la fenêtre sur grand écran, le terrain des aptitudes à 280 |
 | Marque et barre du haut | Le terrain en favicon (`web/favicon.svg`) ; en tête du menu, le coin jaune, la marque inversée et le nom « Football Manager » sur deux lignes (`web/index.html`) ; la barre de 56 ouverte par l'écharpe, ses contrôles de 40 (`web/charte.css`) ; le nom dans le titre de l'onglet et sur les panneaux du direct 3D. Les écrans qui tiennent dans la fenêtre (Composition, Actualités, manuel, palmarès) suivent `--h-bar` |
 | En-tête d'une compétition | Le bandeau d'un club (`competitionHero`, `web/club-hero.js`) sur un championnat, une coupe nationale, une coupe d'Europe et une édition des sélections, à la place de la ligne du titre : l'emblème seul sur le bandeau (`web/emblems/`) ou le drapeau du pays sur le disque, une tuile pour le vainqueur ou le tenant du titre (`winner`, `holder` de l'API) à la place de la ligne « Vainqueur » sous les onglets ; ses couleurs et son fond (`COMPETITION_COLORS`, `api/nations.py`). Le bloc de navigation du bandeau remplace le choix C1, C3, C4 de Coupes d'Europe et le pas d'édition des sélections (`europeNavigation`, `editionNavigation`, `web/navigation.js`) ; dans sa liste, une compétition suit sa pastille |
 | Navigation d'un bandeau | `.entity-nav` à gauche du bandeau d'un club, d'une sélection, d'un joueur et d'une compétition (`neighbours`, `web/navigation.js`) : le pas de saison en colonne, à la place du bloc de trois boutons bordés. Ses flèches et ses traits à la seconde couleur du bandeau quand elle s'y lit, sinon à son encre, et le voile sous le pointeur (`--hero-step`, `--hero-veil`, `heroColors`, `web/club-hero.js`). Sa liste est le menu de la charte, sans titre ; le compte du groupe est l'infobulle des trois traits |
@@ -1859,6 +1860,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Niveau au fil des mois | 240 de haut, 20 points d'ordonnée au moins (`levelChart`, `web/player.js`) |
 | Liste de joueurs | Cadenas d'un intransférable dans « Listé » (`LOCKED`, `web/ui.js`), le prix minimum en tiret |
 | Liens des pastilles et des drapeaux | La pastille d'une compétition mène à sa page, le drapeau d'un pays à sa sélection, sur tous les écrans (`competitionBadge`, `competitionHref`, `nationFlag`, `nationBadge`, `nationHref`, `web/ui.js`) : le drapeau d'un club dans une coupe d'Europe (`clubLink`, option `flag`), la nationalité d'une liste de joueurs, la tuile de sélection d'un joueur jamais appelé (`selectionTile`, `web/club-hero.js`), la carrière d'un joueur, le calendrier d'un club ou d'une sélection, la ligne d'un match. L'option `link` les garde sans lien dans un filtre et dans ce qui est déjà un lien. L'API donne la sélection de chaque pays (`selection_id` de `/api/nations`), table relue à chaque changement de partie (`web/app.js`) |
+| Intertitres | Un seul intertitre, indigo et dégradé, sur tous les écrans (`.section-title`, `web/charte.css`), à la place du lavis jaune ou du club, du trait et des bandeaux arrondis des colonnes ; les colonnes d'une carte à 8 l'une de l'autre (`.sections`) ; la colonne d'un joueur en trois cartes, les temps forts du direct sous leur en-tête ; le titre d'une carte en indigo. Maquette : <https://claude.ai/artifact/UtpqnnjpKpem234fqiLPHz> (sans repère, indigo, dégradé, colonnes espacées) |
 
 Ce qui reste :
 

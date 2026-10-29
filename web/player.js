@@ -67,7 +67,7 @@ export function compositesGroup(player, role=player.position, column=false) {
  const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]),weights=weighting(player.composite_weights?.[key]);
   return `<div class="attribute${wanted?' key':''}" title="${e(weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key])}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
  return column?attributeColumn(`Jeu ${position(role)}`,items.map(item).join(''),'composites-column" data-composites="column')
-  :`<div class="attribute-group composites-group" data-composites><h3>Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
+  :`<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
 }
 
 // A section in a column of its own, under its strip: the strips of the card make one band, read like a table's head.
@@ -345,9 +345,9 @@ function feeTiles(player) {
 // Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
 const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.parent)],['Fin du prêt',date(player.loan.end)]]:[]),...(player.reserve?[['Équipe','Réserve']]:[])];
 
-// Beside the page, a card of facts in sections, each under its title, the first at the top of the card: how he is, with
-// his other nationalities (the flag, then the code), the traits of his character he shows, then what his contract holds.
-// Who he is and what he is worth stand in the header.
+// Beside the page, three cards of facts, each under its head: how he is, with his other nationalities (the flag, then the
+// code), the traits of his character he shows, then what his contract holds. Who he is and what he is worth stand in the
+// header.
 function rail(player) {
  const others=nationCodes(player).slice(1);
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
@@ -356,9 +356,9 @@ function rail(player) {
  const character=characterFacts(player);
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),...loanTerms(player)];
- return `<aside class="card player-rail"><h3>État</h3><div class="rail-section">${state}</div>`
-  +(character?`<h3>Caractère</h3><div class="rail-section">${character}</div>`:'')
-  +`<h3>Contrat</h3><div class="rail-section">${terms.map(([label,value])=>fact(label,value)).join('')}</div></aside>`;
+ const block=(title,facts)=>`<section class="card"><div class="card-head"><h2>${title}</h2></div><div class="rail-section">${facts}</div></section>`;
+ return `<aside class="player-rail">${block('État',state)}${character?block('Caractère',character):''}`
+  +`${block('Contrat',terms.map(([label,value])=>fact(label,value)).join(''))}</aside>`;
 }
 
 // Attributes beside the aptitudes (the pitch of his positions, a block under each); without any position to show, the
@@ -423,7 +423,7 @@ export async function playerPreview(id, state) {
  const tile=(label,value)=>`<div class="tile"><span>${label}</span><strong>${value}</strong></div>`;
  const flags=nationFlags(player);
  const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${competitionLink({name:item.competition})} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
- const shape=`<h3>État</h3>${conditionFact(player)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
+ const shape=`<h3 class="section-title">État</h3>${conditionFact(player)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring_soon?'danger':player.expiring?'warn':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),
   ...(player.transfer_listed||player.loan_listed?[['Listé',marketTags(player.transfer_listed,player.loan_listed)]]:[]),
@@ -434,9 +434,9 @@ export async function playerPreview(id, state) {
  return `<div class="card preview"><div class="preview-head">${flags.main}<h2><a href="#/player/${player.id}">${e(player.name)}</a></h2>${position(player.position)}</div>`
   +`<div class="preview-line">${clubLink(player.club)}${caps(player)}</div>`
   +`<div class="rail-tiles">${tile('Âge',player.age)}${tile('Niveau',levelStars(player,true))}${tile('Potentiel',potentialStars(player,true))}</div>${feeTiles(player)}`
-  +shape+`<h3>Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
-  +(roles?`<h3>Postes</h3>${roles}`:'')+compositesGroup(player)
-  +`<h3>Attributs</h3><div class="attributes-grid">${attributes}</div>`
+  +shape+`<h3 class="section-title">Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
+  +(roles?`<h3 class="section-title">Postes</h3>${roles}`:'')+compositesGroup(player)
+  +`<h3 class="section-title">Attributs</h3><div class="attributes-grid">${attributes}</div>`
   +`<div class="preview-actions"><a class="button" href="#/player/${player.id}">Ouvrir la fiche</a>${actions}</div></div>`;
 }
 

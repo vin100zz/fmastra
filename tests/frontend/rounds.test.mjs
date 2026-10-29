@@ -100,7 +100,7 @@ test('groups show each group with its own compact table, and a cup round spreads
  const html=roundContent({round:{number:3,label:'Qualifications · J3',date:null},groups:[group('Groupe A'),group('Groupe B'),group('Groupe C')]},'next');
  assert.equal(count(html,/class="round-group"/g),3);
  assert.match(html,/<div class="round-groups">/);
- assert.match(html,/<h3>Groupe A<\/h3>/);
+ assert.match(html,/<h3 class="section-title">Groupe A<\/h3>/);
  assert.doesNotMatch(html,/FORME/);
  assert.equal(count(html,/class="promoted"/g),3);
  const cup=roundContent({round:{number:1,label:'32es de finale',date:'2026-12-02'},groups:[{name:null,matches:[played,{...played,id:8}],standings:null}]},'latest');
@@ -153,7 +153,7 @@ test('an international round lays three groups a row beside the leading scorers'
  const data={round:{number:12,label:'Groupes · J2',date:'2028-06-05'},groups:['A','B','C'].map(group),top_scorers:[{id:5,name:'Buteur',club,goals:4}]};
  const html=roundContent(data,'latest',{figures:true});
  assert.match(html,/round-groups stacked/);
- assert.match(html,/<aside class="round-rail"><h3>Meilleurs buteurs<\/h3>.*Buteur.*<b>4<\/b>/s);
+ assert.match(html,/<aside class="round-rail"><h3 class="section-title">Meilleurs buteurs<\/h3>.*Buteur.*<b>4<\/b>/s);
  assert.doesNotMatch(roundContent(data,'latest'),/round-rail/);
 });
 

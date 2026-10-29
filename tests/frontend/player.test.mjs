@@ -152,13 +152,13 @@ test('the Jeu section leads the attributes: an outfield player\'s six composites
  assert.deepEqual(compositeItems(playing).map(item=>[item.key,item.wanted]),
   [['progression_attaque',true],['occasion_attaque',false],['tir',false],['tete',false],['progression_defense',true],['occasion_defense',true]]);
  const html=compositesGroup(playing);
- assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
+ assert.match(html,/<h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3>/);
  assert.match(html,/<div class="attribute key" title="Progression"><span>Progression<\/span><span class="stars" role="img" aria-label="2 étoiles">/);
  assert.match(html,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Création<\/span><span class="off-role"><span class="stars" role="img" aria-label="1 étoile">/);
  assert.doesNotMatch(html,/rating graded|sur 200/);
  // Another position picked on the pitch reads the section for it.
  assert.deepEqual(compositeItems(playing,'BU').filter(item=>item.wanted).map(item=>item.key),['occasion_attaque','tir','tete']);
- assert.match(compositesGroup(playing,'BU'),/<h3>Jeu <span class="position att">BU<\/span>/);
+ assert.match(compositesGroup(playing,'BU'),/<h3 class="section-title">Jeu <span class="position att">BU<\/span>/);
  // A goalkeeper only has his two; without composites there is no section.
  assert.deepEqual(compositeItems({...playing,position:'GB'},'GB').map(item=>item.key),['arret','sortie']);
  assert.equal(compositesGroup(detail),'');
@@ -179,10 +179,10 @@ test('player page is one screen without tabs or stat cards: the header of his cl
  for(const label of ['>État<','>Contrat<','>Attributs<','>Aptitudes par poste<','>Évolution du niveau<','>Carrière<'])assert.ok(html.includes(label),label);
  // A club without colours leaves the band plain; nobody manages a club here, so nothing stands under the band.
  assert.match(html,/^<header class="club-hero plain">/);assert.doesNotMatch(html,/club-hero-bar|<dialog/);
- // The rail has no head: its first section opens it under its title, as the others do.
- assert.match(html,/<\/header><div class="player-page"><aside class="card player-rail"><h3>État<\/h3><div class="rail-section">/);
+ // The rail is three cards, each under its head.
+ assert.match(html,/<\/header><div class="player-page"><aside class="player-rail"><section class="card"><div class="card-head"><h2>État<\/h2><\/div><div class="rail-section">/);
  const side=rail(html),main=html.slice(html.indexOf('class="player-main"'));
- assert.ok(side.indexOf('>État<')<side.indexOf('<h3>Contrat</h3>'));
+ assert.ok(side.indexOf('>État<')<side.indexOf('<h2>Contrat</h2>'));
  assert.ok(!main.includes('>État<')&&!side.includes('>Attributs<'));
  assert.match(html,/Serie A · C1/);
 });
@@ -275,7 +275,7 @@ test('his selection has one tile between his age and his level: its flag over it
   const flag=(name,file)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
   const linked=(name,file,id)=>`<a class="nation" href="#/international/nation/${id}" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
   const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile split"><div><span>Niveau/)[1];
-  const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><h3>Contrat/)?.slice(1);
+  const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><\/section><section class="card"><div class="card-head"><h2>Contrat/)?.slice(1);
   const base={...detail,nationalities:['FRA','SEN'],national_team:'SEN',national_team_id:-12,international_caps:12,international_goals:3};
   const capped=(await render(base)).html;
   // The nation he plays for, whatever its place among his nationalities, with a link to it.
@@ -391,13 +391,13 @@ test('attributes are graded badges without bars; greed is a trait of his charact
  assert.match(card,/<span>Technique<\/span><span class="rating graded" style="--hue:\d+">6</);
  assert.doesNotMatch(card,/class="gauge|class="meter"|Niv\.|Pot\.|Appât du gain/);
  // Between his state and his contract, whose demands it inflates.
- assert.match(rail(html),/<\/div><h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span><strong><span class="rating" title="Appât du gain sur 20">5<\/span><\/strong><\/div><\/div><h3>Contrat<\/h3>/);
+ assert.match(rail(html),/<\/section><section class="card"><div class="card-head"><h2>Caractère<\/h2><\/div><div class="rail-section"><div class="fact"><span>Appât du gain<\/span><strong><span class="rating" title="Appât du gain sur 20">5<\/span><\/strong><\/div><\/div><\/section><section class="card"><div class="card-head"><h2>Contrat<\/h2>/);
  assert.doesNotMatch((await render()).html,/Caractère|Appât du gain|Fragilité|class="potential"|Potentiel estimé/);
 });
 
 test('the four traits of his character in alphabetical order, aggression and fragility graded the other way round, ambition and greed plain',async()=>{
  const html=rail((await render({...detail,aggression:1,ambition:0,greed:.21,fragility:.5})).html);
- const section=html.match(/<h3>Caractère<\/h3><div class="rail-section">(.*?)<\/div><h3>Contrat/)[1];
+ const section=html.match(/<h2>Caractère<\/h2><\/div><div class="rail-section">(.*?)<\/div><\/section><section class="card"><div class="card-head"><h2>Contrat/)[1];
  assert.deepEqual([...section.matchAll(/<div class="fact"><span>([^<]+)<\/span>/g)].map(match=>match[1]),['Agressivité','Ambition','Appât du gain','Fragilité']);
  assert.match(section,/<span>Agressivité<\/span><strong><span class="rating graded" style="--hue:0" title="Agressivité sur 20 : plus elle est haute, plus il commet de fautes et prend de cartons">20</);
  assert.match(section,/<span>Ambition<\/span><strong><span class="rating" title="Ambition sur 20 : plus elle est haute, plus un club trop petit pour lui le lasse">1</);
@@ -407,9 +407,9 @@ test('fragility follows greed under Caractère, graded the other way round from 
  const fragility=async value=>rail((await render({...detail,greed:.21,fragility:value})).html).match(/<div class="fact"><span>Fragilité<\/span><strong>(.*?)<\/strong><\/div>/)?.[1];
  assert.equal(await fragility(1),'<span class="rating graded" style="--hue:0" title="Fragilité sur 20 : plus elle est haute, plus il se blesse">20</span>');
  assert.match(await fragility(0),/style="--hue:120"[^>]*>1</);
- assert.match(rail((await render({...detail,greed:.21,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span>.*<span>Fragilité<\/span>.*<\/div><\/div><h3>Contrat<\/h3>/);
+ assert.match(rail((await render({...detail,greed:.21,fragility:.5})).html),/<h2>Caractère<\/h2><\/div><div class="rail-section"><div class="fact"><span>Appât du gain<\/span>.*<span>Fragilité<\/span>.*<\/div><\/div><\/section><section class="card"><div class="card-head"><h2>Contrat<\/h2>/);
  // Alone, it opens Caractère all the same.
- assert.match(rail((await render({...detail,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
+ assert.match(rail((await render({...detail,fragility:.5})).html),/<h2>Caractère<\/h2><\/div><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
 });
 
 test('the career card holds two tables lined up: the clubs, then the national team under its name in the same four columns',async()=>{
@@ -542,12 +542,12 @@ test('beside a list of players, the picked one is previewed in the words of his 
  assert.match(html,/^<div class="card preview"><div class="preview-head">.*<h2><a href="#\/player\/1">Test Joueur<\/a><\/h2><span class="position def">DD<\/span>/);
  assert.match(html,/18 sél - 3 buts/);
  // Condition, form and morale, then the contract with what he asks to join the user's club.
- for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3>${title}</h3>`),title);
+ for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3 class="section-title">${title}</h3>`),title);
  assert.match(html,/<span>Forme<\/span>.*Mauvaise/);assert.match(html,/<span>Prétentions<\/span><strong>93\sk€<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
  assert.doesNotMatch(html,/Blessure|Cartons/);
  // His positions, best note first, then what the engine reads of him and his attributes.
  assert.match(html,/class="position-row picked" data-composite-role="DD"/);
- assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
+ assert.match(html,/<h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3>/);
  assert.match(html,/<div class="attribute key"[^>]*><span>Passe<\/span>/);
  assert.match(html,/<a class="button" href="#\/player\/1">Ouvrir la fiche<\/a>.*Faire une offre/);
  // An injury shows in its place; a retired player has no preview.

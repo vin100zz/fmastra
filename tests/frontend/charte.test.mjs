@@ -154,15 +154,15 @@ test('a final and the run of a nation are drawn the same by the reference sheet 
 test('an attribute’s column holds the longest name of its section and its badge, in both sheets',async()=>{
  for(const sheet of ['docs/charte/charte.css','web/charte.css']){
   const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
-  // The composites out of 200 (Défense de surface) need more room than the attributes out of 20 (Coups arrêtés).
+  // The composites in stars (Défense de surface, a key one) need more room than the attributes out of 20 (Coups arrêtés).
   assert.match(body('.attributes-grid'),/--attribute-column:140px/,sheet);
-  assert.match(body('.composites-group .attributes-grid'),/^--attribute-column:180px$/,sheet);
+  assert.match(body('.composites-group .attributes-grid'),/^--attribute-column:204px$/,sheet);
   // On the page, a column per section: they share the width, none narrower than that room inside its padding, and wrap
-  // when the card cannot hold them all.
-  assert.equal(body('.attribute-columns'),'display:flex;flex-wrap:wrap',sheet);
+  // when the card cannot hold them all; 8 apart, as every column of a card, without a line between them.
+  assert.equal(body('.attribute-columns'),'display:flex;flex-wrap:wrap;column-gap:var(--s2);padding-bottom:var(--s2)',sheet);
   assert.equal(body('.attribute-column'),'--attribute-column:140px;flex:1 1 0;min-width:calc(var(--attribute-column) + 2*var(--s3))',sheet);
-  assert.equal(body('.attribute-column.composites-column'),'--attribute-column:180px',sheet);
-  assert.equal(body('.attribute-column+.attribute-column'),'border-left:1px solid var(--row-line)',sheet);
+  assert.equal(body('.attribute-column.composites-column'),'--attribute-column:204px',sheet);
+  assert.equal(body('.attribute-column+.attribute-column'),'',sheet);
   assert.equal(body('.others-column .attribute>span:first-child'),'color:var(--muted)',sheet);
  }
  // In a preview's 348 the composites take one column, the attributes two. The older sheets no longer fix their columns.

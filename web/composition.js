@@ -243,10 +243,10 @@ export function scoutingHtml(scout){
  const meeting=last?`<a class="scout-meeting" href="#/match/${last.id}"><span>${e(last.round_label)} · ${e(last.home.name)} – ${e(last.away.name)}</span><span class="club-match-score ${last.outcome}" title="${outcomeLabels[last.outcome]}">${last.score.join(' – ')}</span></a>`:'';
  return `<aside class="card scout-card" aria-label="Adversaire"><div class="card-head"><h2>Adversaire</h2></div><div class="card-body">`
   +`<div class="scout-club">${crest}<div>${clubLink(club)}<small>${e(match.round_label)} · ${e(shortDate(match.date))} · ${scout.home?'Domicile':'Extérieur'}</small>${standing?`<span class="scout-standing">${standing.rank}${standing.rank===1?'er':'e'} · ${standing.points} pts ${form(standing.form)}</span>`:''}</div></div>`
-  +`<div class="scout-facts"><div><span>Tactique</span><strong>${e(club.formation||'—')}</strong></div><div><span>${record.venue==='away'?'À l’extérieur':'À domicile'}</span><strong>${record.won} V · ${record.drawn} N · ${record.lost} D</strong></div></div>`
-  +(scout.key_players.length?`<h3>Joueurs clés</h3><ul class="scout-players">${scout.key_players.map(person).join('')}</ul>`:'')
-  +(scout.absent.length?`<h3>Absents</h3><ul class="scout-players absent">${scout.absent.map(out).join('')}</ul>`:'')
-  +meeting+'</div></aside>';
+  +`<div class="scout-facts"><div><span>Tactique</span><strong>${e(club.formation||'—')}</strong></div><div><span>${record.venue==='away'?'À l’extérieur':'À domicile'}</span><strong>${record.won} V · ${record.drawn} N · ${record.lost} D</strong></div></div></div>`
+  +(scout.key_players.length?`<h3 class="section-title">Joueurs clés</h3><ul class="scout-players">${scout.key_players.map(person).join('')}</ul>`:'')
+  +(scout.absent.length?`<h3 class="section-title">Absents</h3><ul class="scout-players absent">${scout.absent.map(out).join('')}</ul>`:'')
+  +(meeting?`<div class="card-body">${meeting}</div>`:'')+'</aside>';
 }
 
 // What the lineup on screen is, to tell whether it is still the one a level of the automatic lineup gave.
@@ -269,7 +269,7 @@ function editorHtml(){
  const views=[['infos','Infos'],['jeu','Jeu']].map(([key,label])=>`<button type="button" data-lineup-view="${key}" aria-pressed="${key===squadView}" class="${key===squadView?'active':''}">${label}</button>`).join('');
  const scout=scoutingHtml(editor.data.scouting);
  return `<div class="lineup-layout${scout?' with-scout':''}"><div class="lineup-field"><div class="field-head">${tactics}</div><div class="pitch lineup-pitch" aria-label="Terrain · ${e(editor.formation)}">${PITCH_BOXES}${cellsHtml()}${editor.slots.map((id,index)=>slotHtml(id,current[index],cells[index],index,byId)).join('')}</div>
-<h3>Remplaçants</h3><div class="lineup-bench" style="--bench:${editor.bench.length}">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
+<h3 class="section-title">Remplaçants</h3><div class="lineup-bench" style="--bench:${editor.bench.length}">${editor.bench.map((id,index)=>benchHtml(id,index,byId)).join('')}</div></div>
 <div class="lineup-list"><div class="lineup-toolbar">${status}${autoHtml(autoLevel())}<span class="toolbar-rule"></span><div class="segmented" role="group" aria-label="Colonnes">${views}</div></div><div class="lineup-squad" data-squad-drop>${squadHtml(byId)}</div></div>${scout}</div>`;
 }
 

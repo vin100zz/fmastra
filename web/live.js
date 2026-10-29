@@ -80,7 +80,8 @@ const named=(name,short,title=name)=>{const shown=shortName(name,short);return `
 // and its minute by the ball; then the cards, injuries and penalties missed, the minute in the middle as on the report.
 function highlightsHtml(){
  const events=shownHighlights(view.events,view.second??view.state.second,view.score,view.state.home.id);
- if(!events.length)return `<div class="card-body">${empty('Ni but, ni carton, ni blessure')}</div>`;
+ const head='<div class="card-head"><h2>Temps forts</h2></div>';
+ if(!events.length)return `${head}<div class="card-body">${empty('Ni but, ni carton, ni blessure')}</div>`;
  const half=halfEnd(view.events),minute=event=>`${matchMinute(event.second,half,event.period)}′`,home=event=>event.team_id===view.state.home.id;
  const score=[0,0],goals=events.filter(event=>event.kind==='goal').map(event=>{
   const side=home(event)?0:1;score[side]++;
@@ -101,7 +102,7 @@ function highlightsHtml(){
  const fresh=goals.length>(view.goalsShown??goals.length);
  view.goalsShown=goals.length;
  if(fresh)goals[goals.length-1]=goals.at(-1).replace('class="goal-row"','class="goal-row flash"');
- return `${goals.length?`<div class="section-title"><span class="label">Buts</span></div><div class="goal-rows">${goals.join('')}</div>`:''}`
+ return `${head}${goals.length?`<div class="section-title"><span class="label">Buts</span></div><div class="goal-rows">${goals.join('')}</div>`:''}`
   +`${others.length?`<div class="section-title"><span class="label">Cartons, blessures, penaltys</span></div><div class="highlights">${others.join('')}</div>`:''}`;
 }
 
@@ -179,7 +180,7 @@ function squadHtml(){
  const count=mine?`${left} changement${left>1?'s':''} restant${left>1?'s':''}`:formation?e(formation):'';
  const names=[view.state[view.state.side],view.state[sideOf(false)]];
  const pick=`<div class="segmented small fill" role="group" aria-label="Équipe"><button type="button" data-live-team="mine" class="${mine?'active':''}" aria-pressed="${mine}">${kitDot(names[0])}${e(names[0].name)}</button><button type="button" data-live-team="theirs" class="${mine?'':'active'}" aria-pressed="${!mine}">${kitDot(names[1])}${e(names[1].name)}</button></div>`;
- return `<div class="live-team-pick">${pick}</div><div class="live-scroll"><div class="section-title"><span class="label">Sur le terrain</span>${count?`<span class="count-left">${count}</span>`:''}</div>`
+ return `<div class="live-team-pick">${pick}</div><div class="live-scroll"><div class="section-title"><span class="label">Sur le terrain</span>${count?`<span class="aside">${count}</span>`:''}</div>`
   +`<div class="squad-rows ${mine?'mine':'theirs'}">${on.map(row).join('')}</div>${rest.length?`<div class="section-title"><span class="label">Remplaçants</span></div><div class="squad-rows ${mine?'mine':'theirs'}">${rest.map(row).join('')}</div>`:''}</div>`;
 }
 

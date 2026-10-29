@@ -31,7 +31,7 @@
  --good-soft:#1f4a31;--good-line:#2f5a41;--bad-soft:#3a1f1f;--bad-line:#6b3434;--warn-soft:#1f1c12;--warn-line:#5a4a1c;--own-row:#2c2a14;--gold-soft:#3a3113;--info-soft:#13293a;--att-soft:#3a1a1a;--mid-ink:#7fd69a;--att-ink:#ff9d95;
  /* A line under a table's heading; the track of a choice and an option under the pointer there; the wash of a section's
     title. Depth: on the dark ground a shadow does not read, a faint ring of light draws the edge. */
- --head-line:#2a323d;--track:#0e1217;--track-hover:#ffffff12;--title-wash:#2a2614;
+ --head-line:#2a323d;--track:#0e1217;--track-hover:#ffffff12;--title-ink:#c3c6f4;--title-wash:#26284a;
  --shadow-card:0 0 0 1px #ffffff0d,0 1px 3px #00000059;--shadow-field:0 0 0 1px #ffffff1f;--shadow-float:0 0 0 1px #ffffff17,0 16px 36px -10px #000000b3;
  --shadow-thumb:0 1px 2px #00000080;--shadow-accent:inset 0 -1px 0 #00000033,0 1px 2px #00000059;
  --display:"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Segoe UI",sans-serif;
@@ -100,7 +100,7 @@ footer{border-color:var(--line);color:var(--muted)}
 .stat-card .label,.stat-card small{color:var(--muted)}
 .stat-card .label{font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase}
 .stat-card strong{color:var(--strong);font-weight:700}
-.section-title{color:var(--muted);text-transform:uppercase;letter-spacing:var(--caps)}
+
 .hero{background:var(--band);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius)}
 .welcome h1{color:var(--strong)}
 .hero .eyebrow{color:var(--accent-text)}
@@ -296,7 +296,7 @@ h1{font-size:26px;margin:0}
 .pager{padding:5px 12px}
 .pager button{padding:3px 8px}
 .empty{padding:16px 12px}
-.section-title{margin:12px 0 8px}
+
 
 /* Tables: 26 px rows, 26 px headers, 18 px chips. */
 th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
@@ -344,7 +344,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .lineup-fixture b{color:var(--ink)}
 .lineup-problems{display:inline-flex;align-items:center;gap:6px;margin:0;padding:3px 10px;border:1px solid;border-radius:var(--radius);font-size:13px;font-weight:600;line-height:18px}
 .lineup-problems:before{content:"!";display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:currentColor;color:var(--panel);font-size:10px;font-weight:700}
-.lineup-field>h3{margin:8px 0 4px}
+
 .lineup-bench{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
 .bench-slot{min-height:26px;padding:2px 6px}
 .lineup-slot{width:76px;padding:2px 0}
@@ -363,7 +363,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 /* Light theme: same layout and accent, white panels on a pale ground; pitches stay green. */
 :root[data-theme="light"]{
  --bg:#f0f2f5;--rail:#fff;--panel:#fff;--panel-2:#f3f5f8;--panel-3:#e8edf3;--row-line:#edf0f3;--line:#d6dce4;
- --head-line:#e2e6eb;--track:#e9ecf1;--track-hover:#ffffffa6;--title-wash:#fcf1c9;
+ --head-line:#e2e6eb;--track:#e9ecf1;--track-hover:#ffffffa6;--title-ink:#262a6b;--title-wash:#e2e3f6;
  --shadow-card:0 0 0 1px #1018280a,0 1px 2px #1018280f,0 2px 8px -3px #10182814;--shadow-field:0 0 0 1px #10182817,0 1px 2px #1018280d;
  --shadow-float:0 0 0 1px #1018280d,0 16px 36px -10px #10182833,0 4px 12px -4px #1018281a;--shadow-thumb:0 1px 2px #1018282e,inset 0 -1px 0 #00000017;
  --shadow-accent:inset 0 -1px 0 #7f620040,0 1px 2px #7f62002e,0 2px 6px -2px #7f620033;
@@ -489,7 +489,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 /* The same width for every group table, so that they line up from one group to the next. */
 .round-group .round-block{grid-template-columns:minmax(0,460px) minmax(270px,1fr)}
 .round-group .round-table table{width:100%}
-.round-group h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+
 .round-knockout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .round-knockout .fixture:nth-child(odd){border-right:1px solid var(--row-line)}
 .round-knockout .fixture:nth-last-child(2):nth-child(odd){border-bottom:0}
@@ -767,7 +767,7 @@ tbody tr.selected,tbody tr.selected:hover,.player-table tbody tr.selected td:nth
 .preview .rail-tiles{padding:8px 12px}
 .preview .tile{padding:5px 6px}
 .preview .tile strong{font-size:26px}
-.preview h3{display:flex;align-items:center;gap:6px;height:24px;margin:0;padding:0 12px;background:var(--panel-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+
 .preview .fact{min-height:25px;margin:0 12px;padding:0;border-bottom:1px solid var(--row-line);font-size:13px}
 .preview .fact:last-child{border-bottom:1px solid var(--row-line)}
 .preview .fact strong{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--strong);white-space:nowrap}
@@ -873,8 +873,8 @@ a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px s
 .country{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:8px}
 .country>.card{margin:0;min-width:0}
 .country .card-head a{font-variant-numeric:tabular-nums}
-.country h3{display:flex;align-items:center;height:24px;margin:0;padding:0 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
-.country .standings+h3{border-top:1px solid var(--line)}
+
+
 .country .fixture:has(+.standings){border-bottom:0}
 .country .fixture+.standings th{border-top:1px solid var(--line)}
 .country .standings table{table-layout:fixed}
@@ -922,7 +922,7 @@ a.button{display:grid;place-items:center;height:30px;padding:0 10px;border:1px s
 .day-pills,.nations-filter{padding:10px 14px;border-bottom:1px solid var(--row-line)}
 .day-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .day-group{min-width:0;border-right:1px solid var(--row-line);border-bottom:1px solid var(--row-line)}
-.day-group h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+
 .round-groups.stacked .round-block,.round-groups.stacked .round-group .round-block{grid-template-columns:1fr;grid-template-areas:"matches" "table"}
 .round-groups.stacked .round-table{border-left:0;border-top:1px solid var(--line)}
 .stats-panels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
@@ -946,7 +946,7 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 /* Three groups a row beside the leading scorers. */
 .round-with-rail{display:grid;grid-template-columns:minmax(0,1fr) 360px;align-items:start}
 .round-rail{border-left:1px solid var(--line);min-width:0}
-.round-rail h3{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+
 .round-groups.stacked{grid-template-columns:repeat(3,minmax(0,1fr))}
 .round-groups.stacked .round-group{border-top:1px solid var(--line);border-right:1px solid var(--line)}
 .round-groups.stacked .round-group:nth-child(-n+3){border-top:0}
@@ -1068,7 +1068,7 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-lines.injuries li{grid-template-columns:minmax(0,1fr) 80px 64px 72px;min-height:var(--h-row)}
 .news-lines.missed li{grid-template-columns:64px minmax(0,1fr) 80px;min-height:var(--h-row)}
 .news-lines.missed li>:nth-child(2){display:flex;align-items:center;gap:var(--s2);text-align:left}
-.news-body .section-title{margin:0 0 var(--s1)}
+
 .news-lines .market-actions{width:auto}
 .news-lines button,.news-actions button{padding:5px 12px;font-size:13px;white-space:nowrap}
 .news-state{font-size:13px;font-weight:600;color:var(--muted)}
@@ -1097,7 +1097,7 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-widgets .card{margin:0 0 10px}
 .news-widgets .card-head{min-height:30px}
 .news-widgets .card-body{padding:6px 12px 8px}
-.news-widgets h3{margin:0 0 3px;font-size:10px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+
 .news-widgets .muted{margin:0;font-size:13px}
 .news-widgets .moves li{align-items:center;padding:4px 0;font-size:13px}
 .news-widgets .moves li>span:not(.position){flex:1 1 auto}
@@ -1106,8 +1106,8 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-widgets .standings td:nth-child(2){overflow:hidden;text-overflow:ellipsis}
 .news-widgets .standings tr.own{background:var(--own-row)!important}
 .news-widgets .standings tr.own .club-link{color:var(--accent-text)}
-.news-leaders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;padding:10px 12px 12px!important}
-.news-leaders .moves li{font-size:13px}
+.news-leaders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3) var(--s2);padding:0 0 var(--s2)!important}
+.news-leaders .moves li{padding:4px var(--s3);font-size:13px}
 .news-finances{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:10px;padding:12px!important}
 .news-figure{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2)}
 .news-figure span,.news-figure small{font-size:11px;color:var(--muted);white-space:nowrap}
@@ -1127,5 +1127,5 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 
 /* The human club's market under way, over the history of its transfers. */
 .market-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px}
-.market-card h3{margin:0 0 3px;font-size:10px;font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+
 .market-card .muted{margin:0;font-size:13px}
