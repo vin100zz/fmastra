@@ -47,13 +47,15 @@ try{debug=localStorage.getItem('fm-debug')==='1';}catch{}
 export const debugMode = () => debug;
 export const setDebugMode = on => {debug=Boolean(on);try{localStorage.setItem('fm-debug',debug?'1':'0');}catch{}};
 const starWord = value => value%1 ? `${Math.floor(value)||''}½` : String(value);
+// A number of stars in words, as a screen reader says it: « 2½ étoiles ».
+export const starsText = value => `${starWord(value)} étoile${value>1?'s':''}`;
 // Five stars, the sure part in gold up to `low`, the possible one in slate up to `high`; 16 on a tile (`big`). Its tooltip
 // (`title`) only in debug mode.
 export function stars(low, high=low, {big=false,title=''}={}) {
  if(low==null)return '—';
  const top=Math.max(low,high??low);
  const cells=[0,1,2,3,4].map(index=>`<i style="--f:${Math.min(1,Math.max(0,low-index))};--u:${Math.min(1,Math.max(0,top-index))}"></i>`).join('');
- const label=top>low?`${starWord(low)} à ${starWord(top)} étoiles`:`${starWord(low)} étoile${low>1?'s':''}`;
+ const label=top>low?`${starWord(low)} à ${starWord(top)} étoiles`:starsText(low);
  return `<span class="stars${big?' big':''}" role="img" aria-label="${label}"${debug&&title?` title="${escape(title)}"`:''}>${cells}</span>`;
 }
 // A note without doubt in stars; in debug mode its figure out of 200 after `label`.
@@ -510,6 +512,59 @@ const attributeCell=(player,key)=>{
 };
 export const COMPOSITE_SHORT={progression_attaque:'PRO',occasion_attaque:'CRÉ',tir:'FRA',tete:'AÉR',progression_defense:'DMI',occasion_defense:'DSU',arret:'ARR',sortie:'SAÉ'};
 export const compositeHeader = key => `<span title="${COMPOSITES[key]}">${COMPOSITE_SHORT[key]}</span>`;
+// An outfield player's composites in a radar (docs/charte-graphique.md, « Radar »): their names cut short, the whole one in
+// the tooltip, and their corners from the top right: the attack down the right side, the defence of each phase facing it
+// on the left, the air facing the shot.
+export const COMPOSITE_ABBREVIATIONS={progression_attaque:'Progr.',occasion_attaque:'Créat.',tir:'Frappe',tete:'Aérien',progression_defense:'Déf. mil.',occasion_defense:'Déf. surf.'};
+export const RADAR_COMPOSITES=['tir','occasion_attaque','progression_attaque','progression_defense','occasion_defense','tete'];
+
+// The width of a line of text in the page's font, for a drawing that places its names: measured on a canvas in a browser,
+// estimated elsewhere.
+let measure=null;
+function textWidth(text, weight=400) {
+ if(typeof document==='undefined')return text.length*7.5;
+ measure??=document.createElement('canvas').getContext('2d');
+ const family=getComputedStyle(document.documentElement).getPropertyValue('--text').trim()||'sans-serif';
+ measure.font=`${weight} 13px ${family}`;
+ return measure.measureText(text).width;
+}
+// The accent dot after a key name: 5, 6 from the name.
+const KEY_DOT=11;
+
+// A radar of `axes` ({label, value, key, title}) out of `max`, a ring at each of `rings`, drawn in `width` × `height`: the
+// largest radius whose names all stand inside, the drawing moved to where its names leave it room, each name `gap` from its
+// corner. `offset` turns the first axis from the top by a share of a step: half a step lays a hexagon flat, two corners to
+// a row. On the middle row a name of two words takes two lines, which cost no height there. Every name is measured in 700
+// with its dot, so that marking other axes moves nothing. `label` is what a screen reader says of it.
+export function radar(axes, {width, height, max, rings, offset=0, gap=4, label=''}) {
+ const placed=axes.map((axis,index)=>{
+  const angle=(index+offset)/axes.length*2*Math.PI,s=Math.sin(angle),c=-Math.cos(angle);
+  const side=Math.abs(s)<.2?(c<0?'top':'bottom'):s>0?'right':'left';
+  const words=axis.label.split(' '),cut=Math.ceil(words.length/2);
+  const lines=Math.abs(c)<.2&&words.length>1?[words.slice(0,cut).join(' '),words.slice(cut).join(' ')]:[axis.label];
+  const w=Math.max(...lines.map((line,index)=>textWidth(line,700)+(index===lines.length-1?KEY_DOT:0)));
+  return {...axis,s,c,side,lines,w,h:lines.length*18};
+ });
+ // What the drawing and its names take around its centre, for a radius r.
+ const extent=r=>placed.reduce(([x0,x1,y0,y1],{s,c,side,w,h})=>{
+  const ax=s*(r+gap),ay=c*(r+gap);
+  const [left,right]=side==='right'?[ax,ax+w]:side==='left'?[ax-w,ax]:[ax-w/2,ax+w/2];
+  const [top,bottom]=side==='top'?[ay-h,ay]:side==='bottom'?[ay,ay+h]:[ay-h/2,ay+h/2];
+  return [Math.min(x0,left),Math.max(x1,right),Math.min(y0,top),Math.max(y1,bottom)];
+ },[-r,r,-r,r]);
+ let low=0,high=Math.max(width,height);
+ while(high-low>.5){const r=(low+high)/2,[x0,x1,y0,y1]=extent(r);if(x1-x0<=width&&y1-y0<=height)low=r;else high=r;}
+ const r=Math.floor(low),[x0,x1,y0,y1]=extent(r);
+ const cx=Math.round(-x0+(width-(x1-x0))/2),cy=Math.round(-y0+(height-(y1-y0))/2);
+ const at=({s,c},value)=>`${(cx+s*value/max*r).toFixed(1)},${(cy+c*value/max*r).toFixed(1)}`;
+ const polygon=(name,value)=>`<polygon class="${name}" points="${placed.map(axis=>at(axis,value(axis))).join(' ')}"/>`;
+ const drawing=rings.map(ring=>polygon(`radar-ring${ring===max?' outer':''}`,()=>ring)).join('')
+  +placed.map(axis=>{const [x,y]=at(axis,max).split(',');return `<line class="radar-spoke" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`;}).join('')
+  +polygon('radar-shape',axis=>axis.value)
+  +placed.map(axis=>{const [x,y]=at(axis,axis.value).split(',');return `<circle class="radar-dot" cx="${x}" cy="${y}" r="3"/>`;}).join('');
+ const names=placed.map(axis=>`<span class="radar-label ${axis.side}${axis.key?' key':''}" style="left:${(cx+axis.s*(r+gap)).toFixed(1)}px;top:${(cy+axis.c*(r+gap)).toFixed(1)}px"${axis.title?` title="${escape(axis.title)}"`:''}><span>${axis.lines.map(escape).join('<br>')}</span></span>`).join('');
+ return `<div class="radar" style="width:${width}px;height:${height}px"><svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escape(label)}">${drawing}</svg>${names}</div>`;
+}
 // A composite out of 200, grey when the position does not ask for it (`wanted`: the composites of that position).
 export const compositeCell = (player, key, wanted=player.key_composites) => {
  const value=player.composites?.[key];if(value==null)return '—';

@@ -164,12 +164,41 @@ test('the Jeu section leads the attributes: an outfield player\'s six composites
  assert.equal(compositesGroup(detail),'');
 });
 
-test('the Jeu section is the first column of the attributes card, ahead of the attributes',async()=>{
+test('the Jeu section is the first column of the attributes card, an outfield player\'s in a radar, a goalkeeper\'s in a list',async()=>{
  const {html}=await render(playing);
  const attributes=html.slice(html.indexOf('>Attributs<'),html.indexOf('Aptitudes par poste'));
- assert.match(attributes,/<div class="attribute-columns"><div class="attribute-column composites-column" data-composites="column"><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="attribute-rows">/);
+ // Never shorter than the six rows it stands for, whatever the columns beside it.
+ assert.match(attributes,/<div class="attribute-columns"><div class="attribute-column composites-column radar-column" data-composites="column"><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="radar-rows"><div class="radar" style="width:240px;height:148px">/);
  assert.ok(attributes.indexOf('data-composites')<attributes.indexOf('>Attaque</h3>'));
  assert.match(html,/<span class="player-block"><span><span class="stars"/);
+ const keeper=(await render({...playing,position:'GB'})).html;
+ assert.match(keeper,/<div class="attribute-column composites-column" data-composites="column"><h3 class="section-title">Jeu <span class="position gk">GB<\/span><\/h3><div class="attribute-rows"><div class="attribute key" title="Arrêts"><span>Arrêts<\/span>/);
+ assert.doesNotMatch(keeper,/class="radar/);
+});
+
+test('the radar sets the attack down its right side and the defence of each phase facing it, its names short, the whole ones in their tooltips',async()=>{
+ const {compositesGroup}=await import('../../web/player.js');
+ const radar=compositesGroup(playing,'DD',true);
+ const names=[...radar.matchAll(/<span class="radar-label (\w+)( key)?" style="left:([\d.]+)px;top:([\d.]+)px" title="([^"]*)"><span>(.*?)<\/span><\/span>/g)];
+ assert.deepEqual(names.map(([,side,key,,,title,name])=>[name,side,Boolean(key),title.split(' :')[0]]),[
+  ['Frappe','right',false,'Frappe'],['Créat.','right',false,'Création'],['Progr.','right',true,'Progression'],
+  ['Déf. mil.','left',true,'Défense au milieu'],['Déf.<br>surf.','left',true,'Défense de surface'],['Aérien','left',false,'Jeu aérien']]);
+ assert.match(radar,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Créat\.<\/span>/);
+ // Two corners to a row, each name inside the drawing's box.
+ const tops=names.map(match=>Number(match[4]));
+ assert.deepEqual([tops[0]===tops[5],tops[1]===tops[4],tops[2]===tops[3]],[true,true,true]);
+ assert.ok(names.every(match=>Number(match[3])>=0&&Number(match[3])<=240&&Number(match[4])>=0&&Number(match[4])<=148));
+ // Five rings, a spoke and a dot a corner, the shape; and what a screen reader says of it.
+ assert.equal(radar.match(/class="radar-ring( outer)?"/g).length,5);
+ assert.equal(radar.match(/class="radar-ring outer"/g).length,1);
+ assert.equal(radar.match(/class="radar-spoke"/g).length,6);
+ assert.equal(radar.match(/class="radar-dot"/g).length,6);
+ assert.match(radar,/<svg width="240" height="148" viewBox="0 0 240 148" role="img" aria-label="Jeu : Progression 2 étoiles, Création 1 étoile, Frappe 4½ étoiles, Jeu aérien 3 étoiles, Défense au milieu ½ étoile, Défense de surface ½ étoile">/);
+ // Another position marks other names and moves nothing.
+ const striker=compositesGroup(playing,'BU',true);
+ assert.deepEqual([...striker.matchAll(/class="radar-label \w+ key"[^>]*><span>(.*?)<\/span>/g)].map(match=>match[1]),['Frappe','Créat.','Aérien']);
+ const at=html=>[...html.matchAll(/style="left:[\d.]+px;top:[\d.]+px"/g)].map(match=>match[0]).join();
+ assert.equal(at(striker),at(radar));
 });
 
 test('player page is one screen without tabs or stat cards: the header of his club, a rail, the profile, then the history',async()=>{

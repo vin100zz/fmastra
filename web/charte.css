@@ -500,7 +500,7 @@ span.entity-step svg{opacity:.3}
 .rail-section .fact{min-height:var(--h-row)}
 .gauge{width:40px}
 /* Attributes (docs/charte-graphique.md, « Attributs »): a column holds the longest name of its section and its badge, the
-   composites' out of 200 more than the attributes'. Two columns in a preview, where the composites take one. On the page,
+   composites' and their stars more than the attributes'. Two columns in a preview, where the composites take one. On the page,
    no taller than its columns, whatever the height of the pitch beside it. */
 .attributes-grid{--attribute-column:140px}
 .composites-group .attributes-grid{--attribute-column:204px}
@@ -520,6 +520,27 @@ span.entity-step svg{opacity:.3}
 .attribute-column.composites-column{--attribute-column:204px}
 .attribute-rows>.attribute{padding:0 var(--s3)}
 .others-column .attribute>span:first-child{color:var(--muted)}
+/* An outfield player's Jeu section in a radar (« Radar »), in a column of 248 as tall as the others; beside it, the others
+   come down to their longest row. */
+.attribute-column.radar-column{flex:none;width:248px}
+.attribute-columns:has(>.radar-column)>.attribute-column:not(.radar-column){min-width:min-content}
+.radar-rows{display:flex;justify-content:center;padding:var(--s1)}
+/* Radar (docs/charte-graphique.md, « Radar »): a ring a star, the outer one on the line; a spoke a corner; the shape in the
+   gold of the stars, a dot at each corner; the names outside their corner, in 13, a key one in 700 with the accent dot. */
+.radar{position:relative;flex:none}
+.radar>svg{position:absolute;left:0;top:0;overflow:visible}
+.radar-ring{fill:none;stroke:var(--row-line);stroke-width:1}
+.radar-ring.outer{stroke:var(--line)}
+.radar-spoke{stroke:var(--row-line);stroke-width:1}
+.radar-shape{fill:color-mix(in srgb,var(--star) 16%,transparent);stroke:var(--star);stroke-width:2;stroke-linejoin:round}
+.radar-dot{fill:var(--star)}
+.radar-label{position:absolute;line-height:18px;white-space:nowrap;color:var(--ink)}
+.radar-label.right{transform:translate(0,-50%)}
+.radar-label.left{transform:translate(-100%,-50%);text-align:right}
+.radar-label.top{transform:translate(-50%,-100%);text-align:center}
+.radar-label.bottom{transform:translate(-50%,0);text-align:center}
+.radar-label.key>span{font-weight:700}
+.radar-label.key>span::after{content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:middle}
 .career-card .competition{gap:var(--s1)}
 /* His level month after month: the line of a series, a dot in the club's colours where a season opens and on the latest
    month, the level written at both ends as a figure. */

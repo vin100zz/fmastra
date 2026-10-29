@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount,roundFee} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,COMPOSITE_ABBREVIATIONS,RADAR_COMPOSITES,byAttributeName,radar,starsText} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -59,13 +59,30 @@ export function compositeItems(player, role=player.position) {
 
 const weighting=weights=>Object.entries(weights||{}).map(([key,weight])=>`${ATTRIBUTES[key]} ${Math.round(weight*100)} %`).join(' · ');
 
+// The whole name of a composite and what it is made of: the tooltip of its row, or of its name on the radar.
+const compositeTitle=(player,key)=>{const weights=weighting(player.composite_weights?.[key]);return weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key];};
+
+// The radar of the Jeu section in its column of 248 (`.radar-column`, web/charte.css), 4 inside it, as tall as the longest
+// column of attributes beside it and never shorter than the list of six it stands for. In debug mode, the tooltip of a name
+// ends on its figure out of 200.
+const RADAR_WIDTH=248-8,ROW=26;
+function compositesRadar(player, items) {
+ const byKey=Object.fromEntries(items.map(item=>[item.key,item])),rows=Math.max(items.length,...attributeGroups(player).sections.map(section=>section.items.length));
+ const axes=RADAR_COMPOSITES.filter(key=>byKey[key]).map(key=>byKey[key]).map(({key,value,wanted})=>({label:COMPOSITE_ABBREVIATIONS[key],value:starsOf(value),key:wanted,
+  title:`${compositeTitle(player,key)}${debugMode()?`\n${level(value)} sur 200`:''}`}));
+ const label=`Jeu : ${items.map(({key,value})=>`${COMPOSITES[key]} ${starsText(starsOf(value))}`).join(', ')}`;
+ return `<div class="radar-rows">${radar(axes,{width:RADAR_WIDTH,height:rows*ROW-8,max:5,rings:[1,2,3,4,5],offset:.5,label})}</div>`;
+}
+
 // Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for.
-// On the page it is the first of the attribute columns (`column`), in a preview a grid of its own.
+// On the page it is the first of the attribute columns (`column`): an outfield player's six in a radar, a goalkeeper's two in
+// a list. In a preview a grid of its own.
 export function compositesGroup(player, role=player.position, column=false) {
  const items=compositeItems(player,role);
  if(!items.length)return '';
- const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]),weights=weighting(player.composite_weights?.[key]);
-  return `<div class="attribute${wanted?' key':''}" title="${e(weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key])}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
+ const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]);
+  return `<div class="attribute${wanted?' key':''}" title="${e(compositeTitle(player,key))}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
+ if(column&&player.position!=='GB')return `<div class="attribute-column composites-column radar-column" data-composites="column"><h3 class="section-title">Jeu ${position(role)}</h3>${compositesRadar(player,items)}</div>`;
  return column?attributeColumn(`Jeu ${position(role)}`,items.map(item).join(''),'composites-column" data-composites="column')
   :`<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
 }

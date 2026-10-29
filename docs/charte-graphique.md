@@ -171,7 +171,8 @@ où le fond est déjà jaune.
 | Tableau | `.table`, `.tr`, `.tr.head` | Voir « Tableaux » |
 | Fait, tuile | `.fact`, `.tile`, `.tile.graded`, `.tile.split` | Libellé atténué, valeur forte. Une tuile n'a pas de bordure : grise dans une carte, blanche et en relief sur un bandeau, blanche et posée comme une carte dans une rangée (`.tiles.row`). Une tuile graduée prend le fond de la pastille de sa note ; une tuile à colonnes tient plusieurs chiffres, chacun sous son libellé, un trait entre deux ; ses colonnes graduées (`.tile.split > .graded`) la remplissent, chacune sur le fond de sa pastille, le trait entre deux à la couleur du panneau. Sur un bandeau et dans une rangée de tuiles, le contenu de chaque tuile est centré horizontalement, celui de chaque colonne dans la sienne |
 | Attributs | `.attributes-grid`, `.attribute`, `.attribute.key` | Une ligne de 26 par attribut, son nom puis sa pastille au bord ; un attribut clé en 700, un point de l'accent après son nom. Dans une section, les attributs suivent l'ordre alphabétique de leurs noms ; les composites, l'ordre des phases du jeu. Une colonne tient le plus long nom de sa section et sa pastille (`--attribute-column` : 140, 204 pour les composites et leurs étoiles) ; une grille en a autant que la largeur en laisse, une au besoin : ni nom coupé, ni pastille hors de sa colonne |
-| Attributs en colonnes | `.attribute-columns`, `.attribute-column`, `.composites-column`, `.others-column`, `.attribute-rows` | Sur la fiche d'un joueur, une colonne par section, Jeu en tête : son intertitre `.section-title` sous l'en-tête de la carte, les colonnes à 8 l'une de l'autre comme toutes les colonnes d'une carte (voir « Colonnes d'une carte »), ses lignes d'un bord à l'autre de la colonne, leur texte à 12. Les colonnes se partagent la largeur, aucune plus étroite que `--attribute-column` et ses marges ; la dernière passe à la ligne quand la carte ne les tient pas. La carte s'arrête à sa plus longue colonne. Ce que le poste n'emploie pas (`.others-column`) ferme la rangée, ses noms en `--muted`, ses pastilles neutres |
+| Attributs en colonnes | `.attribute-columns`, `.attribute-column`, `.composites-column`, `.others-column`, `.attribute-rows` | Sur la fiche d'un joueur, une colonne par section, Jeu en tête : son intertitre `.section-title` sous l'en-tête de la carte, les colonnes à 8 l'une de l'autre comme toutes les colonnes d'une carte (voir « Colonnes d'une carte »), ses lignes d'un bord à l'autre de la colonne, leur texte à 12. Les colonnes se partagent la largeur, aucune plus étroite que `--attribute-column` et ses marges ; la dernière passe à la ligne quand la carte ne les tient pas. La carte s'arrête à sa plus longue colonne. Ce que le poste n'emploie pas (`.others-column`) ferme la rangée, ses noms en `--muted`, ses pastilles neutres. Les six composites d'un joueur de champ sont un radar (`.radar-column`, voir « Radar ») dans une colonne de 248, à la hauteur de la plus longue ; à côté de lui, les autres colonnes ne tiennent plus que leur plus longue ligne. Les deux d'un gardien restent une liste |
+| Radar | `.radar`, `.radar-label`, `.radar-label.key`, `.radar-rows` | Un hexagone d'étoiles, ses noms courts autour, le nom entier en infobulle. Voir « Radar » |
 | Étoiles | `.stars`, `.stars.big` | Niveau, potentiel, composite, note au poste, installations d'un club : cinq étoiles, demi-étoiles comprises, la fourchette d'une estimation en ardoise. Voir « Étoiles » |
 | Affinité à un poste | `.fit` | Un disque rempli à sa part de 20, à la couleur de son palier. Voir « Étoiles » |
 | Trait d'un club | `.trait`, `.poles` | Un mot et son cran, de cinq, entre deux pôles. Voir « Étoiles » |
@@ -1317,6 +1318,37 @@ laisse.
 - L'ordonnée et les dates sont en `--muted`, en 13 : du texte, pas du dessin
   étiré.
 
+### Radar
+
+`.radar` : les six composites d'un joueur de champ, en tête de ses attributs
+(`radar`, `web/ui.js` ; `compositesGroup`, `web/player.js`). Il remplace leur
+liste sur la fiche ; l'aperçu, les listes et un gardien, qui n'a que deux
+composites, gardent la liste.
+
+- **Hexagone à plat** : deux coins par rangée. L'attaque à droite, la défense
+  à gauche, chaque phase face à son contraire, de bas en haut comme une action :
+  Progr. et Déf. mil. en bas, Créat. et Déf. surf. au milieu, Frappe et Aérien
+  en haut.
+- **Dessin** : un anneau par étoile en `--row-line`, le cinquième en `--line` ;
+  un rayon par coin, en `--row-line` ; la forme du joueur dans l'or des étoiles
+  (`--star`, trait de 2, fond à 16 %), un point de 3 à chaque coin. Ni chiffre,
+  ni étoile écrite : la forme dit le profil.
+- **Noms** : courts (`COMPOSITE_ABBREVIATIONS`), en 13, à 4 de leur coin, en
+  dehors du dessin ; le nom entier et ses pondérations en infobulle, la valeur
+  sur 200 en plus en mode debug. Les codes de trois lettres (PRO, CRÉ…) restent
+  aux en-têtes des tableaux. Sur la rangée du milieu, un nom de deux mots passe
+  sur deux lignes, ce qui ne coûte pas de hauteur.
+- **Poste** : un composite que le poste choisi demande, en 700 avec le point de
+  l'accent, comme dans une liste. Les noms sont mesurés en 700 avec leur point :
+  choisir un autre poste ne déplace rien.
+- **Taille** : une colonne de 248 (`.radar-column`), 4 de marge, aussi haute
+  que la plus longue colonne d'attributs à côté, jamais moins que les six lignes
+  qu'il remplace. Le rayon est le plus grand que les noms laissent, le dessin
+  décalé vers où ils laissent de la place : 73 à 1920 ; les trois autres
+  colonnes y ont 160.
+- **Lecture** : l'image porte, pour un lecteur d'écran, chaque composite avec
+  ses étoiles (« Progression 2 étoiles… »).
+
 ### Classement de joueurs
 
 `.leader-bars` : des joueurs classés sur un chiffre (les buteurs, passeurs et
@@ -1825,6 +1857,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Étoiles et états | Niveau, potentiel, composites, notes au poste et installations en étoiles (`stars`, `noteStars`, `levelStars`, `potentialStars`, `facilityRating`, `web/ui.js`) à la place des pastilles sur 200 et des notes sur 20 des installations ; la personnalité d'un club en mots et crans (`.trait`) ; l'affinité en disque (`affinityIcon`) ; condition, forme et moral en paliers (`conditionIcon`, `formIcon`, `moraleCell`, `moraleFace`) à la place des jauges et des pourcentages ; la courbe du niveau en étoiles ; le mode debug (`setDebugMode`) |
+| Jeu en radar | Sur la fiche d'un joueur de champ, ses six composites en radar (`radar`, `COMPOSITE_ABBREVIATIONS`, `RADAR_COMPOSITES`, `starsText`, `web/ui.js` ; `compositesRadar`, `compositesGroup`, `web/player.js`) à la place de leur liste ; les autres colonnes à leur plus longue ligne à côté de lui (`.radar-column`, `web/charte.css`) |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
 | Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`) et les finances sous elles (`financesBlock`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |

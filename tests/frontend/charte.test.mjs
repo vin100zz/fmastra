@@ -172,6 +172,25 @@ test('an attribute’s column holds the longest name of its section and its badg
  assert.ok(!older.some(([selector,rule])=>/^\.(attributes-card|preview) \.attributes-grid$/.test(selector)&&/grid-template-columns/.test(rule)));
 });
 
+test('the radar of the Jeu section is drawn the same by both sheets, in the column of 248 the page draws it for',async()=>{
+ for(const sheet of ['docs/charte/charte.css','web/charte.css']){
+  const said=rules(await read(sheet)),body=selector=>said.find(([found])=>found===selector)?.[1]??'';
+  // Its column holds it, 4 inside; beside it the others come down to their longest row.
+  assert.equal(body('.attribute-column.radar-column'),'flex:none;width:248px',sheet);
+  assert.equal(body('.attribute-columns:has(>.radar-column)>.attribute-column:not(.radar-column)'),'min-width:min-content',sheet);
+  assert.equal(body('.radar-rows'),'display:flex;justify-content:center;padding:var(--s1)',sheet);
+  // Rings and spokes on the lines of a table, the outer ring a shade darker; the shape in the gold of the stars.
+  assert.equal(body('.radar-ring'),'fill:none;stroke:var(--row-line);stroke-width:1',sheet);
+  assert.equal(body('.radar-ring.outer'),'stroke:var(--line)',sheet);
+  assert.equal(body('.radar-shape'),'fill:color-mix(in srgb,var(--star) 16%,transparent);stroke:var(--star);stroke-width:2;stroke-linejoin:round',sheet);
+  assert.equal(body('.radar-dot'),'fill:var(--star)',sheet);
+  // A name the position asks for is marked as a key attribute is.
+  assert.equal(body('.radar-label.key>span'),'font-weight:700',sheet);
+  assert.equal(body('.radar-label.key>span::after'),body('.attribute.key>span:first-child::after')||'content:"";display:inline-block;width:5px;height:5px;margin-left:6px;border-radius:50%;background:var(--accent);vertical-align:middle',sheet);
+ }
+ assert.match(await read('web/player.js'),/const RADAR_WIDTH=248-8,/);
+});
+
 test('the history’s chart, runs, changes and views are drawn the same by the reference sheet and by the application’s',async()=>{
  const [reference,app]=await Promise.all(['docs/charte/charte.css','web/charte.css'].map(async sheet=>rules(await read(sheet))));
  const body=(said,selector)=>said.find(([found])=>found===selector)?.[1];
