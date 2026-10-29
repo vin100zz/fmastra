@@ -1219,8 +1219,9 @@ L'aperçu d'un joueur reprend les mots de sa fiche : drapeau, nom et poste, club
 sélections, les tuiles âge, niveau et potentiel, puis État (condition, forme, moral,
 et la blessure ou la suspension s'il y en a une), Contrat (avec ses prétentions et son
 intérêt quand l'utilisateur dirige un club), Postes (affinité et note, un clic lit la
-section Jeu pour ce poste), Jeu et Attributs : les attributs sur deux colonnes, Jeu sur
-une, ses plus longs noms et leurs étoiles ne tenant pas sur deux. Au pied,
+section Jeu pour ce poste), Jeu et Attributs : les attributs sur deux colonnes ; Jeu
+en radar comme sur la fiche (charte, « Radar »), à la hauteur des six lignes qu'il
+remplace, et pour un gardien ses deux composites sur une colonne. Au pied,
 « Ouvrir la fiche » et les actions de la fiche (« Faire une offre », « Proposer un
 contrat », mise en vente), avec leurs boîtes de dialogue.
 

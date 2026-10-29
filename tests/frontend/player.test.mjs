@@ -151,16 +151,21 @@ test('the Jeu section leads the attributes: an outfield player\'s six composites
  const {compositesGroup,compositeItems}=await import('../../web/player.js');
  assert.deepEqual(compositeItems(playing).map(item=>[item.key,item.wanted]),
   [['progression_attaque',true],['occasion_attaque',false],['tir',false],['tete',false],['progression_defense',true],['occasion_defense',true]]);
+ // In a preview, an outfield player's six in the radar of his page, in the room of their list.
  const html=compositesGroup(playing);
- assert.match(html,/<h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3>/);
- assert.match(html,/<div class="attribute key" title="Progression"><span>Progression<\/span><span class="stars" role="img" aria-label="2 étoiles">/);
- assert.match(html,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Création<\/span><span class="off-role"><span class="stars" role="img" aria-label="1 étoile">/);
- assert.doesNotMatch(html,/rating graded|sur 200/);
+ assert.match(html,/^<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="radar-rows"><div class="radar" style="width:240px;height:148px">/);
+ assert.match(html,/<span class="radar-label right key"[^>]*title="Progression"><span>Progr\.<\/span>/);
+ assert.match(html,/<span class="radar-label right"[^>]*title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Créat\.<\/span>/);
+ assert.doesNotMatch(html,/rating graded|sur 200|attributes-grid/);
  // Another position picked on the pitch reads the section for it.
  assert.deepEqual(compositeItems(playing,'BU').filter(item=>item.wanted).map(item=>item.key),['occasion_attaque','tir','tete']);
  assert.match(compositesGroup(playing,'BU'),/<h3 class="section-title">Jeu <span class="position att">BU<\/span>/);
- // A goalkeeper only has his two; without composites there is no section.
- assert.deepEqual(compositeItems({...playing,position:'GB'},'GB').map(item=>item.key),['arret','sortie']);
+ // A goalkeeper only has his two, in a list: those his position asks for marked, the others grey. Without composites there
+ // is no section.
+ const keeper={...playing,position:'GB'};
+ assert.deepEqual(compositeItems(keeper,'GB').map(item=>item.key),['arret','sortie']);
+ assert.match(compositesGroup(keeper),/<div class="attributes-grid"><div class="attribute key" title="Arrêts"><span>Arrêts<\/span><span class="stars" role="img" aria-label="½ étoile">/);
+ assert.match(compositesGroup(keeper,'DD'),/<div class="attribute" title="Arrêts"><span>Arrêts<\/span><span class="off-role"><span class="stars" role="img" aria-label="½ étoile">/);
  assert.equal(compositesGroup(detail),'');
 });
 
@@ -576,7 +581,7 @@ test('beside a list of players, the picked one is previewed in the words of his 
  assert.doesNotMatch(html,/Blessure|Cartons/);
  // His positions, best note first, then what the engine reads of him and his attributes.
  assert.match(html,/class="position-row picked" data-composite-role="DD"/);
- assert.match(html,/<h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3>/);
+ assert.match(html,/<h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="radar-rows"><div class="radar"/);
  assert.match(html,/<div class="attribute key"[^>]*><span>Passe<\/span>/);
  assert.match(html,/<a class="button" href="#\/player\/1">Ouvrir la fiche<\/a>.*Faire une offre/);
  // An injury shows in its place; a retired player has no preview.

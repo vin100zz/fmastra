@@ -63,28 +63,30 @@ const weighting=weights=>Object.entries(weights||{}).map(([key,weight])=>`${ATTR
 const compositeTitle=(player,key)=>{const weights=weighting(player.composite_weights?.[key]);return weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key];};
 
 // The radar of the Jeu section in its column of 248 (`.radar-column`, web/charte.css), 4 inside it, as tall as the longest
-// column of attributes beside it and never shorter than the list of six it stands for. In debug mode, the tooltip of a name
-// ends on its figure out of 200.
+// column of attributes beside it (`beside`) and never shorter than the list of six it stands for; in a preview, the same
+// radar in the room of that list. In debug mode, the tooltip of a name ends on its figure out of 200.
 const RADAR_WIDTH=248-8,ROW=26;
-function compositesRadar(player, items) {
- const byKey=Object.fromEntries(items.map(item=>[item.key,item])),rows=Math.max(items.length,...attributeGroups(player).sections.map(section=>section.items.length));
+function compositesRadar(player, items, beside=true) {
+ const byKey=Object.fromEntries(items.map(item=>[item.key,item]));
+ const rows=Math.max(items.length,...(beside?attributeGroups(player).sections.map(section=>section.items.length):[]));
  const axes=RADAR_COMPOSITES.filter(key=>byKey[key]).map(key=>byKey[key]).map(({key,value,wanted})=>({label:COMPOSITE_ABBREVIATIONS[key],value:starsOf(value),key:wanted,
   title:`${compositeTitle(player,key)}${debugMode()?`\n${level(value)} sur 200`:''}`}));
  const label=`Jeu : ${items.map(({key,value})=>`${COMPOSITES[key]} ${starsText(starsOf(value))}`).join(', ')}`;
  return `<div class="radar-rows">${radar(axes,{width:RADAR_WIDTH,height:rows*ROW-8,max:5,rings:[1,2,3,4,5],offset:.5,label})}</div>`;
 }
 
-// Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for.
-// On the page it is the first of the attribute columns (`column`): an outfield player's six in a radar, a goalkeeper's two in
-// a list. In a preview a grid of its own.
+// Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for. An
+// outfield player's six in a radar, a goalkeeper's two in a list: on the page the first of the attribute columns (`column`),
+// in a preview a group of its own.
 export function compositesGroup(player, role=player.position, column=false) {
  const items=compositeItems(player,role);
  if(!items.length)return '';
  const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]);
   return `<div class="attribute${wanted?' key':''}" title="${e(compositeTitle(player,key))}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
- if(column&&player.position!=='GB')return `<div class="attribute-column composites-column radar-column" data-composites="column"><h3 class="section-title">Jeu ${position(role)}</h3>${compositesRadar(player,items)}</div>`;
+ const keeper=player.position==='GB';
+ if(column&&!keeper)return `<div class="attribute-column composites-column radar-column" data-composites="column"><h3 class="section-title">Jeu ${position(role)}</h3>${compositesRadar(player,items)}</div>`;
  return column?attributeColumn(`Jeu ${position(role)}`,items.map(item).join(''),'composites-column" data-composites="column')
-  :`<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
+  :`<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu ${position(role)}</h3>${keeper?`<div class="attributes-grid">${items.map(item).join('')}</div>`:compositesRadar(player,items,false)}</div>`;
 }
 
 // A section in a column of its own, under its strip: the strips of the card make one band, read like a table's head.

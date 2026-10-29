@@ -1322,8 +1322,8 @@ laisse.
 
 `.radar` : les six composites d'un joueur de champ, en tête de ses attributs
 (`radar`, `web/ui.js` ; `compositesGroup`, `web/player.js`). Il remplace leur
-liste sur la fiche ; l'aperçu, les listes et un gardien, qui n'a que deux
-composites, gardent la liste.
+liste sur la fiche et dans l'aperçu d'un joueur ; la vue Jeu des listes garde
+ses colonnes, et un gardien, qui n'a que deux composites, sa liste.
 
 - **Hexagone à plat** : deux coins par rangée. L'attaque à droite, la défense
   à gauche, chaque phase face à son contraire, de bas en haut comme une action :
@@ -1345,7 +1345,8 @@ composites, gardent la liste.
   que la plus longue colonne d'attributs à côté, jamais moins que les six lignes
   qu'il remplace. Le rayon est le plus grand que les noms laissent, le dessin
   décalé vers où ils laissent de la place : 73 à 1920 ; les trois autres
-  colonnes y ont 160.
+  colonnes y ont 160. Dans l'aperçu, le même radar, de 240, à la hauteur des six
+  lignes qu'il remplace, au milieu de sa largeur.
 - **Lecture** : l'image porte, pour un lecteur d'écran, chaque composite avec
   ses étoiles (« Progression 2 étoiles… »).
 
@@ -1857,7 +1858,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Étoiles et états | Niveau, potentiel, composites, notes au poste et installations en étoiles (`stars`, `noteStars`, `levelStars`, `potentialStars`, `facilityRating`, `web/ui.js`) à la place des pastilles sur 200 et des notes sur 20 des installations ; la personnalité d'un club en mots et crans (`.trait`) ; l'affinité en disque (`affinityIcon`) ; condition, forme et moral en paliers (`conditionIcon`, `formIcon`, `moraleCell`, `moraleFace`) à la place des jauges et des pourcentages ; la courbe du niveau en étoiles ; le mode debug (`setDebugMode`) |
-| Jeu en radar | Sur la fiche d'un joueur de champ, ses six composites en radar (`radar`, `COMPOSITE_ABBREVIATIONS`, `RADAR_COMPOSITES`, `starsText`, `web/ui.js` ; `compositesRadar`, `compositesGroup`, `web/player.js`) à la place de leur liste ; les autres colonnes à leur plus longue ligne à côté de lui (`.radar-column`, `web/charte.css`) |
+| Jeu en radar | Sur la fiche et dans l'aperçu d'un joueur de champ, ses six composites en radar (`radar`, `COMPOSITE_ABBREVIATIONS`, `RADAR_COMPOSITES`, `starsText`, `web/ui.js` ; `compositesRadar`, `compositesGroup`, `web/player.js`) à la place de leur liste ; les autres colonnes à leur plus longue ligne à côté de lui (`.radar-column`, `web/charte.css`) |
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
 | Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`) et les finances sous elles (`financesBlock`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
