@@ -5,8 +5,8 @@ import {api,escape as e,matchMinute,halfEnd,number as n,expectedGoals,matchNoteB
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
 const kitOf=(team,side)=>{const major=safeColor(team?.major_color);return major?{major,minor:safeColor(team.minor_color)||contrastText(major)}:fallbackKits[side];};
-// The away bars switch to their second colour, or a neutral one, when both sides would look alike.
-const barColors=(home,away)=>[home.major,[away.major,away.minor,fallbackKits.away.major,fallbackKits.home.major].find(color=>contrastRatio(home.major,color)>=1.6)||away.major];
+// Two shirts, or a shirt and a goalkeeper, that a glance tells apart.
+const apart=(first,second)=>contrastRatio(first,second)>=1.6;
 const minute=(event,half)=>matchMinute(event.second,half,event.period);
 
 // What happened to each player during play (the shoot-out aside): goals, cards, injury, minutes of coming on and off.
@@ -63,14 +63,17 @@ function lineupCard(match,side,marks){
  return `<section class="card match-lineup">${pitch(result[`${side}_lineup`],`Composition de ${match[side].name}`,{compact:true,kit,marks:onPitch,goals})}${benchHalves(result[`${side}_bench`],marks)}</section>`;
 }
 
-// Both sides as the replay draws them: the same contrasting pair as the stat bars, a goalkeeper apart from both.
+// Both sides as the replay draws them, a goalkeeper apart from both. The home side wears its shirt; the away side its own,
+// its away kit when the two home shirts look alike, or else a plain disc of its second colour or of a neutral one.
 export function replayTeams(match){
- const home=kitOf(match.home,'home'),away=kitOf(match.away,'away'),[homeMajor,awayMajor]=barColors(home,away);
- const keeper=['#f2c94c','#40c4ff','#c77dff'].find(color=>contrastRatio(color,homeMajor)>=1.6&&contrastRatio(color,awayMajor)>=1.6)||'#f2c94c';
- const minor=(major,kit)=>major===kit.major?kit.minor:contrastText(major);
- // The discs wear the shirt itself, its pattern from the CSV, unless the side had to change colours to stand apart.
- const shirt=(major,kit,team)=>major===kit.major&&safeColor(team.major_color)?team.shirt_url||null:null;
- return {home:{name:match.home.name,major:homeMajor,minor:minor(homeMajor,home),keeper,shirt:shirt(homeMajor,home,match.home)},away:{name:match.away.name,major:awayMajor,minor:minor(awayMajor,away),keeper,shirt:shirt(awayMajor,away,match.away)}};
+ // A kit's discs wear the shirt itself, its pattern from the CSV.
+ const worn=(team,side)=>({...kitOf(team,side),shirt:safeColor(team?.major_color)?team.shirt_url||null:null});
+ const home=worn(match.home,'home'),own=worn(match.away,'away');
+ const change=safeColor(match.away?.away_kit?.major_color)?worn(match.away.away_kit,'away'):null;
+ const plain=[own.minor,fallbackKits.away.major,fallbackKits.home.major].find(colour=>apart(home.major,colour));
+ const away=[own,change,plain&&{major:plain,minor:contrastText(plain),shirt:null}].find(kit=>kit&&apart(home.major,kit.major))||own;
+ const keeper=['#f2c94c','#40c4ff','#c77dff'].find(color=>apart(color,home.major)&&apart(color,away.major))||'#f2c94c';
+ return {home:{name:match.home.name,...home,keeper},away:{name:match.away.name,...away,keeper}};
 }
 
 export function statsCard(match){

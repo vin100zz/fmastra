@@ -84,7 +84,7 @@ function roundResults(data,day){
  const current=rounds.includes(Number(day))?Number(day):played.at(-1)??rounds[0];
  const pills=`<nav class="chips" aria-label="Journées">${rounds.map(round=>`<a class="${round===current?'active':''}" href="${editionHref(data.code,data.year,tab,round)}">J${round}</a>`).join('')}</nav>`;
  const items=data.matches.filter(m=>m.round===current);
- const blocks=firstGroups(data).map(group=>{const list=groupMatches(group,items,current);return list.length?`<section class="day-group"><h3>Groupe ${e(group.name)}</h3>${fixtures({items:list})}</section>`:'';}).join('');
+ const blocks=firstGroups(data).map(group=>{const list=groupMatches(group,items,current);return list.length?`<section class="day-group"><h3 class="section-title">Groupe ${e(group.name)}</h3>${fixtures({items:list})}</section>`:'';}).join('');
  return card('Résultats par journée',`<div class="day-pills">${pills}</div><div class="day-groups">${blocks}</div>`,`<span class="muted">${date(items[0].date)}</span>`);
 }
 function qualificationsContent(data,day){
@@ -97,8 +97,8 @@ function qualificationsContent(data,day){
 // A Nations League's groups, division by division, four groups a row, each nation marked with where it goes; then the
 // results of a match day.
 function leagueContent(data,day){
- const divisions=data.divisions.map(division=>`<section><h3 class="section-title">${e(division.name)}</h3><div class="intl-groups intl-groups-4">`
-  +`${division.groups.map(group=>card(`Groupe ${group.name}`,internationalStandings(group.rows))).join('')}</div></section>`).join('');
+ const divisions=data.divisions.map(division=>card(division.name,`<div class="intl-groups intl-groups-4">`
+  +`${division.groups.map(group=>`<div><h3 class="section-title">Groupe ${e(group.name)}</h3>${internationalStandings(group.rows)}</div>`).join('')}</div>`)).join('');
  return divisions+roundResults(data,day);
 }
 // `round` is the latest or next round of the edition, for the tabs that show it; `day` the round of the first stage picked

@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount,roundFee} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,byAttributeName} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,COMPOSITE_ABBREVIATIONS,RADAR_COMPOSITES,byAttributeName,radar,starsText} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -59,15 +59,34 @@ export function compositeItems(player, role=player.position) {
 
 const weighting=weights=>Object.entries(weights||{}).map(([key,weight])=>`${ATTRIBUTES[key]} ${Math.round(weight*100)} %`).join(' · ');
 
-// Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for.
-// On the page it is the first of the attribute columns (`column`), in a preview a grid of its own.
+// The whole name of a composite and what it is made of: the tooltip of its row, or of its name on the radar.
+const compositeTitle=(player,key)=>{const weights=weighting(player.composite_weights?.[key]);return weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key];};
+
+// The radar of the Jeu section in its column of 248 (`.radar-column`, web/charte.css), 4 inside it, as tall as the longest
+// column of attributes beside it (`beside`) and never shorter than the list of six it stands for; in a preview, the same
+// radar in the room of that list. In debug mode, the tooltip of a name ends on its figure out of 200.
+const RADAR_WIDTH=248-8,ROW=26;
+function compositesRadar(player, items, beside=true) {
+ const byKey=Object.fromEntries(items.map(item=>[item.key,item]));
+ const rows=Math.max(items.length,...(beside?attributeGroups(player).sections.map(section=>section.items.length):[]));
+ const axes=RADAR_COMPOSITES.filter(key=>byKey[key]).map(key=>byKey[key]).map(({key,value,wanted})=>({label:COMPOSITE_ABBREVIATIONS[key],value:starsOf(value),key:wanted,
+  title:`${compositeTitle(player,key)}${debugMode()?`\n${level(value)} sur 200`:''}`}));
+ const label=`Jeu : ${items.map(({key,value})=>`${COMPOSITES[key]} ${starsText(starsOf(value))}`).join(', ')}`;
+ return `<div class="radar-rows">${radar(axes,{width:RADAR_WIDTH,height:rows*ROW-8,max:5,rings:[1,2,3,4,5],offset:.5,label})}</div>`;
+}
+
+// Ahead of the attributes, the Jeu section; picking a position on the pitch of aptitudes sets the `role` it is read for. An
+// outfield player's six in a radar, a goalkeeper's two in a list: on the page the first of the attribute columns (`column`),
+// in a preview a group of its own.
 export function compositesGroup(player, role=player.position, column=false) {
  const items=compositeItems(player,role);
  if(!items.length)return '';
- const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]),weights=weighting(player.composite_weights?.[key]);
-  return `<div class="attribute${wanted?' key':''}" title="${e(weights?`${COMPOSITES[key]} : ${weights}`:COMPOSITES[key])}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
+ const item=({key,value,wanted})=>{const badge=noteStars(value,COMPOSITES[key]);
+  return `<div class="attribute${wanted?' key':''}" title="${e(compositeTitle(player,key))}"><span>${COMPOSITES[key]}</span>${wanted?badge:`<span class="off-role">${badge}</span>`}</div>`;};
+ const keeper=player.position==='GB';
+ if(column&&!keeper)return `<div class="attribute-column composites-column radar-column" data-composites="column"><h3 class="section-title">Jeu ${position(role)}</h3>${compositesRadar(player,items)}</div>`;
  return column?attributeColumn(`Jeu ${position(role)}`,items.map(item).join(''),'composites-column" data-composites="column')
-  :`<div class="attribute-group composites-group" data-composites><h3>Jeu ${position(role)}</h3><div class="attributes-grid">${items.map(item).join('')}</div></div>`;
+  :`<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu ${position(role)}</h3>${keeper?`<div class="attributes-grid">${items.map(item).join('')}</div>`:compositesRadar(player,items,false)}</div>`;
 }
 
 // A section in a column of its own, under its strip: the strips of the card make one band, read like a table's head.
@@ -345,9 +364,9 @@ function feeTiles(player) {
 // Where a player stands besides his club's first team: lent by the club that owns him, or in the reserve.
 const loanTerms=player=>[...(player.loan?[['Prêté par',clubLink(player.loan.parent)],['Fin du prêt',date(player.loan.end)]]:[]),...(player.reserve?[['Équipe','Réserve']]:[])];
 
-// Beside the page, a card of facts in sections, each under its title, the first at the top of the card: how he is, with
-// his other nationalities (the flag, then the code), the traits of his character he shows, then what his contract holds.
-// Who he is and what he is worth stand in the header.
+// Beside the page, three cards of facts, each under its head: how he is, with his other nationalities (the flag, then the
+// code), the traits of his character he shows, then what his contract holds. Who he is and what he is worth stand in the
+// header.
 function rail(player) {
  const others=nationCodes(player).slice(1);
  const injury=player.injured_until?`<span class="danger">Retour le ${date(player.injured_until)}</span>`:'<span class="available">Disponible</span>';
@@ -356,9 +375,9 @@ function rail(player) {
  const character=characterFacts(player);
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',date(player.contract_end)],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),...loanTerms(player)];
- return `<aside class="card player-rail"><h3>État</h3><div class="rail-section">${state}</div>`
-  +(character?`<h3>Caractère</h3><div class="rail-section">${character}</div>`:'')
-  +`<h3>Contrat</h3><div class="rail-section">${terms.map(([label,value])=>fact(label,value)).join('')}</div></aside>`;
+ const block=(title,facts)=>`<section class="card"><div class="card-head"><h2>${title}</h2></div><div class="rail-section">${facts}</div></section>`;
+ return `<aside class="player-rail">${block('État',state)}${character?block('Caractère',character):''}`
+  +`${block('Contrat',terms.map(([label,value])=>fact(label,value)).join(''))}</aside>`;
 }
 
 // Attributes beside the aptitudes (the pitch of his positions, a block under each); without any position to show, the
@@ -423,7 +442,7 @@ export async function playerPreview(id, state) {
  const tile=(label,value)=>`<div class="tile"><span>${label}</span><strong>${value}</strong></div>`;
  const flags=nationFlags(player);
  const bans=(player.discipline||[]).filter(item=>item.suspended_matches).map(item=>fact('Suspension',`<span class="danger">${competitionLink({name:item.competition})} · ${item.suspended_matches} match${item.suspended_matches>1?'s':''}</span>`)).join('');
- const shape=`<h3>État</h3>${conditionFact(player)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
+ const shape=`<h3 class="section-title">État</h3>${conditionFact(player)}${formFact(player)}${moraleFact(player)}${player.injured_until?fact('Blessure',`<span class="danger">Retour le ${date(player.injured_until)}</span>`):''}${bans}`;
  const terms=[['Salaire',player.contract_end?monthlySalary(player.wage):'—'],['Fin du contrat',`<span class="${player.expiring_soon?'danger':player.expiring?'warn':''}">${date(player.contract_end)}</span>`],
   ...(player.wage_demand!=null?[['Prétentions',monthlySalary(player.wage_demand)]]:[]),
   ...(player.transfer_listed||player.loan_listed?[['Listé',marketTags(player.transfer_listed,player.loan_listed)]]:[]),
@@ -434,9 +453,9 @@ export async function playerPreview(id, state) {
  return `<div class="card preview"><div class="preview-head">${flags.main}<h2><a href="#/player/${player.id}">${e(player.name)}</a></h2>${position(player.position)}</div>`
   +`<div class="preview-line">${clubLink(player.club)}${caps(player)}</div>`
   +`<div class="rail-tiles">${tile('Âge',player.age)}${tile('Niveau',levelStars(player,true))}${tile('Potentiel',potentialStars(player,true))}</div>${feeTiles(player)}`
-  +shape+`<h3>Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
-  +(roles?`<h3>Postes</h3>${roles}`:'')+compositesGroup(player)
-  +`<h3>Attributs</h3><div class="attributes-grid">${attributes}</div>`
+  +shape+`<h3 class="section-title">Contrat</h3>${terms.map(([label,value])=>fact(label,value)).join('')}`
+  +(roles?`<h3 class="section-title">Postes</h3>${roles}`:'')+compositesGroup(player)
+  +`<h3 class="section-title">Attributs</h3><div class="attributes-grid">${attributes}</div>`
   +`<div class="preview-actions"><a class="button" href="#/player/${player.id}">Ouvrir la fiche</a>${actions}</div></div>`;
 }
 

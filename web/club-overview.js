@@ -170,17 +170,17 @@ export async function clubPreview(id){
  const standing=club.standing;
  const tiles=`<div class="rail-tiles">${tile('Réputation',n(club.reputation))}${standing?tile('Classement',`${standing.rank}${standing.rank===1?'er':'e'}`)+tile('Points',standing.points):''}</div>`;
  const books=data.finances,used=Math.round(100*books.wage_bill/Math.max(1,books.wage_cap));
- const finances=`<h3>Finances</h3>${fact('Budget transferts',spendable(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
+ const finances=`<h3 class="section-title">Finances</h3>${fact('Budget transferts',spendable(Math.max(0,books.transfer_budget-books.reserved_transfer_budget)))}${fact('Solde',money(books.balance))}`
   +fact('Masse salariale',`<i class="gauge${used>=95?' full':''}" role="img" aria-label="${used} % du plafond salarial utilisé"><i style="width:${Math.min(100,used)}%"></i></i><b>${money(monthlyAmount(books.wage_bill))} / ${money(monthlyAmount(books.wage_cap))}</b>`)
   +fact('Achats de la saison',money(books.season_spent))+fact('Ventes de la saison',money(books.season_sales));
  // The players the club has lent are not its to field.
  const best=squad.items.filter(player=>!player.away).slice(0,BEST_PLAYERS);
- const players=best.length?`<h3>Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelStars(player),potentialStars(player),figure(price(player.value))]))}</div>`:'';
+ const players=best.length?`<h3 class="section-title">Meilleurs joueurs</h3><div class="preview-table">${table(['POSTE','JOUEUR','ÂGE','NIV.','POT.','VALEUR'],best.map(player=>[position(player.position),`<span class="strong">${playerLink(player.id,player.name)}</span>`,figure(player.age),levelStars(player),potentialStars(player),figure(price(player.value))]))}</div>`:'';
  const tab=(key,label)=>`<a class="button" href="#/club/${club.id}/${key}">${label}</a>`;
  return `<div class="card preview"><div class="preview-head">${crest}<h2><a href="#/club/${club.id}">${e(club.name)}</a></h2></div>`
   +`<div class="preview-line"><span>${nationBadge(club.nation_code,{full:true})}</span><span class="muted">${club.competition?competitionLink({id:club.competition_id,name:club.competition}):'Marché extérieur'} · ${n(club.capacity)} places</span></div>`
   +tiles+fact('Tactique',e(club.formation))+fact('Entraînement',facilityRating(club.training_facilities))+fact('Recrutement des jeunes',facilityRating(club.youth_recruitment))
-  +(club.active?`<h3>Matches</h3>${matchList([...[...data.calendar.last].reverse(),...data.calendar.next],club,'Aucun match programmé.')}`:'')
+  +(club.active?`<h3 class="section-title">Matches</h3>${matchList([...[...data.calendar.last].reverse(),...data.calendar.next],club,'Aucun match programmé.')}`:'')
   +finances+players
   +`<div class="preview-actions"><div class="preview-tabs">${tab('squad','Effectif')}${tab('calendar','Calendrier')}${tab('finances','Finances')}${tab('transfers','Transferts')}</div></div></div>`;
 }
@@ -202,7 +202,7 @@ export function marketBlock(transfers,{club=null,market=null}={}){
  const loan=(row,arrow)=>`<li><div class="market-line"><span class="market-player">${playerLink(row.joueur_id,row.joueur)}<small>${arrow} ${clubLink(row.club)}</small></span><span class="muted">${shortDate(row.fin)}</span></div></li>`;
  const loans=[...(transfers.prets||[]).map(row=>loan(row,'→')),...(transfers.emprunts||[]).map(row=>loan(row,'←'))];
  const offers=transfers.entrantes.reduce((sum,group)=>sum+group.offres.length,0);
- const section=(title,items,none,count=items.length,alert=false)=>`<div class="market-column"><h3>${title}<span class="market-count${alert&&count?' alert':''}">${count}</span></h3>${items.length?`<ul class="market-list">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}</div>`;
+ const section=(title,items,none,count=items.length,alert=false)=>`<div class="market-column"><h3 class="section-title">${title}${alert&&count?`<span class="count">${count}</span>`:`<span class="section-tally">${count}</span>`}</h3>${items.length?`<ul class="market-list">${items.join('')}</ul>`:`<p class="muted">${none}</p>`}</div>`;
  const head=[market?`<span class="market-state open">${WINDOWS[market]||'Mercato ouvert'}</span>`:'<span class="market-state">Mercato fermé</span>',
   club?`<span class="market-room">Budget <b>${spendable(club.available_budget)}</b> · Marge salariale <b>${monthlyMargin(Math.max(0,club.wage_cap-club.wage_bill))}</b></span>`:''].join('');
  const body=section('Offres reçues',incoming,'Aucune offre sur vos joueurs.',offers,true)+section('Vos offres',outgoing,'Aucune offre en cours.')

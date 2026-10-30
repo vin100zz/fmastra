@@ -151,25 +151,59 @@ test('the Jeu section leads the attributes: an outfield player\'s six composites
  const {compositesGroup,compositeItems}=await import('../../web/player.js');
  assert.deepEqual(compositeItems(playing).map(item=>[item.key,item.wanted]),
   [['progression_attaque',true],['occasion_attaque',false],['tir',false],['tete',false],['progression_defense',true],['occasion_defense',true]]);
+ // In a preview, an outfield player's six in the radar of his page, in the room of their list.
  const html=compositesGroup(playing);
- assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
- assert.match(html,/<div class="attribute key" title="Progression"><span>Progression<\/span><span class="stars" role="img" aria-label="2 étoiles">/);
- assert.match(html,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Création<\/span><span class="off-role"><span class="stars" role="img" aria-label="1 étoile">/);
- assert.doesNotMatch(html,/rating graded|sur 200/);
+ assert.match(html,/^<div class="attribute-group composites-group" data-composites><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="radar-rows"><div class="radar" style="width:240px;height:148px">/);
+ assert.match(html,/<span class="radar-label right key"[^>]*title="Progression"><span>Progr\.<\/span>/);
+ assert.match(html,/<span class="radar-label right"[^>]*title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Créat\.<\/span>/);
+ assert.doesNotMatch(html,/rating graded|sur 200|attributes-grid/);
  // Another position picked on the pitch reads the section for it.
  assert.deepEqual(compositeItems(playing,'BU').filter(item=>item.wanted).map(item=>item.key),['occasion_attaque','tir','tete']);
- assert.match(compositesGroup(playing,'BU'),/<h3>Jeu <span class="position att">BU<\/span>/);
- // A goalkeeper only has his two; without composites there is no section.
- assert.deepEqual(compositeItems({...playing,position:'GB'},'GB').map(item=>item.key),['arret','sortie']);
+ assert.match(compositesGroup(playing,'BU'),/<h3 class="section-title">Jeu <span class="position att">BU<\/span>/);
+ // A goalkeeper only has his two, in a list: those his position asks for marked, the others grey. Without composites there
+ // is no section.
+ const keeper={...playing,position:'GB'};
+ assert.deepEqual(compositeItems(keeper,'GB').map(item=>item.key),['arret','sortie']);
+ assert.match(compositesGroup(keeper),/<div class="attributes-grid"><div class="attribute key" title="Arrêts"><span>Arrêts<\/span><span class="stars" role="img" aria-label="½ étoile">/);
+ assert.match(compositesGroup(keeper,'DD'),/<div class="attribute" title="Arrêts"><span>Arrêts<\/span><span class="off-role"><span class="stars" role="img" aria-label="½ étoile">/);
  assert.equal(compositesGroup(detail),'');
 });
 
-test('the Jeu section is the first column of the attributes card, ahead of the attributes',async()=>{
+test('the Jeu section is the first column of the attributes card, an outfield player\'s in a radar, a goalkeeper\'s in a list',async()=>{
  const {html}=await render(playing);
  const attributes=html.slice(html.indexOf('>Attributs<'),html.indexOf('Aptitudes par poste'));
- assert.match(attributes,/<div class="attribute-columns"><div class="attribute-column composites-column" data-composites="column"><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="attribute-rows">/);
+ // Never shorter than the six rows it stands for, whatever the columns beside it.
+ assert.match(attributes,/<div class="attribute-columns"><div class="attribute-column composites-column radar-column" data-composites="column"><h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="radar-rows"><div class="radar" style="width:240px;height:148px">/);
  assert.ok(attributes.indexOf('data-composites')<attributes.indexOf('>Attaque</h3>'));
  assert.match(html,/<span class="player-block"><span><span class="stars"/);
+ const keeper=(await render({...playing,position:'GB'})).html;
+ assert.match(keeper,/<div class="attribute-column composites-column" data-composites="column"><h3 class="section-title">Jeu <span class="position gk">GB<\/span><\/h3><div class="attribute-rows"><div class="attribute key" title="Arrêts"><span>Arrêts<\/span>/);
+ assert.doesNotMatch(keeper,/class="radar/);
+});
+
+test('the radar sets the attack down its right side and the defence of each phase facing it, its names short, the whole ones in their tooltips',async()=>{
+ const {compositesGroup}=await import('../../web/player.js');
+ const radar=compositesGroup(playing,'DD',true);
+ const names=[...radar.matchAll(/<span class="radar-label (\w+)( key)?" style="left:([\d.]+)px;top:([\d.]+)px" title="([^"]*)"><span>(.*?)<\/span><\/span>/g)];
+ assert.deepEqual(names.map(([,side,key,,,title,name])=>[name,side,Boolean(key),title.split(' :')[0]]),[
+  ['Frappe','right',false,'Frappe'],['Créat.','right',false,'Création'],['Progr.','right',true,'Progression'],
+  ['Déf. mil.','left',true,'Défense au milieu'],['Déf.<br>surf.','left',true,'Défense de surface'],['Aérien','left',false,'Jeu aérien']]);
+ assert.match(radar,/title="Création : Vision 50 % · Technique 30 % · Passe 20 %"><span>Créat\.<\/span>/);
+ // Two corners to a row, each name inside the drawing's box.
+ const tops=names.map(match=>Number(match[4]));
+ assert.deepEqual([tops[0]===tops[5],tops[1]===tops[4],tops[2]===tops[3]],[true,true,true]);
+ assert.ok(names.every(match=>Number(match[3])>=0&&Number(match[3])<=240&&Number(match[4])>=0&&Number(match[4])<=148));
+ // Five rings, a spoke and a dot a corner, the shape; and what a screen reader says of it.
+ assert.equal(radar.match(/class="radar-ring( outer)?"/g).length,5);
+ assert.equal(radar.match(/class="radar-ring outer"/g).length,1);
+ assert.equal(radar.match(/class="radar-spoke"/g).length,6);
+ assert.equal(radar.match(/class="radar-dot"/g).length,6);
+ assert.match(radar,/<svg width="240" height="148" viewBox="0 0 240 148" role="img" aria-label="Jeu : Progression 2 étoiles, Création 1 étoile, Frappe 4½ étoiles, Jeu aérien 3 étoiles, Défense au milieu ½ étoile, Défense de surface ½ étoile">/);
+ // Another position marks other names and moves nothing.
+ const striker=compositesGroup(playing,'BU',true);
+ assert.deepEqual([...striker.matchAll(/class="radar-label \w+ key"[^>]*><span>(.*?)<\/span>/g)].map(match=>match[1]),['Frappe','Créat.','Aérien']);
+ const at=html=>[...html.matchAll(/style="left:[\d.]+px;top:[\d.]+px"/g)].map(match=>match[0]).join();
+ assert.equal(at(striker),at(radar));
 });
 
 test('player page is one screen without tabs or stat cards: the header of his club, a rail, the profile, then the history',async()=>{
@@ -179,10 +213,10 @@ test('player page is one screen without tabs or stat cards: the header of his cl
  for(const label of ['>État<','>Contrat<','>Attributs<','>Aptitudes par poste<','>Évolution du niveau<','>Carrière<'])assert.ok(html.includes(label),label);
  // A club without colours leaves the band plain; nobody manages a club here, so nothing stands under the band.
  assert.match(html,/^<header class="club-hero plain">/);assert.doesNotMatch(html,/club-hero-bar|<dialog/);
- // The rail has no head: its first section opens it under its title, as the others do.
- assert.match(html,/<\/header><div class="player-page"><aside class="card player-rail"><h3>État<\/h3><div class="rail-section">/);
+ // The rail is three cards, each under its head.
+ assert.match(html,/<\/header><div class="player-page"><aside class="player-rail"><section class="card"><div class="card-head"><h2>État<\/h2><\/div><div class="rail-section">/);
  const side=rail(html),main=html.slice(html.indexOf('class="player-main"'));
- assert.ok(side.indexOf('>État<')<side.indexOf('<h3>Contrat</h3>'));
+ assert.ok(side.indexOf('>État<')<side.indexOf('<h2>Contrat</h2>'));
  assert.ok(!main.includes('>État<')&&!side.includes('>Attributs<'));
  assert.match(html,/Serie A · C1/);
 });
@@ -275,7 +309,7 @@ test('his selection has one tile between his age and his level: its flag over it
   const flag=(name,file)=>`<span class="nation" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
   const linked=(name,file,id)=>`<a class="nation" href="#/international/nation/${id}" title="${name}"><img class="flag" src="/flags/${file}.svg" alt="" width="16" height="12" loading="lazy">`;
   const tile=html=>html.match(/<strong>19<\/strong><\/div><div class="club-hero-tile split">(.*?)<\/div><div class="club-hero-tile split"><div><span>Niveau/)[1];
-  const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><h3>Contrat/)?.slice(1);
+  const others=html=>rail(html).match(/<div class="fact"><span>(Autres? nationalités?)<\/span><strong>(.*?)<\/strong><\/div><\/div><\/section><section class="card"><div class="card-head"><h2>Contrat/)?.slice(1);
   const base={...detail,nationalities:['FRA','SEN'],national_team:'SEN',national_team_id:-12,international_caps:12,international_goals:3};
   const capped=(await render(base)).html;
   // The nation he plays for, whatever its place among his nationalities, with a link to it.
@@ -391,13 +425,13 @@ test('attributes are graded badges without bars; greed is a trait of his charact
  assert.match(card,/<span>Technique<\/span><span class="rating graded" style="--hue:\d+">6</);
  assert.doesNotMatch(card,/class="gauge|class="meter"|Niv\.|Pot\.|Appât du gain/);
  // Between his state and his contract, whose demands it inflates.
- assert.match(rail(html),/<\/div><h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span><strong><span class="rating" title="Appât du gain sur 20">5<\/span><\/strong><\/div><\/div><h3>Contrat<\/h3>/);
+ assert.match(rail(html),/<\/section><section class="card"><div class="card-head"><h2>Caractère<\/h2><\/div><div class="rail-section"><div class="fact"><span>Appât du gain<\/span><strong><span class="rating" title="Appât du gain sur 20">5<\/span><\/strong><\/div><\/div><\/section><section class="card"><div class="card-head"><h2>Contrat<\/h2>/);
  assert.doesNotMatch((await render()).html,/Caractère|Appât du gain|Fragilité|class="potential"|Potentiel estimé/);
 });
 
 test('the four traits of his character in alphabetical order, aggression and fragility graded the other way round, ambition and greed plain',async()=>{
  const html=rail((await render({...detail,aggression:1,ambition:0,greed:.21,fragility:.5})).html);
- const section=html.match(/<h3>Caractère<\/h3><div class="rail-section">(.*?)<\/div><h3>Contrat/)[1];
+ const section=html.match(/<h2>Caractère<\/h2><\/div><div class="rail-section">(.*?)<\/div><\/section><section class="card"><div class="card-head"><h2>Contrat/)[1];
  assert.deepEqual([...section.matchAll(/<div class="fact"><span>([^<]+)<\/span>/g)].map(match=>match[1]),['Agressivité','Ambition','Appât du gain','Fragilité']);
  assert.match(section,/<span>Agressivité<\/span><strong><span class="rating graded" style="--hue:0" title="Agressivité sur 20 : plus elle est haute, plus il commet de fautes et prend de cartons">20</);
  assert.match(section,/<span>Ambition<\/span><strong><span class="rating" title="Ambition sur 20 : plus elle est haute, plus un club trop petit pour lui le lasse">1</);
@@ -407,9 +441,9 @@ test('fragility follows greed under Caractère, graded the other way round from 
  const fragility=async value=>rail((await render({...detail,greed:.21,fragility:value})).html).match(/<div class="fact"><span>Fragilité<\/span><strong>(.*?)<\/strong><\/div>/)?.[1];
  assert.equal(await fragility(1),'<span class="rating graded" style="--hue:0" title="Fragilité sur 20 : plus elle est haute, plus il se blesse">20</span>');
  assert.match(await fragility(0),/style="--hue:120"[^>]*>1</);
- assert.match(rail((await render({...detail,greed:.21,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Appât du gain<\/span>.*<span>Fragilité<\/span>.*<\/div><\/div><h3>Contrat<\/h3>/);
+ assert.match(rail((await render({...detail,greed:.21,fragility:.5})).html),/<h2>Caractère<\/h2><\/div><div class="rail-section"><div class="fact"><span>Appât du gain<\/span>.*<span>Fragilité<\/span>.*<\/div><\/div><\/section><section class="card"><div class="card-head"><h2>Contrat<\/h2>/);
  // Alone, it opens Caractère all the same.
- assert.match(rail((await render({...detail,fragility:.5})).html),/<h3>Caractère<\/h3><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
+ assert.match(rail((await render({...detail,fragility:.5})).html),/<h2>Caractère<\/h2><\/div><div class="rail-section"><div class="fact"><span>Fragilité<\/span>/);
 });
 
 test('the career card holds two tables lined up: the clubs, then the national team under its name in the same four columns',async()=>{
@@ -542,12 +576,12 @@ test('beside a list of players, the picked one is previewed in the words of his 
  assert.match(html,/^<div class="card preview"><div class="preview-head">.*<h2><a href="#\/player\/1">Test Joueur<\/a><\/h2><span class="position def">DD<\/span>/);
  assert.match(html,/18 sél - 3 buts/);
  // Condition, form and morale, then the contract with what he asks to join the user's club.
- for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3>${title}</h3>`),title);
+ for(const title of ['État','Contrat','Postes','Attributs'])assert.ok(html.includes(`<h3 class="section-title">${title}</h3>`),title);
  assert.match(html,/<span>Forme<\/span>.*Mauvaise/);assert.match(html,/<span>Prétentions<\/span><strong>93\sk€<\/strong>/);assert.match(html,/<span>Intéressé<\/span><strong>Non<\/strong>/);
  assert.doesNotMatch(html,/Blessure|Cartons/);
  // His positions, best note first, then what the engine reads of him and his attributes.
  assert.match(html,/class="position-row picked" data-composite-role="DD"/);
- assert.match(html,/<h3>Jeu <span class="position def">DD<\/span><\/h3>/);
+ assert.match(html,/<h3 class="section-title">Jeu <span class="position def">DD<\/span><\/h3><div class="radar-rows"><div class="radar"/);
  assert.match(html,/<div class="attribute key"[^>]*><span>Passe<\/span>/);
  assert.match(html,/<a class="button" href="#\/player\/1">Ouvrir la fiche<\/a>.*Faire une offre/);
  // An injury shows in its place; a retired player has no preview.

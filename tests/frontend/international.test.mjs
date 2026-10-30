@@ -463,16 +463,17 @@ const league={year:2027,name:'Ligue des nations 2027',kind:'nations',code:'LN',m
 
 test('a Nations League shows its divisions group by group, the places going up, down and to the final four marked',()=>{
  const html=editionContent(league,'league');
- assert.deepEqual([...html.matchAll(/<h3 class="section-title">([^<]+)<\/h3>/g)].map(match=>match[1]),['Division A','Division B','Division C','Division D']);
- assert.equal((html.match(/<h2>Groupe [A-D]\d<\/h2>/g)||[]).length,14);
- const first=html.split('<h2>Groupe A1</h2>')[1].split('</table>')[0];
+ // Each division is a card, its groups side by side under their titles.
+ assert.deepEqual([...html.matchAll(/<h2>(Division [A-D])<\/h2>/g)].map(match=>match[1]),['Division A','Division B','Division C','Division D']);
+ assert.equal((html.split('Résultats par journée')[0].match(/<h3 class="section-title">Groupe [A-D]\d<\/h3>/g)||[]).length,14);
+ const first=html.split('<h3 class="section-title">Groupe A1</h3>')[1].split('</table>')[0];
  assert.match(first,/<tr class="promoted"[^>]*>.*A1 premier/s);assert.match(first,/<tr class="relegated"[^>]*>.*A1 dernier/s);
  assert.doesNotMatch(first,/<tr class="promoted"[^>]*>(?:(?!<\/tr>).)*A1 deuxième/s);
  // In the last division the first two of a group go up, nobody goes down.
- const last=html.split('<h2>Groupe D1</h2>')[1].split('</table>')[0];
+ const last=html.split('<h3 class="section-title">Groupe D1</h3>')[1].split('</table>')[0];
  assert.equal((last.match(/<tr class="promoted"/g)||[]).length,2);assert.doesNotMatch(last,/relegated/);
  // Its match days are picked as a tournament's qualifying days, under its own tab.
- assert.match(html,/class="active" href="#\/international\/ligue-des-nations\/league\/1\?edition=2027">J1<\/a><a class="" href="#\/international\/ligue-des-nations\/league\/2\?edition=2027">J2/);assert.match(html,/<h3>Groupe A1<\/h3>/);
+ assert.match(html,/class="active" href="#\/international\/ligue-des-nations\/league\/1\?edition=2027">J1<\/a><a class="" href="#\/international\/ligue-des-nations\/league\/2\?edition=2027">J2/);assert.match(html,/<h3 class="section-title">Groupe A1<\/h3>/);
 });
 
 test('a Nations League’s finals are its semi-finals and its final alone, empty until they are drawn',()=>{

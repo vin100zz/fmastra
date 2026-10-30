@@ -161,7 +161,7 @@ test('the market under way stands in four columns: offers by player with his val
  assert.match(html,/<span class="market-state open">Mercato d’hiver ouvert<\/span>/);
  assert.match(html,/Budget <b>18\sM€<\/b>/);
  assert.equal((html.match(/class="market-column"/g)||[]).length,4);
- assert.match(html,/Offres reçues<span class="market-count alert">2<\/span>/);
+ assert.match(html,/<h3 class="section-title">Offres reçues<span class="count">2<\/span><\/h3>/);
  assert.match(html,/Baidoo<\/a><small>valeur 41\sM€<\/small>/);
  assert.equal((html.match(/data-command="reponse-offre" data-decision="accepter"/g)||[]).length,2);
  assert.match(html,/<span class="position att">BU<\/span><a href="#\/player\/6">Meïté<\/a>/);assert.match(html,/Négocier <span class="go" aria-hidden="true"><\/span>/);
@@ -176,7 +176,7 @@ test('the calendar widget lists results with their outcome and the fixtures stil
  assert.equal((html.match(/class="club-match-score D"/g)||[]).length,1);
  assert.match(html,/href="#\/match\/1"/);assert.match(html,/2 – 1/);
  // no headings: played matches come first, then the fixtures to come
- assert.doesNotMatch(html.split('</section>')[0],/Derniers matches|Prochains matches|<h3>/);
+ assert.doesNotMatch(html.split('</section>')[0],/Derniers matches|Prochains matches|<h3[ >]/);
  assert.ok(html.indexOf('href="#/match/1"')<html.indexOf('href="#/match/4"'));
  assert.match(html,/club-match-score pending">À venir/);
  // the opponent is the other side, whichever way the club played; a red plane flags away games

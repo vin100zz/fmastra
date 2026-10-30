@@ -204,7 +204,7 @@ function leadersBlock(club,squad){
  const played=squad.items.filter(player=>player.appearances>0),most=Math.max(0,...played.map(player=>player.appearances));
  const top=(key,among=played)=>among.filter(player=>player[key]>0).sort((a,b)=>b[key]-a[key]||b.appearances-a.appearances||a.id-b.id).slice(0,5)
   .map(player=>`<li><span>${playerLink(player.id,player.name)}</span><b>${key==='average'?averageNote(player[key]):n(player[key])}</b></li>`).join('');
- const list=(title,items)=>`<div><h3>${title}</h3>${items?`<ul class="moves">${items}</ul>`:'<p class="muted">—</p>'}</div>`;
+ const list=(title,items)=>`<div><h3 class="section-title">${title}</h3>${items?`<ul class="moves">${items}</ul>`:'<p class="muted">—</p>'}</div>`;
  return card('Joueurs',`<div class="card-body news-leaders">${list('Buts',top('goals'))}${list('Passes',top('assists'))}${list('Notes',top('average',played.filter(player=>player.appearances*2>=most)))}${list('Matches',top('appearances'))}</div>`,
   `<a href="#/club/${club.id}" aria-label="Voir l’effectif">Voir ${GO}</a>`);
 }

@@ -59,7 +59,7 @@ test('the widgets show the table, the players out, the calendar, the leaders and
  assert.match(html,/<a href="#\/player\/3">Cid Trois<\/a><\/span><b class="news-ban">Suspendu · 2 matchs<\/b>/);
  assert.doesNotMatch(html,/Dan Quatre/);
  // Leaders: goals, assists, ratings (a single match does not count), matches.
- const list=title=>html.match(new RegExp(`<h3>${title}</h3><ul class="moves">(.*?)</ul>`))[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+ const list=title=>html.match(new RegExp(`<h3 class="section-title">${title}</h3><ul class="moves">(.*?)</ul>`))[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
  assert.equal(list('Buts'),'Ada Un 7 Bob Deux 2');
  assert.equal(list('Passes'),'Bob Deux 6 Ada Un 1');
  assert.equal(list('Notes'),'Ada Un 7.40 Bob Deux 6.90');
@@ -238,7 +238,7 @@ test('the market under way stands over the history of the club’s transfers',()
  assert.match(html,/<h2>Mercato en cours<\/h2>/);
  assert.match(html,/data-command="reponse-offre" data-decision="accepter" data-offer="in-1"/);
  assert.match(html,/<a href="#\/player\/20">Négocier <span class="go" aria-hidden="true"><\/span><\/a>/);
- assert.match(html,/<h3>Liste des transferts<span class="market-count">1<\/span><\/h3><ul class="market-list"><li><div class="market-line"><span class="market-player"><a href="#\/player\/13">Partant<\/a><\/span><b>4\.5\sM€<\/b><\/div><\/li>/);
+ assert.match(html,/<h3 class="section-title">Liste des transferts<span class="section-tally">1<\/span><\/h3><ul class="market-list"><li><div class="market-line"><span class="market-player"><a href="#\/player\/13">Partant<\/a><\/span><b>4\.5\sM€<\/b><\/div><\/li>/);
  assert.match(html,/Aucun prêt en cours/);assert.doesNotMatch(html,/Prolongations/);
 });
 

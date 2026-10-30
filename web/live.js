@@ -327,7 +327,7 @@ function squadHtml(){
  const count=mine?`${left} changement${left>1?'s':''} restant${left>1?'s':''}`:formation?e(formation):'';
  const names=[view.state[view.state.side],view.state[sideOf(false)]];
  const pick=`<div class="segmented small fill" role="group" aria-label="Équipe"><button type="button" data-live-team="mine" class="${mine?'active':''}" aria-pressed="${mine}">${kitDot(names[0])}${e(names[0].name)}</button><button type="button" data-live-team="theirs" class="${mine?'':'active'}" aria-pressed="${!mine}">${kitDot(names[1])}${e(names[1].name)}</button></div>`;
- return `<div class="live-team-pick">${pick}</div><div class="live-scroll"><div class="section-title"><span class="label">Sur le terrain</span>${count?`<span class="count-left">${count}</span>`:''}</div>`
+ return `<div class="live-team-pick">${pick}</div><div class="live-scroll"><div class="section-title"><span class="label">Sur le terrain</span>${count?`<span class="aside">${count}</span>`:''}</div>`
   +`<div class="squad-rows ${mine?'mine':'theirs'}">${on.join('')}</div>${rest.length?`<div class="section-title"><span class="label">Remplaçants</span></div><div class="squad-rows ${mine?'mine':'theirs'}"${lines?' data-list-drop':''}>${rest.join('')}</div>`:''}</div>`;
 }
 
