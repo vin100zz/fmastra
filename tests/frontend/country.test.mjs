@@ -49,7 +49,7 @@ test('a division gives its round, then its whole table without the form, then fi
  const {html}=await screen('',2);
  const division=card(html,'Ligue 1');
  // the head counts the rounds played out of the season's and opens the division
- assert.match(division,/^<h2>Ligue 1<\/h2><a href="#\/league\/16" aria-label="Voir le championnat">J3 \/ 34 <span class="go" aria-hidden="true"><\/span><\/a><\/div><h3 class="section-title">Journée 3 · 25 août 2030<\/h3><div class="fixture with-scorers">/);
+ assert.match(division,/^<h2>Ligue 1<\/h2><a href="#\/league\/16" aria-label="Voir le championnat">J3 \/ 34 <span class="go" aria-hidden="true"><\/span><\/a><\/div><h3 class="section-title">Journée 3<\/h3><div class="fixture with-scorers">/);
  assert.ok(division.indexOf('class="fixture')<division.indexOf('class="standings"')&&division.indexOf('class="standings"')<division.indexOf('<h3 class="section-title">Buteurs</h3>'));
  // the winner in bold with its figure in the strong ink, the match of the user's club washed; the side at home is written before its mark
  assert.match(division,/<div class="fixture with-scorers"><div class="fixture-side home won"><a href="#\/club\/1" class="club-link reversed"><span>Paris<\/span><\/a><\/div><a class="fixture-score" href="#\/match\/1"><b>2<\/b> – 0<\/a><div class="fixture-side away lost">/);
@@ -69,7 +69,7 @@ test('the next round is shown on demand; a division without one keeps its table 
  assert.ok(requested.includes('/api/competitions/16/journee/prochaine')&&requested.includes('/api/competitions/17/classement')&&requested.includes('/api/competitions/17/statistiques?type=buteurs'));
  // the other choice of matches lets go of the cup round picked
  assert.match(html,/<a class="" href="#\/country\/FRA\?">Derniers matches<\/a><a class="active" href="#\/country\/FRA\?matches=prochains" aria-current="true">Prochains matches<\/a>/);
- assert.match(card(html,'Ligue 1'),/<h3 class="section-title">Journée 4 · 1 sept\. 2030<\/h3><div class="fixture"><div class="fixture-side home">.*?<a class="fixture-score pending" href="#\/match\/3">À venir<\/a>/);
+ assert.match(card(html,'Ligue 1'),/<h3 class="section-title">Journée 4<\/h3><div class="fixture"><div class="fixture-side home">.*?<a class="fixture-score pending" href="#\/match\/3">À venir<\/a>/);
  const division=card(html,'Ligue 2');
  assert.match(division,/^<h2>Ligue 2<\/h2><a href="#\/league\/17" aria-label="Voir le championnat">J3 \/ 34 <span class="go" aria-hidden="true"><\/span><\/a><\/div><div class="standings">/);
  assert.doesNotMatch(division,/class="fixture/);
@@ -80,7 +80,7 @@ test('the cup shows one of its rounds: the latest played, the first still to pla
  const latest=card((await screen()).html,'Coupe de France');
  assert.match(latest,/^<h2>Coupe de France<\/h2><a href="#\/league\/-3" aria-label="Voir la coupe"><span class="go" aria-hidden="true"><\/span><\/a><\/div><nav class="segmented country-rounds" aria-label="Tours"><a class="active" href="#\/country\/FRA\?tour=1" aria-current="true" title="32es de finale">32es<\/a><a class="" href="#\/country\/FRA\?tour=2" title="16es de finale">16es<\/a>/);
  assert.equal(count(latest,/country-rounds.*?<\/nav>/g),1);assert.equal(count(latest.slice(0,latest.indexOf('</nav>')),/<a /g),7);
- assert.match(latest,/<\/nav><h3 class="section-title">32es de finale · 4 déc\. 2030<\/h3>/);
+ assert.match(latest,/<\/nav><h3 class="section-title">32es de finale<\/h3>/);
  // each club's division at the ends, none for a club from below; a shoot-out on a storey under the score, its winner in bold
  assert.match(latest,/<div class="fixture tie wide"><small><\/small><div class="fixture-side home lost">.*?Amateurs<\/span><\/a><\/div><a class="fixture-stack" href="#\/match\/31"><span class="fixture-score settled">1 – 1<\/span><span class="fixture-floor away"><small title="Tirs au but 4 – 5">\(TAB\)<\/small><\/span><\/a><div class="fixture-side away won">.*?Paris<\/a><\/div><small>D1<\/small><\/div>/);
  // every line of that round keeps the room of a storey; the scorers stand under their side
@@ -89,7 +89,7 @@ test('the cup shows one of its rounds: the latest played, the first still to pla
  assert.doesNotMatch(card((await screen('matches=prochains')).html,'Ligue 1'),/fixture-scorers/);
  const next=card((await screen('matches=prochains',4)).html,'Coupe de France');
  assert.match(next,/<a class="active" href="#\/country\/FRA\?matches=prochains&amp;tour=2" aria-current="true" title="16es de finale">16es<\/a>/);
- assert.match(next,/<h3 class="section-title">16es de finale · 8 janv\. 2031<\/h3><div class="fixture tie own">/);
+ assert.match(next,/<h3 class="section-title">16es de finale<\/h3><div class="fixture tie own">/);
  // a round not drawn yet says so
  const picked=card((await screen('tour=5')).html,'Coupe de France');
  assert.match(picked,/<a class="active" href="#\/country\/FRA\?tour=5" aria-current="true" title="Demi-finales">Demi-finales<\/a>/);

@@ -1,4 +1,4 @@
-import {escape as e,date,card,empty,fixtures,standingsTable,table,playerLink,clubLink} from './ui.js';
+import {escape as e,card,empty,fixtures,standingsTable,table,playerLink,clubLink} from './ui.js';
 
 // The two tabs every competition has, just before its statistics; `path` is their endpoint below the competition or the edition.
 export const ROUND_TABS=[['latest','Derniers matches'],['next','Prochains matches']];
@@ -20,11 +20,10 @@ function block(group,compact,flags){
 export function roundContent(data,section,{figures=false,flags=false}={}){
  const round=data.round;
  if(!round)return `<section class="card">${section==='latest'?empty('Aucun match joué'):empty('Aucun match à venir')}</section>`;
- const when=round.date?`<span class="muted">${date(round.date)}</span>`:'';
- if(!data.groups.length)return card(round.label,empty('Tirage à venir'),when);
+ if(!data.groups.length)return card(round.label,empty('Tirage à venir'));
  // Several groups: each one with its own table, two groups a row (three in an international edition).
  const content=data.groups.length>1?`<div class="round-groups${figures?' stacked':''}">${data.groups.map(group=>`<section class="round-group"><h3 class="section-title">${e(group.name)}</h3>${block(group,figures?'figures':true,flags)}</section>`).join('')}</div>`:block(data.groups[0],false,flags);
  // An international edition adds its leading scorers in a column beside the groups.
  const rail=figures&&data.top_scorers?.length?`<aside class="round-rail"><h3 class="section-title">Meilleurs buteurs</h3>${table(['#','JOUEUR','NATION','BUTS'],data.top_scorers.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club),`<b>${row.goals}</b>`]))}</aside>`:'';
- return card(round.label,rail?`<div class="round-with-rail">${content}${rail}</div>`:content,when,'round-card');
+ return card(round.label,rail?`<div class="round-with-rail">${content}${rail}</div>`:content,'','round-card');
 }

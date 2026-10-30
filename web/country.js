@@ -1,4 +1,4 @@
-import {api,escape as e,date,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable,fixtureRow,hasStorey,GO} from './ui.js';
+import {api,escape as e,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable,fixtureRow,hasStorey,GO} from './ui.js';
 import {choiceLinks,listHref} from './listing.js';
 
 // The matches each division shows: its latest round, or on demand the next one.
@@ -8,7 +8,7 @@ const SCORERS=5;
 // The matches of a round, each on the line of a list (fixtureRow): the winner in bold, the match of the user's club (`own`)
 // washed. In a cup, `levels` names the division of each club at the two ends of its line.
 const matchRows=(matches,own,levels)=>{const wide=hasStorey(matches);return matches.map(match=>fixtureRow(match,{own,levels,wide})).join('');};
-const strip=round=>`<h3 class="section-title">${e(round.label)}${round.date?` · ${date(round.date)}`:''}</h3>`;
+const strip=round=>`<h3 class="section-title">${e(round.label)}</h3>`;
 
 // A division's latest or next round with the table it counts for and its leading scorers. Without such a round (before the
 // first one, after the last), the table and the scorers are asked for on their own.

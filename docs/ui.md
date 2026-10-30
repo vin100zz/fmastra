@@ -709,7 +709,7 @@ EU, LN), dernière édition jouée et le tour atteint. Toutes les colonnes se tr
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, Euro, Coupe du monde et
 Ligue des nations) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
 Le dernier tour est celui du résultat le plus récent, le prochain celui du plus proche match à jouer ;
-un tour pas encore tiré garde son nom et sa date, sans matches. Les matches sont à gauche, sur 460 px au
+la carte porte le nom du tour, sans sa date ; un tour pas encore tiré garde son nom, sans matches. Les matches sont à gauche, sur 460 px au
 plus, et le classement qu'ils concernent prend le reste de la largeur : le championnat, ou le classement
 de la phase de ligue d'une coupe d'Europe. Ce classement est suivi des 10 meilleurs buteurs de la
 compétition sur la saison (#, joueur, club, buts), à sa droite à partir de 1450 px, dessous en deçà ;
@@ -806,7 +806,7 @@ du titre porte le drapeau, le nom du pays et le choix « Derniers matches » / �
 matches » (`matches=prochains`), qui vaut pour toutes les colonnes.
 
 Une division donne, sous son nom et le nombre de journées jouées sur celles de la saison
-(« J3 / 34 », lien vers le championnat), la journée choisie : un match par ligne, le
+(« J3 / 34 », lien vers le championnat), la journée choisie, titrée de son nom sans sa date : un match par ligne, le
 vainqueur en gras, et sous un match joué les buteurs de chaque équipe, alignés sous
 elle comme dans l'onglet Derniers matches ; puis son classement complet (#, club, PTS, J, V, N, D, BP, BC, DIFF.,
 sans la forme) et ses cinq meilleurs buteurs. Sans journée à montrer (avant la première,
@@ -815,7 +815,7 @@ pastille du rang (vert pour le titre, la promotion ou la qualification directe, 
 pour l'Europe, jaune pour un barrage, rouge pour la relégation), et seule la ligne du club
 dirigé est colorée, comme son match.
 
-La coupe montre un de ses tours : le dernier joué, ou le premier qui reste à jouer en
+La coupe montre un de ses tours, titré de même : le dernier joué, ou le premier qui reste à jouer en
 « Prochains matches ». Une rangée de boutons, un par tour, en choisit un autre (`tour`) ;
 changer de choix de matches le libère. Chaque club porte la division où il joue (D1, D2…,
 rien pour un club des divisions non simulées) ; une séance de tirs au but s'écrit sur un
