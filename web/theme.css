@@ -1062,7 +1062,8 @@ a.button.primary{background:var(--accent);border-color:var(--accent-text);color:
 .news-lines.recap .club-link{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .news-lines.draw li{grid-template-columns:minmax(0,1fr) 96px 104px;min-height:var(--h-row)}
 .news-lines.draw li>:nth-child(2){text-align:left}
-.news-lines.renewals li{grid-template-columns:32px minmax(0,1fr) 32px 48px 52px 72px auto;gap:8px;min-height:var(--h-row)}
+.news-lines.renewals{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(5,auto);column-gap:8px}
+.news-lines.renewals li{grid-column:1/-1;grid-template-columns:subgrid;gap:8px;min-height:var(--h-row)}
 .news-lines.renewals li>:nth-child(2){text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .news-lines.renewals .news-lines-head{font:600 var(--fs-small)/1 var(--text);letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 .news-lines.injuries li{grid-template-columns:minmax(0,1fr) 80px 64px 72px;min-height:var(--h-row)}
