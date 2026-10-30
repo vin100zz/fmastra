@@ -10,6 +10,7 @@ import pytest
 from api.app import create_app
 from api.kit_images import render_kit
 from api.kits import kit_url, shirt_url
+from api.views import side_shirts
 
 
 @pytest.fixture(scope="module")
@@ -116,3 +117,16 @@ def test_the_2d_replay_disc_is_cut_from_the_shirt_alone(client):
     assert shirt_url(club) == "/kits/3.png?major=F8F8F8&minor=000000&third=000000"
     response = client.get(shirt_url(club))
     assert response.status_code == 200 and response.content == render_kit(3, ("#F8F8F8", "#000000", "#000000"))
+
+
+def test_the_2d_replay_knows_the_away_kit_a_side_changes_into():
+    psg = SimpleNamespace(home_kit_id=16, home_kit_major_color="#004070", home_kit_minor_color="#D82818",
+                          home_kit_third_color="#004070", away_kit_id=38, away_kit_major_color="#F8F8F8",
+                          away_kit_minor_color="#D82818", away_kit_third_color="#004068")
+    world = SimpleNamespace(international=SimpleNamespace(matches={}), clubs={6: psg, 7: SimpleNamespace(home_kit_major_color="#283040")})
+    match = SimpleNamespace(id=1, home_id=7, away_id=6)
+    assert side_shirts(world, match, "away") == {
+        "shirt_url": "/kits/16.png?major=004070&minor=D82818&third=004070",
+        "away_kit": {"major_color": "#F8F8F8", "minor_color": "#D82818", "shirt_url": "/kits/38.png?major=F8F8F8&minor=D82818&third=004068"}}
+    # A side without an away kit has none to change into.
+    assert side_shirts(world, match, "home")["away_kit"] is None

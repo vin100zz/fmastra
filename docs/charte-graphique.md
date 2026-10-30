@@ -1172,10 +1172,13 @@ rayures, cerceaux ou écharpe compris. Son numéro est blanc, cerné de `#0b121a
 (`.replay-player .number.outlined`), pour se lire sur n'importe quelle bande ;
 le terrain garde ses couleurs dans le thème sombre, le trait aussi. Le gardien
 reste uni, à la couleur qui le distingue des deux camps, son numéro à l'encre
-de cette couleur. Un camp qui doit changer de couleur pour se distinguer de
-l'autre (deux maillots trop proches) repasse à une pastille unie de sa couleur
-de remplacement. Le cercle autour de la pastille reste à la seconde couleur du
-camp.
+de cette couleur. Quand les deux maillots domicile sont trop proches, le camp
+qui reçoit garde le sien et l'autre passe à sa tenue extérieure, motif et
+couleurs compris ; si elle aussi se confond, ou s'il n'en a pas, il repasse à
+une pastille unie de sa seconde couleur, ou d'une couleur neutre. Le cercle
+autour de la pastille est à la seconde couleur de la tenue portée. La vue 3D,
+le fil du commentaire et la bande d'un but prennent les couleurs de cette
+tenue ; le bandeau du match garde celles du club.
 
 ### Match en 3D
 

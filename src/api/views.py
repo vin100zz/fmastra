@@ -892,16 +892,22 @@ def lineup_rows(world: World, match: Match, side: str, shorts: dict[int, str] | 
             for pid, position in getattr(result, f"{side}_lineup")]
 
 
-def side_shirt(world: World, match: Match, side: str) -> str | None:
-    """The shirt a side wears on the 2D replay: a club's home shirt, a selection's from ``data/nations.csv``."""
+def side_shirts(world: World, match: Match, side: str) -> dict:
+    """The shirts a side wears on the 2D replay: its home one, and its away one, with its colours, for when the home shirts
+    of both sides look alike; a club's, a selection's from ``data/nations.csv``."""
     team_id = getattr(match, f"{side}_id")
     if match.id in world.international.matches:
         from .nations import nation_kit
         team = world.international.nations.get(team_id)
-        kit = nation_kit(team.code) if team else {}
-        return shirt_url(SimpleNamespace(**kit)) if kit.get("home_kit_major_color") else None
-    club = world.clubs.get(team_id)
-    return shirt_url(club) if club else None
+        garments = SimpleNamespace(**(nation_kit(team.code) if team else {}))
+    else:
+        garments = world.clubs.get(team_id)
+    if garments is None or not getattr(garments, "home_kit_major_color", None):
+        return {"shirt_url": None, "away_kit": None}
+    away = getattr(garments, "away_kit_major_color", None)
+    return {"shirt_url": shirt_url(garments),
+            "away_kit": {"major_color": away, "minor_color": getattr(garments, "away_kit_minor_color", None),
+                         "shirt_url": shirt_url(garments, "away")} if away else None}
 
 
 def match_detail(world: World, match: Match) -> dict:
@@ -916,7 +922,7 @@ def match_detail(world: World, match: Match) -> dict:
         for side in ("home", "away"):
             if data[side]: data[side] = {**data[side], "nation_id": selection_id(world, data[side]["nation"])}
     for side in ("home", "away"):
-        if data[side]: data[side] = {**data[side], "shirt_url": side_shirt(world, match, side)}
+        if data[side]: data[side] = {**data[side], **side_shirts(world, match, side)}
     result = match.result
     if result is None:
         data["result"] = None

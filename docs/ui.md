@@ -994,7 +994,10 @@ message (« il vient d'arriver ») reste dans son infobulle.
   footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
   la reprise et le défenseur qui contrera la frappe font leur course pendant
   l'action.
-  Chaque joueur est une pastille de même taille, son numéro dessus ; son nom
+  Chaque joueur est une pastille de même taille, son numéro dessus, taillée dans
+  le maillot de son camp : le visiteur porte sa tenue extérieure quand les deux
+  maillots domicile se confondent (`replayTeams`, `web/match.js` ; `away_kit`
+  de `match_detail` et de `/direct`). Son nom
   court s'écrit au-dessus, sans la toucher, le temps de la touche où il joue :
   celui que nomme la légende et celui qui a le ballon. Le chemin du ballon
   s'efface dès qu'il arrive. Le terrain ne porte que la minute, en haut à

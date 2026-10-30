@@ -233,17 +233,27 @@ test('the flow of the match adds up each side’s expected goals shot after shot
  assert.doesNotMatch(await screen(report),/Fil du match/);
 });
 
-test('the 2D replay dresses each side in its shirt, unless it had to change colours to stand apart',()=>{
+test('the 2D replay dresses each side in its shirt, the away side in its away kit when the two look alike',()=>{
  const juve={id:1,name:'Juventus',major_color:'#F8F8F8',minor_color:'#000000',shirt_url:'/kits/37.png?major=F8F8F8&minor=000000&third=F8A0D8'};
  const inter={id:2,name:'Inter',major_color:'#2068E8',minor_color:'#000000',shirt_url:'/kits/8.png?major=2068E8&minor=000000&third=080808'};
  const teams=replayTeams({home:juve,away:inter});
  assert.equal(teams.home.shirt,juve.shirt_url);
  assert.equal(teams.away.shirt,inter.shirt_url);
- // Two white shirts: the away side wears its second colour, on a plain disc.
+ // Two dark shirts: Paris plays at Strasbourg in its white away kit, its sash on the discs.
+ const strasbourg={id:5,name:'Strasbourg',major_color:'#283040',minor_color:'#283040',shirt_url:'/kits/10.png?major=283040&minor=283040&third=F8F8F8'};
+ const psg={id:6,name:'PSG',major_color:'#004070',minor_color:'#D82818',shirt_url:'/kits/16.png?major=004070&minor=D82818&third=004070',
+            away_kit:{major_color:'#F8F8F8',minor_color:'#D82818',shirt_url:'/kits/38.png?major=F8F8F8&minor=D82818&third=004068'}};
+ const away=replayTeams({home:strasbourg,away:psg});
+ assert.equal(away.home.shirt,strasbourg.shirt_url);
+ assert.deepEqual([away.away.major,away.away.minor,away.away.shirt],['#F8F8F8','#D82818',psg.away_kit.shirt_url]);
+ // Home shirts apart, the away side keeps its own.
+ assert.equal(replayTeams({home:juve,away:psg}).away.shirt,psg.shirt_url);
+ // Two white shirts and no away kit, or a white one too: the away side wears its second colour, on a plain disc.
  const clash=replayTeams({home:juve,away:{...juve,id:3,minor_color:'#C81018'}});
  assert.equal(clash.home.shirt,juve.shirt_url);
  assert.equal(clash.away.major,'#C81018');
  assert.equal(clash.away.shirt,null);
+ assert.equal(replayTeams({home:juve,away:{...juve,id:3,minor_color:'#C81018',away_kit:psg.away_kit}}).away.major,'#C81018');
  // A side without colours keeps the neutral pair, without a shirt.
  assert.equal(replayTeams({home:{id:4,name:'Sans couleurs'},away:inter}).home.shirt,null);
 });
