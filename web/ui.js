@@ -588,13 +588,15 @@ export function europeLegend(items, short=false) {
 }
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
+// The class that names where a place of a table leads (`movement`, `europe`), which its rank's badge tells (web/charte.css):
+// straight through or into the play-off of a league phase, a European cup, relegation, a title or a promotion; nothing else.
+export const tableZone=row=>row?.movement==='direct'?'europe-direct':row?.movement==='playoff'?'europe-playoff':europePlace(row??{})||(row?.movement==='europe'?'qualified-europe':row?.movement==='relegation'?'relegated':row?.movement==='promotion'||row?.movement==='champion'||row?.movement==='qualified'?'promoted':'');
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
 // 'figures' keeps every figure and leaves the form out, for a table in a narrow column; 'points' keeps the points and the goal
 // difference only, for an extract beside the squad. `own` is the club whose row is washed: the user's, unless told otherwise.
 // `flags` (on `data`) follows each club with the flag of its country, in a European cup.
 export function standingsTable(data, compact=false, sortable=false, own=ownClub) {
- const zone=row=>row.movement==='direct'?'europe-direct':row.movement==='playoff'?'europe-playoff':europePlace(row)||(row.movement==='europe'?'qualified-europe':row.movement==='relegation'?'relegated':row.movement==='promotion'||row.movement==='champion'||row.movement==='qualified'?'promoted':'');
- const rowClasses=data.items.map(row=>`${zone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
+ const rowClasses=data.items.map(row=>`${tableZone(row)}${own!=null&&row.club?.id===own?' own':''}`.trim());
  // A row's class names its place, which its rank's badge tells (web/charte.css); the icons below are hidden there.
  const icon=row=>row.movement==='champion'?' <span class="movement-icon promotion" title="Champion" aria-label="Champion">★</span>':row.movement==='promotion'?' <span class="movement-icon promotion" title="Place de promotion" aria-label="Place de promotion">↑</span>':row.movement==='relegation'?' <span class="movement-icon relegation" title="Place de relégation" aria-label="Place de relégation">↓</span>':'';
  const record=row=>[row.won,row.drawn,row.lost,row.goals_for,row.goals_against];

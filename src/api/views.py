@@ -400,28 +400,33 @@ def table(world: World, competition_id: int, season: int | None = None, view: st
                [match for match in world.matches.values() if match.season == season and match.competition_id == competition_id])
     if season is not None:
         competition = replace(competition, club_ids=sorted({cid for match in matches for cid in (match.home_id, match.away_id)}))
-    count = world.config.world.promotion_relegation.club_count
-    if competition.kind == "europe":
-        rules = world.config.world.europe
-        return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference,
-                 "rank": index + 1, "form": row.form[-5:],
-                 "movement": "direct" if index < rules.direct_places else
-                             "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
-                for index, row in enumerate(standings(competition, matches, world.config))]
-    if view != "general":
+    if view != "general" and competition.kind != "europe":
         # A partial table places nobody: no title, no cup, no relegation hangs on it.
         return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1,
                  "form": row.form[-5:], "movement": None, "europe": None}
                 for index, row in enumerate(standings(competition, matches, world.config, **TABLE_VIEWS[view]))]
     rows = standings(competition, matches, world.config)
-    europe, by_rank = european_places(world, competition, [row.club_id for row in rows], season if season is not None else world.season)
-    return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1, "form": row.form[-5:],
-             "movement": ("champion" if competition.level == 1 and index == 0 else
-                          "europe" if row.club_id in by_rank else
+    places = table_places(world, competition, [row.club_id for row in rows], season)
+    return [{**asdict(row), "club": club_ref(world, row.club_id), "difference": row.difference, "rank": index + 1,
+             "form": row.form[-5:], **place} for index, (row, place) in enumerate(zip(rows, places))]
+
+
+def table_places(world: World, competition: Competition, ranked: list[int], season: int | None = None) -> list[dict]:
+    """Where each place of a table leads, in the order of `ranked`: the league phase of a European cup (straight through,
+    play-off, out), or a league's title, European places, promotion and relegation (`movement`, then `europe`)."""
+    if competition.kind == "europe":
+        rules = world.config.world.europe
+        return [{"movement": "direct" if index < rules.direct_places else
+                             "playoff" if index < rules.direct_places + rules.playoff_places else "eliminated"}
+                for index in range(len(ranked))]
+    count = world.config.world.promotion_relegation.club_count
+    europe, by_rank = european_places(world, competition, ranked, season if season is not None else world.season)
+    return [{"movement": ("champion" if competition.level == 1 and index == 0 else
+                          "europe" if club_id in by_rank else
                           "promotion" if competition.level > 1 and index < count else
                           "relegation" if index >= len(competition.club_ids) - count else None),
-             "europe": europe.get(row.club_id)}
-            for index, row in enumerate(rows)]
+             "europe": europe.get(club_id)}
+            for index, club_id in enumerate(ranked)]
 
 
 def cup_contenders(world: World, cup: Competition, season: int) -> list[int | None]:

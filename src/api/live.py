@@ -145,7 +145,8 @@ def squad_strip(live: LiveMatch, side: int, shorts: dict[int, str]) -> list[dict
 
 
 def multiplex(world: World) -> dict:
-    """The other matches of the competition that day, revealed along the live clock, and the table before it."""
+    """The other matches of the competition that day, revealed along the live clock; in a league or the league phase of a
+    European cup, the table before it and where each of its places leads, rank by rank."""
     cfg = world.config
     match = world.matches[world.live_match.match_id]
     competition = world.competitions[match.competition_id]
@@ -156,15 +157,17 @@ def multiplex(world: World) -> dict:
               "goals": [{"second": event.second, "club_id": event.team_id} for event in other.result.events
                         if event.kind == "goal" and event.period in (1, 2)] if other.result else []}
              for other in others]
-    table = None
-    if competition.kind == "league":
+    table = places = None
+    if competition.kind == "league" or (competition.kind == "europe" and match.round_number <= cfg.world.europe.league_rounds):
         # The season's own fixtures: world.matches also keeps past seasons, with clubs since relegated.
         before = [other for other in map(world.matches.__getitem__, competition.match_ids)
                   if other.result is not None and other.date < match.date]
+        rows = standings(competition, before, cfg)
         table = [{"club": v.club_ref(world, row.club_id), "played": row.played, "won": row.won, "drawn": row.drawn,
                   "lost": row.lost, "goals_for": row.goals_for, "goals_against": row.goals_against, "points": row.points}
-                 for row in standings(competition, before, cfg)]
-    return {"competition": competition.name, "matches": games, "table": table,
+                 for row in rows]
+        places = v.table_places(world, competition, [row.club_id for row in rows])
+    return {"competition": competition.name, "matches": games, "table": table, "places": places,
             "points": {"win": cfg.world.season.win_points, "draw": cfg.world.season.draw_points}}
 
 

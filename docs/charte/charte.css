@@ -736,6 +736,10 @@ span.entity-step svg{opacity:.3}
 .cc-line.flow{stroke-linejoin:miter}
 .cc-half{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3}
 .cc-goal{fill:var(--panel);stroke:var(--strong);stroke-width:1.5}
+/* Live, the minute shown, in the accent's ink as on the line of the match; with too little room under the commands, the
+   flow at the head of the match in figures. */
+.cc-now{stroke:var(--accent-text);stroke-width:2;stroke-linecap:round}
+.flow-mini{padding:var(--s1) var(--s3) 0}
 .cc-point{fill:var(--series-1);stroke:var(--panel);stroke-width:2}
 .cc-point.open{fill:var(--panel);stroke:var(--series-1)}
 /* A league rank season after season, or the stage of each edition of a selection: a column of 44 at least for each, a chart
@@ -1050,13 +1054,31 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .advice.in{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .section-title>.aside{margin-left:auto;font:600 var(--fs-small)/1 var(--text);color:var(--muted)}
-/* A goal on a line of 26 with the score it made, the figure of the side that scored in bold, its minute by the ball. */
-.goal-row{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
-.goal-row:nth-child(even){background:var(--stripe)}
-.goal-row>.highlight{justify-content:flex-end}
-.goal-row>.highlight.away{flex-direction:row;justify-content:flex-start}
-.goal-row>.fixture-score{min-width:56px;text-align:center;color:var(--ink-2)}
-.goal-row.flash{background:var(--own-row)}
+/* The user's side changed where it stands: a line dragged onto another, or picked then the other; the one about to take
+   it ringed with the accent. A change waits on its lines: the player going off faded and struck through, the one coming
+   on after him on the green, × to send him back; a place changed rings its position; on the pitch, the one coming on
+   wears his shirt in the place, his block on the green. */
+.squad-row.picked,.squad-row.picked:nth-child(even){background:var(--panel-3)}
+.squad-row.dragging{opacity:.35}
+.squad-row.drop-hover{box-shadow:inset 0 0 0 2px var(--accent)}
+.squad-row.leaving>:not(:last-child){opacity:.45}
+.squad-row.leaving .squad-who>span:last-child{text-decoration:line-through}
+.squad-row.entering,.squad-row.entering:nth-child(even){background:var(--good-soft)}
+.position.moved{box-shadow:0 0 0 1px var(--panel),0 0 0 2px var(--accent-text)}
+.advice.undo{background:var(--panel);box-shadow:var(--shadow-field);color:var(--ink-2)}
+.pitch-player.entering .player-block{background:var(--good)}
+.pitch-player.entering .mark{color:#fff}
+/* The tactic, changed in its card: in its head, what the rules refuse in red, Annuler and Valider; once validated, a bar of
+   the accent running on a track of 40 until the end of the action. */
+.tactic-actions{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.tactic-problem{min-width:0;overflow:hidden;font:600 var(--fs-small)/1 var(--text);color:var(--bad);white-space:nowrap;text-overflow:ellipsis}
+.waiting-status{display:inline-flex;align-items:center;gap:var(--s2);flex:none;font:600 var(--fs-small)/1 var(--text);color:var(--strong)}
+.waiting-status .ticker-run{width:40px;margin:0;background:var(--track)}
+/* Live, the highlights: the goals, 12 of space and a rule, then the other kinds, a rule between two; a goal just shown on
+   the wash of the user's row, a moment. */
+.highlights.goals+.highlights{margin-top:var(--s3);border-top:1px solid var(--line)}
+.highlights.kind+.highlights.kind{border-top:1px solid var(--line)}
+.highlight-row.flash{background:var(--own-row)}
 /* Live, a figure that has just changed: the wash of a section's title, the accent's ink. */
 .comparison>span.bump{border-radius:var(--radius-chip);background:var(--title-wash);color:var(--accent-text)}
 /* The goal: the scorer's colours across the pitch, ringed with his second colour; BUT in --fs-goal, his shirt of 48 and his

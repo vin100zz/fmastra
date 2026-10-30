@@ -84,10 +84,13 @@ export function statsCard(match){
  if(home.passes!=null&&away.passes!=null)stats.splice(4,0,['Passes',home.passes,away.passes],
   ['Précision des passes',100*home.passes/Math.max(1,home.passes_attempted),100*away.passes/Math.max(1,away.passes_attempted)]);
  // One bar a line, shared between the two sides by their part of the two figures, the home side's on the left; the larger
- // figure is the strong one. The card folds on its first four lines, the same on the report and in the live match.
+ // figure is the strong one. The parts add up to 1 whatever the figures: below 1 in all (0.2 and 0.3 expected goals), the
+ // figures themselves would fill only that much of the bar. The card folds on its first four lines, the same on the
+ // report and in the live match.
  const rows=stats.map(([label,a=0,b=0],index)=>{
   const unit=label==='Possession'||label==='Précision des passes'?'\u00a0%':'',figure=label==='Buts attendus (xG)'?expectedGoals:n,total=a+b;
-  return `<div class="comparison${index>=4?' fold-more':''}"><span class="${a>b?'lead':''}">${figure(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${total?a:1};color:${homeColor}"></i><i style="flex-grow:${total?b:1};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${figure(b)}${unit}</span></div>`;
+  const part=value=>total?+(value/total).toFixed(4):1;
+  return `<div class="comparison${index>=4?' fold-more':''}"><span class="${a>b?'lead':''}">${figure(a)}${unit}</span><div>${label}<span class="comparison-bar${total?'':' none'}" aria-hidden="true"><i style="flex-grow:${part(a)};color:${homeColor}"></i><i style="flex-grow:${part(b)};color:${awayColor}"></i></span></div><span class="${b>a?'lead':''}">${figure(b)}${unit}</span></div>`;
  }).join('');
  return foldCard('match-stats','Le match en chiffres',`<div class="comparisons">${rows}</div>`,'match-stats');
 }
@@ -118,34 +121,40 @@ export function highlightsCard(match,link=playerLink){
 
 // The flow of the chances (docs/charte-graphique.md, « Fil du match »): each side's expected goals added up shot after shot,
 // a step at each, in its colour in a chart, against the minutes; a ball where a shot went in, the half time dashed, the
-// total of each side at the end of its line. Nothing for a match played before its shots were kept.
-export function flowCard(match){
- const result=match.result,shots=result.shots||[];
- if(!shots.length)return '';
- const W=640,H=196,left=32,right=44,top=12,bottom=28,half=halfEnd(result.events),end=Math.max(result.duration||0,half+2700,...shots.map(shot=>shot.second));
- const x=second=>left+(W-left-right)*second/end;
- const sides=[match.home.id,match.away.id],totals=sides.map(team=>shots.filter(shot=>shot.team_id===team).reduce((sum,shot)=>sum+shot.xg,0));
+// total of each side at the end of its line. `shots` hold {second, home, xg, goal}; `half` is the first half's whistle and
+// `end` the last second of the axis. Live, the lines stop at `now`, drawn in the accent's ink, and `inner` writes the
+// figures of the expected goals inside the plot, under their lines, for a chart as wide as the line of the match under the pitch.
+export function flowChart({shots,colours,half,end,now=end,width=640,height=196,left=32,right=44,top=12,bottom=28,inner=false,live=false}){
+ const W=width,H=height,x=second=>left+(W-left-right)*second/end;
+ const totals=[true,false].map(home=>shots.filter(shot=>shot.home===home).reduce((sum,shot)=>sum+shot.xg,0));
  const ceiling=Math.max(1,Math.ceil(Math.max(...totals))),y=value=>top+(H-top-bottom)*(1-value/ceiling);
- const goals=result.events.filter(event=>event.kind==='goal'&&event.period<=2);
- const colours=chartColours(match.home,match.away);
- const grid=Array.from({length:ceiling+1},(_,value)=>`<line class="cc-grid" x1="${left}" x2="${W-right}" y1="${y(value)}" y2="${y(value)}"/><text class="cc-tick" x="${left-8}" y="${y(value)+4}" text-anchor="end">${value}</text>`).join('');
+ const grid=Array.from({length:ceiling+1},(_,value)=>`<line class="cc-grid" x1="${left}" x2="${W-right}" y1="${y(value)}" y2="${y(value)}"/>`
+  +(!inner?`<text class="cc-tick" x="${left-8}" y="${y(value)+4}" text-anchor="end">${value}</text>`:value?`<text class="cc-tick" x="${left+2}" y="${y(value)+14}">${value}</text>`:'')).join('');
  // The minutes of each half from its own kickoff: 45 stands on the whistle, the second half counts on from there.
  const at=minute=>minute<=45?minute*60*half/2700:half+(minute-45)*60;
- const ticks=[0,15,30,45,60,75,90].map(minute=>`<text class="cc-tick" x="${x(at(minute))}" y="${H-6}" text-anchor="middle">${minute}′</text>`).join('');
+ const ticks=[0,15,30,45,60,75,90].map(minute=>`<text class="cc-tick" x="${x(at(minute))}" y="${H-6}" text-anchor="${inner&&minute===0?'start':inner&&minute===90?'end':'middle'}">${minute}′</text>`).join('');
  // The two totals stand at the end of their lines, 16 apart at least, the higher one above.
  const labels=totals.map(y),gap=16-Math.abs(labels[0]-labels[1]);
  if(gap>0){const upper=totals[0]>=totals[1]?0:1;labels[upper]-=gap/2;labels[1-upper]+=gap/2;}
- const lines=sides.map((team,index)=>{
+ const lines=[true,false].map((home,index)=>{
   let sum=0;const points=[`${x(0)},${y(0)}`],balls=[];
-  for(const shot of shots.filter(shot=>shot.team_id===team)){
+  for(const shot of shots.filter(shot=>shot.home===home)){
    points.push(`${x(shot.second)},${y(sum)}`);sum+=shot.xg;points.push(`${x(shot.second)},${y(sum)}`);
-   if(goals.some(goal=>goal.team_id===team&&goal.second===shot.second))balls.push(`<circle class="cc-goal" cx="${x(shot.second)}" cy="${y(sum)}" r="5"/>`);
+   if(shot.goal)balls.push(`<circle class="cc-goal" cx="${x(shot.second)}" cy="${y(sum)}" r="5"/>`);
   }
-  points.push(`${x(end)},${y(sum)}`);
-  return `<polyline class="cc-line flow" style="stroke:${colours[index]}" points="${points.join(' ')}"/>${balls.join('')}<text class="cc-value" x="${W-right+6}" y="${labels[index]+5}">${expectedGoals(sum)}</text>`;
+  points.push(`${x(now)},${y(sum)}`);
+  return `<polyline class="cc-line flow" style="stroke:${colours[index]}" points="${points.join(' ')}"/>${balls.join('')}<text class="cc-value" x="${x(now)+6}" y="${labels[index]+5}">${expectedGoals(sum)}</text>`;
  }).join('');
- const svg=`<svg class="club-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Buts attendus cumulés au fil du match">${grid}<line class="cc-half" x1="${x(half)}" x2="${x(half)}" y1="${top}" y2="${H-bottom}"/>${ticks}${lines}</svg>`;
- return card('Fil du match',`<div class="cc-body">${svg}</div>`,'<span class="card-hint">buts attendus cumulés</span>','match-flow');
+ const minute=live?`<line class="cc-now" x1="${x(now)}" x2="${x(now)}" y1="${top-2}" y2="${H-bottom}"/>`:'';
+ return `<svg class="club-chart"${live?` width="${W}" height="${H}"`:''} viewBox="0 0 ${W} ${H}" role="img" aria-label="Buts attendus cumulés au fil du match">${grid}<line class="cc-half" x1="${x(half)}" x2="${x(half)}" y1="${top}" y2="${H-bottom}"/>${ticks}${lines}${minute}</svg>`;
+}
+export function flowCard(match){
+ const result=match.result;
+ if(!result.shots?.length)return '';
+ const half=halfEnd(result.events),end=Math.max(result.duration||0,half+2700,...result.shots.map(shot=>shot.second));
+ const goals=result.events.filter(event=>event.kind==='goal'&&event.period<=2);
+ const shots=result.shots.map(shot=>({second:shot.second,home:shot.team_id===match.home.id,xg:shot.xg,goal:goals.some(goal=>goal.team_id===shot.team_id&&goal.second===shot.second)}));
+ return card('Fil du match',`<div class="cc-body">${flowChart({shots,colours:chartColours(match.home,match.away),half,end})}</div>`,'<span class="card-hint">buts attendus cumulés</span>','match-flow');
 }
 
 export async function matchScreen(id){

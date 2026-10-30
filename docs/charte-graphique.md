@@ -158,7 +158,7 @@ où le fond est déjà jaune.
 | Banc d'une composition | `.bench`, `.bench-slot` | Sous le terrain de la Composition : trois colonnes, une place de 26 sur `--panel-2`, le poste puis le nom court du joueur, entier ; une place vide en pointillés |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
-| Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.squad-row`, `.advice`, `.goal-row`, `.goal-burst` | Le bandeau du match en 64 et la minute sur sa tuile, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match, la ligne d'un joueur et le conseil de l'adjoint, la ligne d'un but et son score, la bande d'un but. Voir « Match en direct » |
+| Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.live-flow`, `.squad-row`, `.advice`, `.waiting-status`, `.goal-burst` | Le bandeau du match en 64 et la minute sur sa tuile, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match et le fil des buts attendus sous elle, la ligne d'un joueur, le conseil de l'adjoint et les changements prévus, la tactique et l'attente de ses ordres, la bande d'un but. Voir « Match en direct » |
 | Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
@@ -814,23 +814,25 @@ gauche.
 Tout tient dans la fenêtre, sans barre de défilement ni sa place : trois
 colonnes, l'équipe à gauche (de 300 à 400), le match au milieu, la journée à
 droite (de 340 à 500). Ce qui s'allonge défile dans sa carte : l'effectif, les
-temps forts au-delà d'un tiers de la hauteur, le classement. Sous 1100 de large
-ou 600 de haut, la page défile.
+temps forts au-delà d'un tiers de la hauteur, les matches de la journée, le
+classement. Sous 1100 de large ou 600 de haut, la page défile.
 
 - **Bandeau** (`.hero.duel.compact`) : celui du compte rendu, en 64, au-dessus
-  du terrain et de sa seule largeur ; écussons en 40, noms en 26, sans lien. La
+  du terrain et de sa seule largeur ; écussons en 40, noms en 26, sans lien. Un
+  écusson sans disque garde ses proportions et reste dans le bandeau. La
   minute (`.live-clock`), en 20 sur une case de 40 aux coins de 6, se tient sur
   la tuile, à 12 avant le score : sur l'accent pendant une action, sur
   `--panel-2` quand le chronomètre défile ; « MT » à la mi-temps, « Fin » au
   coup de sifflet. Un but fait basculer le chiffre du camp qui marque, et la
   tuile s'entoure un instant de l'accent.
 - **Terrain** : aussi large que la hauteur de la fenêtre le permet. Pendant une
-  action, les pastilles du résumé ; pendant un temps mort, les deux équipes à
-  leur formation, celui qui reçoit à gauche attaquant vers la droite, chaque
-  joueur avec son maillot et son bloc (voir « Terrain et maillot »), et en haut
-  à chaque bord la formation et la mentalité de son camp, sur l'étiquette
-  sombre. Le terrain ne porte pas d'autre texte : « 2e mi-temps » et
-  « Continuer » se posent au bas du terrain.
+  action, les pastilles du résumé, sans trace du ballon ; pendant un temps mort,
+  les deux équipes à leur formation, celui qui reçoit à gauche attaquant vers la
+  droite, chaque joueur avec son maillot et son bloc (voir « Terrain et
+  maillot »), et en haut à chaque bord la formation et la mentalité de son camp,
+  sur l'étiquette sombre. Son équipe y est telle que les changements prévus la
+  laissent (voir « Changer son équipe »). Le terrain ne porte pas d'autre
+  texte : « 2e mi-temps » et « Continuer » se posent au bas du terrain.
 - **Fil** (`.ticker`) : une ligne de 44 collée sous le terrain, aux coins du
   bas de 8, à la couleur du camp qui a l'action et dans son encre : l'écusson en
   26, la minute en 16 (`--display`), puis le commentaire en 16 / 600 sur une
@@ -843,8 +845,12 @@ ou 600 de haut, la page défile.
   entrées de celui qui reçoit, dessous ceux de l'autre, avec leurs marques.
 - **Commandes** : lecture, « action suivante » (le temps mort défile d'un coup),
   les deux vitesses (voir « Curseur ») retenues d'un match à l'autre, la 3D, les
-  occasions montrées, et « Fin du match » au bout. Espace, → et T font lecture,
-  action suivante et Tactique.
+  occasions montrées, et « Fin du match » au bout. Espace et → font lecture et
+  action suivante, T mène à la tactique, Entrée valide les changements prévus.
+- **Fil du match** (`.live-flow`) : sous les commandes, dans toute la hauteur
+  qu'elles laissent, la carte du compte rendu tenue à jour (voir « Fil du
+  match »). Avec moins de 88 pour son graphique, elle passe en tête du match en
+  chiffres, en 104 de haut (`.flow-mini`).
 - **Équipe** : un choix des deux camps en tête de la carte, puis
   « Sur le terrain » (les changements restants au bout de l'intertitre, ou la
   formation de l'adversaire) et « Remplaçants », les sortis en dernier. Une
@@ -854,24 +860,47 @@ ou 600 de haut, la page défile.
   rouge à partir de 70 %, et le conseil de l'adjoint (`.advice`, 22, aux coins
   de 4) : un ⇄ sur le lavis d'avertissement devant celui qu'il ferait sortir
   (sa ligne sur `--warn-soft`), sur le lavis vert devant celui qu'il ferait
-  entrer ; l'infobulle dit pourquoi, un clic ouvre Tactique. La fatigue de
-  l'adversaire ne se lit pas.
-- **Tactique** : sous l'équipe, la formation et la mentalité, « Modifier » à
-  droite.
-- **Temps forts** : une carte faite de deux sections. « Buts » : une ligne de
-  26 par but (`.goal-row`), le score qu'il fait au milieu (`.fixture-score`,
-  56), le chiffre du camp qui marque en gras ; le buteur et son passeur, le
-  ballon et la minute du côté du score. Puis « Cartons, blessures, penaltys » :
-  les lignes du compte rendu, cartons jaunes compris. Un but qui vient d'être
-  montré lave sa ligne de `--own-row`, un instant.
+  entrer ; l'infobulle dit pourquoi, un clic prépare ce changement. La fatigue
+  de l'adversaire ne se lit pas.
+- **Changer son équipe** : sans fenêtre, là où elle se montre. Une ligne glissée
+  sur une autre (ou choisie d'un clic, sur `--panel-3`, puis l'autre) : un
+  remplaçant sur un joueur du terrain le remplace à son poste, deux joueurs du
+  terrain échangent leurs postes. Pendant un temps mort, ses maillots du terrain
+  reçoivent de même un remplaçant venu de la liste, ou un autre de ses maillots.
+  La cible sous le pointeur est cerclée de l'accent (2 ; sur le terrain, comme
+  un maillot choisi, voir « Terrain et maillot »), ce qu'on déplace pâlit. Un
+  changement prévu se lit sur ses lignes : le sortant estompé et barré, ▼ ; juste
+  après lui l'entrant sur `--good-soft`, ▲, et × (`.advice.undo`, sur le
+  panneau) qui le renvoie au banc ; un poste changé cerclé de l'encre de
+  l'accent (`.position.moved`). Sur le terrain, l'entrant porte son maillot à la
+  place du sortant, son bloc sur `--good`. Le compte des changements restants
+  les déduit.
+- **Tactique** : sous l'équipe, la formation dans une liste et la mentalité dans
+  un choix. Tant qu'un changement est prévu, « Annuler » et « Valider » à droite
+  de l'en-tête, précédés en rouge (11 / 600) de ce que les règles refusent
+  (`.tactic-problem`, le reste dans l'infobulle). Valider envoie le tout, qui
+  s'applique à la fin de l'action en cours : en attendant, une barre de l'accent
+  sur une piste de 40, « À la fin de l'action » (`.waiting-status`) et
+  « Annuler », les ▲ ▼ qui battent. Pendant un temps mort ou à la mi-temps, tout
+  de suite. Sur une blessure ou un carton rouge de son équipe, le match
+  s'arrête : « Reprendre » continue sans changement.
+- **Temps forts** : une carte, « Les temps forts », les lignes du compte rendu
+  (voir « Temps forts d'un match »), cartons jaunes compris : les buts d'abord,
+  puis 12 d'espace et un filet `--line`, puis les autres faits groupés par sorte
+  (cartons, blessures, penaltys manqués), chaque groupe dans l'ordre du match,
+  un filet entre deux. Ni intertitre, ni score : il est au bandeau. Un but qui
+  vient d'être montré lave sa ligne de `--own-row`, un instant.
 - **Le match en chiffres** : chaque part glisse vers sa nouvelle valeur (0.8 s)
   et le chiffre qui change passe un instant sur le lavis de l'intertitre, à
   l'encre de l'accent.
-- **Journée** : le match du joueur en tête, sur `--own-row`, puis les autres ;
-  un score qui change s'allume. Le classement tel qu'il serait à la minute
-  montrée, son en-tête fixé, ouvert sur la ligne du club ; devant le club, les
-  places gagnées (▲, `--good`) ou perdues (▼, `--bad`) depuis le début de la
-  journée, en 10.
+- **Journée** : le match du joueur en tête, sur `--own-row`, puis les autres,
+  qui défilent ; un score qui change s'allume. Au pied de la carte, sur neuf
+  lignes, le classement tel qu'il serait à la minute montrée (championnat ou
+  phase de ligue d'une coupe d'Europe), son en-tête fixé, ouvert sur la ligne du
+  club ; chaque place marquée comme sur l'écran Classement (voir « Classement ») ;
+  devant le club, les places gagnées (▲, `--good`) ou perdues (▼, `--bad`)
+  depuis le début de la journée, en 10. Dans une fenêtre basse, le classement
+  descend jusqu'à cinq lignes pour laisser voir quatre matches.
 - **Le but** (`.goal-burst`) : le jeu s'arrête 4 s, quelle que soit la vitesse.
   Un voile, puis une bande aux couleurs du buteur, cerclée de sa seconde
   couleur, traverse le terrain : son écusson en 96, « BUT » en `--fs-goal`, les
@@ -1173,7 +1202,8 @@ reste uni, à la couleur qui le distingue des deux camps, son numéro à l'encre
 de cette couleur. Un camp qui doit changer de couleur pour se distinguer de
 l'autre (deux maillots trop proches) repasse à une pastille unie de sa couleur
 de remplacement. Le cercle autour de la pastille reste à la seconde couleur du
-camp.
+camp. Le ballon ne laisse aucune trace sur le terrain : ni passe, ni centre, ni
+conduite, ni tir.
 
 ### Match en 3D
 
@@ -1238,6 +1268,13 @@ match en chiffres. Dessiné en SVG à la largeur de sa carte (`.club-chart`).
   au moins entre les deux, le plus haut au-dessus.
 - L'unité dans l'en-tête de la carte (`.card-hint`) : buts attendus cumulés.
   Un match joué avant que ses tirs soient conservés n'a pas la carte.
+- **Au direct** (`.live-flow`) : sous les commandes, le tracé a la largeur de
+  la frise, ses minutes sous les siennes, et l'axe garde les 90 minutes quel que
+  soit le temps joué. Les traits s'arrêtent à la minute montrée, tracée en trait
+  de 2 à l'encre de l'accent (`.cc-now`) comme sur la frise ; les totaux sont au
+  bout des traits, à cette minute. Les valeurs de l'ordonnée s'écrivent dans le
+  tracé, sous leur ligne, au bord gauche. Un tir n'y entre qu'une fois montré,
+  son ballon qu'une fois le but compté.
 
 ### La couleur d'un club dans un graphique
 
@@ -1819,7 +1856,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Formation et composition auto | Sur la Composition, le pas des formations (`steps`, options `attribute` et `forward`, `web/ui.js`) à la place des neuf boutons au-dessus du terrain ; la composition auto (`autoHtml`, `web/composition.js` ; `.check-option`, `web/charte.css`) à la place de « Meilleure composition » |
 | Fond | Blanc en thème clair |
 | Onglets | `.tabs` partout, en-tête de club compris |
-| Match en direct | Tout dans la fenêtre, trois colonnes (`liveScreen`, `web/live.js` ; `.live-layout`, `web/charte.css`) : l'équipe en lignes (`squadHtml`, `assistantAdvice`), l'adversaire au même choix, la tactique ; le bandeau du match compact et sa minute (`matchHero`, option `clock`, `web/club-hero.js`) à la place de l'encart du score sur le gazon ; le fil sous le terrain, la frise, les deux vitesses et la bande du but (`ticker`, `drawFrise`, `setDeadSpeed`, `goalBurst`, `web/match-replay.js`) ; les formations pendant les temps morts (`formationsHtml`) ; les temps forts en deux sections, les chiffres qui glissent, le classement qui défile et ses ▲ ▼ (`highlightsHtml`, `patchStats`, `othersHtml`). L'adversaire, sa formation et la place de chaque joueur viennent de `/direct` (`opponent`, `formation`, `role`, `src/api/live.py`) |
+| Match en direct | Tout dans la fenêtre, trois colonnes (`liveScreen`, `web/live.js` ; `.live-layout`, `web/charte.css`) : l'équipe en lignes (`squadHtml`, `assistantAdvice`), l'adversaire au même choix, la tactique ; le bandeau du match compact et sa minute (`matchHero`, option `clock`, `web/club-hero.js`), l'écusson sans disque à sa place ; le fil sous le terrain, la frise, les deux vitesses et la bande du but (`ticker`, `drawFrise`, `setDeadSpeed`, `goalBurst`, `web/match-replay.js`), plus de trace du ballon ; les formations pendant les temps morts (`formationsHtml`) ; le fil des buts attendus sous les commandes ou en tête des chiffres (`drawFlow` ; `flowChart`, `web/match.js`) ; les temps forts par sorte, les chiffres qui glissent et dont les parts remplissent la barre, la journée et le classement à son pied, ses places et ses ▲ ▼ (`highlightGroups`, `patchStats`, `othersHtml` ; `tableZone`, `web/ui.js`). Plus de fenêtre Tactique : le brouillon se fait dans la liste et sur le terrain (`draftLines`, `dropOn`, `tacticHtml`), Valider l'envoie à la fin de l'action (`interrupt`, `cancelInterrupt`, `web/match-replay.js`). L'adversaire, sa formation et la place de chaque joueur viennent de `/direct` (`opponent`, `formation`, `role`, `src/api/live.py`), le classement d'une phase de ligue et ses places de `/direct/multiplex` (`table`, `places` ; `table_places`, `src/api/views.py`) |
 | Terrain et maillot | `.pitch` et `.kit-shirt` sur la composition, le match, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), les buts en grappe au coin du maillot (`.kit-goals`), la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |

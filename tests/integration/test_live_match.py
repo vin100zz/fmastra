@@ -88,6 +88,22 @@ def test_a_refused_order_changes_nothing(config):
     assert world.live_match.orders == []
 
 
+def test_the_multiplex_of_a_league_phase_has_the_table_before_the_day_and_where_each_place_leads(config):
+    from types import SimpleNamespace
+    from api.live import multiplex
+    world = import_world(ROOT / "data", config, 777)
+    cup = next(competition for competition in world.competitions.values() if competition.kind == "europe" and competition.match_ids)
+    match = next(world.matches[mid] for mid in cup.match_ids if world.matches[mid].round_number == 1)
+    world.live_match = SimpleNamespace(match_id=match.id)
+    others = multiplex(world)
+    rules = config.world.europe
+    assert len(others["table"]) == len(others["places"]) == len(cup.club_ids)
+    assert all(row["played"] == 0 for row in others["table"])
+    movements = [place["movement"] for place in others["places"]]
+    assert movements[:rules.direct_places] == ["direct"] * rules.direct_places
+    assert movements[rules.direct_places] == "playoff" and movements[-1] == "eliminated"
+
+
 def test_the_live_api_from_kick_off_to_the_end_of_the_day(config, tmp_path):
     import time
     from fastapi.testclient import TestClient

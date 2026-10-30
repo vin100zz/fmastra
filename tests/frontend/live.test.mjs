@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {liveTable,tableMoves,assistantAdvice,shownHighlights,tacticsDraft,tacticsOrders,tacticsProblems,placeInDraft,benchInDraft,formationInDraft} from '../../web/live.js';
+import {liveTable,tableMoves,assistantAdvice,shownHighlights,highlightGroups,tacticsDraft,tacticsOrders,tacticsProblems,placeInDraft,benchInDraft,formationInDraft,draftLines} from '../../web/live.js';
 
 const club=(id,name)=>({id,name});
 const row=(id,name,points,goals_for=0,goals_against=0)=>({club:club(id,name),played:5,won:0,drawn:0,lost:0,goals_for,goals_against,points});
@@ -103,4 +103,24 @@ test('the assistant would take off the tired, the booked who tire and the poor w
  assert.equal(assistantAdvice(squad,3,'finished').out.size,0);
  // As many as the changes left, the most tired first.
  assert.deepEqual([...assistantAdvice(squad,1,'playing').out.keys()],[2]);
+});
+
+test('the highlights group their facts by kind, each in the order of the match: goals, cards, injuries, penalties missed',()=>{
+ const events=[{kind:'yellow',second:100},{kind:'goal',second:200},{kind:'shot',second:300},{kind:'red',second:400},{kind:'goal',second:500},{kind:'yellow',second:600}];
+ assert.deepEqual(highlightGroups(events).map(group=>[group.kind,group.events.map(event=>event.second)]),
+  [['goal',[200,500]],['booking',[100,400,600]],['missed',[300]]]);
+ assert.deepEqual(highlightGroups([]),[]);
+});
+
+test('the lines of the draft: a substitute right after the player he replaces, a moved player marked, the bench left',()=>{
+ const data=manager();
+ const untouched=draftLines(tacticsDraft(data),data);
+ assert.deepEqual(untouched.pitch.map(line=>[line.id,line.change]),[[1,null],[9,null],[2,null],[3,null],[4,null]]);
+ assert.deepEqual(untouched.bench.map(line=>line.id),[20,21,22]);
+ const changed=placeInDraft(placeInDraft(tacticsDraft(data),data,22,4),data,2,3);
+ const lines=draftLines(changed,data);
+ assert.deepEqual(lines.pitch.map(line=>[line.id,line.role,line.change]),
+  [[1,'GB',null],[9,'DG',null],[3,'DC','moved'],[2,'MC','moved'],[4,'BU','out'],[22,'BU','in']]);
+ assert.equal(lines.pitch.find(line=>line.change==='out').slot,null);
+ assert.deepEqual(lines.bench.map(line=>line.id),[20,21]);
 });

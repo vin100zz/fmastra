@@ -47,8 +47,6 @@ const BOARD_X=6,BOARD_Y=5;
 const CHAIN_MS=300,EXTEND_MS=150;
 // Between chances the clock runs at this many ms of replay per match minute; chances play at this pace, 1 being life-like.
 const MS_PER_MINUTE=90,CHANCE_TEMPO=1;
-// How long the way of a ball that has arrived takes to fade, as match-replay.css has it.
-const TRAIL_FADE_MS=400;
 const clamp=(value,low,high)=>Math.min(high,Math.max(low,value));
 const lerp=(a,b,k)=>a+(b-a)*k;
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -177,7 +175,6 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    ['path',{d:`M16.5 ${H/2-7.3}A9.15 9.15 0 0 1 16.5 ${H/2+7.3}M${W-16.5} ${H/2-7.3}A9.15 9.15 0 0 0 ${W-16.5} ${H/2+7.3}`}]];
   for(const [tag,attributes] of shapes)lines.append(svg(tag,attributes));
   for(let stripe=0;stripe<W;stripe+=W/10)if(Math.round(stripe/(W/10))%2)this.svg.append(svg('rect',{x:stripe,y:0,width:W/10,height:H,class:'replay-stripe'}));
-  this.trail=svg('g',{class:'replay-trail'});
   this.players=svg('g');
   this.shadow=svg('ellipse',{class:'replay-shadow',rx:1,ry:.6});
   this.ball=svg('circle',{class:'replay-ball',r:.95});
@@ -190,7 +187,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    fill.append(svg('image',{href:url,x:.5-CHEST.x*size,y:.5-CHEST.y*size,width:size,height:size}));
    defs.append(fill);this.fills[side]=`url(#${id}) ${this.teams[side].major}`;
   }
-  this.svg.append(defs,lines,this.trail,this.players,this.shadow,this.ball,this.banner);
+  this.svg.append(defs,lines,this.players,this.shadow,this.ball,this.banner);
   stage.prepend(this.svg);
   const timeline=this.querySelector('.replay-timeline');
   timeline.querySelector('.replay-half').style.left=`${100*this.halfTime()/this.duration}%`;
@@ -360,7 +357,6 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   return new Promise(resolve=>{
    action.t0??=this.start();
    this.cursor=action.t0+action.duration;
-   if(action.line){const from=ballAt(this.ballPath,action.t0);action.path=svg('polyline',{class:action.line,points:`${from.x.toFixed(2)},${from.y.toFixed(2)}`});this.trail.append(action.path);}
    action.resolve=value=>resolve(value&&run===this.run);
    this.action=action;
    // Struck a moment ago on the timeline: the ball is shown on its new way before the frame is painted.
@@ -395,9 +391,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.rebound(ball,time);
   this.ballAt={x:ball.x,y:ball.y};this.ballZ=ball.z;
   this.drawBall();
-  if(action?.path&&k<1){const points=action.path.getAttribute('points');action.path.setAttribute('points',`${points} ${ball.x.toFixed(2)},${ball.y.toFixed(2)}`);}
-  // The ball's way fades as soon as it arrives: only the touch being played is drawn.
-  if(action&&k>=1){if(action.path){const line=action.path;line.classList.add('gone');setTimeout(()=>line.remove(),TRAIL_FADE_MS);}this.settle(true);}
+  // The ball leaves no trace on the pitch.
+  if(action&&k>=1)this.settle(true);
   const holding=this.carrier?`${this.carrier.side}:${this.carrier.id}`:'';
   if(holding!==this.holding){this.holding=holding;this.highlight(this.named);}
  }
@@ -530,7 +525,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.score=[played.filter(item=>item.team===this.homeId).length,played.filter(item=>item.team!==this.homeId).length];
   this.period=second>this.halfTime()?2:1;
   this.updateRosters(second);
-  this.trail.replaceChildren();this.faded=false;this.tempo=1;this.cursor=null;this.cues=[];this.skipping=false;
+  this.faded=false;this.tempo=1;this.cursor=null;this.cues=[];this.skipping=false;
   this.stage.querySelector('.goal-burst')?.remove();
   this.stage.classList.remove('fast');
   this.showBanner('');this.showScore();this.showClock(second);
@@ -645,6 +640,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
      this.inChance=false;
      if(!played)return;
      this.clock=sequence.end;
+     // Orders asked for during the action are given at its end: its last chance closes the segment on the server, unless
+     // the segment also brings the break, the whistle or an injury, which its end shows first.
+     if(this.stopRequested&&this.nextIndex(index+1)>=this.sequences.length&&data.status==='playing'&&!data.decision){
+      this.current=this.sequences.length;this.segmentShown=true;this.stopAt(null);return;
+     }
     }
     this.current=this.sequences.length;
     if(!(await this.interlude(this.clock,Math.max(this.clock,...fresh.map(event=>event.second)))))return;
@@ -655,9 +655,9 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    }
   }finally{if(run===this.run)this.running=false;}
  }
- // « Tactique » : resolves with the clock to rewind the server to, or null to stop where the server already is.
- // A chance being played finishes first (it closes its segment); between two chances the clock stops at once, and
- // what the server computed beyond it, unseen, is played again with the new orders.
+ // New orders: resolves with the clock to rewind the server to, or null to stop where the server already is; false when
+ // they were withdrawn first. A chance being played finishes first (it closes its segment); between two chances the clock
+ // stops at once, and what the server computed beyond it, unseen, is played again with the new orders.
  interrupt(){
   if(this.hold)return Promise.resolve(null);
   return new Promise(resolve=>{
@@ -668,7 +668,9 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   });
  }
  stopAt(second){const resolve=this.stopRequested;this.stopRequested=null;this.hold=true;this.running=false;resolve?.(second);}
- // After the Tactique panel or at the start of the second half.
+ // The orders withdrawn while the action plays on: the match goes on as if nothing had been asked.
+ cancelInterrupt(){const resolve=this.stopRequested;this.stopRequested=null;resolve?.(false);}
+ // After new orders, or at the start of the second half.
  resume(){
   if(!this.live||!this.hold||this.status==='finished')return;
   this.hold=false;this.skipping=false;
@@ -708,7 +710,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // for a moment on each card, injury or substitution and at the break.
  async interlude(from,to){
   this.tempo=1;
-  this.highlight([]);this.showBanner('');this.trail.replaceChildren();
+  this.highlight([]);this.showBanner('');
   this.progress('Jeu en cours');
   const notes=this.querySelector('.replay-progress-notes');
   notes?.replaceChildren();
@@ -761,7 +763,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   if(!(await this.wait(260)))return false;
   this.snap(point,side,[],carrier);
   setup?.();
-  this.drawDots();this.trail.replaceChildren();
+  this.drawDots();
   this.stage.classList.remove('cut');
   return this.wait(420);
  }
@@ -874,7 +876,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.gesture(to,move.then==='one'?this.touchOf(next):this.touchOf({type:'control'},height),t0+duration);
   this.advance(t0+duration);
   if(move.then==='one')this.prepare(next,t0+duration);
-  const done=await this.perform({kind:'pass',by,to,target:{x:aim.x,y:aim.y},duration,t0,line:height?'replay-cross':'replay-pass'});
+  const done=await this.perform({kind:'pass',by,to,target:{x:aim.x,y:aim.y},duration,t0});
   if(done)this.carrier=to;
   return done;
  }
@@ -902,7 +904,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.gesture(by,this.touchOf(next,ball.z),t0+duration);
   this.advance(t0+duration);
   this.prepare(next,t0+duration);
-  return this.perform({kind:'carry',by,duration,t0,line:'replay-carry'});
+  return this.perform({kind:'carry',by,duration,t0});
  }
  // He knocks the ball on a stride or two at a time and runs onto it, until he has brought it to the spot of the move;
  // past the man he takes on, with a touch out to the side.
@@ -926,7 +928,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    this.gesture(by,last?this.touchOf(next):{kind:'touch',target:{x:move.point.x,y:move.point.y}},t0+duration);
    this.advance(t0+duration);
    this.prepare(next,t0+duration);
-   if(!(await this.perform({kind:'carry',by,duration,t0,line:'replay-carry'})))return false;
+   if(!(await this.perform({kind:'carry',by,duration,t0})))return false;
    if(last)break;
   }
   this.pressLock=null;
@@ -950,7 +952,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.loose();
   if(dot)this.runTo(header,spot,t0+duration,scale(unit(dot,spot),.002));
   this.gesture(header,{kind:'head',style:'shot',target:this.toPitch(move.side,1,.5),jump:clamp(move.height-1.75,0,.6)},t0+duration);
-  return this.perform({kind:'cross',by,to:header,target:{x:spot.x,y:spot.y},duration,t0,line:'replay-cross'});
+  return this.perform({kind:'cross',by,to:header,target:{x:spot.x,y:spot.y},duration,t0});
  }
  // A dead ball: the taker runs in from where he stands and strikes it as he reaches it.
  runUp(taker,ball,next,duration){
@@ -1099,7 +1101,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   const keeperHeight=ballAt(this.ballPath,t0+duration*.92).z;
   return this.perform({kind:'shot',by:move.by,target:{x:target.x,y:target.y},style:move.header?'header':move.freeKick?'free_kick':move.style,
    outcome,keeper,keeperFrom:keeperDot&&{x:keeperDot.x,y:keeperDot.y},keeperPoint:dive,
-   keeperTarget:dive&&{x:dive.x,y:dive.y,z:keeperHeight},keeperHeight,duration:end,t0,line:'replay-shot'});
+   keeperTarget:dive&&{x:dive.x,y:dive.y,z:keeperHeight},keeperHeight,duration:end,t0});
  }
  // A teammate a short pass square or back from the ball, for the move to go round before it goes forward.
  support(owner,receiver,ball){
@@ -1270,7 +1272,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.period=sequence.period;
   this.tempo=CHANCE_TEMPO;
   this.updateRosters(sequence.second);
-  this.trail.replaceChildren();this.showBanner('');
+  this.showBanner('');
   // The clock stops on the minute of the shot while the chance plays out, as the highlights show it.
   this.showClock(sequence.shot.second);
   const note=(id,text)=>{this.highlight(id!=null?[id]:[]);this.caption(text);};

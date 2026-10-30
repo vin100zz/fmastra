@@ -84,7 +84,7 @@ select,input:not([type=checkbox]):not([type=radio]):not([type=range]){height:var
 .chip.on,.filter-menu.on>summary,.toolbar select.on{border-color:transparent;box-shadow:inset 0 0 0 1px var(--accent-text)}
 .chip.nation-chip,.chip.toggle{font-size:var(--fs-body);font-weight:400}
 .chip.on.nation-chip,.chip.on.toggle{font-weight:600}
-.card-head button,.card-head a.button,.head-pager button,.pager button,td button,.market-actions button,.news-lines button,.news-actions button,.news-heading button,.live-tactics-actions button{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
+.card-head button,.card-head a.button,.head-pager button,.pager button,td button,.market-actions button,.news-lines button,.news-actions button,.news-heading button{height:var(--h-control-small);padding:0 var(--s2);font-size:var(--fs-small)}
 .head-pager button{width:var(--h-control-small);padding:0}
 th button,button.pitch-player,.position-row,.advance-todo,.replay-marker,.replay-start{height:auto;font-weight:inherit;line-height:inherit}
 th button{padding:0;font-size:inherit;white-space:inherit}
@@ -1178,18 +1178,29 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .live-column{display:flex;flex-direction:column;gap:var(--s2);min-width:0;min-height:0}
 .live-column>*{flex:none}
 .live-squad,.live-others{flex:1 1 auto;min-height:0}
-.live-scroll,.live-table-scroll{flex:1;min-height:0;overflow-y:auto}
-.live-highlights{max-height:36%;overflow-y:auto}
+.live-scroll{flex:1;min-height:0;overflow-y:auto}
+.live-highlights{display:flex;flex-direction:column;max-height:36%;overflow:hidden}
+.highlights-scroll{min-height:0;overflow-y:auto}
 .live-team-pick{padding:var(--s2) var(--s3)}
 .live-team-pick .segmented>button{gap:6px}
 .live-tactic .card-body{padding-top:0}
+/* The tactic, changed in its card: the formation in a list, the mentality in a choice; in the head, what the rules refuse,
+   Annuler and Valider, or where validated changes stand. */
+.live-tactic .tactic-edit .fact{display:flex;align-items:center;justify-content:space-between;min-height:34px}
+.live-tactic .tactic-edit select{width:132px}
+.tactic-actions{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.tactic-problem{min-width:0;overflow:hidden;font:600 var(--fs-small)/1 var(--text);color:var(--bad);white-space:nowrap;text-overflow:ellipsis}
+.waiting-status{display:inline-flex;align-items:center;gap:var(--s2);flex:none;font:600 var(--fs-small)/1 var(--text);color:var(--strong)}
+.waiting-status .ticker-run{display:block;width:40px;margin:0;background:var(--track)}
 .live-squad .section-title{display:flex;align-items:center;padding-right:var(--s3)}
 .section-title .count-left{margin-left:auto;font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
-/* The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the tile before the score. */
+/* The match's band, compact: 64 high, crests of 40, names in 26, the minute's chip on the tile before the score. A crest
+   without its disc keeps no line of text: its hidden initial would push the picture out of the band. */
 .match-hero.live .club-hero-band{min-height:64px}
 .match-hero.live .club-hero-main{gap:var(--s4)}
 .match-hero.live .match-hero-side{gap:var(--s3)}
 .match-hero.live .crest.club-hero-crest{width:40px;height:40px;border-width:2px;font-size:var(--fs-small)}
+.match-hero.live .crest.club-hero-crest:has(>.crest-logo){width:auto;height:auto;font-size:0}
 .match-hero.live .club-hero-crest>.crest-logo{width:40px;width:min(40px*sqrt(var(--r)),48px*var(--r),80px)}
 .match-hero.live .match-hero-name{font-size:var(--fs-page)}
 .match-hero.live .club-hero-tile.match-score{flex-direction:row;gap:var(--s3);padding:var(--s1) var(--s3) var(--s1) var(--s1)}
@@ -1207,6 +1218,23 @@ match-replay.live .replay-pitch{max-height:none}
 match-replay.live .replay-progress{justify-content:flex-end;padding-bottom:var(--s6);background:#0b0f1433}
 .live-formations{position:absolute;inset:0}
 .live-formations .pitch-player{transform:translate(-50%,-50%)}
+/* While the pitch shows both sides, the user's shirts take a player dropped on them; the one about to take a place ringed
+   as a picked shirt (« Terrain et maillot »), a substitute coming on wearing his shirt in it, his block on the green. */
+.replay-stage.fast .live-formations .pitch-player[data-slot]{pointer-events:auto;cursor:pointer}
+.live-formations .pitch-player[draggable=true]{cursor:grab}
+.live-formations .pitch-player.dragging{opacity:.35}
+.live-formations .pitch-player.drop-hover .kit-shirt::before{content:"";position:absolute;inset:-6px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
+.live-formations .pitch-player.drop-hover .player-block{background:var(--accent);color:var(--accent-ink)}
+.live-formations .pitch-player.entering .player-block{background:var(--good)}
+.live-formations .pitch-player.entering .match-mark{color:#fff}
+/* The flow of the expected goals under the commands, taking the height they leave; with too little, at the head of the
+   match in figures. The minute in the accent's ink, as on the line of the match. */
+.live-flow{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.live-column>.live-flow{flex:1 1 auto}
+.live-flow[hidden]{display:none}
+.live-flow .flow-body{flex:1;min-height:0;overflow:hidden}
+.flow-mini{padding:var(--s1) var(--s3) 0}
+.club-chart .cc-now{stroke:var(--accent-text);stroke-width:2;stroke-linecap:round}
 .formation-tag{position:absolute;top:var(--s2);padding:var(--s1) var(--s2);border-radius:var(--radius-chip);background:var(--pitch-label);color:#fff;font:600 var(--fs-small)/14px var(--text)}
 .formation-tag.home{left:var(--s2)}
 .formation-tag.away{right:var(--s2)}
@@ -1271,6 +1299,22 @@ match-replay.live .slider input[type=range]{width:96px}
 .squad-row:is(.bench,.off) .squad-name{font-weight:400;color:var(--muted)}
 .squad-row .marks{gap:4px}
 .squad-row.advised,.squad-row.advised:nth-child(even){background:var(--warn-soft)}
+/* The user's side changed where it stands: a line dragged onto another, or picked then the other; the one about to take
+   it ringed with the accent. A change waits on its lines: the player going off faded and struck through, the one coming
+   on after him on the green, × to send him back; a place changed rings its position. */
+.squad-rows.mine .squad-row[draggable=true]{cursor:grab}
+.squad-row.picked,.squad-row.picked:nth-child(even){background:var(--panel-3)}
+.squad-row.dragging{opacity:.35}
+.squad-row.drop-hover{box-shadow:inset 0 0 0 2px var(--accent)}
+.squad-row.leaving>:not(:last-child){opacity:.45}
+.squad-row.leaving .squad-name{text-decoration:line-through}
+.squad-row.entering,.squad-row.entering:nth-child(even){background:var(--good-soft)}
+.squad-row.invalid .squad-name{color:var(--bad)}
+.squad-row .position.moved{box-shadow:0 0 0 1px var(--panel),0 0 0 2px var(--accent-text)}
+.live-layout:has(.waiting-status) .match-mark.waiting{animation:waiting 1.4s ease-in-out infinite}
+@keyframes waiting{50%{opacity:.35}}
+.squad-row.drag-ghost{position:fixed;left:-1000px;top:0;grid-template-columns:24px auto;border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow-float)}
+button.advice.undo{background:var(--panel);box-shadow:var(--shadow-field);color:var(--ink-2)}
 .fatigue{display:flex;align-items:center;gap:6px;font-size:var(--fs-small);color:var(--muted);white-space:nowrap}
 .fatigue .gauge{width:32px}
 .gauge.warn>i{background:var(--accent)}
@@ -1278,26 +1322,26 @@ match-replay.live .slider input[type=range]{width:96px}
 button.advice{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:var(--radius-chip);background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 button.advice.in{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-/* The goals, each with the score it made, the figure of the side that scored in bold, its minute by the ball. */
-.goal-rows{padding:0}
-.goal-row{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
-.goal-row:nth-child(even){background:var(--stripe)}
-.goal-row .highlight{justify-content:flex-end}
-.goal-row .highlight.away{flex-direction:row;justify-content:flex-start}
-.goal-row .fixture-score{min-width:56px;text-align:center;color:var(--ink-2)}
-.goal-row .minute{font:700 var(--fs-figure)/1 var(--display);font-stretch:semi-condensed;color:var(--accent-text)}
+/* The highlights: the goals, 12 of space and a rule, then the other kinds, a rule between two. */
 .live-highlights .highlights{padding:0}
 .live-highlights .highlight-row{padding:0 var(--s3)}
 .live-highlights .highlight-row:nth-child(even){background:var(--stripe)}
-:is(.goal-row,.live-game).flash{animation:row-flash 2.4s ease-out}
+.live-highlights .highlights.goals+.highlights{margin-top:var(--s3);border-top:1px solid var(--line)}
+.live-highlights .highlights.kind+.highlights.kind{border-top:1px solid var(--line)}
+:is(.highlight-row,.live-game).flash{animation:row-flash 2.4s ease-out}
 @keyframes row-flash{0%,30%{background:var(--own-row)}}
 /* Live, the bars of the figures slide to their new shares; a figure that changed lights up. */
 .live-stats .comparison-bar>i{transition:flex-grow .8s cubic-bezier(.2,.8,.2,1)}
 .live-stats .comparison>span{border-radius:var(--radius-chip)}
 .live-stats .comparison>span.bump{animation:figure-bump 1.2s ease-out}
 @keyframes figure-bump{from{background:var(--title-wash);color:var(--accent-text)}}
-/* The day's matches, the user's first, then the table as it stands, which scrolls in its card. */
-.live-games{padding-bottom:var(--s2)}
+/* The day's matches, the user's first, scrolling in their card; at its foot, on nine lines, the table as it stands. In a
+   short window the table gives up lines, down to five, so that four matches still show. */
+.live-others{display:flex;flex-direction:column}
+.live-others>.card-head{flex:none}
+.live-games{flex:1 1 0;min-height:calc(var(--h-row)*4);overflow-y:auto}
+.live-table-scroll{flex:0 1 calc(var(--h-row)*10 + 1px);min-height:calc(var(--h-row)*6 + 1px);overflow-y:auto;border-top:1px solid var(--line)}
+.live-table :is(th,td){height:var(--h-row)}
 .live-game{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
 .live-game:nth-child(even){background:var(--stripe)}
 .live-game.own{background:var(--own-row)}
@@ -1305,7 +1349,7 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .live-game>span:first-child{justify-content:flex-end}
 .live-game .fixture-score{text-align:center}
 .live-table thead th{position:sticky;top:0;z-index:1;background:var(--panel)}
-.live-table .move{font:700 var(--fs-micro)/1 var(--text)}
+.live-table .move{display:inline-block;min-width:22px;font:700 var(--fs-micro)/1 var(--text)}
 .live-table .move.up{color:var(--good)}
 .live-table .move.down{color:var(--bad)}
 @media(prefers-reduced-motion:reduce){.goal-burst,.goal-burst *,.goal-band::after,.live-stats .comparison-bar>i,.match-hero.live *,.ticker-run>i{animation-duration:.01ms!important;transition-duration:.01ms!important}}

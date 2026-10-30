@@ -996,8 +996,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   l'action.
   Chaque joueur est une pastille de même taille, son numéro dessus ; son nom
   court s'écrit au-dessus, sans la toucher, le temps de la touche où il joue :
-  celui que nomme la légende et celui qui a le ballon. Le chemin du ballon
-  s'efface dès qu'il arrive. Le terrain ne porte que la minute, en haut à
+  celui que nomme la légende et celui qui a le ballon. Le ballon ne laisse pas
+  de trace. Le terrain ne porte que la minute, en haut à
   gauche : le score est celui du bandeau du match, qui suit la lecture et
   revient au score final quand le résumé se replie. Au direct, la minute et le
   score sont sur le bandeau du match, au-dessus du terrain.
@@ -1116,42 +1116,52 @@ charte, « Match en direct »). Trois colonnes :
   l'adjoint (le joueur qu'il sortirait, celui qu'il ferait entrer, voir le
   manuel, « L'entraîneur ») ; la fatigue de l'adversaire ne se lit pas. Les
   changements restants sont au bout de l'intertitre. Dessous, la tactique : la
-  formation et la mentalité, « Modifier » ouvre la fenêtre Tactique.
+  formation dans une liste et la mentalité dans un choix, qui se changent là.
 - **Au milieu, le match.** Le bandeau du match, compact, la minute sur sa tuile
   avant le score ; le résumé 2D alimenté segment par segment : seules les
   occasions sont animées, le compteur défile entre elles. Pendant un temps mort,
   le terrain montre les deux équipes à leur formation, avec leurs notes, leur
-  formation et leur mentalité. Sous le terrain, le fil du commentaire, à la
-  couleur du camp qui a l'action (neutre quand le compteur défile, un carton ou
-  un changement y passant un instant), puis la frise du match, puis les
-  commandes : lecture, action suivante, une vitesse pour les actions (0.25× à
-  4×) et une pour les temps morts (0.5× à 32×), retenues d'un match à l'autre,
-  la 3D, les occasions montrées, « Fin du match ». Espace, → et T font lecture,
-  action suivante et Tactique.
+  formation et leur mentalité, son équipe telle que ses changements prévus la
+  laissent. Sous le terrain, le fil du commentaire, à la couleur du camp qui a
+  l'action (neutre quand le compteur défile, un carton ou un changement y
+  passant un instant), puis la frise du match, puis les commandes : lecture,
+  action suivante, une vitesse pour les actions (0.25× à 4×) et une pour les
+  temps morts (0.5× à 32×), retenues d'un match à l'autre, la 3D, les occasions
+  montrées, « Fin du match ». Dessous, dans la place qui reste, le fil du match
+  du compte rendu, tenu à jour tir après tir, à la largeur de la frise ; dans
+  une fenêtre trop basse, il passe en tête des statistiques. Espace et → font
+  lecture et action suivante, T mène à la tactique, Entrée valide les
+  changements.
 - **À droite, la journée.** Les temps forts (le widget du compte rendu, sans
-  liens) en deux sections : les buts, chacun avec le score qu'il fait, puis les
-  cartons, blessures et penaltys manqués ; un but n'y paraît qu'une fois marqué
-  à l'écran. Les statistiques (la carte du compte rendu, repliée de même), dont
-  les barres glissent. Le multiplex de la compétition, son match en tête, et le
-  classement tel qu'il serait si les matches s'arrêtaient à la minute affichée,
-  qui défile dans sa carte, avec les places gagnées ou perdues depuis le début
-  de la journée.
+  liens, cartons jaunes compris) : les buts, puis un espace, puis les autres
+  faits groupés par sorte (cartons, blessures, penaltys manqués) ; un but n'y
+  paraît qu'une fois marqué à l'écran. Les statistiques (la carte du compte
+  rendu, repliée de même), dont les barres glissent. Le multiplex de la
+  compétition, son match en tête, qui défile ; à son pied, sur neuf lignes, le
+  classement tel qu'il serait si les matches s'arrêtaient à la minute affichée
+  (championnat ou phase de ligue d'une coupe d'Europe), ouvert sur le club,
+  ses places marquées comme sur l'écran Classement, avec les places gagnées ou
+  perdues depuis le début de la journée.
 
 Un but arrête le jeu quatre secondes, quelle que soit la vitesse : une bande aux
 couleurs du buteur traverse le terrain (« BUT », son maillot, son nom, le
 passeur) et le score change au bandeau.
 
-- « Tactique » termine l'occasion en cours, ou arrête le compteur tout de suite
-  entre deux occasions, puis ouvre une fenêtre dans le style de la composition :
-  le terrain à gauche, chaque joueur avec ses buts au maillot et son bloc (son nom, puis sa note et
-  ce qu'il a fait d'autre, tels que le match les a montrés), les joueurs (sur le terrain, remplaçants,
-  sortis) à droite.
-  Glisser un remplaçant sur le terrain le fait entrer, glisser deux joueurs du
-  terrain l'un sur l'autre échange leurs postes, renvoyer un entrant vers la liste
-  annule son entrée ; tactiques et mentalité en haut. « Reprendre » applique les
-  ordres et relance le match, « Annuler » (ou Échap) le relance sans rien changer.
-- Une blessure ou un carton rouge dans l'équipe du joueur arrête le match et ouvre
-  la fenêtre Tactique.
+- Les changements se préparent sans fenêtre et sans arrêter le match, dans la
+  colonne de gauche : glisser un remplaçant sur un joueur du terrain le fait
+  entrer à son poste, glisser deux joueurs du terrain l'un sur l'autre échange
+  leurs postes, × (ou glisser l'entrant vers les remplaçants) annule son entrée ;
+  un clic sur une ligne puis sur une autre fait de même. Pendant un temps mort,
+  les maillots de son équipe sur le terrain reçoivent de même un remplaçant venu
+  de la liste. Le ⇄ de l'adjoint prépare son conseil d'un clic. Un changement
+  prévu se lit sur ses lignes (le sortant barré, l'entrant sur le vert juste
+  après lui) et sur le terrain. « Valider », dans la carte Tactique, envoie le
+  tout, appliqué à la fin de l'action en cours : tout de suite entre deux
+  actions et à la mi-temps ; en attendant, « À la fin de l'action ». « Annuler »
+  efface ce qui est prévu. Ce que les règles refusent (remplacements, fenêtres,
+  deux gardiens) se lit avant les boutons, et Valider ne part pas.
+- Une blessure ou un carton rouge dans l'équipe du joueur arrête le match ;
+  « Reprendre » le relance sans changement.
 - À la mi-temps le compteur reste sur « MT » jusqu'à « 2e mi-temps », bouton
   affiché au bas du terrain.
 - « Fin du match » laisse l'IA finir le match sans l'afficher.
@@ -1508,7 +1518,7 @@ POST /api/direct/demarrer                 {commande_id} -> travail_id ; joue les
 GET  /api/direct                          le match jusqu'ici : score, seconde, statut, événements montrés, stats, effectif du joueur
 POST /api/direct/avancer                  {commande_id, jusqu_a: "evenement" | "fin"} -> segment suivant (ou la fin, jouée par l'IA)
 POST /api/direct/ordres                   {commande_id, seconde: float|null, ordres: [...]} ; seconde = compteur arrêté entre deux occasions
-GET  /api/direct/multiplex                autres matches du jour (buts horodatés) et classement avant la journée
+GET  /api/direct/multiplex                autres matches du jour (buts horodatés) ; en championnat ou en phase de ligue, classement avant la journée et où mène chaque place, rang par rang (places)
 POST /api/direct/terminer                 {commande_id} -> travail_id ; applique le résultat et clôt la journée
 
 POST /api/partie/sauvegarder              {slot: str}
