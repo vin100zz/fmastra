@@ -238,7 +238,7 @@ gardées une par une, mais le fil n'en montre qu'un message (« 17 joueurs veule
 | Mercato ouvert | Date de fermeture, budget de transferts, marge sous le plafond salarial, lien vers Joueurs |
 | Mercato qui ferme demain | Vos offres en cours, les joueurs dont une offre attend, budget de transferts, lien vers Joueurs |
 | Bilan du mercato (le lendemain de sa fermeture) | Les principaux transferts de la fenêtre, dans la division du club (un joueur arrivé dans un de ses clubs ou parti de l'un d'eux) puis dans le monde : les 5 plus grosses indemnités, puis les 3 joueurs libres du plus haut niveau. Par ligne : le joueur, le club quitté → le club rejoint, l'indemnité ; un joueur libre vient de « Libre » et porte sa pastille de niveau à la place du montant |
-| Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
+| Tirage d'une coupe (à l'ouverture de la saison, pour le premier tour de la coupe nationale et la phase de ligue d'une coupe d'Europe ; le soir d'un tour, si le club est encore en lice ; au choix du club, pour les matches de coupe déjà tirés qu'il lui reste à jouer) | Le titre nomme la coupe, l'adversaire et le tour (« Coupe de France : Lens en 8es de finale ») ; dessous, une ligne par match : Domicile, Extérieur ou Terrain neutre, et sa date. Un tour aller-retour de coupe d'Europe a ses deux lignes. Puis le tirage complet du tour, dans l'ordre du tirage, chaque match sur la ligne d'une liste (charte, « Match dans une liste ») : celui du club sur fond jaune, la division de chaque club en coupe nationale (de la saison du tirage), le drapeau de son pays en coupe d'Europe, l'aller seul d'un aller-retour ; le score une fois joué. Une phase de ligue a plusieurs adversaires : le titre l'annonce (« Ligue des champions : tirage de la phase de ligue ») et chaque match a sa ligne, avec l'adversaire, le lieu et la date |
 | Bilan de la saison (1er juin) | Par compétition : la place ou le tour atteint, et le vainqueur ; la coupe d'Europe obtenue ; lien vers Palmarès ; meilleur buteur et meilleure note |
 | Changements de numéro (1er juillet) | « Lago change de numéro », « 3 changements de numéro » ; une ligne par joueur : le maillot du club au numéro qu'il quitte, voilé, → celui au numéro qu'il prend (charte, « Terrain et maillot ») |
 | Arrivée d'un joueur (transfert, prêt, retour de prêt, jeune promu au centre de formation) | La phrase, sans numéro (« Haaland rejoint Marseille ») ; dessous, « Numéro » et le maillot du club au numéro qu'il prend. Plusieurs jeunes promus : une ligne par joueur, avec son maillot |
@@ -709,7 +709,7 @@ EU, LN), dernière édition jouée et le tour atteint. Toutes les colonnes se tr
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, Euro, Coupe du monde et
 Ligue des nations) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
 Le dernier tour est celui du résultat le plus récent, le prochain celui du plus proche match à jouer ;
-un tour pas encore tiré garde son nom et sa date, sans matches. Les matches sont à gauche, sur 460 px au
+la carte porte le nom du tour, sans sa date ; un tour pas encore tiré garde son nom, sans matches. Les matches sont à gauche, sur 460 px au
 plus, et le classement qu'ils concernent prend le reste de la largeur : le championnat, ou le classement
 de la phase de ligue d'une coupe d'Europe. Ce classement est suivi des 10 meilleurs buteurs de la
 compétition sur la saison (#, joueur, club, buts), à sa droite à partir de 1450 px, dessous en deçà ;
@@ -806,7 +806,7 @@ du titre porte le drapeau, le nom du pays et le choix « Derniers matches » / �
 matches » (`matches=prochains`), qui vaut pour toutes les colonnes.
 
 Une division donne, sous son nom et le nombre de journées jouées sur celles de la saison
-(« J3 / 34 », lien vers le championnat), la journée choisie : un match par ligne, le
+(« J3 / 34 », lien vers le championnat), la journée choisie, titrée de son nom sans sa date : un match par ligne, le
 vainqueur en gras, et sous un match joué les buteurs de chaque équipe, alignés sous
 elle comme dans l'onglet Derniers matches ; puis son classement complet (#, club, PTS, J, V, N, D, BP, BC, DIFF.,
 sans la forme) et ses cinq meilleurs buteurs. Sans journée à montrer (avant la première,
@@ -815,7 +815,7 @@ pastille du rang (vert pour le titre, la promotion ou la qualification directe, 
 pour l'Europe, jaune pour un barrage, rouge pour la relégation), et seule la ligne du club
 dirigé est colorée, comme son match.
 
-La coupe montre un de ses tours : le dernier joué, ou le premier qui reste à jouer en
+La coupe montre un de ses tours, titré de même : le dernier joué, ou le premier qui reste à jouer en
 « Prochains matches ». Une rangée de boutons, un par tour, en choisit un autre (`tour`) ;
 changer de choix de matches le libère. Chaque club porte la division où il joue (D1, D2…,
 rien pour un club des divisions non simulées) ; une séance de tirs au but s'écrit sur un

@@ -914,10 +914,11 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
 
 ### Match dans une liste
 
-Le tour d'une compétition, la journée d'un championnat, les matches d'un pays
-s'écrivent avec un seul composant (`.fixture`) : face à face, celui qui reçoit à
-gauche. Le calendrier d'un club ou d'une sélection, qui se lit de son côté (ses
-buts d'abord, le score coloré V, N ou D), garde sa ligne propre.
+Le tour d'une compétition, la journée d'un championnat, les matches d'un pays,
+le tirage d'une coupe dans les actualités s'écrivent avec un seul composant
+(`.fixture`) : face à face, celui qui reçoit à gauche. Le calendrier d'un club
+ou d'une sélection, qui se lit de son côté (ses buts d'abord, le score coloré V,
+N ou D), garde sa ligne propre.
 
 - **Camps** : le nom de celui qui reçoit puis sa pastille, le score, la pastille
   de l'autre puis son nom. Les deux pastilles, les drapeaux pour des sélections,

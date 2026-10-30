@@ -278,6 +278,29 @@ def test_a_cup_draw_tells_the_human_club_its_next_opponent(config):
     assert len(world.news) == 3
 
 
+def test_a_cup_draw_shows_the_whole_round_as_it_was_drawn(config):
+    from api.news import draw_body
+    world, club = human_world(config)
+    cup, europe, drawn = cups(world)
+    league = world.competitions[5] = Competition(5, "Ligue 2", "FRA", 2, [1, 2])
+    first, day = world.next_id, world.date.add_days(30)
+    drawn(league, 1, world.date, 1, 2)
+    # A national cup: every match of the round, in the order of the draw, each club with the division it plays.
+    others = drawn(cup, 2, day, 3, 4)
+    own = drawn(cup, 2, day, 2, 1)
+    # A European tie: the first leg of each.
+    first_leg = drawn(europe, 9, day.add_days(7), 2, 1)
+    rival_leg = drawn(europe, 9, day.add_days(7), 3, 4)
+    drawn(europe, 10, day.add_days(14), 1, 2, first_leg_id=first_leg.id)
+    drawn(europe, 10, day.add_days(14), 4, 3, first_leg_id=rival_leg.id)
+    news.draw_notices(world, first)
+    national, european = (draw_body(world, item) for item in world.news)
+    assert [tie["id"] for tie in national["ties"]] == [others.id, own.id]
+    assert national["levels"] == {1: "D2", 2: "D2"} and not national["flags"]
+    assert [tie["id"] for tie in european["ties"]] == [first_leg.id, rival_leg.id]
+    assert european["levels"] is None and european["flags"]
+
+
 def test_a_club_just_chosen_is_told_every_match_the_cups_drew_that_it_has_yet_to_play(config):
     world, club = human_world(config)
     cup, europe, drawn = cups(world)

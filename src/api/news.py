@@ -322,9 +322,20 @@ def recap_body(world: World, item: NewsItem) -> dict:
 
 
 def draw_body(world: World, item: NewsItem) -> dict:
-    """The matches a cup drew for the human club, in the order it plays them: the opponent, the day and where."""
-    return {"matches": [{"id": line.match_id, "opponent": v.club_ref(world, line.club_id), "date": line.until.iso(), "venue": line.text}
+    """The matches a cup drew for the human club, in the order it plays them: the opponent, the day and where; then the
+    whole round as it was drawn (`ties`, the first leg of a European tie), with the division each club played that
+    season in a national cup (`levels`), its country's flag in a European one (`flags`). A league phase, which draws
+    every club's opponents at once, keeps to the club's."""
+    body = {"matches": [{"id": line.match_id, "opponent": v.club_ref(world, line.club_id), "date": line.until.iso(), "venue": line.text}
                         for line in item.lines]}
+    first = world.matches.get(item.lines[0].match_id)
+    if first is None or len({line.club_id for line in item.lines}) > 1: return body
+    ties = sorted((match for match in world.matches.values() if match.competition_id == first.competition_id
+                   and match.season == first.season and match.round_number == first.round_number), key=lambda match: match.id)
+    national = world.competitions[first.competition_id].kind == "cup"
+    played = v.played_leagues(world, {(first.season, cid) for match in ties for cid in (match.home_id, match.away_id)}) if national else {}
+    return {**body, "ties": [v.match_row(world, match) for match in ties], "flags": not national,
+            "levels": {cid: f"D{league.level}" for (_, cid), league in played.items()} if national else None}
 
 
 def review_body(world: World, item: NewsItem) -> dict:

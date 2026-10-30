@@ -22,8 +22,8 @@ async function withApi(answer,run){
 
 test('a round lists its matches on the left, with each side’s scorers and their minutes, and the table on the right',()=>{
  const html=roundContent(league,'latest');
- assert.match(html,/<h2>Journée 12<\/h2>/);
- assert.match(html,/8 nov\. 2026/);
+ assert.match(html,/<div class="card-head"><h2>Journée 12<\/h2><\/div>/);
+ assert.doesNotMatch(html,/8 nov\. 2026/);
  assert.ok(html.indexOf('round-matches')<html.indexOf('round-table'));
  // surnames linked to the player, the minutes of each goal gathered per scorer
  assert.match(html,/<div class="fixture-scorers home"><a href="#\/player\/101" title="Neal Maupay">Maupay<\/a> 14’ 75’<\/div><div class="fixture-scorers away"><a href="#\/player\/201" title="Amine Gouiri">Gouiri<\/a> 26’<\/div>/);
