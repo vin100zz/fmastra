@@ -427,7 +427,14 @@ def test_the_cups_tell_their_draws_and_a_window_closed_its_main_transfers(client
     opening, = told(cup)
     assert opening["title"] == f"{cup.name} : {rival(first).name} en 32es de finale" and not opening["pending"]
     assert opening["segments"][2] == {"text": rival(first).name, "ref": {"club": rival(first).id}}
-    assert opening["draw"] == {"matches": [line(first)]}
+    assert opening["draw"]["matches"] == [line(first)]
+    # Under it, the whole round as it was drawn, each club with its division that season.
+    drawn = sorted((world.matches[mid] for mid in cup.match_ids if world.matches[mid].round_number == 1), key=lambda match: match.id)
+    assert [tie["id"] for tie in opening["draw"]["ties"]] == [match.id for match in drawn] and len(drawn) > 1
+    assert not opening["draw"]["flags"]
+    levels = opening["draw"]["levels"]
+    assert levels[str(club.id)] == f"D{world.competitions[club.competition_id].level}"
+    assert set(levels) <= {str(cid) for match in drawn for cid in (match.home_id, match.away_id)}
     league, = told(europe)
     assert league["title"] == f"{europe.name} : tirage de la phase de ligue" and len(league["segments"]) == 2
     assert league["draw"] == {"matches": [line(match) for match in own(europe)]}
@@ -443,7 +450,8 @@ def test_the_cups_tell_their_draws_and_a_window_closed_its_main_transfers(client
     assert following.round_number == 2 and [item.kind for item in world.news] == ["cup_draw"] * 3
     message = told(cup)[-1]
     assert message["id"] == 2 and message["title"] == f"{cup.name} : {rival(following).name} en 16es de finale"
-    assert message["draw"] == {"matches": [line(following)]}
+    assert message["draw"]["matches"] == [line(following)] and following.id in [tie["id"] for tie in message["draw"]["ties"]]
+    assert all(tie["round"] == 2 for tie in message["draw"]["ties"])
 
     # The day after a window closes: its main transfers, in the division of the club then in the world.
     summer = world.config.world.market.summer

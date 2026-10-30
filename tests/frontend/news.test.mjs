@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {newsScreen} from '../../web/news.js';
 import {playerScreen} from '../../web/player.js';
 import {marketBlock} from '../../web/club-overview.js';
+import {setOwnClub} from '../../web/ui.js';
 
 const ref=(id,name)=>({id,name,major_color:'#aa0000',minor_color:'#ffcc00'});
 const club={id:7,name:'Lens',competition_id:3,competition:'Ligue 1',major_color:'#cc0000',minor_color:'#ffd700'};
@@ -198,6 +199,13 @@ test('a cup draw names the opponent in its title, then tells where and when each
  assert.match(html,/<span class="news-tag season">Tirage<\/span>/);
  assert.match(html,/<h2><a href="#\/league\/-3">Coupe de France<\/a> : <a href="#\/club\/9">Nice<\/a> en 8es de finale<\/h2>/);
  assert.match(html,/<div class="news-body"><div class="news-facts"><div class="fact"><span>Extérieur<\/span><strong>6 févr\. 2030<\/strong><\/div><\/div><\/div>/);
+ // Under them, the whole round as it was drawn: each club with its division, the club's match washed.
+ const fixture=(id,home,away)=>({id,date:'2030-02-06',home,away,score:null,first_leg_id:null,return_leg_id:null});
+ const whole={...single,draw:{...single.draw,ties:[fixture(899,ref(5,'Brest'),ref(6,'Caen')),fixture(900,nice,ref(7,'Lens'))],levels:{5:'D1',6:'D2',7:'D1',9:'D1'},flags:false}};
+ setOwnClub(7);
+ try{
+  assert.match(await screen([whole],whole,'msg=11'),/<strong>6 févr\. 2030<\/strong><\/div><\/div><div><div class="fixture tie"><small>D1<\/small><div class="fixture-side home">.*?Brest<\/span><i[^>]*><\/i><\/a><\/div><a class="fixture-score pending" href="#\/match\/899">À venir<\/a><div class="fixture-side away">.*?Caen<\/a><\/div><small>D2<\/small><\/div><div class="fixture tie own"><small>D1<\/small>.*?Nice.*?Lens<\/a><\/div><small>D1<\/small><\/div><\/div><\/div>/);
+ }finally{setOwnClub(null);}
  // A European tie has a line for each leg; a final is played on neutral ground.
  const tie=drawn({id:-101,name:'Ligue des champions',kind:'europe',code:'C1'},'quarts de finale',[{id:901,date:'2030-04-10',venue:'home'},{id:902,date:'2030-04-17',venue:'away'}]);
  const legs=await screen([tie],tie,'msg=11');

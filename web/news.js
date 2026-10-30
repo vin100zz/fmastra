@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyMargin} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,competitionBadge,contractEnd,GO} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,competitionBadge,contractEnd,fixtureRow,hasStorey,GO} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -153,13 +153,18 @@ function recapBody(data){
  return data.scopes.map(scope=>`<section><h3 class="section-title">${title(scope)}</h3>${lines(scope.transfers.map(row),'recap')}</section>`).join('');
 }
 
-// The matches a cup drew for the club: where it plays each, and when. A European tie has a line for each leg; the opponents
-// of a league phase, which the title cannot name, each have theirs.
+// The matches a cup drew for the club: where it plays each, and when, then the whole round as it was drawn, each match on
+// the line of a list, the club's washed (fixtureRow): each club with its division in a national cup, with its country's
+// flag in a European one. A European tie has a line for each leg; the opponents of a league phase, which the title cannot
+// name, each have theirs.
 const VENUES={home:'Domicile',away:'Extérieur',neutral:'Terrain neutre'};
 function drawBody(data){
  if(new Set(data.matches.map(match=>match.opponent?.id)).size>1)
   return lines(data.matches.map(match=>[`<span>${clubLink(match.opponent)}</span>`,`<span>${VENUES[match.venue]}</span>`,`<span>${date(match.date)}</span>`]),'draw');
- return `<div class="news-facts">${data.matches.map(match=>fact(VENUES[match.venue],date(match.date))).join('')}</div>`;
+ const facts=`<div class="news-facts">${data.matches.map(match=>fact(VENUES[match.venue],date(match.date))).join('')}</div>`;
+ if(!data.ties?.length)return facts;
+ const wide=hasStorey(data.ties);
+ return `${facts}<div>${data.ties.map(match=>fixtureRow(match,{levels:data.levels,wide,flags:data.flags})).join('')}</div>`;
 }
 
 function reviewBody(data,club){
