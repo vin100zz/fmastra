@@ -78,7 +78,6 @@ input::placeholder{color:var(--placeholder)}
 
 /* Top bar: dark, underlined by the accent, the Continue button as the one bright call to action. */
 .topbar{height:60px!important;padding:0 20px!important;background:var(--rail);border-bottom:3px solid var(--accent)}
-.job-bar{top:60px!important}
 .eyebrow{color:var(--muted);letter-spacing:var(--caps)}
 .date-block strong{font-size:20px!important;font-weight:600;margin-top:1px!important;color:var(--strong)}
 .time-controls select{height:40px}
@@ -87,8 +86,6 @@ input::placeholder{color:var(--placeholder)}
 #autoplay[aria-pressed="true"]{background:var(--accent);border-color:var(--accent-text);color:var(--accent-ink)}
 .pill{background:transparent;border:1px solid var(--good-line);color:var(--good);border-radius:var(--radius);padding:5px 10px;font-size:13px;font-weight:600}
 #market-badge:not(:empty):before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}
-.job-bar{background:var(--warn-soft);color:var(--warn);border-bottom:1px solid var(--warn-line)}
-.job-bar progress{accent-color:var(--accent-text)}
 footer{border-color:var(--line);color:var(--muted)}
 
 /* Panels. */
@@ -238,7 +235,6 @@ dialog::backdrop{background:var(--backdrop)}
  .brand{height:52px}
  .topbar{height:auto!important;padding:12px!important}
  .sidebar nav a{min-height:36px;padding:0 8px!important;font-size:13px}
- .job-bar{top:0!important}
  .sidebar-bottom{border-top:0;padding-top:0;top:4px!important}
  .time-controls{grid-template-columns:1fr 1fr}
  .time-controls .advance-group{grid-column:1/-1}
@@ -249,7 +245,6 @@ dialog::backdrop{background:var(--backdrop)}
 /* Density: as much as possible visible without scrolling. The bar of the charter (--h-bar), 8-12 px gaps, 26 px table rows, one-line page headers. */
 .topbar{height:var(--h-bar)!important;padding:0 12px 0 16px!important}
 .brand{height:var(--h-bar);margin-bottom:0}
-.job-bar{top:var(--h-bar)!important;padding:6px 16px}
 .date-block .eyebrow{font-size:10px}
 .date-block strong{font-size:20px!important}
 .time-controls{gap:8px}
@@ -296,7 +291,6 @@ h1{font-size:26px;margin:0}
 .pager{padding:5px 12px}
 .pager button{padding:3px 8px}
 .empty{padding:16px 12px}
-
 
 /* Tables: 26 px rows, 26 px headers, 18 px chips. */
 th,.player-table th,.league-summary-grid th{height:26px;padding:0 8px!important}
@@ -418,21 +412,6 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-comp.cup{color:var(--info)}
 @media(max-width:1200px){.next-match~.next-match~.next-match{display:none}}
 @media(max-width:950px){.next-matches{display:none}}
-
-/* Running job: inside the top bar, never pushing the page down. The label sits in the bar's free middle,
-   the progress runs along its bottom edge in place of the accent line. */
-.topbar .job-bar{position:static!important;top:auto!important;flex:1;min-width:0;justify-content:center;gap:0;padding:0 12px!important;background:none!important;border:0!important;color:var(--muted);font-size:13px}
-#job-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar .job-bar progress{position:absolute;left:0;right:0;bottom:-3px;width:100%;max-width:none;height:3px;margin:0;border:0;appearance:none;-webkit-appearance:none;background:var(--line)}
-.topbar .job-bar progress::-webkit-progress-bar{background:var(--line)}
-.topbar .job-bar progress::-webkit-progress-value{background:var(--accent);transition:width .3s}
-.topbar .job-bar progress::-moz-progress-bar{background:var(--accent)}
-/* Auto mode has no end: a band sweeps along the edge instead. */
-.topbar .job-bar progress:indeterminate{background:linear-gradient(90deg,transparent,var(--accent),transparent) no-repeat var(--line);background-size:30% 100%;animation:job-sweep 1.4s linear infinite}
-.topbar .job-bar progress:indeterminate::-webkit-progress-bar{background:transparent}
-.topbar .job-bar progress:indeterminate::-moz-progress-bar{background:transparent}
-@keyframes job-sweep{from{background-position:-40% 0}to{background-position:140% 0}}
-@media(max-width:650px){.topbar .job-bar{height:0;padding:0!important}#job-label{display:none}}
 
 /* Cup brackets: one column per round, each box centred on the two it comes from; the lines are drawn half by each column. */
 .bracket{display:flex;gap:28px;overflow-x:auto;padding:10px 14px 14px}

@@ -1,5 +1,5 @@
 import {initNationLogos} from './nation-logos.js';
-import {initHeroCrests,tintPage} from './club-hero.js';
+import {initHeroCrests,tintPage,arrivalHero} from './club-hero.js';
 import {worldHistoryScreen} from './world-history.js';
 import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen,setStarScale,debugMode,setDebugMode,GO} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
@@ -29,6 +29,9 @@ import {initColumns} from './columns.js';
 const tableSorts=new Map();
 const sortScope=table=>`${location.hash.split('?')[0]}|${[...main.querySelectorAll('table[data-sortable]')].indexOf(table)}`;
 let renderedPath=null,state={},leagues=[],nationsOf=null,renderVersion=0,polling=null,submitting=false,pendingMatchRedirect=null,lastFinishedJobId=null;
+// The job the page watches: the day it has reached (`jobDay`), the day the next match's fill starts from, its name and day in
+// Continuer's tooltip, and the band of the game it loads or makes (`arrival`), which holds the page until it ends.
+let jobDay=null,fillFrom=null,jobTitle='',arrival=null;
 // A list fitted to the window is drawn again once it has measured the rows that fit (`refitted`: that second pass is under way).
 let refitted=false,previewVersion=0;
 const main=document.querySelector('#main');
@@ -119,6 +122,10 @@ const busyButtons=()=>{
  const auto=Boolean(state.auto?.running),stopping=Boolean(state.auto?.stopping);
  document.querySelectorAll('[data-command],#advance,#simulate').forEach(element=>element.disabled=busy||auto||(!state.exists&&element.id.startsWith('advance'))||Boolean(state.recovery_required&&element.id.startsWith('advance')));
  updateAdvanceButton();
+ // At work, Continuer keeps its colour and turns its chevron into a ring; the job and its day are in its tooltip.
+ const advance=document.querySelector('#advance');
+ advance.classList.toggle('busy',Boolean(polling));
+ if(polling&&jobTitle)advance.title=jobTitle;
  const button=document.querySelector('#autoplay');
  button.disabled=stopping||(!auto&&(busy||!state.exists||Boolean(state.recovery_required)));
  button.setAttribute('aria-pressed',String(auto));
@@ -133,8 +140,13 @@ function changeParams(values){const path=location.hash.split('?')[0]||'#/';locat
 // The controlled club's last matches and its next three, left of Continuer, in one band read in time (« Barre du haut »):
 // a played match by its score from the club's side on the badge of its outcome, a rule for today, then each match to come
 // by its days to go; under the opponent (plane if away), the competition (cups in blue). `short` keeps a played match to the
-// opponent's dot and the score. A played match opens its report, one to come the page of its opponent.
+// opponent's dot and the score. A played match opens its report, one to come the page of its opponent. While a job runs the
+// days to go count from the day it has reached, and the next match fills as it nears.
 const daysBetween=(from,to)=>Math.round((new Date(`${to}T12:00:00`)-new Date(`${from}T12:00:00`))/864e5);
+const delayLabel=(from,to)=>{const days=daysBetween(from,to);return days<=0?'Auj.':`J-${days}`;};
+// The share of the days between the start of the fill and the next match that the job has gone through: full on its day.
+const fillShare=to=>{const total=daysBetween(fillFrom,to);return total<=0?1:Math.min(1,Math.max(0,daysBetween(fillFrom,jobDay)/total));};
+const fillHtml=to=>`<i class="next-match-fill" style="width:${fillShare(to)*100}%"></i>`;
 function barMatchesHtml(count,short){
  const club=state.controlled_club_id;
  const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span>`;
@@ -143,9 +155,9 @@ function barMatchesHtml(count,short){
   const title=`${outcomeLabels[match.outcome]}${short?` · ${opponent.name}`:''} · ${date(match.date)} · ${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${match.penalties?` · t.a.b. ${ours(match.penalties)}`:''}`;
   return `<a class="last-match ${match.outcome}${short?' short':''}" href="#/match/${match.id}" title="${e(title)}">${short?kitDot(opponent):''}<span class="last-match-score">${ours(match.score)}</span>${short?'':body(match,home,opponent)}</a>`;
  });
- const coming=(state.club_next_matches||[]).map(match=>{
-  const home=match.home.id===club,opponent=home?match.away:match.home,days=daysBetween(state.date,match.date);
-  return `<a class="next-match" href="#/club/${opponent.id}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}"><span class="next-match-when">${days<=0?'Auj.':`J-${days}`}</span>${body(match,home,opponent)}</a>`;
+ const coming=(state.club_next_matches||[]).map((match,index)=>{
+  const home=match.home.id===club,opponent=home?match.away:match.home;
+  return `<a class="next-match" href="#/club/${opponent.id}" data-date="${match.date}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}">${index===0&&jobDay?fillHtml(match.date):''}<span class="next-match-when">${delayLabel(jobDay||state.date,match.date)}</span>${body(match,home,opponent)}</a>`;
  });
  return played.join('')+(played.length&&coming.length?'<i class="bar-today" aria-hidden="true"></i>':'')+coming.join('');
 }
@@ -159,7 +171,31 @@ function drawBarMatches(){
   &&[...block.querySelectorAll('.next-match-who b,.next-match-comp')].some(text=>text.scrollWidth>text.clientWidth));
  for(const [count,short] of BAR_STAGES){band.innerHTML=barMatchesHtml(count,short);if(!cut())break;}
 }
-async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';document.querySelector('#game-date').textContent=state.exists&&!state.recovery_required?date(state.date,true):'';document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);setStarScale(state.star_scale);document.querySelector('#debug-badge').hidden=!debugMode();const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}drawBarMatches();if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
+// A text a job changes rolls up: the old one leaves upwards, the new one comes from below (« Barre du haut »).
+function rollText(element,text,roll){
+ const old=element.querySelector(':scope>.roll>.in')?.textContent??element.textContent;
+ if(old===text)return;
+ if(!roll||!old){element.textContent=text;return;}
+ element.innerHTML=`<span class="roll"><span class="out">${e(old)}</span><span class="in">${e(text)}</span></span>`;
+ element.querySelector('.out').addEventListener('animationend',event=>event.target.remove(),{once:true});
+}
+// The day a job has reached moves the bar: the date and the next match's delay roll up, the delays after it follow, the
+// next match fills. In auto mode the fill starts again from each match the club plays.
+function tickBar(day){
+ if(!day||day===jobDay)return;
+ jobDay=day;
+ const last=state.club_last_matches?.at(-1)?.date;
+ if(last&&(!fillFrom||last>fillFrom))fillFrom=last;
+ rollText(document.querySelector('#game-date'),date(day,true),true);
+ document.querySelectorAll('#next-matches .next-match').forEach((block,index)=>{
+  rollText(block.querySelector('.next-match-when'),delayLabel(day,block.dataset.date),index===0);
+  if(index)return;
+  let fill=block.querySelector('.next-match-fill');
+  if(!fill){fill=block.insertAdjacentElement('afterbegin',document.createElement('i'));fill.className='next-match-fill';fill.style.width='0%';fill.getBoundingClientRect();}
+  fill.style.width=`${fillShare(block.dataset.date)*100}%`;
+ });
+}
+async function refreshState(){state=await api('/monde/etat');document.body.classList.toggle('live-mode',Boolean(state.live_match_id));document.body.classList.toggle('no-game',!state.exists||Boolean(state.recovery_required)||state.controlled_club_id==null);document.querySelector('#season-label').textContent=state.exists?`SAISON ${season(state.season)}`:'';rollText(document.querySelector('#game-date'),state.exists&&!state.recovery_required?date(jobDay||state.date,true):'',false);document.querySelector('#market-badge').textContent=state.market?'Mercato ouvert':'';setToday(state.date);setOwnClub(state.controlled_club_id);setStarScale(state.star_scale);document.querySelector('#debug-badge').hidden=!debugMode();const own=document.querySelector('#own-club'),mine=state.exists&&!state.recovery_required?state.controlled_club:null;own.hidden=!mine;if(mine){own.href=`#/club/${mine.id}`;own.innerHTML=`<span>${kitDot(mine)}</span>${e(mine.name)}`;}drawBarMatches();if(state.exists&&!state.recovery_required){leagues=await api('/competitions');setCompetitions(leagues);if(nationsOf!==state.seed){setNations(await api('/nations'));nationsOf=state.seed;}const activeNations=playableNations(leagues);document.querySelector('#leagues-nav').innerHTML=activeNations.map(nation=>`<a href="#/country/${nation}" data-nav="country-${nation}"><span>${nationFlag(nation,{link:false})}</span>${e(nationName(nation))}</a>`).join('');}busyButtons();if(state.job)pollJob(state.job);}
 
 async function confirmDialog({eyebrow,title,text,confirmLabel='Confirmer',danger=false}){
  const dialog=document.querySelector('#confirm-dialog');
@@ -276,6 +312,8 @@ function draw(html,field,typing){
 async function render(){const version=++renderVersion;const hash=rememberFilters(location.hash);if(hash!==location.hash)history.replaceState(history.state,'',hash);const {parts,params}=routeParts();
  // The address of the screen Actualités took the place of.
  if(parts[0]==='mon-club'){location.hash='#/actualites';return;}
+ // A game being loaded or made holds the page: no screen is drawn from the one it replaces.
+ if(arrival){if(!main.querySelector('.arrival'))main.innerHTML=arrival;return;}
  if(!main.innerHTML||main.querySelector('.loading'))main.innerHTML='<div class="loading">Chargement…</div>';
  try{await refreshState();let html;const [screen,id,section,extra]=parts;
   // The manual needs no game: it opens from the welcome screen too, though never over a live match.
@@ -288,7 +326,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
   // The live match is modal: whatever the address, it stays on screen until the day is closed.
   else if(state.live_match_id)html=await liveScreen();
   else switch(screen){case 'international':html=await internationalScreen(id,section,extra,params);break;case 'europe':html=await europeScreen(id,section,params,leagues);break;case 'honours':html=await honoursScreen(params);break;case 'clubs':html=await clubsScreen(params,leagues);break;case 'club':html=await clubScreen(id,section,params);break;case 'league':html=await leagueScreen(id,section,params,leagues);break;case 'country':html=await countryScreen(id,leagues,params,state.controlled_club_id);break;case 'transfers':html=await worldHistoryScreen(id,params,leagues,state);break;case 'players':html=await playersScreen(params);break;case 'player':html=await playerScreen(id);break;case 'match':html=await matchScreen(id);break;case 'saves':html=await savesScreen();break;case 'actualites':html=await newsScreen(await openMessage(params));break;default:html=await dashboard(leagues);}}
- if(version!==renderVersion)return;const openMenu=main.querySelector('.entity-menu[open] .menu'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu,details.season-pick')].map(details=>details.open):[];renderedPath=path;
+ if(version!==renderVersion||arrival)return;const openMenu=main.querySelector('.entity-menu[open] .menu'),menuScroll=openMenu?.scrollTop;const path=location.hash.split('?')[0],moved=path!==renderedPath,folds=path===renderedPath?[...main.querySelectorAll('details.filters,details.filter-menu,details.season-pick')].map(details=>details.open):[];renderedPath=path;
  // The field of a filter in use: the same screen is drawn again around its form, and typing goes on. Its text is kept
  // while it runs ahead of the address this screen was drawn from; otherwise it follows the address, as after a step back.
  const active=document.activeElement,field=main.contains(active)&&active.matches('[data-filter] input,[data-filter] select')?active:null;
@@ -305,7 +343,7 @@ async function render(){const version=++renderVersion;const hash=rememberFilters
  const list=main.querySelector('[data-fit]');
  if(list&&refit(list)&&!refitted){refitted=true;return render();}
  refitted=false;
- }catch(error){if(version!==renderVersion)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message))+`<button id="retry">Réessayer</button>`;tintPage(main);toast(error.message,true);}}
+ }catch(error){if(version!==renderVersion||arrival)return;main.innerHTML=card('Impossible d’afficher cette page',empty(error.message))+`<button id="retry">Réessayer</button>`;tintPage(main);toast(error.message,true);}}
 
 // Actualités opens on a message (`msg` in the address): the one asked for, else the next one to read, else one awaiting an
 // answer, else the latest. Opening it marks it as read, and the menu and Continuer follow at once.
@@ -330,6 +368,8 @@ async function command(path,payload){
   let job;
   try{job=await api(path,body);}catch(error){if(error instanceof TypeError)job=await api(path,body);else throw error;}
   state.job=job.id;
+  // A game being loaded or made shows its club at once: the server may not answer again until it is in.
+  if(ARRIVING.includes(job.command))showArrival(job);
   pollJob(job.id);
   return true;
  }catch(error){
@@ -356,25 +396,41 @@ async function simulateMatch(){
  pendingMatchRedirect=matchId;
  await command('/monde/avancer',{jusqu_a:'jour'});
 }
+const JOB_NAMES={create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation',auto:'Simulation automatique',live_start:'Les autres matches du jour',live_finish:'Fin de la journée'};
+const ARRIVING=['create','load'];
+// The band of the game being loaded or made takes the whole page and empties the bar until the job ends (« Accueil »).
+function showArrival(job){
+ if(arrival)return;
+ arrival=`<div class="arrival">${arrivalHero(job.club,job.date)}</div>`;
+ document.body.classList.add('arriving');
+ main.innerHTML=arrival;
+ tintPage(main);
+}
+// What the page shows of the job ends with it: the bar goes back to the game's day, the page to its screen.
+function endJob(){
+ jobDay=null;fillFrom=null;jobTitle='';arrival=null;
+ document.body.classList.remove('arriving');
+}
 async function pollJob(id){
  // A job whose outcome was already handled is never followed again, whatever a late /monde/etat still reports.
  if(polling===id||id===lastFinishedJobId)return;
  polling=id;
- document.querySelector('#job-bar').hidden=false;
- const progress=document.querySelector('#job-progress');
+ fillFrom=state.date;
  let seenDate;
  try{
   while(polling===id){
    const job=await api(`/travaux/${id}`);
    const open=job.command==='auto';
-   // An auto job has no end to measure against: show an indeterminate bar instead of a percentage.
-   if(open)progress.removeAttribute('value');else progress.value=job.progress;
-   document.querySelector('#job-label').textContent=`${({create:'Création du monde',load:'Chargement',save:'Sauvegarde',advance:'Simulation',auto:'Simulation automatique',live_start:'Les autres matches du jour',live_finish:'Fin de la journée'})[job.command]}… ${job.date?date(job.date):''} ${open?'':Math.round(job.progress*100)+'%'}`;
+   if(ARRIVING.includes(job.command))showArrival(job);
+   else{
+    jobTitle=[JOB_NAMES[job.command],job.date&&date(job.date)].filter(Boolean).join(' · ');
+    document.querySelector('#advance').title=jobTitle;
+   }
    if(['done','failed','awaiting_lineup'].includes(job.status)){
     state.job=null;
     polling=null;
     lastFinishedJobId=id;
-    document.querySelector('#job-bar').hidden=true;
+    endJob();
     if(job.status==='failed'){pendingMatchRedirect=null;toast(job.error,true);}
     else if(job.status==='awaiting_lineup'){toast('Un match de votre club est programmé aujourd’hui : composez votre équipe pour poursuivre.');}
     else if(job.command==='live_start')toast('Coup d’envoi !');
@@ -396,9 +452,10 @@ async function pollJob(id){
    // The server keeps simulating while the user browses: refresh the current screen at each new date.
    if(open&&seenDate!==undefined&&job.date!==seenDate)await render();
    seenDate=job.date;
+   if(!ARRIVING.includes(job.command))tickBar(job.date);
    await new Promise(resolve=>setTimeout(resolve,700));
   }
- }catch(error){polling=null;toast('Suivi interrompu : rechargez la page pour retrouver le travail en cours.',true);}
+ }catch(error){polling=null;endJob();busyButtons();toast('Suivi interrompu : rechargez la page pour retrouver le travail en cours.',true);}
 }
 
 document.querySelector('#autoplay').addEventListener('click',async()=>{

@@ -47,6 +47,22 @@ html{scrollbar-gutter:stable}
 :is(.next-match:first-child,.bar-today+.next-match){box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--c4)}
 :is(.next-match:first-child,.bar-today+.next-match) .next-match-when{color:var(--c4)}
 .bar-today{flex:none;width:var(--mark-control);background:var(--c4)}
+/* A job at work: nothing is written in the bar, its line stays yellow. The day and the next match's delay roll up as the
+   days go (the old one leaves upwards, the new one comes from below); the next match fills from the left with a veil of
+   the teal as it nears, above its mark. Continuer keeps its colour, its chevron turning into a ring. */
+.roll{display:inline-grid;overflow:hidden;vertical-align:top}
+.roll>span{grid-area:1/1;white-space:nowrap}
+.roll>.out{animation:roll-out .26s ease-in forwards}
+.roll>.in{animation:roll-in .26s ease-out}
+@keyframes roll-out{to{translate:0 -100%;opacity:0}}
+@keyframes roll-in{from{translate:0 100%;opacity:0}}
+.next-match{position:relative}
+.next-match>*{position:relative}
+.next-match>.next-match-fill{position:absolute;inset:0 auto var(--mark-control) 0;background:color-mix(in srgb,var(--c4) 18%,var(--c4-soft));transition:width .6s linear}
+#advance.busy:disabled{opacity:1;cursor:progress}
+#advance.busy .go::after{-webkit-mask:none;mask:none;width:.75em;height:.75em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;background:none;animation:turn .8s linear infinite}
+@keyframes turn{to{rotate:1turn}}
+@media (prefers-reduced-motion:reduce){.roll>*{animation:none}.roll>.out{display:none}.next-match>.next-match-fill{transition:none}}
 .last-match{display:flex;align-items:center;gap:var(--s2);flex:0 1 auto;height:var(--h-bar-control);min-width:0;max-width:180px;padding:0 var(--s3) 0 var(--s2);line-height:1.15}
 .last-match.short{gap:var(--s1);padding:0 var(--s2)}
 .last-match>.kit-dot{flex:none;margin:0}
@@ -999,6 +1015,16 @@ a.door:is(:hover,:focus-visible){text-decoration-line:none}
 .saves-list .delete-column{width:calc(var(--h-control-small) + 2*var(--s3))}
 .saves-list tbody td:last-child button{visibility:hidden}
 .saves-list tbody tr:is(:hover,:focus-within) td:last-child button{visibility:visible}
+/* A game being loaded or made: its club's band alone in the middle of the page, its sash coming and going. The server may
+   not answer while it reads the save: the sheet alone moves the band. The bar keeps only the history. */
+.arriving .topbar :is(.date-block,.time-controls){visibility:hidden}
+main:has(>.arrival){display:flex;flex-direction:column;min-height:calc(100vh - var(--h-bar))}
+.arrival{display:flex;flex-direction:column;justify-content:center;flex:1}
+.arrival .club-hero{margin:0}
+.arrival .club-hero-band{border-radius:var(--radius-card)}
+.arrival .club-hero-art>i{animation:arrival-sash 1.6s ease-in-out infinite alternate}
+@keyframes arrival-sash{from{translate:-56% 0}to{translate:46% 0}}
+@media (prefers-reduced-motion:reduce){.arrival .club-hero-art>i{animation-duration:4.8s}}
 button.square{display:inline-grid;place-items:center;width:var(--h-control);padding:0}
 button.square.small{width:var(--h-control-small);height:var(--h-control-small)}
 button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}

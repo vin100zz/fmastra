@@ -381,12 +381,7 @@ def router(service: GameService) -> APIRouter:
     @api.get("/partie/slots")
     def slots() -> list[dict]:
         slots = service.store.slots()
-        _, appearances = service.kits.snapshot()
-        for slot in slots:
-            club = slot.get("club")
-            if club and (appearance := appearances.get(club["id"])) is not None:
-                club.update(major_color=appearance["home_kit_major_color"],
-                            minor_color=appearance["home_kit_minor_color"])
+        for slot in slots: service.kit_colours(slot.get("club"))
         return slots
 
     @api.post("/partie/supprimer")

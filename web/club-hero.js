@@ -154,6 +154,15 @@ export function creationHero(club){
   after:context(`${nationFlag(club.nation_code,{link:false})}${e(club.competition)}`),tiles:''});
 }
 
+// The band of a game being loaded or made (« Accueil »): its club's colours, crest and name, then the day the game stands
+// at; no link, no tile, no tab. A game without a club has the plain band, its day for name.
+export function arrivalHero(club,day){
+ const when=day?date(day,true):'';
+ if(!club)return hero({colors:'',lead:'',name:when,foot:'',tiles:''});
+ return hero({colors:heroColors(club.major_color,club.minor_color),lead:'',name:club.name,foot:'',crest:clubCrest(club),
+  after:when?context(e(when)):'',tiles:''});
+}
+
 // The header of a selection's page, a club's: the band in the colours of its kit, its logo alone (its initials on the disc
 // without one), its name then its flag, as high as its capitals, then its strength. `lead` steps between the selections of
 // the confederation, `tools` close the row of tabs.

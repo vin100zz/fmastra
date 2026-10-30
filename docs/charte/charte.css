@@ -136,6 +136,23 @@
 .last-match.D>b{background:var(--bad-soft);color:var(--bad)}
 .last-match.short{gap:var(--s1);padding:0 var(--s2)}
 .last-match.short>b{min-width:36px}
+/* A job at work: nothing is written in the bar, its line stays yellow. The day and the next match's delay roll up as the
+   days go (.roll: the old one leaves upwards, the new one comes from below); the next match's block fills from the left with
+   a veil of the teal as it nears (.next-match-fill), above its mark. The main action keeps its name, its chevron turning
+   into a ring (.cta.busy). */
+.roll{display:inline-grid;overflow:hidden;vertical-align:top}
+.roll>span{grid-area:1/1;white-space:nowrap}
+.roll>.out{animation:roll-out .26s ease-in forwards}
+.roll>.in{animation:roll-in .26s ease-out}
+@keyframes roll-out{to{translate:0 -100%;opacity:0}}
+@keyframes roll-in{from{translate:0 100%;opacity:0}}
+.next-match{position:relative}
+.next-match>*{position:relative}
+.next-match>.next-match-fill{position:absolute;inset:0 auto var(--mark-control) 0;background:color-mix(in srgb,var(--c4) 18%,var(--c4-soft));transition:width .6s linear}
+.cta.busy{cursor:progress}
+.cta.busy .go::after{-webkit-mask:none;mask:none;width:.75em;height:.75em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;background:none;animation:turn .8s linear infinite}
+@keyframes turn{to{rotate:1turn}}
+@media (prefers-reduced-motion:reduce){.roll>*{animation:none}.roll>.out{display:none}.next-match>.next-match-fill{transition:none}}
 .page{flex:1;display:flex;flex-direction:column;gap:var(--s2);min-height:0;padding:var(--s2) var(--s4) var(--s3)}
 /* A page's title, its commands on the same line. */
 .page-heading{display:flex;align-items:center;gap:var(--s3);flex:none;height:var(--h-head)}
@@ -843,6 +860,15 @@ span.entity-step svg{opacity:.3}
 .saves-list .tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 148px 156px var(--h-control-small);cursor:pointer}
 .saves-list .tr>.button{visibility:hidden}
 .saves-list .tr:is(:hover,.hover,:focus-within)>.button{visibility:visible}
+/* A game being loaded or made: its club's band alone in the middle of the page, the day the game stands at after its name,
+   its sash coming and going. Nothing waits on the server, which may not answer while it reads the save: the sheet alone
+   moves it. The bar keeps only the history. */
+.arriving .topbar :is(.date-block,.time-controls){visibility:hidden}
+.arrival{display:flex;flex-direction:column;justify-content:center;flex:1}
+.arrival .hero{border-radius:var(--radius-card)}
+.arrival .hero-sash{animation:arrival-sash 1.6s ease-in-out infinite alternate}
+@keyframes arrival-sash{from{translate:-56% 0}to{translate:46% 0}}
+@media (prefers-reduced-motion:reduce){.arrival .hero-sash{animation-duration:4.8s}}
 /* The name a new game is saved under, in the bar before Commencer: a field of 40 on the ground of the next matches, the save
    of « Reprendre » at its head, its name in the figures' type. Written in, it turns white, ringed with the accent's text. A
    name already saved under, or one a save cannot have, takes the bad wash and line, its save in red. */

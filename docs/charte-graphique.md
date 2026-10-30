@@ -140,7 +140,7 @@ où le fond est déjà jaune.
 | Composant | Classes | Règle |
 |---|---|---|
 | Marque | `.brand`, `.logo`, `.wordmark` | Le coin jaune en tête du menu. Voir « Marque » |
-| Barre du haut | `.topbar`, `.history-nav`, `.date-block`, `.next-matches`, `.last-match`, `.bar-today`, `.next-match` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Voir « Barre du haut » |
+| Barre du haut | `.topbar`, `.history-nav`, `.date-block`, `.next-matches`, `.last-match`, `.bar-today`, `.next-match`, `.next-match-fill`, `.roll` | Blanche, 56, ouverte par l'écharpe de la marque ; ce qui s'y tient a 40. Pendant un travail, le jour et le prochain match avancent. Voir « Barre du haut » |
 | Onglets d'une page | `.tabs` | Une seule rangée par écran, sans trait dessous. L'ouvert souligné d'un trait de 3 aux bouts arrondis, de l'accent ou de la couleur du club, de la sélection ou de la compétition sur sa fiche (voir « Page d'un club ») |
 | Choix d'une vue | `.segmented`, `.small` | Sur la ligne du titre ou dans l'en-tête d'une carte : statut des clubs, derniers ou prochains matches, tactique, colonnes. Une piste sans trait (`--track`), l'option ouverte posée dessus, remplie de l'accent et écrite de son encre ; sur la page d'un club, de ses couleurs (voir « Page d'un club »). Piste de 28, options de 24, leur texte à 16 de leurs bords ; dans l'en-tête d'une carte (`.small`), piste de 26, options de 22, à 12 |
 | Vues d'un onglet | `.segmented.views` | Au bout de la rangée d'onglets, à la place du pas de saison : les vues d'un onglet qui ne se lit pas par saison (Historique). L'ouverte prend la couleur de la page, comme tout choix. Voir « Historique » |
@@ -148,7 +148,7 @@ où le fond est déjà jaune.
 | Pas de saison | `.season`, `.season-pick` | Saisons, éditions des sélections : une flèche de chaque côté de celle montrée, qui ouvre la liste de toutes. Voir « Pas de saison » |
 | Bouton | `.button`, `.primary`, `.danger`, `.square`, `.small` | Blanc, cerclé d'une ombre fine (`--shadow-field`), sans bordure ; 28, 22 dans une carte ou une ligne ; carré pour une icône seule. L'action principale sur l'accent éclairé d'en haut (`--shadow-accent`) ; `.danger` garde son trait |
 | Pied du menu | `.sidebar-bottom`, `.sidebar-tools` | Ma partie, le mode Auto, le thème et le manuel du jeu : quatre boutons d'une icône, de même largeur, sur une ligne ; leur nom en infobulle. Auto montre ce que fait un clic (lecture, pause), sur fond d'accent tant qu'il tourne ; le thème, celui où il mène |
-| Action principale | `.cta` | Une seule par écran ; 36, 40 dans la barre du haut. Elle finit sur un chevron dans une pastille (`.go`) |
+| Action principale | `.cta`, `.cta.busy` | Une seule par écran ; 36, 40 dans la barre du haut. Elle finit sur un chevron dans une pastille (`.go`), un anneau qui tourne pendant un travail (`.busy`) |
 | Champ | `.field` | Recherche, liste déroulante : blancs, cerclés d'une ombre fine, sans bordure |
 | Nom de la sauvegarde | `.slot-field` | Dans la barre du haut de « Nouvelle partie », avant « Commencer » : 40 de haut, sur `--panel-2`. Voir « Nouvelle partie » |
 | En-tête de page | `.page-heading`, `.page-title`, `.tools` | Le titre, ses commandes sur la même ligne, à droite |
@@ -196,7 +196,7 @@ où le fond est déjà jaune.
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
 | Recherche globale | `.palette`, `.palette-head`, `.results`, `.result` ; `.veil` dans une maquette | Voir « Recherche globale » |
-| Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list` | Deux panneaux l'un sous l'autre : créer une partie, reprendre une partie. Voir « Accueil » |
+| Accueil | `.doors`, `.door`, `.door.main`, `.door-mark`, `.saves-list`, `.arrival` | Deux panneaux l'un sous l'autre : créer une partie, reprendre une partie ; pendant un chargement, le bandeau du club. Voir « Accueil » |
 | Nouvelle partie | `.nation-line`, `.segmented.range`, `.check` | Le monde, ses clubs, le club choisi, sur un écran. Voir « Nouvelle partie » |
 | Curseur | `.slider` | Une valeur choisie sur une échelle de crans, écrite après lui. Voir « Curseur » |
 | Case à cocher | `.check` | 18, bordée ; cochée, l'accent et son encre |
@@ -250,8 +250,19 @@ marque ouvre à gauche.
     le score seul après la pastille de l'adversaire (`.last-match.short`, son nom
     dans l'infobulle), trois puis deux. Avant le premier match de la saison, les
     prochains seuls.
-- **Avancement d'une simulation** : il se dessine dans le trait jaune de la
-  barre, sans décaler la page.
+- **Pendant un travail** (simulation, sauvegarde, chargement) : rien ne s'écrit au
+  milieu de la barre et son trait reste jaune ; rien ne décale la page.
+  - **Le jour** : la date suit le jour simulé ; chaque nouveau jour monte à la
+    place de l'ancien, qui sort par le haut (`.roll`).
+  - **Le prochain match** : son délai monte de même, ceux des matchs suivants
+    changent sans bouger ; son bloc se remplit depuis la gauche d'un voile de la
+    sarcelle (`.next-match-fill`, 18 % sur son lavis), au-dessus de son
+    soulignement, à mesure qu'il approche : la part des jours passés depuis le
+    début du travail, ou depuis le dernier match joué en mode Auto, sur ceux qui
+    l'en séparaient. Le jour du match, il est plein.
+  - **L'action principale** garde son nom et sa couleur ; son chevron devient un
+    anneau qui tourne (`.cta.busy`). Le travail et son jour sont dans son
+    infobulle. Un travail sans jour (sauvegarde) n'a que l'anneau.
 
 ### Pas de saison
 
@@ -428,6 +439,13 @@ Sans partie, et sur « Ma partie », deux panneaux de même forme, l'un sous l'a
   confirmation.
 - Rien d'autre : ni texte d'accueil, ni compte. Sans sauvegarde, la carte le dit.
 - Sans partie, la barre du haut est vide et le menu n'a que le manuel.
+- **Chargement** (`.arrival`) : pendant qu'une partie se charge ou se crée, la
+  page ne montre que le bandeau de son club, seul au milieu de la page : son
+  écusson, son nom, puis le jour où en est la partie ; son écharpe va et vient.
+  La barre du haut ne garde que l'historique : la partie d'avant n'y est plus
+  (`.arriving` sur la page). Le serveur peut ne plus répondre tant qu'il lit la sauvegarde : rien n'y attend
+  de lui, la feuille seule fait bouger le bandeau. Une partie sans club (une
+  ancienne sauvegarde) a le bandeau sans couleurs, son jour pour nom.
 
 ### Nouvelle partie
 

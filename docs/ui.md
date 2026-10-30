@@ -142,9 +142,13 @@ Actualités, avant elle depuis une autre page, et restent dus si l'on consulte d
 dans l'onglet du navigateur). Le mode Auto garde son propre rythme : il enchaîne toutes les dates de matchs du monde
 et ne s'arrête jamais, même si des messages attendent une réponse.
 
-Une avance longue renvoie un identifiant de travail et une progression.
-Elle s'affiche dans la barre du haut, sans décaler la page : le libellé au
-milieu de la barre, la progression le long de son bord inférieur.
+Une avance longue renvoie un identifiant de travail et le jour qu'il a atteint.
+La barre du haut le suit sans décaler la page ni rien écrire : la date et les
+délais des prochains matchs suivent ce jour, le prochain se remplit à mesure
+qu'il approche, Continuer tourne (charte, « Barre du haut »). Une partie qui se
+charge ou se crée montre son club au milieu de la page jusqu'à la fin du
+travail, sans attendre le serveur, qui peut ne plus répondre pendant la lecture
+de la sauvegarde (charte, « Accueil »).
 Désactiver les commandes incompatibles tant qu'elle est active ; les vues
 lisent le dernier état cohérent validé. Une consultation ne tire aucun nouvel
 aléa de simulation. Les estimations affichées restent stables sur leur période
@@ -1386,7 +1390,9 @@ GET  /api/monde/etat                     date, saison, prochaines échéances, m
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
-GET  /api/travaux/{id}                  statut, progression, erreur éventuelle, compétition dont le tour suit (competition)
+GET  /api/travaux/{id}                  statut, progression, jour atteint (date), erreur éventuelle, compétition dont le tour suit
+                                          (competition) ; pour un chargement ou une création, dès sa soumission, le jour de la
+                                          partie et son club (club : id, name, major_color, minor_color)
 GET  /api/monde/journal?date=             événements du jour
 GET  /api/recherche?q=&type=joueurs|clubs|competitions|selections   recherche globale : {items}, 12 au plus, la meilleure correspondance d'abord
                                           chaque item : kind (player, club, competition, nation), id, name, marks ([début, fin[ des lettres tapées dans le nom)

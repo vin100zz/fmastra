@@ -674,6 +674,10 @@ def test_the_game_is_saved_automatically_in_its_slot_beside_a_copy_of_its_previo
     slots = lambda: [row["slot"] for row in client.get("/api/partie/slots").json()]
     slot = lambda: client.get("/api/monde/etat").json()["slot"]
     try:
+        # While it loads, the job tells the screen which game is coming: the day it stands at (its club, once it has one).
+        loading = client.post("/api/partie/charger", json={"slot": "Marseille"}).json()
+        assert loading["command"] == "load" and loading["date"] == start.iso() and loading["club"] is None
+        assert wait_until(lambda: service.jobs[loading["id"]].status == "done")
         run("/api/partie/charger", slot="Marseille")
         assert slots() == ["Marseille"] and slot() == "Marseille"  # loading writes nothing
         run("/api/monde/avancer", jusqu_a="jour")

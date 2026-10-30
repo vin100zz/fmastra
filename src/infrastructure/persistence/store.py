@@ -479,6 +479,11 @@ class SaveStore:
                         "date": saved_date(path), "club": self._club(path)}
                        for path in self.directory.glob("*.json.gz")), key=lambda row: row["slot"].casefold())
 
+    def summary(self, slot: str) -> dict[str, object]:
+        """The day a slot's game stands at and its user's club, read without loading it: what the screen shows while it loads."""
+        path = self.path_for(slot)
+        return {"date": saved_date(path), "club": self._club(path)}
+
     def _club(self, path: Path) -> dict | None:
         try:
             return json.loads(path.with_name(path.name.removesuffix(".json.gz") + SUMMARY).read_text("utf-8"))["club"]

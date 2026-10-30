@@ -40,6 +40,8 @@ class Job:
     # The competition whose round the screen flow shows once the job ends: its next round when
     # the human club's match awaits a lineup, otherwise the round just played.
     competition: dict | None = None
+    # The user's club in the game being loaded or made, which the screen shows meanwhile; `date` is then the day that game stands at.
+    club: dict | None = None
 
 
 def take_charge(world: World, club_id: int) -> None:
@@ -148,6 +150,8 @@ class GameService:
             yield self.world
 
     def submit(self, kind: str, command_id: str, payload: dict) -> dict:
+        # Read before the lock: the summary of a slot, the catalogue of a new game.
+        day, club = self.arrival(kind, payload)
         with self.lock:
             if command_id in self.commands:
                 previous_kind, previous_payload, job_id = self.commands[command_id]
@@ -162,7 +166,7 @@ class GameService:
             if kind == "live_finish" and self.world.live_match is None:
                 raise CommandError("Aucun match en cours.")
             if "slot" in payload: self.store.path_for(payload["slot"])
-            job = Job(uuid4().hex, kind)
+            job = Job(uuid4().hex, kind, date=day, club=club)
             self.jobs[job.id] = job
             self.commands[command_id] = (kind, payload.copy(), job.id)
             self.active = job.id
@@ -171,6 +175,24 @@ class GameService:
                 self.auto_job = job.id
             self.executor.submit(self._run, job, payload)
             return asdict(job)
+
+    def kit_colours(self, club: dict | None) -> dict | None:
+        """A saved club in the colours of its home kit today, as the game will draw it once loaded."""
+        _, appearances = self.kits.snapshot()
+        if club and (appearance := appearances.get(club["id"])) is not None:
+            club.update(major_color=appearance["home_kit_major_color"], minor_color=appearance["home_kit_minor_color"])
+        return club
+
+    def arrival(self, kind: str, payload: dict) -> tuple[str | None, dict | None]:
+        """The day the game being loaded or made stands at, and its user's club: the slot's summary, or the catalogue's club."""
+        if kind == "load":
+            summary = self.store.summary(payload["slot"])
+            return summary["date"], self.kit_colours(summary["club"])
+        if kind == "create" and payload.get("levels") is not None:  # the route has built the catalogue to check them
+            data = self.catalogue.data()
+            club = data["clubs"].get(payload.get("club_id"))
+            return data["date"], club and {key: club[key] for key in ("id", "name", "major_color", "minor_color")}
+        return None, None
 
     def resume(self) -> dict | None:
         """Loads the slot saved last, as Reprendre would; None when there is no save."""

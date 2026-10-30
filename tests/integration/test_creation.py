@@ -67,6 +67,8 @@ def test_a_new_game_plays_the_divisions_chosen_with_its_club_and_a_drawn_seed(cl
     refused = client.post("/api/partie/creer", json={"nations": {"ENG": 2}, "club_id": rennes["id"]})
     assert refused.status_code == 400
     job = client.post("/api/partie/creer", json={"nations": {"FRA": 2, "ENG": 0}, "club_id": rennes["id"]})
+    # While the world is made, the job tells the screen the club and the first day of the game.
+    assert job.json()["club"]["name"] == "Rennes" and job.json()["date"] == "2026-07-01"
     assert job.status_code == 202 and finish(client, job.json())["status"] == "done"
     world = client.app.state.game.world
     assert [league.name for league in world.config.world.competitions] == ["Ligue 1", "Ligue 2"]
