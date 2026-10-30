@@ -9,4 +9,5 @@ reports/
 .ruff_cache/
 *.log
 .idea/
-.claude/
+.claude/*
+!.claude/skills/

@@ -27,17 +27,9 @@ et tout travail sur un écran.
 - Un écran nouveau ou refondu suit la charte ; une fois aligné, il est retiré
   de sa section « Migration ».
 
-## Maquettes
+## Skills du projet
 
-Quand une maquette est demandée, sans qu'il soit besoin de le préciser :
-
-- **À la charte** : la maquette part de `docs/charte/charte.css`, copiée telle
-  quelle, sans réécrire ses styles.
-- **Thème clair** : fond blanc, jamais le thème sombre.
-- **Grand écran** : mise en page pensée pour un écran de bureau large (référence
-  1920 × 1080), qui exploite toute la largeur. Pas de version téléphone, sauf
-  demande explicite.
-- **Minimaliste** : pas de libellé qui explique le jeu ou paraphrase l'écran
-  (sous-titre descriptif, phrase d'aide, légende évidente). Une mécanique du jeu
-  qui doit être expliquée va dans le manuel du jeu (`docs/manuel/`), pas à
-  l'écran.
+- **`vcdesign`** (effort élevé) : maquettes, pistes visuelles, refontes d'écran.
+  Il porte les règles des maquettes. Le skill `impeccable` ne sert que dans ce
+  cadre.
+- **`vccommit`** (effort faible) : commits, push et merges.

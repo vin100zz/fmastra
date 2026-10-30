@@ -1,4 +1,7 @@
 {
+  "hook": {
+    "enabled": false
+  },
   "detector": {
     "ignoreRules": [],
     "ignoreFiles": [],
