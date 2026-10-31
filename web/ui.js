@@ -634,13 +634,6 @@ const europeTip = row => {
  const why=place.winner?`Vainqueur de la ${place.cup}`:place.tentative?`Sous réserve : ${place.fallback?place.fallback.name:'aucune coupe d’Europe'} si la ${place.cup} est gagnée par un club moins bien classé`:'';
  return ` title="${escape(why?`${place.name}\n${why}`:place.name)}"`;
 };
-// The cups a table's places lead to, each after the square of its colour, for the head of its card: their names, or their
-// codes in a narrow card (`short`). Nothing when no place leads to Europe.
-export function europeLegend(items, short=false) {
- const names=new Map(items.filter(europePlace).map(row=>[row.europe.code,row.europe.name]));
- const codes=['C1','C3','C4'].filter(code=>names.has(code));
- return codes.length?`<span class="europe-legend">${codes.map(code=>`<span class="europe-${code.toLowerCase()}">${escape(short?code:names.get(code))}</span>`).join('')}</span>`:'';
-}
 // Names the last round a table accounts for, from the most matches any club has played.
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // The class that names where a place of a table leads (`movement`, `europe`), which its rank's badge tells (web/charte.css):
@@ -763,12 +756,10 @@ export function seasonSteps(data){
  return steps(years.map(year=>({value:year,label:season(year),note:year===data.current_season?'en cours':''})),data.season);
 }
 
-// The full table of a finished season of a league, the latest by default; its head names the cups of its places and steps
-// through the other seasons.
+// The full table of a finished season of a league, the latest by default; its head steps through the other seasons.
 export function seasonArchive(archive){
  if(!archive)return '';
- const legend=europeLegend(archive.standings,true);
- return card('Classement',standingsTable({items:archive.standings},false,true),legend?`<div class="card-tools">${legend}${seasonSteps(archive)}</div>`:seasonSteps(archive));
+ return card('Classement',standingsTable({items:archive.standings},false,true),seasonSteps(archive));
 }
 
 // The players with the most matches and the most goals in a club or a competition, side by side (`leaders` comes from the API).

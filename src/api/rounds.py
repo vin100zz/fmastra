@@ -90,7 +90,16 @@ def competition_round(world: World, competition_id: int, which: Which, season: i
     rows = [{**v.match_row(world, match), "scorers": scorers(world, match)} for match in fixtures]
     # The competition's leading scorers of the season go with its table, or beside the ties of a knockout round.
     top = [{key: row[key] for key in ("id", "name", "club", "goals")} for row in leaders(world, competition.id, "buteurs", year)[:TOP_SCORERS]]
-    return view(number, label, day.iso() if day else None, [{"name": None, "matches": rows, "standings": table, "top_scorers": top}] if rows else [])
+    return view(number, label, day.iso() if day else None, [{"name": None, "matches": rows, "standings": table, "top_scorers": top,
+                                                             "top_ratings": best_ratings(world, competition.id, year)}] if rows else [])
+
+
+def best_ratings(world: World, competition_id: int, season: int) -> list[dict]:
+    """The best average ratings of the competition's season; a rating counts from half the matches of its most rated player."""
+    rated = leaders(world, competition_id, "notes", season)
+    most = max((row["rating_count"] for row in rated), default=0)
+    return [{"id": row["id"], "name": row["name"], "club": row["club"], "rating": row["value"], "matches": row["rating_count"]}
+            for row in rated if 2 * row["rating_count"] >= most][:TOP_SCORERS]
 
 
 def nation_standings(world: World, edition, group: list[int], finals: bool) -> list[dict]:

@@ -13,7 +13,7 @@ import {wideScreen,fittedRows,sidePanel,searchField,positionChips,nationChips,ch
 import {compositionContent} from './composition.js';
 import {clubNavigation,competitionNavigation} from './navigation.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
-import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,europeLegend,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
+import {api,date,GO,titlesCard,countTitles,escape as e,number as n,averageNote,money,price,budget,headPager,figure,miniBar,scoreBadge,leadersCards,season,clubLink,playerLink,position,form,empty,card,heading,table,sortableTable,pager,playerTable,playerViewSwitch,standingsTable,roundTitle,seasonArchive,seasonSteps,fixtures,query,nationBadge,nationFlag,nationName,sortButton,levelBadge,competitionLink} from './ui.js';
 
 // What stands above the first row of a list screen: top bar, title line, card head and table header.
 const LIST_ABOVE=155;
@@ -157,13 +157,13 @@ async function leagueContent(league,section,params,lead){
  if(section==='table'){
   const view=TABLE_VIEWS.some(([key])=>key===params.get('vue'))?params.get('vue'):'general';
   const [data,scorers,assists]=await Promise.all([api(`/competitions/${id}/classement?${query({vue:view==='general'?'':view})}`),api(`/competitions/${id}/statistiques?type=buteurs`),api(`/competitions/${id}/statistiques?type=passeurs`)]);
-  content=`<div class="league-layout">${card('Classement',standingsTable(data),`${view==='general'?europeLegend(data.items,true):''}${tableViews(id,view)}`,'league-table')}${leagueLeaders(data,scorers,assists)}</div>`;
+  content=`<div class="league-layout">${card('Classement',standingsTable(data),tableViews(id,view),'league-table')}${leagueLeaders(data,scorers,assists)}</div>`;
  }
  else if(section==='calendar'){
   const [data,standings,scorers]=await Promise.all([api(`/competitions/${id}/calendrier?${params}`),api(`/competitions/${id}/classement`),api(`/competitions/${id}/statistiques?type=buteurs`)]);
   const day=data.items[0]?.date;
   const matches=data.items.length?`<div class="fixture-grid">${data.items.map(match=>`<div class="fixture-card">${fixtures({items:[match]})}</div>`).join('')}</div>`:empty('Aucun match programmé');
-  content=roundStepper(`#/league/${id}/calendar`,data)+`<div class="calendar-layout"><section class="calendar-matches"><h3 class="round-heading">Journée ${data.round}${day?` · ${date(day,true)}`:''}</h3>${matches}</section><div class="calendar-side">${card('Classement',standingsTable(standings,true),europeLegend(standings.items,true))}${card('Buteurs',table(['#','JOUEUR','CLUB','BUTS'],scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club),`<b>${n(row.value)}</b>`])))}</div></div>`;
+  content=roundStepper(`#/league/${id}/calendar`,data)+`<div class="calendar-layout"><section class="calendar-matches"><h3 class="round-heading">Journée ${data.round}${day?` · ${date(day,true)}`:''}</h3>${matches}</section><div class="calendar-side">${card('Classement',standingsTable(standings,true))}${card('Buteurs',table(['#','JOUEUR','CLUB','BUTS'],scorers.items.slice(0,5).map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club),`<b>${n(row.value)}</b>`])))}</div></div>`;
  }
  else if(isRoundTab(section))content=roundContent(await api(`/competitions/${id}/${roundPath(section)}`),section);
  else if(section==='stats'){

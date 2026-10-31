@@ -1047,13 +1047,46 @@ ces quatre cartes.
   une autre vue est dans l'adresse (`vue`). Domicile et Extérieur ne comptent
   que les matches du club à domicile ou à l'extérieur, 5 derniers que ses cinq
   derniers matches. Seul le général place les clubs : une autre vue écrit ses
-  rangs sans pastille et sans légende, la ligne du club dirigé seule colorée.
-- **Légende** : les codes des coupes (C1, C3, C4) avant le choix des vues, sur
-  le général seulement.
+  rangs sans pastille, la ligne du club dirigé seule colorée.
 - **Attaques et défenses** : celles de la vue montrée, les dix premières :
   le plus de buts marqués, le moins de buts encaissés.
 - Sous 1330 de large, le classement prend toute la largeur, les quatre cartes
   dessous sur deux colonnes.
+
+### Derniers et prochains matches
+
+Les onglets Derniers matches et Prochains matches d'une compétition posent
+chaque partie dans sa carte, comme l'onglet Classement : les cartes à 8 l'une de
+l'autre, alignées en haut, chacune arrêtée à ses lignes. Ni trait entre elles,
+ni blanc sous une colonne plus courte que sa voisine. Le classement et les
+buteurs ne sont pas ceux du tour : ils ont leur titre à eux.
+
+- **Matches** : sous le nom du tour (« Journée 2 », « 8es de finale »), sans sa
+  date, sur 460 au plus.
+- **Classement** : titré de la dernière journée qu'il compte (« Classement ·
+  1re journée », voir « Classement »), celle d'avant le tour sur Prochains
+  matches ; 680 au plus, jamais plus étroit que ses colonnes.
+- **Buteurs** : les dix premiers de la compétition sur la saison (#, joueur,
+  club, buts), dans une carte « Buteurs » qui prend le reste de la largeur,
+  jamais moins que ses colonnes ; absente avant le premier but. Les matches
+  cèdent la place qui manque.
+- **Notes** : sous les buteurs, à 8, dans la même colonne, une carte « Notes » :
+  les dix meilleures notes moyennes de la saison (#, joueur, club, note à deux
+  décimales), parmi les joueurs notés dans au moins la moitié des matches du
+  plus noté ; absente avant le premier match. Les sélections n'en ont pas.
+- **Sous 1700 de large**, les buteurs passent sous les matches, le classement à
+  côté d'eux ; sous 1330, tout s'empile.
+- **Tour à élimination directe** : sans classement, ses matches sur deux
+  colonnes de leur carte, les bandes d'une ligne à l'autre, un match seul (une
+  finale) sur les deux ; les buteurs à côté sur un tiers de la largeur. Sous
+  1330, ils passent dessous, sur la moitié ; sous 950, les matches tiennent une
+  colonne.
+- **Groupes** (qualifications et phase de groupes des sélections, phase de ligue
+  d'une Ligue des nations) : dans la carte du tour, chacun sous son intertitre,
+  ses matches puis son classement réduit ; les buteurs dans leur carte, sur 360
+  à côté, dessous sous 1330.
+- Sans buteurs, la carte d'un tour à élimination directe ou des groupes prend
+  toute la largeur.
 
 ### Compétitions des sélections
 
@@ -1714,13 +1747,8 @@ tenues loin du rouge, du vert et du jaune des états. Une place du championnat
 - **Infobulle** : le nom de la coupe, puis la raison, sur une seconde ligne :
   « Vainqueur de la Coupe de France », « Sous réserve : Conference League si la
   Coupe de France est gagnée par un club moins bien classé ».
-- **Légende** : les coupes présentes, dans l'en-tête de la carte, chacune après
-  son carré : leur code sur l'onglet Classement d'un championnat, où le choix
-  des vues partage l'en-tête, et dans une carte étroite (le classement réduit
-  du calendrier, le classement archivé) ; leur nom ailleurs.
-  Un classement sans carte à lui (onglets Derniers et Prochains matches) ou un
-  extrait ailleurs (vue d'ensemble, actualités, page d'un pays) n'a que
-  l'infobulle.
+- **Pas de légende** : aucun classement ne nomme ses coupes dans l'en-tête de
+  sa carte ; la couleur du rang les dit, l'infobulle les nomme.
 
 ### Historique
 
@@ -1943,7 +1971,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Drapeaux des clubs | Dans une coupe d'Europe, le drapeau du pays de chaque club après son nom, devant lui pour celui qui reçoit d'un match face à face (`clubLink`, option `flag`, `web/ui.js` ; `.club-flag`, `web/charte.css`) : son classement, sa phase de ligue et ses derniers et prochains matches (`flags` de `standingsTable`, `fixtures`, `fixtureRow`, `roundContent`), sa phase finale (`bracket`), ses buteurs, son historique et la tuile de son vainqueur (`competitionHero`). Dans le compte rendu d'un de ses matches, le drapeau de chaque club en 24 × 18 après son nom dans le bandeau, lien vers la sélection (`matchHero`, `web/club-hero.js`) ; la ligne du match ne le répète pas. L'API donne le pays de chaque club (`nation` de `club_ref`, `src/api/views.py`), et sa sélection dans le compte rendu (`nation_id`) |
 | Accueil et nouvelle partie | Les deux panneaux de l'accueil (`homeScreen`, `savesList`, `web/home.js`) sans partie et sur « Ma partie », à la place du texte d'accueil, du formulaire de création et de la liste des emplacements ; la liste des sauvegardes y dit le club et la date de chaque partie (`slots`, `src/infrastructure/persistence/store.py`). L'écran « Nouvelle partie » (`newGameScreen`, `web/new-game.js` ; `creationHero`, `web/club-hero.js`) à la place du choix du club après la création : nations, divisions et club choisis avant que la partie ne soit tirée, « Commencer » dans la barre du haut. `.doors`, `.door`, `.saves-list`, `.check`, `.nation-line` dans `web/charte.css` |
 | Compétitions des sélections | La Coupe du monde, l'Euro et la Ligue des nations ont chacune leur page (`#/international/coupe-du-monde`, `euro`, `ligue-des-nations` ; `competitionScreen`, `web/international.js`) à la place d'une page par édition : leur nom seul sur le bandeau, la navigation du bandeau entre les trois (`selectionNavigation`, `web/navigation.js`), leurs éditions au pas de saison (`edition` dans l'adresse), un onglet Historique (`competitionHistory` ; `/api/international/competitions/{slug}/historique`) avec les finales, les titres, les parcours des nations (`.run`, `.final-score`) et les joueurs de tous les temps avec leur nation. Sélections nationales en trois colonnes (`competitionColumn`, `competitionBand`, `web/club-hero.js` ; `.club-hero-band.narrow`, `web/charte.css`) et la liste des nations avec leurs titres par compétition, à la place des cartes des éditions en cours, du palmarès mêlé et de la rangée des éditions. Les adresses d'une édition par son année ouvrent sa compétition, et la pastille d'une édition mène à la page de sa compétition, sur cette édition (`editionHref`, `competitionHref`, `web/ui.js`) |
-| Places européennes | Dans un championnat, le rang d'une place européenne à la couleur de sa coupe (C1 bleu, C3 violet, C4 sarcelle), en pointillé sous réserve de la coupe nationale, à la place du bleu unique de l'Europe ; son infobulle et la légende des coupes dans l'en-tête de la carte (`europePlace`, `europeTip`, `europeLegend`, `web/ui.js`), à la place de « 3 points pour une victoire ». L'API donne la coupe de chaque ligne (`europe`, `european_places`, `src/api/views.py`), le vainqueur de la coupe nationale compris |
+| Places européennes | Dans un championnat, le rang d'une place européenne à la couleur de sa coupe (C1 bleu, C3 violet, C4 sarcelle), en pointillé sous réserve de la coupe nationale, à la place du bleu unique de l'Europe ; son infobulle (`europePlace`, `europeTip`, `web/ui.js`), sans légende des coupes dans l'en-tête de la carte, à la place de « 3 points pour une victoire ». L'API donne la coupe de chaque ligne (`europe`, `european_places`, `src/api/views.py`), le vainqueur de la coupe nationale compris |
 | Numéros de maillot | Sur les terrains de la composition, du compte rendu d'un match et du direct, le numéro du joueur à la place de son poste, en 13 (`shirtLabel`, `kitShirt`, `.kit-shirt.number`, `web/ui.js`) : celui qu'il portait ce jour-là pour un match joué (`shirts` du résultat, `match_shirt`, `src/api/views.py`), le poste à défaut (place vide, renfort temporaire, sélection). Le bandeau d'un joueur porte son numéro devant son nom, en 40 et voilé (`playerHero`, `web/club-hero.js` ; `.club-hero-number`). Dans Actualités, le maillot du club sous le titre d'une arrivée, et les deux maillots d'un changement de numéro (`clubShirt`, `web/news.js` ; `.kit-shirt.former`, `.shirt-change`) |
 | Attributs | Sur la fiche et dans l'aperçu d'un joueur, une colonne à la mesure du plus long nom de sa section et de sa pastille (`--attribute-column`, `web/charte.css`), à la place des 165 de toutes les sections sur la fiche et des deux colonnes fixes de l'aperçu : dans l'aperçu, la section Jeu passe sur une colonne, ses lignes et celles des attributs à 26. Sur la fiche, les attributs en colonnes, une par section (`.attribute-columns`, `attributesBody`, `web/player.js`), à la place des sections empilées sur trois colonnes : la carte s'arrête à son contenu (`.player-row>.attributes-card`), et sur grand écran la carrière monte sous elle (`.player-main`, `web/theme.css`) ; les attributs d'un gardien qui ne servent pas à son poste en dernière colonne grisée à la place du repli « Autres attributs ». Les attributs de chaque section dans l'ordre alphabétique, sur la fiche, dans l'aperçu et dans la vue Attributs des listes (`ATTRIBUTE_SECTIONS`, `web/ui.js`). L'appât du gain quitte Général pour la sous-section Caractère de la colonne de la fiche (`rail`, `web/player.js`), où l'agressivité, l'ambition et la fragilité le rejoignent |
 | Écusson sans disque | Sur le bandeau d'un club, d'une sélection, d'un joueur et de « Nouvelle partie », l'écusson seul, à l'aire d'un carré de 64 (72 de haut, 128 de large au plus), à la place du disque blanc : son rapport lu sur l'image une fois chargée (`initHeroCrests`, `web/club-hero.js` ; `--r`, `web/charte.css`), le disque et ses initiales revenant pour un écusson absent ou qui ne se charge pas (le `onerror` en ligne, bloqué par la CSP, est retiré). Les PNG de `web/clubs` et `web/nations` rognés à ce qu'ils dessinent (`tools/trim_logos.py`, empreintes de `web/nations/sources.json`). Le drapeau d'une sélection après son nom, 37 × 28, à 16 (`.club-hero-flag`), plus dans le disque. Le bandeau d'un match aussi, chaque camp son écusson seul (`matchHero`) ; le disque d'un championnat ne change pas |
@@ -1954,6 +1982,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Liste de joueurs | Cadenas d'un intransférable dans « Listé » (`LOCKED`, `web/ui.js`), le prix minimum en tiret |
 | Liens des pastilles et des drapeaux | La pastille d'une compétition mène à sa page, le drapeau d'un pays à sa sélection, sur tous les écrans (`competitionBadge`, `competitionHref`, `nationFlag`, `nationBadge`, `nationHref`, `web/ui.js`) : le drapeau d'un club dans une coupe d'Europe (`clubLink`, option `flag`), la nationalité d'une liste de joueurs, la tuile de sélection d'un joueur jamais appelé (`selectionTile`, `web/club-hero.js`), la carrière d'un joueur, le calendrier d'un club ou d'une sélection, la ligne d'un match. L'option `link` les garde sans lien dans un filtre et dans ce qui est déjà un lien. L'API donne la sélection de chaque pays (`selection_id` de `/api/nations`), table relue à chaque changement de partie (`web/app.js`) |
 | Intertitres | Un seul intertitre, indigo et dégradé, sur tous les écrans (`.section-title`, `web/charte.css`), à la place du lavis jaune ou du club, du trait et des bandeaux arrondis des colonnes ; les colonnes d'une carte à 8 l'une de l'autre (`.sections`) ; la colonne d'un joueur en trois cartes, les temps forts du direct sous leur en-tête ; le titre d'une carte en indigo. Maquette : <https://claude.ai/artifact/UtpqnnjpKpem234fqiLPHz> (sans repère, indigo, dégradé, colonnes espacées) |
+| Derniers et prochains matches | Une carte par partie (`roundContent`, `web/rounds.js` ; `.round-layout`, `web/charte.css`) : le tour, son classement titré de sa journée (`roundTitle`, `web/ui.js`), les buteurs, à la place d'une carte coupée de traits ; les groupes des sélections gardent leur carte, les buteurs à côté dans la leur. Les règles du tour retirées de `web/theme.css` |
 
 Ce qui reste :
 

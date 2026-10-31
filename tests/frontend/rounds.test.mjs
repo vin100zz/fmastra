@@ -20,11 +20,13 @@ async function withApi(answer,run){
  try{return {html:await run(),urls};}finally{globalThis.fetch=previous;}
 }
 
-test('a round lists its matches on the left, with each side’s scorers and their minutes, and the table on the right',()=>{
+test('a round lists its matches in a card, with each side’s scorers and their minutes, and the table in its own card beside it',()=>{
  const html=roundContent(league,'latest');
- assert.match(html,/<div class="card-head"><h2>Journée 12<\/h2><\/div>/);
+ assert.match(html,/^<div class="round-layout league"><section class="card round-matches"><div class="card-head"><h2>Journée 12<\/h2><\/div>/);
  assert.doesNotMatch(html,/8 nov\. 2026/);
  assert.ok(html.indexOf('round-matches')<html.indexOf('round-table'));
+ // the table is titled with the last round it counts, not with the round shown
+ assert.match(html,/<section class="card round-table"><div class="card-head"><h2>Classement · 12e journée<\/h2><\/div>/);
  // surnames linked to the player, the minutes of each goal gathered per scorer
  assert.match(html,/<div class="fixture-scorers home"><a href="#\/player\/101" title="Neal Maupay">Maupay<\/a> 14’ 75’<\/div><div class="fixture-scorers away"><a href="#\/player\/201" title="Amine Gouiri">Gouiri<\/a> 26’<\/div>/);
  assert.match(html,/class="fixture with-scorers"/);
@@ -33,13 +35,30 @@ test('a round lists its matches on the left, with each side’s scorers and thei
  assert.equal(count(html,/class="rank[ "]/g),2);
 });
 
-test('the leading scorers of the competition follow its table, ranked, and only once someone has scored',()=>{
+test('the leading scorers of the competition follow its table in their own card, ranked, and only once someone has scored',()=>{
  const top_scorers=[{id:101,name:'Neal Maupay',club:club(1,'Brighton'),goals:7},{id:-5,name:'Renfort',club:club(2,'Nice'),goals:4}];
  const html=roundContent({...league,groups:[{...league.groups[0],top_scorers}]},'latest');
- assert.match(html,/<div class="round-block with-top-scorers">/);
- assert.ok(html.indexOf('round-table')<html.indexOf('round-top-scorers'));
- assert.match(html,/<div class="round-top-scorers">.*<th[^>]*><button class="sort-toggle" data-table-sort>JOUEUR<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>CLUB<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>BUTS<\/button><\/th>.*<td[^>]*>1<\/td><td[^>]*><a href="#\/player\/101">Neal Maupay<\/a><\/td>.*<b>7<\/b>.*<td[^>]*>2<\/td><td[^>]*><span class="temporary-player"/);
- for(const none of [[],null,undefined])assert.doesNotMatch(roundContent({...league,groups:[{...league.groups[0],top_scorers:none}]},'latest'),/top-scorers/);
+ assert.ok(html.indexOf('round-table')<html.indexOf('round-scorers'));
+ assert.match(html,/<section class="card round-scorers"><div class="card-head"><h2>Buteurs<\/h2><\/div>.*<th[^>]*><button class="sort-toggle" data-table-sort>JOUEUR<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>CLUB<\/button><\/th><th[^>]*><button class="sort-toggle" data-table-sort>BUTS<\/button><\/th>.*<td[^>]*>1<\/td><td[^>]*><a href="#\/player\/101">Neal Maupay<\/a><\/td>.*<b>7<\/b>.*<td[^>]*>2<\/td><td[^>]*><span class="temporary-player"/);
+ for(const none of [[],null,undefined])assert.doesNotMatch(roundContent({...league,groups:[{...league.groups[0],top_scorers:none}]},'latest'),/round-scorers/);
+});
+
+test('the best average ratings stand under the scorers, in the same column, with two decimals',()=>{
+ const top_scorers=[{id:101,name:'Neal Maupay',club:club(1,'Brighton'),goals:7}];
+ const top_ratings=[{id:201,name:'Amine Gouiri',club:club(2,'Nice'),rating:7.456,matches:11}];
+ const html=roundContent({...league,groups:[{...league.groups[0],top_scorers,top_ratings}]},'latest');
+ assert.match(html,/<div class="round-leaders"><section class="card round-scorers">.*<\/section><section class="card round-ratings"><div class="card-head"><h2>Notes<\/h2><\/div>.*NOTE.*Amine Gouiri.*<b>7\.46<\/b>.*<\/section><\/div><\/div>$/s);
+ // the ratings alone, before a goal; neither, no column
+ assert.match(roundContent({...league,groups:[{...league.groups[0],top_ratings}]},'latest'),/<div class="round-leaders"><section class="card round-ratings">/);
+ assert.doesNotMatch(roundContent(league,'latest'),/round-leaders/);
+});
+
+test('the table of a round tells a place’s European cup by the colour of its rank, with no legend',()=>{
+ const europe=(code,name)=>({europe:{code,name}});
+ const html=roundContent({...league,groups:[{...league.groups[0],standings:[{...row(1,'Brighton',1),...europe('C1','Ligue des champions')},{...row(2,'Nice',2),...europe('C3','Europa League')}]}]},'latest');
+ assert.match(html,/<tr class="europe-c1"/);
+ assert.match(html,/<h2>Classement · 12e journée<\/h2><\/div>/);
+ assert.doesNotMatch(html,/europe-legend/);
 });
 
 test('several scorers of one side follow each other; a goalless match or one to come has no scorers line',()=>{
@@ -104,13 +123,12 @@ test('groups show each group with its own compact table, and a cup round spreads
  assert.doesNotMatch(html,/FORME/);
  assert.equal(count(html,/class="promoted"/g),3);
  const cup=roundContent({round:{number:1,label:'32es de finale',date:'2026-12-02'},groups:[{name:null,matches:[played,{...played,id:8}],standings:null}]},'latest');
- assert.match(cup,/<div class="round-knockout">/);
- assert.doesNotMatch(cup,/round-table/);
- // its leading scorers, once a goal is scored, stand beside the ties
+ assert.match(cup,/^<div class="round-layout knockout"><section class="card round-matches"><div class="card-head"><h2>32es de finale<\/h2><\/div><div class="round-knockout">/);
+ assert.doesNotMatch(cup,/round-table|round-scorers/);
+ // its leading scorers, once a goal is scored, stand beside the ties in their own card
  const scorer={id:4,name:'Neal Maupay',club:{id:9,name:'Brighton'},goals:3};
  const scored=roundContent({round:{number:2,label:'16es de finale',date:'2027-01-06'},groups:[{name:null,matches:[played],standings:null,top_scorers:[scorer]}]},'latest');
- assert.match(scored,/<div class="round-block knockout"><div class="round-matches round-knockout">/);
- assert.match(scored,/<div class="round-top-scorers">.*Neal Maupay/s);
+ assert.match(scored,/<div class="round-knockout">.*<\/section><div class="round-leaders"><section class="card round-scorers"><div class="card-head"><h2>Buteurs<\/h2><\/div>.*Neal Maupay/s);
  assert.doesNotMatch(scored,/round-table/);
 });
 
@@ -146,15 +164,16 @@ test('an international edition gets both tabs, before its statistics',async()=>{
  assert.ok(urls.includes('/api/international/editions/2028/journee/derniere'));
 });
 
-test('an international round lays three groups a row beside the leading scorers',()=>{
+test('an international round lays three groups a row in its card, the leading scorers beside it in theirs',()=>{
  const club={id:-1,name:'Alpha',nation:'FRA',national:true};
  const played={id:1,date:'2028-06-01',home:club,away:{...club,id:-2,name:'Bravo'},score:[1,0],aggregate:null,penalties:null,scorers:null};
  const group=name=>({name,matches:[played],standings:[row(1,'A',1)]});
  const data={round:{number:12,label:'Groupes · J2',date:'2028-06-05'},groups:['A','B','C'].map(group),top_scorers:[{id:5,name:'Buteur',club,goals:4}]};
  const html=roundContent(data,'latest',{figures:true});
- assert.match(html,/round-groups stacked/);
- assert.match(html,/<aside class="round-rail"><h3 class="section-title">Meilleurs buteurs<\/h3>.*Buteur.*<b>4<\/b>/s);
- assert.doesNotMatch(roundContent(data,'latest'),/round-rail/);
+ assert.match(html,/^<div class="round-layout groups"><section class="card round-matches"><div class="card-head"><h2>Groupes · J2<\/h2><\/div><div class="round-groups stacked">/);
+ assert.match(html,/<\/section><div class="round-leaders"><section class="card round-scorers"><div class="card-head"><h2>Buteurs<\/h2><\/div>.*NATION.*Buteur.*<b>4<\/b>/s);
+ assert.doesNotMatch(html,/round-ratings/);
+ assert.doesNotMatch(roundContent(data,'latest'),/round-scorers/);
 });
 
 test('a scorer goes by his short name, told apart within his squad, his whole name in the tooltip',()=>{

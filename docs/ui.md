@@ -626,8 +626,8 @@ d'onglets :
 
 | Onglet | Contenu |
 |---|---|
-| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche, le rang d'une place européenne à la couleur de sa coupe et les codes des coupes dans l'en-tête de la carte (charte, « Classement ») ; au bout de cet en-tête, le choix des vues : Général, Domicile, Extérieur, 5 derniers (`vue` de l'adresse et de l'endpoint), une vue partielle classant les clubs sur leurs seuls matches à domicile, à l'extérieur ou sur leurs cinq derniers, sans place ni légende. À droite, côte à côte et de même hauteur, les attaques (le plus de buts marqués) et les défenses (le moins de buts encaissés) de la vue montrée, les dix premières, la première en grand avec ce qu'elle vaut par match ; dessous, sur les deux mêmes colonnes, les cinq meilleurs buteurs et passeurs de la saison (charte, « Classement d'une ligue »). Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
-| Calendrier | une journée à la fois : une pastille par journée au-dessus (la journée affichée allumée, une flèche de chaque côté), puis les matches de la journée en deux colonnes, chacun avec ses buteurs et leurs minutes, la date en tête ; à droite, le classement réduit (#, points, J, différence), les codes des coupes d'Europe en légende, et les 5 meilleurs buteurs |
+| Classement | position, points, J, V, N, D, BP, BC, différence, forme, à gauche, le rang d'une place européenne à la couleur de sa coupe, nommée dans son infobulle, sans légende (charte, « Classement ») ; au bout de cet en-tête, le choix des vues : Général, Domicile, Extérieur, 5 derniers (`vue` de l'adresse et de l'endpoint), une vue partielle classant les clubs sur leurs seuls matches à domicile, à l'extérieur ou sur leurs cinq derniers, sans place ni légende. À droite, côte à côte et de même hauteur, les attaques (le plus de buts marqués) et les défenses (le moins de buts encaissés) de la vue montrée, les dix premières, la première en grand avec ce qu'elle vaut par match ; dessous, sur les deux mêmes colonnes, les cinq meilleurs buteurs et passeurs de la saison (charte, « Classement d'une ligue »). Un championnat n'a pas de choix de saison. Une coupe d'Europe montre ses 36 clubs en deux tableaux de 18 côte à côte (1 à 18, puis 19 à 36), légende des zones dans l'en-tête de la carte |
+| Calendrier | une journée à la fois : une pastille par journée au-dessus (la journée affichée allumée, une flèche de chaque côté), puis les matches de la journée en deux colonnes, chacun avec ses buteurs et leurs minutes, la date en tête ; à droite, le classement réduit (#, points, J, différence) et les 5 meilleurs buteurs |
 | Derniers matches | la dernière journée ou le dernier tour joué, à côté du classement et des 10 meilleurs buteurs |
 | Prochains matches | la prochaine journée ou le prochain tour, à côté du classement et des 10 meilleurs buteurs |
 | Statistiques | les cinq classements (meilleurs buteurs, passeurs, meilleures notes moyennes, cartons, clean sheets) côte à côte, 10 lignes chacun ; « Voir tout » ouvre la liste complète et paginée du classement, avec un menu pour passer de l'un à l'autre ou revenir aux cinq |
@@ -713,18 +713,23 @@ EU, LN), dernière édition jouée et le tour atteint. Toutes les colonnes se tr
 Toutes les compétitions (championnats, coupes nationales, coupes d'Europe, Euro, Coupe du monde et
 Ligue des nations) ont les onglets Derniers matches et Prochains matches, juste avant Statistiques.
 Le dernier tour est celui du résultat le plus récent, le prochain celui du plus proche match à jouer ;
-la carte porte le nom du tour, sans sa date ; un tour pas encore tiré garde son nom, sans matches. Les matches sont à gauche, sur 460 px au
-plus, et le classement qu'ils concernent prend le reste de la largeur : le championnat, ou le classement
-de la phase de ligue d'une coupe d'Europe. Ce classement est suivi des 10 meilleurs buteurs de la
-compétition sur la saison (#, joueur, club, buts), à sa droite à partir de 1450 px, dessous en deçà ;
-ils n'apparaissent qu'une fois un but marqué.
+chaque partie a sa carte (charte, « Derniers et prochains matches »). La carte des matches porte le nom
+du tour, sans sa date ; un tour pas encore tiré garde son nom, sans matches. Les matches sont à
+gauche, sur 460 px au plus ; à côté, le classement qu'ils concernent, sur 680 px au plus : le
+championnat, ou le classement de la phase de ligue d'une coupe d'Europe, titré de la dernière journée
+qu'il compte (« Classement · 1re journée »). Puis les
+10 meilleurs buteurs de la compétition sur la saison (#, joueur, club, buts), dans leur carte, à droite
+à partir de 1700 px, sous les matches en deçà, tout empilé sous 1330 px ; ils n'apparaissent qu'une fois
+un but marqué. Sous eux, dans la même colonne, les 10 meilleures notes moyennes de la saison (#, joueur,
+club, note), parmi les joueurs notés dans au moins la moitié des matches du plus noté (championnat,
+coupe nationale, coupe d'Europe ; pas les sélections).
 Une compétition à groupes (qualifications et phase de groupes des sélections, phase de ligue d'une
-Ligue des nations) montre chaque groupe avec
+Ligue des nations) montre dans la carte du tour chaque groupe avec
 ses matches et son classement réduit (#, points, J, différence), deux groupes par ligne (un seul sous
-1330 px), les places qualificatives surlignées. Un tour à élimination directe, sans classement, étale
-ses matches sur deux colonnes ; les 10 meilleurs buteurs de la compétition sur la saison (coupe
-nationale, coupe d'Europe) les suivent dans une troisième de même largeur à partir de 1450 px,
-sous la deuxième en deçà. Chaque match s'écrit face à face (charte, « Match dans une liste ») :
+1330 px), les places qualificatives surlignées ; les buteurs de l'édition à côté, dans leur carte. Un
+tour à élimination directe, sans classement, étale ses matches sur deux colonnes ; les 10 meilleurs
+buteurs de la compétition sur la saison (coupe nationale, coupe d'Europe) les suivent dans leur carte,
+sur un tiers de la largeur à partir de 1330 px, sous les matches en deçà. Chaque match s'écrit face à face (charte, « Match dans une liste ») :
 la pastille de chaque club contre le score, le nom du vainqueur en gras à l'encre de l'accent et celui
 du battu en retrait, le match du club dirigé sur fond jaune ; dans tout classement, la ligne du club dirigé a le même fond. Sous chaque match joué, les buteurs de chaque équipe sont alignés sous
 elle, par nom court (le nom de famille, l'initiale du prénom devant un homonyme de l'effectif ; lien vers la fiche), dans l'ordre de leur premier but, avec les minutes de

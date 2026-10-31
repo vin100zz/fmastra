@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from api import views as v
 from api.app import create_app
 from api.nations import build_nation_table, kit_colors
+from api.statistics import leaders
 from core.domain.players import ATTRIBUTE_NAMES, Discipline, Injury
 from core.world.simulation import advance_day, target_date
 from infrastructure.importation.loader import import_world
@@ -942,6 +943,11 @@ def test_latest_and_next_rounds_list_scorers_beside_the_tables_they_count_for(pl
             assert all(row["round"] == data["round"]["number"] and (row["score"] is not None) == played_out for row in block["matches"])
             assert [row["club_id"] for row in block["standings"]] == [row["club_id"] for row in v.table(world, league.id)]
             assert block["top_scorers"] == top_scorers(league.id) and 0 < len(block["top_scorers"]) <= 10
+            # The best averages, among the players rated in at least half the matches of the most rated one.
+            ratings = block["top_ratings"]
+            most = max(row["rating_count"] for row in leaders(world, league.id, "notes"))
+            assert 0 < len(ratings) <= 10 and all(2 * row["matches"] >= most for row in ratings)
+            assert [row["rating"] for row in ratings] == sorted((row["rating"] for row in ratings), reverse=True)
             check_scorers(block["matches"])
     for cup in (item for item in world.competitions.values() if item.kind == "cup"):
         assert get(f"/competitions/{cup.id}/journee/derniere") == {"round": None, "groups": []}

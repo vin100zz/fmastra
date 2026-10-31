@@ -212,10 +212,8 @@ th button{padding:0;font-size:inherit;white-space:inherit}
 .sections>*{min-width:0}
 /* The application's groups side by side, as the charter's columns of a card: 8 apart, no line between them. */
 .card>.intl-groups{gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
-.round-groups,.day-groups{gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
-:is(.round-group,.day-group){border:0!important}
-.round-with-rail{column-gap:var(--s2)}
-.round-rail{border:0!important}
+.day-groups{gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
+.day-group{border:0!important}
 .history-runs :is(th,td):first-child{padding-left:var(--s3)!important}
 .activity-window>small{font-family:var(--text);font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 
@@ -255,10 +253,10 @@ tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playof
 .standings tr.relegated .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
 /* In a league, a place in Europe takes the colour of its cup (C1 blue, C3 violet, C4 teal), the title keeping its green;
    one that hangs on the winner of the national cup has its ring dashed. The legend of the cups shows the same square. */
-.standings tr.europe-c1 .rank,.europe-legend>.europe-c1::before{--cup:var(--info);--cup-soft:var(--info-soft)}
-.standings tr.europe-c3 .rank,.europe-legend>.europe-c3::before{--cup:var(--c3);--cup-soft:var(--c3-soft)}
-.standings tr.europe-c4 .rank,.europe-legend>.europe-c4::before{--cup:var(--c4);--cup-soft:var(--c4-soft)}
-.standings tr:is(.europe-c1,.europe-c3,.europe-c4) .rank,.europe-legend>:is(.europe-c1,.europe-c3,.europe-c4)::before{background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
+.standings tr.europe-c1 .rank{--cup:var(--info);--cup-soft:var(--info-soft)}
+.standings tr.europe-c3 .rank{--cup:var(--c3);--cup-soft:var(--c3-soft)}
+.standings tr.europe-c4 .rank{--cup:var(--c4);--cup-soft:var(--c4-soft)}
+.standings tr:is(.europe-c1,.europe-c3,.europe-c4) .rank{background:var(--cup-soft);box-shadow:inset 0 0 0 1px var(--cup);color:var(--cup)}
 .standings tr.tentative .rank{box-shadow:none;border:1px dashed var(--cup)}
 .standings th.rank-column{text-align:center}
 .standings tbody tr.own,.standings tbody tr.own:hover,.standings-card tr:has(.own){background:var(--own-row)!important}
@@ -1170,6 +1168,56 @@ button.square svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-wi
 .league-layout>.league-table{grid-row:span 2}
 .league-players{grid-column:2/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
 @media(max-width:1329px){.league-layout{grid-template-columns:repeat(2,minmax(0,1fr))}.league-layout>.league-table{grid-column:1/-1;grid-row:auto}.league-players{grid-column:1/-1}}
+/* A competition's latest or next round (« Derniers et prochains matches »): each part in its card, 8 apart, each ending with
+   its rows. A league's matches (460 at most), its table (680 at most, never narrower than its columns), its scorers and
+   its best ratings in the rest, 340 at least; under 1700 the scorers go under the matches, the table beside both (the second row
+   takes what the table leaves), under 1330 all of them under one another. A knockout round's ties over two columns of
+   their card, the scorers on a third of the width, under them on half of it below 1330. Groups two a row (three in an
+   international edition) in the card of the round, the scorers on 360 beside them. */
+.round-layout{display:grid;gap:var(--s2);align-items:start}
+.round-layout>.card{margin-bottom:0;min-width:0}
+/* The scorers and the best ratings, one under the other, 8 apart. */
+.round-leaders{display:grid;gap:var(--s2);align-content:start;min-width:0}
+.round-leaders>.card{margin-bottom:0;min-width:0}
+/* The scorers' column keeps 340 at least: its tables spread their columns over their width (web/columns.js), so their own
+   width would only grow. */
+.round-layout.league{grid-template-columns:minmax(0,460px) minmax(min-content,680px) minmax(340px,1fr)}
+.round-layout.knockout{grid-template-columns:minmax(0,2fr) minmax(340px,1fr)}
+.round-layout.groups{grid-template-columns:minmax(0,1fr) 360px}
+.round-layout:is(.knockout,.groups)>.card:only-child{grid-column:1/-1}.round-knockout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--s2)}
+/* The ties' stripes go from one line of two to the next. */
+.round-knockout>.fixture{background:none}
+.round-knockout>.fixture:is(:nth-child(4n+3),:nth-child(4n+4)){background:var(--stripe)}
+.round-knockout>.fixture.own{background:var(--own-row)}
+.round-knockout>.fixture:only-child{grid-column:1/-1}
+.round-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3) var(--s2);padding-bottom:var(--s2)}
+.round-groups.stacked{grid-template-columns:repeat(3,minmax(0,1fr))}
+.round-group{min-width:0}
+/* A group's matches beside its table, as wide in every group so that the tables line up; above it in an international
+   edition. */
+.round-block{display:grid;grid-template-columns:minmax(0,460px) minmax(270px,1fr);gap:var(--s2);align-items:start}
+.round-block>*{min-width:0}
+.round-groups.stacked .round-block{grid-template-columns:minmax(0,1fr)}
+.round-group .round-table table{width:100%}
+@media(max-width:1699px){
+ .round-groups.stacked{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .round-layout.league{grid-template-columns:minmax(0,460px) minmax(min-content,680px);grid-template-rows:auto 1fr}
+ .round-layout.league>.round-table{grid-column:2;grid-row:1/span 2}
+ .round-layout.league>.round-leaders{grid-column:1}
+}
+@media(max-width:1329px){
+ .round-layout.league,.round-layout.groups,.round-groups,.round-groups.stacked{grid-template-columns:minmax(0,1fr)}
+ .round-layout.league{grid-template-rows:none}
+ .round-layout.league>:is(.round-table,.round-leaders){grid-column:auto;grid-row:auto}
+ .round-layout.knockout{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .round-layout.knockout>.round-matches{grid-column:1/-1}
+}
+@media(max-width:950px){
+ .round-layout.knockout,.round-knockout,.round-block{grid-template-columns:minmax(0,1fr)}
+ .round-knockout>.fixture:nth-child(n){background:none}
+ .round-knockout>.fixture:nth-child(even){background:var(--stripe)}
+ .round-knockout>.fixture.own{background:var(--own-row)}
+}
 
 /* The look of the surfaces (« Fondations », « Composants »). The page's ground is the root's (theme.css): a page in a club's
    colours lays its breath between the two. */
