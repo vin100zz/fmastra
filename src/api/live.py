@@ -68,7 +68,8 @@ def live_view(world: World, live: LiveMatch, events: list[MatchEvent] | None = N
 
     shown = stored_events(live.log.events[:live.delivered]) if events is None else events
     team = live.teams[side]
-    decision = next(({"kind": event.kind, "player_id": event.player_id, "player": names.get(event.player_id)}
+    decision = next(({"kind": event.kind, "player_id": event.player_id, "player": names.get(event.player_id),
+                      "team_id": event.team_id, "second": round(event.second)}
                      for event in reversed(events or []) if event.kind in ("injury", "red") and event.team_id == team.club_id), None)
     row = v.match_row(world, match)
     for key in ("home", "away"):
