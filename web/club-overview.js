@@ -100,7 +100,7 @@ export function watchCard(squad,rows=6){
 // figure; `soft` draws the bars in the pale blue.
 export function leaderBars(title,rows,key,unit,{format=n,soft=false}={}){
  const top=rows[0]?.[key]||1;
- const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur');
+ const body=rows.length?`<ol class="leader-bars">${rows.map(row=>`<li${isOwnClub(row.club)?' class="own"':''}><span>${playerLink(row.player_id,row.player)}</span><i style="width:${Math.round(100*row[key]/top)}%"></i><b>${format(row[key])}</b></li>`).join('')}</ol>`:empty('Aucun joueur');
  return card(title,body,`<span class="card-hint">${unit}</span>`,`leaders-card ${key}${soft?' soft':''}`);
 }
 

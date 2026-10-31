@@ -1,4 +1,4 @@
-import {api,titlesCard,countTitles,nationBadge,escape as e,season,seasonSteps,date,clubLink,playerLink,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
+import {api,titlesCard,countTitles,nationBadge,escape as e,season,seasonSteps,date,clubLink,playerLink,ownRows,number as n,fixtures,empty,card,heading,table,pager,standingsTable,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
 import {competitionHero} from './club-hero.js';
 import {europeNavigation} from './navigation.js';
@@ -43,7 +43,7 @@ export async function europeScreen(code,section,params,competitions){
   content=roundContent(await api(`/competitions/${cup.id}/${roundPath(section)}?${year}`),section,{flags:true});
  }else if(section==='stats'){
   const stats=await api(`/competitions/${cup.id}/statistiques?type=buteurs&${year}&page=${params.get('page')||1}`);
-  content=card(`Meilleurs buteurs · ${season(data.season)}`,table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club,{flag:true}),n(row.value)]))+pager(stats));
+  content=card(`Meilleurs buteurs · ${season(data.season)}`,table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club,{flag:true}),n(row.value)]),undefined,ownRows(stats.items))+pager(stats));
  }else{
   const history=await api(`/competitions/${cup.id}/historique?page=${params.get('page')||1}`);
   const winners=card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[`<a href="#/europe/${cup.code}/knockout?saison=${row.season}">${season(row.season)}</a>`,clubLink(row.champion,{flag:true})]))+pager(history));

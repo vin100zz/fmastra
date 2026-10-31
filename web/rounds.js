@@ -1,4 +1,4 @@
-import {escape as e,card,empty,fixtures,standingsTable,roundTitle,table,playerLink,clubLink,averageNote} from './ui.js';
+import {escape as e,card,empty,fixtures,standingsTable,roundTitle,table,playerLink,clubLink,ownRows,averageNote} from './ui.js';
 
 // The two tabs every competition has, just before its statistics; `path` is their endpoint below the competition or the edition.
 export const ROUND_TABS=[['latest','Derniers matches'],['next','Prochains matches']];
@@ -8,11 +8,11 @@ export const roundPath=section=>`journee/${section==='latest'?'derniere':'procha
 // The competition's leading scorers of the season, in a card of their own; none before a goal. `nations` heads the column
 // of a selection's; `flags` follows each club with the flag of its country (a European cup).
 const scorersCard=(rows,{flags=false,nations=false}={})=>rows?.length?card('Buteurs',table(['#','JOUEUR',nations?'NATION':'CLUB','BUTS'],
- rows.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club,{flag:flags}),`<b>${row.goals}</b>`])),'','round-scorers'):'';
+ rows.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club,{flag:flags}),`<b>${row.goals}</b>`]),undefined,nations?undefined:ownRows(rows)),'','round-scorers'):'';
 // The best average ratings of the season under the scorers, among the players rated in at least half the matches of the
 // most rated one; none before a match is played.
 const ratingsCard=(rows,flags)=>rows?.length?card('Notes',table(['#','JOUEUR','CLUB','NOTE'],
- rows.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club,{flag:flags}),`<b>${averageNote(row.rating)}</b>`])),'','round-ratings'):'';
+ rows.map((row,index)=>[index+1,playerLink(row.id,row.name),clubLink(row.club,{flag:flags}),`<b>${averageNote(row.rating)}</b>`]),undefined,ownRows(rows)),'','round-ratings'):'';
 // The scorers and the ratings one under the other, in one column of the round.
 const leadersColumn=(...cards)=>cards.some(Boolean)?`<div class="round-leaders">${cards.join('')}</div>`:'';
 

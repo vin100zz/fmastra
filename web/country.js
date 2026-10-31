@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,clubLink,playerLink,nationFlag,nationName,empty,card,table,figure,standingsTable,fixtureRow,hasStorey,GO} from './ui.js';
+import {api,escape as e,number as n,clubLink,playerLink,ownRows,nationFlag,nationName,empty,card,table,figure,standingsTable,fixtureRow,hasStorey,GO} from './ui.js';
 import {choiceLinks,listHref} from './listing.js';
 
 // The matches each division shows: its latest round, or on demand the next one.
@@ -23,7 +23,7 @@ async function division(id,next){
 function divisionCard(league,data,own){
  const played=Math.max(0,...data.standings.map(row=>row.played));
  const progress=played?`J${played}${league.rounds?` / ${league.rounds}`:''} `:'';
- const scorers=data.scorers.length?`<h3 class="section-title">Buteurs</h3>${table(['#','JOUEUR','CLUB','BUTS'],data.scorers.slice(0,SCORERS).map((row,index)=>[figure(index+1),`<span class="strong">${playerLink(row.id,row.name)}</span>`,clubLink(row.club),figure(`<b>${n(row.goals)}</b>`)]),undefined,undefined,undefined,['rank-column','','club-column','goals-column'])}`:'';
+ const scorers=data.scorers.length?`<h3 class="section-title">Buteurs</h3>${table(['#','JOUEUR','CLUB','BUTS'],data.scorers.slice(0,SCORERS).map((row,index)=>[figure(index+1),`<span class="strong">${playerLink(row.id,row.name)}</span>`,clubLink(row.club),figure(`<b>${n(row.goals)}</b>`)]),undefined,ownRows(data.scorers.slice(0,SCORERS)),undefined,['rank-column','','club-column','goals-column'])}`:'';
  return card(league.name,`${data.round?strip(data.round):''}${matchRows(data.matches,own)}${standingsTable({items:data.standings},'figures',false,own)}${scorers}`,`<a href="#/league/${league.id}" aria-label="Voir le championnat">${progress}${GO}</a>`);
 }
 

@@ -659,6 +659,8 @@ export function standingsTable(data, compact=false, sortable=false, own=ownClub)
 let ownClub=null;
 export const setOwnClub = id => ownClub=id??null;
 export const isOwnClub = club => ownClub!=null&&club?.id===ownClub;
+// The classes of a ranking's rows (`table`'s rowClasses): the row of the user's club, or of one of its players, is washed.
+export const ownRows = (items, club=row=>row.club) => items.map(row=>isOwnClub(club(row))?'own':'');
 // Under each side of a played match, its scorers by short name, each with the minutes of his goals: "Maupay 14’ 75’ · Gouiri 26’".
 const scorerList = side => side.map(scorer=>`${scorer.id<0?`<span title="${escape(scorer.name)}">${escape(shortName(scorer.name,scorer.short))}</span>`:`<a href="#/player/${scorer.id}" title="${escape(scorer.name)}">${escape(shortName(scorer.name,scorer.short))}</a>`} ${scorer.minutes.map(minute=>`${escape(minute)}’`).join(' ')}`).join(' · ');
 const scorersRow = scorers => scorers&&scorers.some(side=>side.length)?`<div class="fixture-scorers home">${scorerList(scorers[0])}</div><div class="fixture-scorers away">${scorerList(scorers[1])}</div>`:'';

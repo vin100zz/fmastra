@@ -55,7 +55,7 @@ la structure HTML des spécimens.
 | `--accent`, `--accent-ink` | Le jaune de l'application et l'encre écrite dessus : action principale, marque de ce qui est ouvert |
 | `--accent-hover` | L'action principale sous le pointeur |
 | `--accent-text` | L'accent en texte sur fond blanc ; le lien dans une phrase ; le nom du vainqueur d'un match dans une liste |
-| `--own-row` | Ligne du club dirigé, son match dans une liste, ligne choisie, entrée ouverte du menu |
+| `--own-row` | Ligne du club dirigé ou d'un de ses joueurs dans un classement, son match dans une liste, ligne choisie, entrée ouverte du menu |
 | `--good`, `--warn`, `--bad`, `--info` et leur `-soft` | États : texte sur son fond pâle |
 | `--c3`, `--c4` et leur `-soft` | Coupes d'Europe d'une place de championnat : la C3 en violet, la C4 en sarcelle ; la C1 prend `--info` (voir « Classement »). La sarcelle marque aussi les matchs à venir du club dirigé dans la barre du haut |
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
@@ -1457,6 +1457,10 @@ notes de la Présentation d'un club ; l'Historique classe les siens en tableaux)
   Présentation. Sur la page d'un club, d'une sélection ou d'un joueur
   (`.club-page`), elle prend la couleur du club (`--club`), son pâle mêlé à
   45 % au panneau.
+- **Joueur du club dirigé** : dans le classement d'une compétition (buteurs,
+  passeurs, notes, cartons), en barres comme en tableau, sa ligne est sur
+  `--own-row`, comme celle du club dirigé dans un classement de clubs. Pas sur
+  la page d'un club, où tous les joueurs sont les siens.
 
 ### Classement de clubs
 
@@ -1889,6 +1893,9 @@ sa pastille n'en est pas un (ci-dessus), ni :
 - Aucun trait entre les lignes : une sur deux sur une bande (`--stripe`).
   L'en-tête n'a pas de fond, un trait pâle dessous (`--head-line`). Les listes
   (matchs, faits, attributs, temps forts) font de même.
+- **Club dirigé** : dans un classement, la ligne du club dirigé ou d'un de ses
+  joueurs (`tr.own`) est sur `--own-row` à la place de sa bande, sous le
+  pointeur aussi.
 - Une colonne a la largeur de ce qu'elle tient au plus, son en-tête ou sa plus
   longue valeur, quelle que soit la valeur affichée : rang 36, poste 48,
   pastille 56, chiffre 52 (68 sous un en-tête long : MATCHES, SAISONS), score

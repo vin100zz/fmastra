@@ -1,4 +1,4 @@
-import {api,titlesCard,countTitles,season,seasonSteps,clubLink,playerLink,number as n,card,table,pager,leadersCards} from './ui.js';
+import {api,titlesCard,countTitles,season,seasonSteps,clubLink,playerLink,ownRows,number as n,card,table,pager,leadersCards} from './ui.js';
 import {bracket} from './bracket.js';
 import {competitionHero} from './club-hero.js';
 import {ROUND_TABS,isRoundTab,roundPath,roundContent} from './rounds.js';
@@ -14,7 +14,7 @@ export async function cupScreen(cup,section,params,lead=''){
   content=`<div class="history-layout"><div class="history-main">${card('Les vainqueurs',table(['SAISON','VAINQUEUR'],history.items.map(row=>[season(row.season),clubLink(row.champion)]))+pager(history))}${titlesCard('Titres par club',countTitles(history.items,row=>row.champion?.id,row=>clubLink(row.champion)))}</div><div class="history-leaders">${leadersCards(history.leaders)}</div></div>`;
  }else if(section==='stats'){
   const stats=await api(`/competitions/${cup.id}/statistiques?type=buteurs&${params}`);
-  content=card('Meilleurs buteurs · Saison en cours',table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]))+pager(stats));
+  content=card('Meilleurs buteurs · Saison en cours',table(['JOUEUR','CLUB','BUTS'],stats.items.map(row=>[playerLink(row.id,row.name),clubLink(row.club),n(row.value)]),undefined,ownRows(stats.items))+pager(stats));
  }else{
   const data=await api(`/competitions/${cup.id}/coupe?${params}`);
   // The season is stepped through from the end of the row of tabs; the header's tile names who won the one shown.
