@@ -234,10 +234,14 @@
    opens. No mark, no rounded corner, neither the accent's yellow (the club managed, the main action) nor a club's colours.
    A count follows its label, muted (.section-tally), or in the red badge (.count) when it calls for an action; an aside
    stands at its end. */
-.section-title{display:flex;align-items:center;gap:var(--s2);flex:none;height:var(--h-row);margin:0;padding:0 var(--s3);background:linear-gradient(90deg,var(--title-wash) 35%,color-mix(in srgb,var(--title-wash) 12%,var(--panel)));font:700 semi-condensed var(--fs-small)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink);white-space:nowrap}
+.section-title{display:flex;align-items:baseline;gap:var(--s2);flex:none;height:var(--h-row);margin:0;padding:0 var(--s3);background:linear-gradient(90deg,var(--title-wash) 35%,color-mix(in srgb,var(--title-wash) 12%,var(--panel)));font:700 semi-condensed var(--fs-small)/1 var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink);white-space:nowrap}
 .section-title>.label{display:flex;align-items:center;gap:var(--s2);font:inherit;letter-spacing:inherit;color:inherit}
 .section-tally{font:600 var(--fs-small)/1 var(--text);letter-spacing:0;text-transform:none;color:var(--muted)}
 .section-title>.count{letter-spacing:0;text-transform:none}
+/* Its capitals stand in the middle of the band whatever the font's metrics: its items share their baseline, which an
+   empty first item sets half a capital below the band's middle; a badge is centred as a box. */
+.section-title::before{content:"";flex:none;height:calc(var(--h-row)/2 + .5cap);margin-right:calc(-1*var(--s2))}
+.section-title>:is(.count,.position){align-self:center}
 /* A section's title that follows another section stands 12 below it: white closes the section above before its band
    opens the next. At the head of a column, or under a card's head, nothing above it; in a stack, its gap makes 8 of the
    12, under a card's body its padding. A card never opens on a section's title: it has its head. */
