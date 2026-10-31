@@ -12,7 +12,7 @@ const autoOptions={young:false,free:false};
 export const AUTO_LEVELS=[['Meilleure','La meilleure équipe pour ce match'],['Légère','Légère rotation : un tiers des joueurs de champ au repos, leurs seconds choix jouent'],
  ['Forte','Forte rotation : deux tiers des joueurs de champ au repos, leurs seconds choix jouent'],['Complète','Rotation complète : tous les joueurs de champ au repos, le gardien reste']];
 const AUTO_OPTIONS=[['young','Jeunes','Dans la rotation, les grands espoirs passent avant les seconds choix'],
- ['free','Formation','L’IA peut changer la formation ; sinon elle garde celle du terrain']];
+ ['free','Formation','L’IA choisit la formation que les joueurs disponibles remplissent le mieux ; sinon elle garde celle du terrain']];
 
 const POSITION_ORDER=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 // The upright pitch of a formation is the one the Présentation draws its eleven on (web/ui.js).

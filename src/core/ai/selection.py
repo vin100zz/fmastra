@@ -12,6 +12,7 @@ from core.domain.players import Player, Position
 from core.engine.abilities import overall, state_multiplier
 from core.engine.fitness import projected_fitness
 from .assignment import maximize_assignment
+from .formation import best_formation, formation_value, roles_value
 from .playing_time import playing_time_priorities, prospect, rotation_bonus
 
 if TYPE_CHECKING:
@@ -60,13 +61,23 @@ class LineupContext:
 def select_lineup(context: LineupContext, cfg: Config, formation: str | None = None,
                   positions: Sequence[str] | None = None, adapt: bool = False, rotation: int = 0,
                   youth: bool = False) -> Lineup:
-    """Best eleven and bench; a given `formation`, or the `positions` of the club's own tactic, is kept as is unless
-    `adapt`, otherwise the formation may give way to a better-suited one. A `rotation` level rests a share of the
-    outfield starters for their second choices (see `rotate`), the club's prospects first with `youth`."""
-    forced = (formation is not None or positions is not None) and not adapt
+    """Best eleven and bench; a given `formation`, or the `positions` of the club's own tactic, is kept as is. With
+    `adapt`, it gives way, as a club of the AI chooses its own (`best_formation`), to the formation the available players
+    fill best by at least `formations.choix.marge_changement` per place. Without a tactic given, the club's formation
+    gives way only to fill a place no player can play. A `rotation` level rests a share of the outfield starters for
+    their second choices (see `rotate`), the club's prospects first with `youth`."""
+    forced = formation is not None or positions is not None
     players = sorted((player for player in context.players if player.available(context.competition_id, context.date)),
                      key=lambda player: player.id)
     formations = cfg.formations.formations
+    if forced and adapt and players:
+        best = best_formation(players, cfg, formation if positions is None else None)
+        if positions is None:
+            formation = best
+        else:
+            gain = formation_value(players, best, cfg) - roles_value(players, [Position(role) for role in positions], cfg)
+            if gain > 0 and gain >= cfg.formations.choice.change_margin:
+                formation, positions = best, None
     formation = formation or (CUSTOM_FORMATION if positions is not None else context.club.formation)
     source = formations[formation] if positions is None else positions
     if len(players) < cfg.world.match_rules.players_on_pitch:
