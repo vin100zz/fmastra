@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyMargin} from './salaries.js';
 import {calendarBlock,financesBlock,shortDate} from './club-overview.js';
 import {talksAction,contractDialog} from './player.js';
-import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,competitionBadge,contractEnd,fixtureRow,hasStorey,GO} from './ui.js';
+import {api,escape as e,number as n,averageNote,card,pager,money,price,budget as spendable,date,season,empty,fact,playerLink,clubLink,position,levelBadge,moraleReading,moraleFace,moraleWord,debugMode,standingsTable,roundTitle,kitShirt,teamKit,competitionBadge,contractEnd,fixtureRow,hasStorey,GO} from './ui.js';
 
 // The badge of each kind of message: its label and the family that colours it (see .news-tag in theme.css).
 const TAGS={offer_received:['Transfert','transfer'],offer_rejected:['Transfert','transfer'],offer_expired:['Transfert','transfer'],offer_accepted:['Transfert','transfer'],
@@ -95,7 +95,7 @@ function talksBody(data){
 const talksStatus=data=>data.state==='agreed'?`Arrivée le ${date(data.arrival)}`:'Négociation terminée';
 
 // A number on the club's shirt, as on its pitches; the one a player leaves, veiled (`former`).
-const clubShirt=(club,number,former=false)=>kitShirt(club?.major_color,club?.minor_color,number,{former});
+const clubShirt=(club,number,former=false)=>kitShirt(teamKit(club),number,{former});
 // The number a player takes at the club: his shirt, under the title that tells his arrival.
 const shirtBody=(number,club)=>lines([[`<span class="muted">Numéro</span>`,clubShirt(club,number)]],'shirts');
 

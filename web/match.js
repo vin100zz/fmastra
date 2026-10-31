@@ -4,7 +4,8 @@ import {api,escape as e,matchMinute,halfEnd,number as n,expectedGoals,matchNoteB
 
 // Colours of a side: its home kit, or a neutral pair for teams without one (national teams).
 const fallbackKits={home:{major:'#236e52',minor:'#ffffff'},away:{major:'#bc4c45',minor:'#ffffff'}};
-const kitOf=(team,side)=>{const major=safeColor(team?.major_color);return major?{major,minor:safeColor(team.minor_color)||contrastText(major)}:fallbackKits[side];};
+// A side's kit: its colours, the third and the pattern of its shirt as the pitch draws it (`kitShirt`).
+const kitOf=(team,side)=>{const major=safeColor(team?.major_color);return major?{major,minor:safeColor(team.minor_color)||contrastText(major),third:safeColor(team.third_color),pattern:team.kit_id}:fallbackKits[side];};
 // Two shirts, or a shirt and a goalkeeper, that a glance tells apart.
 const apart=(first,second)=>contrastRatio(first,second)>=1.6;
 const minute=(event,half)=>matchMinute(event.second,half,event.period);

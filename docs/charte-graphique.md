@@ -1198,13 +1198,20 @@ Un seul terrain et un seul joueur, sur tous les écrans.
   l'attaque à 12 de la ligne de but d'en face, le bloc du gardien à 12 de la
   sienne, les lignes entre elles à égale distance, quelle que soit la hauteur
   du terrain.
-- **Maillot** (`.kit-shirt`) : 32, carré, les manches à l'horizontale. Le corps
-  dans la première couleur du club ou de la sélection, blanc compris, les
-  manches et le col dans la seconde. Le gazon n'est pas la page : la règle de la
+- **Maillot** (`.kit-shirt`) : 32, carré, les manches à l'horizontale. Il porte
+  le motif du maillot domicile du club ou de la sélection (son modèle dans le
+  CSV, un des 57 de `web/kits/templates`), redessiné à plat dans la silhouette,
+  sans perspective ni tissu : des aplats droits, nets à toutes les tailles. Le
+  corps est dans la première couleur, blanc compris ; les zones du motif dans la
+  deuxième et la troisième, comme sur la tenue complète ; le col et les
+  poignets dans la troisième. Une couleur absente reprend la précédente ; un
+  modèle inconnu est l'uni. Le gazon n'est pas la page : la règle de la
   pastille, qui passe à la seconde couleur quand la première est proche du
-  blanc, ne s'y applique pas. Chaque couleur arrondit son bord ; un contour noir
-  à 20 % et une ombre le détachent du gazon. Le numéro du joueur est écrit
-  dessus (`.kit-shirt.number`), en 13, dans l'encre lisible sur le corps. À
+  blanc, ne s'y applique pas. Le corps arrondit son bord et le motif reste
+  dedans ; un contour noir à 20 % et une ombre le détachent du gazon. Le numéro
+  du joueur est écrit dessus (`.kit-shirt.number`), en 13, dans l'encre lisible
+  sur le corps ; sur un motif qui passe sous le numéro (`.kit-shirt.patterned`),
+  en blanc cerné de l'encre la plus sombre, comme sur le disque du replay 2D. À
   défaut de numéro (une place vide, un renfort temporaire, le joueur d'une
   sélection), son poste, en 10 ; sur les aptitudes d'un joueur, chaque maillot
   porte le poste qu'il montre. La couleur de poste reste dans les listes, pas
@@ -1941,7 +1948,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Fond | Blanc en thème clair |
 | Onglets | `.tabs` partout, en-tête de club compris |
 | Match en direct | Tout dans la fenêtre, trois colonnes (`liveScreen`, `web/live.js` ; `.live-layout`, `web/charte.css`) : l'équipe en lignes (`squadHtml`, `assistantAdvice`), l'adversaire au même choix, la tactique ; le bandeau du match compact et sa minute (`matchHero`, option `clock`, `web/club-hero.js`), l'écusson sans disque à sa place ; le fil sous le terrain, la frise, les deux vitesses et la bande du but (`ticker`, `drawFrise`, `setDeadSpeed`, `goalBurst`, `web/match-replay.js`), plus de trace du ballon ; les formations pendant les temps morts (`formationsHtml`) ; le fil des buts attendus sous les commandes ou en tête des chiffres (`drawFlow` ; `flowChart`, `web/match.js`) ; les temps forts par sorte, les chiffres qui glissent et dont les parts remplissent la barre, la journée et le classement à son pied, ses places et ses ▲ ▼ (`highlightGroups`, `patchStats`, `othersHtml` ; `tableZone`, `web/ui.js`). Plus de fenêtre Tactique : le brouillon se fait dans la liste et sur le terrain (`draftLines`, `dropOn`, `tacticHtml`), Valider l'envoie à la fin de l'action (`interrupt`, `cancelInterrupt`, `web/match-replay.js`). L'adversaire, sa formation et la place de chaque joueur viennent de `/direct` (`opponent`, `formation`, `role`, `src/api/live.py`), le classement d'une phase de ligue et ses places de `/direct/multiplex` (`table`, `places` ; `table_places`, `src/api/views.py`) |
-| Terrain et maillot | `.pitch` et `.kit-shirt` sur la composition, le match, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, corps à la première couleur, manches et col à la seconde ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), les buts en grappe au coin du maillot (`.kit-goals`), la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
+| Terrain et maillot | `.pitch` et `.kit-shirt` sur la composition, le match, les aptitudes et le direct (`kitShirt`, `pitch`, `web/ui.js`). Le maillot carré, le motif du maillot du club redessiné à plat (corps à la première couleur, motif à la deuxième et à la troisième, col et poignets à la troisième, numéro blanc cerné sur un motif) ; sous lui le bloc (`playerBlock`, `blockNote`, `web/ui.js`) à la place de l'étiquette du nom, de la note à côté du maillot et des faits à gauche : plus de note qui change de côté (`noteSide` retiré de `web/composition.js`), les buts en grappe au coin du maillot (`.kit-goals`), la sortie en blanc. Les aptitudes d'un joueur sans liste des postes, leur terrain à 360 (`positionPitch`, `web/player.js`) ; la liste reste dans l'aperçu d'un joueur. L'étiquette du nom passe à 70 % |
 | Pastilles | Postes pleins ; compétitions en deux caractères (`competitionCode`, `web/ui.js`) ; notes, scores, statuts à 18 |
 | Nombres | Point décimal, notes à un et deux chiffres, buts attendus à un chiffre, montants en €, k€, M€ (`number`, `matchNote`, `averageNote`, `expectedGoals`, `amount`), y compris dans le manuel |
 | Étoiles et états | Niveau, potentiel, composites, notes au poste et installations en étoiles (`stars`, `noteStars`, `levelStars`, `potentialStars`, `facilityRating`, `web/ui.js`) à la place des pastilles sur 200 et des notes sur 20 des installations ; la personnalité d'un club en mots et crans (`.trait`) ; l'affinité en disque (`affinityIcon`) ; condition, forme et moral en paliers (`conditionIcon`, `formIcon`, `moraleCell`, `moraleFace`) à la place des jauges et des pourcentages ; la courbe du niveau en étoiles ; le mode debug (`setDebugMode`) |

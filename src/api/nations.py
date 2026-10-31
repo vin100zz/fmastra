@@ -73,9 +73,10 @@ def nation_kit(code: str | None) -> dict:
 
 
 def kit_colors(code: str | None) -> dict[str, str | None]:
-    """The two colours of a selection's home shirt, under the keys a club's carry; none without a kit."""
+    """The colours of a selection's home shirt and its pattern, under the keys a club's carry; none without a kit."""
     kit = nation_kit(code)
-    return {"major_color": kit.get("home_kit_major_color"), "minor_color": kit.get("home_kit_minor_color")}
+    return {"major_color": kit.get("home_kit_major_color"), "minor_color": kit.get("home_kit_minor_color"),
+            "third_color": kit.get("home_kit_third_color"), "kit_id": kit.get("home_kit_id")}
 
 
 def kit_outfits(code: str | None) -> dict[str, str | None]:
@@ -101,7 +102,8 @@ def competition_colors(code: str | None, nation: str | None = None) -> dict[str,
     badge; for a league or a national cup, the kit of the selection of its country, by its code `nation`."""
     major, minor, ground = COMPETITION_COLORS.get(code or "", (None, None, None))
     if major is None and nation:
-        return {**kit_colors(nation), "ground_color": None}
+        kit = kit_colors(nation)
+        return {"major_color": kit["major_color"], "minor_color": kit["minor_color"], "ground_color": None}
     return {"major_color": major, "minor_color": minor, "ground_color": ground}
 
 

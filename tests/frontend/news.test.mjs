@@ -333,7 +333,7 @@ test('an arrival shows the number he takes on the club’s shirt, under a title 
  const arrival={...row(5,'transfer','Icardi rejoint Lens'),shirt:9};
  let html=await screen([arrival],arrival,'msg=5');
  assert.match(html,/<h2>Icardi rejoint Lens<\/h2>/);
- assert.match(html,/<ul class="news-lines shirts"><li><span class="muted">Numéro<\/span><span class="kit-shirt number" style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff"><svg[^]*?<\/svg><b>9<\/b><\/span><\/li><\/ul>/);
+ assert.match(html,/<ul class="news-lines shirts"><li><span class="muted">Numéro<\/span><span class="kit-shirt number" style="--kit-body:#cc0000;--kit-minor:#ffd700;--kit-third:#ffd700;--kit-ink:#ffffff"><svg[^]*?<\/svg><b>9<\/b><\/span><\/li><\/ul>/);
  const change={...row(6,'shirt_numbers','Vermot change de numéro'),players:[{player:{id:1,name:'Théo Vermot',gone:false},shirt:1,before:16}]};
  html=await screen([change],change,'msg=6');
  assert.match(html,/<li><span><a href="#\/player\/1">Théo Vermot<\/a><\/span><span class="shirt-change"><span class="kit-shirt number former"[^>]*><svg[^]*?<\/svg><b>16<\/b><\/span><small>→<\/small><span class="kit-shirt number"[^>]*><svg[^]*?<\/svg><b>1<\/b><\/span><\/span><\/li>/);

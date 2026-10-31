@@ -209,7 +209,7 @@ test('the pitch spreads full-backs and centre-backs on one line, from left to ri
 test('the match pitch shirts each side in its kit, the position on the shirt and the note of the match beside it',()=>{
  const line=[{id:1,name:'Ada Un',position:'GB',stats:{rating:7}},{id:-2,name:'Bob Deux',position:'BU',temporary:true,stats:{rating:6}},{id:3,name:'Cy Trois',position:'MC'}];
  const shirts=html=>[...html.matchAll(/<span class="kit-shirt([^"]*)"( style="[^"]*")?>/g)].map(match=>`${match[1]}${match[2]||''}`);
- const red=' style="--kit-body:#cc0000;--kit-sleeves:#ffd700;--kit-ink:#ffffff"';
+ const red=' style="--kit-body:#cc0000;--kit-minor:#ffd700;--kit-third:#ffd700;--kit-ink:#ffffff"';
  // a match-only player keeps a grey shirt; without a kit every shirt is grey
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'#cc0000',minor:'#ffd700'}})),[red,' plain',red]);
  assert.deepEqual(shirts(pitch(line)),[' plain',' plain',' plain']);
@@ -222,11 +222,11 @@ test('the match pitch shirts each side in its kit, the position on the shirt and
  assert.match(html,/<b>GB<\/b><\/span><span class="player-block"><span class="block-name">Ada Un<\/span><span><b class="block-note" style="--hue:\d+" title="Note du match">7\.0<\/b><\/span><\/span>/);
  assert.match(html,/<b>MC<\/b><\/span><span class="player-block"><span class="block-name">Cy Trois<\/span><span><\/span><\/span>/);
  assert.doesNotMatch(html,/position-note|pitch-marks|<small>/);
- // one drawing for every shirt: the whole shape in the sleeves' colour, the body and the collar over it, the outline alone
- for(const part of ['kit-sleeves','kit-body','kit-collar','kit-outline'])assert.equal((html.match(new RegExp(`<path class="${part}"`,'g'))||[]).length,3);
+ // one drawing for every shirt: the whole shape in the body's colour, its pattern over it, the collar, the outline alone
+ for(const part of ['kit-mask','kit-base','kit-collar','kit-outline'])assert.equal((html.match(new RegExp(`<path class="${part}"`,'g'))||[]).length,3);
  assert.ok(contrastRatio('#cc0000','#ffd700')>=3);
  // a missing secondary colour reuses the primary one; an unsafe colour is never written out
- assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/--kit-body:#204080;--kit-sleeves:#204080;/);
+ assert.match(shirts(pitch(line,'x',{kit:{major:'#204080',minor:null}}))[0],/--kit-body:#204080;--kit-minor:#204080;--kit-third:#204080;/);
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:'red;background:url(x)',minor:'#ffffff'}})),[' plain',' plain',' plain']);
  assert.deepEqual(shirts(pitch(line,'x',{kit:{major:null,minor:null}})),[' plain',' plain',' plain']);
 });

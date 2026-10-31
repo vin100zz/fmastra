@@ -83,10 +83,12 @@ def season_steps(seasons, selected: int, current: int | None = None) -> dict:
 
 
 def club_ref(world: World, club_id: int | None) -> dict | None:
-    """A club where a page names it: its name, its colours, and its country, whose flag follows it in a European cup."""
+    """A club where a page names it: its name, its colours, the third and the pattern of its home shirt (its shirt on a pitch
+    wears them), and its country, whose flag follows it in a European cup."""
     club = world.clubs.get(club_id)
     return {"id": club.id, "name": club.name, "major_color": club.home_kit_major_color,
-            "minor_color": club.home_kit_minor_color, "nation": club.nation} if club else None
+            "minor_color": club.home_kit_minor_color, "third_color": club.home_kit_third_color, "kit_id": club.home_kit_id,
+            "nation": club.nation} if club else None
 
 
 def selection_id(world: World, nation: str | None) -> int | None:
@@ -912,6 +914,8 @@ def side_shirts(world: World, match: Match, side: str) -> dict:
     away = getattr(garments, "away_kit_major_color", None)
     return {"shirt_url": shirt_url(garments),
             "away_kit": {"major_color": away, "minor_color": getattr(garments, "away_kit_minor_color", None),
+                         "third_color": getattr(garments, "away_kit_third_color", None),
+                         "kit_id": getattr(garments, "away_kit_id", None),
                          "shirt_url": shirt_url(garments, "away")} if away else None}
 
 

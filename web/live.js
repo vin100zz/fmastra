@@ -309,7 +309,7 @@ function squadHtml(){
   const drag=line&&editable()&&line.change!=='out'&&!hurt(player)&&player.state!=='off';
   const target=line?line.slot!=null?` data-slot="${line.slot}"`:line.change!=='out'?` data-bench="${player.id}"`:'':'';
   const chip=position(role).replace('class="position',`class="position${line?.change==='moved'?' moved':''}`);
-  return `<div class="${classes}"${target}${drag?` data-player="${player.id}" draggable="true"`:''}>${kitShirt(kit.major,kit.minor,shirtLabel(player,role))}`
+  return `<div class="${classes}"${target}${drag?` data-player="${player.id}" draggable="true"`:''}>${kitShirt(kit,shirtLabel(player,role))}`
    +`<span class="squad-who">${chip}<span class="squad-name" title="${e(player.name)}">${e(player.name)}</span></span>`
    +`<span class="marks">${marks}</span>${line?.change==='in'?'<span></span>':matchNoteBadge(player.rating)||'<span></span>'}${mine?fatigue+last:''}</div>`;
  };
@@ -368,7 +368,7 @@ function formationsHtml(){
    const coming=into.has(player.id),drag=draft&&editable()&&!hurt(player);
    const second=coming?mark('sub-on waiting','Entrera','▲'):matchBlockNote(player.rating)+sheetMarks(player,{goals:false});
    const classes=['pitch-player',coming?'entering':'',draft&&hurt(player)&&!player.red?'invalid':'',draft&&view.picked===player.id?'picked':''].filter(Boolean).join(' ');
-   return `<div class="${classes}"${draft?` data-slot="${index}"`:''}${drag?` data-player="${player.id}" draggable="true"`:''} style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">${kitShirt(teams[key].major,teams[key].minor,shirtLabel(player,role),{goals:coming?0:player.goals})}`
+   return `<div class="${classes}"${draft?` data-slot="${index}"`:''}${drag?` data-player="${player.id}" draggable="true"`:''} style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">${kitShirt(teams[key],shirtLabel(player,role),{goals:coming?0:player.goals})}`
     +`${playerBlock(e(shortName(player.name,player.short)),second)}</div>`;
   }).join('');
   const info=own?{...view.shown.manager,mentality:draft?.mentality??view.shown.manager.mentality}:view.shown.opponent;

@@ -1,7 +1,7 @@
 import {monthlySalary,monthlyAmount,roundFee} from './salaries.js';
 import {playerNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
-import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,COMPOSITE_ABBREVIATIONS,RADAR_COMPOSITES,byAttributeName,radar,starsText} from './ui.js';
+import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,teamKit,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,COMPOSITE_ABBREVIATIONS,RADAR_COMPOSITES,byAttributeName,radar,starsText} from './ui.js';
 
 // An attribute weighing at least this share of the main position's rating (`attribute_weights`, from the game rules) is a
 // key one for that position; the position marks them and changes nothing else.
@@ -114,7 +114,7 @@ export function positionPitch(ratings, main, player=null, picked=main) {
  const roles=Object.entries(PITCH).filter(([role])=>ratings[role]>=MIN_RATING);
  if(!roles.length)return '';
  // Each position in the shirt of his club; the main one is ringed.
- const shirt=role=>kitShirt(player?.club?.major_color,player?.club?.minor_color,role);
+ const shirt=role=>kitShirt(teamKit(player?.club),role);
  const block=role=>{const line=positionBlockNote(player,role,player?.composites_by_position?.[role])+affinityTag(ratings[role],role);return line?playerBlock(null,line):'';};
  return `<div class="pitch ratings" role="group" aria-label="Aptitudes par poste">${PITCH_BOXES}${roles.map(([role,[x,y]])=>`<button type="button" class="pitch-player${role===main?' main':''}${role===picked?' picked':''}" data-composite-role="${role}" aria-pressed="${role===picked}" style="left:${x}%;top:${y}%" title="${role} : ${affinityWord(ratings[role]).toLowerCase()}${debugMode()?` · ${ratings[role]} / 20`:''}">${shirt(role)}${block(role)}</button>`).join('')}</div>`;
 }

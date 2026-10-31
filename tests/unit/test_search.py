@@ -147,10 +147,10 @@ def test_each_kind_of_result_says_what_its_line_shows(config):
     assert items["nation"] == {"kind": "nation", "id": 1, "name": "France", "nation": "FRA", "marks": [[0, 3]]}
     assert items["competition"] == {"kind": "competition", "id": 20, "name": "Coupe de France", "marks": [[9, 12]],
                                     "competition": {"id": 20, "name": "Coupe de France", "kind": "cup", "code": None, "nation": "FRA", "level": 1}}
-    assert items["club"] == {"kind": "club", "id": 2, "name": "Eintracht Francfort", "major_color": "#e1000f", "minor_color": "#111111", "nation": "GER",
+    assert items["club"] == {"kind": "club", "id": 2, "name": "Eintracht Francfort", "major_color": "#e1000f", "minor_color": "#111111", "third_color": None, "kit_id": None, "nation": "GER",
                              "competition": {"id": 30, "name": "Bundesliga", "kind": "league", "code": None, "nation": "GER", "level": 1}, "marks": [[10, 13]]}
     assert items["player"] == {"kind": "player", "id": 100, "name": "Franck Ribéry", "position": world.players[100].position.value,
-                               "club": {"id": 1, "name": "Paris SG", "major_color": None, "minor_color": None, "nation": world.clubs[1].nation}, "retired": False, "marks": [[0, 3]]}
+                               "club": {"id": 1, "name": "Paris SG", "major_color": None, "minor_color": None, "third_color": None, "kit_id": None, "nation": world.clubs[1].nation}, "retired": False, "marks": [[0, 3]]}
     dormant = search.search(world, "borains")["items"][0]
     assert dormant["competition"] is None and dormant["nation"] == "BEL"
     world.players[100].club_id = None

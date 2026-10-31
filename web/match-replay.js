@@ -479,7 +479,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   burst.className='goal-burst';
   burst.style.cssText=`--team:${team.major};--team-2:${team.minor};--team-ink:${ink}`;
   burst.innerHTML=`<div class="goal-band"><div class="goal-word">${team.crest?`<img class="goal-crest" src="${e(team.crest)}" alt="">`:''}<span class="goal-letters" aria-label="But"><span>B</span><span>U</span><span>T</span></span></div>`
-   +`<div class="goal-scorer">${kitShirt(team.major,team.minor,shirt??'')}<span>${e(shot.player||'—')}</span></div>${assist?`<div class="goal-assist">${assist}</div>`:''}</div>`;
+   +`<div class="goal-scorer">${kitShirt(team,shirt??'')}<span>${e(shot.player||'—')}</span></div>${assist?`<div class="goal-assist">${assist}</div>`:''}</div>`;
   burst.querySelector('.goal-crest')?.addEventListener('error',event=>event.target.remove());
   this.stage.append(burst);
   setTimeout(()=>burst.remove(),GOAL_HOLD_MS+600);

@@ -183,20 +183,75 @@ export const safeColor = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i
 export const contrastText = hex => {const color=safeColor(hex); if(!color) return '#2c3a30'; const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255>0.6?'#1c2b22':'#ffffff';};
 const luminance = hex => {const [r,g,b]=[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)/255).map(value=>value<=.03928?value/12.92:((value+.055)/1.055)**2.4); return .2126*r+.7152*g+.0722*b;};
 export const contrastRatio = (first, second) => {const [light,dark]=[luminance(first),luminance(second)].sort((a,b)=>b-a); return (light+.05)/(dark+.05);};
-// The one shirt of every pitch (docs/charte-graphique.md): square, its sleeves level, the club's kit, the body in its first
-// colour (white included) and the sleeves and the collar in its second, each fill drawing its own round edge, a light outline
-// around the whole; `label` (his number, else a position: see `shirtLabel`) is written on it in the ink that reads on the
-// body, a number larger than a position. Grey without colours, a dashed outline for an `empty` place. His `goals` stand at
-// its top right, a ball for each; the rest of what he did goes in his block (`playerBlock`). A `former` one, veiled, shows
-// the number a player leaves.
-const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_BODY='M14 4Q20 8.5 26 4L32.5 5.4V37.5H7.5V5.4Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
-export const KIT_SVG = `<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><path class="kit-sleeves" d="${SHIRT_SHAPE}"/><path class="kit-body" d="${SHIRT_BODY}"/><path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
-// The custom properties a kit drawing reads its colours from; empty without a primary colour.
-export const kitStyle = (major, minor) => {const body=safeColor(major);return body?`--kit-body:${body};--kit-sleeves:${safeColor(minor)||body};--kit-ink:${contrastText(body)}`:'';};
-export const kitShirt = (major, minor, label='', {empty=false,goals=0,former=false}={}) => {
- const style=empty?'':kitStyle(major,minor),number=/^\d+$/.test(String(label));
+// The one shirt of every pitch (docs/charte-graphique.md, « Terrain et maillot »): square, its sleeves level, the pattern of
+// the club's kit redrawn flat on it. The body is in the kit's first colour (white included), the zones of its pattern in its
+// second and its third, the collar and the cuffs in its third; each fill draws its own round edge, a light outline goes
+// around the whole. `label` (his number, else a position: see `shirtLabel`) is written on it: in the ink that reads on the
+// body where the chest under it is plain, in white outlined in the darkest ink on a pattern. Grey without colours, a dashed
+// outline for an `empty` place. His `goals` stand at its top right, a ball for each; the rest of what he did goes in his
+// block (`playerBlock`). A `former` one, veiled, shows the number a player leaves.
+const SHIRT_SHAPE='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z',SHIRT_COLLAR='M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z';
+// The 57 patterns of web/kits/templates, by their number in clubs.csv, in the 40 × 40 of the shirt: what each draws over the
+// body, in its second colour (`m`) and its third (`t`), clipped to the shirt. Body x 7.5–32.5, y 4–37.5; sleeves x 1–7.5
+// and 32.5–39, y 5.5–15.5. A pattern the file does not know is the plain one (1).
+const KIT_PATTERNS=(()=>{
+ const n=value=>+value.toFixed(2);
+ const rect=(x,y,w,h,z)=>`<rect class="kit-${z}" x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}"/>`;
+ const poly=(points,z)=>`<polygon class="kit-${z}" points="${points}"/>`;
+ const band=(points,width,z)=>`<polyline class="kit-${z}-band" points="${points}" stroke-width="${width}"/>`;
+ // Centres every `period` through `center`, across the whole drawing.
+ const every=(center,period,from=-1,to=41)=>{const out=[];for(let x=center;x>from-period;x-=period)out.unshift(x);for(let x=center+period;x<to+period;x+=period)out.push(x);return out;};
+ const columns=(centers,width,z,x0=0,x1=40)=>centers.map(x=>{const a=Math.max(x0,x-width/2),b=Math.min(x1,x+width/2);return b>a?rect(a,0,b-a,40,z):'';}).join('');
+ const rows=(tops,height,z,x0=0,x1=40)=>tops.map(y=>rect(x0,y,x1-x0,height,z)).join('');
+ const left=z=>rect(0,0,7.5,17,z),right=z=>rect(32.5,0,7.5,17,z);
+ const B0=7.5,B1=32.5;
+ return {
+  1:'', 2:left('m')+right('m'), 3:columns(every(22.1,4.2),2.1,'m'), 4:rows([8.6,14,19.4,24.8,30.2,35.6],2.7,'m'),
+  5:rect(20,0,12.5,40,'m')+left('m'), 6:rect(20,0,12.5,20.5,'m')+rect(B0,20.5,12.5,20,'m')+left('m'),
+  7:Array.from({length:14*12},(_,k)=>{const i=k%14-3,j=Math.floor(k/14);return (i+j)%2===0?rect(B0+i*3.125,4+j*3.125,3.125,3.125,'m'):'';}).join(''),
+  8:band('5,41 31,2',4.6,'m'), 9:rect(15,0,10,40,'m'), 10:rect(8,16,1.6,22,'m')+rect(30.9,16,1.6,22,'m'),
+  11:left('m')+right('m')+rect(B0,0,5.5,40,'m')+rect(27,0,5.5,40,'m'), 12:columns(every(20,2.8,B0,B1),.5,'m',B0,B1),
+  13:rows([14.5,28],5,'m',B0,B1)+poly('0,8 7,5 14,3.5 13,7.6 7.5,10 0,12','m')+poly('40,8 33,5 26,3.5 27,7.6 32.5,10 40,12','m'),
+  14:rows(every(9,2.6,8,36.5).filter(y=>y>=8&&y<=36.5),.5,'m',B0+.5,B1-.5), 15:rect(B0,16,25,5,'m'), 16:rect(16.5,0,5,40,'m'),
+  17:rect(25,0,1.6,40,'m'), 18:rect(12.6,0,1.6,40,'m'), 19:rect(B0,20.5,25,20,'m'), 20:band('9,-1 35,41',4.6,'m'),
+  21:rect(B0,16,25,2.6,'m')+rect(B0,18.6,25,2.6,'t'), 22:rect(25.4,0,1.1,40,'m')+rect(26.5,0,1.1,40,'t'),
+  23:rect(12.2,0,1.1,40,'m')+rect(13.3,0,1.1,40,'t'), 24:rect(15.5,0,5.5,40,'t')+rect(21,0,19,40,'m'),
+  25:band('15,4.6 7,6.2 0,9.4',1.3,'m')+band('25,4.6 33,6.2 40,9.4',1.3,'m'),
+  26:poly('25,3 33,5 40,8 40,17 32.5,17 32.5,13 27.5,7.5','m'), 27:poly('15,3 7,5 0,8 0,17 7.5,17 7.5,13 12.5,7.5','m'),
+  28:poly('-1,-1 26,-1 26,4.5 7.5,33 -1,33','m'), 29:poly(`${B0},11.5 20,18.5 ${B1},11.5 ${B1},15.5 20,22.5 ${B0},15.5`,'m'),
+  30:rect(B0,16.6,25,2.6,'m')+rect(B0,19.8,25,2.6,'t'), 31:rect(26,0,1.1,40,'t')+rect(27.1,0,1.1,40,'m'),
+  32:rect(11.8,0,1.1,40,'t')+rect(12.9,0,1.1,40,'m'), 33:rect(13,0,4,40,'t')+rect(23,0,4,40,'m'), 34:rect(0,0,40,11.5,'m'),
+  35:poly('14.2,4 25.8,4 20,13.5','m'), 36:rect(5.6,5,2.4,11,'m')+rect(32,5,2.4,11,'m'),
+  37:left('m')+right('m')+columns(every(20,6.25),3.1,'m',B0,B1),
+  38:band('3.8,40.2 29.8,1.2',2.2,'t')+band('6.2,41.8 32.2,2.8',2.2,'m'), 39:band('7.8,-0.2 33.8,40.8',2.2,'m')+band('10.2,-1.8 36.2,39.2',2.2,'t'),
+  40:band(`${B0},10.5 20,16 ${B1},10.5`,.9,'m')+band(`${B0},14 20,19.5 ${B1},14`,.9,'t'),
+  41:columns(every(20,6.25),2.8,'m')+columns(every(18.3,6.25),.6,'t')+columns(every(21.7,6.25),.6,'t'),
+  42:left('t')+right('m'), 43:poly('15.5,-1 41,-1 41,34 33.5,34','m'), 44:rows(every(7.8,3.3,6,38).filter(y=>y>=6&&y<=38),1.7,'m'),
+  45:rect(17.5,0,5,40,'m')+rect(B0,15,25,5,'m'), 46:rect(24,0,4.2,40,'m')+rect(B0,18,25,4.2,'m'), 47:rect(11.8,0,4.2,40,'m')+rect(B0,18,25,4.2,'m'),
+  48:columns(every(17.4,5.2),2.6,'m'),
+  49:rows([9.5,15.5,21.5,27.5,33.5],3,'m',B0,B1)+poly('0,8 7,5 14,3.5 13,7 7.5,9 0,11','m')+poly('40,8 33,5 26,3.5 27,7 32.5,9 40,11','m'),
+  50:rect(0,0,40,10,'m')+left('m')+right('m'),
+  51:rows(every(7,6,5,38).filter(y=>y>=5&&y<=38),2.4,'m')+rows(every(10.2,6,8,38).filter(y=>y>=8&&y<=38),1.4,'t'),
+  52:poly(`${B0},10.5 20,16.5 ${B1},10.5 ${B1},14 20,20 ${B0},14`,'t')+poly(`${B0},15.5 20,21.5 ${B1},15.5 ${B1},18 20,24 ${B0},18`,'m'),
+  53:rect(13,0,7,40,'m')+rect(20,0,7,40,'t'), 54:rect(B0,15,25,6,'m')+rect(B0,21,25,20,'t'), 55:columns(every(20,3.2,B0,B1),.45,'m',B0,B1),
+  56:left('m')+columns(every(20,6.25),3.1,'m',B0,B1), 57:rect(15.6,0,.6,40,'t')+rect(16.2,0,7.6,40,'m')+rect(23.8,0,.6,40,'t'),
+ };
+})();
+// The patterns that leave the chest plain where a number is written: it keeps the ink of the body there.
+const PLAIN_CHEST=new Set([1,2,10,25,26,27,34,35,36,42,50]);
+// A team's home kit, as the API names its garments; none without a first colour.
+export const teamKit = team => {const major=safeColor(team?.major_color);return major?{major,minor:safeColor(team.minor_color),third:safeColor(team.third_color),pattern:team.kit_id}:null;};
+// The custom properties a kit drawing reads its colours from; empty without a first colour. A missing second colour takes
+// the first, a missing third the second, as the outfits do.
+export const kitStyle = kit => {const body=safeColor(kit?.major);if(!body)return '';const minor=safeColor(kit.minor)||body,third=safeColor(kit.third)||minor;return `--kit-body:${body};--kit-minor:${minor};--kit-third:${third};--kit-ink:${contrastText(body)}`;};
+let kitMasks=0;
+export const kitShirt = (kit, label='', {empty=false,goals=0,former=false}={}) => {
+ const style=empty?'':kitStyle(kit),number=/^\d+$/.test(String(label));
+ const pattern=style&&KIT_PATTERNS[kit.pattern]!=null?kit.pattern:1,patterned=!PLAIN_CHEST.has(pattern);
+ const mask=`kit-mask-${++kitMasks}`,drawing=empty?'':`<g mask="url(#${mask})">${KIT_PATTERNS[pattern]}<rect class="kit-t" width="2.6" height="17"/><rect class="kit-t" x="37.4" width="2.6" height="17"/></g>`;
+ const svg=`<svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><mask id="${mask}"><path class="kit-mask" d="${SHIRT_SHAPE}"/></mask><path class="kit-base" d="${SHIRT_SHAPE}"/>${drawing}<path class="kit-collar" d="${SHIRT_COLLAR}"/><path class="kit-outline" d="${SHIRT_SHAPE}"/></svg>`;
  const balls=goals>0?`<span class="kit-goals" title="${goals} but${goals>1?'s':''}">${'<i></i>'.repeat(goals)}</span>`:'';
- return `<span class="kit-shirt${empty?' empty':style?'':' plain'}${number?' number':''}${former?' former':''}"${style?` style="${style}"`:''}>${KIT_SVG}${label!==''&&label!=null?`<b>${escape(label)}</b>`:''}${balls}</span>`;
+ return `<span class="kit-shirt${empty?' empty':style?'':' plain'}${patterned&&!empty?' patterned':''}${number?' number':''}${former?' former':''}"${style?` style="${style}"`:''}>${svg}${label!==''&&label!=null?`<b>${escape(label)}</b>`:''}${balls}</span>`;
 };
 // What a player's shirt says on a pitch: his number, or `position` (his own by default) when he has none: a selection's
 // player, a temporary reinforcement.
@@ -714,7 +769,7 @@ export function pitch(lineup,label='Composition initiale',{compact=false,kit=nul
   const row=rows[line(player)],y=bands[player.position]??40;
   let x=50+(row.indexOf(player)-(row.length-1)/2)*Math.min(30,78/Math.max(1,row.length-1));if(player.position==='AILG')x=15;if(player.position==='AILD')x=85;
   const tag=player.temporary?'span':'a',name=`${escape(compact?shortName(player.name,player.short):player.name)}${player.temporary?' (temp.)':''}`;
-  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit?.major,kit?.minor,shirtLabel(player),{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
+  return `<${tag} ${player.temporary?'title="Joueur temporaire"':`href="#/player/${player.id}" title="${escape(player.name)}"`} class="pitch-player${player.temporary?' temporary-player':''}" style="left:${x}%;top:${y}%">${kitShirt(player.temporary?null:kit,shirtLabel(player),{goals:goals?goals(player):0})}${playerBlock(name,matchBlockNote(player.stats?.rating)+(marks?marks(player):''))}</${tag}>`;
  }).join('')}</div>`;
 }
 export const api = async (path, body) => {const response = await fetch(`/api${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await response.json();if(!response.ok){const error=new Error(typeof data.detail==='string'?data.detail: 'La requête contient une valeur invalide.');error.status=response.status;throw error;}return data;};
