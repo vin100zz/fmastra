@@ -1072,7 +1072,10 @@ qu'il a donnée ; le moindre changement à la main retire la marque. « Meilleur
 les joueurs de champ, remplacés par leurs seconds choix ; le gardien reste le meilleur. Les titulaires
 reposés sont ceux dont le second choix est le plus proche, le temps de jeu qu'il attend compté (voir
 `rotate`, `src/core/ai/selection.py`). « Jeunes » fait passer les grands espoirs avant les seconds
-choix ; « Formation » laisse l'IA changer de formation, sinon elle garde celle du terrain. Cocher ou
+choix ; « Formation » laisse l'IA choisir la formation que les joueurs disponibles remplissent le mieux,
+comme un club de l'IA choisit la sienne (`best_formation`, `src/core/ai/formation.py`) : celle du terrain,
+formation ou tactique du club, ne cède qu'à un gain d'au moins `formations.choix.marge_changement` par
+place ; sans la case, elle garde celle du terrain. Cocher ou
 décocher une case pendant qu'un niveau est marqué recompose aussitôt. Les deux cases restent d'un match
 à l'autre. Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
 seconde) marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
