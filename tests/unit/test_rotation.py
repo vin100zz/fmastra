@@ -1,5 +1,6 @@
 from dataclasses import replace
 
+from core.ai.formation import best_formation, formation_value
 from core.ai.selection import LineupContext, select_lineup
 from core.domain.players import Position
 from test_market import mini_world
@@ -69,11 +70,22 @@ def test_youth_puts_the_prospects_first_in_the_rotation(config, monkeypatch):
     assert prospect.id in {slot.player.id for slot in select_lineup(context, config, "4-3-3", rotation=3, youth=True).slots}
 
 
-def test_adapting_a_formation_chooses_as_the_club_would_from_it(config):
+def test_adapting_a_formation_chooses_as_a_club_of_the_ai_would(config):
     world, club, players = squad(config)
+    # Each player at home at his own position only: the formations no longer suit the squad alike.
+    players = [replace(player, position_ratings={position: 20 if position == player.position else 1 for position in Position})
+               for player in players]
     context = LineupContext(club, players, 16, world.date, world.seed, 10)
-    assert select_lineup(context, config, "5-4-1").formation == "5-4-1"
-    adapted = select_lineup(context, config, "5-4-1", adapt=True)
-    own = select_lineup(LineupContext(replace(club, formation="5-4-1"), players, 16, world.date, world.seed, 10), config)
-    assert adapted.formation == own.formation
-    assert [(slot.player.id, slot.position) for slot in adapted.slots] == [(slot.player.id, slot.position) for slot in own.slots]
+    best = best_formation(players, config)
+    worst = min(config.formations.formations, key=lambda name: formation_value(players, name, config))
+    assert best != worst and formation_value(players, best, config) - formation_value(players, worst, config) >= config.formations.choice.change_margin
+    assert select_lineup(context, config, worst).formation == worst
+    adapted = select_lineup(context, config, worst, adapt=True)
+    assert adapted.formation == best
+    assert [(slot.player.id, slot.position) for slot in adapted.slots] == [(slot.player.id, slot.position) for slot in select_lineup(context, config, best).slots]
+    # The best formation stays; so does the club's own tactic when it is the best one's places.
+    assert select_lineup(context, config, best, adapt=True).formation == best
+    own = select_lineup(context, config, positions=config.formations.formations[best], adapt=True)
+    assert own.formation == "Perso"
+    # The club's own tactic gives way to a better one.
+    assert select_lineup(context, config, positions=config.formations.formations[worst], adapt=True).formation == best
