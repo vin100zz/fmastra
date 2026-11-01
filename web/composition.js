@@ -1,5 +1,5 @@
-import {api,query,toast,escape as e,position,group,levelStars,potentialStars,conditionIcon,debugMode,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,teamKit,shirtLabel,playerBlock,PITCH_BOXES,clubLink,form,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout,steps} from './ui.js';
-import {outcomeLabels,shortDate} from './club-overview.js';
+import {api,query,toast,escape as e,position,group,levelStars,potentialStars,conditionIcon,debugMode,number,averageNote,shortName,appearances,positionNote,positionBlockNote,affinityTag,compositeCell,compositeHeader,formBadge,formArrow,COMPOSITE_SECTIONS,kitShirt,teamKit,shirtLabel,playerBlock,PITCH_BOXES,clubLink,kitDot,noteStars,date,safeColor,competitionCode,LINE_Y,pitchLine,pitchLayout,steps} from './ui.js';
+import {outcomeLabels,shortDate,awayIcon} from './club-overview.js';
 
 // The lineup being edited survives the re-renders of the page (auto refresh, busy buttons) until the match is played.
 let editor=null;
@@ -230,20 +230,35 @@ function squadHtml(byId){
  return `<div class="table-scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
-// What the club knows of its opponent: its standing and form, the tactic it plays, its record where it plays this match, its best
-// players, those who cannot play, and the latest meeting of the two clubs.
+// What the club knows of its opponent: its name, a plane after it when the club plays at its ground, its rank and points in
+// its league, its level and potential, the tactic it plays, its record where it plays this match, its last five matches of
+// the season, its best players, those who cannot play, and the latest meeting of the two clubs.
 export function scoutingHtml(scout){
  if(!scout)return '';
- const {club,match,standing,record}=scout;
+ const {club,standing,record}=scout;
  const major=safeColor(club.major_color)||'#8a9193',minor=safeColor(club.minor_color)||major;
  const crest=`<span class="crest mini-crest" style="background:linear-gradient(155deg,${major} 55%,${minor} 55%)"><img class="crest-logo" src="/crests/TCM1_${club.id}.png" alt="" loading="lazy" onerror="this.remove()"></span>`;
+ const rank=standing?`<span class="scout-rank"><strong>${standing.rank}${standing.rank===1?'er':'e'}</strong><em>${number(standing.points)} pts</em></span>`:'';
+ const grade=(label,value)=>`<div><span>${label}</span><strong>${noteStars(value,label,true)}</strong></div>`;
+ // A match of its last five, as a played match of the top bar: the score from its side on the badge of its outcome, the
+ // other club after its dot (a plane when it played away), the competition under it (a cup in blue), the day at the end.
+ const played=match=>{
+  const home=match.home.id===club.id,opponent=home?match.away:match.home,side=list=>(home?list:[...list].reverse()).join('–');
+  const venue=match.neutral?'Terrain neutre':home?'Domicile':'Extérieur';
+  const title=`${outcomeLabels[match.outcome]} · ${date(match.date)} · ${match.competition} · ${match.round_label} · ${venue}${match.penalties?` · t.a.b. ${side(match.penalties)}`:''}`;
+  return `<a class="last-match ${match.outcome}" href="#/match/${match.id}" title="${e(title)}"><span class="last-match-score">${side(match.score)}</span>`
+   +`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home||match.neutral?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span>`
+   +`<span class="last-match-date">${e(shortDate(match.date))}</span></a>`;
+ };
  const person=player=>`<li>${position(player.position)}<a href="#/player/${player.id}">${e(player.name)}</a>${levelStars(player)}</li>`;
  const out=player=>`<li>${player.injured_until?`<span class="status danger" title="Retour le ${e(date(player.injured_until))}">✚ ${e(shortDate(player.injured_until))}</span>`:`<span class="status ban">${player.suspension} match${player.suspension>1?'s':''}</span>`}<a href="#/player/${player.id}">${e(player.name)}</a></li>`;
- const last=scout.last_meeting;
+ const last=scout.last_meeting,matches=scout.last_matches||[];
  const meeting=last?`<a class="scout-meeting" href="#/match/${last.id}"><span>${e(last.round_label)} · ${e(last.home.name)} – ${e(last.away.name)}</span><span class="club-match-score ${last.outcome}" title="${outcomeLabels[last.outcome]}">${last.score.join(' – ')}</span></a>`:'';
  return `<aside class="card scout-card" aria-label="Adversaire"><div class="card-head"><h2>Adversaire</h2></div><div class="card-body">`
-  +`<div class="scout-club">${crest}<div>${clubLink(club)}<small>${e(match.round_label)} · ${e(shortDate(match.date))} · ${scout.home?'Domicile':'Extérieur'}</small>${standing?`<span class="scout-standing">${standing.rank}${standing.rank===1?'er':'e'} · ${standing.points} pts ${form(standing.form)}</span>`:''}</div></div>`
-  +`<div class="scout-facts"><div><span>Tactique</span><strong>${e(club.formation||'—')}</strong></div><div><span>${record.venue==='away'?'À l’extérieur':'À domicile'}</span><strong>${record.won} V · ${record.drawn} N · ${record.lost} D</strong></div></div></div>`
+  +`<div class="scout-club">${crest}<span class="scout-name">${clubLink(club)}${scout.home||scout.match.neutral?'':awayIcon}</span>${rank}</div>`
+  +`<div class="scout-facts"><div class="split">${grade('Niveau',club.top_rating)}${grade('Potentiel',club.top_potential)}</div>`
+  +`<div><span>Tactique</span><strong>${e(club.formation||'—')}</strong></div><div><span>${record.venue==='away'?'À l’extérieur':'À domicile'}</span><strong>${record.won} V · ${record.drawn} N · ${record.lost} D</strong></div></div></div>`
+  +(matches.length?`<h3 class="section-title">5 derniers matches</h3><div class="scout-matches">${matches.map(played).join('')}</div>`:'')
   +(scout.key_players.length?`<h3 class="section-title">Joueurs clés</h3><ul class="scout-players">${scout.key_players.map(person).join('')}</ul>`:'')
   +(scout.absent.length?`<h3 class="section-title">Absents</h3><ul class="scout-players absent">${scout.absent.map(out).join('')}</ul>`:'')
   +(meeting?`<div class="card-body">${meeting}</div>`:'')+'</aside>';

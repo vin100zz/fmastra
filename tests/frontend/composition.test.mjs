@@ -235,26 +235,39 @@ test('the tactics stand over the pitch and the substitutes on one line; starters
  }finally{globalThis.fetch=previous;}
 });
 
-test('beside the list, the opponent: its standing and form, its tactic, its record where it plays, its best players, those out and the last meeting',async()=>{
+test('beside the list, the opponent: its rank, its level, its tactic, its record where it plays, its last matches, its best players, those out and the last meeting',async()=>{
  const {scoutingHtml}=await import('../../web/composition.js');
- const club={id:9,name:'Lorient <FC>',major_color:'#F84000',minor_color:'#080808',formation:'3-5-2'};
- const scout={match:{id:50,date:'2031-01-18',round_label:'Journée 19',competition:'Ligue 1'},home:true,club,standing:{rank:14,points:19,form:'NDDVN'},
+ const club={id:9,name:'Lorient <FC>',major_color:'#F84000',minor_color:'#080808',formation:'3-5-2',top_rating:70,top_potential:74};
+ const lens={id:7,name:'Lens',major_color:'#F8D000',minor_color:'#E00000'},brest={id:8,name:'Brest',major_color:'#E2001A',minor_color:'#FFFFFF'};
+ const scout={match:{id:50,date:'2031-01-18',round_label:'Journée 19',competition:'Ligue 1',neutral:false},home:true,club,standing:{rank:14,points:19},
   record:{venue:'away',won:1,drawn:3,lost:5},key_players:[{id:61,name:'Bamba Dieng',position:'BU',rating:70.5,injured_until:null,suspension:0}],
   absent:[{id:62,name:'Théo Le Bris',position:'MC',rating:66,injured_until:'2031-02-01',suspension:0},{id:63,name:'Igor Silva',position:'DC',rating:64,injured_until:null,suspension:1}],
+  last_matches:[{id:44,date:'2031-01-04',round_label:'Journée 17',competition:'Ligue 1',league:true,home:lens,away:club,score:[3,1],outcome:'D',neutral:false},
+   {id:45,date:'2031-01-08',round_label:'32es de finale',competition:'Coupe de France',league:false,home:club,away:brest,score:[2,0],outcome:'V',neutral:false}],
   last_meeting:{id:40,round_label:'Journée 2',home:{id:9,name:'Lorient'},away:{id:7,name:'Lens'},score:[1,1],outcome:'N'}};
  const html=scoutingHtml(scout);
  assert.match(html,/<aside class="card scout-card" aria-label="Adversaire"><div class="card-head"><h2>Adversaire<\/h2>/);
  assert.match(html,/Lorient &lt;FC&gt;/);assert.doesNotMatch(html,/<FC>/);
- assert.match(html,/Journée 19 · 18 janv\. · Domicile/);
- assert.match(html,/14e · 19 pts <span class="form"><i class="N">N<\/i>/);
+ // The club hosts the match: no plane after the opponent's name; no line for the round, the day and the ground.
+ assert.match(html,/<span class="scout-name"><a [^>]*>.*Lorient &lt;FC&gt;<\/a><\/span>/);assert.doesNotMatch(html,/Journée 19/);
+ assert.match(html,/<span class="scout-rank"><strong>14e<\/strong><em>19 pts<\/em><\/span>/);
+ assert.match(html,/<div class="split"><div><span>Niveau<\/span><strong><span class="stars big".*<span>Potentiel<\/span><strong><span class="stars big"/);
  assert.match(html,/<span>Tactique<\/span><strong>3-5-2<\/strong>/);
  assert.match(html,/<span>À l’extérieur<\/span><strong>1 V · 3 N · 5 D<\/strong>/);
+ // Its last matches, oldest first, each from its side: its goals first, a plane when it played away, a cup in blue.
+ assert.match(html,/<h3 class="section-title">5 derniers matches<\/h3><div class="scout-matches"><a class="last-match D" href="#\/match\/44"/);
+ assert.match(html,/<span class="last-match-score">1–3<\/span><span class="next-match-body"><span class="next-match-who"><i class="kit-dot"[^>]*><\/i><b>Lens<\/b><svg class="away"/);
+ assert.match(html,/<span class="next-match-comp">Ligue 1<\/span><\/span><span class="last-match-date">4 janv\.<\/span>/);
+ assert.match(html,/<span class="last-match-score">2–0<\/span>.*<b>Brest<\/b><\/span><span class="next-match-comp cup">Coupe de France/);
  assert.match(html,/<h3 class="section-title">Joueurs clés<\/h3>.*Bamba Dieng/);
  assert.match(html,/✚ 1 févr\.<\/span><a href="#\/player\/62">Théo Le Bris/);assert.match(html,/1 match<\/span><a href="#\/player\/63">Igor Silva/);
  assert.match(html,/href="#\/match\/40"><span>Journée 2 · Lorient – Lens<\/span><span class="club-match-score N"/);
  assert.equal(scoutingHtml(null),'');
- const quiet=scoutingHtml({...scout,standing:null,absent:[],key_players:[],last_meeting:null,home:false,record:{venue:'home',won:0,drawn:0,lost:0}});
- assert.match(quiet,/Extérieur/);assert.match(quiet,/À domicile/);assert.doesNotMatch(quiet,/Absents|Joueurs clés|scout-meeting|pts/);
+ const quiet=scoutingHtml({...scout,standing:null,absent:[],key_players:[],last_matches:[],last_meeting:null,home:false,record:{venue:'home',won:0,drawn:0,lost:0}});
+ // Away: a plane after its name.
+ assert.match(quiet,/Lorient &lt;FC&gt;<\/a><svg class="away"/);assert.match(quiet,/À domicile/);
+ assert.doesNotMatch(quiet,/Absents|Joueurs clés|derniers matches|scout-meeting|scout-rank/);
+ assert.doesNotMatch(scoutingHtml({...scout,home:false,match:{...scout.match,neutral:true}}),/Lorient &lt;FC&gt;<\/a><svg/);
 });
 
 test('the automatic lineup offers its four levels and its two options, the level on screen marked',()=>{
