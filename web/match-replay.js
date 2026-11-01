@@ -209,7 +209,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(!button)return;
    if(button.classList.contains('replay-start')){button.remove();this.play();}
    else if(button.dataset.chance)this.jump(Number(button.dataset.chance));
-   else if(button.dataset.replay==='play')this.decision?this.emit('live-go-on'):this.paused?this.play():this.pause();
+   else if(button.dataset.replay==='play'){
+    // Live, ▶ first lets the screen send the changes it holds: they set the match going themselves.
+    if(this.live&&(this.paused||this.decision)&&!this.dispatchEvent(new CustomEvent('live-play',{bubbles:true,cancelable:true})))return;
+    this.decision?this.emit('live-go-on'):this.paused?this.play():this.pause();
+   }
    else if(button.dataset.replay==='view')this.setView(!this.view3d,true);
    else if(button.dataset.replay==='previous')this.jump(this.previousIndex());
    else if(button.dataset.replay==='next')this.live?this.skip():this.jump(this.nextIndex(this.current+1));
@@ -670,10 +674,11 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  stopAt(second){const resolve=this.stopRequested;this.stopRequested=null;this.hold=true;this.running=false;resolve?.(second);}
  // The orders withdrawn while the action plays on: the match goes on as if nothing had been asked.
  cancelInterrupt(){const resolve=this.stopRequested;this.stopRequested=null;resolve?.(false);}
- // After new orders, or at the start of the second half.
- resume(){
+ // After new orders, or at the start of the second half; `paused`, the match is free to go on but waits for ▶.
+ resume({paused=false}={}){
   if(!this.live||!this.hold||this.status==='finished')return;
   this.hold=false;this.skipping=false;this.decision=null;
+  if(paused&&this.status!=='halftime'){this.paused=true;this.updatePlay();return;}
   if(this.status==='halftime'){
    this.status='playing';this.period=2;
    this.updateRosters(this.clock);this.kickOff(this.kickOffSide(2));
