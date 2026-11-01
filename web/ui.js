@@ -693,7 +693,7 @@ const europeTip = row => {
 export function roundTitle(title,items){const round=Math.max(0,...items.map(row=>row.played));return round?`${title} · ${round}${round===1?'re':'e'} journée`:title;}
 // The class that names where a place of a table leads (`movement`, `europe`), which its rank's badge tells (web/charte.css):
 // straight through or into the play-off of a league phase, a European cup, relegation, a title or a promotion; nothing else.
-export const tableZone=row=>row?.movement==='direct'?'europe-direct':row?.movement==='playoff'?'europe-playoff':europePlace(row??{})||(row?.movement==='europe'?'qualified-europe':row?.movement==='relegation'?'relegated':row?.movement==='promotion'||row?.movement==='champion'||row?.movement==='qualified'?'promoted':'');
+export const tableZone=row=>row?.movement==='direct'?'europe-direct':row?.movement==='playoff'?'europe-playoff':row?.movement==='eliminated'?'europe-eliminated':europePlace(row??{})||(row?.movement==='europe'?'qualified-europe':row?.movement==='relegation'?'relegated':row?.movement==='promotion'||row?.movement==='champion'||row?.movement==='qualified'?'promoted':'');
 // `compact` keeps the essential columns; 'record' trades the played column for won, drawn, lost and goals, for a dashboard widget titled with the round;
 // 'figures' keeps every figure and leaves the form out, for a table in a narrow column; 'points' keeps the points and the goal
 // difference only, for an extract beside the squad. `own` is the club whose row is washed: the user's, unless told otherwise.

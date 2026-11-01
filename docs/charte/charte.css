@@ -119,7 +119,7 @@
    the turquoise's wash, the next one marked in it. */
 .next-matches{display:flex;border-radius:var(--radius-box);background:var(--panel-2);overflow:hidden}
 :is(.next-match,.last-match){display:flex;align-items:center;gap:var(--s2);height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2)}
-.next-match{max-width:170px;background:var(--c4-soft)}
+.next-match{max-width:220px;background:var(--c4-soft)}
 .last-match{max-width:180px}
 :is(.next-match,.last-match)+:is(.next-match,.last-match){border-left:1px solid var(--panel)}
 :is(.next-match:first-child,.bar-today+.next-match){box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--c4)}
@@ -129,6 +129,13 @@
 :is(.next-match,.last-match) strong{display:flex;align-items:center;gap:var(--s1);font-weight:600;line-height:16px;color:var(--strong)}
 :is(.next-match,.last-match) small{font-size:var(--fs-small);line-height:14px;color:var(--muted)}
 :is(.next-match,.last-match) small.cup{color:var(--info)}
+.next-match-rank{font-weight:700;color:var(--ink-2)}
+.next-match-rank.good{color:var(--good)}
+.next-match-rank:is(.info,.c1){color:var(--info)}
+.next-match-rank.c3{color:var(--c3)}
+.next-match-rank.c4{color:var(--c4)}
+.next-match-rank.warn{color:var(--warn)}
+.next-match-rank.bad{color:var(--bad)}
 .bar-today{flex:none;width:var(--mark-control);background:var(--c4)}
 .last-match>b{display:grid;place-items:center;min-width:40px;height:var(--h-control-small);padding:0 var(--s1);border-radius:var(--radius-chip);font:700 semi-condensed var(--fs-figure)/1 var(--display);white-space:nowrap}
 .last-match.V>b{background:var(--good-soft);color:var(--good)}
@@ -774,9 +781,11 @@ span.entity-step svg{opacity:.3}
    The larger figure is the strong one. A part takes its colour from its own `color`: the club's, brought into the band
    where a mark reads on the surface (docs/charte-graphique.md, « Graphiques »). */
 .comparisons{padding:var(--s1) 0}
-.comparison{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;column-gap:var(--s3);height:36px;padding:0 var(--s3)}
-.comparison>span{color:var(--muted)}
-.comparison>span:last-child{text-align:right}
+.comparison{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;grid-template-rows:14px 8px;align-content:center;align-items:center;gap:var(--s1) var(--s3);height:36px;padding:0 var(--s3)}
+.comparison>span{grid-row:2;color:var(--muted);white-space:nowrap}
+.comparison>span:first-child{grid-column:1}
+.comparison>span:last-child{grid-column:3;text-align:right}
+.comparison>div{grid-area:1/2/3/3}
 .comparison>span.lead{font-weight:600;color:var(--strong)}
 .comparison>div{display:flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-small);line-height:14px;color:var(--ink-2)}
 .comparison-bar{display:flex;gap:2px;width:100%;height:8px}

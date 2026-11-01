@@ -1,7 +1,7 @@
 import {initNationLogos} from './nation-logos.js';
 import {initHeroCrests,tintPage,arrivalHero} from './club-hero.js';
 import {worldHistoryScreen} from './world-history.js';
-import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen,setStarScale,debugMode,setDebugMode,GO} from './ui.js';
+import {api,escape as e,number as n,date,season,kitDot,card,heading,empty,toast,setNations,setCompetitions,nationName,nationFlag,sortTable,nextDirection,setToday,setOwnClub,setFoldOpen,setStarScale,debugMode,setDebugMode,GO,tableZone} from './ui.js';
 import {dashboard,clubsScreen,clubScreen,leagueScreen,playersScreen,playableNations} from './screens.js';
 import {countryScreen} from './country.js';
 import {playerScreen,playerPreview} from './player.js';
@@ -147,9 +147,15 @@ const delayLabel=(from,to)=>{const days=daysBetween(from,to);return days<=0?'Auj
 // The share of the days between the start of the fill and the next match that the job has gone through: full on its day.
 const fillShare=to=>{const total=daysBetween(fillFrom,to);return total<=0?1:Math.min(1,Math.max(0,daysBetween(fillFrom,jobDay)/total));};
 const fillHtml=to=>`<i class="next-match-fill" style="width:${fillShare(to)*100}%"></i>`;
+// A match to come of a league or of a European cup's league phase follows its competition with the opponent's rank today,
+// in the ink of where its place leads, as its badge in the table.
+const RANK_INKS={promoted:'good','europe-direct':'good','qualified-europe':'info','europe-playoff':'warn',relegated:'bad','europe-eliminated':'bad','europe-c1':'c1','europe-c3':'c3','europe-c4':'c4'};
+const ordinal=rank=>rank===1?'1er':`${rank}e`;
+const rankHtml=standing=>{if(!standing)return '';const ink=RANK_INKS[tableZone(standing).split(' ')[0]];return ` · <b class="next-match-rank${ink?` ${ink}`:''}">${ordinal(standing.rank)}</b>`;};
+const rankTitle=standing=>standing?` · ${ordinal(standing.rank)} · ${standing.points} pt${standing.points>1?'s':''}`:'';
 function barMatchesHtml(count,short){
  const club=state.controlled_club_id;
- const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${venueIcon(home)}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}</span></span>`;
+ const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${venueIcon(home)}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}${match.score?'':rankHtml(match.opponent_standing)}</span></span>`;
  const played=(state.club_last_matches||[]).slice(-count).map(match=>{
   const home=match.home.id===club,opponent=home?match.away:match.home,ours=list=>(home?list:[...list].reverse()).join('–');
   const title=`${outcomeLabels[match.outcome]}${short?` · ${opponent.name}`:''} · ${date(match.date)} · ${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${match.penalties?` · t.a.b. ${ours(match.penalties)}`:''}`;
@@ -157,7 +163,7 @@ function barMatchesHtml(count,short){
  });
  const coming=(state.club_next_matches||[]).map((match,index)=>{
   const home=match.home.id===club,opponent=home?match.away:match.home;
-  return `<a class="next-match" href="#/club/${opponent.id}" data-date="${match.date}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}`)}">${index===0&&jobDay?fillHtml(match.date):''}<span class="next-match-when">${delayLabel(jobDay||state.date,match.date)}</span>${body(match,home,opponent)}</a>`;
+  return `<a class="next-match" href="#/club/${opponent.id}" data-date="${match.date}" title="${e(`${date(match.date)} · ${match.competition} · ${home?'Domicile':'Extérieur'}${rankTitle(match.opponent_standing)}`)}">${index===0&&jobDay?fillHtml(match.date):''}<span class="next-match-when">${delayLabel(jobDay||state.date,match.date)}</span>${body(match,home,opponent)}</a>`;
  });
  return played.join('')+(played.length&&coming.length?'<i class="bar-today" aria-hidden="true"></i>':'')+coming.join('');
 }

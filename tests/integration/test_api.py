@@ -823,6 +823,16 @@ def test_the_bar_reads_the_club_last_matches_then_its_next_ones(played):
     assert all(row["score"] and "league" in row for row in last)
     assert [row["id"] for row in upcoming] == [match.id for match in own if not match.result][:3]
     assert all(row["score"] is None for row in upcoming)
+    # A league's match to come carries its opponent's place in the table as it stands; a cup's match, none.
+    for row in upcoming:
+        match, standing = world.matches[row["id"]], row["opponent_standing"]
+        competition = world.competitions[match.competition_id]
+        if competition.kind == "league":
+            opponent = match.away_id if match.home_id == club.id else match.home_id
+            expected = next(item for item in v.table(world, competition.id) if item["club_id"] == opponent)
+            assert standing["rank"] == expected["rank"] and standing["points"] == expected["points"]
+        elif competition.kind == "cup":
+            assert standing is None
 
 
 def test_the_lineup_screen_scouts_the_next_opponent(played):

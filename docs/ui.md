@@ -92,7 +92,11 @@ Barre persistante en tête d'application :
   du club sur la pastille de son issue (V, N, D), un trait sarcelle pour
   aujourd'hui, puis les trois prochains sur le lavis sarcelle, chacun par son
   délai en gros (J-6, « Auj. »). Pour tous, l'adversaire (maison verte à
-  domicile, avion rouge à l'extérieur) et la compétition dessous, en bleu pour une coupe. Le prochain
+  domicile, avion rouge à l'extérieur) et la compétition dessous, en bleu pour une coupe. Un match à
+  venir de championnat ou de phase de ligue d'une coupe d'Europe suit sa
+  compétition du rang de l'adversaire ce jour (« Ligue 1 · 5e »), à l'encre de
+  sa place ; ni en coupe, ni en phase finale, ni avant la première journée.
+  Le prochain
   match a son délai et un soulignement en sarcelle. Selon la place : trois matchs
   joués tant que tous les noms se lisent en entier, puis deux, puis le score
   seul après la pastille de l'adversaire ; deux prochains seulement sous
@@ -1400,7 +1404,8 @@ signaler explicitement plutôt que d'afficher des sections vides.
 GET  /api/monde/etat                     date, saison, prochaines échéances, mode auto (auto.running / auto.stopping),
                                           controlled_club, news : {unread, next_unread, pending: [id]} (messages non lus, le prochain à lire, ceux à traiter),
                                           slot (sauvegarde où la partie s'enregistre), club_last_matches (les 3 derniers joués de la saison,
-                                          par date, avec outcome V/N/D du côté du club), club_next_matches (les 3 prochains)
+                                          par date, avec outcome V/N/D du côté du club), club_next_matches (les 3 prochains,
+                                          opponent_standing : rang, points, movement, europe de l'adversaire en championnat ou phase de ligue, sinon null)
 POST /api/monde/avancer                  {commande_id: str, jusqu_a: "etape" | "jour" | "journee" | "fin_mercato"} -> travail_id
 POST /api/monde/auto/demarrer            {commande_id: str} -> travail_id ; enchaîne les journées jusqu'à l'arrêt
 POST /api/monde/auto/arreter             signal d'arrêt idempotent -> {running, stopping, job}
