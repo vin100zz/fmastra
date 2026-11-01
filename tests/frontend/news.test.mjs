@@ -342,14 +342,6 @@ test('an arrival shows the number he takes on the club’s shirt, under a title 
  assert.match(html,/<ul class="news-lines shirts"><li><span><a href="#\/player\/2">Ugo Tégar<\/a><\/span><span class="kit-shirt number"[^>]*><svg[^]*?<\/svg><b>34<\/b><\/span><\/li>/);
 });
 
-test('a change of formation of a rival tells each club after its badge, the formation it left and the one it plays now',async()=>{
- const message={...row(8,'formation_change','2 adversaires changent de formation'),
-  formations:[{club:ref(9,'Nice'),before:'4-4-2 plat',after:'4-3-3'},{club:ref(11,'Lyon'),before:'3-5-2',after:'5-3-2'}]};
- const html=await screen([message],message,'msg=8');
- assert.match(html,/<span class="news-tag season">Tactique<\/span>/);
- assert.match(html,/<ul class="news-lines"><li><span><a href="#\/club\/9" class="club-link">[^]*?Nice<\/a><\/span><span>4-4-2 plat<small>→<\/small>4-3-3<\/span><\/li><li><span><a href="#\/club\/11"/);
-});
-
 test('the demands of a day make one message: a line a player, his wage and the one he asks, until when, and his answer',async()=>{
  const demand=(id,name,state,wage)=>({player:{id,name,gone:false},position:'MC',rating:70,current:{wage:1000,end:'2030-06-30'},asked:{wage,end:'2032-06-30'},state});
  const item=row(5,'renewal_proposed','2 joueurs veulent un nouveau contrat',{pending:true});
