@@ -158,7 +158,7 @@ où le fond est déjà jaune.
 | Banc d'une composition | `.bench`, `.bench-slot` | Sous le terrain de la Composition : trois colonnes, une place de 26 sur `--panel-2`, le poste puis le nom court du joueur, entier ; une place vide en pointillés |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
-| Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.live-flow`, `.squad-row`, `.advice`, `.waiting-status`, `.goal-burst` | Le bandeau du match en 64 et la minute sur sa tuile, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match et le fil des buts attendus sous elle, la ligne d'un joueur, le conseil de l'adjoint et les changements prévus, la tactique et l'attente de ses ordres, la bande d'un but. Voir « Match en direct » |
+| Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.live-flow`, `.squad-row`, `.advice`, `.waiting-status`, `.goal-burst`, `.card-burst`, `.sent-off` | Le bandeau du match en 64, la minute sur sa tuile et les cartons rouges après les noms, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match et le fil des buts attendus sous elle, la ligne d'un joueur, le conseil de l'adjoint et les changements prévus, la tactique et l'attente de ses ordres, la bande d'un but, celle d'une expulsion. Voir « Match en direct » |
 | Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
@@ -855,6 +855,10 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
   `--panel-2` quand le chronomètre défile ; « MT » à la mi-temps, « Fin » au
   coup de sifflet. Un but fait basculer le chiffre du camp qui marque, et la
   tuile s'entoure un instant de l'accent.
+  Les cartons rouges d'un camp se gardent jusqu'au coup de sifflet, après son
+  nom (`.sent-off`) : sur une pastille blanche de 24 aux coins de 4, lisible
+  sur toutes les couleurs, un carton de 10 × 14 par expulsion, le second
+  chevauchant le premier.
 - **Terrain** : aussi large que la hauteur de la fenêtre le permet. Pendant une
   action, les pastilles du résumé, sans trace du ballon ; pendant un temps mort,
   les deux équipes à leur formation, celui qui reçoit à gauche attaquant vers la
@@ -938,6 +942,15 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
   puis un reflet la traverse. À côté, son maillot en 48 et son nom en 40, le
   passeur dessous en 16 (« Sur penalty » pour un penalty). Le score n'y est
   pas : il change au bandeau.
+- **L'expulsion** (`.card-burst`) : le jeu s'arrête 2.6 s, quelle que soit la
+  vitesse. Plus sobre que le but : un voile plus léger, puis une bande à l'encre
+  du voile (`#0a141e`, dans les deux thèmes) bordée en haut et en bas (3) de la
+  couleur du camp expulsé traverse le terrain. Le carton rouge en 52 × 72,
+  incliné, se lève ; derrière lui un jaune pour un deuxième avertissement. À
+  côté, l'écusson en 26 et « Carton rouge » avec la minute en capitales de 16,
+  puis le maillot en 48 et le nom en 40, « Deuxième avertissement » dessous en
+  16. Ni lettres frappées, ni secousse, ni reflet. Si c'est son équipe, le match
+  s'arrête ensuite (voir « Tactique »).
 - Rien de cela ne bouge sous `prefers-reduced-motion`.
 
 ### Match dans une liste

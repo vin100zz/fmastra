@@ -23,7 +23,7 @@ const FILTER_KEY='touchline-replay-filter',VIEW_KEY='touchline-replay-view',SPEE
 const SPEEDS=[.25,.5,.75,1,1.5,2,3,4];
 // Live, the play between two chances, where the clock runs, has its own pace, remembered apart: at 1× a match minute
 // takes MS_PER_MINUTE ms. A goal holds the pitch GOAL_HOLD_MS, whatever the paces.
-const DEAD_SPEEDS=[.5,1,2,4,8,16,32],DEAD_KEY='touchline-live-dead-speed',GOAL_HOLD_MS=4000;
+const DEAD_SPEEDS=[.5,1,2,4,8,16,32],DEAD_KEY='touchline-live-dead-speed',GOAL_HOLD_MS=4000,CARD_HOLD_MS=2600;
 // The icons before the two sliders of the live match: the ball for the chances, the stopwatch for the clock between them.
 const SLIDER_ICONS={ball:'<svg class="slider-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="m10 6.2 3.2 2.3-1.2 3.8H8l-1.2-3.8Z"/></svg>',
  clock:'<svg class="slider-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="11" r="6.5"/><path d="M10 7.5V11l2.2 1.6M8 2.5h4"/></svg>'};
@@ -484,6 +484,22 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.stage.append(burst);
   setTimeout(()=>burst.remove(),GOAL_HOLD_MS+600);
  }
+ // Live, a red card holds the pitch a moment, more soberly than a goal: a dark band edged with the colours of the side
+ // sent off crosses it, the card rising (a yellow behind it for a second booking), the crest, « Carton rouge » and the
+ // minute, then the player's shirt and name, the reason under it.
+ cardBurst(event){
+  this.stage.querySelector('.card-burst')?.remove();
+  const side=this.side(event.team_id),team=this.teams[side],shirt=this.shirts?.get(event.player_id),twice=event.detail==='second_yellow';
+  const burst=document.createElement('div');
+  burst.className='card-burst';
+  burst.style.setProperty('--team',team.major);
+  burst.innerHTML=`<div class="card-band"><div class="card-pair">${twice?'<i class="card-face yellow"></i>':''}<i class="card-face"></i></div>`
+   +`<div class="card-text"><div class="card-label">${team.crest?`<img src="${e(team.crest)}" alt="">`:''}Carton rouge · ${this.minute(event.second)}</div>`
+   +`<div class="card-who">${kitShirt(team,shirt??'')}<span>${e(event.player||'—')}</span></div>${twice?'<div class="card-why">Deuxième avertissement</div>':''}</div></div>`;
+  burst.querySelector('.card-label img')?.addEventListener('error',error=>error.target.remove());
+  this.stage.append(burst);
+  setTimeout(()=>burst.remove(),CARD_HOLD_MS+400);
+ }
  showBanner(text,side){this.banner.textContent=text;this.banner.setAttribute('class',`replay-banner${text?' on':''}`);this.banner.style.fill=side?this.teams[side].major:'';}
 
  // The kick-off shape: both sides in their half, the ball on the centre spot at the feet of `side`'s most advanced player.
@@ -528,6 +544,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.faded=false;this.tempo=1;this.cursor=null;this.cues=[];this.skipping=false;
   this.stage.querySelector('.goal-burst')?.remove();
   this.stage.classList.remove('fast');
+  this.stage.querySelector('.card-burst')?.remove();
   this.showBanner('');this.showScore();this.showClock(second);
   const next=this.sequences[index];
   this.kickOff(second&&next?this.opponent(this.side(next.team)):this.kickOffSide(this.period));
@@ -740,7 +757,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
     const event=stop.event,said=`${NOTABLE[event.kind]} · ${e(event.player||'—')}${event.kind==='substitution'&&event.secondary?` ➜ ${e(event.secondary)}`:''}`;
     if(this.live){
      this.ticker(said,{side:this.side(event.team_id),minute:this.minute(event.second)});
-     if(!(await this.wait(1400,{pace:stopPace})))return false;
+     if(event.kind==='red'){this.cardBurst(event);this.emit('replay-card',{second:event.second});}
+     if(!(await this.wait(event.kind==='red'?CARD_HOLD_MS:1400,{pace:stopPace})))return false;
      this.ticker('Jeu en cours');
     }
     else{

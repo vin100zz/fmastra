@@ -400,6 +400,19 @@ function heroScore(score){
  });
 }
 
+// The red cards each side has had by the minute shown, on a chip after its name in the band until the whistle.
+function heroCards(second){
+ const home=view.state.home.id,reds=[0,0];
+ for(const event of shownHighlights(view.events,second,view.score,home))if(event.kind==='red')reds[event.team_id===home?0:1]++;
+ document.querySelectorAll('.match-hero.live .match-hero-side').forEach((side,index)=>{
+  let chip=side.querySelector('.sent-off');
+  if(!reds[index]){chip?.remove();return;}
+  if(!chip){chip=document.createElement('span');chip.className='sent-off';side.querySelector('.match-hero-name')?.after(chip);}
+  chip.innerHTML='<i></i>'.repeat(reds[index]);
+  chip.title=reds[index]>1?`${reds[index]} cartons rouges`:'Carton rouge';
+ });
+}
+
 // After the final whistle nothing is left to order: Continuer, on the pitch, closes the day.
 function actionsHtml(){
  if(view.status==='finished')return '';
@@ -514,7 +527,7 @@ export async function liveScreen(){
  // The commentary and the goal carry the crest of a club; a selection has none.
  for(const side of ['home','away'])if(!state[side].national)teams[side].crest=`/crests/TCM1_${state[side].id}.png`;
  // The replay builds itself once the page is drawn: its formations, its commands and the flow under them are filled then.
- setTimeout(()=>{refresh(['actions','stats']);centreOwnRow();});
+ setTimeout(()=>{refresh(['actions','stats']);centreOwnRow();heroCards(state.second);});
  return `<div class="live-layout">
 <div class="live-column"><section class="card live-squad">${squadHtml()}</section><section class="card live-tactic">${tacticHtml()}</section></div>
 <div class="live-column live-centre">${heroHtml(state)}${liveReplay(state,teams,next)}</div>
@@ -560,6 +573,7 @@ const updateOthers=second=>{
  }
  const highlights=document.querySelector('.live-highlights');
  if(highlights){const scroll=highlights.querySelector('.highlights-scroll')?.scrollTop;highlights.innerHTML=highlightsHtml();if(scroll)highlights.querySelector('.highlights-scroll').scrollTop=scroll;}
+ heroCards(second);
  drawFlow();
 };
 // The minute on the band: grey while the clock runs between chances, on the accent while one is played; MT at the break.
@@ -577,6 +591,8 @@ globalThis.document?.addEventListener('replay-clock',event=>{
  if(clock&&view.status!=='halftime'&&view.status!=='finished')clock.textContent=event.detail.label;
  if(minute!==view.minute){view.minute=minute;updateOthers(event.detail.second);const squad=document.querySelector('.live-squad');if(squad&&shownChanges().size!==view.changes?.size)refresh(['stats']);}
 });
+// A red card shown on the pitch reaches the band at once.
+globalThis.document?.addEventListener('replay-card',event=>{if(view)heroCards(event.detail.second);});
 globalThis.document?.addEventListener('replay-score',event=>{if(!view)return;view.score=event.detail.score;heroScore(view.score);updateOthers(view.second??0);});
 globalThis.addEventListener?.('resize',()=>{if(view&&document.querySelector('.live-layout'))drawFlow();});
 globalThis.document?.addEventListener('change',event=>{

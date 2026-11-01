@@ -1172,6 +1172,26 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .goal-scorer .kit-shirt{width:48px;height:48px}
 .goal-scorer .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
 .goal-assist{align-self:start;font:600 var(--fs-figure)/20px var(--text);opacity:.85}
+/* The sending-off: a lighter veil than the goal's, a dark band crossing the pitch edged with the colours of the side
+   sent off; the card tilted (a yellow behind it for a second booking), « Carton rouge » and the minute in capitals of 16
+   after the crest, the shirt of 48 and the name in 40, the reason under it. No stamped letters, no shake, no light. */
+.card-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e59;pointer-events:none}
+.card-band{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:var(--s6);width:100%;padding:var(--s4) 0;background:#0a141e;color:#fff;box-shadow:inset 0 var(--mark) 0 var(--team),inset 0 calc(-1*var(--mark)) 0 var(--team),0 20px 40px -10px #0008}
+.card-pair{display:grid;place-items:center;width:72px;height:88px}
+.card-face{grid-area:1/1;width:52px;height:72px;border-radius:var(--radius);background:var(--bad);box-shadow:0 6px 14px -4px #0009;rotate:-8deg}
+.card-face.yellow{background:var(--accent);rotate:-20deg;translate:-12px 4px}
+.card-text{display:flex;flex-direction:column;gap:var(--s1)}
+.card-label{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-figure)/20px var(--display);letter-spacing:var(--caps);text-transform:uppercase;opacity:.75}
+.card-label img{width:26px;height:26px;object-fit:contain}
+.card-who{display:flex;align-items:center;gap:var(--s3);font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
+.card-who .kit-shirt{width:48px;height:48px}
+.card-who .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.card-why{font:600 var(--fs-figure)/20px var(--text);opacity:.75}
+/* The red cards of a side, in the match band until the whistle, after its name: on a white chip, so that they read on any
+   colours, 10 by 14 each, the second over the first. */
+.sent-off{display:flex;align-items:center;flex:none;height:24px;padding:0 6px;border-radius:var(--radius-chip);background:#fff;box-shadow:0 1px 2px #0a141e40}
+.sent-off>i{width:10px;height:14px;border-radius:2px;background:var(--bad);rotate:-8deg}
+.sent-off>i+i{margin-left:-3px}
 
 /* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
    filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;
