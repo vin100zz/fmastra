@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {clubNavigation,playerNavigation,competitionNavigation,europeNavigation,selectionNavigation} from '../../web/navigation.js';
+import {clubNavigation,playerNavigation,competitionNavigation,europeNavigation,selectionNavigation,matchNavigation} from '../../web/navigation.js';
 import {heading} from '../../web/ui.js';
 
 const group=(items,index,scope)=>({scope,index,total:items.length,items,previous:items[index-1]??null,next:items[index+1]??null});
@@ -114,4 +114,14 @@ test('names are escaped wherever they appear',()=>{
 test('a page’s heading is its title, then its commands; the block stepping between peers stands in a band, not there',()=>{
  assert.equal(heading('Ligue 1'),'<div class="page-heading"><div><h1>Ligue 1</h1></div></div>');
  assert.equal(heading('A<b>','<span class="pill">extra</span>'),'<div class="page-heading"><div><h1>A&lt;b&gt;</h1></div><span class="pill">extra</span></div>');
+});
+
+test('over the live match, a player steps through the players of the match, both sides, each with his position',()=>{
+ const players=[{id:7,name:'Gomes',position:'MC'},{id:9,name:'Gouiri',position:'BU'},{id:21,name:'Chevalier',position:'GB'}];
+ const html=matchNavigation(players,9,'Marseille – Lille');
+ assert.match(html,/<a class="entity-step prev" href="#\/player\/7" rel="prev" aria-label="Précédent : Gomes"/);
+ assert.match(html,/<a class="entity-step next" href="#\/player\/21" rel="next" aria-label="Suivant : Chevalier"/);
+ assert.match(html,/title="Joueurs du match · Marseille – Lille · 2 \/ 3"/);
+ assert.match(html,/<a href="#\/player\/9" role="menuitemradio" aria-checked="true"><div class="cell"><span class="position[^"]*">BU<\/span>Gouiri<\/div><\/a>/);
+ assert.equal(matchNavigation(players,99,'Marseille – Lille'),'');
 });

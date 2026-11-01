@@ -8,6 +8,7 @@ import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,flowChart} from './match.js';
 import {matchHero} from './club-hero.js';
 import {pitchLayout,changeFormation} from './composition.js';
+import {openPlayerSheet,sheetOpen,pausedMatch} from './live-sheet.js';
 
 const POSITIONS=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 const MENTALITIES={defensive:'Défensive',equilibree:'Équilibrée',offensive:'Offensive'};
@@ -310,7 +311,7 @@ function squadHtml(){
   const target=line?line.slot!=null?` data-slot="${line.slot}"`:line.change!=='out'?` data-bench="${player.id}"`:'':'';
   const chip=position(role).replace('class="position',`class="position${line?.change==='moved'?' moved':''}`);
   return `<div class="${classes}"${target}${drag?` data-player="${player.id}" draggable="true"`:''}>${kitShirt(kit,shirtLabel(player,role))}`
-   +`<span class="squad-who">${chip}<span class="squad-name" title="${e(player.name)}">${e(player.name)}</span></span>`
+   +`<span class="squad-who">${chip}${nameLink(player,'squad-name')}</span>`
    +`<span class="marks">${marks}</span>${line?.change==='in'?'<span></span>':matchNoteBadge(player.rating)||'<span></span>'}${mine?fatigue+last:''}</div>`;
  };
  let on,rest;
@@ -369,7 +370,7 @@ function formationsHtml(){
    const second=coming?mark('sub-on waiting','Entrera','▲'):matchBlockNote(player.rating)+sheetMarks(player,{goals:false});
    const classes=['pitch-player',coming?'entering':'',draft&&hurt(player)&&!player.red?'invalid':'',draft&&view.picked===player.id?'picked':''].filter(Boolean).join(' ');
    return `<div class="${classes}"${draft?` data-slot="${index}"`:''}${drag?` data-player="${player.id}" draggable="true"`:''} style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">${kitShirt(teams[key],shirtLabel(player,role),{goals:coming?0:player.goals})}`
-    +`${playerBlock(e(shortName(player.name,player.short)),second)}</div>`;
+    +`${playerBlock(nameLink(player,'',shortName(player.name,player.short)),second)}</div>`;
   }).join('');
   const info=own?{...view.shown.manager,mentality:draft?.mentality??view.shown.manager.mentality}:view.shown.opponent;
   const tag=[own&&draft?formationOf(draft)??info?.formation:info?.formation,MENTALITIES[info?.mentality]].filter(Boolean).map(e).join(' · ');
@@ -379,6 +380,28 @@ function formationsHtml(){
 }
 // The name of the formation the draft stands in, when it is one of those the user can choose.
 const formationOf=draft=>{const key=list=>[...list].sort().join(),roles=key(draft.slots.map(slot=>slot.role));return Object.entries(team().formations).find(([,list])=>key(list)===roles)?.[0];};
+
+// A player's name, in the lists and under his shirt on the pitch, leads to his page over the match; the rest of the line
+// keeps the picking and dragging of the changes, and the name is not dragged on its own.
+const nameLink=(player,className,text=player.name)=>`<a${className?` class="${className}"`:''} href="#/player/${player.id}" data-live-player="${player.id}" draggable="false" title="${e(player.name)}">${e(text)}</a>`;
+
+// The players of the match for the steps of a page opened over it: the user's side, then the other, each in the order of
+// its list (on the pitch by place, the substitutes, those who went off).
+export function matchPlayers(own, other){
+ const order=player=>POSITIONS.indexOf(player.role??player.position);
+ const side=sheet=>[...sheet.filter(player=>player.state==='on').sort((a,b)=>order(a)-order(b)),...sheet.filter(player=>player.state==='bench'),...sheet.filter(player=>player.state==='off')]
+  .map(player=>({id:player.id,name:player.name,position:player.role??player.position}));
+ return [...side(own),...side(other)];
+}
+
+// A player's page over the match: the replay paused under it, the draft kept.
+function openSheet(id){
+ replay()?.pause();
+ const home=view.state.home,away=view.state.away;
+ const minute=document.querySelector('.live-layout .live-clock')?.textContent??'';
+ openPlayerSheet(id,{players:matchPlayers(sheetOf(view.state.side),sheetOf(sideOf(false))),scope:`${home.name} – ${away.name}`,
+  match:pausedMatch(home,away,view.score,minute,kitDot)});
+}
 
 // The match's band, compact, the minute on its tile: grey while the clock runs, on the accent while a chance is played.
 function heroHtml(state){
@@ -587,6 +610,8 @@ globalThis.document?.addEventListener('change',event=>{
 globalThis.document?.addEventListener('click',event=>{
  if(!view||!document.querySelector('.live-layout'))return;
  const target=event.target;
+ const name=target.closest?.('.live-layout [data-live-player]');
+ if(name){event.preventDefault();openSheet(Number(name.dataset.livePlayer));return;}
  const team=target.closest?.('.live-layout [data-live-team]');
  if(team){view.team=team.dataset.liveTeam;view.picked=null;redraw();return;}
  const mentality=target.closest?.('.live-layout [data-mentality]');
@@ -617,7 +642,7 @@ globalThis.document?.addEventListener('click',event=>{
 // The keys of a player: Space plays and pauses, → runs the clock to the next chance, T reaches the tactic, Entrée sends
 // the draft, Échap drops a line picked.
 globalThis.document?.addEventListener('keydown',event=>{
- if(!view||!document.querySelector('.live-layout')||event.ctrlKey||event.metaKey||event.altKey)return;
+ if(!view||!document.querySelector('.live-layout')||sheetOpen()||event.ctrlKey||event.metaKey||event.altKey)return;
  if(event.key==='Escape'&&view.picked!=null){view.picked=null;redraw();return;}
  if(document.querySelector('dialog[open]')||event.target.closest?.('input,select,textarea,[contenteditable]'))return;
  const press=selector=>{const button=document.querySelector(`.live-layout ${selector}`);if(button&&!button.hidden){event.preventDefault();button.click();}};

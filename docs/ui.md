@@ -1185,6 +1185,14 @@ passeur) et le score change au bandeau.
   action d'une mi-temps, le joueur est marqué à la pause.
 - À la mi-temps le compteur reste sur « MT » jusqu'à « 2e mi-temps », bouton
   affiché au bas du terrain.
+- Le nom d'un joueur, dans la colonne de gauche des deux camps et sous son
+  maillot pendant un temps mort, ouvre sa fiche par-dessus le direct (voir la
+  charte, « Fiche sur le direct ») : le match se met en pause, et ce qui est
+  prévu reste en place. C'est la page du joueur telle quelle, sans ses
+  commandes ; les flèches de son bandeau passent d'un joueur du match à l'autre,
+  et ce qui mènerait hors du match (club, sélection, compétitions) s'écrit sans
+  lien. « Retour au match » ou Échap la referment ; le match reprend sur ▶
+  (Espace). Le reste de la ligne garde le choix et le glisser des changements.
 - « Fin du match » laisse l'IA finir le match sans l'afficher.
 - Au coup de sifflet final, « Continuer », au bas du terrain, clôt la journée et
   mène aux « Derniers matches » de la compétition, puis aux Actualités. « 2e mi-temps » et « Continuer » reprennent le style du
