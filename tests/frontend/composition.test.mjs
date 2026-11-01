@@ -228,7 +228,7 @@ test('the tactics stand over the pitch and the substitutes on one line; starters
   assert.match(html,/<div class="lineup-bench" style="--bench:9">/);
   assert.equal((html.match(/class="bench-slot/g)||[]).length,9);
   // The keeper wears the kit with his position on it; an empty place keeps the outline of a shirt.
-  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt" style="--kit-body:#F8D000;--kit-sleeves:#E00000;--kit-ink:#1c2b22"><svg class="kit-drawing"[^]*?<\/svg><b>GB<\/b><\/span>/);
+  assert.match(html,/data-slot="0" data-player="1"[^>]*><span class="kit-shirt" style="--kit-body:#F8D000;--kit-minor:#E00000;--kit-third:#E00000;--kit-ink:#1c2b22"><svg class="kit-drawing"[^]*?<\/svg><b>GB<\/b><\/span>/);
   assert.match(html,/data-slot="1"[^>]*><span class="kit-shirt empty"><svg[^]*?<\/svg><b>DG<\/b><\/span>/);
   // Without a match there is no opponent to show.
   assert.doesNotMatch(html,/scout-card|with-scout/);

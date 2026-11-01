@@ -35,7 +35,8 @@ def test_champions_come_latest_season_first_with_their_club(config):
     first_division = data["countries"][1]["competitions"][0]
     assert [(row["season"], row["champion"]["id"]) for row in first_division["items"]] == [(2026, 2), (2025, 1)]
     assert first_division["items"][0]["champion"] == {"id": 2, "name": "Club 2", "major_color": world.clubs[2].home_kit_major_color,
-                                                       "minor_color": world.clubs[2].home_kit_minor_color, "nation": world.clubs[2].nation}
+                                                       "minor_color": world.clubs[2].home_kit_minor_color, "third_color": world.clubs[2].home_kit_third_color,
+                                                       "kit_id": world.clubs[2].home_kit_id, "nation": world.clubs[2].nation}
     assert [(row["season"], row["champion"]["id"]) for row in data["europe"][0]["items"]] == [(2025, 2)]
     assert [row["champion"]["id"] for row in data["countries"][1]["competitions"][2]["items"]] == [1]
 

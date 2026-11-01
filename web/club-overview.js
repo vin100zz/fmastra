@@ -1,4 +1,4 @@
-import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
+import {api,escape as e,number as n,money,price,budget as spendable,date,kitDot,kitShirt,teamKit,shirtLabel,playerBlock,PITCH_BOXES,clubLink,playerLink,card,empty,fact,table,figure,position,levelBadge,nationBadge,nationFlag,facilityRating,safeColor,contrastText,initials,shortName,standingsTable,competitionBadge,competitionLink,
  spreadLayout,level,noteStars,levelStars,potentialStars,averageNote,moraleCell,contractEnd,roundTitle,GO,chartColour,isOwnClub} from './ui.js';
 import {monthlySalary,monthlyAmount,monthlyMargin} from './salaries.js';
 import {clubTiles} from './club-hero.js';
@@ -77,7 +77,7 @@ export function elevenCard(club,eleven,height=null){
    :noteStars(player.note,`Note au poste ${player.position}`);
   const told=eleven.basis==='starts'?`${player.appearances} match${player.appearances>1?'es':''} dont ${player.starts} titularisation${player.starts>1?'s':''}, ${player.goals} but${player.goals>1?'s':''}`:`Note au poste ${player.position}`;
   const tag=player.temporary?'span':'a',link=player.temporary?'':` href="#/player/${player.id}"`;
-  return `<${tag} class="pitch-player"${link} title="${e(player.name)} · ${e(told)}" style="left:${x}%;--row:${row}">${kitShirt(player.temporary?null:club.major_color,club.minor_color,shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</${tag}>`;
+  return `<${tag} class="pitch-player"${link} title="${e(player.name)} · ${e(told)}" style="left:${x}%;--row:${row}">${kitShirt(player.temporary?null:teamKit(club),shirtLabel(player))}${playerBlock(e(shortName(player.name,player.short)),facts)}</${tag}>`;
  }).join('');
  return card('Équipe-type',`<div class="pitch spread eleven-pitch" aria-label="Équipe-type de ${e(club.name)}" style="--rows:${rows}${fit}">${PITCH_BOXES}${marks}</div>`,'','season-eleven');
 }

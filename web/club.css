@@ -41,10 +41,9 @@
 .standings-extract .standings{padding:2px 4px 6px}
 @media(max-width:1250px){.club-squad-layout{grid-template-columns:minmax(0,1fr)}.club-widgets{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}
 
-/* A shirt in the club's kit: body and sleeves, a label on it. */
+/* A shirt in the club's kit, a label on it (drawn by charte.css). */
 .kit-shirt{position:relative;display:inline-grid;place-items:center;width:28px;height:28px;flex:none}
 .kit-shirt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.kit-shirt .kit-body{fill:var(--kit-body)}.kit-shirt .kit-sleeves{fill:var(--kit-sleeves)}
 .kit-shirt path{stroke:#00000066;stroke-width:1.4;stroke-linejoin:round}
 .kit-shirt b{position:relative;margin-top:4px;font-size:10px;font-weight:700;line-height:1;color:var(--kit-ink)}
 .kit-shirt.plain,.kit-shirt.temporary{border-radius:var(--radius) var(--radius) var(--radius) var(--radius);background:#8a9193}
@@ -193,7 +192,6 @@
 .composition-card .lineup-toolbar>.segmented{margin-left:0}
 .lineup-slot .shirt.kit{background:none!important;box-shadow:none!important;border:0}
 .lineup-slot .shirt.kit .kit-drawing{position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);overflow:visible}
-.lineup-slot .shirt.kit .kit-body{fill:var(--kit-body)}.lineup-slot .shirt.kit .kit-sleeves{fill:var(--kit-sleeves)}
 .lineup-slot .shirt.kit path{stroke:#00000073;stroke-width:1.4;stroke-linejoin:round}
 .lineup-slot .shirt.kit>b{position:relative;margin-top:5px;font-size:10px;line-height:1;color:var(--kit-ink)}
 .lineup-slot.picked .shirt.kit:before,.lineup-slot.invalid .shirt.kit:before{content:"";position:absolute;inset:-7px;border-radius:50%;box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}

@@ -127,6 +127,6 @@ def test_the_2d_replay_knows_the_away_kit_a_side_changes_into():
     match = SimpleNamespace(id=1, home_id=7, away_id=6)
     assert side_shirts(world, match, "away") == {
         "shirt_url": "/kits/16.png?major=004070&minor=D82818&third=004070",
-        "away_kit": {"major_color": "#F8F8F8", "minor_color": "#D82818", "shirt_url": "/kits/38.png?major=F8F8F8&minor=D82818&third=004068"}}
+        "away_kit": {"major_color": "#F8F8F8", "minor_color": "#D82818", "third_color": "#004068", "kit_id": 38, "shirt_url": "/kits/38.png?major=F8F8F8&minor=D82818&third=004068"}}
     # A side without an away kit has none to change into.
     assert side_shirts(world, match, "home")["away_kit"] is None

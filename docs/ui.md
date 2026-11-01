@@ -1077,8 +1077,8 @@ comme un club de l'IA choisit la sienne (`best_formation`, `src/core/ai/formatio
 formation ou tactique du club, ne cède qu'à un gain d'au moins `formations.choix.marge_changement` par
 place ; sans la case, elle garde celle du terrain. Cocher ou
 décocher une case pendant qu'un niveau est marqué recompose aussitôt. Les deux cases restent d'un match
-à l'autre. Un titulaire porte le maillot du club (corps de la couleur principale, manches de la
-seconde) marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
+à l'autre. Un titulaire porte le maillot du club (le motif de son maillot domicile, redessiné à plat)
+marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
 
 L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
 rang, ses points et sa forme en championnat, la tactique qu'il joue, son bilan de la saison en
@@ -1410,7 +1410,7 @@ GET  /api/travaux/{id}                  statut, progression, jour atteint (date)
 GET  /api/monde/journal?date=             événements du jour
 GET  /api/recherche?q=&type=joueurs|clubs|competitions|selections   recherche globale : {items}, 12 au plus, la meilleure correspondance d'abord
                                           chaque item : kind (player, club, competition, nation), id, name, marks ([début, fin[ des lettres tapées dans le nom)
-                                          player : position, club, retired ; club : major_color, minor_color, nation, competition ; competition : competition ({id, name, kind, code, nation, level}) ; nation : nation (code)
+                                          player : position, club, retired ; club : major_color, minor_color, third_color, kit_id, nation, competition ; competition : competition ({id, name, kind, code, nation, level}) ; nation : nation (code)
 GET  /api/monde/palmares                  champions de chaque compétition, toutes saisons : {season, europe, countries, clubs, players, scorers, nations}
                                           chaque compétition : items (saison, champion, pays du club), scorer (meilleur buteur de tous les temps),
                                           current (saison en cours : {leader, round} ou {label}, null une fois le champion connu)
@@ -1463,7 +1463,7 @@ GET  /api/competitions/{id}/calendrier?journee=      matches de la journée (ave
 GET  /api/competitions/{id}/journee/derniere|prochaine?saison=   {round: {number, label, date} | null, groups: [{name, matches (avec scorers), standings | null, top_scorers (10 premiers buteurs de la saison)}]}
 GET  /api/international/editions/{année}/journee/derniere|prochaine   idem sans top_scorers, un groupe par groupe de qualification, de phase finale
                                           ou de Ligue des nations (chaque ligne de son classement avec movement)
-GET  /api/international/nations/{id}?tri=&ordre=   fiche d'une sélection : major_color, minor_color, kit_url, away_kit_url (lus dans
+GET  /api/international/nations/{id}?tri=&ordre=   fiche d'une sélection : major_color, minor_color, third_color, kit_id, kit_url, away_kit_url (lus dans
                                           data/nations.csv à chaque requête ; null sans tenue), camp, squad (trié comme un effectif ; chaque joueur :
                                           caps, international_goals, et pour l'édition du rassemblement appearances, goals, assists, average)
 GET  /api/international/nations/{id}/apercu   cartes de la Présentation : calendar {last (les 40 derniers joués au plus, le plus récent
@@ -1510,7 +1510,7 @@ GET  /api/joueurs/{id}/historique         carrière (chaque ligne : competition,
                                           championnats simulés) + trajectory : niveau sur 200 mois par mois {year, month, season, level, club, stars, band}, du plus ancien au plus récent
 GET  /api/joueurs/{id}/navigation        effectif du club : précédent, suivant, liste (null sans club)
 
-GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color et minor_color, club ou sélection, et pour un club nation (son pays, comme tout club nommé par l'API) et nation_id (la sélection de ce pays | null) ; chaque fait donne le nom court de ses joueurs (player_short, secondary_short), chaque joueur des compositions le sien (short), distingués dans l'effectif de leur camp ; les buteurs d'une liste de matches, la composition et le direct donnent aussi short
+GET  /api/matches/{id}                    compte rendu complet ; home et away portent major_color, minor_color, third_color et kit_id (le modèle du maillot, que le terrain redessine), club ou sélection, et pour un club nation (son pays, comme tout club nommé par l'API) et nation_id (la sélection de ce pays | null) ; chaque fait donne le nom court de ses joueurs (player_short, secondary_short), chaque joueur des compositions le sien (short), distingués dans l'effectif de leur camp ; les buteurs d'une liste de matches, la composition et le direct donnent aussi short
 
 GET  /api/ma-partie/actualites?page=&message=&taille=   le fil, du plus récent au plus ancien : la page demandée, sinon celle du message ;
                                           chaque ligne : {id, date, kind, title, segments: [{text, ref?}], read, pending}

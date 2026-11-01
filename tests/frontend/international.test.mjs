@@ -315,7 +315,7 @@ test('a selection opens on its Présentation, a club’s: its tiles, its kits an
   assert.match(columns[0],/<span class="strong">✦ Vainqueur<\/span>/);
   // Its équipe-type in its kit, each player's position on his shirt; a reinforcement in no kit and without a page.
   const eleven=columns[1].split('<h2>Groupe')[0];
-  assert.equal((eleven.match(/<span class="kit-shirt" style="--kit-body:#1f3f94;--kit-sleeves:#ffffff;--kit-ink:#ffffff">/g)||[]).length,10);
+  assert.equal((eleven.match(/<span class="kit-shirt" style="--kit-body:#1f3f94;--kit-minor:#ffffff;--kit-third:#ffffff;--kit-ink:#ffffff">/g)||[]).length,10);
   assert.equal((eleven.match(/<span class="kit-shirt plain">/g)||[]).length,1);
   assert.match(eleven,/<span class="pitch-player" title="Joueur 0 · 2 matches dont 2 titularisations, 0 but"/);
   assert.match(eleven,/<a class="pitch-player" href="#\/player\/109" title="Joueur 9 · 2 matches dont 2 titularisations, 3 buts"/);
