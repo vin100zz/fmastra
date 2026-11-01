@@ -11,7 +11,9 @@ export function gestureTiming(gesture){
  if(gesture?.kind==='kick')return gesture.style==='shot'?{lead:240,span:800}:gesture.style==='cross'?{lead:210,span:700}:{lead:170,span:560};
  return {touch:{lead:90,span:330},cushion:{lead:130,span:440},thigh:{lead:230,span:560},chest:{lead:260,span:660},head:{lead:300,span:640},
   // Challenges: a standing tackle, a sliding one (down, the slide, back on his feet) and a fall after a foul.
-  tackle:{lead:260,span:780},slide:{lead:420,span:1700},fall:{lead:60,span:2000}}[gesture?.kind];
+  tackle:{lead:260,span:780},slide:{lead:420,span:1700},fall:{lead:60,span:2000},
+  // With the hands: a keeper catching a high ball, his overarm throw, and the two-handed throw-in.
+  catch:{lead:320,span:760},throw:{lead:520,span:960},throwin:{lead:560,span:900}}[gesture?.kind];
 }
 // The kinds of gesture that take the whole body to the ground or into a lunge, rather than meet the ball.
 const CHALLENGES=new Set(['tackle','slide','fall']);
@@ -124,6 +126,26 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
       blend(p.hip,jump?-.38:-.12,pulse);blend(p.knee,jump?.85:.3,pulse);
       blend(p.shoulder,-.9,pulse);blend(p.spread,.65,pulse);blend(p.elbow,-.65,pulse);
       p.lean=mix(p.lean,before?mix(-.22,.12,wind):.28,pulse);p.headPitch=mix(-.15,.32,wind)*pulse;
+     }else if(gesture.kind==='catch'){
+      // Up to it with both hands above his head, the knee on the far side raised to protect himself.
+      const jump=gesture.jump??.3;
+      p.lift+=jump*SCALE*contactPulse;
+      blend(p.shoulder,-2.75,pulse);blend(p.elbow,-.35,pulse);blend(p.spread,.2,pulse);
+      p.hip[foot]=mix(p.hip[foot],-1.1,contactPulse);p.knee[foot]=mix(p.knee[foot],1.5,contactPulse);
+      p.lean=mix(p.lean,-.1,pulse);p.headPitch=mix(p.headPitch,-.35,pulse);
+     }else if(gesture.kind==='throw'){
+      // The arm on his throwing side goes back low, over the top and through, as he steps into it.
+      const arm=before?mix(.9,-2.5,smooth(wind*wind)):mix(-2.5,-1.1,smooth(follow*1.6));
+      const weight=before?smooth(wind*2.5):1-smooth((follow-.35)/.65);
+      p.shoulder[foot]=mix(p.shoulder[foot],arm,weight);p.elbow[foot]=mix(p.elbow[foot],before?-.5:-.15,weight);p.spread[foot]=mix(p.spread[foot],.25,weight);
+      p.shoulder[1-foot]=mix(p.shoulder[1-foot],-.9,weight);p.spread[1-foot]=mix(p.spread[1-foot],.45,weight);
+      p.twist=mix(p.twist,sign*(before?-.45:.35),weight);p.lean=mix(p.lean,before?-.2:.3,weight);
+     }else if(gesture.kind==='throwin'){
+      // Both hands behind the head, then over it and through; both feet stay on the ground.
+      const weight=before?smooth(wind*2):1-smooth((follow-.3)/.7);
+      blend(p.shoulder,before?mix(-2.2,-3.05,wind):mix(-2.6,-1.2,smooth(follow*1.5)),weight);
+      blend(p.elbow,before?mix(-1,-1.7,wind):-.15,weight);blend(p.spread,.16,weight);
+      p.lean=mix(p.lean,before?mix(0,-.3,wind):.32,weight);
      }
     }
    }

@@ -1021,6 +1021,15 @@ message (« il vient d'arriver ») reste dans son infobulle.
   ou un penalty se joue : le joueur fauché reçoit le ballon un peu avant l'endroit
   de l'arrêt de jeu, le fautif le tacle ou glisse, il tombe, et la coupure vient
   ensuite (`foul`).
+  La perte de balle qui donne l'occasion (`turnover` du moteur) se joue avant
+  elle, quand ses deux joueurs sont sur le terrain (`recover`) : l'autre camp a le
+  ballon quelques secondes plus tôt, puis le perd. Une interception coupe sa
+  passe, un tacle (debout ou glissé) prend le ballon dans les pieds du porteur,
+  un duel aérien se gagne de la tête sur un long ballon, un dégagement de la
+  tête renvoie un centre vers un coéquipier, et le gardien capte un centre,
+  le garde en main puis le relance à la main au coéquipier libre le plus proche.
+  Celui qui récupère le ballon le contrôle et l'occasion part de ses pieds
+  (`collect`), les deux équipes encore dans la disposition de l'action perdue.
   Chaque joueur est une pastille de même taille, son numéro dessus, taillée dans
   le maillot de son camp : le visiteur porte sa tenue extérieure quand les deux
   maillots domicile se confondent (`replayTeams`, `web/match.js` ; `away_kit`
@@ -1082,7 +1091,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   joueurs.
   Les duels ont leurs gestes : le tacle debout (jambe lancée vers le ballon, l'autre
   genou plié bas), le tacle glissé (au sol sur la hanche, jambe tendue, puis relevé)
-  et la chute du joueur fauché, qui reste un moment à terre.
+  et la chute du joueur fauché, qui reste un moment à terre. Le gardien capte
+  un ballon haut les deux mains au-dessus de la tête, genou levé, et relance
+  d'un bras par-dessus l'épaule ; la touche se lance des deux mains.
   Passes, centres et frappes ont leur préparation, leur contact et leur
   accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
@@ -1094,8 +1105,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   lecture les accélère ensemble et la pause fige joueurs, ballon, public et caméra.
   La présentation conserve les trajectoires et le résultat du moteur. La page
   `tests/fixtures/replay-3d.html` permet de revoir des scènes déterministes de
-  passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
-  de tir contré et de coup franc, avec ralenti et arrêt sur image.
+  récupérations (interception, tacle, duel aérien, prise du gardien, dégagement),
+  de passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
+  de tir contré, de faute et de coup franc, avec ralenti et arrêt sur image.
   `tests/fixtures/replay-locomotion.html` compare six joueurs en marche, course
   et sprint, ou à allure identique, le ballon devant eux, derrière ou de côté
   (course arrière et pas chassés), avec caméra de profil ou trois quarts,

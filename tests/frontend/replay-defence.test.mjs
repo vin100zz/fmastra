@@ -110,3 +110,41 @@ test('a slide and a fall take him to the ground, then back on his feet when they
  const left=playerMotion({time:1700,gesture:{kind:'fall',at:1000},foot:0}),right=playerMotion({time:1700,gesture:{kind:'fall',at:1000},foot:1});
  assert.ok(left.roll*right.roll<0,'he falls to the side he is sent');
 });
+
+// The loss of the ball before a chance, played on the fixture's pitch; every beat resolves at once, the clock jumping
+// to its end, so that the cues on the way apply.
+function played(){
+ const replay=fixture();
+ Object.assign(replay,{names:new Map(),drawDots(){},drawBall(){},highlight(){},caption(){},
+  perform(action){action.t0??=this.start();this.action=action;this.cursor=action.t0+action.duration;this.time=this.cursor;
+   while(this.cues.length&&this.cues[0].at<=this.time)this.cues.shift().apply();return Promise.resolve(true);}});
+ return replay;
+}
+const sequence=(detail,winner,loser)=>({recovery:{kind:'turnover',detail,player_id:winner,secondary_id:loser,player:'A',secondary:'B'}});
+
+for(const [detail,winner,loser] of [['interception',107,8],['tackle',106,9],['aerial',103,10]])test(`a ${detail} is played out and ends with the winner on the ball`,async()=>{
+ const replay=played(),start=replay.toPitch('away',.4,.5);
+ const holder=await replay.recover(sequence(detail,winner,loser),start,'away','Paris',event=>event?.player||'—');
+ assert.deepEqual(holder,{side:'away',id:winner});
+ assert.deepEqual(replay.carrier,holder);
+ // The fixture moves nobody: where his last run takes him is where he stands.
+ const run=replay.runs.get(`away:${winner}`),ball=replay.ballAt;
+ assert.ok(Math.hypot(run.to.x-ball.x,run.to.y-ball.y)<1.5,'the ball is at his feet');
+ const kinds=replay.dot(holder).gestures.map(gesture=>gesture.kind);
+ assert.ok(kinds.includes({interception:'cushion',tackle:'tackle',aerial:'head'}[detail])||detail==='tackle'&&kinds.includes('slide'),`his gesture: ${kinds}`);
+});
+
+test('a keeper claims the cross, holds it, then throws it out to a teammate who takes it on',async()=>{
+ const replay=played(),start=replay.toPitch('away',.1,.5);
+ const holder=await replay.recover(sequence('claim',101,9),start,'away','Paris',event=>event?.player||'—');
+ const keeper=replay.dot({side:'away',id:101}).gestures.map(gesture=>gesture.kind);
+ assert.ok(keeper.includes('catch')&&keeper.includes('throw'),`the keeper catches then throws: ${keeper}`);
+ assert.equal(holder.side,'away');assert.notEqual(holder.id,101);
+ assert.deepEqual(replay.carrier,holder);
+});
+
+test('a loss the replay cannot show leaves the chance to start as before',async()=>{
+ const replay=played();
+ assert.equal(await replay.recover(sequence('interception',999,8),{x:50,y:34},'away','Paris',()=>''),null);
+ assert.equal(await replay.recover(sequence('offside',107,8),{x:50,y:34},'away','Paris',()=>''),null);
+});

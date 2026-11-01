@@ -1266,6 +1266,166 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   return best;
  }
 
+ // ---- How the side won the ball: the other side has it a few seconds earlier and loses it, as the engine says. ----
+ // Interception (a pass cut out), tackle (on the man carrying it), aerial (a long ball won in the air), clearance (a
+ // ball into the box headed away to a teammate) or claim (the keeper catches it and throws it out). Resolves with the
+ // man who has the ball at his feet when the chance starts, null when it cannot be played, false when a jump replaced it.
+ async recover(sequence,start,side,title,name){
+  const event=sequence.recovery,other=this.opponent(side),kind=event.detail;
+  const winner=this.dots[side].has(event.player_id)?{side,id:event.player_id}:null;
+  if(!winner||!['interception','tackle','aerial','clearance','claim'].includes(kind))return null;
+  const loser=this.dots[other].has(event.secondary_id)?{side:other,id:event.secondary_id}:null,random=this.random;
+  // The way the other side was attacking: towards this side's goal.
+  const goal=this.toPitch(side,0,.5),forward=unit(start,goal),back=this.toPitch(side,1,.5);
+  const note=(id,text)=>{this.highlight(id!=null?[id]:[]);this.caption(`${title} · ${text}`);};
+  this.runners=[];
+  const lob=(from,to,height,duration)=>{const {velocity,options}=lofted(from,to,duration,height);this.ballPath=path(from,velocity,this.start(),options);};
+  if(kind==='interception'||kind==='tackle'){
+   const before={x:start.x-forward.x*8,y:start.y-forward.y*8};
+   const carrier=this.snap(before,other,[],loser);
+   const dot=this.dot(winner),across={x:-forward.y,y:forward.x},offset=random()<.5?1:-1;
+   if(kind==='interception'){
+    // He reads the pass and steps across its line.
+    Object.assign(dot,{x:start.x+across.x*offset*4.5+forward.x*1.5,y:start.y+across.y*offset*4.5+forward.y*1.5,sx:0,sy:0});
+    this.drawDots();
+    note(carrier?.id,`${name({player:this.names.get(carrier?.id)})} cherche une passe`);
+    if(!(await this.wait(450)))return false;
+    const t0=this.start(),from=grounded(ballAt(this.ballPath,t0)),aim={x:start.x+forward.x*10,y:start.y+forward.y*10};
+    const {velocity}=rolled(from,aim,FLIGHT.ground(distance(from,aim)));
+    this.ballPath=path(from,velocity,t0);
+    this.gesture(carrier,{kind:'kick',style:'pass',strength:.5,target:aim,contact:{...from}},t0);
+    this.loose();
+    const mate=this.nearest(other,aim,{exclude:[carrier?.id]});
+    // The ball reaches the line where he cuts it out.
+    let cut=t0+200;while(cut<t0+3000&&distance(ballAt(this.ballPath,cut),from)<distance(from,start))cut+=10;
+    const meet=ballAt(this.ballPath,cut),side0=unit(meet,dot);
+    this.runTo(winner,{x:meet.x+side0.x*CONTACT,y:meet.y+side0.y*CONTACT},cut,scale(forward,-.001));
+    if(mate)this.runTo(mate,aim,cut+600);
+    this.gesture(winner,{kind:'cushion'},cut);
+    note(winner.id,`Interception de ${name(event)}`);
+    if(!(await this.perform({kind:'pass',by:carrier,to:winner,target:{x:meet.x,y:meet.y},duration:cut-t0,t0})))return false;
+   }else{
+    // He comes in on the man running at him with the ball and takes it off his foot.
+    Object.assign(dot,{x:start.x+forward.x*2.5+across.x*offset*2.5,y:start.y+forward.y*2.5+across.y*offset*2.5,sx:0,sy:0});
+    this.drawDots();
+    note(carrier?.id,`${name({player:this.names.get(carrier?.id)})} conduit le ballon`);
+    const t0=this.start(),from=grounded(ballAt(this.ballPath,t0)),aim={x:start.x-forward.x*.5,y:start.y-forward.y*.5};
+    const duration=1100,touch=rolled(from,aim,duration,TOUCH_FRICTION);
+    this.ballPath=path(from,touch.velocity,t0,{friction:TOUCH_FRICTION});
+    this.gesture(carrier,{kind:'touch',target:aim,contact:{...from}},t0);
+    this.loose();
+    const contact=t0+duration*.75,ball=ballAt(this.ballPath,contact),come=unit(dot,ball);
+    if(carrier)this.runTo(carrier,{x:ball.x-forward.x*CONTACT*1.4,y:ball.y-forward.y*CONTACT*1.4},contact,scale(forward,.004));
+    const slide=distance(dot,ball)>3&&random()<.35;
+    this.runTo(winner,{x:ball.x-come.x*(slide?1.1:.75),y:ball.y-come.y*(slide?1.1:.75)},contact,scale(come,.001));
+    this.gesture(winner,{kind:slide?'slide':'tackle',target:{x:ball.x,y:ball.y}},contact);
+    // The ball is knocked off his foot, back the way it came.
+    const knock={x:ball.x-forward.x*2.4+across.x*offset*.8,y:ball.y-forward.y*2.4+across.y*offset*.8};
+    this.cue(contact,()=>{const at=ballAt(this.ballPath,contact);this.ballPath=path(grounded(at),rolled(grounded(at),knock,520,TOUCH_FRICTION).velocity,contact,{friction:TOUCH_FRICTION});});
+    if(carrier)this.cue(contact,()=>this.runTo(carrier,{x:ball.x+forward.x*1.4,y:ball.y+forward.y*1.4},contact+450));
+    if(!(await this.perform({kind:'carry',by:carrier,duration:contact-t0,t0})))return false;
+    note(winner.id,`${name(event)} tacle ${e(event.secondary||'—')}`);
+    if(slide)this.still(winner,this.dot(winner),this.time,this.time+700);
+    if(!(await this.wait(slide?650:250)))return false;
+   }
+   return this.collect(winner,side);
+  }
+  if(kind==='aerial'){
+   // A long ball from deep in the other half, contested in the air where it comes down.
+   const deep={x:start.x-forward.x*30,y:start.y-forward.y*30};
+   const kicker=this.snap(deep,other,[]);
+   const dot=this.dot(winner),rival=this.dot(loser);
+   Object.assign(dot,{x:start.x+forward.x*4,y:start.y+forward.y*4,sx:0,sy:0});
+   if(rival)Object.assign(rival,{x:start.x-forward.x*3+1,y:start.y-forward.y*3,sx:0,sy:0});
+   this.drawDots();
+   note(kicker?.id,'Long ballon');
+   if(!(await this.wait(400)))return false;
+   const t0=this.start(),from=grounded(ballAt(this.ballPath,t0)),duration=FLIGHT.lofted(distance(from,start));
+   lob(from,{...start,z:2.3},2.3,duration);
+   this.gesture(kicker,{kind:'kick',style:'pass',strength:1,target:{...start},contact:{...from}},t0);
+   this.loose();
+   const arrive=t0+duration;
+   this.runTo(winner,{x:start.x+forward.x*.4,y:start.y+forward.y*.4},arrive,{x:0,y:0});
+   this.gesture(winner,{kind:'head',jump:.45,target:{x:start.x-forward.x*5,y:start.y-forward.y*5}},arrive);
+   if(rival){this.runTo(loser,{x:start.x-forward.x*.6+.4,y:start.y-forward.y*.6},arrive,{x:0,y:0});this.gesture(loser,{kind:'head',jump:.35},arrive+40);}
+   // Headed down towards his own side.
+   const drop={x:start.x-forward.x*3.5,y:start.y-forward.y*3.5};
+   this.cue(arrive,()=>{const at=ballAt(this.ballPath,arrive);lob({...at,z:at.z},drop,.2,520);});
+   if(!(await this.perform({kind:'pass',by:kicker,to:winner,target:{...start},duration,t0})))return false;
+   note(winner.id,`${name(event)} gagne le duel aérien`);
+   if(!(await this.wait(200)))return false;
+   return this.collect(winner,side);
+  }
+  // A ball played into this side's box: headed clear, or caught by the keeper.
+  const wing=random()<.5?.12:.88,cross=this.toPitch(other,.84,wing);
+  const crosser=this.snap(cross,other,[],loser);
+  const keeper=kind==='claim',spot=keeper?this.toPitch(side,.045,.5+(random()-.5)*.12):this.toPitch(side,.075,.5+(random()-.5)*.25);
+  const dot=this.dot(winner);
+  if(!keeper)Object.assign(dot,{x:spot.x+(back.x-spot.x)*.03,y:spot.y+4*(wing<.5?-1:1),sx:0,sy:0});
+  this.drawDots();
+  note(crosser?.id,'Centre');
+  if(!(await this.wait(400)))return false;
+  const t0=this.start(),from=grounded(ballAt(this.ballPath,t0)),height=keeper?2.4:2.05,duration=FLIGHT.floated(distance(from,spot));
+  lob(from,{...spot,z:height},height,duration);
+  this.gesture(crosser,{kind:'kick',style:'cross',strength:.9,target:{...spot},contact:{...from}},t0);
+  this.loose();
+  const arrive=t0+duration;
+  this.runTo(winner,spot,arrive,{x:0,y:0});
+  if(keeper){
+   this.gesture(winner,{kind:'catch',jump:.35},arrive);
+   this.cue(arrive,()=>{this.place(spot,arrive);this.carrier=winner;this.post(winner,this.dot(winner));});
+   if(!(await this.perform({kind:'cross',by:crosser,to:winner,target:{...spot},duration,t0})))return false;
+   note(winner.id,`${name(event)} capte le ballon`);
+   if(!(await this.wait(900)))return false;
+   // He throws it out to the nearest teammate free of the play, 10 to 35 metres away.
+   const keeperAt=this.dot(winner);
+   let receiver=null,best=Infinity;
+   for(const player of this.rosters[side]){
+    const mate=this.dots[side].get(player.id),gap=mate&&distance(mate,keeperAt);
+    if(player.position!=='GB'&&gap>=10&&gap<=35&&gap<best){best=gap;receiver={side,id:player.id};}
+   }
+   if(!receiver)return null;
+   const target=this.dot(receiver),release=this.start();
+   const aim={x:target.x-forward.x*2,y:target.y-forward.y*2},flight=260+distance(spot,aim)*32;
+   this.gesture(winner,{kind:'throw',target:aim},release+20);
+   if(!(await this.wait(520)))return false;
+   const throwFrom={x:spot.x,y:spot.y,z:2.1};
+   lob(throwFrom,{...aim,z:.3},.3,flight);
+   this.loose();
+   this.runTo(receiver,aim,this.start()+flight,{x:0,y:0});
+   note(winner.id,`Relance à la main de ${name(event)}`);
+   if(!(await this.perform({kind:'pass',by:winner,to:receiver,target:aim,duration:flight})))return false;
+   return this.collect(receiver,side);
+  }
+  // Headed away, up towards where the side's move starts, for a teammate.
+  const jump=.4,clear={x:start.x+(random()-.5)*6,y:start.y+(random()-.5)*6};
+  this.gesture(winner,{kind:'head',jump,target:clear},arrive);
+  const mate=this.nearest(side,clear,{exclude:[winner.id]});
+  const flight=FLIGHT.lofted(distance(spot,clear));
+  this.cue(arrive,()=>{const at=ballAt(this.ballPath,arrive);lob({...at},clear,.2,flight);});
+  if(mate)this.cue(arrive,()=>this.runTo(mate,clear,arrive+flight,{x:0,y:0}));
+  if(!(await this.perform({kind:'cross',by:crosser,to:winner,target:{...spot},duration,t0})))return false;
+  note(winner.id,`Dégagement de ${name(event)}`);
+  if(!mate)return null;
+  if(!(await this.wait(flight)))return false;
+  return this.collect(mate,side);
+ }
+ // `who` gets to the loose ball and takes it on, facing the way his side attacks: the chance starts from his feet.
+ async collect(who,side){
+  const dot=this.dot(who);
+  if(!dot)return null;
+  const t0=this.start(),ball=ballAt(this.ballPath,t0+400),ahead=unit(ball,this.toPitch(side,1,.5));
+  const behind={x:ball.x-ahead.x*CONTACT,y:ball.y-ahead.y*CONTACT},duration=Math.max(420,distance(dot,behind)/.0065);
+  const rest=ballAt(this.ballPath,t0+duration);
+  this.runTo(who,{x:rest.x-ahead.x*CONTACT,y:rest.y-ahead.y*CONTACT},t0+duration,scale(ahead,.001));
+  this.gesture(who,{kind:rest.z>.6?'chest':'cushion'},t0+duration);
+  this.carrier=who;this.lastSide=side;
+  if(!(await this.perform({kind:'carry',by:who,duration,t0})))return false;
+  this.place(grounded(ballAt(this.ballPath,this.time)));
+  this.post(who,this.dot(who));
+  return who;
+ }
+
  // The move as a list of touches: how each step of the engine's trail is played and taken, then the finish.
  plan(sequence,{side,holder,title,name}){
   const random=this.random,at=(u,v)=>this.toPitch(side,u,v),jitter=(value,amount)=>clamp(value+(random()-.5)*2*amount,.02,.98);
@@ -1458,12 +1618,16 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   // rebound, with it at his feet.
   const first=rebound?shot.player_id:sequence.recovery?.player_id;
   const recoverer=first!=null&&this.dots[side].has(first)?{side,id:first}:null;
-  const holder=this.snap(start,side,sequence.progress.slice(0,1).map(event=>event.player_id),recoverer);
   this.faded=false;
   this.stage.classList.remove('fast');
+  // The loss of the ball that gave the chance is played first, when its two men are on the pitch.
+  const regained=!rebound&&!follow&&sequence.recovery?await this.recover(sequence,start,side,title,name):null;
+  if(regained===false)return false;
+  const holder=regained||this.snap(start,side,sequence.progress.slice(0,1).map(event=>event.player_id),recoverer);
   const again=follow?.kind==='save'?(follow.detail==='corner'?'Arrêt en corner':'Le gardien repousse'):follow?.detail==='post'?'Sur le poteau !'
    :follow?.detail==='blocked'?'Second ballon':'Occasion';
-  note(rebound?null:recoverer?.id??null,`${title} · ${counter?'Contre-attaque !':follow?again:recoverer?`Ballon récupéré par ${name(sequence.recovery)}`:sequence.start?'Récupération':'Occasion'}`);
+  if(regained&&counter)note(regained.id,`${title} · Contre-attaque !`);
+  else if(!regained)note(rebound?null:recoverer?.id??null,`${title} · ${counter?'Contre-attaque !':follow?again:recoverer?`Ballon récupéré par ${name(sequence.recovery)}`:sequence.start?'Récupération':'Occasion'}`);
   const moves=this.plan(sequence,{side,holder,title,name});
   const outcome=sequence.outcome?.kind,blocked=outcome==='off_target'&&sequence.outcome.detail==='blocked';
   const finish=moves.find(move=>move.type==='shot'),before=moves[moves.indexOf(finish)-1];
@@ -1474,7 +1638,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   const strike=finish.header?moves.find(move=>move.type==='cross').box:before?.point||at(.85,.5),goal=at(1,.5);
   this.runners=[finish.by&&{who:finish.by,spot:strike,start:14},finish.blocker&&{who:finish.blocker,spot:lerpPoint(strike,goal,Math.min(.5,4.5/Math.max(1,distance(strike,goal)))),start:5}]
    .filter(run=>run&&this.dot(run.who)&&run.who.id!==holder?.id);
-  for(const run of this.runners){const dot=this.dot(run.who),gap=distance(dot,run.spot);if(gap>run.start)Object.assign(dot,lerpPoint(run.spot,dot,run.start/gap));}
+  // Brought back on after a cut, they are already on their way; after a recovery played out, they set off from there.
+  if(!regained)for(const run of this.runners){const dot=this.dot(run.who),gap=distance(dot,run.spot);if(gap>run.start)Object.assign(dot,lerpPoint(run.spot,dot,run.start/gap));}
   this.drawDots();
   if(!(await this.opening(holder,600,moves[0])))return false;
   for(let index=0;index<moves.length;index++){
