@@ -149,6 +149,8 @@ export function createPlayerFigure(view,side,id,keeper){
  const {skeleton:at,chest}=model,hips=[],knees=[],ankles=[],shoulders=[],elbows=[],wrists=[];
  for(const sign of [-1,1]){
   const hip=pivot(body,[sign*at.hip[0],at.hip[1],at.hip[2]]),knee=pivot(hip,[0,-.45,0]),ankle=pivot(knee,[0,-.4,0]);
+  // The thigh swings forward and back in the leg's plane first, then out to the side (a side step, a lunge).
+  hip.rotation.order='ZXY';
   mesh(parts.boot,boots,ankle);mesh(parts.sole,sole,ankle,false);mesh(parts.bootTrim,bootTrim,ankle,false);
   hips.push(hip);knees.push(knee);ankles.push(ankle);
  }
@@ -183,6 +185,6 @@ export function createPlayerFigure(view,side,id,keeper){
  const blob=new THREE.Mesh(parts.blob,view.blob);blob.rotation.x=-Math.PI/2;blob.position.y=.025;blob.layers.set(OVERLAY);root.add(blob);
  const name=label(view,view.replay.names.get(id)||'');root.add(name);view.people.add(root);
  const seed=random()*6,style=gaitStyle(seed);
- return {root,body,hips,knees,ankles,spine,head,shoulders,elbows,wrists,name,blob,keeper,foot:random()<.2?0:1,seed,style,skin:figure,skeleton,
-  phase:style.phase,speed:0,acceleration:0,course:null,ready:0,cheer:0,yaw:null,x:null,z:null,dive:null,hold:false};
+ return {root,body,hips,knees,ankles,spine,head,shoulders,elbows,wrists,name,blob,keeper,side,id,foot:random()<.2?0:1,seed,style,skin:figure,skeleton,
+  phase:style.phase,speed:0,acceleration:0,course:null,ready:0,cheer:0,watch:0,guard:0,mood:null,moodWeight:0,yaw:null,x:null,z:null,dive:null,hold:false};
 }

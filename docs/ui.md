@@ -1016,6 +1016,29 @@ message (« il vient d'arriver ») reste dans son infobulle.
   route de celui qui le conduit, là où va le ballon ; à portée, il tente le
   tacle, le manque (le moteur a laissé passer le porteur), perd un instant sa
   course puis repart.
+  La défense joue : la ligne des quatre défenseurs tient une même profondeur,
+  qui recule quand le ballon passe derrière elle, et les attaquants ne la
+  dépassent pas tant que le ballon ne l'a pas fait (hors-jeu). Les autres
+  défenseurs prennent chacun un attaquant, d'autant plus serré qu'il approche
+  du but, côté but et un peu vers le ballon ; les défenseurs de la ligne n'en
+  prennent que le côté, sauf dans la surface. Les paires tiennent un moment
+  avant d'être refaites (`targets`, `mark`). Chacun se replace plus ou moins vite
+  selon sa vitesse. Le joueur éliminé par un dribble tente le tacle, debout ou en
+  glissade, là où allait le ballon, et reste un instant sur place (`lunge`).
+  Le défenseur qui contre une frappe basse tend la jambe ou glisse. Sur un centre,
+  son marqueur saute avec le joueur de tête. La faute qui donne un coup franc
+  ou un penalty se joue : le joueur fauché reçoit le ballon un peu avant l'endroit
+  de l'arrêt de jeu, le fautif le tacle ou glisse, il tombe, et la coupure vient
+  ensuite (`foul`).
+  La perte de balle qui donne l'occasion (`turnover` du moteur) se joue avant
+  elle, quand ses deux joueurs sont sur le terrain (`recover`) : l'autre camp a le
+  ballon quelques secondes plus tôt, puis le perd. Une interception coupe sa
+  passe, un tacle (debout ou glissé) prend le ballon dans les pieds du porteur,
+  un duel aérien se gagne de la tête sur un long ballon, un dégagement de la
+  tête renvoie un centre vers un coéquipier, et le gardien capte un centre,
+  le garde en main puis le relance à la main au coéquipier libre le plus proche.
+  Celui qui récupère le ballon le contrôle et l'occasion part de ses pieds
+  (`collect`), les deux équipes encore dans la disposition de l'action perdue.
   Chaque joueur est une pastille de même taille, son numéro dessus, taillée dans
   le maillot de son camp : le visiteur porte sa tenue extérieure quand les deux
   maillots domicile se confondent (`replayTeams`, `web/match.js` ; `away_kit`
@@ -1065,27 +1088,71 @@ message (« il vient d'arriver ») reste dans son infobulle.
   buste, le bassin et la tête ; le pied d'appui reste à la cinématique
   inverse, et la jambe qui revient y retourne avant de se poser. Au-delà de la
   course rapide, la foulée procédurale reprend une part, faute de sprint dans
-  la base ; sans le fichier, toute la foulée est procédurale. Les gestes
+  la base ; sans le fichier, toute la foulée est procédurale.
+  Le regard et la course sont distincts : hors du ballon, un défenseur, le
+  gardien ou un joueur au pas gardent les yeux sur le ballon et reculent ou
+  se décalent en pas chassés (`direction` de `locomotionPose`, foulées plus
+  courtes et plus vives, hanches ouvertes sur le côté) jusqu'à l'allure où il
+  faut se retourner et courir (plus basse vers l'arrière). Le défenseur qui
+  presse le porteur se met en garde : bassin bas, buste penché, bras écartés.
+  À pleine vitesse, le corps s'incline dans les courbes, et les pieds suivent
+  la course quand le buste tourne : un virage serré se prend en pas croisés,
+  sans glisser. Les gestes
   (`replay-motion.js`) se superposent à ces foulées sans synchroniser les
   joueurs.
+  Les duels ont leurs gestes : le tacle debout (jambe lancée vers le ballon, l'autre
+  genou plié bas), le tacle glissé (au sol sur la hanche, jambe tendue, puis relevé)
+  et la chute du joueur fauché, qui reste un moment à terre. Le gardien capte
+  un ballon haut les deux mains au-dessus de la tête, genou levé, et relance
+  d'un bras par-dessus l'épaule ; la touche se lance des deux mains.
   Passes, centres et frappes ont leur préparation, leur contact et leur
-  accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
+  accompagnement ; le pied d'appui se pose à côté du ballon, et la frappe suit
+  sa technique (`technique`) : intérieur du pied, genou ouvert, pour une passe à
+  ras de terre ou une frappe placée, buste en arrière sous un ballon levé ou un
+  centre, au-dessus d'une frappe tendue ou rasante, hanches ouvertes et corps
+  qui part de côté sur un coup franc, hanche haute pour une reprise de volée.
+  Un ballon joué loin en travers (un centre, une passe sur le côté) part du pied
+  opposé à sa direction, sinon du pied fort du joueur (`kickingFoot`). Sur un
+  coup de pied arrêté, le tireur arrive en courbe derrière le ballon, dans l'axe
+  de sa frappe. La touche se joue à la main : le joueur, juste hors du terrain,
+  tient le ballon au-dessus de la tête et le lance des deux mains ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
   La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
-  Le défenseur qui tente le tacle fléchit la jambe d'appui, la semelle au sol,
-  et tend l'autre jambe, basse, vers le ballon.
-  Le gardien garde ses pas pendant le placement, se prépare à l'arrêt, plonge
-  à la hauteur de la frappe, retombe puis se relève ;
-  après un arrêt, le ballon tenu suit ses gants. L'équipe qui marque célèbre avec
-  ses supporters. Tous ces gestes utilisent le temps du résumé : la vitesse de
+  Le gardien se place sur la droite qui joint le milieu de son but au ballon
+  (la bissectrice de l'angle des poteaux) : sur sa ligne quand le ballon est
+  proche, avancé jusqu'au bord de sa surface quand le jeu est loin. Il se
+  déplace en pas chassés face au ballon, garde ses pas pendant le placement, se
+  prépare à l'arrêt, plonge à la hauteur de la frappe, retombe puis se relève ;
+  battu, il plonge un peu court. Face à un joueur lancé seul (passe en
+  profondeur, dribble), il sort pour fermer l'angle et s'interpose là où la frappe
+  passe au plus près de lui (`keeperReach`). Une frappe basse tout près de lui est
+  repoussée du pied, une fois sur deux, genou opposé au sol. Le ballon gardé, il
+  relance (`distribute`) à la main au coéquipier libre le plus proche (de 10 à
+  35 m), ou d'une volée vers le milieu du terrain ;
+  après un arrêt, le ballon tenu suit ses gants. Les joueurs réagissent (`react` de
+  `match-replay.js`, humeurs datées que la 3D pose sur le geste en cours) : après un
+  but, le buteur part vers le poteau de corner de son côté, bras écartés, et la
+  caméra le suit ; ses coéquipiers les plus proches le rejoignent en courant,
+  tous lèvent les bras, et les supporters se lèvent. Ceux qui encaissent s'arrêtent,
+  mains sur les hanches ou penchés, mains sur les genoux, comme leur gardien.
+  Après une occasion manquée, le tireur porte les mains à la tête (des
+  coéquipiers aussi après un poteau) ; le gardien qui a arrêté le tir se relève
+  et replace sa défense du bras. Celui à qui la passe est destinée lève le bras
+  pour l'appeler, et hors du ballon chacun jette de temps en temps un coup d'œil
+  par-dessus l'épaule. Tous ces gestes utilisent le temps du résumé : la vitesse de
   lecture les accélère ensemble et la pause fige joueurs, ballon, public et caméra.
   La présentation conserve les trajectoires et le résultat du moteur. La page
   `tests/fixtures/replay-3d.html` permet de revoir des scènes déterministes de
-  passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
-  de tir contré et de coup franc, avec ralenti et arrêt sur image.
+  récupérations (interception, tacle, duel aérien, prise du gardien, dégagement),
+  de passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
+  de tir contré, de faute et de coup franc, de relance du gardien et de tacle du
+  presseur, avec ralenti et arrêt sur image.
   `tests/fixtures/replay-locomotion.html` compare six joueurs en marche, course
-  et sprint, ou à allure identique, avec caméra de profil ou trois quarts,
+  et sprint, ou à allure identique, le ballon devant eux, derrière ou de côté
+  (course arrière et pas chassés), avec caméra de profil ou trois quarts,
   ralenti et progression image par image sur le même squelette que le match.
+  Sur la page des scènes, `?close=1` rapproche la caméra du ballon pour juger
+  les gestes.
 
 ### Composition
 

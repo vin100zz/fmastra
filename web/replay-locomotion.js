@@ -18,13 +18,21 @@ export function gaitStyle(seed=0){
   stance:mix(-.012,.012,random(7)),asymmetry:mix(-.06,.06,random(8)),idle:random(9)*TAU};
 }
 
-export function gaitCycle(speed,style=gaitStyle()){
- const v=clamp(speed,0,9.5),run=smooth((v-1.65)/1.9),sprint=smooth((v-4.4)/3.5);
+// How a travel direction, in the body's own frame (0 ahead, ±π/2 to a side, π behind), shares out between the three
+// ways of moving: the forward gait, the backpedal and the side step. The three weights add up to one.
+export function travelShares(direction=0){
+ const ahead=Math.cos(direction),across=Math.sin(direction);
+ return {forward:Math.max(0,ahead)**2,back:Math.max(0,-ahead)**2,side:across*across,ahead,across};
+}
+// Going backwards or sideways, a player takes shorter, quicker steps than he does running ahead.
+export function gaitCycle(speed,style=gaitStyle(),direction=0){
+ const v=clamp(speed,0,9.5),run=smooth((v-1.65)/1.9),sprint=smooth((v-4.4)/3.5),{forward}=travelShares(direction);
  const cadence=mix(.72+v*.16,1.35+v*.095,run)*style.cadence;
  const stance=mix(.63,.345-.066*sprint,run)+style.stance;
- return {run,sprint,cadence,stance,stride:Math.max(.2,v)/cadence};
+ const stride=Math.max(.2,v)/cadence*mix(.62,1,forward);
+ return {run,sprint,cadence:Math.max(.2,v)/stride,stance,stride};
 }
-export const strideLength=(speed,style=gaitStyle())=>gaitCycle(speed,style).stride;
+export const strideLength=(speed,style=gaitStyle(),direction=0)=>gaitCycle(speed,style,direction).stride;
 
 // The lowest point of the rounded sole when the toe rolls about the ankle.
 export function soleHeight(pitch){
@@ -112,27 +120,39 @@ function softMin(a,b,k){
  const h=Math.max(k-Math.abs(a-b),0)/k;return Math.min(a,b)-h*h*k/4;
 }
 
-function solveLeg(z,height,lift,pitch){
- const a=.45,b=.4,down=.93+(lift/SCALE)-height;
+// The hip, knee and ankle angles that put the sole `height` up, `z` ahead of the hip and `x` out to its side, with the
+// sole pitched by `pitch`. The leg bends in its own plane, which the hip then swings out by the returned roll (the
+// hips turn pitch first, then roll: rotation order ZXY).
+export function solveLeg(z,height,lift,pitch,x=0){
+ const a=.45,b=.4,vertical=.93+(lift/SCALE)-height,down=Math.hypot(vertical,x);
  const d=clamp(Math.hypot(z,down),.14,a+b-.001);
  const knee=Math.PI-Math.acos(clamp((a*a+b*b-d*d)/(2*a*b),-1,1));
  const hip=-Math.atan2(z,down)-Math.acos(clamp((a*a+d*d-b*b)/(2*a*d),-1,1));
- return [hip,knee,pitch-hip-knee];
+ return [hip,knee,pitch-hip-knee,Math.atan2(x,vertical)];
 }
 
-export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(seed),acceleration=0,turn=0}={}){
- const gait=gaitCycle(speed,style),{run,sprint,stance}=gait,moving=smooth((speed-.08)/.9);
+// `direction` is where he travels in his own frame (0 ahead): facing the ball, he backpedals or steps sideways, the
+// feet then moving along his travel and the hips opening to the side. `crouch` (0 to 1) is a defender's guard, low on
+// bent knees, arms out, in front of the man with the ball.
+export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(seed),acceleration=0,turn=0,direction=0,crouch=0}={}){
+ const gait=gaitCycle(speed,style,direction),{run,sprint,stance}=gait,moving=smooth((speed-.08)/.9);
+ const travel=travelShares(direction),{forward,back,side:sideways,ahead,across}=travel;
  const cycles=[fract(phase/TAU),fract(phase/TAU+.5)],feet=cycles.map((cycle,i)=>{
   const foot=footPath(cycle,gait,style,i),clearance=foot.height-soleHeight(foot.pitch);
+  // Backwards, he stays on the balls of his feet; sideways, the soles stay flat and the feet low.
+  const pitch=foot.pitch*Math.max(0,ahead)+(.16+.3*Math.abs(foot.pitch))*Math.max(0,-ahead);
+  const lifted=clearance*(forward+.7*back+.5*sideways);
   // Blend contact targets, rather than joint angles: a slow first step must
   // still land on the grass while the body rises out of its standing pose.
-  foot.z=mix(.006,foot.z,moving);foot.pitch*=moving;
-  foot.height=soleHeight(foot.pitch)+clearance*moving;
+  const along=mix(.006,foot.z,moving);
+  foot.z=along*ahead;foot.x=along*across+(i?1:-1)*.035*sideways*moving;foot.pitch=pitch*moving;
+  foot.height=soleHeight(foot.pitch)+lifted*moving;
   return foot;
  });
- const p={hip:[0,0],knee:[0,0],ankle:[0,0],hipYaw:[0,0],shoulder:[0,0],spread:[.12,.12],elbow:[-.18,-.18],
+ const p={hip:[0,0],knee:[0,0],ankle:[0,0],hipYaw:[0,0],hipRoll:[0,0],shoulder:[0,0],spread:[.12,.12],elbow:[-.18,-.18],
   lift:0,lean:0,roll:0,twist:0,spineRoll:0,headPitch:0,headYaw:0,sway:0,shift:0,diveWeight:0};
- const captured=capturedGait(speed,cycles[0],stance),take=captured?captured.weight*moving:0,c=captured?.values;
+ // The capture holds forward gaits only: it fades out as he turns to backpedal or to step sideways.
+ const captured=capturedGait(speed,cycles[0],stance),take=captured?captured.weight*moving*forward:0,c=captured?.values;
  const breath=Math.sin(time*(.0023+seed*.00007)+style.idle),weight=Math.sin(time*.0007+style.idle);
  const half=fract(phase/Math.PI)*.5;
  // A compressed support followed by a short flight; walking retains double support.
@@ -142,11 +162,12 @@ export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(se
  // Either extended leg limits hip height, including the end of recovery.
  // Preparing this before touchdown avoids snapping the pelvis onto the ground.
  for(const foot of feet){
-  const reach=Math.sqrt(Math.max(.01,.849**2-foot.z**2));
+  const reach=Math.sqrt(Math.max(.01,.849**2-foot.z**2-foot.x**2));
   lift=softMin(lift,SCALE*(reach-.93+foot.height),.03*take);
  }
+ lift-=crouch*.1*SCALE;
  p.lift=lift;
- p.lean=(.018+run*.13+sprint*.09)*style.lean*moving;
+ p.lean=(.018+run*.13+sprint*.09)*style.lean*moving*(forward+.35*back+.6*sideways);
  p.spineRoll=-Math.sin(phase)*.035*run*moving;
  p.twist=Math.cos(phase+.15)*(.025+.065*run)*moving;
  p.headPitch=-p.lean*.4;
@@ -155,18 +176,21 @@ export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(se
   p.lean=mix(p.lean,c.lean*style.lean,take);p.spineRoll=mix(p.spineRoll,c.spineRoll,take);
   p.twist=mix(p.twist,c.twist,take);p.roll=c.roll*.6*take;p.headPitch=mix(p.headPitch,c.headPitch,take);
  }
- p.lean+=clamp(acceleration,-6,6)*.017*moving;p.spineRoll+=clamp(-turn*.055,-.16,.16)*moving;
+ p.lean+=clamp(acceleration,-6,6)*.017*moving*ahead;p.spineRoll+=clamp(-turn*.055,-.16,.16)*moving;
+ // Into a bend at pace, the whole body leans towards its centre, as far as the grip of the studs allows.
+ p.roll+=clamp(-Math.atan(speed*turn/9.81)*.55,-.3,.3)*moving*forward;
+ if(crouch){p.lean+=crouch*.24;p.headPitch-=crouch*.18;}
  p.sway=weight*.007*(1-moving);
  p.headYaw=Math.sin(time*.0009+style.idle)*.075*(1-moving);
  for(let side=0;side<2;side++){
-  const foot=feet[side],[hip,knee,ankle]=solveLeg(foot.z,foot.height,lift,foot.pitch);
-  p.hip[side]=hip;p.knee[side]=knee;p.ankle[side]=ankle;
+  const foot=feet[side],[hip,knee,ankle,roll]=solveLeg(foot.z,foot.height,lift,foot.pitch,foot.x);
+  p.hip[side]=hip;p.knee[side]=knee;p.ankle[side]=ankle;p.hipRoll[side]=roll;
   p.hipYaw[side]=Math.sin(phase)*.025*run*moving;
   // Arm opposition follows the thigh, including the knee drive during recovery.
   const arm=clamp(-(hip+.24)*mix(.55,.95,run),-.9,.95)*style.arms;
   p.shoulder[side]=mix(-.05+(side?1:-1)*.035+breath*.014,arm,moving);
   p.elbow[side]=mix(-.15-(side?0:.07),-(.3+run*.87+sprint*.12+Math.max(0,-arm)*.2)*style.elbows,moving);
-  p.spread[side]=.09+run*.055+(side?1:-1)*style.asymmetry*.3;
+  p.spread[side]=.09+run*.055+(side?1:-1)*style.asymmetry*.3+.14*(1-forward)*moving;
   if(!take)continue;
   // The captured recovery leg, between take-off and touchdown only: the planted foot stays with the inverse
   // kinematics above, and the blend fades out at both ends so that each contact lands where it is solved.
@@ -188,6 +212,10 @@ export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(se
   p.elbow[side]=mix(p.elbow[side],c[`elbow${side}`]*style.elbows,take);
   // Never inside the hips: the captured arms hang from a narrower trunk than the model's.
   p.spread[side]=mix(p.spread[side],Math.max(.08,c[`spread${side}`]+(side?1:-1)*style.asymmetry*.3),take);
+ }
+ // On guard, the arms come out from his sides, for balance, whatever the gait swings.
+ if(crouch)for(let side=0;side<2;side++){
+  p.shoulder[side]=mix(p.shoulder[side],-.3,crouch);p.elbow[side]=mix(p.elbow[side],-.75,crouch);p.spread[side]=mix(p.spread[side],.42,crouch);
  }
  return p;
 }
