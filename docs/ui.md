@@ -1100,8 +1100,17 @@ message (« il vient d'arriver ») reste dans son infobulle.
   La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
   Le gardien garde ses pas pendant le placement, se prépare à l'arrêt, plonge
   à la hauteur de la frappe, retombe puis se relève ;
-  après un arrêt, le ballon tenu suit ses gants. L'équipe qui marque célèbre avec
-  ses supporters. Tous ces gestes utilisent le temps du résumé : la vitesse de
+  après un arrêt, le ballon tenu suit ses gants. Les joueurs réagissent (`react` de
+  `match-replay.js`, humeurs datées que la 3D pose sur le geste en cours) : après un
+  but, le buteur part vers le poteau de corner de son côté, bras écartés, et la
+  caméra le suit ; ses coéquipiers les plus proches le rejoignent en courant,
+  tous lèvent les bras, et les supporters se lèvent. Ceux qui encaissent s'arrêtent,
+  mains sur les hanches ou penchés, mains sur les genoux, comme leur gardien.
+  Après une occasion manquée, le tireur porte les mains à la tête (des
+  coéquipiers aussi après un poteau) ; le gardien qui a arrêté le tir se relève
+  et replace sa défense du bras. Celui à qui la passe est destinée lève le bras
+  pour l'appeler, et hors du ballon chacun jette de temps en temps un coup d'œil
+  par-dessus l'épaule. Tous ces gestes utilisent le temps du résumé : la vitesse de
   lecture les accélère ensemble et la pause fige joueurs, ballon, public et caméra.
   La présentation conserve les trajectoires et le résultat du moteur. La page
   `tests/fixtures/replay-3d.html` permet de revoir des scènes déterministes de

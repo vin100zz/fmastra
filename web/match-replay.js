@@ -572,10 +572,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // Both teams set in their shape around `point`, the ball at rest there at the feet of `side`'s nearest player
  // (other than `exclude`); used where the replay cuts in, so nobody has to run across the pitch.
  snap(point,side,exclude=[],carrier=null){
-  this.runs.clear();this.posts.clear();this.wall=null;this.pressLock=null;this.marks=null;
+  this.runs.clear();this.posts.clear();this.wall=null;this.pressLock=null;this.marks=null;this.focus=null;
   for(let pass=0;pass<2;pass++){
    const targets=this.targets(point,side);
-   for(const team of ['home','away'])for(const [id,dot] of this.dots[team]){const spot=targets.get(team).get(id);dot.gesture=null;dot.gestures=[];if(spot){dot.x=spot.x;dot.y=spot.y;dot.vx=dot.vy=dot.sx=dot.sy=0;}}
+   for(const team of ['home','away'])for(const [id,dot] of this.dots[team]){const spot=targets.get(team).get(id);dot.gesture=null;dot.gestures=[];dot.moods=[];if(spot){dot.x=spot.x;dot.y=spot.y;dot.vx=dot.vy=dot.sx=dot.sy=0;}}
   }
   carrier=carrier&&this.dot(carrier)?carrier:this.nearest(side,point,{exclude});
   const dot=this.dot(carrier);
@@ -906,6 +906,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // who will block the next shot steps into its way.
  prepare(next,until){
   const time=until-this.time;
+  // Whoever the pass is meant for raises an arm for it.
+  if(next?.type==='pass'&&time>350)this.react(next.to,'call',this.time+Math.max(0,time-900),until+120);
   if(next?.type==='shot'&&next.blocker){
    const dot=this.dot(next.blocker),ball=ballAt(this.ballPath,until),goal=this.toPitch(next.side,1,.5);
    const lane=lerpPoint(ball,goal,Math.min(.5,4.5/Math.max(1,distance(ball,goal)))),gap=dot?distance(dot,lane):0;
@@ -1659,9 +1661,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    this.caption(`${title} · <strong>But de ${name(shot)}${shot.detail==='penalty'?' sur penalty':''}</strong>${assist}${xg}`);
    // The outcome is read at normal pace; live, the goal holds the pitch for its own time.
    this.tempo=1;
+   this.celebrate(side,finish.by,this.live?GOAL_HOLD_MS:2600);
    if(this.live){this.goalBurst(side,shot,sequence.outcome);return this.wait(GOAL_HOLD_MS,{pace:'real'});}
    this.showBanner('BUT !',side);
-   return this.wait(1700);
+   return this.wait(2600);
   }
   const keeperName=e(shot.secondary||'—'),detail=sequence.outcome?.detail;
   const said=shot.detail==='penalty'?(outcome==='save'?`Penalty arrêté par ${keeperName}`:'Penalty manqué')
@@ -1669,7 +1672,56 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    :blocked?`Tir contré par ${e(sequence.outcome.secondary||'—')}`:detail==='post'?'Sur le poteau !':'Tir non cadré';
   this.caption(`${title} · ${said}${xg}`);
   this.tempo=1;
-  return this.wait(850);
+  this.regret(sequence,finish,{blocked,saved:outcome==='save',post:detail==='post'});
+  return this.wait(1300);
+ }
+ // A reaction of `who`, from `from` to `until` (ms of replay): see `react` in replay-motion.js.
+ // They follow one another (the scorer's run, then his joy): each holds over its own window.
+ react(who,kind,from,until){
+  const dot=this.dot(who);
+  if(dot)dot.moods=[...(dot.moods||[]).filter(mood=>mood.until>from-2000),{kind,at:from,until}].slice(-4);
+ }
+ // The goal: the scorer runs off towards the corner flag on his side with his arms out, the nearest teammates chase
+ // after him and jump on him; the side that conceded stops, hands on hips or bent over, the keeper too.
+ celebrate(side,scorer,hold){
+  const other=this.opponent(side),now=this.time,until=now+hold,dot=this.dot(scorer);
+  // The 3D camera leaves the ball in the net for him.
+  this.focus=dot?scorer:null;
+  if(dot){
+   const local=this.toLocal(side,dot),flag=this.toPitch(side,.97,local.v<.5?.04:.96),gap=distance(dot,flag);
+   const run=Math.min(gap,.0068*hold*.7),spot=lerpPoint(dot,flag,gap?run/gap:0);
+   this.runTo(scorer,spot,now+Math.max(600,run/.0068),{x:0,y:0});
+   this.react(scorer,'scorer',now,now+Math.max(600,run/.0068));
+   this.react(scorer,'cheer',now+Math.max(600,run/.0068),until);
+   const mates=this.rosters[side].filter(player=>player.position!=='GB'&&player.id!==scorer.id).map(player=>({side,id:player.id}))
+    .filter(mate=>this.dot(mate)).sort((a,b)=>distance(this.dot(a),dot)-distance(this.dot(b),dot));
+   mates.forEach((mate,index)=>{
+    const at=this.dot(mate);
+    if(index<4){
+     // Round him, a little behind, at a sprint.
+     const angle=index*1.6+.8,around={x:spot.x+Math.cos(angle)*1.3,y:spot.y+Math.sin(angle)*1.3},arrive=now+Math.max(700,distance(at,around)/.0072);
+     this.runTo(mate,around,arrive,{x:0,y:0});
+     this.react(mate,'cheer',now+200,until);
+    }else{this.react(mate,'cheer',now+300,until);this.post(mate,lerpPoint(at,spot,.25));}
+   });
+  }
+  for(const player of this.rosters[other]){
+   const man={side:other,id:player.id},at=this.dot(man);
+   if(!at)continue;
+   this.post(man,{x:at.x+(at.sx||0)*250,y:at.y+(at.sy||0)*250});
+   this.react(man,player.position==='GB'||player.id%3===0?'crouch':'dejected',now+350+(player.id%5)*90,until);
+  }
+ }
+ // A chance gone: the shooter puts his hands on his head (and a teammate or two off a post), a keeper who saved it
+ // gets up and organises his defence.
+ regret(sequence,finish,{blocked,saved,post}){
+  const now=this.time,shooter=finish.by,dot=this.dot(shooter);
+  if(dot&&!blocked)this.react(shooter,'despair',now+150,now+1700);
+  if(post&&dot)for(const player of this.rosters[shooter.side]){
+   const mate={side:shooter.side,id:player.id},at=this.dot(mate);
+   if(player.id!==shooter.id&&player.position!=='GB'&&at&&distance(at,dot)<14)this.react(mate,'despair',now+250+player.id%4*80,now+1600);
+  }
+  if(saved&&finish.keeper)this.react(finish.keeper,'point',now+700,now+1700);
  }
 }
 // A slider set on the stop of `stops` nearest to `value`, its value written after it.

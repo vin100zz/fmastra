@@ -186,5 +186,5 @@ export function createPlayerFigure(view,side,id,keeper){
  const name=label(view,view.replay.names.get(id)||'');root.add(name);view.people.add(root);
  const seed=random()*6,style=gaitStyle(seed);
  return {root,body,hips,knees,ankles,spine,head,shoulders,elbows,wrists,name,blob,keeper,side,id,foot:random()<.2?0:1,seed,style,skin:figure,skeleton,
-  phase:style.phase,speed:0,acceleration:0,course:null,ready:0,cheer:0,watch:0,guard:0,yaw:null,x:null,z:null,dive:null,hold:false};
+  phase:style.phase,speed:0,acceleration:0,course:null,ready:0,cheer:0,watch:0,guard:0,mood:null,moodWeight:0,yaw:null,x:null,z:null,dive:null,hold:false};
 }

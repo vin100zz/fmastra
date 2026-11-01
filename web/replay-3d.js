@@ -536,7 +536,7 @@ export class Pitch3D{
    if(keeper&&action?.keeper?.side===side&&action.keeper.id===id&&(action!==this.action||reset))this.begin(action);
    const defending=!!possession&&side!==possession;
    const guard=defending&&!keeper&&!!owner&&replay.pressers?.[side]===id&&Math.hypot(owner.x-dot.x,owner.y-dot.y)<6;
-   this.pose(figure,toWorld(dot.x,dot.y),ball,rdt,cheering===side,dot.gestures||[dot.gesture].filter(Boolean),time,reset,{defending,guard,carries});
+   this.pose(figure,toWorld(dot.x,dot.y),ball,rdt,false,dot.gestures||[dot.gesture].filter(Boolean),time,reset,{defending,guard,carries,mood:dot.moods?.findLast(mood=>time>=mood.at&&time<mood.until)});
    figure.name.visible=dot.node.classList.contains('on');
    if(carries)carrier=figure;
   }
@@ -546,7 +546,9 @@ export class Pitch3D{
   this.ring.visible=!!carrier&&!away&&!carrier.hold;
   if(carrier)this.ring.position.set(carrier.x,.04,carrier.z);
   for(const side of ['home','away']){const fans=this.fans[side];fans.material.map=fans.frames[cheering===side?1+Math.floor(time/170)%2:0];}
-  this.frameCamera(ball,away,reset||!this.cameraReady?10000:Math.min(64,rdt));this.cameraReady=true;
+  // Whoever the replay points the camera at (the scorer running off), or the ball.
+  const focus=replay.focus&&replay.dots[replay.focus.side]?.get(replay.focus.id),framed=focus?toWorld(focus.x,focus.y):ball;
+  this.frameCamera(framed,away,reset||!this.cameraReady?10000:Math.min(64,rdt));this.cameraReady=true;
  }
  // A strike at goal: a keeper who has to reach the ball dives for it.
  begin(action){
@@ -583,9 +585,9 @@ export class Pitch3D{
  }
  // Positions remain those of the replay; only the skeleton and its weight shift are animated. `defending`: his side
  // is without the ball; `guard`: he closes down the man on it; `carries`: the ball is at his feet.
- pose(figure,at,ball,rdt,cheer,gestures,time,reset=false,{defending=false,guard=false,carries=false}={}){
+ pose(figure,at,ball,rdt,cheer,gestures,time,reset=false,{defending=false,guard=false,carries=false,mood=null}={}){
   let moved=figure.x==null?0:Math.hypot(at.x-figure.x,at.z-figure.z);
-  if(reset||moved>6){moved=0;figure.speed=0;figure.acceleration=0;figure.course=null;figure.yaw=null;if(!reset)figure.dive=null;figure.ready=0;figure.cheer=0;figure.watch=0;figure.guard=0;figure.phase=figure.style.phase;}
+  if(reset||moved>6){moved=0;figure.speed=0;figure.acceleration=0;figure.course=null;figure.yaw=null;if(!reset)figure.dive=null;figure.ready=0;figure.cheer=0;figure.watch=0;figure.guard=0;figure.mood=null;figure.moodWeight=0;figure.phase=figure.style.phase;}
   const course=moved>1e-4?Math.atan2(at.x-figure.x,at.z-figure.z):null;
   figure.x=at.x;figure.z=at.z;figure.root.position.set(at.x,0,at.z);
   if(!rdt&&figure.yaw!=null)return;
@@ -619,9 +621,16 @@ export class Pitch3D{
   const near=figure.keeper&&!figure.hold&&!running&&Math.hypot(ball.x-at.x,ball.z-at.z)<32?1:0;
   figure.ready+=(near-figure.ready)*(1-Math.exp(-rdt/220));
   figure.cheer=clamp(figure.cheer+(cheer?rdt/300:-rdt/350),0,1);
+  // His reaction, eased in and out over its window of the replay; the last one fades before another takes over.
+  const reacting=mood&&time>=mood.at&&time<mood.until;
+  if(reacting&&(figure.mood?.kind!==mood.kind||!figure.moodWeight))figure.mood=figure.moodWeight<.05?mood:figure.mood;
+  const same=reacting&&figure.mood?.kind===mood.kind;
+  figure.moodWeight=clamp(figure.moodWeight+(same?rdt/260:-rdt/300),0,1);
+  if(!figure.moodWeight&&!reacting)figure.mood=null;
   if(figure.dive&&time>figure.dive.start+figure.dive.duration+1080)figure.dive=null;
   const p=playerMotion({speed:figure.hold?0:speed,phase:figure.phase,time,seed:figure.seed,style:figure.style,acceleration:figure.acceleration,ready:figure.ready,
-   hold:figure.hold,gesture,foot:gesture?.foot??figure.foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard});
+   hold:figure.hold,gesture,foot:gesture?.foot??figure.foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard,
+   mood:figure.mood&&{kind:figure.mood.kind,weight:smooth(figure.moodWeight)}});
   for(let side=0;side<2;side++){
    figure.hips[side].rotation.set(p.hip[side],p.hipYaw[side],p.hipRoll[side]);figure.knees[side].rotation.x=p.knee[side];
    // The sole stays level when the thigh swings out.
@@ -630,7 +639,10 @@ export class Pitch3D{
   }
   figure.body.rotation.set(0,figure.yaw,p.roll);
   figure.spine.rotation.set(p.lean,p.twist,p.spineRoll);
-  figure.head.rotation.set(p.headPitch,(clamp(angleDelta(figure.yaw,gaze),-.65,.65)+p.headYaw)*(1-p.diveWeight),-p.spineRoll*.55);
+  // Off the ball he checks over his shoulder now and then, for a moment, before looking back at the play.
+  const period=2600+figure.seed*450,glance=(time+figure.seed*997)%period,scan=!carries&&!gesture&&!figure.keeper&&!figure.moodWeight&&glance<650
+   ?Math.sin(Math.PI*glance/650)*(Math.floor((time+figure.seed*997)/period)%2?.95:-.95):0;
+  figure.head.rotation.set(p.headPitch,(clamp(angleDelta(figure.yaw,gaze)+scan,-1.1,1.1)+p.headYaw)*(1-p.diveWeight),-p.spineRoll*.55);
   figure.body.position.set(Math.cos(figure.yaw)*(p.shift+p.sway),p.lift,-Math.sin(figure.yaw)*(p.shift+p.sway));
   if(figure.dive&&p.diveWeight>0){
    // The skeleton reaches with its gloves: the replay dot already marks the

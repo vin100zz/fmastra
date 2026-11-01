@@ -148,3 +148,37 @@ test('a loss the replay cannot show leaves the chance to start as before',async(
  assert.equal(await replay.recover(sequence('interception',999,8),{x:50,y:34},'away','Paris',()=>''),null);
  assert.equal(await replay.recover(sequence('offside',107,8),{x:50,y:34},'away','Paris',()=>''),null);
 });
+
+test('a goal sends the scorer off towards the flag, his teammates after him, and leaves the other side dejected',()=>{
+ const replay=fixture();replay.time=5000;
+ const scorer={side:'home',id:10};Object.assign(replay.dot(scorer),{x:96,y:30});
+ replay.celebrate('home',scorer,2600);
+ assert.deepEqual(replay.dot(scorer).moods.map(mood=>mood.kind),['scorer','cheer']);
+ assert.deepEqual(replay.focus,scorer,'the camera follows him');
+ const run=replay.runs.get('home:10');
+ assert.ok(run.to.x>96&&run.to.y<30,'towards the corner flag on his side');
+ const cheering=[...replay.dots.home.values()].filter(dot=>dot.moods?.some(mood=>mood.kind==='cheer')).length;
+ assert.ok(cheering>=9,'his teammates celebrate');
+ for(const [id,dot] of replay.dots.away){
+  assert.ok(['dejected','crouch'].includes(dot.moods[0].kind),`away ${id} reacts`);
+  assert.equal(dot.moods[0].until,7600);
+ }
+});
+
+test('a miss puts the shooter\'s hands on his head and the keeper who saved it organises his defence',()=>{
+ const replay=fixture();replay.time=5000;
+ const finish={by:{side:'home',id:10},keeper:{side:'away',id:101}};
+ replay.regret({},finish,{blocked:false,saved:true,post:false});
+ assert.equal(replay.dot(finish.by).moods[0].kind,'despair');
+ assert.equal(replay.dot(finish.keeper).moods[0].kind,'point');
+});
+
+test('every reaction keeps a finite pose and fades back to the plain gait',()=>{
+ for(const kind of ['scorer','cheer','dejected','crouch','despair','point','call'])for(const speed of [0,4]){
+  const pose=playerMotion({speed,phase:1,time:3000,seed:2,mood:{kind,weight:1}});
+  for(const value of Object.values(pose).flat())assert.ok(Number.isFinite(value),`${kind} at ${speed} m/s`);
+  assert.deepEqual(playerMotion({speed,phase:1,time:3000,seed:2,mood:{kind,weight:0}}),playerMotion({speed,phase:1,time:3000,seed:2}));
+ }
+ const crouch=playerMotion({time:3000,seed:2,mood:{kind:'crouch',weight:1}});
+ assert.ok(Math.abs(footY(crouch,0))<.01&&Math.abs(footY(crouch,1))<.01,'bent over, both soles on the grass');
+});

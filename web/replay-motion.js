@@ -74,7 +74,8 @@ export function activeGesture(gestures,time){
  return selected;
 }
 
-export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0,ready=0,hold=false,gesture=null,foot=1,turn=0,cheer=0,dive=null,direction=0,crouch=0}={}){
+// `mood` ({kind, weight}) is how he reacts to what just happened, over whatever he is doing: see `react`.
+export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0,ready=0,hold=false,gesture=null,foot=1,turn=0,cheer=0,dive=null,direction=0,crouch=0,mood=null}={}){
  const p=locomotionPose({speed,phase,time,seed,style,acceleration,turn,direction,crouch});
  const blend=(list,value,k)=>{for(let side=0;side<2;side++)list[side]=mix(list[side],typeof value==='function'?value(side):value,k);};
  if(ready){
@@ -180,11 +181,41 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
   blend(p.shoulder,-.95,gather);blend(p.elbow,-1.35,gather);blend(p.spread,.18,gather);
   p.lean=mix(p.lean,.06,gather);
  }
+ if(mood?.kind==='cheer')cheer=Math.max(cheer,mood.weight);
+ else if(mood?.weight)react(p,mood.kind,mood.weight,speed,time,seed,blend);
  if(cheer){
-  const bounce=Math.max(0,Math.sin(time*.009+seed));
+  const bounce=Math.max(0,Math.sin(time*.009+seed))*(1-smooth((speed-1)/2));
   p.lift+=bounce*.16*cheer;
   blend(p.shoulder,side=>-2.5+Math.sin(time*.007+seed+side)*.18,cheer);
   blend(p.spread,.4,cheer);blend(p.elbow,-.3,cheer);
  }
  return p;
+}
+
+// How a player reacts, `weight` from 0 to 1: the scorer running off with his arms out ('scorer'), hands on his hips
+// ('dejected'), bent over with his hands on his knees ('crouch'), hands on his head after a miss ('despair'), the keeper
+// pointing to organise his defence ('point'), an arm up to call for the ball ('call'). The legs change only once he
+// has stopped.
+function react(p,kind,weight,speed,time,seed,blend){
+ const still=weight*(1-smooth((speed-.4)/1.2));
+ if(kind==='scorer'){
+  blend(p.shoulder,-.25,weight);blend(p.spread,1.42,weight);blend(p.elbow,-.08,weight);
+  p.lean=mix(p.lean,p.lean*.4-.05,weight);p.headPitch=mix(p.headPitch,-.25,weight);
+ }else if(kind==='dejected'){
+  blend(p.shoulder,.28,weight);blend(p.spread,.62,weight);blend(p.elbow,-1.95,weight);
+  p.headPitch=mix(p.headPitch,.5,weight);p.lean=mix(p.lean,.06,weight);
+ }else if(kind==='crouch'){
+  blend(p.shoulder,-.95,weight);blend(p.spread,.2,weight);blend(p.elbow,-.15,weight);p.headPitch=mix(p.headPitch,.35,weight);
+  // Bent at the hips over flexed knees, both soles on the grass.
+  blend(p.hip,-.42,still);blend(p.knee,.7,still);blend(p.ankle,-.28,still);blend(p.hipRoll,0,still);
+  p.lift=mix(p.lift,SCALE*(.45*Math.cos(-.42)+.4*Math.cos(.28)+soleHeight(0)-.93),still);
+  p.lean=mix(p.lean,.78,still);
+ }else if(kind==='despair'){
+  blend(p.shoulder,-2.35,weight);blend(p.spread,.95,weight);blend(p.elbow,-2.3,weight);
+  p.headPitch=mix(p.headPitch,-.3,weight);p.lean=mix(p.lean,-.08,weight);
+ }else if(kind==='point'){
+  p.shoulder[1]=mix(p.shoulder[1],-1.45,weight);p.spread[1]=mix(p.spread[1],.55+.25*Math.sin(time*.004+seed),weight);p.elbow[1]=mix(p.elbow[1],-.05,weight);
+ }else if(kind==='call'){
+  p.shoulder[1]=mix(p.shoulder[1],-2.75,weight);p.spread[1]=mix(p.spread[1],.3,weight);p.elbow[1]=mix(p.elbow[1],-.25,weight);
+ }
 }
