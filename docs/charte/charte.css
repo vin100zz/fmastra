@@ -531,7 +531,7 @@
 .crest.large:has(>.crest-logo){background:#fff}
 .crest.large>img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .crest.large>.crest-logo{width:calc(100% - 14px);height:calc(100% - 14px);border-radius:0;object-fit:contain}
-svg.away{width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
+svg.away,svg.home{width:11px;height:11px}svg.away{fill:var(--bad);transform:rotate(45deg)}svg.home{fill:var(--good)}
 .gauge{display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 .gauge>i{display:block;height:100%;background:var(--good)}
 .gauge.warn>i{background:var(--accent)}.gauge.bad>i{background:var(--bad)}

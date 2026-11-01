@@ -796,7 +796,7 @@ th.date-col{width:108px}
 th.rank-col{text-align:center}
 :is(.history-leaders,.history-best) td:first-child{text-align:center;color:var(--muted)}
 .history-record tfoot td{font-weight:600}
-.history-scores svg.away{flex:none;width:11px;height:11px;fill:var(--bad);transform:rotate(45deg)}
+.history-scores svg:is(.away,.home){flex:none;width:11px;height:11px}.history-scores svg.away{fill:var(--bad);transform:rotate(45deg)}.history-scores svg.home{fill:var(--good)}
 /* A run in a cup, a chip of 18: the round reached, plain; a semi-final ringed in blue, a final in green, a title on the
    accent with its star. A title in a league reads the same: its rank on the accent. */
 .reached{display:inline-flex;align-items:center;gap:var(--s1);flex:none;height:var(--h-chip);padding:0 var(--s2);border-radius:var(--radius-chip);background:var(--panel-2);color:var(--ink-2);font:600 var(--fs-small)/1 var(--text);white-space:nowrap}

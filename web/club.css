@@ -62,7 +62,7 @@
 .calendar-row.next{background:var(--own-row);box-shadow:inset 3px 0 0 var(--accent-text)}
 .calendar-date{color:var(--muted);white-space:nowrap}
 .calendar-round{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.calendar-venue svg.away{width:13px;height:13px;fill:var(--red);transform:rotate(45deg)}
+.calendar-venue svg{width:13px;height:13px}.calendar-venue svg.away{fill:var(--red);transform:rotate(45deg)}.calendar-venue svg.home{fill:var(--good)}
 .calendar-opponent{display:flex;align-items:center;gap:8px;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden}
 .calendar-opponent .club-link{overflow:hidden;text-overflow:ellipsis}
 .calendar-opponent em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:var(--caps);text-transform:uppercase;color:var(--accent-text)}

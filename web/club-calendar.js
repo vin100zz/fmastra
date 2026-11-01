@@ -1,5 +1,5 @@
 import {escape as e,shortName,empty,clubLink,competitionBadge} from './ui.js';
-import {awayIcon,outcomeLabels} from './club-overview.js';
+import {venueIcon,outcomeLabels} from './club-overview.js';
 
 // The badge of a competition and its two characters are the same on every screen (ui.js).
 export {competitionCode,competitionBadge} from './ui.js';
@@ -22,7 +22,7 @@ function calendarRow(match,club,competitions,next,{written=day,round=roundShort}
  const detail=`${match.competition} · ${match.round_label} · ${neutral?'Terrain neutre':home?'Domicile':'Extérieur'}`;
  return `<div class="calendar-row${match.score?'':' coming'}${next?' next':''}" data-competition="${match.competition_id}">`
   +`<span class="calendar-date">${written(match.date)}</span>${competitionBadge(competition)}<span class="calendar-round" title="${e(match.round_label)}">${e(round(match.round_label))}</span>`
-  +`<span class="calendar-venue">${home||neutral?'':awayIcon}</span><span class="calendar-opponent">${clubLink(opponent)}${next?'<em>Prochain</em>':''}${shootout?`<small>${e(shootout)}</small>`:''}</span>`
+  +`<span class="calendar-venue">${venueIcon(home,neutral)}</span><span class="calendar-opponent">${clubLink(opponent)}${next?'<em>Prochain</em>':''}${shootout?`<small>${e(shootout)}</small>`:''}</span>`
   +`<a class="calendar-score${match.outcome?` ${match.outcome}`:''}" href="#/match/${match.id}" title="${e(match.outcome?`${outcomeLabels[match.outcome]} · ${detail}`:detail)}">${score}</a>`
   +`<span class="calendar-scorers">${scorerList(ours)}</span><span class="calendar-scorers theirs">${scorerList(theirs)}</span></div>`;
 }

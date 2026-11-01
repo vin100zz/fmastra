@@ -229,8 +229,8 @@ marque ouvre à gauche.
 - **Matchs du club** (`.next-matches`) : un bandeau, sans bordure, qui se lit
   dans le temps : les derniers matchs joués de la saison, un trait pour
   aujourd'hui, puis les trois prochains. Chaque bloc porte l'adversaire après sa
-  pastille (un avion à l'extérieur), la compétition dessous, en bleu pour une
-  coupe.
+  pastille (une maison à domicile, un avion à l'extérieur : voir « Clubs et
+  pays »), la compétition dessous, en bleu pour une coupe.
   - **Joués** (`.last-match`) : sur le gris du bandeau (`--panel-2`), du plus
     ancien au plus récent. Le score, du côté du club, ses buts d'abord, en
     chiffre clé sur la pastille de son issue (22) : verte pour une victoire,
@@ -787,7 +787,7 @@ sélection : ni finances, ni « À surveiller ».
 - **Calendrier** : toute la hauteur de sa colonne, toutes éditions confondues :
   les trois prochains matches au plus, les derniers joués avant eux.
   L'adversaire suit son drapeau ; un match d'une autre édition porte sa
-  pastille ; un match sur terrain neutre n'a pas d'avion.
+  pastille ; un match sur terrain neutre n'a ni maison ni avion.
 - **Buteurs, passeurs, notes** : ceux de la sélection dans l'édition, joueurs
   partis compris ; un renfort temporaire suivi de « (temp.) », sans lien.
 
@@ -1842,6 +1842,11 @@ sa pastille n'en est pas un (ci-dessus), ni :
   coin, coupé en diagonale. Son écusson la remplace dans un en-tête. Dans un
   match face à face, la pastille de celui qui reçoit suit son nom : voir
   « Match dans une liste ».
+- Dans un match d'un club ou d'une sélection, vu de son côté (calendrier, bandeau
+  des matchs, historique), le lieu suit le nom de l'adversaire : une maison
+  verte à domicile (`svg.home`, `--good`), un avion rouge à l'extérieur
+  (`svg.away`, `--bad`, incliné de 45°), de 11 (10 dans le bandeau, 13 au
+  calendrier). Rien sur terrain neutre. Son infobulle dit le lieu.
 - Dans une coupe d'Europe, où se croisent les clubs de plusieurs pays, le nom
   d'un club est suivi du drapeau de son pays (`.club-flag`) : la pastille, le nom,
   puis le drapeau, à 6. Ce drapeau est un lien à part, vers la sélection de son
