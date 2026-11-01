@@ -1046,8 +1046,17 @@ message (« il vient d'arriver ») reste dans son infobulle.
   pied, opposition des bras et inclinaison dans les accélérations et virages.
   Les cibles des pieds sont résolues par les articulations pour conserver le
   contact avec la pelouse, y compris au départ et à l'arrêt. Le bassin prépare
-  l'atterrissage avant la pose du pied. Les gestes (`replay-motion.js`) se
-  superposent à ces foulées sans synchroniser les joueurs.
+  l'atterrissage avant la pose du pied. Les foulées viennent de la capture de
+  mouvement (`web/models/motions.json`, tirée de la base du CMU par
+  `tools/build_motion_clips.mjs`) : un cycle de marche, de footing, de course
+  et de course rapide, mêlés selon la vitesse et calés sur les appuis du
+  replay (`capturedGait`). La capture mène la jambe qui revient, les bras, le
+  buste, le bassin et la tête ; le pied d'appui reste à la cinématique
+  inverse, et la jambe qui revient y retourne avant de se poser. Au-delà de la
+  course rapide, la foulée procédurale reprend une part, faute de sprint dans
+  la base ; sans le fichier, toute la foulée est procédurale. Les gestes
+  (`replay-motion.js`) se superposent à ces foulées sans synchroniser les
+  joueurs.
   Passes, centres et frappes ont leur préparation, leur contact et leur
   accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.

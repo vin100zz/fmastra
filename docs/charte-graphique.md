@@ -1378,9 +1378,11 @@ et à revers de la seconde couleur, le short et les chaussettes à bande sont
 peints sur le corps ; le gardien a les manches longues et des gants. Aucune
 bande au col : elle se lirait déchirée sur le maillage. Les gestes suivent le ballon : appuis des courses,
 préparation et accompagnement des passes et des tirs, contrôles, têtes, plongeon
-bas ou haut puis reprise d'appui du gardien. Ces animations procédurales restent
-calées sur les contacts et le temps du résumé, sans changer les déplacements ni
-le résultat du match. La pause fige l'image, joueurs, ballon, public et caméra
+bas ou haut puis reprise d'appui du gardien. Les foulées sont celles de
+coureurs réels (capture de mouvement) ; les gestes restent procéduraux. Toutes
+ces animations restent calées sur les contacts et le temps du résumé, sans
+changer les déplacements ni le résultat du match ; le pied d'appui ne glisse
+jamais et aucun pied ne traverse la pelouse. La pause fige l'image, joueurs, ballon, public et caméra
 compris ; les commandes autour du terrain gardent les composants de la charte.
 Les joueurs ont des phases de foulée et des styles de course individuels,
 stables d'une scène à l'autre. La marche, la course et le sprint se distinguent
