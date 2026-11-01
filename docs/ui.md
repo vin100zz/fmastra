@@ -1006,7 +1006,16 @@ message (« il vient d'arriver ») reste dans son infobulle.
   passe au-dessus d'un mur de quatre joueurs. Les joueurs courent à l'allure d'un
   footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
   la reprise et le défenseur qui contrera la frappe font leur course pendant
-  l'action.
+  l'action. Le gardien joue depuis sa surface : quand il a récupéré le ballon,
+  il le garde dans sa surface et le relance vers le point de départ de
+  l'action ; quand le moteur lui attribue une progression, il la joue d'une
+  passe au partenaire le plus proche de l'endroit visé (un partenaire qui lui
+  remet le ballon le lui donne dans sa surface), jamais balle au pied. Un
+  adversaire sort sur le porteur : il laisse un gardien qui tient le ballon
+  dans ses mains, attend à deux pas celui qui l'a au pied, et se met sur la
+  route de celui qui le conduit, là où va le ballon ; à portée, il tente le
+  tacle, le manque (le moteur a laissé passer le porteur), perd un instant sa
+  course puis repart.
   Chaque joueur est une pastille de même taille, son numéro dessus, taillée dans
   le maillot de son camp : le visiteur porte sa tenue extérieure quand les deux
   maillots domicile se confondent (`replayTeams`, `web/match.js` ; `away_kit`
@@ -1061,6 +1070,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
   La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
+  Le défenseur qui tente le tacle fléchit la jambe d'appui, la semelle au sol,
+  et tend l'autre jambe, basse, vers le ballon.
   Le gardien garde ses pas pendant le placement, se prépare à l'arrêt, plonge
   à la hauteur de la frappe, retombe puis se relève ;
   après un arrêt, le ballon tenu suit ses gants. L'équipe qui marque célèbre avec

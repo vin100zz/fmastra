@@ -88,3 +88,15 @@ test('a ready goalkeeper moves his legs while walking to cover the goal',()=>{
  assert.ok(Math.max(...hips)-Math.min(...hips)>.12,'the ready stance must not freeze the walking hips');
  assert.ok(Math.max(...knees)-Math.min(...knees)>.12,'the ready stance must not freeze the walking knees');
 });
+
+test('a standing tackle stretches one leg low towards the ball, the support sole kept on the turf',()=>{
+ const {v,figure}=view(4);
+ for(const foot of [0,1])for(const at of [880,1000,1200])for(let frame=0;frame<24;frame++){
+  figure.foot=foot;
+  const gesture={kind:'tackle',at,target:{x:52.5,y:40}};
+  pose(v,figure,{speed:3,phase:frame/24*Math.PI*2,gesture});
+  const feet=[soleHeight(figure,0),soleHeight(figure,1)];
+  assert.ok(Math.min(...feet)>-.01,`a tackle sinks a foot into the turf: ${feet}, foot ${foot}, at ${at}, phase ${frame}/24`);
+  if(at===1000)assert.ok(feet[1-foot]<.03,`the support foot leaves the turf in the lunge: ${feet}, foot ${foot}, phase ${frame}/24`);
+ }
+});

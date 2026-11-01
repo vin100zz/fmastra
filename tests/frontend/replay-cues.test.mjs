@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {ballAt,lofted,path,rolled} from '../../web/replay-physics.js';
+const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
 // Capture the registered element without a browser; these tests exercise the replay's own scheduling.
 let Replay;
@@ -142,4 +143,62 @@ test('recorded and live replays retain shirt numbers for both benches and refres
    assert.equal(replay.shirts.get(9),9);
   }
  }
+});
+
+// Both sides in their shape, home attacking left to right: a keeper, two defenders, a midfielder and a forward each.
+const shaped=()=>{
+ const replay=fixture();
+ replay.rosters={home:[{id:1,position:'GB',u:.02,v:.5},{id:2,position:'DC',u:.17,v:.35},{id:3,position:'DC',u:.17,v:.65},{id:4,position:'MC',u:.46,v:.5},{id:5,position:'BU',u:.74,v:.5}],
+                 away:[{id:21,position:'GB',u:.02,v:.5},{id:22,position:'DC',u:.17,v:.5},{id:23,position:'MC',u:.46,v:.5},{id:24,position:'BU',u:.74,v:.4},{id:25,position:'BU',u:.74,v:.6}]};
+ replay.dots={home:new Map(),away:new Map()};replay.pressers={};replay.drawDots=replay.drawBall=()=>{};
+ for(const side of ['home','away'])for(const player of replay.rosters[side]){const spot=replay.toPitch(side,player.u,player.v);replay.dots[side].set(player.id,{x:spot.x,y:spot.y});}
+ return replay;
+};
+
+test('a keeper credited with taking the play forward gives the ball from his area instead of running out with it',()=>{
+ const replay=shaped(),keeper={side:'home',id:1};
+ replay.snap(replay.toPitch('home',.07,.5),'home',[],keeper);
+ const sequence={trail:[{kind:'progress',zone:1,lane:1,player_id:1,player:'Gardien'},{kind:'progress',zone:2,lane:1,player_id:4,player:'Milieu'}],
+                 shot:{detail:'shot',player_id:5,zone:3,lane:1}};
+ const moves=replay.plan(sequence,{side:'home',holder:keeper,title:'',name:event=>event?.player||'—'});
+ assert.ok(!moves.some(move=>move.type==='carry'&&move.who?.id===1),'the keeper never carries the ball');
+ const relaunch=moves.find(move=>move.type==='pass');
+ assert.notEqual(relaunch.to.id,1);
+ assert.match(relaunch.note[1],/Relance de Gardien/);
+ // Every pass meant for the keeper stays in his area.
+ for(const move of moves.filter(item=>item.type==='pass'&&item.to.id===1))assert.ok(replay.toLocal('home',move.point).u<=.1);
+});
+
+test('a keeper who won the ball holds it in his area and plays it out to where the move starts',()=>{
+ const replay=shaped(),keeper={side:'home',id:1},start=replay.toPitch('home',.37,.5);
+ replay.snap(replay.toPitch('home',.07,.5),'home',[],keeper);
+ const sequence={recovery:{player_id:1,player:'Gardien'},trail:[{kind:'progress',zone:2,lane:1,player_id:4,player:'Milieu'}],shot:{detail:'shot',player_id:5,zone:3,lane:1}};
+ const moves=replay.plan(sequence,{side:'home',holder:keeper,title:'',name:event=>event?.player||'—',distribute:start});
+ const [first]=moves;
+ assert.equal(first.type,'pass');
+ assert.notEqual(first.to.id,1);
+ assert.ok(Math.abs(replay.toLocal('home',first.point).u-.37)<.2,'the ball goes out to where the move starts');
+ assert.ok(!moves.some(move=>move.who?.id===1));
+});
+
+test('the man closing a carrier down goes in on the ball when it comes within his reach, then needs a moment',()=>{
+ const replay=shaped(),carrier={side:'home',id:4};
+ replay.carrier=carrier;replay.action={kind:'carry'};replay.pressers={home:null,away:23};
+ const ball={x:50,y:34},presser=replay.dots.away.get(23);
+ Object.assign(presser,{x:56,y:34});
+ replay.challenge(ball,1000);
+ assert.equal(presser.gesture,undefined,'out of reach, he does not go in');
+ Object.assign(presser,{x:51.5,y:34});
+ replay.challenge(ball,1000);
+ assert.equal(presser.gesture.kind,'tackle');
+ assert.ok(presser.stall>1000&&presser.again>presser.stall);
+ presser.gesture=null;
+ replay.challenge(ball,1200);
+ assert.equal(presser.gesture,null,'he cannot go straight in again');
+ // He waits on a man standing on the ball, and comes to a carrier where the ball is going.
+ replay.action={kind:'wait'};
+ const standing=replay.targets(ball,'home').get('away').get(23);
+ replay.action={kind:'carry'};
+ const closing=replay.targets(ball,'home',{x:53,y:34}).get('away').get(23);
+ assert.ok(distance(closing,{x:53,y:34})<distance(standing,ball));
 });
