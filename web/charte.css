@@ -388,7 +388,7 @@ tbody tr.own,tbody tr.own:hover,.standings-card tr:has(.own){background:var(--ow
 
 /* Figures: the label over the figure, at 20 px. */
 .stat-card{padding:6px var(--s3)}
-.stat-card .label,.tile span,.club-hero-tile span,.finance-figure>span,.balance-end>span,.news-figure span,.scout-facts span{font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
+.stat-card .label,.tile span,.club-hero-tile span,.finance-figure>span,.balance-end>span,.news-figure span,.scout-facts div>span:first-child{font-size:var(--fs-small);font-weight:600;letter-spacing:var(--caps);text-transform:uppercase;color:var(--muted)}
 .stat-card strong,.tile strong,.preview .tile strong,.club-hero-tile strong,.finance-figure>strong,.balance-end>strong,.news-figure strong,.news-figure.ring strong,.scout-facts strong,.finance-split p strong,.news-title .tile strong,.side-inner .stat-card strong{font-family:var(--display);font-stretch:semi-condensed;font-size:var(--fs-title);font-weight:700;line-height:24px;letter-spacing:0}
 .stat-card strong{margin:2px 0 0}
 .finance-figure{gap:2px;padding:var(--s2) var(--s3);border-radius:var(--radius-box)}
@@ -1433,6 +1433,20 @@ match-replay.live .slider input[type=range]{width:96px}
 .squad-row.drag-ghost{position:fixed;left:-1000px;top:0;grid-template-columns:24px auto;border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow-float)}
 button.advice.undo{background:var(--panel);box-shadow:var(--shadow-field);color:var(--ink-2)}
 .fatigue{display:flex;align-items:center;gap:6px;font-size:var(--fs-small);color:var(--muted);white-space:nowrap}
+/* A player's name, in the list and under his shirt, leads to his page over the match (« Fiche sur le direct »). */
+.block-name>a{color:inherit}
+/* A player's page over the live match (docs/charte-graphique.md, « Fiche sur le direct »): a layer over the whole window
+   on the page's ground, the live match paused under it. At its head a bar of 56 like the top bar: « Retour au match »,
+   then the paused match, its sides, its score, its minute; under it the player's page as it stands, without its commands. */
+.live-sheet{position:fixed;inset:0;z-index:15;display:flex;flex-direction:column;overflow-y:auto;background:var(--bg)}
+.live-sheet-bar{position:sticky;top:0;z-index:6;flex:none}
+.button.live-sheet-back{display:flex;align-items:center;gap:var(--s2);height:var(--h-bar-control);padding:0 var(--s4) 0 var(--s3);border-radius:var(--radius-box);font-size:var(--fs-figure);font-weight:700}
+.live-sheet-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.live-sheet-match{display:flex;align-items:center;gap:var(--s3);margin:0 auto 0 var(--s4);font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong);white-space:nowrap}
+.live-sheet-side{display:flex;align-items:center;gap:var(--s2)}
+.live-sheet-match .live-clock{min-width:48px;height:var(--h-control);font-size:var(--fs-figure)}
+.live-sheet-match .pill{font:600 var(--fs-small)/1 var(--text)}
+.live-sheet-page{flex:1 0 auto;padding:var(--s2) var(--s4) var(--s3)}
 .fatigue .gauge{width:32px}
 .gauge.warn>i{background:var(--accent)}
 .gauge.bad>i{background:var(--bad)}
@@ -1518,25 +1532,56 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .pill.debug{background:var(--warn-soft);color:var(--warn)}
 /* A trait's word on a tile is a figure, not a label. */
 :is(.tile,.club-hero-tile) .trait{font:700 var(--fs-figure)/20px var(--display);font-stretch:semi-condensed;letter-spacing:0;text-transform:none;color:var(--strong)}
+/* The opponent beside the lineup (« Adversaire d'une composition »): its crest, its name after its dot, a plane when the club
+   plays at its ground, its rank large at the right and its points small under it; its level and potential on a tile of two
+   columns, its tactic and its record on two tiles; its last five matches of the season as the played blocks of the top bar,
+   stacked, the day at the end; its key players and those out, a line each; the latest meeting of the two clubs. */
+.scout-card{margin:0}
+.scout-card>.card-body{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s3)}
+.scout-club{display:flex;align-items:center;gap:var(--s3)}
+.scout-name{display:flex;align-items:center;gap:6px;min-width:0;font-size:var(--fs-figure);font-weight:700}
+.scout-name .club-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scout-name svg.away{flex:none;width:13px;height:13px;fill:var(--bad);transform:rotate(45deg)}
+.scout-rank{display:flex;flex-direction:column;align-items:flex-end;flex:none;margin-left:auto;white-space:nowrap}
+.scout-rank strong{font:700 var(--fs-page)/26px var(--display);font-stretch:semi-condensed;color:var(--strong)}
+.scout-rank em{font:600 var(--fs-small)/14px var(--text);font-style:normal;color:var(--muted)}
+.scout-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
+.scout-facts>div{min-width:0;padding:6px var(--s3);border-radius:var(--radius-box);background:var(--panel-2)}
+.scout-facts>.split{display:flex;grid-column:1/-1;gap:var(--s3)}
+.scout-facts>.split>*+*{padding-left:var(--s3);border-left:1px solid var(--row-line)}
+.scout-facts div>span:first-child{display:block}
+.scout-facts strong{display:block;color:var(--strong);white-space:nowrap}
+.scout-facts .stars{margin-top:5px}
+.scout-matches{display:flex;flex-direction:column}
+.scout-matches .last-match{max-width:none;height:36px;padding:0 var(--s3)}
+.scout-matches .last-match+.last-match{border-left:0;border-top:1px solid var(--row-line)}
+.scout-matches .next-match-body{flex:1}
+.last-match-date{flex:none;font-size:var(--fs-small);color:var(--muted)}
+.scout-players{list-style:none;margin:0;padding:0}
+.scout-players li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:var(--s2);align-items:center;min-height:var(--h-row);padding:0 var(--s3);border-top:1px solid var(--row-line)}
+.scout-players li:first-child{border-top:0}
+.scout-players li a{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scout-players.absent li{grid-template-columns:auto minmax(0,1fr)}
+.scout-meeting{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);color:var(--ink-2)}
 
 /* Recrutement: a card per position of the squad, three abreast; its need in a red gauge in its head; the club's player there
    on the grey of a tile (.holder), then the leads, a line of 26 each; À céder under them. */
-.scout-figures{margin-bottom:var(--s2)}
-.scout-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s2)}
-@media(max-width:1500px){.scout-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:999px){.scout-grid{grid-template-columns:minmax(0,1fr)}}
-.scout-card .card-head h2{display:flex;align-items:center;gap:var(--s2)}
-.scout-card .card-head .gauge{width:56px}
-.scout-list{display:flex;flex-direction:column;margin:0;padding:0 0 var(--s1);list-style:none}
-.scout-list>li{display:grid;grid-template-columns:minmax(0,1fr) 24px 64px minmax(0,130px) 56px 48px 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
-.scout-list.future>li{grid-template-columns:minmax(0,1fr) 24px 64px 64px minmax(0,130px) 56px}
-.scout-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.scout-list>li:nth-child(odd):not(.holder){background:var(--stripe)}
-.scout-list>li>a:first-child{font-weight:600;color:var(--strong)}
-.scout-list>li.holder{background:var(--panel-2)}
-.scout-list>li.holder>*{color:var(--muted)}
-.scout-list>li.holder>a:first-child{font-weight:400;color:var(--muted)}
-.scout-list>li:not(.holder):hover{background:var(--panel-3)}
-.scout-list .club-link{display:block;overflow:hidden;text-overflow:ellipsis}
-.scout-list .club-link>.kit-dot{display:inline-block;margin-right:6px;vertical-align:-2px}
-.scout-gain{display:flex;justify-content:flex-end}
+.recruit-figures{margin-bottom:var(--s2)}
+.recruit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s2)}
+@media(max-width:1500px){.recruit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:999px){.recruit-grid{grid-template-columns:minmax(0,1fr)}}
+.recruit-card .card-head h2{display:flex;align-items:center;gap:var(--s2)}
+.recruit-card .card-head .gauge{width:56px}
+.recruit-list{display:flex;flex-direction:column;margin:0;padding:0 0 var(--s1);list-style:none}
+.recruit-list>li{display:grid;grid-template-columns:minmax(0,1fr) 24px 64px minmax(0,130px) 56px 48px 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.recruit-list.future>li{grid-template-columns:minmax(0,1fr) 24px 64px 64px minmax(0,130px) 56px}
+.recruit-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recruit-list>li:nth-child(odd):not(.holder){background:var(--stripe)}
+.recruit-list>li>a:first-child{font-weight:600;color:var(--strong)}
+.recruit-list>li.holder{background:var(--panel-2)}
+.recruit-list>li.holder>*{color:var(--muted)}
+.recruit-list>li.holder>a:first-child{font-weight:400;color:var(--muted)}
+.recruit-list>li:not(.holder):hover{background:var(--panel-3)}
+.recruit-list .club-link{display:block;overflow:hidden;text-overflow:ellipsis}
+.recruit-list .club-link>.kit-dot{display:inline-block;margin-right:6px;vertical-align:-2px}
+.recruit-gain{display:flex;justify-content:flex-end}

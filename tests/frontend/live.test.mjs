@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {liveTable,tableMoves,assistantAdvice,shownHighlights,highlightGroups,tacticsDraft,tacticsOrders,tacticsProblems,placeInDraft,benchInDraft,formationInDraft,draftLines} from '../../web/live.js';
+import {liveTable,tableMoves,assistantAdvice,shownHighlights,highlightGroups,tacticsDraft,tacticsOrders,tacticsProblems,placeInDraft,benchInDraft,formationInDraft,draftLines,matchPlayers} from '../../web/live.js';
 
 const club=(id,name)=>({id,name});
 const row=(id,name,points,goals_for=0,goals_against=0)=>({club:club(id,name),played:5,won:0,drawn:0,lost:0,goals_for,goals_against,points});
@@ -123,4 +123,10 @@ test('the lines of the draft: a substitute right after the player he replaces, a
   [[1,'GB',null],[9,'DG',null],[3,'DC','moved'],[2,'MC','moved'],[4,'BU','out'],[22,'BU','in']]);
  assert.equal(lines.pitch.find(line=>line.change==='out').slot,null);
  assert.deepEqual(lines.bench.map(line=>line.id),[20,21]);
+});
+
+test('the players of the match for the steps of a page over it: the user’s side by place, its bench, those gone off, then the other side',()=>{
+ const own=[{id:3,name:'C',state:'on',role:'BU',position:'MC'},{id:1,name:'A',state:'on',role:'GB',position:'GB'},{id:5,name:'E',state:'off',position:'DC'},{id:4,name:'D',state:'bench',position:'MC'}];
+ const other=[{id:8,name:'H',state:'on',role:'DC',position:'DC'}];
+ assert.deepEqual(matchPlayers(own,other),[{id:1,name:'A',position:'GB'},{id:3,name:'C',position:'BU'},{id:4,name:'D',position:'MC'},{id:5,name:'E',position:'DC'},{id:8,name:'H',position:'DC'}]);
 });

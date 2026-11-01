@@ -1084,11 +1084,14 @@ décocher une case pendant qu'un niveau est marqué recompose aussitôt. Les deu
 à l'autre. Un titulaire porte le maillot du club (le motif de son maillot domicile, redessiné à plat)
 marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
 
-L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
-rang, ses points et sa forme en championnat, la tactique qu'il joue, son bilan de la saison en
-championnat là où il joue ce match (à l'extérieur quand le club le reçoit), ses trois meilleurs joueurs
-de l'équipe première, ceux qui ne peuvent pas jouer (blessés avec leur date de retour, suspendus avec
-leurs matchs) et le dernier match entre les deux clubs.
+L'adversaire (`scouting` de la composition ; charte, « Adversaire d'une composition ») : son écusson,
+son nom, un avion rouge quand le club joue chez lui, son rang en grand et ses points en championnat,
+le niveau et le potentiel de son effectif en étoiles (ceux de son bandeau), la tactique qu'il joue,
+son bilan de la saison en championnat là où il joue ce match (à l'extérieur quand le club le reçoit),
+ses cinq derniers matches de la saison, toutes compétitions (score de son côté coloré V/N/D,
+adversaire, avion à l'extérieur, compétition, jour), ses trois meilleurs joueurs de l'équipe
+première, ceux qui ne peuvent pas jouer (blessés avec leur date de retour, suspendus avec leurs
+matchs) et le dernier match entre les deux clubs.
 
 Le terrain est une grille : cinq colonnes sur chaque ligne (défense, sentinelles, milieu, milieu
 offensif, attaque) et le gardien seul dans son but. Chaque tactique y pose ses postes. Glisser un
@@ -1176,19 +1179,33 @@ passeur) et le score change au bandeau.
   prévu se lit sur ses lignes (le sortant barré, l'entrant sur le vert juste
   après lui) et sur le terrain. « Valider », dans la carte Tactique, envoie le
   tout, appliqué à la fin de l'action en cours : tout de suite entre deux
-  actions et à la mi-temps ; en attendant, « À la fin de l'action ». « Annuler »
-  efface ce qui est prévu. Ce que les règles refusent (remplacements, fenêtres,
-  deux gardiens) se lit avant les boutons, et Valider ne part pas.
+  actions et à la mi-temps ; en attendant, « À la fin de l'action ». ▶ (Espace)
+  et « 2e mi-temps » valident d'eux-mêmes ce qui est prévu avant de relancer le
+  match. « Annuler » efface ce qui est prévu. Ce que les règles refusent
+  (remplacements, fenêtres, deux gardiens) se lit avant les boutons : Valider ne
+  part pas, et ▶ ou « 2e mi-temps » le disent dans un message sans relancer.
+- La mentalité choisie part seule, tout de suite, appliquée à la fin de l'action
+  en cours : le reste de ce qui est prévu attend, et le match reste comme il
+  était (en pause, arrêté sur une blessure, à la mi-temps). Pendant qu'elle
+  attend, les changements se préparent toujours ; ▶ les joint à elle.
 - Une blessure ou un carton rouge dans l'équipe du joueur arrête le match, le
   temps de réagir : le bandeau du terrain passe à « Arrêt de jeu », le fil dit
   ce qui s'est passé (« Blessure · Kondogbia · à vous de jouer »), aux couleurs
   de l'équipe, et le bouton de lecture repasse à ▶. Un changement validé le
-  relance ; « Reprendre », dans la carte Tactique, ou ▶ (Espace) le relance sans
-  changement. Des ordres validés pendant une action qui finit sur une blessure
+  relance ; « Reprendre », dans la carte Tactique, le relance sans changement, ▶
+  (Espace) aussi quand rien n'est prévu. Des ordres validés pendant une action qui finit sur une blessure
   ou un carton rouge sont appliqués, mais le match reste arrêté. Sur la dernière
   action d'une mi-temps, le joueur est marqué à la pause.
 - À la mi-temps le compteur reste sur « MT » jusqu'à « 2e mi-temps », bouton
   affiché au bas du terrain.
+- Le nom d'un joueur, dans la colonne de gauche des deux camps et sous son
+  maillot pendant un temps mort, ouvre sa fiche par-dessus le direct (voir la
+  charte, « Fiche sur le direct ») : le match se met en pause, et ce qui est
+  prévu reste en place. C'est la page du joueur telle quelle, sans ses
+  commandes ; les flèches de son bandeau passent d'un joueur du match à l'autre,
+  et ce qui mènerait hors du match (club, sélection, compétitions) s'écrit sans
+  lien. « Retour au match » ou Échap la referment ; le match reprend sur ▶
+  (Espace). Le reste de la ligne garde le choix et le glisser des changements.
 - « Fin du match » laisse l'IA finir le match sans l'afficher.
 - Au coup de sifflet final, « Continuer », au bas du terrain, clôt la journée et
   mène aux « Derniers matches » de la compétition, puis aux Actualités. « 2e mi-temps » et « Continuer » reprennent le style du

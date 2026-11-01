@@ -89,5 +89,5 @@ match-replay{display:block;padding:12px 16px 14px;--pitch-a:#1f5236;--pitch-b:#2
 .match-replay-card[hidden]{display:none}
 
 /* The live match takes the whole window: the menu and the header can do nothing until the final whistle. */
-.live-mode .sidebar,.live-mode .topbar{display:none}
+.live-mode .sidebar,.live-mode .workspace>.topbar{display:none}
 .live-mode .workspace{margin-left:0}

@@ -1,5 +1,5 @@
 import {monthlySalary,monthlyAmount,roundFee} from './salaries.js';
-import {playerNavigation} from './navigation.js';
+import {playerNavigation,matchNavigation} from './navigation.js';
 import {playerHero} from './club-hero.js';
 import {api,editionHref,escape as e,number as n,averageNote,money,price,budget,attributeScore,level,noteStars,stars,starsOf,levelStars,potentialStars,debugMode,conditionIcon,conditionReading,formIcon,formWord,moraleFace,moraleWord,affinityIcon,affinityWord,scoreBadge,reverseScoreBadge,scoreHue,formReading,moraleReading,date,season,clubLink,kitDot,nationFlag,nationBadge,nationBadges,competitionBadge,competitionLink,position,empty,card,fact,appearances,positionNote,positionBlockNote,marketTags,kitShirt,teamKit,playerBlock,affinityTag,PITCH_BOXES,ATTRIBUTES,ATTRIBUTE_SECTIONS,COMPOSITES,COMPOSITE_SECTIONS,COMPOSITE_ABBREVIATIONS,RADAR_COMPOSITES,byAttributeName,radar,starsText} from './ui.js';
 
@@ -459,15 +459,18 @@ export async function playerPreview(id, state) {
   +`<div class="preview-actions"><a class="button" href="#/player/${player.id}">Ouvrir la fiche</a>${actions}</div></div>`;
 }
 
-export async function playerScreen(id) {
- const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
+// Over the live match (`live`: the players of the match and its name), the same page without its commands, its band stepping
+// through the players of the match instead of his squad.
+export async function playerScreen(id, {live=null}={}) {
+ const [player,history,neighbours,state]=await Promise.all([api(`/joueurs/${id}`),api(`/joueurs/${id}/historique`),live?null:api(`/joueurs/${id}/navigation`),api('/monde/etat')]);
  const points=history.trajectory;
  const chart=card('Évolution du niveau',points.length>1?`<div class="card-body fill">${levelChart(points)}</div>`:empty('Un seul relevé'),'','level-card');
  const story=`<div class="player-row history">${chart}${careerCard(player,history.career)}</div>`;
  // A retired player keeps his name and his history.
  if(player.retired)return `<div class="page-heading"><div class="identity"><div><span class="eyebrow">CARRIÈRE ARCHIVÉE</span><h1>${e(player.name)}</h1><p>Retraité</p></div></div></div>${story}`;
- const {bar,dialogs}=await playerBar(player,state);
- return `${playerHero(player,{lead:playerNavigation(neighbours),foot:bar})}${dialogs}<div class="player-page">${rail(player)}<div class="player-main">${profile(player)}${story}</div></div>`;
+ const {bar,dialogs}=live?{bar:'',dialogs:''}:await playerBar(player,state);
+ const lead=live?matchNavigation(live.players,player.id,live.scope):playerNavigation(neighbours);
+ return `${playerHero(player,{lead,foot:bar})}${dialogs}<div class="player-page">${rail(player)}<div class="player-main">${profile(player)}${story}</div></div>`;
 }
 
 // A position picked on the pitch of aptitudes or in their list: the Jeu section marks what that position asks for, and both

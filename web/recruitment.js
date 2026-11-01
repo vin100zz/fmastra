@@ -24,7 +24,7 @@ const gauge=(share,modifier='')=>`<i class="gauge${modifier?` ${modifier}`:''}">
 // What a lead brings today, its bar the share of the need it covers; the place it would take, and from whom, in its tooltip.
 const contribution=lead=>{
  const place=PLACES[lead.place],from=lead.replaces?` à la place de ${lead.replaces.name}`:'';
- return `<span class="scout-gain" title="${e(place?`${place}${from}`:'Apport à l’effectif')}">${gauge(lead.contribution)}</span>`;
+ return `<span class="recruit-gain" title="${e(place?`${place}${from}`:'Apport à l’effectif')}">${gauge(lead.contribution)}</span>`;
 };
 const fee=lead=>lead.club?price(lead.asking_price):'—';
 
@@ -37,22 +37,22 @@ const leadRow=(lead,future)=>`<li>${playerLink(lead.id,lead.name)}<span class="n
   :`${clubLink(lead.club)}<span class="num">${fee(lead)}</span><span class="num">${monthlySalary(lead.wage_demand)}</span>${contribution(lead)}`)+'</li>';
 
 export function positionCard(item,future){
- const need=future?'':`<span class="scout-need" title="Besoin">${gauge(item.need,'bad')}</span>`;
- const list=`<ul class="scout-list${future?' future':''}">${holderRow(item.holder,future)}${item.leads.map(lead=>leadRow(lead,future)).join('')}</ul>`;
- return `<section class="card scout-card"><div class="card-head"><h2>${position(item.position)}${e(POSITION_NAMES[item.position]||item.position)}</h2>${need}</div>${list}${item.leads.length?'':empty('Aucune piste')}</section>`;
+ const need=future?'':`<span class="recruit-need" title="Besoin">${gauge(item.need,'bad')}</span>`;
+ const list=`<ul class="recruit-list${future?' future':''}">${holderRow(item.holder,future)}${item.leads.map(lead=>leadRow(lead,future)).join('')}</ul>`;
+ return `<section class="card recruit-card"><div class="card-head"><h2>${position(item.position)}${e(POSITION_NAMES[item.position]||item.position)}</h2>${need}</div>${list}${item.leads.length?'':empty('Aucune piste')}</section>`;
 }
 
 // The players without a place in the squad, in the columns of a player list, sorted in the browser.
-const surplusCard=players=>card('À céder',playerTable({items:players},false,'rating','asc',{sortable:false,pager:false}),'','scout-surplus');
+const surplusCard=players=>card('À céder',playerTable({items:players},false,'rating','asc',{sortable:false,pager:false}),'','recruit-surplus');
 
 export function recruitmentContent(data,params=new URLSearchParams()){
  const future=data.mode==='avenir',squad=data.squad,window=data.window;
  const head=heading('Recrutement',`<div class="tools">${choice(params,'vue',[['','Présent'],['avenir','Avenir']],'Horizon')}${choice(params,'libres',[['','Toutes les pistes'],['1','Agents libres']],'Joueurs')}</div>`);
- const figures=`<div class="finance-figures scout-figures">${shareBlock(data.finances)}`
+ const figures=`<div class="finance-figures recruit-figures">${shareBlock(data.finances)}`
   +figure('Effectif',`${squad.size} / ${squad.max}`,'',squad.size>=squad.max?'bad':'')
   +(window.closes?figure('Fin du mercato',dayMonth(window.closes)):figure('Ouverture du mercato',dayMonth(window.opens)))+'</div>';
  const cards=data.positions.map(item=>positionCard(item,future)).join('');
- return head+figures+`<div class="scout-grid">${cards}</div>`+(data.surplus.length?surplusCard(data.surplus):'');
+ return head+figures+`<div class="recruit-grid">${cards}</div>`+(data.surplus.length?surplusCard(data.surplus):'');
 }
 
 export async function recruitmentScreen(params){

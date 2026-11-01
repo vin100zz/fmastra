@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>La fiche d’un joueur sur le direct · Football Manager</title>
+<link rel="stylesheet" href="charte.css">
+<style>
+/* ——— Proposition pour la charte : la fiche d’un joueur ouverte sur le direct (.live-sheet) ———
+   Un calque plein écran sur le fond de la page ; en tête, une barre de 56 comme la barre du haut : « Retour au match »,
+   puis le match en pause. Dessous, la fiche telle quelle, sans ses commandes. */
+.live-sheet{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;background:var(--bg)}
+.live-sheet>.topbar{background:var(--panel);box-shadow:var(--shadow-card)}
+.back{display:flex;align-items:center;gap:var(--s2);height:var(--h-bar-control);padding:0 var(--s4) 0 var(--s3);border-radius:var(--radius-box);font:700 var(--fs-figure)/20px var(--text)}
+.back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.paused-match{display:flex;align-items:center;gap:var(--s3);margin-left:var(--s4);font:700 semi-condensed var(--fs-title)/24px var(--display);color:var(--strong)}
+.paused-match .side{display:flex;align-items:center;gap:var(--s2)}
+.paused-match .live-clock{height:var(--h-control);min-width:48px;font-size:var(--fs-figure)}
+.live-sheet-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--s2);padding:var(--s2) var(--s3) var(--s3)}
+/* Le nom d’une ligne de l’équipe est un lien vers la fiche, comme partout : souligné sous le pointeur. */
+.squad-who>a{min-width:0;overflow:hidden;font-weight:600;color:var(--strong);white-space:nowrap;text-overflow:ellipsis;text-decoration:none}
+.squad-row.bench .squad-who>a{font-weight:400;color:var(--muted)}
+.squad-who>a.hover{text-decoration:underline;text-underline-offset:2px}
+
+/* ——— Mise en page de la maquette (rien que l’application utilise) ——— */
+body{margin:0;background:var(--line)}
+.board{display:flex;flex-direction:column;gap:var(--s6);width:1920px;margin:0 auto;padding:40px 0}
+.board-head{display:flex;align-items:baseline;gap:var(--s4);padding:0 48px var(--s3);border-bottom:var(--mark) solid var(--accent)}
+.board-head h1{margin:0;font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase;color:var(--strong)}
+.piste{display:flex;flex-direction:column;gap:var(--s3)}
+.piste-head{display:flex;align-items:baseline;gap:var(--s4);padding:0 48px}
+.piste-head h2{margin:0;font:700 semi-condensed var(--fs-page)/32px var(--display);text-transform:uppercase;color:var(--strong)}
+.piste-head p{margin:0;color:var(--ink-2)}
+.notes{display:flex;gap:40px;padding:0 48px}
+.notes dl{display:grid;grid-template-columns:auto 1fr;gap:var(--s1) var(--s3);margin:0;max-width:560px}
+.notes dt{font:700 semi-condensed var(--fs-small)/18px var(--display);letter-spacing:var(--caps);text-transform:uppercase;color:var(--title-ink)}
+.notes dd{margin:0;color:var(--ink-2)}
+.screen{position:relative;display:grid;grid-template-columns:400px minmax(0,1fr) 500px;gap:var(--s2);width:1920px;height:1080px;padding:var(--s2);background:var(--bg);overflow:hidden}
+.col{display:flex;flex-direction:column;gap:var(--s2);min-height:0}
+.squad-card{flex:1;min-height:0;overflow:hidden}
+.squad-row.hover,.squad-row.hover:nth-child(even){background:var(--panel-3)}
+.squad-row .rating{justify-self:end}
+.cursor{position:absolute;z-index:6;width:16px;height:22px;pointer-events:none;filter:drop-shadow(0 1px 1px #0006)}
+.cursor path{fill:#fff;stroke:#000;stroke-width:1.2;stroke-linejoin:round}
+.hero-side{display:flex;align-items:center;gap:var(--s3);flex:1}
+.hero-side.away{justify-content:flex-end}
+.hero .tile.match-score{flex:none;flex-direction:row;align-items:center;gap:var(--s3)}
+.big-score{font:700 semi-condensed var(--fs-hero)/1 var(--display);color:var(--strong)}
+.turf{position:relative;flex:none;aspect-ratio:105/68;border-radius:var(--radius-box) var(--radius-box) 0 0;background:repeating-linear-gradient(90deg,var(--pitch-a) 0 9.09%,var(--pitch-b) 9.09% 18.18%)}
+.turf::before{content:"";position:absolute;inset:16px;border:2px solid var(--pitch-line);border-radius:2px;background:linear-gradient(var(--pitch-line),var(--pitch-line)) center/2px 100% no-repeat}
+.turf::after{content:"";position:absolute;left:50%;top:50%;width:18%;aspect-ratio:1;border:2px solid var(--pitch-line);border-radius:50%;transform:translate(-50%,-50%)}
+.turf-box{position:absolute;top:28%;bottom:28%;width:15%;border:2px solid var(--pitch-line)}
+.turf-box.left{left:16px;border-left:0}.turf-box.right{right:16px;border-right:0}
+.commands{display:flex;align-items:center;gap:var(--s2)}
+.commands .button.primary{margin-left:auto}
+.ghost{flex:1;min-height:0}
+.ghost .card-body{display:flex;flex-direction:column;gap:var(--s2)}
+.ghost i{display:block;height:var(--s3);border-radius:var(--radius-chip);background:var(--panel-2)}
+.sheet-grid{flex:1;min-height:0;display:grid;grid-template-columns:280px minmax(0,1fr) 380px;gap:var(--s2)}
+.sheet-grid>.col{min-height:0}
+.career{flex:none}
+.career .tr{grid-template-columns:96px minmax(0,1fr) 84px 96px 68px 52px 68px 52px}
+.hero .tiles{margin-left:auto}
+.hero .tile.split a{color:inherit;text-decoration:none}
+.aptitudes{flex:none;height:380px;margin:var(--s3)}
+.chart{flex:none}
+.chart svg{display:block;width:100%;height:240px}
+.chart .grid-line{stroke:var(--row-line)}
+.chart .curve{fill:none;stroke:var(--series-1);stroke-width:2}
+.chart .band{fill:var(--series-1-soft);opacity:.45}
+.chart text{font:400 var(--fs-small) var(--text);fill:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app board">
+<header class="board-head"><h1>La fiche d’un joueur, en direct</h1><span class="label">Option 2 · thème clair · 1920 × 1080</span></header>
+<div id="pistes"></div>
+</div>
+<script>
+// ——— Données de la maquette ———
+const OM={name:'Marseille',body:'#ffffff',minor:'#2faee0',third:'#2faee0',ink:'#0b121a'};
+const LOSC={name:'Lille',body:'#e01e13',minor:'#1d2b5c',third:'#1d2b5c',ink:'#ffffff'};
+const LINE={GB:'gk',DC:'',DG:'',DD:'',MDC:'mid',MC:'mid',MOC:'mid',AILG:'att',AILD:'att',BU:'att'};
+// [numéro, poste, nom, note, fatigue %, marques]
+const XI=[[12,'GB','Jeffrey de Lange','6.9',1],[13,'DC','Derek Cornelius','7.0',7],[18,'DC','Bamo Meïté','6.7',6],[21,'DC','Nayef Aguerd','6.8',6],
+ [23,'MDC','Pierre-Emile Højbjerg','6.9',7],[15,'MC','Himad Abdelli','7.0',6],[8,'MC','Angel Gomes','7.7',7,'goal'],[14,'AILG','Igor Paixão','7.2',6],
+ [2,'AILD','Timothy Weah','6.7',7],[9,'BU','Amine Gouiri','6.8',7],[31,'BU','Faris','6.6',7]];
+const BENCH=[[40,'GB','Jelle Van Neck'],[6,'DG','Ulisses Garcia'],[33,'DG','Emerson'],[32,'MDC','Tochukwu Nnadi'],[4,'MDC','CJ Egan-Riley'],
+ [19,'MDC','Geoffrey Kondogbia'],[11,'MOC','Amine Harit'],[7,'BU','Neal Maupay']];
+// Composites en étoiles, dans l’ordre du radar : Frappe, Créat., Progr., Déf. mil., Déf. surf., Aérien.
+const LABELS=[['Frappe','Frappe : Finition 60 % · Sang-froid 25 % · Technique 15 %'],['Créat.','Création : Vision 50 % · Technique 30 % · Passe 20 %'],
+ ['Progr.','Progression : Passe 45 % · Technique 30 % · Vision 15 % · Vitesse 10 %'],['Déf. mil.','Défense au milieu : Placement 45 % · Tacle 35 % · Vitesse 20 %'],
+ ['Déf.<br>surf.','Défense de surface : Placement 60 % · Tacle 40 %'],['Aérien','Jeu aérien : Jeu de tête 70 % · Placement 30 %']];
+const KEYS={MC:[1,2,3],AILG:[0,1,2],BU:[0,1,5]};
+const ATTRS=['Centres','Coups arrêtés','Endurance','Finition','Jeu de tête','Passe','Penaltys','Placement','Sang-froid','Tacle','Technique','Vision','Vitesse'];
+const KEY_ATTRS={MC:['Passe','Technique','Vision','Placement','Endurance'],AILG:['Vitesse','Technique','Centres','Finition'],BU:['Finition','Jeu de tête','Sang-froid','Technique']};
+const GOMES={number:8,pos:'MC',name:'Angel Gomes',age:26,level:3.5,potential:[3.5,4],form:1,morale:'excellent',radar:[2.5,4,4.5,2.5,1.5,1],
+ attrs:{Centres:11,'Coups arrêtés':12,Endurance:15,Finition:10,'Jeu de tête':6,Passe:16,Penaltys:9,Placement:12,'Sang-froid':14,Tacle:9,Technique:17,Vision:16,Vitesse:13}};
+const PAIXAO={number:14,pos:'AILG',name:'Igor Paixão',age:26,level:3.5,potential:[3.5,3.5],form:2,morale:'bon',radar:[3.5,4,4,1.5,1,1.5]};
+const GOUIRI={number:9,pos:'BU',short:'Gouiri',name:'Amine Gouiri',level:3.5,form:0,morale:'correct',fatigue:71,radar:[4,3.5,3,1,0.5,2.5],
+ attrs:{Finition:15,'Jeu de tête':11,'Sang-froid':14,Technique:15,Vitesse:14,Endurance:12,Passe:12,Vision:13}};
+const MAUPAY={number:7,pos:'BU',short:'Maupay',name:'Neal Maupay',level:3,form:-1,morale:'bon',fatigue:0,radar:[3.5,2.5,2,1.5,0.5,3],
+ attrs:{Finition:14,'Jeu de tête':13,'Sang-froid':13,Technique:12,Vitesse:12,Endurance:15,Passe:11,Vision:10}};
+
+// ——— Composants de la charte, dessinés comme sur les planches ———
+let maskId=0;
+const SHIRT='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z';
+const kit=(club,n)=>{const id=`m${++maskId}`;
+ return `<span class="kit-shirt number" style="--kit-body:${club.body};--kit-minor:${club.minor};--kit-third:${club.third};--kit-ink:${club.ink}"><svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><mask id="${id}"><path class="kit-mask" d="${SHIRT}"/></mask><path class="kit-base" d="${SHIRT}"/><g mask="url(#${id})"><rect class="kit-t" width="2.6" height="17"/><rect class="kit-t" x="37.4" width="2.6" height="17"/></g><path class="kit-collar" d="M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z"/><path class="kit-outline" d="${SHIRT}"/></svg><b>${n}</b></span>`;};
+const pos=p=>`<span class="position ${LINE[p]}">${p}</span>`;
+const hue=v=>v<=4?4:v>=16?135:v<=10?4+(v-4)/6*46:50+(v-10)/6*85;
+const rating=(v,cls='')=>`<span class="rating graded ${cls}" style="--hue:${Math.round(hue(v))}">${v}</span>`;
+const noteHue=s=>hue(Math.max(0,(parseFloat(s)-4)*3.33+4));
+const note=s=>`<span class="rating graded" style="--hue:${Math.round(hue(parseFloat(s)*2+2))}">${s}</span>`;
+const stars=(sure,possible=sure,big=false)=>{let h='';for(let i=0;i<5;i++){const f=Math.max(0,Math.min(1,sure-i)),u=Math.max(0,Math.min(1,possible-i));h+=`<i style="--f:${f};--u:${u}"></i>`;}
+ return `<span class="stars${big?' big':''}" role="img">${h}</span>`;};
+const ARROWS={2:-90,1:-45,0:0,'-1':45,'-2':90},FORMS={2:'Excellente',1:'Bonne',0:'Normale','-1':'Mauvaise','-2':'Très mauvaise'};
+const arrow=a=>`<span class="arrow a${a}"><svg viewBox="0 0 10 10" aria-hidden="true" style="transform:rotate(${ARROWS[a]}deg)"><path d="M1.5 5h7M5.5 2l3 3-3 3"></path></svg></span>`;
+const FACES={excellent:[135,'M4.6 9.5Q8 12.8 11.4 9.5','Excellent'],bon:[88,'M4.6 10.05Q8 11.7 11.4 10.05','Bon'],correct:[50,'M4.6 10.6Q8 10.6 11.4 10.6','Correct']};
+const face=m=>`<svg class="face" viewBox="0 0 16 16" style="--hue:${FACES[m][0]}"><circle class="head" cx="8" cy="8" r="8"></circle><circle class="eye" cx="5.4" cy="6.2" r="1.1"></circle><circle class="eye" cx="10.6" cy="6.2" r="1.1"></circle><path d="${FACES[m][1]}"></path></svg>`;
+const gauge=p=>`<span class="fatigue"><span class="gauge ${p>=70?'bad':p>=50?'warn':''}"><i style="width:${p}%"></i></span>${p} %</span>`;
+const fact=(label,value)=>`<div class="fact"><span>${label}</span><strong>${value}</strong></div>`;
+const section=(title,extra='')=>`<div class="section-title"><span class="label">${title}</span>${extra}</div>`;
+
+// Le radar de 240 × 148 des planches : centre (116, 74), un anneau de 14 par étoile.
+const CX=116,CY=74,STEP=14,ANG=[-60,0,60,120,180,240];
+const at=(i,r)=>[CX+r*Math.cos(ANG[i]*Math.PI/180),CY+r*Math.sin(ANG[i]*Math.PI/180)];
+const poly=r=>ANG.map((_,i)=>at(i,r).map(v=>v.toFixed(1)).join(',')).join(' ');
+function radar(values,role,other=null){
+ const keys=KEYS[role]||[];
+ let svg='';for(let k=1;k<=5;k++)svg+=`<polygon class="radar-ring${k===5?' outer':''}" points="${poly(k*STEP)}"/>`;
+ ANG.forEach((_,i)=>{const [x,y]=at(i,5*STEP);svg+=`<line class="radar-spoke" x1="${CX}" y1="${CY}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;});
+ const shape=(vals,cls)=>{const pts=vals.map((v,i)=>at(i,v*STEP));return `<polygon class="radar-shape${cls}" points="${pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ')}"/>`+pts.map(([x,y])=>`<circle class="radar-dot${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3"/>`).join('');};
+ if(other)svg+=shape(other,' out');
+ svg+=shape(values,'');
+ const labels=ANG.map((_,i)=>{const [x,y]=at(i,5*STEP),right=i<3,dx=i===1||i===4?4:2,dy=i===0||i===5?-3.5:i===2||i===3?3.5:0;
+  return `<span class="radar-label ${right?'right':'left'}${keys.includes(i)?' key':''}" style="left:${(x+(right?dx:-dx)).toFixed(1)}px;top:${(y+dy).toFixed(1)}px" title="${LABELS[i][1]}"><span>${LABELS[i][0]}</span></span>`;}).join('');
+ return `<div class="radar-rows"><div class="radar" style="width:240px;height:148px"><svg width="240" height="148" viewBox="0 0 240 148" role="img">${svg}</svg>${labels}</div></div>`;
+}
+
+// ——— L’écran du direct ———
+function squadRow(club,[n,p,name,rate,fat,mark],{bench=false,hover=false,opp=false,cls=''}={}){
+ const marks=mark==='goal'?'<span class="marks"><i class="mark goal"></i></span>':'<span class="marks"></span>';
+ return `<div class="squad-row${bench?' bench':''}${hover?' hover':''}${cls?' '+cls:''}" data-n="${n}">${kit(club,n)}<span class="squad-who">${pos(p)}<span>${name}</span></span>${marks}${rate?note(rate):'<span></span>'}${opp?'<span></span>':gauge(fat??0)}<span></span></div>`;}
+function squadCard(opts={}){
+ const rows=XI.map(r=>squadRow(OM,r,{hover:opts.hover===r[0],cls:opts.target===r[0]?'drop-hover':''})).join('');
+ const bench=BENCH.map(r=>squadRow(OM,[r[0],r[1],r[2],'',0],{bench:true,hover:opts.hover===r[0],cls:opts.drag===r[0]?'dragging':''})).join('');
+ return `<section class="card squad-card"><div class="live-team-pick"><div class="segmented small fill" role="group"><button type="button" class="active">Marseille</button><button type="button">Lille</button></div></div>`
+  +`${section('Sur le terrain','<span class="aside">5 changements restants</span>')}${rows}${section('Remplaçants')}${bench}</section>`
+  +`<section class="card"><div class="card-head"><h2>Tactique</h2></div><div class="card-body"><div class="fact"><span>Formation</span><select aria-label="Formation"><option>3-4-3</option></select></div><div class="fact"><span>Mentalité</span><div class="segmented small"><button type="button">Défensive</button><button type="button" class="active">Équilibrée</button><button type="button">Offensive</button></div></div></div></section>`;
+}
+const middle=()=>`<section class="card"><div class="hero duel compact" style="background:${OM.minor}">
+<i class="hero-sash home-band" style="background:#ffffff"></i><i class="hero-sash home-band thin" style="background:#ffffff"></i>
+<i class="hero-sash away-field" style="background:${LOSC.body};clip-path:polygon(61% 0,100% 0,100% 100%,53% 100%)"></i>
+<div class="hero-side" style="color:#ffffff"><h1>Marseille</h1></div>
+<div class="tile match-score"><span class="live-clock">64′</span><span class="big-score">1 – 0</span></div>
+<div class="hero-side away" style="color:#ffffff"><h1>Lille</h1></div></div></section>
+<div><div class="turf"><span class="turf-box left"></span><span class="turf-box right"></span></div>
+<div class="ticker"><b>64′</b><span>Jeu en cours</span><span class="ticker-run"><i></i></span></div></div>
+<div class="frise"><span class="frise-played" style="width:71%"></span><span class="frise-half" style="left:50%"></span><span class="frise-now" style="left:71%"></span><i class="mark goal home" style="left:42%"></i></div>
+<div class="commands"><button type="button" class="button">Pause</button><button type="button" class="button">Action suivante</button><button type="button" class="button">3D</button><button type="button" class="button primary">Fin du match</button></div>
+<section class="card ghost"><div class="card-head"><h2>Le fil du match</h2></div><div class="card-body"><i style="width:90%"></i><i style="width:60%"></i></div></section>`;
+const right=()=>`<section class="card ghost"><div class="card-head"><h2>Les temps forts</h2></div><div class="card-body"><i style="width:70%"></i></div></section>
+<section class="card ghost" style="flex:2"><div class="card-head"><h2>Ligue 1 · 11e journée</h2></div><div class="card-body"><i></i><i></i><i></i><i></i><i></i><i style="width:80%"></i></div></section>`;
+const cursor=(x,n)=>`<svg class="cursor" data-row="${n}" data-x="${x}" viewBox="0 0 16 22"><path d="M1 1v17l4.4-4.2 3 6.6 2.8-1.3-3-6.4H14z"/></svg>`;
+const screen=(left,peek)=>`<div class="screen"><div class="col">${left}</div><div class="col">${middle()}</div><div class="col">${right()}</div>${peek}</div>`;
+
+// ——— Le nom, lien vers la fiche ———
+function squadRow(club,[n,p,name,rate,fat,mark],{bench=false,hover=false,opp=false,cls=''}={}){
+ const marks=mark==='goal'?'<span class="marks"><i class="mark goal"></i></span>':'<span class="marks"></span>';
+ return `<div class="squad-row${bench?' bench':''}${hover?' hover':''}${cls?' '+cls:''}" data-n="${n}">${kit(club,n)}<span class="squad-who">${pos(p)}<a href="#"${hover?' class="hover"':''}>${name}</a></span>${marks}${rate?note(rate):'<span></span>'}${opp?'<span></span>':gauge(fat??0)}<span></span></div>`;}
+
+// ——— La fiche, telle que la page d’un joueur la dessine ———
+const svgPath=d=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"></path></svg>`;
+const kitDot=c=>`<i class="kit-dot" style="background:linear-gradient(135deg,${c.body} 64%,${c.minor} 64%)"></i>`;
+const flag=`<img class="flag" src="gb-eng.svg" alt="">`;
+function hero(){
+ return `<section class="card"><div class="hero" style="background:${OM.minor};color:#ffffff;--hero-step:#ffffff;--hero-veil:#ffffff1f">
+<i class="hero-sash" style="background:#ffffff"></i><i class="hero-sash thin" style="background:#ffffff"></i>
+<div class="entity-nav" role="group" aria-label="Les joueurs du match"><a class="entity-step" href="#" aria-label="Joueur précédent">${svgPath('M6.5 14.5 12 9l5.5 5.5')}</a><details class="entity-menu"><summary aria-label="Les joueurs du match">${svgPath('M5 7.5h14M5 12h14M5 16.5h14')}</summary></details><a class="entity-step" href="#" aria-label="Joueur suivant">${svgPath('M6.5 9.5 12 15l5.5-5.5')}</a></div>
+<div class="hero-name"><span class="hero-number" title="Numéro de maillot">8</span><h1>Angel Gomes</h1><span class="hero-context">Marseille</span></div>
+<div class="tiles"><div class="tile"><span class="label">Âge</span><strong>26</strong></div>
+<div class="tile split"><div><span class="label">${flag}</span><strong>ENG</strong></div><div><span class="label">Sél.</span><strong>3</strong></div><div><span class="label">Buts</span><strong>0</strong></div></div>
+<div class="tile split"><div><span class="label">Niveau</span><strong>${stars(3.5,3.5,true)}</strong></div><div><span class="label">Potentiel</span><strong>${stars(3.5,4,true)}</strong></div></div>
+<div class="tile split"><div><span class="label">Valeur</span><strong>28 M€</strong></div><div><span class="label">Prix demandé</span><strong>N/A</strong></div></div></div></div></section>`;
+}
+function rail(){
+ const cells='<span class="cells good"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>';
+ return `<section class="card"><div class="card-head"><h2>État</h2></div><div class="rail-section">${fact('Condition',cells+'Bon')}${fact('Forme',arrow(1)+'Bonne')}${fact('Moral',face('excellent')+'Excellent')}${fact('Blessure','<span class="good">Disponible</span>')}${fact('Cartons','1')}</div></section>
+<section class="card"><div class="card-head"><h2>Caractère</h2></div><div class="rail-section">${fact('Agressivité',rating(8))}${fact('Ambition','<span class="rating neutral">15</span>')}${fact('Appât du gain','<span class="rating neutral">12</span>')}${fact('Fragilité',rating(16))}</div></section>
+<section class="card"><div class="card-head"><h2>Contrat</h2></div><div class="rail-section">${fact('Salaire','310 k€')}${fact('Fin du contrat','30 juin 2029')}</div></section>`;
+}
+function attributes(){
+ const col=(title,names,keys)=>`<div class="attribute-column"><div class="section-title"><span class="label">${title}</span></div><div class="attribute-rows">${names.map(a=>`<div class="attribute${keys.includes(a)?' key':''}"><span>${a}</span>${rating(GOMES.attrs[a])}</div>`).join('')}</div></div>`;
+ const keys=KEY_ATTRS.MC;
+ return `<section class="card"><div class="card-head"><h2>Attributs</h2></div><div class="attribute-columns">
+<div class="attribute-column composites-column radar-column"><div class="section-title"><span class="label">Jeu</span>${pos('MC')}</div>${radar(GOMES.radar,'MC')}</div>
+${col('Défense',['Placement','Tacle'],keys)}${col('Attaque',['Centres','Coups arrêtés','Finition','Jeu de tête','Penaltys','Sang-froid','Technique','Vision'],keys)}${col('Général',['Endurance','Passe','Vitesse'],keys)}</div></section>`;
+}
+function career(){
+ const comp=(...c)=>`<span class="cell">${c.map(x=>`<span class="comp${x.startsWith('C')?' europe':''}">${x}</span>`).join('')}</span>`;
+ const club=c=>`<span class="cell">${kitDot(c)}<span>${c.name}</span></span>`;
+ const SUN={name:'Sunderland',body:'#eb172b',minor:'#ffffff'},MU={name:'Man. United',body:'#da291c',minor:'#000000'},LOSCc={...LOSC,name:'Lille'};
+ const rows=[['2026 / 2027',OM,'—',comp('L1','C1'),'14 (1)','3','4','7.12'],['2025 / 2026',OM,'—',comp('L1','C1'),'41 (3)','6','11','7.04'],['2024 / 2025',OM,'Libre',comp('L1'),'38 (2)','4','9','6.95'],
+  ['2023 / 2024',LOSCc,'—',comp('L1','C4'),'36 (6)','6','5','6.88'],['2022 / 2023',LOSCc,'Libre',comp('L1','C4'),'31 (9)','3','4','6.71'],['2021 / 2022',MU,'—',comp('D1'),'2 (2)','0','0','6.30']];
+ const tr=r=>`<div class="tr"><span>${r[0]}</span>${club(r[1])}<span>${r[2]}</span>${r[3]}<span class="num">${r[4]}</span><span class="num">${r[5]}</span><span class="num">${r[6]}</span><span class="num">${r[7]}</span></div>`;
+ return `<section class="card career"><div class="card-head"><h2>Carrière</h2></div><div class="career-body"><div class="table scroll aligned">
+<div class="tr head"><span>Saison</span><span>Club</span><span>Transfert</span><span>Compétition</span><span class="num">Matchs</span><span class="num">Buts</span><span class="num">Passes</span><span class="num">Note</span></div>
+${rows.map(tr).join('')}<div class="tr foot"><span>Total</span><span></span><span>—</span><span></span><span class="num">162</span><span class="num">22</span><span class="num">33</span><span class="num">6.94</span></div></div></div></section>`;
+}
+function aptitudes(){
+ const spots=[['MC',50,42,4,135,true],['MOC',50,25,3.5,88],['MDC',50,59,3,88],['AILG',15,17,3,50],['AILD',85,17,2.5,50]];
+ const block=(s,h,main)=>`<span class="player-block"><span>${stars(s)}${h<135?`<i class="fit" style="--hue:${h};--p:${h===88?85:60}"></i>`:''}</span></span>`;
+ return `<section class="card"><div class="card-head"><h2>Aptitudes</h2></div><div class="pitch ratings aptitudes"><span class="pitch-box"></span><span class="pitch-box far"></span>
+${spots.map(([r,x,y,s,h,main])=>`<span class="pitch-player${main?' main picked':''}" style="left:${x}%;top:${y}%">${kit(OM,r)}${block(s,h,main)}</span>`).join('')}</div></section>`;
+}
+function chart(){
+ const W=356,H=240,pts=[[0,2.5],[1,2.5],[2,3],[3,3],[4,3],[5,3.5],[6,3.5]],x=i=>24+i*(W-40)/6,y=s=>H-24-(s-1)*(H-40)/4;
+ const lines=[1,2,3,4,5].map(s=>`<line class="grid-line" x1="24" x2="${W-8}" y1="${y(s)}" y2="${y(s)}"/>`).join('');
+ const band=`<polygon class="band" points="${pts.map(([i,s])=>`${x(i)},${y(Math.min(5,s+1.5-i*.15))}`).join(' ')} ${pts.slice().reverse().map(([i,s])=>`${x(i)},${y(s)}`).join(' ')}"/>`;
+ const labels=['21','22','23','24','25','26','27'].map((t,i)=>`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${t}</text>`).join('');
+ return `<section class="card chart"><div class="card-head"><h2>Évolution du niveau</h2></div><svg viewBox="0 0 ${W} ${H}" >${lines}${band}<polyline class="curve" points="${pts.map(([i,s])=>`${x(i)},${y(s)}`).join(' ')}"/>${labels}</svg></section>`;
+}
+function sheet(){
+ return `<div class="live-sheet"><header class="topbar"><button type="button" class="button primary back">${svgPath('M15 5l-7 7 7 7')}Retour au match</button>
+<div class="paused-match"><span class="side">${kitDot(OM)}Marseille</span><span>1 – 0</span><span class="side">Lille ${kitDot(LOSC)}</span><span class="live-clock running">64′</span><span class="pill">En pause</span></div></header>
+<div class="live-sheet-body">${hero()}<div class="sheet-grid"><div class="col">${rail()}</div><div class="col">${attributes()}${career()}</div><div class="col">${aptitudes()}${chart()}</div></div></div></div>`;
+}
+
+// ——— Les deux écrans ———
+const pistes=[
+ {title:'1 · Le nom, un lien',lede:'Sur la ligne, le nom mène à la fiche ; le reste de la ligne garde le choix d’un changement.',
+  html:screen(squadCard({hover:8}),cursor(110,8)),
+  notes:[['Lien','Le nom de chaque ligne, des deux camps, souligné sous le pointeur comme tout nom de joueur. Le maillot, le poste, la note gardent le clic et le glisser des changements.'],
+   ['Ouverture','Le match se met en pause, comme sur la touche Espace ; un brouillon de changements reste en place.'],
+   ['Terrain','Pendant un temps mort, le nom sous un maillot y mène aussi.']]},
+ {title:'2 · La fiche sur le direct',lede:'La page du joueur, dans un calque : le direct reste chargé dessous.',
+  html:`<div class="screen">${sheet()}</div>`,
+  notes:[['Retour','« Retour au match » ou Échap ferment le calque ; le match reste en pause, où on l’a laissé. Espace le relance.'],
+   ['Fiche','Celle de la page du joueur, sans sa barre de commandes. Les flèches du bandeau passent d’un joueur du match à l’autre, des deux camps ; sa liste les donne tous.'],
+   ['Liens','Ce qui mènerait hors du match (club, sélection, compétitions de la carrière) s’écrit sans lien. La fiche d’un adversaire ne montre pas sa condition.']]}];
+document.getElementById('pistes').outerHTML=pistes.map(p=>`<section class="piste"><div class="piste-head"><h2>${p.title}</h2><p>${p.lede}</p></div>${p.html}<div class="notes">${p.notes.map(([t,d])=>`<dl><dt>${t}</dt><dd>${d}</dd></dl>`).join('')}</div></section>`).join('');
+// Le pointeur sur le nom de la ligne visée.
+document.querySelectorAll('.screen').forEach(screen=>{const box=screen.getBoundingClientRect();
+ screen.querySelectorAll('.cursor').forEach(c=>{const r=screen.querySelector(`.squad-row[data-n="${c.dataset.row}"]`).getBoundingClientRect();c.style.left=`${r.left-box.left+Number(c.dataset.x)}px`;c.style.top=`${r.top-box.top+12}px`;});});
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@ import {liveReplay} from './match-replay.js';
 import {replayTeams,statsCard,flowChart} from './match.js';
 import {matchHero} from './club-hero.js';
 import {pitchLayout,changeFormation} from './composition.js';
+import {openPlayerSheet,sheetOpen,pausedMatch} from './live-sheet.js';
 
 const POSITIONS=['GB','DG','DC','DD','MDC','MC','AILG','AILD','MOC','BU'];
 const MENTALITIES={defensive:'Défensive',equilibree:'Équilibrée',offensive:'Offensive'};
@@ -282,8 +283,9 @@ function shownChanges(){
 }
 const sideOf=mine=>mine?view.state.side:view.state.side==='home'?'away':'home';
 const sheetOf=side=>side===view.state.side?view.shown.manager.squad:view.shown.opponent?.squad??[];
-// The user's side can be changed until the final whistle, except while its changes wait for the end of the action.
-const editable=()=>view.status!=='finished'&&!view.waiting;
+// The user's side can be changed until the final whistle, except while its changes wait for the end of the action (a
+// mentality waiting alone leaves the rest free).
+const editable=()=>view.status!=='finished'&&view.waiting!==true;
 const hurt=player=>player.injured||player.red||view.decision?.player_id===player.id;
 
 // One side's players, a line each: those on the pitch, in the order of their places, then the substitutes, then those who
@@ -310,7 +312,7 @@ function squadHtml(){
   const target=line?line.slot!=null?` data-slot="${line.slot}"`:line.change!=='out'?` data-bench="${player.id}"`:'':'';
   const chip=position(role).replace('class="position',`class="position${line?.change==='moved'?' moved':''}`);
   return `<div class="${classes}"${target}${drag?` data-player="${player.id}" draggable="true"`:''}>${kitShirt(kit,shirtLabel(player,role))}`
-   +`<span class="squad-who">${chip}<span class="squad-name" title="${e(player.name)}">${e(player.name)}</span></span>`
+   +`<span class="squad-who">${chip}${nameLink(player,'squad-name')}</span>`
    +`<span class="marks">${marks}</span>${line?.change==='in'?'<span></span>':matchNoteBadge(player.rating)||'<span></span>'}${mine?fatigue+last:''}</div>`;
  };
  let on,rest;
@@ -346,7 +348,7 @@ function tacticHtml(){
   :changed?`${problems.length?`<span class="tactic-problem" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}</span>`:''}<button type="button" class="button small" data-live="annuler">Annuler</button><button type="button" class="button small primary" data-live="valider"${problems.length?` aria-disabled="true" title="${e(problems.join('\n'))}"`:' title="Valider (Entrée)"'}>Valider</button>`
   :view.decision&&view.status!=='halftime'?'<button type="button" class="button small primary" data-live="reprendre" title="Reprendre (Espace)">Reprendre</button>':'';
  return `<div class="card-head"><h2>Tactique</h2><div class="tactic-actions">${actions}</div></div>`
-  +`<div class="card-body tactic-edit"><div class="fact"><span>Formation</span><select data-live-formation aria-label="Formation" title="Formation (T)"${view.waiting?' disabled':''}>${options}</select></div><div class="fact"><span>Mentalité</span><div class="segmented small" role="group" aria-label="Mentalité">${choices}</div></div></div>`;
+  +`<div class="card-body tactic-edit"><div class="fact"><span>Formation</span><select data-live-formation aria-label="Formation" title="Formation (T)"${view.waiting===true?' disabled':''}>${options}</select></div><div class="fact"><span>Mentalité</span><div class="segmented small" role="group" aria-label="Mentalité">${choices}</div></div></div>`;
 }
 
 // Between two chances the pitch shows both sides in their formation, the side at home on the left attacking to the
@@ -369,7 +371,7 @@ function formationsHtml(){
    const second=coming?mark('sub-on waiting','Entrera','▲'):matchBlockNote(player.rating)+sheetMarks(player,{goals:false});
    const classes=['pitch-player',coming?'entering':'',draft&&hurt(player)&&!player.red?'invalid':'',draft&&view.picked===player.id?'picked':''].filter(Boolean).join(' ');
    return `<div class="${classes}"${draft?` data-slot="${index}"`:''}${drag?` data-player="${player.id}" draggable="true"`:''} style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">${kitShirt(teams[key],shirtLabel(player,role),{goals:coming?0:player.goals})}`
-    +`${playerBlock(e(shortName(player.name,player.short)),second)}</div>`;
+    +`${playerBlock(nameLink(player,'',shortName(player.name,player.short)),second)}</div>`;
   }).join('');
   const info=own?{...view.shown.manager,mentality:draft?.mentality??view.shown.manager.mentality}:view.shown.opponent;
   const tag=[own&&draft?formationOf(draft)??info?.formation:info?.formation,MENTALITIES[info?.mentality]].filter(Boolean).map(e).join(' · ');
@@ -379,6 +381,28 @@ function formationsHtml(){
 }
 // The name of the formation the draft stands in, when it is one of those the user can choose.
 const formationOf=draft=>{const key=list=>[...list].sort().join(),roles=key(draft.slots.map(slot=>slot.role));return Object.entries(team().formations).find(([,list])=>key(list)===roles)?.[0];};
+
+// A player's name, in the lists and under his shirt on the pitch, leads to his page over the match; the rest of the line
+// keeps the picking and dragging of the changes, and the name is not dragged on its own.
+const nameLink=(player,className,text=player.name)=>`<a${className?` class="${className}"`:''} href="#/player/${player.id}" data-live-player="${player.id}" draggable="false" title="${e(player.name)}">${e(text)}</a>`;
+
+// The players of the match for the steps of a page opened over it: the user's side, then the other, each in the order of
+// its list (on the pitch by place, the substitutes, those who went off).
+export function matchPlayers(own, other){
+ const order=player=>POSITIONS.indexOf(player.role??player.position);
+ const side=sheet=>[...sheet.filter(player=>player.state==='on').sort((a,b)=>order(a)-order(b)),...sheet.filter(player=>player.state==='bench'),...sheet.filter(player=>player.state==='off')]
+  .map(player=>({id:player.id,name:player.name,position:player.role??player.position}));
+ return [...side(own),...side(other)];
+}
+
+// A player's page over the match: the replay paused under it, the draft kept.
+function openSheet(id){
+ replay()?.pause();
+ const home=view.state.home,away=view.state.away;
+ const minute=document.querySelector('.live-layout .live-clock')?.textContent??'';
+ openPlayerSheet(id,{players:matchPlayers(sheetOf(view.state.side),sheetOf(sideOf(false))),scope:`${home.name} – ${away.name}`,
+  match:pausedMatch(home,away,view.score,minute,kitDot)});
+}
 
 // The match's band, compact, the minute on its tile: grey while the clock runs, on the accent while a chance is played.
 function heroHtml(state){
@@ -447,32 +471,74 @@ function refresh(parts=['actions']){
 const replay=()=>document.querySelector('.live-layout match-replay');
 
 // ---- Orders. ----
-// Valider sends the draft once the action under way has ended (at once between two chances, at the break or on an
-// injury); the match goes on, except at the break and when the action ended on an injury or a red card in the user's
-// side, which still waits for him. Annuler drops the draft, and the wait for the end of the action.
-async function validate(){
+// Valider, or ▶ while the draft holds changes, sends the draft once the action under way has ended (at once between two
+// chances, at the break or on an injury); the match goes on, except at the break and when the action ended on an injury
+// or a red card in the user's side, which still waits for him. Annuler drops the draft, and the wait for the end of the
+// action.
+// A mentality picked is sent alone, at once, the same way: the rest of the draft stays as it is, and the match as it was
+// (paused, stopped on an injury, at the break).
+// A mentality waiting alone becomes the whole draft when ▶ is pressed meanwhile (`view.waiting` turned to true).
+const mentalityOnly=orders=>orders.filter(order=>order.type==='mentalite');
+async function validate({mentality=false}={}){
  const halftime=view.status==='halftime',asked=view.decision;
- if(view.waiting||!pending()||tacticsProblems(view.draft,team(),halftime).length)return;
- view.waiting=true;refresh(['side']);
+ if(view.waiting)return;
+ const orders=tacticsOrders(view.draft,team());
+ if(mentality?!mentalityOnly(orders).length:!orders.length||tacticsProblems(view.draft,team(),halftime).length)return;
+ view.waiting=mentality?'mentality':true;refresh(['side']);
  const rewind=await replay()?.interrupt();
  if(rewind===false)return;
- if(view.waiting){
+ if(view.waiting)mentality=view.waiting==='mentality';
+ // What the draft holds by now (a player injured meanwhile starts it again): nothing left, nothing is sent.
+ const all=tacticsOrders(view.draft,team()),sent=mentality?mentalityOnly(all):all;
+ if(view.waiting&&sent.length){
   try{
-   const state=await api('/direct/ordres',{commande_id:crypto.randomUUID(),seconde:rewind??null,ordres:tacticsOrders(view.draft,team())});
+   const state=await api('/direct/ordres',{commande_id:crypto.randomUUID(),seconde:rewind??null,ordres:sent});
+   const kept=view.draft;
    adopt(state);replay()?.resync(state);
-  }catch(error){toast(error.message,true);}
+   if(mentality)view.draft={...kept,mentality:team().mentality};
+  }catch(error){toast(error.message,true);if(mentality)view.draft={...view.draft,mentality:team().mentality};}
  }
  // An injury or a red card met while the orders waited for the end of the action: the match stays stopped on it.
- const met=view.decision&&view.decision!==asked?view.decision:null;
- view.waiting=false;view.decision=met;view.draft=tacticsDraft(team());
+ const met=view.decision&&view.decision!==asked?view.decision:mentality?asked:null;
+ view.waiting=false;view.decision=met;
+ if(mentality)syncDraft();else view.draft=tacticsDraft(team());
  refresh(['actions','stats']);
  if(met)replay()?.stopFor(met);
- else if(view.status!=='halftime')replay()?.resume();
+ else if(view.status!=='halftime')replay()?.resume({paused:mentality&&replay()?.paused});
 }
 function cancel(){
+ const mentality=view.waiting==='mentality';
  if(view.waiting){view.waiting=false;replay()?.cancelInterrupt();}
- view.draft=tacticsDraft(team());view.picked=null;
+ view.draft=mentality?{...view.draft,mentality:team().mentality}:tacticsDraft(team());view.picked=null;
  refresh(['side']);
+}
+// ▶ with changes in the draft sends them, which sets the match going; a draft the rules refuse holds it, and says why.
+// While a mentality waits for the end of the chance, the changes made meanwhile join it, and the chance plays out.
+function playWithDraft(event){
+ if(!view||view.waiting===true||!pending())return;
+ const waiting=view.waiting==='mentality';
+ if(waiting&&!tacticsOrders(view.draft,team()).some(order=>order.type!=='mentalite'))return;
+ const problems=tacticsProblems(view.draft,team(),view.status==='halftime');
+ if(problems.length){event.preventDefault();toast(problems[0],true);return;}
+ if(waiting){
+  if(!replay()?.stopRequested){event.preventDefault();return;}
+  view.waiting=true;view.picked=null;refresh(['side']);return;
+ }
+ event.preventDefault();
+ // Paused during a chance, the chance plays out first: the orders wait for its end.
+ if(replay()?.inChance)replay().play();
+ validate();
+}
+// The second half kicks off with the changes the draft holds, sent first; a draft the rules refuse holds it, and says why.
+async function secondHalf(){
+ if(view.waiting)return;
+ if(pending()){
+  const problems=tacticsProblems(view.draft,team(),true);
+  if(problems.length){toast(problems[0],true);return;}
+  await validate();
+  if(view.status!=='halftime')return;
+ }
+ view.status='playing';view.decision=null;refresh(['actions','side']);replay()?.resume();
 }
 // Stopped on an injury or a red card: the match goes on as it stands.
 function goOn(){view.decision=null;refresh(['side']);replay()?.resume();}
@@ -547,6 +613,7 @@ globalThis.document?.addEventListener('live-decision',event=>{
 });
 // The play button of a match stopped on an injury or a red card goes on, as Reprendre does.
 globalThis.document?.addEventListener('live-go-on',()=>{if(view?.decision)goOn();});
+globalThis.document?.addEventListener('live-play',playWithDraft);
 globalThis.document?.addEventListener('live-finished',()=>{if(!view)return;if(view.pending){view.shown=view.pending;view.pending=null;}finished();});
 globalThis.document?.addEventListener('live-error',event=>toast(event.detail.error?.message||'Le match ne peut pas continuer.',true));
 // Each minute the other matches, the table, the highlights, the flow and the players' sheet catch up with the clock.
@@ -587,10 +654,15 @@ globalThis.document?.addEventListener('change',event=>{
 globalThis.document?.addEventListener('click',event=>{
  if(!view||!document.querySelector('.live-layout'))return;
  const target=event.target;
+ const name=target.closest?.('.live-layout [data-live-player]');
+ if(name){event.preventDefault();openSheet(Number(name.dataset.livePlayer));return;}
  const team=target.closest?.('.live-layout [data-live-team]');
  if(team){view.team=team.dataset.liveTeam;view.picked=null;redraw();return;}
  const mentality=target.closest?.('.live-layout [data-mentality]');
- if(mentality&&editable()){view.draft={...view.draft,mentality:mentality.dataset.mentality};redraw();return;}
+ if(mentality&&editable()){
+  if(view.waiting||mentality.dataset.mentality===view.draft.mentality)return;
+  view.draft={...view.draft,mentality:mentality.dataset.mentality};redraw();validate({mentality:true});return;
+ }
  const undo=target.closest?.('.live-layout [data-undo]');
  if(undo){dropOn(Number(undo.dataset.undo),{list:true});return;}
  const advice=target.closest?.('.live-layout [data-advice]');
@@ -601,7 +673,7 @@ globalThis.document?.addEventListener('click',event=>{
   if(action==='valider')validate();
   else if(action==='annuler')cancel();
   else if(action==='reprendre')goOn();
-  else if(action==='second-half'){view.status='playing';view.decision=null;refresh(['actions','side']);replay()?.resume();}
+  else if(action==='second-half')secondHalf();
   else if(action==='fin')endMatch();
   else if(action==='continuer')document.querySelector('#advance')?.click();
   return;
@@ -617,7 +689,7 @@ globalThis.document?.addEventListener('click',event=>{
 // The keys of a player: Space plays and pauses, → runs the clock to the next chance, T reaches the tactic, Entrée sends
 // the draft, Échap drops a line picked.
 globalThis.document?.addEventListener('keydown',event=>{
- if(!view||!document.querySelector('.live-layout')||event.ctrlKey||event.metaKey||event.altKey)return;
+ if(!view||!document.querySelector('.live-layout')||sheetOpen()||event.ctrlKey||event.metaKey||event.altKey)return;
  if(event.key==='Escape'&&view.picked!=null){view.picked=null;redraw();return;}
  if(document.querySelector('dialog[open]')||event.target.closest?.('input,select,textarea,[contenteditable]'))return;
  const press=selector=>{const button=document.querySelector(`.live-layout ${selector}`);if(button&&!button.hidden){event.preventDefault();button.click();}};
