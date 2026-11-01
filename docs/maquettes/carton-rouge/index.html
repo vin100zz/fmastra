@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maquette · Carton rouge au direct</title>
+<link rel="stylesheet" href="charte.css">
+<link rel="stylesheet" href="../../charte/planches.css">
+<style>
+/* Proposals, not yet in the charter: the sending-off band, the red cards kept in the match band, the player leaving the
+   pitch, the red ticker. Values from the charter's scales only. */
+
+/* The sending-off: a lighter veil than the goal's, a dark band crossing the pitch, edged with the side's colour. No
+   stamped letters, no shake, no glint: the band slides in, the card rises. */
+.card-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e59;pointer-events:none;animation:card-veil 3s ease both}
+.card-band{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:var(--s6);width:100%;padding:var(--s4) 0;background:var(--strong);color:#fff;box-shadow:inset 0 var(--mark) 0 var(--team),inset 0 calc(-1*var(--mark)) 0 var(--team),0 20px 40px -10px #0008;animation:card-band .5s cubic-bezier(.2,.9,.2,1) both}
+.card-band.light{background:var(--panel);color:var(--strong)}
+.card-pair{position:relative;display:grid;width:72px;height:88px;place-items:center}
+.red-card{grid-area:1/1;width:52px;height:72px;border-radius:var(--radius);background:var(--bad);box-shadow:0 6px 14px -4px #0009;rotate:-8deg;animation:card-rise .45s .25s cubic-bezier(.2,.9,.2,1) both}
+.red-card.yellow{background:var(--accent);rotate:-20deg;translate:-12px 4px;animation-delay:.15s}
+.card-text{display:flex;flex-direction:column;gap:var(--s1)}
+.card-label{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-figure)/20px var(--display);letter-spacing:var(--caps);text-transform:uppercase;opacity:.75;animation:card-text .4s .35s both}
+.card-label img{width:26px;height:26px;object-fit:contain}
+.card-who{display:flex;align-items:center;gap:var(--s3);font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase;animation:card-text .4s .4s both}
+.card-who .kit-shirt{width:48px;height:48px}
+.card-who .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.card-why{font:600 var(--fs-figure)/20px var(--text);opacity:.75;animation:card-text .4s .5s both}
+@keyframes card-veil{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes card-band{from{clip-path:polygon(0 0,0 0,0 100%,0 100%)}to{clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}}
+@keyframes card-rise{from{opacity:0;translate:0 24px;rotate:0deg}}
+@keyframes card-text{from{opacity:0;transform:translateY(8px)}}
+.held .card-burst{animation:none}
+
+/* The red cards a side has had, kept in the match band until the end: on a chip of the panel, so that they read on any
+   colours, 10 by 14 each, the second over the first. The same chip leads the red ticker. */
+.sent-off{display:flex;align-items:center;flex:none;height:24px;padding:0 6px;border-radius:var(--radius-chip);background:var(--panel);box-shadow:0 1px 2px #0a141e40}
+.sent-off>i{width:10px;height:14px;border-radius:2px;background:var(--bad);rotate:-8deg}
+.sent-off>i.yellow{background:var(--accent);rotate:-20deg}
+.sent-off>i+i{margin-left:-3px}
+/* On the pitch, the player sent off walks to the touchline: faded, his card above his shirt, his block on --bad. */
+.pitch-land{position:relative;aspect-ratio:105/68;border-radius:var(--radius-box);overflow:hidden;box-shadow:inset 0 0 0 1px #00000014,inset 0 0 120px #0000002e;background:repeating-linear-gradient(90deg,var(--pitch-a) 0 10%,var(--pitch-b) 10% 20%)}
+.pitch-land>svg.lines{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--pitch-line);stroke-width:.3}
+.pitch-land .pitch-player .kit-shirt{width:28px;height:28px}
+.pitch-land .pitch-player .kit-shirt.number b{margin-top:5px;font-size:var(--fs-small)}
+.pitch-player.leaving .kit-shirt{opacity:.55}
+.pitch-player.leaving .player-block{background:var(--bad)}
+.pitch-player.leaving::before{content:"";position:absolute;top:-18px;width:10px;height:14px;border-radius:2px;background:var(--bad);box-shadow:0 0 0 1.5px #fff;rotate:-8deg}
+
+/* The light variant of the ticker: the line of the card on --bad, the card's chip in front of the commentary. */
+.ticker.booking{--team:var(--bad);--team-ink:#fff}
+.live-col{display:flex;flex-direction:column;gap:var(--s2)}
+.replay{margin-left:auto}
+</style>
+</head>
+<body>
+<div class="app sheet">
+<header class="sheet-head"><h1>Carton rouge au direct</h1><span class="label">Maquettes · thème clair</span><button type="button" class="button small replay" onclick="replay()">Rejouer les entrées</button></header>
+<div class="sheet-grid">
+
+<section class="spec" style="grid-column: span 6">
+<h2>A · Bande d'expulsion · l'adversaire</h2>
+<div class="live-col">
+<section class="card" data-hero="0"></section>
+<div class="pitch-land" data-pitch="full">
+<div class="card-burst" style="--team: #e03030"><div class="card-band"><div class="card-pair"><i class="red-card"></i></div><div class="card-text"><div class="card-label"><img src="../../../web/clubs/TCM1_884.png" alt="">Carton rouge · 82′</div><div class="card-who" data-shirt="rennes:24">Christopher Wooh</div></div></div></div>
+</div>
+<div class="ticker" style="--team: #e03030; --team-ink: #ffffff"><img src="../../../web/clubs/TCM1_884.png" alt=""><b>82′</b><span>Carton rouge · Christopher Wooh</span></div>
+<div class="frise" data-frise="1"></div>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 6">
+<h2>A · Bande d'expulsion · son équipe, deuxième avertissement</h2>
+<div class="live-col">
+<section class="card" data-hero="0"></section>
+<div class="pitch-land" data-pitch="full">
+<div class="card-burst" style="--team: #004170"><div class="card-band"><div class="card-pair"><i class="red-card yellow"></i><i class="red-card"></i></div><div class="card-text"><div class="card-label"><img src="../../../web/clubs/TCM1_868.png" alt="">Carton rouge · 82′</div><div class="card-who" data-shirt="psg:51">Willian Pacho</div><div class="card-why">Deuxième avertissement</div></div></div></div>
+</div>
+<div class="ticker" style="--team: #004170; --team-ink: #ffffff"><img src="../../../web/clubs/TCM1_868.png" alt=""><b>82′</b><span><strong>Carton rouge</strong> · Willian Pacho · à vous de jouer</span></div>
+<div class="frise" data-frise="2"></div>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 6">
+<h2>B + C · Après l'expulsion · le rappel au bandeau, le joueur qui sort</h2>
+<div class="live-col">
+<section class="card" data-hero="1"></section>
+<div class="pitch-land" data-pitch="leaving"></div>
+<div class="ticker"><span>Jeu en cours</span><span class="ticker-run"><i></i></span></div>
+<div class="frise" data-frise="1"></div>
+</div>
+</section>
+
+<section class="spec" style="grid-column: span 6">
+<h2>A′ · Bande claire</h2>
+<div class="live-col">
+<div class="pitch-land" data-pitch="full">
+<div class="card-burst" style="--team: #e03030"><div class="card-band light"><div class="card-pair"><i class="red-card"></i></div><div class="card-text"><div class="card-label"><img src="../../../web/clubs/TCM1_884.png" alt="">Carton rouge · 82′</div><div class="card-who" data-shirt="rennes:24">Christopher Wooh</div></div></div></div>
+</div>
+</div>
+<h2 style="margin-top: 16px">B · Le bandeau · deux expulsions, chaque camp</h2>
+<div class="live-col">
+<section class="card" data-hero="2"></section>
+<section class="card" data-hero="3"></section>
+</div>
+<h2 style="margin-top: 16px">D · Le fil en rouge, sans bande</h2>
+<div class="live-col">
+<div class="ticker booking"><img src="../../../web/clubs/TCM1_884.png" alt=""><b>82′</b><span class="sent-off"><i></i></span><span>Carton rouge · Christopher Wooh</span></div>
+<div class="ticker booking"><img src="../../../web/clubs/TCM1_868.png" alt=""><b>82′</b><span class="sent-off"><i class="yellow"></i><i></i></span><span>Deuxième avertissement · Willian Pacho · à vous de jouer</span></div>
+</div>
+</section>
+
+</div>
+</div>
+<script>
+const KITS={psg:['#004170','#da291c','#004170','#ffffff'],rennes:['#e03030','#1a1a1a','#1a1a1a','#ffffff']};
+const SHIRT='M14 4Q20 8.5 26 4L33 5.5L39 8.5V15.5H32.5V37.5H7.5V15.5H1V8.5L7 5.5Z';
+let maskId=0;
+function shirt(club,number){
+ const [body,minor,third,ink]=KITS[club],id=`m${maskId++}`;
+ const pattern=club==='psg'?`<rect class="kit-m" x="16.5" y="0" width="5" height="40"/>`:`<rect class="kit-m" x="0" y="15.5" width="40" height="6"/>`;
+ return `<span class="kit-shirt patterned number" style="--kit-body:${body};--kit-minor:${minor};--kit-third:${third};--kit-ink:${ink}"><svg class="kit-drawing" viewBox="0 0 40 40" aria-hidden="true"><mask id="${id}"><path class="kit-mask" d="${SHIRT}"/></mask><path class="kit-base" d="${SHIRT}"/><g mask="url(#${id})">${pattern}</g><path class="kit-collar" d="M14 4Q20 8.5 26 4L26.2 6.3Q20 10.8 13.8 6.3Z"/><path class="kit-outline" d="${SHIRT}"/></svg><b>${number}</b></span>`;
+}
+for(const node of document.querySelectorAll('[data-shirt]')){const [club,number]=node.dataset.shirt.split(':');node.insertAdjacentHTML('afterbegin',shirt(club,number));}
+
+// The match band: [home cards, away cards] per variant.
+const HEROES=[[0,0],[0,1],[2,0],[0,2]];
+document.querySelectorAll('[data-hero]').forEach(node=>{
+ const [home,away]=HEROES[node.dataset.hero],cards=n=>n?`<span class="sent-off" title="${n} carton${n>1?'s':''} rouge${n>1?'s':''}">${'<i></i>'.repeat(n)}</span>`:'';
+ node.innerHTML=`<div class="hero duel compact" style="background: #004170">
+<i class="hero-sash away-field" style="background: #e03030"></i>
+<i class="hero-sash home-band" style="background: #da291c"></i><i class="hero-sash home-band thin" style="background: #da291c"></i>
+<i class="hero-sash away-band" style="background: #1a1a1a"></i><i class="hero-sash away-band thin" style="background: #1a1a1a"></i>
+<div class="hero-side" style="color: #ffffff"><img class="hero-logo" src="../../../web/clubs/TCM1_868.png" alt=""><h1>Paris SG</h1>${cards(home)}</div>
+<div class="tile match-score"><span class="live-clock${node.dataset.hero==='1'?' running':''}">${node.dataset.hero==='1'?'83′':'82′'}</span><span class="big-score">2 – 1</span></div>
+<div class="hero-side away" style="color: #ffffff"><img class="hero-logo" src="../../../web/clubs/TCM1_884.png" alt=""><h1>Rennes</h1>${cards(away)}</div></div>`;
+});
+
+// The line of the match: 1, the opponent's card; 2, the viewer's second yellow.
+const FRISES={
+ 1:`<i class="mark goal home" style="left: 25.6%"></i><i class="mark goal away" style="left: 74.4%"></i><i class="mark yellow away" style="left: 43.3%"></i><i class="mark yellow home" style="left: 64.4%"></i><i class="mark red away" style="left: 91%"></i>`,
+ 2:`<i class="mark goal home" style="left: 25.6%"></i><i class="mark goal away" style="left: 74.4%"></i><i class="mark yellow home" style="left: 43.3%"></i><i class="mark yellow home" style="left: 71%"></i><i class="mark red home" style="left: 91%"></i>`};
+document.querySelectorAll('[data-frise]').forEach(node=>node.innerHTML=`<span class="frise-played" style="width: 91%"></span><span class="frise-half" style="left: 50%"></span>${FRISES[node.dataset.frise]}<span class="frise-now" style="left: 91%"></span>`);
+
+// The pitch at a dead time: both sides in their shape, Paris attacking to the right.
+const PSG=[[1,'Safonov',6,50],[2,'Hakimi',22,14],[5,'Marquinhos',19,38],[51,'Pacho',19,62],[25,'Mendes',22,86],[87,'Neves',33,50],[17,'Vitinha',36,28],[33,'Zaïre-Emery',36,72],[29,'Barcola',47,18],[10,'Dembélé',46,50],[7,'Kvaratskhelia',47,82]];
+const RENNES=[[1,'Samba',94,50],[22,'Assignon',79,14],[55,'Ostigard',81,38],[24,'Wooh',81,62],[3,'Truffert',79,86],[6,'Kamara',68,40],[8,'Matusiwa',68,60],[18,'James',64,16],[10,'Blas',64,84],[9,'Kalimuendo',58,50]];
+const LINES=`<svg class="lines" viewBox="0 0 105 68" preserveAspectRatio="none"><rect x="1.5" y="1.5" width="102" height="65"/><line x1="52.5" y1="1.5" x2="52.5" y2="66.5"/><circle cx="52.5" cy="34" r="9.15"/><rect x="1.5" y="13.85" width="16.5" height="40.3"/><rect x="87" y="13.85" width="16.5" height="40.3"/><rect x="1.5" y="24.85" width="5.5" height="18.3"/><rect x="98" y="24.85" width="5.5" height="18.3"/></svg>`;
+const player=(club,[number,name,x,y],extra='')=>`<div class="pitch-player${extra}" style="left: ${x}%; top: ${y}%">${shirt(club,number)}<span class="player-block"><span class="block-name">${name}</span></span></div>`;
+document.querySelectorAll('[data-pitch]').forEach(node=>{
+ const leaving=node.dataset.pitch==='leaving';
+ const rennes=leaving?RENNES.filter(p=>p[0]!==24):RENNES;
+ node.insertAdjacentHTML('afterbegin',LINES+PSG.map(p=>player('psg',p)).join('')+rennes.map(p=>player('rennes',p)).join('')+(leaving?player('rennes',[24,'Wooh',86,84],' leaving'):''));
+});
+
+function replay(){document.querySelectorAll('.card-burst').forEach(node=>{const clone=node.cloneNode(true);node.replaceWith(clone);});}
+// Held on screen for the boards; the veil's timing plays on « Rejouer ».
+document.body.classList.add('held');
+document.querySelector('.replay').addEventListener('click',()=>document.body.classList.remove('held'));
+</script>
+</body>
+</html>
