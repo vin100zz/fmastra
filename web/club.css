@@ -82,6 +82,13 @@
 .calendar-record p{display:flex;justify-content:space-between;gap:8px;margin:0 0 5px;font-size:13px}
 .calendar-record p span{color:var(--muted)}
 .calendar-record>strong{font-family:var(--display);font-stretch:semi-condensed;font-size:16px;color:var(--strong)}
+/* A played competition: the score stands at the end of its record bar, the badge across both lines. */
+.calendar-record:has(.record-bar){grid-template-rows:auto 8px;row-gap:5px}
+.calendar-record:has(.record-bar)>div{display:contents}
+.calendar-record:has(.record-bar)>:first-child{grid-row:1/3}
+.calendar-record:has(.record-bar) p{grid-column:2;margin:0}
+.calendar-record .record-bar{grid-area:2/2}
+.calendar-record:has(.record-bar)>strong{grid-area:2/3;line-height:8px}
 .record-bar,.split-bar{display:flex;gap:2px;height:8px}
 .record-bar i{border-radius:var(--radius)}.record-bar .won{background:var(--good)}.record-bar .drawn{background:var(--muted)}.record-bar .lost{background:var(--bad)}
 @media(max-width:1250px){.club-calendar{grid-template-columns:minmax(0,1fr)}}
