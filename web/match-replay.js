@@ -35,8 +35,10 @@ const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substi
 const JOG=.006,PRESS=.0072,REACH=.0062;
 // Speeding up and braking, in metres per ms²: about 5 and 7 m/s², so that nobody starts or stops dead.
 const ACCEL=5e-6,BRAKE=7e-6;
-// The ball meets a player this far in front of him. A touch dies quickly on the grass, a ball in the net at once.
-const CONTACT=.9,TOUCH_FRICTION=1.2e-5,NET_FRICTION=4e-5;
+// The ball meets a player this far in front of him, where his boot reaches it in the 3D view. A touch dies quickly
+// on the grass, a ball in the net at once.
+export const CONTACT=.66;
+const TOUCH_FRICTION=1.2e-5,NET_FRICTION=4e-5;
 // How long the ball takes over d metres, in ms: rolled along the grass, driven, lofted over the lines, or a cross
 // floated to the far post or whipped in.
 const FLIGHT={ground:d=>220+d*55,driven:d=>160+d*44,lofted:d=>650+d*30,floated:d=>900+d*28,whipped:d=>500+d*26};
