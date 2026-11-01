@@ -51,7 +51,7 @@
   <div class="status"><output id="status">Chargement…</output><span>Marche : 2 et 17 · Course : 7 et 31 · Sprint : 11 et 44</span></div>
   <pre id="error" role="alert"></pre>
   <script type="module">
-    import { LENS, Pitch3D } from '../../web/replay-3d.js';
+    import { LENS, Pitch3D, ready } from '../../web/replay-3d.js';
 
     // Positions and the replay clock are the fixture's only animation inputs.
     // Pitch3D creates, poses and renders the same figures used in a real match.
@@ -127,6 +127,7 @@
     }
     for (const runner of runners) runner.speed = paceSpeeds[pace === 'mixed' ? runner.pace : pace];
     updatePositions();
+    await ready;
     const view = new Pitch3D(replay);
     cancelAnimationFrame(view.frame);
     view.frame = null;

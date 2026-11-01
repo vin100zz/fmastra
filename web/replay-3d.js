@@ -3,7 +3,7 @@
 // Pitch units are metres: x along the touchline (0 to 105), y across (0 at the far touchline, 68 at the near one).
 // In the scene, x runs along the touchline from the centre spot, z across towards the camera, y up.
 import * as THREE from './vendor/three/three.module.js';
-import {LABEL,OVERLAY,createPlayerParts,createPlayerFigure} from './replay-player.js';
+import {LABEL,OVERLAY,createPlayerParts,createPlayerFigure,loadPlayerModel} from './replay-player.js';
 import {activeGesture,angleDelta,playerMotion,strideLength} from './replay-motion.js';
 import {SCALE} from './replay-locomotion.js';
 import {EffectComposer} from './vendor/three/addons/postprocessing/EffectComposer.js';
@@ -18,6 +18,8 @@ const W=105,H=68,MARGIN_X=6,MARGIN_Y=5;
 // players keep their size on screen. [height, distance from the halfway line's centre] close to the ball, then
 // for the whole pitch while the clock runs.
 export const LENS=17;
+// The players' body, fetched with this module in a browser; a Pitch3D is built once it has arrived.
+export const ready=typeof window==='undefined'?Promise.resolve():loadPlayerModel(new URL('./models/footballer.bin',import.meta.url));
 const CLOSE=[30,82],WIDE=[56,154];
 // The effects in order of cost, dropped one by one when a frame takes longer than FRAME_BUDGET milliseconds on average.
 const QUALITY={full:2,bloom:1,plain:0},FRAME_BUDGET=25,BUDGET_FRAMES=90;
@@ -465,6 +467,7 @@ export class Pitch3D{
  drop(key,figure){
   this.people.remove(figure.root);
   figure.name.material.map.dispose();figure.name.material.dispose();
+  figure.skin.geometry.dispose();figure.skeleton.dispose();
   this.figures.delete(key);
  }
 

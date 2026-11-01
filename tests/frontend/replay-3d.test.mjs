@@ -2,7 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../../web/vendor/three/three.module.js';
 import {Pitch3D} from '../../web/replay-3d.js';
-import {createPlayerParts} from '../../web/replay-player.js';
+import {readFileSync} from 'node:fs';
+import {createPlayerParts,setPlayerModel} from '../../web/replay-player.js';
+
+setPlayerModel(readFileSync(new URL('../../web/models/footballer.bin',import.meta.url)));
 import {angleDelta,gaitCycle,strideLength} from '../../web/replay-motion.js';
 import {SCALE} from '../../web/replay-locomotion.js';
 
@@ -67,7 +70,8 @@ test('pausing preserves every joint and a new scene clears a previous dive',()=>
  v.pose(figure,{x:-30,z:10},{x:-25,z:3},0,false,[],1450,true);
  near(figure.body.rotation.z,0);
  assert.ok(Math.hypot(figure.body.position.x,figure.body.position.z)<.01,'reset clears the dive offset while retaining natural idle weight shift');
- assert.ok(centreOfGloves(figure).y>1);
+ // Hands back at standing height: a real arm hangs its wrists below the waist, well above a dive's turf.
+ assert.ok(centreOfGloves(figure).y>.8);
 });
 
 test('a straight low shot is smothered with bent knees and hands near the turf',()=>{

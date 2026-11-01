@@ -1031,9 +1031,14 @@ message (« il vient d'arriver ») reste dans son infobulle.
   lisibles les volumes des joueurs. Une machine trop lente pour ces effets
   les perd d'elle-même : la moyenne de 90 images au-delà de 25 ms retire
   l'occlusion, puis le halo et la haute définition (`measure`, `setQuality`).
-  Le modèle articulé des joueurs (`replay-player.js`) distingue le
-  buste, les épaules, les membres, le visage, les cheveux, les chaussures et les
-  gants ; le maillot porte le numéro du match (`shirt`) et les couleurs du camp.
+  Le corps des joueurs (`replay-player.js`) est un maillage humain d'un seul
+  tenant, celui de MakeHuman (CC0), ajusté sur les pivots du squelette et
+  articulé par eux : `tools/build_player_model.mjs` en tire
+  `web/models/footballer.bin` (9 000 triangles, chargé avec la vue 3D,
+  `ready`), où chaque sommet porte la pièce de la tenue qui le couvre. Les
+  chaussures, les cheveux, l'écusson et le numéro du match (`shirt`) s'y
+  ajoutent ; le maillot, le short et les chaussettes prennent les couleurs du
+  camp, les manches et les gants celles du gardien.
   La locomotion (`replay-locomotion.js`) fait avancer chaque foulée avec la
   distance parcourue. Chaque joueur conserve sa phase, sa cadence et son
   amplitude de bras propres. La marche garde un double appui ; la course et
