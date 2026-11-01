@@ -61,7 +61,7 @@ la structure HTML des spécimens.
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--ball` | Ballon d'un but : blanc, le pentagone du centre et cinq pans coupés au bord, à l'encre `#0b121a` dans les deux thèmes ; dessiné pour 10 (pans larges, contour épais) |
-| `--card-red` | `#d42a20` : le carton rouge de la bande d'expulsion et du bandeau, rouge franc dans les deux thèmes |
+| `--card-red` | `#d42a20` : le carton rouge, partout où il se dessine (faits de match, suspension, bande d'expulsion, bandeau), rouge franc dans les deux thèmes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
 | `--star`, `--star-soft`, `--star-empty` et `--star-soft-dark`, `--star-empty-dark` | Étoiles : l'or de ce qui est sûr, l'ardoise de ce qui n'est que possible, une étoile vide ; sur le noir d'un bloc de terrain, l'ardoise et le vide éclaircis (voir « Étoiles ») |
 | `--series-1`, `--series-2`, leur `-soft` et leur `-deep` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre ; en foncé, une troisième part de la même série |

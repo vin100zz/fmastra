@@ -728,7 +728,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .match-mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .match-mark.booking{width:8px;height:11px;border-radius:1px}
 .match-mark.booking.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
-.match-mark.booking.red{background:var(--bad);box-shadow:none}
+.match-mark.booking.red{background:var(--card-red);box-shadow:none}
 .match-mark.injury{width:10px;height:10px;border-radius:0;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
 .match-mark.injury::before,.match-mark.injury::after{content:none}
 .match-mark.sub-on{color:var(--good)}

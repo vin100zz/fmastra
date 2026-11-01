@@ -598,7 +598,7 @@ svg.away,svg.home{width:11px;height:11px}svg.away{fill:var(--bad);transform:rota
 .mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .mark.yellow,.mark.red{width:8px;height:11px;border-radius:1px}
 .mark.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
-.mark.red{background:var(--bad)}
+.mark.red{background:var(--card-red)}
 .mark.injury{width:10px;height:10px;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
 .mark.on{color:var(--good)}.mark.off{color:var(--bad)}
 
