@@ -751,9 +751,11 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
    the two figures, with a gap of the surface between the parts; nothing on either side leaves the bar empty. The larger
    figure is the strong one. A part takes its colour from its own `color`. */
 .comparisons{padding:var(--s1) 0}
-.comparison,.match-stats .comparison{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:0 var(--s3);height:36px;margin:0;padding:0 var(--s3);font-size:var(--fs-body)}
-.comparison>span{color:var(--muted);white-space:nowrap}
-.comparison>span:last-child{text-align:right}
+.comparison,.match-stats .comparison{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;grid-template-rows:14px 8px;align-content:center;align-items:center;gap:var(--s1) var(--s3);height:36px;margin:0;padding:0 var(--s3);font-size:var(--fs-body)}
+.comparison>span{grid-row:2;color:var(--muted);white-space:nowrap}
+.comparison>span:first-child{grid-column:1}
+.comparison>span:last-child{grid-column:3;text-align:right}
+.comparison>div{grid-area:1/2/3/3}
 .comparison>span.lead{font-weight:600;color:var(--strong)}
 .comparison>div{display:flex;flex-direction:column;align-items:center;gap:var(--s1);font-size:var(--fs-small);line-height:14px;color:var(--ink-2)}
 .comparison-bar,.match-stats .comparison-bar{display:flex;gap:2px;width:100%;height:8px;margin:0;border-radius:0;background:none;overflow:visible}

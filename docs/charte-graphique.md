@@ -1301,7 +1301,9 @@ d'un club »).
 `.comparison` : les statistiques d'un match, face à face.
 
 - Une ligne de 36 par statistique : le chiffre de chaque camp aux extrémités, le
-  libellé (11 / 14) au-dessus d'une seule barre partagée entre les deux.
+  libellé (11 / 14) au-dessus d'une seule barre partagée entre les deux. Les
+  chiffres sont centrés sur la barre, pas sur la ligne : ils se lisent comme ses
+  deux bouts.
 - La barre a 8 de haut et des bouts arrondis de 4. Chaque part vaut la part de son
   camp dans le total des deux chiffres ; 2 de fond les séparent.
 - Rien de part et d'autre (0 – 0) laisse la barre vide, en `--panel-3`.
