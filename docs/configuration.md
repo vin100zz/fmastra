@@ -61,6 +61,12 @@ est un entier positif ou nul ; zéro désactive la période de stabilité.
 De même, `ia_gestion.mercato.gain_qualite_min_recrutement` vaut 3.0 si absent
 dans une ancienne configuration. C'est le gain minimal non négatif de qualité
 pondérée de l'effectif exigé hors urgence ; un gain nul reste insuffisant.
+`ia_gestion.mercato.cellule_recrutement`, les réglages de l'écran Recrutement, prend
+ses valeurs par défaut si absent (`candidats_par_poste` 40, `pistes_par_poste` 5,
+`age_apport_plein` 31, `baisse_par_an` 0,2, `part_min` 0,2, `age_max_espoir_maison`
+23, `a_ceder_max` 6) : une ancienne partie a la cellule sans changer de configuration.
+Elle pèse au moins autant de candidats qu'elle montre de pistes, une au moins ;
+`part_min` reste dans [0, 1].
 
 Les configurations antérieures à la version 8 des sauvegardes reçoivent aussi
 les valeurs par défaut de `ia_gestion.mercato` pour la profondeur d'effectif

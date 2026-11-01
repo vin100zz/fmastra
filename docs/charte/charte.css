@@ -959,6 +959,22 @@ span.entity-step svg{opacity:.3}
 .watch-list>li:last-child{border-bottom:0}
 .watch-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .watch-facts{display:flex;align-items:center;gap:var(--s3)}
+/* The recruitment cell (« Recrutement »): a card per position of the squad, three abreast, its need in a red gauge in its
+   head; the club's player there on the grey of a tile (.holder), then the leads, a line of 26 each: name, age, level (and
+   potential, for later), club, price, wage asked, what he brings in a gauge. */
+.recruit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+.recruit-card .card-head h2{display:flex;align-items:center;gap:var(--s2)}
+.recruit-card .card-head .gauge{width:56px}
+.recruit-list{display:flex;flex-direction:column;margin:0;padding:0 0 var(--s1);list-style:none}
+.recruit-list>li{display:grid;grid-template-columns:minmax(0,1fr) 24px 64px minmax(0,130px) 56px 48px 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.recruit-list.future>li{grid-template-columns:minmax(0,1fr) 24px 64px 64px minmax(0,130px) 56px}
+.recruit-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recruit-list>li:nth-child(odd):not(.holder){background:var(--stripe)}
+.recruit-list>li>a:first-child{font-weight:600;color:var(--strong)}
+.recruit-list>li.holder{background:var(--panel-2)}
+.recruit-list>li.holder>*{color:var(--muted)}
+.recruit-list>li.holder>a:first-child{font-weight:400;color:var(--muted)}
+.recruit-gain{display:flex;justify-content:flex-end}
 /* Players ranked on one figure: a line of 26 each, his rank, his name, a bar of 8 against the first of the list (its end
    rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) on the
    lists of the Présentation. */
@@ -999,7 +1015,7 @@ span.entity-step svg{opacity:.3}
 .prose a{color:var(--accent-text)}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
-:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.recruit-list>li:not(.holder),.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
 a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}

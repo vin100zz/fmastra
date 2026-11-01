@@ -1585,3 +1585,25 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .scout-players li a{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scout-players.absent li{grid-template-columns:auto minmax(0,1fr)}
 .scout-meeting{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);color:var(--ink-2)}
+
+/* Recrutement: a card per position of the squad, three abreast; its need in a red gauge in its head; the club's player there
+   on the grey of a tile (.holder), then the leads, a line of 26 each; À céder under them. */
+.recruit-figures{margin-bottom:var(--s2)}
+.recruit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s2)}
+@media(max-width:1500px){.recruit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:999px){.recruit-grid{grid-template-columns:minmax(0,1fr)}}
+.recruit-card .card-head h2{display:flex;align-items:center;gap:var(--s2)}
+.recruit-card .card-head .gauge{width:56px}
+.recruit-list{display:flex;flex-direction:column;margin:0;padding:0 0 var(--s1);list-style:none}
+.recruit-list>li{display:grid;grid-template-columns:minmax(0,1fr) 24px 64px minmax(0,130px) 56px 48px 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.recruit-list.future>li{grid-template-columns:minmax(0,1fr) 24px 64px 64px minmax(0,130px) 56px}
+.recruit-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recruit-list>li:nth-child(odd):not(.holder){background:var(--stripe)}
+.recruit-list>li>a:first-child{font-weight:600;color:var(--strong)}
+.recruit-list>li.holder{background:var(--panel-2)}
+.recruit-list>li.holder>*{color:var(--muted)}
+.recruit-list>li.holder>a:first-child{font-weight:400;color:var(--muted)}
+.recruit-list>li:not(.holder):hover{background:var(--panel-3)}
+.recruit-list .club-link{display:block;overflow:hidden;text-overflow:ellipsis}
+.recruit-list .club-link>.kit-dot{display:inline-block;margin-right:6px;vertical-align:-2px}
+.recruit-gain{display:flex;justify-content:flex-end}
