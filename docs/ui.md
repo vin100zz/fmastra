@@ -1176,15 +1176,21 @@ passeur) et le score change au bandeau.
   prévu se lit sur ses lignes (le sortant barré, l'entrant sur le vert juste
   après lui) et sur le terrain. « Valider », dans la carte Tactique, envoie le
   tout, appliqué à la fin de l'action en cours : tout de suite entre deux
-  actions et à la mi-temps ; en attendant, « À la fin de l'action ». « Annuler »
-  efface ce qui est prévu. Ce que les règles refusent (remplacements, fenêtres,
-  deux gardiens) se lit avant les boutons, et Valider ne part pas.
+  actions et à la mi-temps ; en attendant, « À la fin de l'action ». ▶ (Espace)
+  et « 2e mi-temps » valident d'eux-mêmes ce qui est prévu avant de relancer le
+  match. « Annuler » efface ce qui est prévu. Ce que les règles refusent
+  (remplacements, fenêtres, deux gardiens) se lit avant les boutons : Valider ne
+  part pas, et ▶ ou « 2e mi-temps » le disent dans un message sans relancer.
+- La mentalité choisie part seule, tout de suite, appliquée à la fin de l'action
+  en cours : le reste de ce qui est prévu attend, et le match reste comme il
+  était (en pause, arrêté sur une blessure, à la mi-temps). Pendant qu'elle
+  attend, les changements se préparent toujours ; ▶ les joint à elle.
 - Une blessure ou un carton rouge dans l'équipe du joueur arrête le match, le
   temps de réagir : le bandeau du terrain passe à « Arrêt de jeu », le fil dit
   ce qui s'est passé (« Blessure · Kondogbia · à vous de jouer »), aux couleurs
   de l'équipe, et le bouton de lecture repasse à ▶. Un changement validé le
-  relance ; « Reprendre », dans la carte Tactique, ou ▶ (Espace) le relance sans
-  changement. Des ordres validés pendant une action qui finit sur une blessure
+  relance ; « Reprendre », dans la carte Tactique, le relance sans changement, ▶
+  (Espace) aussi quand rien n'est prévu. Des ordres validés pendant une action qui finit sur une blessure
   ou un carton rouge sont appliqués, mais le match reste arrêté. Sur la dernière
   action d'une mi-temps, le joueur est marqué à la pause.
 - À la mi-temps le compteur reste sur « MT » jusqu'à « 2e mi-temps », bouton
