@@ -50,7 +50,7 @@ const data={competitions:[{id:16,name:'Ligue 1',kind:'league',code:null,place:'3
   match(2,'2030-08-24',16,ref(7,'Lens'),ref(8,'Lorient'),{score:[1,1],penalties:null,outcome:'D',scorers:[[scorer(-5,'Joueur Temporaire','12')],[]]}),
   match(3,'2030-08-31',16,ref(7,'Lens'),ref(10,'Auxerre')),match(4,'2030-12-02',40,ref(11,'PSG'),ref(7,'Lens'))]};
 
-test('one line per match: the day, the badge, the round, a plane away, the opponent, the score from the club side and the scorers',()=>{
+test('one line per match: the day, the badge, the round, a house at home or a plane away, the opponent, the score from the club side and the scorers',()=>{
  const html=calendarContent(club,data,new URLSearchParams());
  // The season is told by the steps of the row of tabs, not by the card.
  assert.match(html,/<h2>Matches<\/h2>/);assert.doesNotMatch(html,/Saison 2030|class="segmented steps"/);
@@ -59,8 +59,8 @@ test('one line per match: the day, the badge, the round, a plane away, the oppon
  // Away at Nice, won 2–1: the club's goals first, its scorers first.
  assert.match(rows[0],/<span class="calendar-date">sam\. 17 août<\/span><a class="competition-code league" href="#\/league\/16" title="Ligue 1">L1<\/a><span class="calendar-round" title="Journée 1">J1<\/span><span class="calendar-venue"><svg class="away"/);
  assert.match(rows[0],/<a class="calendar-score V" href="#\/match\/1" title="Victoire · Ligue 1 · Journée 1 · Extérieur">2–1<\/a><span class="calendar-scorers"><a href="#\/player\/71" title="Franjo Ivanović">Ivanović<\/a> 23’ 64’<\/span><span class="calendar-scorers theirs"><a href="#\/player\/91" title="Kévin Diallo">Diallo<\/a> 55’<\/span>/);
- // At home the plane is not there; a player without a page keeps his name without a link.
- assert.match(rows[1],/<span class="calendar-venue"><\/span>/);assert.match(rows[1],/<span class="calendar-scorers">Temporaire 12’<\/span>/);
+ // At home a green house; a player without a page keeps his name without a link.
+ assert.match(rows[1],/<span class="calendar-venue"><svg class="home"[^>]*aria-label="Match à domicile"/);assert.match(rows[1],/<span class="calendar-scorers">Temporaire 12’<\/span>/);
  // The first match to play stands out; those to come have no score yet.
  assert.match(rows[2],/^ coming next" data-competition="16">/);assert.match(rows[2],/Auxerre<\/a><em>Prochain<\/em>/);assert.match(rows[2],/<a class="calendar-score" href="#\/match\/3" title="Ligue 1 · Journée 3 · Domicile">—<\/a>/);
  assert.match(rows[3],/^ coming" data-competition="40">/);assert.match(rows[3],/<a class="competition-code cup" href="#\/league\/40" title="Coupe de France">CdF<\/a><span class="calendar-round" title="32es de finale">32es<\/span>/);

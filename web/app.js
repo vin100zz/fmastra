@@ -16,7 +16,7 @@ import {newGameScreen,creationChoice,leaveCreation,SLOT,slotFor,savedUnder,repla
 import {newsScreen} from './news.js';
 import {compositionIssues,lineupSubmission} from './composition.js';
 import {liveScreen,liveStatus} from './live.js';
-import {awayIcon,clubPreview,outcomeLabels} from './club-overview.js';
+import {venueIcon,clubPreview,outcomeLabels} from './club-overview.js';
 import {landing,setSteps,resetFlow,nextStep,newsStep,messageHash,openingMessage} from './flow.js';
 import {rememberFilters,viewParams} from './filters.js';
 import {refit} from './listing.js';
@@ -139,7 +139,7 @@ function routeParts(){const [path,search='']=location.hash.slice(1).split('?');r
 function changeParams(values){const path=location.hash.split('?')[0]||'#/';location.hash=`${path}?${new URLSearchParams(values)}`;}
 // The controlled club's last matches and its next three, left of Continuer, in one band read in time (« Barre du haut »):
 // a played match by its score from the club's side on the badge of its outcome, a rule for today, then each match to come
-// by its days to go; under the opponent (plane if away), the competition (cups in blue). `short` keeps a played match to the
+// by its days to go; under the opponent (house at home, plane away), the competition (cups in blue). `short` keeps a played match to the
 // opponent's dot and the score. A played match opens its report, one to come the page of its opponent. While a job runs the
 // days to go count from the day it has reached, and the next match fills as it nears.
 const daysBetween=(from,to)=>Math.round((new Date(`${to}T12:00:00`)-new Date(`${from}T12:00:00`))/864e5);
@@ -155,7 +155,7 @@ const rankHtml=standing=>{if(!standing)return '';const ink=RANK_INKS[tableZone(s
 const rankTitle=standing=>standing?` · ${ordinal(standing.rank)} · ${standing.points} pt${standing.points>1?'s':''}`:'';
 function barMatchesHtml(count,short){
  const club=state.controlled_club_id;
- const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${home?'':awayIcon}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}${match.score?'':rankHtml(match.opponent_standing)}</span></span>`;
+ const body=(match,home,opponent)=>`<span class="next-match-body"><span class="next-match-who">${kitDot(opponent)}<b>${e(opponent.name)}</b>${venueIcon(home)}</span><span class="next-match-comp${match.league?'':' cup'}">${e(match.competition)}${match.score?'':rankHtml(match.opponent_standing)}</span></span>`;
  const played=(state.club_last_matches||[]).slice(-count).map(match=>{
   const home=match.home.id===club,opponent=home?match.away:match.home,ours=list=>(home?list:[...list].reverse()).join('–');
   const title=`${outcomeLabels[match.outcome]}${short?` · ${opponent.name}`:''} · ${date(match.date)} · ${match.competition} · ${match.round_label} · ${home?'Domicile':'Extérieur'}${match.penalties?` · t.a.b. ${ours(match.penalties)}`:''}`;

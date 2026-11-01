@@ -407,7 +407,7 @@ td,.player-table td,.league-summary-grid td{padding:3px 8px!important}
 .next-match-who{display:flex;align-items:center;gap:5px;min-width:0}
 .next-match-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--strong);font-size:13px;font-weight:600}
 .next-match-who .kit-dot{flex:none;margin:0}
-.next-match-who .away{flex:none;width:10px;height:10px;fill:var(--bad);transform:rotate(45deg)}
+.next-match-who :is(.away,.home){flex:none;width:10px;height:10px}.next-match-who .away{fill:var(--bad);transform:rotate(45deg)}.next-match-who .home{fill:var(--good)}
 .next-match-comp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:var(--muted)}
 .next-match-comp.cup{color:var(--info)}
 @media(max-width:1200px){.next-match~.next-match~.next-match{display:none}}

@@ -1,5 +1,5 @@
 import {escape as e,number as n,money,price,date,season,card,empty,fact,table,playerLink,clubLink,position,competitionBadge,competitionLink,editionHref,noteHue,averageNote,pitch} from './ui.js';
-import {awayIcon} from './club-overview.js';
+import {venueIcon} from './club-overview.js';
 
 // The Historique tab of a club or of a selection (docs/ui.md, « Historique »), in four views chosen at the end of its row of
 // tabs: the overview (the league rank of each season or the stage each edition left the selection at, with the reputation or
@@ -148,7 +148,7 @@ function elevenCard(data,kit,unit){
 // A score from the side's point of view, to its match: green won, red lost.
 const scoreCell=row=>`<a class="calendar-score ${row.scored>row.conceded?'V':row.scored<row.conceded?'D':'N'}" href="#/match/${row.match_id}">${row.scored} – ${row.conceded}</a>`;
 function scoresCard(title,rows,badge){
- const body=rows.length?table(['SCORE','ADVERSAIRE','COMP.','DATE'],rows.map(row=>[scoreCell(row),`<span class="cell">${clubLink(row.opponent)}${row.home||row.neutral?'':awayIcon}</span>`,badge(row),date(row.date)]),
+ const body=rows.length?table(['SCORE','ADVERSAIRE','COMP.','DATE'],rows.map(row=>[scoreCell(row),`<span class="cell">${clubLink(row.opponent)}${venueIcon(row.home,row.neutral)}</span>`,badge(row),date(row.date)]),
   undefined,undefined,sorted(rows,row=>[Math.abs(row.scored-row.conceded),row.opponent?.name||'',row.competition,row.date]),['score-col','','badge-col','date-col'])
   :empty('Aucun match');
  return card(title,body,'','history-scores');

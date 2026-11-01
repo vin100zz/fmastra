@@ -91,8 +91,8 @@ Barre persistante en tête d'application :
   `/monde/etat`) : les derniers joués de la saison, chacun par son score du côté
   du club sur la pastille de son issue (V, N, D), un trait sarcelle pour
   aujourd'hui, puis les trois prochains sur le lavis sarcelle, chacun par son
-  délai en gros (J-6, « Auj. »). Pour tous, l'adversaire (avion si le match est
-  à l'extérieur) et la compétition dessous, en bleu pour une coupe. Un match à
+  délai en gros (J-6, « Auj. »). Pour tous, l'adversaire (maison verte à
+  domicile, avion rouge à l'extérieur) et la compétition dessous, en bleu pour une coupe. Un match à
   venir de championnat ou de phase de ligue d'une coupe d'Europe suit sa
   compétition du rang de l'adversaire ce jour (« Ligue 1 · 5e »), à l'encre de
   sa place ; ni en coupe, ni en phase finale, ni avant la première journée.
@@ -401,7 +401,7 @@ salariale, que nulle règle ne lit, n'est pas montrée. Puis quatre colonnes, ch
 | Finances | sous les tenues : budget de transferts disponible (hors offres en cours) en grand, trésorerie, marge salariale mensuelle (hors offres en cours) en anneau rempli à sa part du plafond, rouge à 5 % ou moins | onglet Finances |
 | Équipe-type | sur le terrain debout de la Composition, à chaque place de la forme que le club a le plus alignée dans la saison, le joueur de son équipe première qui y a été le plus souvent titulaire ; sous son nom ses matches et ses buts (« 52 m / 24 » et le ballon). Avant le premier match de la saison, ou pour un club qui n'en joue pas, ses meilleurs joueurs aux places de sa formation, chacun avec sa note au poste (`eleven` de l'aperçu) | — |
 | À surveiller | club dirigé seulement : les joueurs qui attendent une décision (contrat qui finit dans l'année, blessure et date de retour, suspension, moral sous 70 % et sa cause), six au plus | — |
-| Calendrier | les trois prochains matches au plus et les derniers joués avant eux, autant que la colonne en laisse (score domicile – extérieur coloré V/N/D, adversaire, avion rouge à l'extérieur, compétition hors championnat sur la même ligne) | onglet Calendrier |
+| Calendrier | les trois prochains matches au plus et les derniers joués avant eux, autant que la colonne en laisse (score domicile – extérieur coloré V/N/D, adversaire, maison verte à domicile, avion rouge à l'extérieur, compétition hors championnat sur la même ligne) | onglet Calendrier |
 | Championnat | « Ligue 1 – 18e journée » : le classement entier tant que cinq matches tiennent à côté, sinon les lignes autour du club, avec les points puis la différence de buts | page de la compétition |
 | Buteurs, Passeurs, Notes | les meilleurs du club dans la saison, toutes compétitions, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |
 
@@ -420,7 +420,7 @@ défiler de côté. Rien ne se tient à côté d'elle : les widgets du club sont
 **Calendrier.** Une ligne par match de la saison, du premier au dernier, sans intertitre de mois :
 le jour, la pastille de la compétition (deux caractères, voir la charte : C1, L1, D2, CF ; le
 championnat en contour gris, la coupe nationale en contour bleu, la coupe d'Europe en noir plein),
-le tour (J12, 32es), un avion à l'extérieur, l'adversaire, le score du côté
+le tour (J12, 32es), une maison à domicile ou un avion à l'extérieur, l'adversaire, le score du côté
 du club (ses buts d'abord, coloré V/N/D, la séance de tirs au but à côté de l'adversaire), les buteurs
 du club avec leurs minutes, puis ceux de l'adversaire en gris. Le prochain match est surligné. Des
 boutons au-dessus de la liste gardent une compétition (`competition` dans l'adresse). À droite, le
@@ -576,7 +576,7 @@ Bilan), les joueurs du dernier rassemblement et leur âge moyen, leur valeur. Pu
 | Parcours | la place dans chaque édition jouée, la plus récente d'abord (celle du Bilan : « 1er du groupe D », « Éliminé · Quarts de finale », « ✦ Vainqueur »…) | chaque édition vers sa phase finale |
 | Équipe-type | celle d'un club pour l'édition où elle en est : à chaque place de la forme qu'elle y a le plus alignée, le joueur qui y a été le plus souvent titulaire, parmi ceux de son dernier rassemblement et ceux qui ont été titulaires dans l'édition ; ses matches et ses buts de l'édition sous son nom. Avant son premier match de l'édition, ses meilleurs joueurs du rassemblement à leur note au poste, aux places de la formation du rassemblement. Le poste sur le maillot ; un renfort temporaire en gris, sans lien | — |
 | Groupe | sous l'équipe-type : le groupe de l'édition (celui de sa Ligue des nations, de ses qualifications, ou de la phase finale une fois tiré), en entier : rang, nation, points, différence. Les places qualificatives sont marquées (la première en qualifications, les deux premières en phase finale ; en Ligue des nations, en vert la place qui monte d'une division ou mène à la phase finale, en rouge celle qui descend) et la ligne de la sélection est teintée. Absent pour une nation que l'édition ne concerne pas | page de l'édition |
-| Calendrier | toute la colonne, toutes éditions confondues : les trois prochains matches au plus et les derniers joués avant eux. L'adversaire suit son drapeau ; un match d'une autre édition porte sa pastille (EU, CM, LN) ; un match sur terrain neutre n'a pas d'avion | onglet Calendrier |
+| Calendrier | toute la colonne, toutes éditions confondues : les trois prochains matches au plus et les derniers joués avant eux. L'adversaire suit son drapeau ; un match d'une autre édition porte sa pastille (EU, CM, LN) ; un match sur terrain neutre n'a ni maison ni avion | onglet Calendrier |
 | Buteurs, Passeurs, Notes | les meilleurs de la sélection dans l'édition, joueurs partis compris, en barres contre le premier ; une note compte à partir de la moitié des matches du joueur le plus utilisé | — |
 
 **Effectif.** Une seule liste, sur toute la largeur, celle du rassemblement en cours, à défaut du
@@ -591,8 +591,8 @@ de tri. Rien ne se tient à côté d'elle : les widgets de la sélection sont da
 **Calendrier.** Le calendrier d'un club, pour une édition : une ligne par match, du premier au dernier,
 avec le jour et son année (une édition court sur deux ans), la pastille de l'édition (EU, CM, LN), le
 tour (J3 en qualifications et en Ligue des nations, puis « Groupes · J1 », « Quarts de finale »… en
-toutes lettres), un avion
-à l'extérieur (jamais sur terrain neutre), l'adversaire après son drapeau, le score du côté de la
+toutes lettres), une maison
+à domicile ou un avion à l'extérieur (ni l'un ni l'autre sur terrain neutre), l'adversaire après son drapeau, le score du côté de la
 sélection (ses buts d'abord, coloré V/N/D, la séance de tirs au but à côté de l'adversaire), ses
 buteurs avec leurs minutes, puis ceux de l'adversaire en gris. Le prochain match est surligné.
 Les éditions se parcourent comme les saisons d'un club, au bout de la rangée d'onglets (`edition`

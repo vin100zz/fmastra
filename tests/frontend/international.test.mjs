@@ -135,7 +135,7 @@ test('the calendar tab lists the matches of one edition as a club’s season, be
   const rows=html.split(/<div class="calendar-row(?=[ "])/).slice(1);
   assert.equal(rows.length,4);
   // The day with its year, the edition's badge, a qualifying round by its number; the selection's goals and scorers first.
-  assert.match(rows[0],/<span class="calendar-date">1 sept\. 2028<\/span><a class="competition-code international" href="#\/international\/coupe-du-monde\?edition=2030" title="Coupe du monde 2030">CM<\/a><span class="calendar-round" title="Qualifications · J1">J1<\/span><span class="calendar-venue"><\/span>/);
+  assert.match(rows[0],/<span class="calendar-date">1 sept\. 2028<\/span><a class="competition-code international" href="#\/international\/coupe-du-monde\?edition=2030" title="Coupe du monde 2030">CM<\/a><span class="calendar-round" title="Qualifications · J1">J1<\/span><span class="calendar-venue"><svg class="home"/);
   assert.match(rows[0],/<a href="#\/international\/nation\/-1002" class="club-link"><span class="nation"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"/);
   assert.match(rows[0],/<a class="calendar-score V" href="#\/match\/11" title="Victoire · Coupe du monde 2030 · Qualifications · J1 · Domicile">4–0<\/a><span class="calendar-scorers"><a href="#\/player\/12" title="Kylian Titulaire">Titulaire<\/a> 12’ 67’ · Renfort 81’<\/span><span class="calendar-scorers theirs"><\/span>/);
   assert.match(rows[1],/<span class="calendar-venue"><svg class="away"/);
@@ -331,7 +331,7 @@ test('a selection opens on its Présentation, a club’s: its tiles, its kits an
   const rows=columns[2].split('<a class="club-match"').slice(1);
   assert.equal(rows.length,3);
   assert.match(rows[0],/t\.a\.b\. 4 – 5/);assert.match(rows[0],/<b><span class="nation"><span class="nation" title="Espagne"><img class="flag" src="\/flags\/es\.svg"[^>]*><\/span>Espagne<\/span><\/b><span class="competition-code international" title="Coupe du monde 2026">CM<\/span>/);
-  assert.match(rows[0],/title="Coupe du monde 2026 · Demi-finales · Terrain neutre · t\.a\.b\. 4 – 5"/);assert.doesNotMatch(rows[0],/<svg class="away"/);
+  assert.match(rows[0],/title="Coupe du monde 2026 · Demi-finales · Terrain neutre · t\.a\.b\. 4 – 5"/);assert.doesNotMatch(rows[0],/<svg class="(away|home)"/);
   assert.match(rows[1],/class="club-match-score V"/);assert.match(rows[1],/<span class="competition-code international" title="Euro 2028">EU<\/span>/);
   assert.match(rows[2],/<svg class="away"/);assert.match(rows[2],/À venir/);
   // Its best scorers, providers and notes in the edition, as bars; a reinforcement says so.

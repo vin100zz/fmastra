@@ -179,16 +179,16 @@ test('the calendar widget lists results with their outcome and the fixtures stil
  assert.doesNotMatch(html.split('</section>')[0],/Derniers matches|Prochains matches|<h3[ >]/);
  assert.ok(html.indexOf('href="#/match/1"')<html.indexOf('href="#/match/4"'));
  assert.match(html,/club-match-score pending">À venir/);
- // the opponent is the other side, whichever way the club played; a red plane flags away games
+ // the opponent is the other side, whichever way the club played; a red plane flags away games, a green house home games
  const rows=html.split('<a class="club-match"').slice(1),row=name=>rows.find(item=>item.includes(name));
  assert.match(row('Lille'),/<svg class="away"[^>]*aria-label="Match à l’extérieur"/);
- assert.match(row('Nantes'),/<svg class="away"/);assert.doesNotMatch(row('Metz'),/<svg/);assert.doesNotMatch(row('Brest'),/<svg/);
+ assert.match(row('Nantes'),/<svg class="away"/);assert.match(row('Metz'),/<svg class="home"[^>]*aria-label="Match à domicile"/);assert.doesNotMatch(row('Metz'),/<svg class="away"/);assert.match(row('Brest'),/<svg class="home"/);
  assert.match(row('Metz'),/title="Ligue 1 · Journée 19 · Domicile"/);
  assert.doesNotMatch(html,/ext\.|Lens<\/b>/);
  // a league game needs no competition; a cup tie or a shootout is named on the opponent's line
  assert.doesNotMatch(html,/<small>Ligue 1/);
  const cup=clubOverview(club,data({calendar:{last:[match(5,[7,'Lens'],[8,'Rennes'],{competition:'Coupe de France',score:[1,1],penalties:[4,3],outcome:'V'}),match(6,[9,'Nice'],[7,'Lens'],{competition:'Coupe de France',score:[0,1],outcome:'V'})],next:[]}}));
- assert.match(cup,/Rennes<\/b><span class="competition-code" title="Coupe de France">CdF<\/span><small>t\.a\.b\. 4 – 3<\/small>/);
+ assert.match(cup,/Rennes<\/b><svg class="home".*?<\/svg><span class="competition-code" title="Coupe de France">CdF<\/span><small>t\.a\.b\. 4 – 3<\/small>/);
  assert.match(cup,/title="Coupe de France · Journée 19 · Domicile · t\.a\.b\. 4 – 3"/);
  assert.match(cup,/Nice<\/b><svg class="away".*?<\/svg><span class="competition-code" title="Coupe de France">CdF<\/span><\/span>/);
  // played matches read oldest first, like the upcoming ones
