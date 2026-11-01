@@ -1022,7 +1022,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
-  le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
+  le bouton disparaît. Au direct, elle ne sert que pendant les actions : un
+  temps mort, la mi-temps et le coup de sifflet final repassent sur le terrain
+  vu de dessus, où les formations se lisent. Le stade a des tribunes pleines (supporters aux couleurs
   des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
   filets. Le cadrage de retransmission (longue focale), la pelouse dessinée par
   son shader, le reflet du stade (`stadiumEnvironment`), les ombres douces et les

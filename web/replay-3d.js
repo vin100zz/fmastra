@@ -501,7 +501,8 @@ export class Pitch3D{
   this.frame=requestAnimationFrame(next=>this.tick(next));
   const dt=Math.min(64,now-this.last);this.last=now;
   // Nothing to draw while the summary is folded away.
-  if(!this.replay.isConnected||!this.canvas.offsetParent)return;
+  // Live, a dead time hides the view for the top-down pitch: it comes back framed afresh on the next chance.
+  if(!this.replay.isConnected||!this.canvas.offsetParent){if(this.replay.stage?.classList.contains('fast'))this.wasAway=true;return;}
   this.update(dt);
   this.render();
   this.measure(dt);
