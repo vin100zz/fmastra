@@ -163,7 +163,7 @@ d'observation.
 ### Titres de page
 
 Une page n'affiche que son titre, sans ligne au-dessus ni au-dessous. Ce titre est
-celui de son entrée dans le menu de gauche : Actualités, Vue d'ensemble, Clubs, Joueurs, Mercato
+celui de son entrée dans le menu de gauche : Actualités, Recrutement, Vue d'ensemble, Clubs, Joueurs, Mercato
 mondial, Palmarès, Sélections nationales, Ma partie, ou le nom du pays pour la page d'un
 pays. Les commandes de la page (recherche, filtres, choix des matches d'un pays)
 se rangent sur la même ligne, à sa droite. Le Journal, onglet de Vue d'ensemble, porte ce même titre et allume la même
@@ -1229,6 +1229,42 @@ Pour un résultat analytique, signaler l'absence de détail et masquer les
 statistiques inconnues au lieu d'afficher des zéros. Garder les compositions
 initiales indépendantes des remplacements enregistrés ensuite.
 
+### Recrutement
+
+La cellule de recrutement du club dirigé : son entrée suit celle du club dans le menu (« Votre club »),
+`#/recrutement` (`recruitmentScreen`, `web/recruitment.js` ; `/api/ma-partie/recrutement`,
+`src/api/recruitment.py` ; le calcul dans `src/core/world/recruitment.py`). Elle raisonne comme un club de
+l'IA qui prépare son mercato (`recruitment_plan`, `needs_for`, `quality_with`, `core/ai/market.py`), avec ce que
+le club dirigé peut savoir : les niveaux et potentiels qu'il estime, les attributs que tout écran montre, les prix
+et salaires qu'on lui demanderait.
+
+- **En tête** : Présent ou Avenir (`vue=avenir`), Toutes les pistes ou Agents libres (`libres=1`), dans l'adresse.
+- **Chiffres** : la répartition des budgets de l'onglet Finances, sans poignée ; l'effectif sur son maximum ;
+  la fin du mercato, ou l'ouverture du suivant quand il est fermé.
+- **Une carte par poste** de la formation de la meilleure affectation de l'effectif, dans l'ordre des listes
+  (`POSITION_ORDER`). En Présent, son besoin (`needs_for` : l'écart au niveau visé, la jauge pleine au
+  `gain_besoin_plein`). La première ligne est le joueur du club au poste : son titulaire dans la meilleure
+  affectation en Présent, son meilleur espoir (`age_max_espoir_maison` ans au plus, au potentiel qu'il lui voit) en
+  Avenir.
+- **Les pistes** : au plus `pistes_par_poste` joueurs qui accepteraient de venir (`accepts_move`), que leur club
+  laisserait partir (`can_sell`), dont le prix demandé tient dans le budget de transferts libre et les prétentions
+  (`asked_wage`, ce que l'offre réserverait) sous le plafond salarial, offres en cours déduites. Ni joueur prêté,
+  ni recrue récente, ni joueur déjà promis à un club, ni discussions rompues.
+  - Présent : parmi les `candidats_par_poste` meilleurs que le club voit au poste, ceux qui relèvent la qualité
+    pondérée de l'effectif d'au moins `gain_qualite_min_recrutement`, du plus grand apport au plus petit. L'apport
+    d'un joueur passé `age_apport_plein` ans perd `baisse_par_an` par année, jusqu'à `part_min` : il ne le tiendra
+    pas longtemps. Sa jauge est l'apport rapporté à `gain_besoin_plein` ; son infobulle, la place qu'il prendrait
+    (titulaire, rotation, doublure) et le joueur qu'il en délogerait.
+  - Avenir : les jeunes d'au plus `age_max_espoir` ans dont le club estime le potentiel au-dessus de son niveau
+    visé et de leur niveau d'au moins `marge_potentiel_espoir`, comme un club de l'IA cherche un espoir ; les plus
+    sûrs d'abord (le bas de la fourchette, puis son milieu).
+- **À céder** : au plus `a_ceder_max` joueurs de l'effectif sans place dans l'effectif utile (`squad_places`), le
+  plus faible d'abord.
+
+Le calcul pèse quelques centaines de joueurs (deux secondes environ) : la vue est gardée tant que le jour, l'effectif,
+les offres, les budgets et les discussions rompues n'ont pas changé. Les réglages sont dans
+`ia_gestion.mercato.cellule_recrutement`.
+
 ### Listes : Joueurs, Clubs, Mercato mondial
 
 Les trois écrans de liste partagent la même mise en page (`web/listing.js`).
@@ -1558,6 +1594,10 @@ POST /api/partie/renouvellement           {commande_id, joueur_id, decision} ; r
 GET  /api/ma-partie/contrat/{id}          le contrat qu'un joueur du club signerait : {obstacle, demande, salaire_actuel, salaire_propose, fin_contrat_actuelle, fin_contrat_proposee}
 POST /api/partie/prolongation             {commande_id, joueur_id} ; signe ce contrat
 POST /api/partie/negociation/abandon      {commande_id, joueur_id} ; abandonne un dossier d'achat avant l'accord sur le contrat
+GET  /api/ma-partie/recrutement?vue=present|avenir&libres=   la cellule de recrutement : {mode, free_agents, finances (comme l'onglet Finances,
+                                          sans wage_cap_range), squad {size, max}, window {closes, opens}, positions, surplus}
+                                          positions : {position, need (0 à 1), holder, leads} dans l'ordre des listes ; une piste : la ligne
+                                          d'un joueur, asking_price, wage_demand, contribution (0 à 1, Présent), place, replaces {id, name}
 GET  /api/ma-partie/effectif/{id}         réserve et prêt d'un joueur : {pret, en_reserve, obstacle_reserve, sens: "sortant" | "entrant", obstacle_pret, durees: [{cle, fin}], clubs}
 POST /api/partie/reserve                  {commande_id, joueur_id, reserve: bool}
 POST /api/partie/preter                   {commande_id, joueur_id, club_id, duree: "saison" | "demi_saison"}

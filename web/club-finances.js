@@ -78,7 +78,7 @@ function salariesCard(squad){
 }
 
 // A key figure of the tab: its label, its amount and a line or a bar under it.
-const figure=(label,value,extra='',modifier='')=>`<div class="finance-figure${modifier?` ${modifier}`:''}"><span>${label}</span><strong>${value}</strong>${extra}</div>`;
+export const figure=(label,value,extra='',modifier='')=>`<div class="finance-figure${modifier?` ${modifier}`:''}"><span>${label}</span><strong>${value}</strong>${extra}</div>`;
 
 // The share of a club's means between its transfer budget and its wage cap, for a weekly wage cap of `cap` (the one it has, by
 // default): the budget left free, the part of the cap its wages take, and the parts of the bar on either side of the handle, in
@@ -131,7 +131,7 @@ export function shareContent(data,cap=data.wage_cap,dragged=false){
 }
 // The block itself, over two of the four columns of the key figures; it carries what its handle needs to move (budget-share.js).
 const SHARE_FIELDS=['transfer_budget','reserved_transfer_budget','wage_bill','wage_cap','reserved_wages','wage_cap_range'];
-const shareBlock=data=>`<section class="finance-figure balance" aria-label="Répartition des budgets"${data.wage_cap_range?` data-share="${e(JSON.stringify(Object.fromEntries(SHARE_FIELDS.map(name=>[name,data[name]]))))}"`:''}>${shareContent(data)}</section>`;
+export const shareBlock=data=>`<section class="finance-figure balance" aria-label="Répartition des budgets"${data.wage_cap_range?` data-share="${e(JSON.stringify(Object.fromEntries(SHARE_FIELDS.map(name=>[name,data[name]]))))}"`:''}>${shareContent(data)}</section>`;
 
 // The Finances tab: the share of the budgets and two key figures, the cash month by month, the best-paid players, the money in
 // and out each month and where it came from and went to; the journal of every entry stays folded under them. The season

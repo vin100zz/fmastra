@@ -77,6 +77,11 @@ def validate_consistency(cfg: Config) -> None:
     require(0 <= offers.min_raises <= offers.max_raises and offers.outbid_step >= 0 and 0 <= offers.seller_tolerance < 1,
             "Raises must be ordered, the outbidding step nonnegative and the seller's tolerance within [0, 1)")
     require(0 <= offers.untouchable_morale_loss <= 1, "The morale loss of a player held back must be within [0, 1]")
+    cell = market.recruitment
+    require(cell.candidates_per_position >= cell.leads_per_position >= 1 and cell.surplus_shown >= 0,
+            "The recruitment cell weighs at least the players it shows, one or more at each position")
+    require(cell.yearly_fade >= 0 and 0 <= cell.minimum_share <= 1 and cell.own_prospect_max_age >= 0,
+            "A veteran's contribution fades by a nonnegative share a year, down to a share within [0, 1]")
     windows = [((window.start_month, window.start_day), (window.end_month, window.end_day))
                for window in (cfg.world.market.summer, cfg.world.market.winter)]
     require(all(any(start <= (day.month, day.day) <= end for start, end in windows) for day in market.planning_rounds),

@@ -22,6 +22,20 @@ Quand le joueur ouvre la discussion sur son contrat, le message arrive dans vos 
 
 Vous pouvez mener autant de dossiers que vous voulez. Chacun réserve son indemnité sur votre budget de transferts et son salaire sur votre masse salariale dès l'ouverture, et les réserve jusqu'à l'arrivée du joueur ou l'échec du dossier. Tant que le contrat n'est pas négocié, le salaire réservé est celui que le joueur demande, la colonne PRÉTENTIONS de la liste des joueurs.
 
+## La cellule de recrutement
+
+L'écran **Recrutement**, sous votre club dans le menu, est le travail de votre cellule de recrutement. Elle cherche comme un club de l'IA qui prépare son mercato (voir [Ce qu'un club cherche](#/aide/mercato/ce-qu-un-club-cherche)), avec ce que vous savez : les niveaux et potentiels tels que votre club les estime, qui peuvent la tromper comme ils vous trompent, et les prix et salaires qu'on vous demanderait.
+
+Elle ne retient que des joueurs que vous pourriez recruter aujourd'hui : ils acceptent de venir, leur club les laisserait partir, leur prix tient dans votre budget de transferts libre et leur salaire demandé sous votre plafond salarial, vos offres en cours déduites. Ni joueur prêté, ni recrue arrivée depuis peu, ni joueur déjà promis à un club, ni joueur avec qui les discussions sont rompues.
+
+Une carte par poste de votre effectif, de la défense à l'attaque. La première ligne est votre joueur au poste, puis viennent ses pistes, {{ia_gestion.mercato.cellule_recrutement.pistes_par_poste}} au plus.
+
+- **Présent** : parmi les {{ia_gestion.mercato.cellule_recrutement.candidats_par_poste}} meilleurs joueurs à sa portée au poste, ceux qui amélioreraient votre effectif autant qu'il le faut à un club de l'IA pour recruter, le plus grand apport d'abord. La barre rouge de la carte dit le manque du poste, celle de chaque piste son apport ; son infobulle, la place qu'il prendrait et le joueur qu'il en délogerait. Un joueur de plus de {{ia_gestion.mercato.cellule_recrutement.age_apport_plein}} ans compte {{pct(ia_gestion.mercato.cellule_recrutement.baisse_par_an, 0)}} de moins par année de plus, jusqu'à {{pct(ia_gestion.mercato.cellule_recrutement.part_min, 0)}} de son apport : il ne le tiendra pas longtemps.
+- **Avenir** : les jeunes d'au plus {{ia_gestion.mercato.reperage.age_max_espoir}} ans dont votre club estime le potentiel au moins {{ia_gestion.mercato.marge_potentiel_espoir * 2}} points au-dessus du niveau qu'il vise pour un titulaire et du niveau actuel du joueur, comme un club de l'IA [cherche un espoir](#/aide/mercato/la-recherche-d-espoirs) ; les plus sûrs d'abord. Votre ligne est alors votre meilleur espoir au poste, d'au plus {{ia_gestion.mercato.cellule_recrutement.age_max_espoir_maison}} ans.
+- **Agents libres** ne garde que les joueurs sans club.
+
+Sous les cartes, **À céder** liste au plus {{ia_gestion.mercato.cellule_recrutement.a_ceder_max}} joueurs de votre effectif qui n'ont pas de place dans l'effectif utile : un effectif plein ne peut plus recruter avant d'en vendre un.
+
 ## Ce qui empêche une offre
 
 - Le mercato est fermé.

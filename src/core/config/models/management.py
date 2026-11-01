@@ -228,6 +228,20 @@ class ManagementConfigMarketScouting:
 
 
 @dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
+class ManagementConfigMarketRecruitment:
+    """The human club's recruitment cell: how many players it weighs and shows at each position, how a veteran's
+    contribution fades with age, and which of its own young players it shows for later; the defaults are what a save made
+    before receives."""
+    candidates_per_position: int = Field(default=40, alias="candidats_par_poste")
+    leads_per_position: int = Field(default=5, alias="pistes_par_poste")
+    full_value_age: int = Field(default=31, alias="age_apport_plein")
+    yearly_fade: float = Field(default=0.2, alias="baisse_par_an")
+    minimum_share: float = Field(default=0.2, alias="part_min")
+    own_prospect_max_age: int = Field(default=23, alias="age_max_espoir_maison")
+    surplus_shown: int = Field(default=6, alias="a_ceder_max")
+
+
+@dataclass(frozen=True, slots=True, config=MODEL_CONFIG)
 class ManagementConfigMarketLoans:
     """Which players an AI club sends to its reserve or out on loan; the defaults are what a save made before loans receives."""
     max_age: int = Field(default=21, alias="age_max_ia")
@@ -331,6 +345,7 @@ class ManagementConfigMarket:
     known_player_weight: float = Field(default=3.0, alias="poids_joueur_connu_club_dormant")
     scouting: ManagementConfigMarketScouting = Field(default_factory=ManagementConfigMarketScouting, alias="reperage")
     loans: ManagementConfigMarketLoans = Field(default_factory=ManagementConfigMarketLoans, alias="prets")
+    recruitment: ManagementConfigMarketRecruitment = Field(default_factory=ManagementConfigMarketRecruitment, alias="cellule_recrutement")
     offers: ManagementConfigMarketOffers = Field(default_factory=ManagementConfigMarketOffers, alias="offres")
     long_contracts: ManagementConfigMarketLongContracts = Field(default_factory=ManagementConfigMarketLongContracts, alias="contrats_longs")
     planning_rounds: tuple[ManagementConfigMarketPlanningRound, ...] = Field(

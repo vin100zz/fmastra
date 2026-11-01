@@ -169,6 +169,16 @@
       "age_max_espoir": 21,
       "probabilite_recherche_espoir": 0.5
     },
+    "cellule_recrutement": {
+      "_note": "La cellule de recrutement du club dirige (ecran Recrutement). A chaque poste, elle pese les candidats_par_poste meilleurs joueurs a sa portee, au niveau qu'elle leur voit, et en montre pistes_par_poste. L'apport d'un joueur compte en plein jusqu'a age_apport_plein ans, puis perd baisse_par_an par annee de plus, sans descendre sous part_min. En mode Avenir, la ligne du club est son meilleur espoir d'au plus age_max_espoir_maison ans ; A ceder montre au plus a_ceder_max joueurs sans place dans l'effectif utile.",
+      "candidats_par_poste": 40,
+      "pistes_par_poste": 5,
+      "age_apport_plein": 31,
+      "baisse_par_an": 0.2,
+      "part_min": 0.2,
+      "age_max_espoir_maison": 23,
+      "a_ceder_max": 6
+    },
     "jours_relance_proposition": 14,
     "offres_max_proposition": 5,
     "prets": {

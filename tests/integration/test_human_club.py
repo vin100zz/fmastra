@@ -631,3 +631,30 @@ def test_the_demands_of_a_day_make_one_message(client):
     assert client.post("/api/partie/renouvellement", json={"joueur_id": askers[0].id, "decision": "refuser"}).status_code == 200
     states = {row["player"]["id"]: row["state"] for row in client.get(f"/api/ma-partie/actualites/{demands[-1]}").json()["renewals"]}
     assert states[askers[0].id] == "refused" and states[askers[1].id] == "pending"
+
+
+def test_recruitment_cell_lists_affordable_leads_position_by_position(client):
+    world = client.app.state.game.world
+    assert client.get("/api/ma-partie/recrutement").status_code == 400
+    club = next(club for club in world.active_clubs() if club.name == "Nantes")
+    choose(client, club.id)
+    data = client.get("/api/ma-partie/recrutement").json()
+    assert data["mode"] == "present" and data["squad"] == {"size": len(club.player_ids), "max": world.config.management.guardrails.max_squad}
+    assert data["window"]["closes"] and data["window"]["opens"] is None
+    # The positions in the order of the lists, each lead within the club's means.
+    ranks = [position_rank(item["position"]) for item in data["positions"]]
+    assert ranks == sorted(ranks) and len(set(ranks)) == len(ranks)
+    free = data["finances"]["transfer_budget"] - data["finances"]["reserved_transfer_budget"]
+    room = data["finances"]["wage_cap"] - data["finances"]["wage_bill"] - data["finances"]["reserved_wages"]
+    leads = [lead for item in data["positions"] for lead in item["leads"]]
+    assert leads and all(lead["position"] == item["position"] for item in data["positions"] for lead in item["leads"])
+    assert all(lead["wage_demand"] <= room and (lead["asking_price"] or 0) <= free * 1.1 and 0 <= lead["contribution"] <= 1 for lead in leads)
+    assert all(lead["club"] is None or lead["club"]["id"] != club.id for lead in leads)
+    assert "wage_cap_range" not in data["finances"]
+    # Kept for the day: asking again answers the same view at once.
+    assert client.get("/api/ma-partie/recrutement").json() == data
+    future = client.get("/api/ma-partie/recrutement?vue=avenir&libres=true").json()
+    assert future["mode"] == "avenir" and future["free_agents"]
+    young = world.config.management.market.scouting.prospect_max_age
+    assert all(lead["club"] is None and lead["age"] <= young and lead["contribution"] is None
+               for item in future["positions"] for lead in item["leads"])

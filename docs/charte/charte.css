@@ -23,6 +23,7 @@
  --pitch-a:#3c9358;--pitch-b:#429c5f;--pitch-line:#ffffffb3;--pitch-label:#0a141eb3;
  /* The ball of a goal: the pentagon in the middle, five cut at the rim, drawn to read at 10. */
  --ball:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3CclipPath id='c'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3C/clipPath%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff'/%3E%3Cg clip-path='url(%23c)' fill='%230b121a'%3E%3Cpath d='M50 19L34.8 7.9L40.6-9.9L59.4-9.9L65.2 7.9ZM79.5 40.4L85.3 22.5L104.1 22.5L109.9 40.4L94.7 51.5ZM68.2 75.1L87 75.1L92.8 93L77.6 104L62.4 93ZM31.8 75.1L37.6 93L22.4 104L7.2 93L13 75.1ZM20.5 40.4L5.3 51.5L-9.9 40.4L-4.1 22.5L14.7 22.5Z'/%3E%3Cpath d='M50 33V19M66.2 44.7L79.5 40.4M60 63.8L68.2 75.1M40 63.8L31.8 75.1M33.8 44.7L20.5 40.4' stroke='%230b121a' stroke-width='6'/%3E%3C/g%3E%3Cpath d='M50 33L66.2 44.7L60 63.8H40L33.8 44.7Z' fill='%230b121a'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='%230b121a' stroke-width='7'/%3E%3C/svg%3E");
+ --card-red:#d42a20;
  /* Series: the line of a curve, a second series beside it, and the pale form of each for what is free of a share. */
  /* Stars: the gold of what is sure, the slate of what is only possible, an empty star; on the dark of a pitch's block, the
     slate and the empty part lightened. */
@@ -597,7 +598,7 @@ svg.away,svg.home{width:11px;height:11px}svg.away{fill:var(--bad);transform:rota
 .mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .mark.yellow,.mark.red{width:8px;height:11px;border-radius:1px}
 .mark.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
-.mark.red{background:var(--bad)}
+.mark.red{background:var(--card-red)}
 .mark.injury{width:10px;height:10px;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
 .mark.on{color:var(--good)}.mark.off{color:var(--bad)}
 
@@ -958,6 +959,22 @@ span.entity-step svg{opacity:.3}
 .watch-list>li:last-child{border-bottom:0}
 .watch-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .watch-facts{display:flex;align-items:center;gap:var(--s3)}
+/* The recruitment cell (« Recrutement »): a card per position of the squad, three abreast, its need in a red gauge in its
+   head; the club's player there on the grey of a tile (.holder), then the leads, a line of 26 each: name, age, level (and
+   potential, for later), club, price, wage asked, what he brings in a gauge. */
+.recruit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+.recruit-card .card-head h2{display:flex;align-items:center;gap:var(--s2)}
+.recruit-card .card-head .gauge{width:56px}
+.recruit-list{display:flex;flex-direction:column;margin:0;padding:0 0 var(--s1);list-style:none}
+.recruit-list>li{display:grid;grid-template-columns:minmax(0,1fr) 24px 64px minmax(0,130px) 56px 48px 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.recruit-list.future>li{grid-template-columns:minmax(0,1fr) 24px 64px 64px minmax(0,130px) 56px}
+.recruit-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recruit-list>li:nth-child(odd):not(.holder){background:var(--stripe)}
+.recruit-list>li>a:first-child{font-weight:600;color:var(--strong)}
+.recruit-list>li.holder{background:var(--panel-2)}
+.recruit-list>li.holder>*{color:var(--muted)}
+.recruit-list>li.holder>a:first-child{font-weight:400;color:var(--muted)}
+.recruit-gain{display:flex;justify-content:flex-end}
 /* Players ranked on one figure: a line of 26 each, his rank, his name, a bar of 8 against the first of the list (its end
    rounded), the figure; its unit in the head of the card. The bar in the blue of a series, the pale one (.soft) on the
    lists of the Présentation. */
@@ -998,7 +1015,7 @@ span.entity-step svg{opacity:.3}
 .prose a{color:var(--accent-text)}
 /* A row of a table or of a list, a fact: the ground. A row that opens something as a whole also shows the hand, and
    underlines nothing. */
-:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
+:is(.tr:not(.head,.own,.chosen,.lent,.invalid),.match-row:not(.next),.fixture:not(.own),.fact,.highlight-row,.result:not(.chosen),.watch-list>li,.recruit-list>li:not(.holder),.leader-bars>li):is(:hover,.hover){background:var(--panel-3)}
 a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The head of a card that folds opens it as a whole: the ground, and its arrow keeps its colour. */
 .card-head.toggle:is(:hover,.hover){background:var(--panel-3)}
@@ -1185,6 +1202,26 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 .goal-scorer .kit-shirt{width:48px;height:48px}
 .goal-scorer .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
 .goal-assist{align-self:start;font:600 var(--fs-figure)/20px var(--text);opacity:.85}
+/* The sending-off: a lighter veil than the goal's, a dark band crossing the pitch edged with the colours of the side
+   sent off; the card tilted (a yellow behind it for a second booking), « Carton rouge » and the minute in capitals of 16
+   after the crest, the shirt of 48 and the name in 40, the reason under it. No stamped letters, no shake, no light. */
+.card-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e59;pointer-events:none}
+.card-band{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:var(--s6);width:100%;padding:var(--s4) 0;background:#0a141e;color:#fff;box-shadow:inset 0 var(--mark) 0 var(--team),inset 0 calc(-1*var(--mark)) 0 var(--team),0 20px 40px -10px #0008}
+.card-pair{display:grid;place-items:center;width:72px;height:88px}
+.card-face{grid-area:1/1;width:52px;height:72px;border-radius:var(--radius);background:var(--card-red);box-shadow:0 6px 14px -4px #0009;rotate:-8deg}
+.card-face.yellow{background:var(--accent);rotate:-20deg;translate:-12px 4px}
+.card-text{display:flex;flex-direction:column;gap:var(--s1)}
+.card-label{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-figure)/20px var(--display);letter-spacing:var(--caps);text-transform:uppercase;opacity:.75}
+.card-label img{width:26px;height:26px;object-fit:contain}
+.card-who{display:flex;align-items:center;gap:var(--s3);font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase}
+.card-who .kit-shirt{width:48px;height:48px}
+.card-who .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.card-why{font:600 var(--fs-figure)/20px var(--text);opacity:.75}
+/* The red cards of a side, in the match band until the whistle, after its name: on a white chip, so that they read on any
+   colours, 10 by 14 each, the second over the first. */
+.sent-off{display:flex;align-items:center;flex:none;height:24px;padding:0 6px;border-radius:var(--radius-chip);background:#fff;box-shadow:0 1px 2px #0a141e40}
+.sent-off>i{width:10px;height:14px;border-radius:2px;background:var(--card-red);rotate:-8deg}
+.sent-off>i+i{margin-left:-3px}
 
 /* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
    filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;

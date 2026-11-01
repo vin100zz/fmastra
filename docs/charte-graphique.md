@@ -61,6 +61,7 @@ la structure HTML des spécimens.
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--ball` | Ballon d'un but : blanc, le pentagone du centre et cinq pans coupés au bord, à l'encre `#0b121a` dans les deux thèmes ; dessiné pour 10 (pans larges, contour épais) |
+| `--card-red` | `#d42a20` : le carton rouge, partout où il se dessine (faits de match, suspension, bande d'expulsion, bandeau), rouge franc dans les deux thèmes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
 | `--star`, `--star-soft`, `--star-empty` et `--star-soft-dark`, `--star-empty-dark` | Étoiles : l'or de ce qui est sûr, l'ardoise de ce qui n'est que possible, une étoile vide ; sur le noir d'un bloc de terrain, l'ardoise et le vide éclaircis (voir « Étoiles ») |
 | `--series-1`, `--series-2`, leur `-soft` et leur `-deep` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre ; en foncé, une troisième part de la même série |
@@ -159,7 +160,7 @@ où le fond est déjà jaune.
 | Adversaire d'une composition | `.scout-card`, `.scout-club`, `.scout-name`, `.scout-rank`, `.scout-facts`, `.scout-matches`, `.last-match-date`, `.scout-players` | À droite de la liste de la Composition, 320 au plus : l'adversaire, son rang en grand, ses étoiles, ses cinq derniers matches en blocs de la barre du haut. Voir « Adversaire d'une composition » |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
-| Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.live-flow`, `.squad-row`, `.advice`, `.waiting-status`, `.goal-burst` | Le bandeau du match en 64 et la minute sur sa tuile, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match et le fil des buts attendus sous elle, la ligne d'un joueur, le conseil de l'adjoint et les changements prévus, la tactique et l'attente de ses ordres, la bande d'un but. Voir « Match en direct » |
+| Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.live-flow`, `.squad-row`, `.advice`, `.waiting-status`, `.goal-burst`, `.card-burst`, `.sent-off` | Le bandeau du match en 64, la minute sur sa tuile et les cartons rouges après les noms, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match et le fil des buts attendus sous elle, la ligne d'un joueur, le conseil de l'adjoint et les changements prévus, la tactique et l'attente de ses ordres, la bande d'un but, celle d'une expulsion. Voir « Match en direct » |
 | Match dans une liste | `.fixture`, `.fixture-side`, `.fixture-score`, `.fixture-stack`, `.fixture-floor`, `.fixture-scorers` | Face à face : le score entre les deux camps, le nom du vainqueur en gras à l'encre de l'accent, le match du club dirigé sur fond jaune. Voir « Match dans une liste » |
 | En-tête d'une compétition | `.hero`, `.hero-emblem`, `.hero-name` | Le bandeau d'un club aux couleurs de la compétition, son emblème seul sur le bandeau ou le drapeau de son pays sur le disque, ses onglets dessous. Voir « En-tête d'une compétition » |
 | Navigation d'un bandeau | `.entity-nav`, `.entity-step`, `.entity-menu` | Une colonne à gauche du bandeau : le pair d'avant, la liste de tous, le suivant. Voir « Navigation d'un bandeau » |
@@ -193,6 +194,7 @@ où le fond est déjà jaune.
 | Tuile d'un record | `.tile.record` | Dans une rangée de tuiles, lue de gauche à droite : le joueur, le chevron (`.go`, retourné pour une arrivée), le club après sa pastille, le montant au bout. Le double d'une tuile à chiffres |
 | Joueur sur un terrain | `.pitch-player`, `.kit-shirt`, `.kit-shirt.number`, `.kit-shirt.former`, `.shirt-change`, `.player-block`, `.block-note`, `.block-season` | Le maillot du club et son numéro, le bloc dessous : le nom, la note et les faits. Voir « Terrain et maillot » |
 | Présentation d'un club | `.tiles.row`, `.presentation`, `.kits`, `.kit-outfit`, `.watch-list`, `.watch-facts` | La fiche d'un club s'ouvre sur elle : une rangée de tuiles, quatre colonnes qui remplissent la fenêtre. Celle d'une sélection aussi. Voir « Présentation d'un club », « Présentation d'une sélection » |
+| Recrutement | `.recruit-grid`, `.recruit-card`, `.recruit-list`, `.holder`, `.recruit-gain` | Une carte par poste de l'effectif, trois de front : le joueur du club au poste, puis les pistes de la cellule. Voir « Recrutement » |
 | Classement de joueurs | `.leader-bars`, `.leader-bars.soft`, `.card-hint` | Rang, nom, barre contre le premier, chiffre ; l'unité dans l'en-tête de la carte. Voir « Graphiques » |
 | Faits de match | `.mark` | But, cartons, blessure, entrée, sortie |
 | Infobulle | `.tooltip` | Voir « Infobulles » |
@@ -833,6 +835,35 @@ sélection : ni finances, ni « À surveiller ».
 - **Buteurs, passeurs, notes** : ceux de la sélection dans l'édition, joueurs
   partis compris ; un renfort temporaire suivi de « (temp.) », sans lien.
 
+### Recrutement
+
+L'écran de la cellule de recrutement du club dirigé (`web/recruitment.js`). Ce
+qu'il recommande et comment est dans `docs/ui.md` et le manuel.
+
+- **En tête** : le titre, puis à droite deux choix (`.segmented`) : Présent ou
+  Avenir, Toutes les pistes ou Agents libres.
+- **Chiffres** : la répartition des budgets de l'onglet Finances (voir
+  « Répartition réglable »), sans poignée : rien ne s'y règle ; puis deux faits,
+  l'effectif sur son maximum (au rouge quand il est plein) et la fin du mercato
+  ouvert, ou l'ouverture du suivant.
+- **Une carte par poste** (`.recruit-card`), dans l'ordre des postes des listes (GB,
+  DG, DD, DC, MDC, MC, MOC, AILG, AILD, BU), trois de front, deux puis une quand
+  la fenêtre se resserre. L'en-tête porte la pastille du poste devant son nom ;
+  en Présent, le besoin du poste au bout, en jauge rouge de 56 (`.gauge.bad`),
+  pleine pour le plus grand manque qu'un club de l'IA comble.
+- **La première ligne** (`.holder`) est le joueur du club au poste, sur
+  `--panel-2` et à l'encre atténuée : son titulaire en Présent, son meilleur
+  espoir en Avenir, un tiret quand il n'en a pas.
+- **Les pistes** (`.recruit-list`), une ligne de 26 chacune, une sur deux sur sa
+  bande : le nom, l'âge, le niveau en étoiles, puis en Présent le club, le prix
+  minimum, les prétentions et l'apport en jauge verte (`.recruit-gain`), dont
+  l'infobulle dit la place prise (« Titulaire à la place de Cafaro ») ; en
+  Avenir, le potentiel en étoiles après le niveau, le club et le prix minimum.
+  Un agent libre a « Libre » pour club et un tiret pour prix. Sans piste, la
+  carte le dit en une ligne vide (« Aucune piste »).
+- **À céder** : sous les cartes, sur toute la largeur, la liste des joueurs du
+  club sans place dans l'effectif utile, aux colonnes d'une liste de joueurs.
+
 ### Compte rendu d'un match
 
 Tout tient dans une fenêtre de navigateur sur un écran de 1080 (environ 940 de
@@ -887,6 +918,10 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
   `--panel-2` quand le chronomètre défile ; « MT » à la mi-temps, « Fin » au
   coup de sifflet. Un but fait basculer le chiffre du camp qui marque, et la
   tuile s'entoure un instant de l'accent.
+  Les cartons rouges d'un camp se gardent jusqu'au coup de sifflet, après son
+  nom (`.sent-off`) : sur une pastille blanche de 24 aux coins de 4, lisible sur
+  toutes les couleurs, un carton de 10 × 14 (`--card-red`) par expulsion, le
+  second chevauchant le premier.
 - **Terrain** : aussi large que la hauteur de la fenêtre le permet. Pendant une
   action, les pastilles du résumé, sans trace du ballon ; pendant un temps mort,
   les deux équipes à leur formation, celui qui reçoit à gauche attaquant vers la
@@ -982,6 +1017,15 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
   puis un reflet la traverse. À côté, son maillot en 48 et son nom en 40, le
   passeur dessous en 16 (« Sur penalty » pour un penalty). Le score n'y est
   pas : il change au bandeau.
+- **L'expulsion** (`.card-burst`) : le jeu s'arrête 2.6 s, quelle que soit la
+  vitesse. Plus sobre que le but : un voile plus léger, puis une bande à l'encre
+  du voile (`#0a141e`, dans les deux thèmes) bordée en haut et en bas (3) de la
+  couleur du camp expulsé traverse le terrain. Le carton rouge (`--card-red`) en
+  52 × 72, incliné, se lève ; derrière lui un jaune pour un deuxième
+  avertissement. À côté, l'écusson en 26 et « Carton rouge » avec la minute en
+  capitales de 16, puis le maillot en 48 et le nom en 40, « Deuxième
+  avertissement » dessous en 16. Ni lettres frappées, ni secousse, ni reflet. Si
+  c'est son équipe, le match s'arrête ensuite (voir « Tactique »).
 - Rien de cela ne bouge sous `prefers-reduced-motion`.
 
 ### Match dans une liste
@@ -2054,6 +2098,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Classements | Le rang d'une place marquée en pastille cerclée, les autres nus (`.standings .rank`, `web/charte.css`), à la place du trait à gauche du rang, dans tous les classements (`standingsTable`, `internationalStandings`, le direct) et la légende de la phase de ligue ; ordre des colonnes unique |
 | En-tête de club | Bandeau de 88, nom en 40, son championnat à sa suite en 20 (`clubHero`, `web/club-hero.js`) : ni ligne au-dessus du nom, ni capacité du stade ; une sélection n'a que son nom (`nationHero`). Ses tuiles : niveau et potentiel des 16 meilleurs en deux colonnes graduées (`top_rating`, `top_potential` de l'API), puis la réputation ; plus de tenues ni de tactique, d'entraînement ou de recrutement sur le bandeau de la fiche (le bandeau de « Nouvelle partie » garde ses tenues) |
 | Présentation d'un club | Premier onglet de la fiche, ouverte sur lui (`presentationContent`, `web/club-overview.js` ; `clubScreen`, `web/screens.js`) : la rangée de tuiles (`clubTiles`, `web/club-hero.js`), les tenues (`kitsCard`) et les finances sous elles (`financesBlock`), l'équipe-type (`elevenCard` ; `eleven` de `/clubs/{id}/apercu`, `typical_eleven`, `src/api/club_overview.py`), À surveiller (`watchCard`), le calendrier et le classement qui se partagent les lignes, les buteurs, passeurs et notes (`leadersCards`) ; les lignes suivent la hauteur de la fenêtre (`presentationHeight`), redessinées quand elle change (`[data-fill]`, `web/app.js`). Le terrain debout de la Composition est partagé (`pitchLayout`, `pitchLine`, `LINE_Y` passés dans `web/ui.js`) ; l'équipe-type n'en garde que les lignes de sa formation, réparties sur toute la hauteur (`spreadLayout`, `web/ui.js` ; `.pitch.spread`). L'onglet Effectif n'a plus que ses deux listes, sur toute la largeur (`squadWidgets` retiré). La barre d'un classement de joueurs passe dans `web/charte.css` (`.leader-bars` ; `leaderBars`, `web/club-overview.js`), retirée de `web/club.css` avec l'ancien Historique |
+| Recrutement | Écran nouveau, à la charte (`recruitmentContent`, `positionCard`, `web/recruitment.js` ; `.recruit-grid`, `.recruit-card`, `.recruit-list`, `web/charte.css`) : la répartition des budgets reprise de l'onglet Finances (`shareBlock`, `figure`, `web/club-finances.js`) sans poignée |
 | Fiche d'une sélection | L'en-tête d'un club à ses couleurs (`nationHero`, `web/club-hero.js`), son logo seul, son drapeau après son nom (initiales sur le disque sans logo), aux couleurs de son maillot lues dans `data/nations.csv` (`NATION_KITS`, `src/api/nations.py`) ; la Présentation d'un club, premier onglet (`presentationContent`, `web/international.js` ; tuiles `nationTiles`, `web/club-hero.js` ; colonnes `presentationColumns`, tenues `kitsCard`, équipe-type `elevenCard`, calendrier `calendarBlock`, classements de joueurs `leadersCards` de `web/club-overview.js` ; parcours `runsCard` ; `/international/nations/{id}/apercu`, `nation_overview`, `src/api/international.py`), la liste seule sur l'Effectif (les widgets à côté d'elle retirés) ; le calendrier d'un club, par édition ; pastilles EU, CM et LN ; classements dans l'ordre des colonnes de la charte (D, non P) |
 | Le match en chiffres | `.comparison`, couleurs calculées (`chartColours`, `web/ui.js`) ; carte repliée sur ses quatre premières lignes, l'en-tête entier montre les autres et le choix est gardé (`foldCard`, `web/ui.js` ; `turnFold`, `web/app.js`), au compte rendu comme au direct |
 | Tableaux | Toutes les colonnes se trient (`sortValue`), la flèche après le libellé ; chaque colonne de ce qu'elle tient, le nom de son plus long à 200, des écarts égaux (`spreadColumns`, `web/columns.js`) ; une seule échelle pour les listes de joueurs |
