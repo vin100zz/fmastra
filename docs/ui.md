@@ -1054,7 +1054,16 @@ message (« il vient d'arriver ») reste dans son infobulle.
   buste, le bassin et la tête ; le pied d'appui reste à la cinématique
   inverse, et la jambe qui revient y retourne avant de se poser. Au-delà de la
   course rapide, la foulée procédurale reprend une part, faute de sprint dans
-  la base ; sans le fichier, toute la foulée est procédurale. Les gestes
+  la base ; sans le fichier, toute la foulée est procédurale.
+  Le regard et la course sont distincts : hors du ballon, un défenseur, le
+  gardien ou un joueur au pas gardent les yeux sur le ballon et reculent ou
+  se décalent en pas chassés (`direction` de `locomotionPose`, foulées plus
+  courtes et plus vives, hanches ouvertes sur le côté) jusqu'à l'allure où il
+  faut se retourner et courir (plus basse vers l'arrière). Le défenseur qui
+  presse le porteur se met en garde : bassin bas, buste penché, bras écartés.
+  À pleine vitesse, le corps s'incline dans les courbes, et les pieds suivent
+  la course quand le buste tourne : un virage serré se prend en pas croisés,
+  sans glisser. Les gestes
   (`replay-motion.js`) se superposent à ces foulées sans synchroniser les
   joueurs.
   Passes, centres et frappes ont leur préparation, leur contact et leur
@@ -1071,7 +1080,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
   de tir contré et de coup franc, avec ralenti et arrêt sur image.
   `tests/fixtures/replay-locomotion.html` compare six joueurs en marche, course
-  et sprint, ou à allure identique, avec caméra de profil ou trois quarts,
+  et sprint, ou à allure identique, le ballon devant eux, derrière ou de côté
+  (course arrière et pas chassés), avec caméra de profil ou trois quarts,
   ralenti et progression image par image sur le même squelette que le match.
 
 ### Composition

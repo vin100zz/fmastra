@@ -24,8 +24,8 @@ export function activeGesture(gestures,time){
  return selected;
 }
 
-export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0,ready=0,hold=false,gesture=null,foot=1,turn=0,cheer=0,dive=null}={}){
- const p=locomotionPose({speed,phase,time,seed,style,acceleration,turn});
+export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0,ready=0,hold=false,gesture=null,foot=1,turn=0,cheer=0,dive=null,direction=0,crouch=0}={}){
+ const p=locomotionPose({speed,phase,time,seed,style,acceleration,turn,direction,crouch});
  const blend=(list,value,k)=>{for(let side=0;side<2;side++)list[side]=mix(list[side],typeof value==='function'?value(side):value,k);};
  if(ready){
   // Keep taking steps while tracking a shot. The set stance folds the legs
@@ -33,7 +33,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
   const set=ready*(1-smooth((speed-.1)/.8));
   const support=()=>Math.min(...p.hip.map((hip,i)=>.93-.45*Math.cos(hip)-.4*Math.cos(hip+p.knee[i])-soleHeight(hip+p.knee[i]+p.ankle[i])));
   const ground=support();
-  blend(p.hip,-.42,set);blend(p.knee,.84,set);blend(p.ankle,-.42,set);
+  blend(p.hip,-.42,set);blend(p.knee,.84,set);blend(p.ankle,-.42,set);blend(p.hipRoll,0,set);
   p.lift+=(ground-support())*SCALE;
   blend(p.shoulder,-.38,ready);blend(p.elbow,-1.1,ready);blend(p.spread,.48,ready);
   p.lean=mix(p.lean,.16,ready);
@@ -53,7 +53,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
      const kick=gesture.kind==='kick',control=gesture.kind==='cushion',power=kick?clamp(gesture.strength??.7):control?.18:.27;
      const backswing=kick?.35+power*.6:.12,contact=control?-.52:-.87;
      const swing=before?mix(backswing,contact,wind):mix(contact,control?-.12:-.12-power*.55,Math.sin(follow*Math.PI/2));
-     p.hip[foot]=mix(p.hip[foot],swing,weight);
+     p.hip[foot]=mix(p.hip[foot],swing,weight);blend(p.hipRoll,0,weight);
      p.knee[foot]=mix(p.knee[foot],before?mix(.9+power*.5,.12,wind):.12+follow*.55,weight);
      p.ankle[foot]=mix(p.ankle[foot],control?.12:kick?.28:-.12,weight);
      if(gesture.kind!=='touch'||speed<2){p.hip[other]=mix(p.hip[other],-.16,weight);p.knee[other]=mix(p.knee[other],.32,weight);p.ankle[other]=mix(p.ankle[other],-.16,weight);}
@@ -100,7 +100,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
    blend(p.elbow,mix(mix(-1+low*.95,-.14,overhead),-.14,lateral),reach);blend(p.spread,.13,reach);
    blend(p.hip,i=>mix(centralHip,i===(side>0?0:1)?-.18:.32,lateral),reach);
    blend(p.knee,i=>mix(centralKnee,i===(side>0?0:1)?.18:.68,lateral),reach);
-   blend(p.ankle,centralHip*(1-lateral),reach);
+   blend(p.ankle,centralHip*(1-lateral),reach);blend(p.hipRoll,0,reach);
   }
  }
  if(hold){

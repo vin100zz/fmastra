@@ -40,6 +40,12 @@
       <button type="button" data-pace="walk" aria-pressed="false">Tous en marche</button>
       <button type="button" data-pace="jog" aria-pressed="false">Tous en course</button>
       <button type="button" data-pace="sprint" aria-pressed="false">Tous au sprint</button>
+      <button type="button" data-pace="defend" aria-pressed="false">Tous à 3 m/s</button>
+    </div>
+    <div class="segmented" aria-label="Où est le ballon">
+      <button type="button" data-ball="ahead" aria-pressed="true" class="active">Ballon devant</button>
+      <button type="button" data-ball="behind" aria-pressed="false">Ballon derrière (en défense)</button>
+      <button type="button" data-ball="side" aria-pressed="false">Ballon de côté (en défense)</button>
     </div>
     <div class="tools">
       <label>Duo suivi <select id="focus"><option value="0">Marche · 1.4 m/s</option><option value="1" selected>Course · 4.5 m/s</option><option value="2">Sprint · 7.5 m/s</option></select></label>
@@ -61,7 +67,7 @@
     window.addEventListener('unhandledrejection', event => reportError(event.reason));
 
     const params = new URLSearchParams(location.search);
-    const paceSpeeds = { walk: 1.4, jog: 4.5, sprint: 7.5 };
+    const paceSpeeds = { walk: 1.4, jog: 4.5, sprint: 7.5, defend: 3 };
     const names = ['Marche · n° 2', 'Marche · n° 17', 'Course · n° 7', 'Course · n° 31', 'Sprint · n° 11', 'Sprint · n° 44'];
     const ids = [2, 17, 7, 31, 11, 44];
     const players = ids.map((id, index) => ({ id, name: names[index], shirt: id, position: 'MC' }));
@@ -88,6 +94,8 @@
     });
 
     let pace = Object.hasOwn(paceSpeeds, params.get('pace')) ? params.get('pace') : 'mixed';
+    // Ahead, the runners chase the ball; behind or to a side, they defend (the ball is the other side's) and face it.
+    let ballMode = ['ahead', 'behind', 'side'].includes(params.get('ball')) ? params.get('ball') : 'ahead';
     let speed = params.get('speed') === '0.5' ? .5 : 1;
     let paused = params.get('paused') === '1';
     let focus = Math.max(0, Math.min(2, Math.floor(Number(params.get('focus') ?? 1) || 0)));
@@ -122,8 +130,9 @@
         const at = position(runner.distance, runner.lane);
         Object.assign(runner.dot, { x: at.x, y: at.y });
       }
-      const leader = runners[focus * 2], ahead = position(leader.distance + 8, leader.lane);
-      replay.ballAt = { x: ahead.x, y: ahead.y };
+      const leader = runners[focus * 2], ahead = position(leader.distance + (ballMode === 'behind' ? -14 : 8), leader.lane);
+      replay.ballAt = ballMode === 'side' ? { x: ahead.x - ahead.ty * 16, y: ahead.y + ahead.tx * 16 } : { x: ahead.x, y: ahead.y };
+      replay.lastSide = ballMode === 'ahead' ? null : 'ball';
     }
     for (const runner of runners) runner.speed = paceSpeeds[pace === 'mixed' ? runner.pace : pace];
     updatePositions();
@@ -169,8 +178,8 @@
       document.querySelector('#step').disabled = !paused;
       document.querySelector('#focus').value = String(focus);
       document.querySelector('#camera').value = cameraMode;
-      for (const button of document.querySelectorAll('[data-speed], [data-pace]')) {
-        const selected = button.dataset.speed ? Number(button.dataset.speed) === speed : button.dataset.pace === pace;
+      for (const button of document.querySelectorAll('[data-speed], [data-pace], [data-ball]')) {
+        const selected = button.dataset.speed ? Number(button.dataset.speed) === speed : button.dataset.ball ? button.dataset.ball === ballMode : button.dataset.pace === pace;
         button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected));
       }
     }
@@ -183,6 +192,7 @@
     });
     document.querySelectorAll('[data-speed]').forEach(button => button.addEventListener('click', () => { speed = Number(button.dataset.speed); refreshControls(); }));
     document.querySelectorAll('[data-pace]').forEach(button => button.addEventListener('click', () => { pace = button.dataset.pace; refreshControls(); }));
+    document.querySelectorAll('[data-ball]').forEach(button => button.addEventListener('click', () => { ballMode = button.dataset.ball; refreshControls(); }));
     document.querySelector('#focus').addEventListener('change', event => { focus = Number(event.target.value); cameraCut = true; });
     document.querySelector('#camera').addEventListener('change', event => { cameraMode = event.target.value; cameraCut = true; });
     document.querySelector('#labels').addEventListener('change', event => { runners.forEach(runner => runner.dot.node.classList.toggle('on', event.target.checked)); });
