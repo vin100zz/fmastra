@@ -255,14 +255,14 @@ th:last-child button:is(.sort-toggle,[data-sort])::after{right:auto;left:-7px}
 /* A place in a table is told by its rank: a badge of 24 on the pale ground of its place, ringed with its colour; the other
    ranks bare, on the same centre. A row is never tinted, nothing runs along it; the row of the user's club is the only one
    coloured. The legend of the places shows the same badge, a square of 12. */
-tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff){background:none!important}
-tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff):nth-child(even){background:var(--stripe)!important}
-tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff):hover{background:var(--panel-3)!important}
+tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff,.europe-eliminated){background:none!important}
+tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff,.europe-eliminated):nth-child(even){background:var(--stripe)!important}
+tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff,.europe-eliminated):hover{background:var(--panel-3)!important}
 .rank,.rank.first{display:inline-grid;place-items:center;width:24px;height:var(--h-chip);border-radius:var(--radius-chip);font:700 var(--fs-small)/1 var(--text);color:var(--muted);vertical-align:middle}
 .standings tr:is(.promoted,.europe-direct) .rank{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .standings tr.qualified-europe .rank{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .standings tr.europe-playoff .rank{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
-.standings tr.relegated .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+.standings tr:is(.relegated,.europe-eliminated) .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
 /* In a league, a place in Europe takes the colour of its cup (C1 blue, C3 violet, C4 teal), the title keeping its green;
    one that hangs on the winner of the national cup has its ring dashed. The legend of the cups shows the same square. */
 .standings tr.europe-c1 .rank{--cup:var(--info);--cup-soft:var(--info-soft)}

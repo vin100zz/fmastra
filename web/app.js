@@ -149,7 +149,7 @@ const fillShare=to=>{const total=daysBetween(fillFrom,to);return total<=0?1:Math
 const fillHtml=to=>`<i class="next-match-fill" style="width:${fillShare(to)*100}%"></i>`;
 // A match to come of a league or of a European cup's league phase follows its competition with the opponent's rank today,
 // in the ink of where its place leads, as its badge in the table.
-const RANK_INKS={promoted:'good','europe-direct':'good','qualified-europe':'info','europe-playoff':'warn',relegated:'bad','europe-c1':'c1','europe-c3':'c3','europe-c4':'c4'};
+const RANK_INKS={promoted:'good','europe-direct':'good','qualified-europe':'info','europe-playoff':'warn',relegated:'bad','europe-eliminated':'bad','europe-c1':'c1','europe-c3':'c3','europe-c4':'c4'};
 const ordinal=rank=>rank===1?'1er':`${rank}e`;
 const rankHtml=standing=>{if(!standing)return '';const ink=RANK_INKS[tableZone(standing).split(' ')[0]];return ` · <b class="next-match-rank${ink?` ${ink}`:''}">${ordinal(standing.rank)}</b>`;};
 const rankTitle=standing=>standing?` · ${ordinal(standing.rank)} · ${standing.points} pt${standing.points>1?'s':''}`:'';
