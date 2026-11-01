@@ -182,3 +182,50 @@ test('every reaction keeps a finite pose and fades back to the plain gait',()=>{
  const crouch=playerMotion({time:3000,seed:2,mood:{kind:'crouch',weight:1}});
  assert.ok(Math.abs(footY(crouch,0))<.01&&Math.abs(footY(crouch,1))<.01,'bent over, both soles on the grass');
 });
+
+test('the keeper stands on the line from his goal to the ball, further off it as the ball goes away',()=>{
+ const replay=fixture(),keeperAt=ball=>replay.targets(ball,'home').get('away').get(101);
+ for(const ball of [{x:92,y:12},{x:92,y:56}]){
+  const spot=keeperAt(ball),goal={x:105,y:34};
+  const cross=(spot.x-goal.x)*(ball.y-goal.y)-(spot.y-goal.y)*(ball.x-goal.x);
+  assert.ok(Math.abs(cross)/Math.hypot(ball.x-goal.x,ball.y-goal.y)<.6,'on the line to the ball');
+  assert.ok(spot.y<34===ball.y<34,'towards its side');
+ }
+ assert.ok(105-keeperAt({x:20,y:34}).x>105-keeperAt({x:90,y:34}).x+6,'well off his line with the ball far away');
+});
+
+test('a keeper off his line spreads himself where the shot passes nearest him; beaten, he is a stride short',async()=>{
+ for(const outcome of ['save','goal']){
+  const replay=fixture(),keeper={side:'away',id:101};
+  replay.carrier={side:'home',id:10};replay.ballPath=path({x:88,y:34,z:0},{x:0,y:0,z:0},1000);
+  Object.assign(replay.dot(keeper),{x:97,y:33});
+  await replay.shoot({type:'shot',side:'home',by:{side:'home',id:10},keeper,style:'low',point:{x:105,y:34}},{outcome:{kind:outcome}});
+  const action=replay.action,meet=action.keeperPoint;
+  assert.ok(meet.x<103,'he meets it off his line');
+  assert.ok(action.keeperReach<action.duration,'before it reaches the goal');
+  if(outcome==='save')assert.ok(Math.abs(action.duration-action.keeperReach/.92)<1,'the ball stops at him');
+ }
+});
+
+test('a keeper with the ball throws it to a free teammate, or kicks it upfield when none is near',async()=>{
+ const replay=played(),keeper={side:'away',id:101};
+ Object.assign(replay.dot(keeper),{x:100,y:34});replay.carrier=keeper;
+ const receiver=await replay.distribute(keeper,{throw:true});
+ assert.ok(receiver&&receiver.side==='away');
+ assert.ok(replay.dot(keeper).gestures.some(gesture=>gesture.kind==='throw'));
+ assert.equal(replay.carrier,null);
+ const lonely=played();
+ for(const [id,dot] of lonely.dots.away)if(id!==101)Object.assign(dot,{x:20,y:34});
+ Object.assign(lonely.dot(keeper),{x:100,y:34});
+ await lonely.distribute(keeper);
+ const kick=lonely.dot(keeper).gestures.find(gesture=>gesture.kind==='kick');
+ assert.ok(kick&&kick.target.x<70,'a long kick upfield');
+});
+
+test('a low save near him is kept out with a foot, the body dropping onto the other knee',()=>{
+ const dive={start:1000,duration:600,distance:1.2,height:.1,side:1,style:'foot'},pose=playerMotion({time:1650,ready:1,dive,seed:3});
+ assert.ok(pose.hipRoll[1]>.6,'the near leg swings out to the side');
+ assert.ok(pose.knee[0]>1.2,'the other knee bends');
+ assert.ok(Math.abs(footY(pose,0))<.01,'on the grass');
+ assert.ok(Math.abs(pose.roll)<.2,'he stays up, no dive');
+});

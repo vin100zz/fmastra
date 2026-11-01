@@ -557,8 +557,10 @@ export class Pitch3D{
   const from=toWorld(action.keeperFrom.x,action.keeperFrom.y),to=toWorld(action.keeperPoint.x,action.keeperPoint.y);
   const ball=this.replay.ballAt||action.target,yaw=keeper.yaw??Math.atan2(ball.x-action.keeperFrom.x,ball.y-action.keeperFrom.y);
   const lateral=(to.x-from.x)*Math.cos(yaw)-(to.z-from.z)*Math.sin(yaw);
-  keeper.dive={start:action.t0,duration:action.duration*.92,distance:Math.abs(lateral),side:Math.sign(lateral)||1,
-   height:action.keeperHeight??.6,yaw};
+  const height=action.keeperHeight??.6,distance=Math.abs(lateral);
+  // A low ball close to him is kept out with the foot, one save in two, the same each time the chance is replayed.
+  const foot=action.outcome==='save'&&height<.35&&distance<1.7&&Math.floor(action.t0)%2===0;
+  keeper.dive={start:action.t0,duration:action.keeperReach??action.duration*.92,distance,side:Math.sign(lateral)||1,height,yaw,style:foot?'foot':'dive'};
  }
  // The goal banner is up (live, the goal's band): the side that scored celebrates, on the pitch and in the stands.
  cheering(){
@@ -644,7 +646,12 @@ export class Pitch3D{
    ?Math.sin(Math.PI*glance/650)*(Math.floor((time+figure.seed*997)/period)%2?.95:-.95):0;
   figure.head.rotation.set(p.headPitch,(clamp(angleDelta(figure.yaw,gaze)+scan,-1.1,1.1)+p.headYaw)*(1-p.diveWeight),-p.spineRoll*.55);
   figure.body.position.set(Math.cos(figure.yaw)*(p.shift+p.sway),p.lift,-Math.sin(figure.yaw)*(p.shift+p.sway));
-  if(figure.dive&&p.diveWeight>0){
+  if(figure.dive?.style==='foot'&&p.diveWeight>0){
+   // The boot goes to the ball: the replay dot marks the interception.
+   figure.root.updateMatrixWorld(true);
+   const leg=figure.dive.side>0?1:0,boot=figure.ankles[leg].getWorldPosition(new THREE.Vector3()),k=p.diveWeight;
+   figure.body.position.x+=(at.x-boot.x)*k;figure.body.position.z+=(at.z-boot.z)*k;
+  }else if(figure.dive&&p.diveWeight>0){
    // The skeleton reaches with its gloves: the replay dot already marks the
    // interception, so leaving the feet there would send the hands past the ball.
    figure.root.updateMatrixWorld(true);

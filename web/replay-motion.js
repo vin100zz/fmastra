@@ -152,7 +152,21 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
    }
   }
  }
- if(dive){
+ if(dive?.style==='foot'){
+  // A low shot near him is kept out with a leg thrown out to its side, dropping onto the other knee, arms out wide.
+  const progress=clamp((time-dive.start)/Math.max(1,dive.duration)),after=time-dive.start-dive.duration;
+  const reach=smooth((progress-.3)/.6)*(1-smooth((after-250)/650)),side=dive.side||1,leg=side>0?1:0,other=1-leg;
+  p.diveWeight=reach;
+  if(reach>0){
+   p.hip[leg]=mix(p.hip[leg],-.25,reach);p.knee[leg]=mix(p.knee[leg],.05,reach);p.ankle[leg]=mix(p.ankle[leg],.1,reach);
+   p.hipRoll[leg]=mix(p.hipRoll[leg],side*clamp(.45+dive.distance*.45,.45,1.15),reach);p.hipYaw[leg]=mix(p.hipYaw[leg],side*.6,reach);
+   p.hip[other]=mix(p.hip[other],-.75,reach);p.knee[other]=mix(p.knee[other],1.55,reach);p.ankle[other]=mix(p.ankle[other],-.65,reach);
+   p.hipRoll[other]=mix(p.hipRoll[other],0,reach);
+   p.lift=mix(p.lift,standing(p,other),reach);
+   blend(p.shoulder,-.55,reach);blend(p.spread,.95,reach);blend(p.elbow,-.2,reach);
+   p.lean=mix(p.lean,.22,reach);p.roll=mix(p.roll,-side*.12,reach);
+  }
+ }else if(dive){
   // Set, push off, reach the shot, absorb the landing, then get back up.
   // Recovery depends on the contact time, not the next replay action's type.
   const progress=clamp((time-dive.start)/Math.max(1,dive.duration)),after=time-dive.start-dive.duration;

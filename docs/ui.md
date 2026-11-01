@@ -1098,8 +1098,17 @@ message (« il vient d'arriver ») reste dans son infobulle.
   accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
   La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
-  Le gardien garde ses pas pendant le placement, se prépare à l'arrêt, plonge
-  à la hauteur de la frappe, retombe puis se relève ;
+  Le gardien se place sur la droite qui joint le milieu de son but au ballon
+  (la bissectrice de l'angle des poteaux) : sur sa ligne quand le ballon est
+  proche, avancé jusqu'au bord de sa surface quand le jeu est loin. Il se
+  déplace en pas chassés face au ballon, garde ses pas pendant le placement, se
+  prépare à l'arrêt, plonge à la hauteur de la frappe, retombe puis se relève ;
+  battu, il plonge un peu court. Face à un joueur lancé seul (passe en
+  profondeur, dribble), il sort pour fermer l'angle et s'interpose là où la frappe
+  passe au plus près de lui (`keeperReach`). Une frappe basse tout près de lui est
+  repoussée du pied, une fois sur deux, genou opposé au sol. Le ballon gardé, il
+  relance (`distribute`) à la main au coéquipier libre le plus proche (de 10 à
+  35 m), ou d'une volée vers le milieu du terrain ;
   après un arrêt, le ballon tenu suit ses gants. Les joueurs réagissent (`react` de
   `match-replay.js`, humeurs datées que la 3D pose sur le geste en cours) : après un
   but, le buteur part vers le poteau de corner de son côté, bras écartés, et la
