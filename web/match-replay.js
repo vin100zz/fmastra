@@ -59,6 +59,13 @@ const grounded=point=>({x:point.x,y:point.y,z:0});
 const turn=(vector,angle)=>({x:vector.x*Math.cos(angle)-vector.y*Math.sin(angle),y:vector.x*Math.sin(angle)+vector.y*Math.cos(angle)});
 // Minutes as the match report gives them (`matchMinute`); `half` is when the first half ended.
 const clockLabel=(second,half)=>`${matchMinute(second,half)}′`;
+// What a stop in the viewer's side says first: his side's colours and the minute of the fact. It is always his side's;
+// a server older than these fields gives neither, and the stop then reads at the clock where the match stands.
+export function stopSaid(decision,{homeId,clock,live}){
+ const side=decision.team_id!=null?(decision.team_id===homeId?'home':'away'):live?.state?.side??'home';
+ const second=Number.isFinite(decision.second)?decision.second:clock;
+ return {side,second};
+}
 // Stable jitter, so a chance looks the same each time it is replayed.
 const seeded=seed=>()=>{seed=(seed+0x6d2b79f5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
 const SVG='http://www.w3.org/2000/svg';
@@ -687,7 +694,8 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  stopFor(decision){
   this.hold=true;this.skipping=false;this.decision=decision;
   this.progress('Arrêt de jeu',true);
-  this.ticker(`<strong>${NOTABLE[decision.kind]||'Arrêt de jeu'}</strong> · ${e(decision.player||'—')} · à vous de jouer`,{side:this.side(decision.team_id),minute:this.minute(decision.second)});
+  const {side,second}=stopSaid(decision,this);
+  this.ticker(`<strong>${NOTABLE[decision.kind]||'Arrêt de jeu'}</strong> · ${e(decision.player||'—')} · à vous de jouer`,{side,minute:this.minute(second)});
   this.updatePlay();
   this.emit('replay-phase',{phase:'stopped'});
  }
