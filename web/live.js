@@ -344,7 +344,7 @@ function tacticHtml(){
  const problems=changed?tacticsProblems(draft,manager,view.status==='halftime'):[];
  const actions=view.waiting?'<span class="waiting-status" role="status"><span class="ticker-run" aria-hidden="true"><i></i></span>À la fin de l’action</span><button type="button" class="button small" data-live="annuler">Annuler</button>'
   :changed?`${problems.length?`<span class="tactic-problem" role="status" title="${e(problems.join('\n'))}">${e(problems[0])}</span>`:''}<button type="button" class="button small" data-live="annuler">Annuler</button><button type="button" class="button small primary" data-live="valider"${problems.length?` aria-disabled="true" title="${e(problems.join('\n'))}"`:' title="Valider (Entrée)"'}>Valider</button>`
-  :view.decision?'<button type="button" class="button small primary" data-live="reprendre">Reprendre</button>':'';
+  :view.decision&&view.status!=='halftime'?'<button type="button" class="button small primary" data-live="reprendre" title="Reprendre (Espace)">Reprendre</button>':'';
  return `<div class="card-head"><h2>Tactique</h2><div class="tactic-actions">${actions}</div></div>`
   +`<div class="card-body tactic-edit"><div class="fact"><span>Formation</span><select data-live-formation aria-label="Formation" title="Formation (T)"${view.waiting?' disabled':''}>${options}</select></div><div class="fact"><span>Mentalité</span><div class="segmented small" role="group" aria-label="Mentalité">${choices}</div></div></div>`;
 }
@@ -448,9 +448,10 @@ const replay=()=>document.querySelector('.live-layout match-replay');
 
 // ---- Orders. ----
 // Valider sends the draft once the action under way has ended (at once between two chances, at the break or on an
-// injury); the match goes on, except at the break. Annuler drops the draft, and the wait for the end of the action.
+// injury); the match goes on, except at the break and when the action ended on an injury or a red card in the user's
+// side, which still waits for him. Annuler drops the draft, and the wait for the end of the action.
 async function validate(){
- const halftime=view.status==='halftime';
+ const halftime=view.status==='halftime',asked=view.decision;
  if(view.waiting||!pending()||tacticsProblems(view.draft,team(),halftime).length)return;
  view.waiting=true;refresh(['side']);
  const rewind=await replay()?.interrupt();
@@ -461,9 +462,12 @@ async function validate(){
    adopt(state);replay()?.resync(state);
   }catch(error){toast(error.message,true);}
  }
- view.waiting=false;view.decision=null;view.draft=tacticsDraft(team());
+ // An injury or a red card met while the orders waited for the end of the action: the match stays stopped on it.
+ const met=view.decision&&view.decision!==asked?view.decision:null;
+ view.waiting=false;view.decision=met;view.draft=tacticsDraft(team());
  refresh(['actions','stats']);
- if(view.status!=='halftime')replay()?.resume();
+ if(met)replay()?.stopFor(met);
+ else if(view.status!=='halftime')replay()?.resume();
 }
 function cancel(){
  if(view.waiting){view.waiting=false;replay()?.cancelInterrupt();}
@@ -534,12 +538,15 @@ globalThis.document?.addEventListener('live-segment',event=>{
  view.pending=event.detail;view.status=event.detail.status==='finished'?view.status:event.detail.status;
 });
 const settle=event=>{if(!view)return;view.shown=event.detail;view.pending=null;syncDraft();};
-globalThis.document?.addEventListener('live-halftime',event=>{if(!view)return;settle(event);view.status='halftime';refresh(['actions','stats']);});
+// An injury or a red card on the last action of the half is dealt with at the break: the player is marked there.
+globalThis.document?.addEventListener('live-halftime',event=>{if(!view)return;settle(event);view.status='halftime';view.decision=event.detail.decision??null;refresh(['actions','stats']);});
 // An injury or a red card in the user's side holds the match until he changes something or goes on.
 globalThis.document?.addEventListener('live-decision',event=>{
  if(!view)return;settle(event);view.decision=event.detail.decision;view.team='mine';
  refresh(['actions','stats']);
 });
+// The play button of a match stopped on an injury or a red card goes on, as Reprendre does.
+globalThis.document?.addEventListener('live-go-on',()=>{if(view?.decision)goOn();});
 globalThis.document?.addEventListener('live-finished',()=>{if(!view)return;if(view.pending){view.shown=view.pending;view.pending=null;}finished();});
 globalThis.document?.addEventListener('live-error',event=>toast(event.detail.error?.message||'Le match ne peut pas continuer.',true));
 // Each minute the other matches, the table, the highlights, the flow and the players' sheet catch up with the clock.
@@ -594,7 +601,7 @@ globalThis.document?.addEventListener('click',event=>{
   if(action==='valider')validate();
   else if(action==='annuler')cancel();
   else if(action==='reprendre')goOn();
-  else if(action==='second-half'){view.status='playing';refresh(['actions','side']);replay()?.resume();}
+  else if(action==='second-half'){view.status='playing';view.decision=null;refresh(['actions','side']);replay()?.resume();}
   else if(action==='fin')endMatch();
   else if(action==='continuer')document.querySelector('#advance')?.click();
   return;

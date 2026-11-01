@@ -209,7 +209,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(!button)return;
    if(button.classList.contains('replay-start')){button.remove();this.play();}
    else if(button.dataset.chance)this.jump(Number(button.dataset.chance));
-   else if(button.dataset.replay==='play')this.paused?this.play():this.pause();
+   else if(button.dataset.replay==='play')this.decision?this.emit('live-go-on'):this.paused?this.play():this.pause();
    else if(button.dataset.replay==='view')this.setView(!this.view3d,true);
    else if(button.dataset.replay==='previous')this.jump(this.previousIndex());
    else if(button.dataset.replay==='next')this.live?this.skip():this.jump(this.nextIndex(this.current+1));
@@ -540,7 +540,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   if(this.live){if(this.hold)return;this.paused=false;this.updatePlay();this.startLoop();if(!this.running)this.liveLoop();return;}
   if(this.current>=this.sequences.length)this.reset(0);this.paused=false;this.querySelector('.replay-start')?.remove();this.updatePlay();this.startLoop();if(!this.running)this.loop();}
  pause(){this.paused=true;this.updatePlay();}
- updatePlay(){const button=this.querySelector('[data-replay="play"]');button.textContent=this.paused?'▶':'❚❚';button.setAttribute('aria-label',this.paused?'Lecture':'Pause');button.title=button.getAttribute('aria-label');}
+ updatePlay(){const button=this.querySelector('[data-replay="play"]'),still=this.paused||Boolean(this.decision);button.textContent=still?'▶':'❚❚';button.setAttribute('aria-label',this.decision?'Reprendre':this.paused?'Lecture':'Pause');button.title=button.getAttribute('aria-label');}
  shown(sequence){return sequence.goal||(this.filter!=='goals'&&(sequence.shot.xg??1)>=Number(this.filter));}
  visible(index){return index>=0&&index<this.sequences.length&&this.shown(this.sequences[index]);}
  // Hides the markers of the chances left out and counts what the summary will play.
@@ -651,7 +651,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
     this.segmentShown=true;
     if(data.status==='finished'){this.finishLive();return;}
     if(data.status==='halftime'){this.showHalfTime();this.hold=true;this.emit('live-halftime',data);if(this.stopRequested)this.stopAt(null);return;}
-    if(data.decision){this.hold=true;this.emit('live-decision',data);if(this.stopRequested)this.stopAt(null);return;}
+    if(data.decision){this.stopFor(data.decision);this.emit('live-decision',data);if(this.stopRequested)this.stopAt(null);return;}
    }
   }finally{if(run===this.run)this.running=false;}
  }
@@ -673,7 +673,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // After new orders, or at the start of the second half.
  resume(){
   if(!this.live||!this.hold||this.status==='finished')return;
-  this.hold=false;this.skipping=false;
+  this.hold=false;this.skipping=false;this.decision=null;
   if(this.status==='halftime'){
    this.status='playing';this.period=2;
    this.updateRosters(this.clock);this.kickOff(this.kickOffSide(2));
@@ -681,6 +681,15 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    this.querySelector('.replay-second-half').hidden=true;
   }
   this.play();
+ }
+ // An injury or a red card in the viewer's side stops the match until he goes on (the play button, or Reprendre):
+ // the band says why, the play button turns to ▶.
+ stopFor(decision){
+  this.hold=true;this.skipping=false;this.decision=decision;
+  this.progress('Arrêt de jeu',true);
+  this.ticker(`<strong>${NOTABLE[decision.kind]||'Arrêt de jeu'}</strong> · ${e(decision.player||'—')} · à vous de jouer`,{side:this.side(decision.team_id),minute:this.minute(decision.second)});
+  this.updatePlay();
+  this.emit('replay-phase',{phase:'stopped'});
  }
  // The clock stays on 45′ until the viewer kicks the second half off.
  showHalfTime(){

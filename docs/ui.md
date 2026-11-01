@@ -1175,8 +1175,14 @@ passeur) et le score change au bandeau.
   actions et à la mi-temps ; en attendant, « À la fin de l'action ». « Annuler »
   efface ce qui est prévu. Ce que les règles refusent (remplacements, fenêtres,
   deux gardiens) se lit avant les boutons, et Valider ne part pas.
-- Une blessure ou un carton rouge dans l'équipe du joueur arrête le match ;
-  « Reprendre » le relance sans changement.
+- Une blessure ou un carton rouge dans l'équipe du joueur arrête le match, le
+  temps de réagir : le bandeau du terrain passe à « Arrêt de jeu », le fil dit
+  ce qui s'est passé (« Blessure · Kondogbia · à vous de jouer »), aux couleurs
+  de l'équipe, et le bouton de lecture repasse à ▶. Un changement validé le
+  relance ; « Reprendre », dans la carte Tactique, ou ▶ (Espace) le relance sans
+  changement. Des ordres validés pendant une action qui finit sur une blessure
+  ou un carton rouge sont appliqués, mais le match reste arrêté. Sur la dernière
+  action d'une mi-temps, le joueur est marqué à la pause.
 - À la mi-temps le compteur reste sur « MT » jusqu'à « 2e mi-temps », bouton
   affiché au bas du terrain.
 - « Fin du match » laisse l'IA finir le match sans l'afficher.
