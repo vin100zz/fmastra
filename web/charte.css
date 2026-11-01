@@ -728,7 +728,7 @@ dialog.palette{width:720px;max-width:calc(100vw - 2*var(--s4));margin:calc(2*var
 .match-mark.missed::after{content:"";position:absolute;left:-2px;right:-2px;top:4px;height:2px;background:var(--bad);transform:rotate(-45deg)}
 .match-mark.booking{width:8px;height:11px;border-radius:1px}
 .match-mark.booking.yellow{background:var(--accent);box-shadow:inset 0 0 0 1px #0000002e}
-.match-mark.booking.red{background:var(--bad);box-shadow:none}
+.match-mark.booking.red{background:var(--card-red);box-shadow:none}
 .match-mark.injury{width:10px;height:10px;border-radius:0;background:linear-gradient(var(--bad),var(--bad)) center/100% 4px no-repeat,linear-gradient(var(--bad),var(--bad)) center/4px 100% no-repeat}
 .match-mark.injury::before,.match-mark.injury::after{content:none}
 .match-mark.sub-on{color:var(--good)}
@@ -1404,6 +1404,28 @@ match-replay.live .slider input[type=range]{width:96px}
 @keyframes goal-shake{25%{transform:translateY(4px)}50%{transform:translateY(-3px)}75%{transform:translateY(1px)}}
 @keyframes goal-glint{from{background-position:100% 0}to{background-position:0 0}}
 @keyframes goal-rise{from{opacity:0;transform:translateY(10px)}}
+/* The sending-off: a lighter veil than the goal's, a dark band crossing the pitch edged with the colours of the side
+   sent off; the card tilted (a yellow behind it for a second booking), « Carton rouge » and the minute in capitals of 16
+   after the crest, the shirt of 48 and the name in 40, the reason under it. No stamped letters, no shake, no light. */
+.card-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e59;pointer-events:none;animation:card-veil 3s ease forwards}
+.card-band{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:var(--s6);width:100%;padding:var(--s4) 0;background:#0a141e;color:#fff;box-shadow:inset 0 var(--mark) 0 var(--team),inset 0 calc(-1*var(--mark)) 0 var(--team),0 20px 40px -10px #0008;animation:goal-band .5s cubic-bezier(.2,.9,.2,1) both}
+.card-pair{display:grid;place-items:center;width:72px;height:88px}
+.card-face{grid-area:1/1;width:52px;height:72px;border-radius:var(--radius);background:var(--card-red);box-shadow:0 6px 14px -4px #0009;rotate:-8deg;animation:card-rise .45s .25s cubic-bezier(.2,.9,.2,1) both}
+.card-face.yellow{background:var(--accent);rotate:-20deg;translate:-12px 4px;animation-delay:.15s}
+.card-text{display:flex;flex-direction:column;gap:var(--s1)}
+.card-label{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-figure)/20px var(--display);letter-spacing:var(--caps);text-transform:uppercase;opacity:.75;animation:goal-rise .4s .35s both}
+.card-label img{width:26px;height:26px;object-fit:contain}
+.card-who{display:flex;align-items:center;gap:var(--s3);font:700 semi-condensed var(--fs-hero)/1 var(--display);text-transform:uppercase;animation:goal-rise .4s .4s both}
+.card-who .kit-shirt{width:48px;height:48px}
+.card-who .kit-shirt.number b{margin-top:9px;font-size:var(--fs-figure)}
+.card-why{font:600 var(--fs-figure)/20px var(--text);opacity:.75;animation:goal-rise .4s .5s both}
+@keyframes card-veil{0%{opacity:0}8%,88%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes card-rise{from{opacity:0;translate:0 24px;rotate:0deg}}
+/* The red cards of a side, in the match band until the whistle, after its name: on a white chip, so that they read on any
+   colours, 10 by 14 each, the second over the first. */
+.sent-off{display:flex;align-items:center;flex:none;height:24px;padding:0 6px;border-radius:var(--radius-chip);background:#fff;box-shadow:0 1px 2px #0a141e40}
+.sent-off>i{width:10px;height:14px;border-radius:2px;background:var(--card-red);rotate:-8deg}
+.sent-off>i+i{margin-left:-3px}
 /* A side's players, a line of 30 each: shirt of 24, position, whole name, what he did, note; the user's side adds the
    fatigue and the assistant's advice, the player he would take off on the wash of a warning. */
 .squad-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto 32px;align-items:center;column-gap:var(--s2);height:30px;padding:0 var(--s3)}
@@ -1483,7 +1505,7 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .live-table .move{display:inline-block;min-width:22px;font:700 var(--fs-micro)/1 var(--text)}
 .live-table .move.up{color:var(--good)}
 .live-table .move.down{color:var(--bad)}
-@media(prefers-reduced-motion:reduce){.goal-burst,.goal-burst *,.goal-band::after,.live-stats .comparison-bar>i,.match-hero.live *,.ticker-run>i{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(prefers-reduced-motion:reduce){.goal-burst,.goal-burst *,.card-burst,.card-burst *,.goal-band::after,.live-stats .comparison-bar>i,.match-hero.live *,.ticker-run>i{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 /* Stars (.stars): a level, a potential, a note without its figure (see « Étoiles »). Five stars, half ones included, each
    filled in gold up to what is sure (--f), in slate up to what is only possible (--u, the top of a band), then empty;
