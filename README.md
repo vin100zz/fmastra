@@ -68,7 +68,8 @@ Un *Web Service* Render, branché sur le dépôt :
 Le jeu n'a pas d'authentification : quiconque a l'adresse joue la même partie.
 
 L'interface comprend le tableau de bord, les classements, calendriers,
-statistiques, clubs et budgets, la recherche de joueurs, les fiches de carrière,
+statistiques, clubs et budgets, la recherche de joueurs, la cellule de recrutement
+du club dirigé, les fiches de carrière,
 les comptes rendus et les compositions. L'utilisateur dirige un club, choisi à la
 création : compositions, matches en direct, contrats et transferts ; les autres
 clubs sont pilotés par l'IA.

@@ -1518,3 +1518,25 @@ button.advice svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-wi
 .pill.debug{background:var(--warn-soft);color:var(--warn)}
 /* A trait's word on a tile is a figure, not a label. */
 :is(.tile,.club-hero-tile) .trait{font:700 var(--fs-figure)/20px var(--display);font-stretch:semi-condensed;letter-spacing:0;text-transform:none;color:var(--strong)}
+
+/* Recrutement: a card per position of the squad, three abreast; its need in a red gauge in its head; the club's player there
+   on the grey of a tile (.holder), then the leads, a line of 26 each; À céder under them. */
+.scout-figures{margin-bottom:var(--s2)}
+.scout-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s2)}
+@media(max-width:1500px){.scout-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:999px){.scout-grid{grid-template-columns:minmax(0,1fr)}}
+.scout-card .card-head h2{display:flex;align-items:center;gap:var(--s2)}
+.scout-card .card-head .gauge{width:56px}
+.scout-list{display:flex;flex-direction:column;margin:0;padding:0 0 var(--s1);list-style:none}
+.scout-list>li{display:grid;grid-template-columns:minmax(0,1fr) 24px 64px minmax(0,130px) 56px 48px 40px;align-items:center;column-gap:var(--s2);height:var(--h-row);padding:0 var(--s3)}
+.scout-list.future>li{grid-template-columns:minmax(0,1fr) 24px 64px 64px minmax(0,130px) 56px}
+.scout-list>li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scout-list>li:nth-child(odd):not(.holder){background:var(--stripe)}
+.scout-list>li>a:first-child{font-weight:600;color:var(--strong)}
+.scout-list>li.holder{background:var(--panel-2)}
+.scout-list>li.holder>*{color:var(--muted)}
+.scout-list>li.holder>a:first-child{font-weight:400;color:var(--muted)}
+.scout-list>li:not(.holder):hover{background:var(--panel-3)}
+.scout-list .club-link{display:block;overflow:hidden;text-overflow:ellipsis}
+.scout-list .club-link>.kit-dot{display:inline-block;margin-right:6px;vertical-align:-2px}
+.scout-gain{display:flex;justify-content:flex-end}

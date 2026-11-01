@@ -264,6 +264,13 @@ def squad_places(players: list[Player], club: Club, cfg: Config) -> dict[int, in
     return {players[index].id: place for place, index in enumerate(assignment) if index < len(players)}
 
 
+def squad_place_roles(players: list[Player], club: Club, cfg: Config) -> dict[int, tuple[int, Position]]:
+    """`squad_places` with the position of each place, in the formation of the squad's best deep assignment."""
+    _, places, formation = _best_assignment(players, club, cfg, True)
+    roles = squad_roles(club, cfg, formation)[0]
+    return {players[index].id: (place, roles[place]) for place, index in enumerate(places) if index < len(players)}
+
+
 @dataclass(frozen=True, slots=True)
 class Assignment:
     """A squad's weighted assignment to the places of a profile: its score, the player index of each place (an index past

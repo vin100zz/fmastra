@@ -743,6 +743,14 @@ def router(service: GameService) -> APIRouter:
             taken = [loan_row(player, player.loan.parent_id) for pid in club.player_ids if (player := world.players[pid]).loan is not None]
             return {"sortantes": outgoing, "entrantes": entrantes, "liste": listed, "prets": lent, "emprunts": taken}
 
+    @api.get("/ma-partie/recrutement")
+    def recruitment(vue: Literal["present", "avenir"] = "present", libres: bool = False) -> dict:
+        """What the human club's recruitment cell recommends at each position of its squad (see `api.recruitment`)."""
+        from .recruitment import recruitment as cell
+        with service.reading() as world:
+            if world.controlled_club_id is None: raise HTTPException(400, "Aucun club sélectionné.")
+            return cell(world, vue, libres)
+
     @api.get("/ma-partie/contrats")
     def pending_renewals() -> dict:
         with service.reading() as world:
