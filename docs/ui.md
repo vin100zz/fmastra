@@ -1024,8 +1024,14 @@ message (« il vient d'arriver ») reste dans son infobulle.
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
   le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
   des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
-  filets. L'éclairage, les ombres et le cadrage rapproché rendent lisibles les
-  volumes des joueurs. Leur modèle articulé (`replay-player.js`) distingue le
+  filets. Le cadrage de retransmission (longue focale), la pelouse dessinée par
+  son shader, le reflet du stade (`stadiumEnvironment`), les ombres douces et les
+  effets (`effects` : occlusion ambiante à demi-résolution, halo des lumières,
+  courbe neutre, étalonnage ; passes de `web/vendor/three/addons/`) rendent
+  lisibles les volumes des joueurs. Une machine trop lente pour ces effets
+  les perd d'elle-même : la moyenne de 90 images au-delà de 25 ms retire
+  l'occlusion, puis le halo et la haute définition (`measure`, `setQuality`).
+  Le modèle articulé des joueurs (`replay-player.js`) distingue le
   buste, les épaules, les membres, le visage, les cheveux, les chaussures et les
   gants ; le maillot porte le numéro du match (`shirt`) et les couleurs du camp.
   La locomotion (`replay-locomotion.js`) fait avancer chaque foulée avec la

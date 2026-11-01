@@ -1,9 +1,10 @@
 // A small articulated footballer. Geometry and kit materials are shared by the squad;
 // only the pivots and shirt-number texture belong to an individual player.
 import * as THREE from './vendor/three/three.module.js';
-import {gaitStyle} from './replay-locomotion.js';
+import {SCALE,gaitStyle} from './replay-locomotion.js';
 
-const SCALE=1.25;
+// The name above a player, in metres, and the layer of what is drawn without ambient occlusion (labels, blob shadows).
+export const LABEL=2.4,OVERLAY=1;
 const SKINS=['#f1c9a0','#d9a577','#b27b52','#8a5a3b','#5e3b27'];
 const HAIR=['#16110d','#2b1d14','#3f2a1c','#5c3d24','#8a6038','#c9a36a','#7c3a1d'];
 const BOOTS=['#161a21','#161a21','#f5f5ec','#d7ff3c','#ff684b','#4484ff'];
@@ -105,14 +106,14 @@ function label(view,text){
  // The label is explicitly disposed when a substitute removes this figure.
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false,transparent:true}));
- sprite.scale.set(canvas.width/canvas.height*1.3,1.3,1);sprite.position.y=2.75;sprite.renderOrder=2;sprite.visible=false;return sprite;
+ sprite.scale.set(canvas.width/canvas.height*1.3,1.3,1);sprite.position.y=LABEL;sprite.renderOrder=2;sprite.layers.set(OVERLAY);sprite.visible=false;return sprite;
 }
 
 export function createPlayerFigure(view,side,id,keeper){
  const kit=view.replay.teams[side],parts=view.parts,random=seeded(hash(id)),pick=list=>list[Math.floor(random()*list.length)];
  const colour=keeper?kit.keeper:kit.major,trim=keeper?inkOn(colour):kit.minor;
- const shirt=view.material(colour,.86),shorts=view.material(keeper?kit.keeper:kit.minor,.9),accent=view.material(trim,.85);
- const skin=view.material(SKINS[hash(id)%SKINS.length],.78),boots=view.material(pick(BOOTS),.5);
+ const shirt=view.cloth(colour,.86),shorts=view.cloth(keeper?kit.keeper:kit.minor,.9),accent=view.cloth(trim,.85);
+ const skin=view.material(SKINS[hash(id)%SKINS.length],.62),boots=view.material(pick(BOOTS),.5);
  const hair=random()<.1?null:view.material(pick(HAIR),.95),hands=keeper?view.material(pick(GLOVES),.75):skin;
  const sole=view.material('#252b31',.88),bootTrim=view.material('#edf1ed',.68);
  const body=new THREE.Group();body.rotation.order='YXZ';
@@ -151,7 +152,7 @@ export function createPlayerFigure(view,side,id,keeper){
  // Small stable differences in build, without changing leg length or ball contacts.
  body.scale.set(SCALE*(.94+random()*.12),SCALE,SCALE);
  const root=new THREE.Group();root.add(body);
- const blob=new THREE.Mesh(parts.blob,view.blob);blob.rotation.x=-Math.PI/2;blob.position.y=.025;root.add(blob);
+ const blob=new THREE.Mesh(parts.blob,view.blob);blob.rotation.x=-Math.PI/2;blob.position.y=.025;blob.layers.set(OVERLAY);root.add(blob);
  const name=label(view,view.replay.names.get(id)||'');root.add(name);view.people.add(root);
  const seed=random()*6,style=gaitStyle(seed);
  return {root,body,hips,knees,ankles,spine,head,shoulders,elbows,wrists,name,blob,keeper,foot:random()<.2?0:1,seed,style,
