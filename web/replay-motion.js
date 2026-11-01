@@ -51,7 +51,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
     const weight=envelope*(touch?(before?wind:1-smooth(follow/.7)):1),other=1-foot,sign=foot?1:-1;
     if(['kick','touch','cushion'].includes(gesture.kind)){
      const kick=gesture.kind==='kick',control=gesture.kind==='cushion',power=kick?clamp(gesture.strength??.7):control?.18:.27;
-     const backswing=kick?.35+power*.6:.12,contact=control?-.52:-.87;
+     const backswing=kick?.35+power*.6:.12,contact=control?-.52:-.72;
      const swing=before?mix(backswing,contact,wind):mix(contact,control?-.12:-.12-power*.55,Math.sin(follow*Math.PI/2));
      p.hip[foot]=mix(p.hip[foot],swing,weight);
      p.knee[foot]=mix(p.knee[foot],before?mix(.9+power*.5,.12,wind):.12+follow*.55,weight);
