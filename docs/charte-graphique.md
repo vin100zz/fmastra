@@ -156,6 +156,7 @@ où le fond est déjà jaune.
 | En-tête d'un joueur | `.hero`, `.hero-number`, `.hero-name`, `.hero-context`, `.hero-bar`, `.hero-pills`, `.command-group` | Le bandeau de son club, son numéro devant son nom, ses commandes dessous. Voir « Bandeau » et « En-tête d'un joueur » |
 | En-tête d'un match | `.hero.duel`, `.hero-side`, `.tile.match-score`, `.big-score`, `.match-facts` | Le bandeau partagé entre les deux camps, le score où ils se rejoignent ; sans barre, la ligne du match au-dessus des temps forts. Voir « En-tête d'un match » |
 | Banc d'une composition | `.bench`, `.bench-slot` | Sous le terrain de la Composition : trois colonnes, une place de 26 sur `--panel-2`, le poste puis le nom court du joueur, entier ; une place vide en pointillés |
+| Adversaire d'une composition | `.scout-card`, `.scout-club`, `.scout-name`, `.scout-rank`, `.scout-facts`, `.scout-matches`, `.last-match-date`, `.scout-players` | À droite de la liste de la Composition, 320 au plus : l'adversaire, son rang en grand, ses étoiles, ses cinq derniers matches en blocs de la barre du haut. Voir « Adversaire d'une composition » |
 | Deux colonnes | `.halves` | Une courte liste en deux tableaux côte à côte, un trait entre eux : le banc sous un terrain. Voir « Compte rendu d'un match » |
 | Temps forts d'un match | `.highlight-row`, `.highlight`, `.marks`, `.highlight-names`, `.minute` | Une ligne de 26 par fait, la minute au milieu, chaque camp à son bord. Voir « Temps forts d'un match » |
 | Match en direct | `.hero.duel.compact`, `.live-clock`, `.ticker`, `.frise`, `.live-flow`, `.squad-row`, `.advice`, `.waiting-status`, `.goal-burst` | Le bandeau du match en 64 et la minute sur sa tuile, le fil du commentaire aux couleurs du camp qui a l'action, la frise du match et le fil des buts attendus sous elle, la ligne d'un joueur, le conseil de l'adjoint et les changements prévus, la tactique et l'attente de ses ordres, la bande d'un but. Voir « Match en direct » |
@@ -322,6 +323,37 @@ action, sans menu à ouvrir.
   champ au repos… »).
 - **Place** : après le premier problème de la composition, qui se coupe pour lui laisser la place ;
   un trait (`--line`, 22 de haut) le sépare d'« Infos » / « Jeu ».
+
+### Adversaire d'une composition
+
+À droite de la liste de la Composition, une carte « Adversaire » (`.scout-card`)
+dit ce que le club sait de son prochain adversaire, de haut en bas :
+
+- **En tête** (`.scout-club`) : son écusson (48), son nom après sa pastille,
+  lien vers sa fiche, en 16 / 700 ; un avion rouge après lui quand le club joue
+  chez lui, rien sur terrain neutre (`.scout-name`). La journée, le jour et le
+  lieu ne s'écrivent pas : la barre du haut les dit. Au bout de la ligne, son
+  rang en championnat en chiffre de page (26, `--display`), « 1er », « 14e »,
+  ses points dessous en 11 / 600 atténués, « 24 pts » (`.scout-rank`) ; rien
+  hors d'un championnat.
+- **Tuiles** (`.scout-facts`, sur `--panel-2`) : son niveau et son potentiel
+  en étoiles de 16, sur une tuile de deux colonnes de toute la largeur, comme
+  sur son bandeau ; dessous, sa tactique et son bilan en championnat là où il
+  joue ce match (« À domicile », « À l'extérieur » : 4 V · 1 N · 0 D).
+- **5 derniers matches** (`.scout-matches`) : ses cinq derniers matches de la
+  saison, toutes compétitions, du plus ancien au plus récent, chacun un bloc
+  joué de la barre du haut (`.last-match`), empilés, de 36, un trait
+  `--row-line` entre deux : le score de son côté, ses buts d'abord, sur la
+  pastille de son issue ; l'autre club après sa pastille, un avion quand il a
+  joué chez lui ; la compétition dessous, en bleu hors de son championnat ; le
+  jour au bout, en 11 atténué (`.last-match-date`). Chacun ouvre son compte
+  rendu ; l'infobulle dit l'issue, le jour, la compétition, le tour et le lieu.
+  Avant son premier match de la saison, ni intertitre ni blocs.
+- **Joueurs clés** puis **Absents** (`.scout-players`), une ligne de 26 chacun :
+  le poste puis le nom et ses étoiles ; la date de retour d'un blessé, en
+  rouge, ou les matches d'un suspendu, en ambre, puis le nom.
+- **Dernière rencontre** des deux clubs, au pied : le tour, les deux noms, le
+  score sur la pastille de l'issue pour le club.
 
 **La couleur d'un club sous ses onglets.** L'onglet ouvert d'une fiche et les
 flèches de ses saisons prennent, des deux couleurs du club, de la sélection ou
@@ -1951,6 +1983,7 @@ ses échelles (tailles, graisses, rayons, capitales).
 | Sujet | Fait |
 |---|---|
 | Échelles | Sept tailles, trois graisses, un rayon, dans toutes les feuilles |
+| Adversaire d'une composition | La carte « Adversaire » (`scoutingHtml`, `web/composition.js` ; `.scout-*`, `web/charte.css`, retirés de `web/club.css`) : l'avion après le nom, le rang en grand et ses points dessous à la place de la ligne du tour et de la forme, le niveau et le potentiel de l'effectif en étoiles, les cinq derniers matches de la saison en blocs de la barre du haut (`last_matches`, `squad_strength`, `src/api/scouting.py`) |
 | Formation et composition auto | Sur la Composition, le pas des formations (`steps`, options `attribute` et `forward`, `web/ui.js`) à la place des neuf boutons au-dessus du terrain ; la composition auto (`autoHtml`, `web/composition.js` ; `.check-option`, `web/charte.css`) à la place de « Meilleure composition » |
 | Fond | Blanc en thème clair |
 | Onglets | `.tabs` partout, en-tête de club compris |

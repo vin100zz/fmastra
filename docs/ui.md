@@ -1080,11 +1080,14 @@ décocher une case pendant qu'un niveau est marqué recompose aussitôt. Les deu
 à l'autre. Un titulaire porte le maillot du club (le motif de son maillot domicile, redessiné à plat)
 marqué de son numéro ; une place vide garde le contour d'un maillot, son poste dessus.
 
-L'adversaire (`scouting` de la composition) : son écusson, la journée, le jour et le lieu du match, son
-rang, ses points et sa forme en championnat, la tactique qu'il joue, son bilan de la saison en
-championnat là où il joue ce match (à l'extérieur quand le club le reçoit), ses trois meilleurs joueurs
-de l'équipe première, ceux qui ne peuvent pas jouer (blessés avec leur date de retour, suspendus avec
-leurs matchs) et le dernier match entre les deux clubs.
+L'adversaire (`scouting` de la composition ; charte, « Adversaire d'une composition ») : son écusson,
+son nom, un avion rouge quand le club joue chez lui, son rang en grand et ses points en championnat,
+le niveau et le potentiel de son effectif en étoiles (ceux de son bandeau), la tactique qu'il joue,
+son bilan de la saison en championnat là où il joue ce match (à l'extérieur quand le club le reçoit),
+ses cinq derniers matches de la saison, toutes compétitions (score de son côté coloré V/N/D,
+adversaire, avion à l'extérieur, compétition, jour), ses trois meilleurs joueurs de l'équipe
+première, ceux qui ne peuvent pas jouer (blessés avec leur date de retour, suspendus avec leurs
+matchs) et le dernier match entre les deux clubs.
 
 Le terrain est une grille : cinq colonnes sur chaque ligne (défense, sentinelles, milieu, milieu
 offensif, attaque) et le gardien seul dans son but. Chaque tactique y pose ses postes. Glisser un

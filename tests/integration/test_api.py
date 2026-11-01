@@ -847,7 +847,17 @@ def test_the_lineup_screen_scouts_the_next_opponent(played):
     venue = [match for match in world.matches.values() if match.season == world.season and match.result and match.competition_id == rival.competition_id
              and (match.away_id if scout["home"] else match.home_id) == rival.id]
     assert sum(scout["record"][key] for key in ("won", "drawn", "lost")) == len(venue)
-    if scout["standing"]: assert set(scout["standing"]) == {"rank", "points", "form"}
+    if scout["standing"]: assert set(scout["standing"]) == {"rank", "points"}
+    assert scout["club"]["top_rating"] is not None and scout["club"]["top_potential"] is not None
+    # Its last five matches of the season in every competition, oldest first, each read from its side.
+    season = sorted((match for match in world.matches.values() if match.season == world.season and match.result
+                     and rival.id in (match.home_id, match.away_id)), key=lambda match: (match.date, match.id))
+    assert [row["id"] for row in scout["last_matches"]] == [match.id for match in season[-5:]]
+    for row in scout["last_matches"]:
+        home = row["home"]["id"] == rival.id
+        goals, conceded = row["score"] if home else row["score"][::-1]
+        assert row["outcome"] == ("V" if goals > conceded else "D" if goals < conceded else "N") or row["penalties"]
+        assert row["league"] == (row["competition_id"] == rival.competition_id)
     if scout["last_meeting"]: assert {scout["last_meeting"]["home"]["id"], scout["last_meeting"]["away"]["id"]} == {club.id, rival.id}
     # Each player's last five matches with the club, oldest first, and the load they leave him.
     played_matches = sorted((match for match in world.matches.values() if match.result and club.id in (match.home_id, match.away_id)),

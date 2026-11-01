@@ -1210,5 +1210,36 @@ a:is(.tr,.match-row,.result,.door){cursor:pointer}
 /* The debug mode, while it is on: a mark in the top bar; the exact values are in the tooltips. */
 .pill.debug{background:var(--warn-soft);color:var(--warn)}
 
+/* The opponent beside the lineup (« Adversaire d'une composition »): its crest, its name after its dot, a plane when the club
+   plays at its ground, its rank large at the right and its points small under it; its level and potential on a tile of two
+   columns, its tactic and its record on two tiles; its last five matches of the season as the played blocks of the top bar,
+   stacked, the day at the end; its key players and those out, a line each. */
+.scout-card{max-width:320px}
+.scout-card>.card-body{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s3)}
+.scout-club{display:flex;align-items:center;gap:var(--s3)}
+.scout-club>.crest{width:48px;height:48px;border:3px solid #fff;box-shadow:0 1px 5px #0a141e40}
+.scout-name{display:flex;align-items:center;gap:6px;min-width:0;font-size:var(--fs-figure);font-weight:700;color:var(--strong)}
+.scout-name svg.away{width:13px;height:13px}
+.scout-rank{display:flex;flex-direction:column;align-items:flex-end;flex:none;margin-left:auto;white-space:nowrap}
+.scout-rank strong{font:700 semi-condensed var(--fs-page)/26px var(--display);color:var(--strong)}
+.scout-rank em{font:600 var(--fs-small)/14px var(--text);font-style:normal;color:var(--muted)}
+.scout-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
+.scout-facts>.tile{min-width:0}
+.scout-facts>.tile strong{white-space:nowrap}
+.scout-facts>.tile.split{grid-column:1/-1}
+.scout-matches{display:flex;flex-direction:column}
+.scout-matches .last-match{max-width:none;height:36px;padding:0 var(--s3)}
+.scout-matches .last-match+.last-match{border-left:0;border-top:1px solid var(--row-line)}
+.scout-matches .last-match>span{flex:1;min-width:0}
+.scout-matches .last-match>.last-match-date{flex:none}
+.last-match-date{font-size:var(--fs-small);color:var(--muted)}
+.scout-players{list-style:none}
+.scout-players li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:var(--s2);align-items:center;min-height:var(--h-row);padding:0 var(--s3);border-top:1px solid var(--row-line)}
+.scout-players li:first-child{border-top:0}
+.scout-players li a{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scout-players.absent li{grid-template-columns:auto minmax(0,1fr)}
+.scout-players .status.danger{color:var(--bad)}
+.scout-players .status.ban{color:var(--warn)}
+
 /* Last, so that it wins over any component's display. */
 .hidden{display:none}

@@ -196,24 +196,6 @@
 .lineup-slot .shirt.kit>b{position:relative;margin-top:5px;font-size:10px;line-height:1;color:var(--kit-ink)}
 .lineup-slot.picked .shirt.kit:before,.lineup-slot.invalid .shirt.kit:before{content:"";position:absolute;inset:-7px;border-radius:50%;box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
 .lineup-slot.invalid .shirt.kit:before{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--bad)}
-.scout-card{margin:0}
-.scout-card .card-body{display:flex;flex-direction:column;gap:12px;padding:12px 14px}
-.scout-club{display:flex;align-items:center;gap:12px}
-.scout-club>div{display:flex;flex-direction:column;gap:3px;min-width:0}
-.scout-club .club-link{font-size:16px;font-weight:700}
-.scout-club small{font-size:13px;color:var(--muted)}
-.scout-standing{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-.scout-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.scout-facts>div{padding:8px 10px;border-radius:var(--radius);background:var(--panel-2)}
-.scout-facts span{display:block;font-size:11px;font-weight:600;color:var(--muted)}
-.scout-facts strong{font-family:var(--display);font-stretch:semi-condensed;font-size:20px;color:var(--strong);white-space:nowrap}
-
-.scout-players{list-style:none;margin:0;padding:0}
-.scout-players li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;min-height:28px;padding:0 var(--s3);border-top:1px solid var(--row-line)}
-.scout-players li:first-child{border-top:0}
-.scout-players li a{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scout-players.absent li{grid-template-columns:auto minmax(0,1fr)}
 .status.ban{color:var(--warn)}
-.scout-meeting{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-2)}
 @media(max-width:1400px){.composition-card .lineup-layout.with-scout{grid-template-columns:auto minmax(0,1fr)}.composition-card .scout-card{grid-column:1/-1}}
 .finance-split p,.calendar-record p{color:var(--ink)}
