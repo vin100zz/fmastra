@@ -1,15 +1,16 @@
-// Builds web/models/motions.json, the motion-captured gaits of the 3D players, from the CMU motion capture
+// Builds web/models/motions.json, the motion-captured gaits and gestures of the 3D players, from the CMU motion capture
 // database (mocap.cs.cmu.edu, free for research and commercial use) in the BVH conversion by Bruce Hahne:
 //
 //   git clone --depth 1 --filter=blob:none --no-checkout https://github.com/una-dinosauria/cmu-mocap.git cmu
-//   git -C cmu checkout HEAD -- data/009 data/016 data/035
+//   git -C cmu checkout HEAD -- data/009 data/016 data/035 data/010 data/011 data/078 data/127 data/142 data/143
 //   node tools/build_motion_clips.mjs cmu
 //
 // Each clip is cut to one gait cycle that starts when the right foot touches down, its loop closed, then
 // measured on the channels of replay-motion.js: the angles of the hips, knees, ankles, shoulders and elbows in
 // the planes the replay's pivots turn in, the lean, twist and roll of the trunk, the head's nod and the rise
 // and fall of the pelvis. replay-locomotion.js plays them back at the stride of the replay; its own inverse
-// kinematics keeps the planted foot on the grass.
+// kinematics keeps the planted foot on the grass. The gestures (GESTURES, below) are stretches of takes measured whole:
+// replay-motion.js plays them once, timed on their contact.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 
@@ -169,5 +170,107 @@ for(const [name,file] of CLIPS){
 const walk=library.clips[0].curves.lean,bias=walk.reduce((s,v)=>s+v,0)/walk.length;
 for(const {curves} of library.clips){
  curves.lean=curves.lean.map(v=>Math.round((v-bias)*1e4)/1e4);curves.headPitch=curves.headPitch.map(v=>Math.round((v+bias)*1e4)/1e4);
+}
+
+// --- Gestures: a strike of the ball, a feint, a stop, a start, a cut and a celebration, each a stretch of a take
+// rather than a cycle, played once by replay-motion.js over whatever the player is doing.
+// [name, take, anchor] where the anchor is 'kick' (the right foot at its fastest, the contact with the ball) or a
+// time in seconds, and the stretch runs `before` seconds ahead of it and `after` beyond it. The direction of a
+// gesture is that of the kick, of the hips' travel over the stretch ('travel') or of the pelvis's facing at its
+// anchor ('facing').
+const GESTURES=[
+ ['shot','011/11_01',{anchor:'kick',before:.7,after:.65,heading:'kick'}],
+ ['pass','010/10_02',{anchor:'kick',before:.6,after:.55,heading:'kick'}],
+ ['feint','078/78_20',{anchor:.75,before:.45,after:.7,heading:'travel'}],
+ ['stop','143/143_02',{anchor:.4,before:.1,after:.8,heading:'travel'}],
+ ['start','143/143_03',{anchor:1,before:.05,after:.85,heading:'travel'}],
+ ['cut','127/127_15',{anchor:.6,before:.35,after:.5,heading:'facing'}],
+ ['joy','142/142_09',{anchor:12.3,before:0,after:1.5,heading:'facing'}],
+];
+const FPS=60;
+const clamp=(v,a=-1,b=1)=>Math.max(a,Math.min(b,v));
+const horizontal=v=>norm([v[0],0,v[2]]);
+// The pivots of replay-player.js in a frame that has the pelvis's turn and side tilt but not its tilt forward: x to
+// the left, y up, z ahead. A thigh turns forward (x), then out to the side (z), having first turned about itself (y).
+function gesturePose(p,forward,leg,low,restSole,previous){
+ const up=[0,1,0],left=cross(up,forward),pelvis=sub(p('LeftUpLeg'),p('RightUpLeg'));
+ const L=norm(pelvis),F=norm(cross(L,up)),U=cross(F,L),local=v=>[dot(v,L),dot(v,U),dot(v,F)];
+ const out={yaw:Math.atan2(-dot(pelvis,forward),dot(pelvis,left)),roll:Math.atan2(dot(pelvis,up),Math.hypot(dot(pelvis,forward),dot(pelvis,left)))};
+ const rx=(v,a)=>[v[0],v[1]*Math.cos(a)-v[2]*Math.sin(a),v[1]*Math.sin(a)+v[2]*Math.cos(a)];
+ const ry=(v,a)=>[v[0]*Math.cos(a)+v[2]*Math.sin(a),v[1],-v[0]*Math.sin(a)+v[2]*Math.cos(a)];
+ const rz=(v,a)=>[v[0]*Math.cos(a)-v[1]*Math.sin(a),v[0]*Math.sin(a)+v[1]*Math.cos(a),v[2]];
+ for(const [side,name] of [[0,'Right'],[1,'Left']]){
+  const thigh=norm(local(sub(p(`${name}Leg`),p(`${name}UpLeg`)))),shin=norm(local(sub(p(`${name}Foot`),p(`${name}Leg`))));
+  const foot=norm(local(sub(p(`${name}ToeBase`),p(`${name}Foot`))));
+  const hip=-Math.asin(clamp(thigh[2])),roll=Math.atan2(thigh[0],-thigh[1]);
+  const inThigh=v=>rx(rz(v,-roll),-hip),s=inThigh(shin),knee=Math.acos(clamp(-s[1]));
+  // About its own axis the thigh is only seen through the bent knee: straight, it keeps the turn it had.
+  const seen=Math.min(1,Math.max(0,(Math.sin(knee)-.06)/.2)),turned=Math.atan2(-s[0],-s[2]);
+  const before=previous?.[`hipYaw${side}`]??0,yaw=before+Math.atan2(Math.sin(turned-before),Math.cos(turned-before))*seen;
+  const f=rx(ry(inThigh(foot),-yaw),-knee);
+  out[`hip${side}`]=hip;out[`hipRoll${side}`]=roll;out[`hipYaw${side}`]=yaw;out[`knee${side}`]=knee;
+  out[`ankle${side}`]=Math.atan2(-f[1],f[2])-restSole;
+ }
+ const neck=p('Neck'),spine=p('Spine'),chestUp=local(norm(sub(neck,spine)));
+ const shoulders=sub(p('LeftArm'),p('RightArm'));
+ out.lean=Math.atan2(chestUp[2],chestUp[1]);out.spineRoll=Math.atan2(-chestUp[0],chestUp[1]);
+ out.twist=Math.atan2(-dot(shoulders,F),dot(shoulders,L));
+ const chestUpWorld=norm(sub(neck,spine)),chestLeft=norm(sub(shoulders,mul(chestUpWorld,dot(shoulders,chestUpWorld)))),chestForward=cross(chestLeft,chestUpWorld);
+ for(const [side,name] of [[0,'Right'],[1,'Left']]){
+  const arm=norm(sub(p(`${name}ForeArm`),p(`${name}Arm`))),fore=norm(sub(p(`${name}Hand`),p(`${name}ForeArm`)));
+  out[`shoulder${side}`]=Math.atan2(-dot(arm,chestForward),-dot(arm,chestUpWorld));
+  out[`spread${side}`]=Math.asin(clamp(dot(arm,side?chestLeft:mul(chestLeft,-1))));
+  out[`elbow${side}`]=-Math.acos(clamp(dot(arm,fore)));
+ }
+ const head=norm(sub(p('Head'),neck));
+ out.headPitch=Math.atan2(dot(head,chestForward),dot(head,chestUpWorld));
+ // How high his lowest sole is off the grass: nothing while a foot is planted, his flight in a leap.
+ out.air=low(p)/leg*LEG;
+ return out;
+}
+library.gestures={};
+for(const [name,file,{anchor,before,after,heading}] of GESTURES){
+ const clip=parse(join(root,'data',`${file}.bvh`)),frames=[...Array(clip.frames).keys()].map(k=>positions(clip,k)),dt=clip.dt;
+ const rest=positions(clip,-1),leg=len(sub(rest('RightUpLeg'),rest('RightLeg')))+len(sub(rest('RightLeg'),rest('RightFoot')));
+ // The kick: the right foot whips through at its fastest, along the line the ball takes; it meets the ball as its toe
+ // comes level with the planted left one.
+ let at=Math.round(anchor/dt),kick=null;
+ if(anchor==='kick'){
+  let best=0;for(let k=1;k<frames.length;k++){const v=len(sub(frames[k]('RightFoot'),frames[k-1]('RightFoot')));if(v>best){best=v;at=k;}}
+  kick=horizontal(sub(frames[at+1]('RightFoot'),frames[at-1]('RightFoot')));
+  while(at<frames.length-2&&dot(sub(frames[at]('RightToeBase'),frames[at]('LeftToeBase')),kick)<0)at++;
+ }
+ const first=Math.max(1,at-Math.round(before/dt)),last=Math.min(frames.length-1,at+Math.round(after/dt));
+ const forward=heading==='kick'?kick
+  :heading==='travel'?horizontal(sub(frames[last]('Hips'),frames[first]('Hips')))
+  :horizontal(cross(sub(frames[at]('LeftUpLeg'),frames[at]('RightUpLeg')),[0,1,0]));
+ // The lowest point of either sole: the toe, or the heel under the ankle, each against its height at rest.
+ const restGround=Math.min(rest('RightToeBase')[1],rest('RightFoot')[1]),toeUp=rest('RightToeBase')[1]-restGround,heelUp=rest('RightFoot')[1]-restGround;
+ const sole=p=>Math.min(p('RightToeBase')[1]-toeUp,p('LeftToeBase')[1]-toeUp,p('RightFoot')[1]-heelUp,p('LeftFoot')[1]-heelUp);
+ const ground=Math.min(...frames.slice(first,last+1).map(sole)),low=p=>Math.max(0,sole(p)-ground);
+ const toe=sub(rest('RightToeBase'),rest('RightFoot')),restSole=Math.atan2(-toe[1],Math.hypot(toe[0],toe[2]));
+ const count=Math.round((last-first)*dt*FPS)+1,poses=[];
+ for(let s=0;s<count;s++){
+  const x=first+s/FPS/dt,k=Math.min(last-1,Math.floor(x)),f=x-k,a=frames[k],b=frames[k+1];
+  poses.push(gesturePose(joint=>add(mul(a(joint),1-f),mul(b(joint),f)),forward,leg,low,restSole,poses.at(-1)));
+ }
+ const curves={};
+ for(const key of Object.keys(poses[0])){
+  // Unwrapped, so that a turn goes on past a half-turn instead of jumping back.
+  let values=poses.map(pose=>pose[key]);
+  for(let k=1;k<values.length;k++)values[k]=values[k-1]+Math.atan2(Math.sin(values[k]-values[k-1]),Math.cos(values[k]-values[k-1]));
+  if(key==='lean')values=values.map(v=>v-bias);
+  if(key==='headPitch')values=values.map(v=>v+bias);
+  curves[key]=values.map(v=>Math.round(v*1e4)/1e4);
+ }
+ library.gestures[name]={file:`${file}.bvh`,fps:FPS,contact:Math.round((at-first)*dt*1e3)/1e3,curves};
+ // A strike: when the support foot comes down beside the ball, ahead of the contact (s), for the replay to time its
+ // stride on.
+ if(kick){
+  const down=p=>Math.min(p('LeftToeBase')[1]-toeUp,p('LeftFoot')[1]-heelUp)-ground<.03*leg;
+  let plant=at;while(plant>first&&down(frames[plant-1]))plant--;
+  library.gestures[name].plant=Math.round((at-plant)*dt*1e3)/1e3;
+ }
+ console.log(name,file,'frames',count,'contact',library.gestures[name].contact.toFixed(2),'s');
 }
 writeFileSync(OUT,JSON.stringify(library));

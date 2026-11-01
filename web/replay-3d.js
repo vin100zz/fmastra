@@ -4,8 +4,9 @@
 // In the scene, x runs along the touchline from the centre spot, z across towards the camera, y up.
 import * as THREE from './vendor/three/three.module.js';
 import {LABEL,OVERLAY,createPlayerParts,createPlayerFigure,loadPlayerModel} from './replay-player.js';
-import {activeGesture,angleDelta,playerMotion,strideLength} from './replay-motion.js';
-import {SCALE,loadMotionLibrary} from './replay-locomotion.js';
+import {activeGesture,angleDelta,gestureTiming,playerMotion,strideCue,strideLength,strideStretch,transitionLength} from './replay-motion.js';
+import {CONTACT} from './match-replay.js';
+import {SCALE,gestureClip,loadMotionLibrary} from './replay-locomotion.js';
 import {EffectComposer} from './vendor/three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './vendor/three/addons/postprocessing/RenderPass.js';
 import {GTAOPass} from './vendor/three/addons/postprocessing/GTAOPass.js';
@@ -29,12 +30,17 @@ const QUALITY={full:2,bloom:1,plain:0},FRAME_BUDGET=25,BUDGET_FRAMES=90;
 const SKINS=['#f1c9a0','#d9a577','#b27b52','#8a5a3b','#5e3b27'];
 // A regulation ball, 22 cm across, drawn a size up like the players and goals.
 export const BALL=.11*SCALE;
+// The middle of the boot, in the ankle's frame, and how far behind the ball's surface it meets it (m).
+const INSTEP=[0,-.045,.075],REACH_GAP=.035;
 // Below this pace, in metres per second of replay, a player walks and faces the ball.
 const JOG=1.2;
 // The fans' tile: seats along the stand and rows up its slope, in metres.
 const SEAT=.5,ROW=.9,SEATS=96,ROWS=24;
 // The advertising boards' tile and the hospitality boxes' one, in metres along them.
 const BOARD_TILE=28.8,BOX_TILE=12,NET_CELL=.14;
+// The back of the net in cells across and up; how far a ball bulges it (m) and how long it takes to settle (ms of
+// replay); how far a struck post sways (m), how fast (per ms) and how long.
+const NET_GRID=[24,10],NET_BULGE=.42,NET_SETTLE=1500,POST_SWAY=.03,POST_RATE=.055,POST_SETTLE=600;
 // The stands, local x along them and z away from the pitch: tiers [front, back, height at front, height at back,
 // underside], the boxes' facade [z, bottom, top] and the roof [front, back, height].
 const MAIN_STAND={tiers:[[0,14,1.2,8.3],[12,30,12.4,24.1,11.2]],boxes:[14,8.3,11.2],roof:[8,32,27.5]};
@@ -67,6 +73,21 @@ function panel(points,uv){
 function extrude(length,profile){
  return new THREE.ExtrudeGeometry(new THREE.Shape(profile.map(([z,y])=>new THREE.Vector2(z,y))),{depth:length,bevelEnabled:false})
   .rotateY(-Math.PI/2).translate(length/2,0,0);
+}
+
+// A quad of `corners` (a, b, c, d in turn) cut into cols × rows cells, textured by `uv(point)`: a surface that can be
+// pushed out of its plane vertex by vertex (the back of a net, a flag).
+function grid([a,b,c,d],uv,cols,rows){
+ const position=[],coords=[],index=[];
+ for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++){
+  const u=i/cols,v=j/rows,point=[0,1,2].map(k=>(a[k]*(1-u)+b[k]*u)*(1-v)+(d[k]*(1-u)+c[k]*u)*v);
+  position.push(...point);coords.push(...uv(point));
+ }
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const k=j*(cols+1)+i;index.push(k,k+1,k+cols+2,k,k+cols+2,k+cols+1);}
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(position,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(coords,2));
+ geometry.setIndex(index);geometry.userData={cols,rows,base:Float32Array.from(position)};
+ return geometry;
 }
 
 // The grass, drawn by its shader on the lit material so that it keeps its shadows and reflections: ten mowing
@@ -389,15 +410,20 @@ export class Pitch3D{
   for(const side of ['far','near'])this.place(this.board(W+2*MARGIN_X-2),side,MARGIN_Y);
   for(const side of ['left','right'])this.place(this.board(H+2*MARGIN_Y-2),side,MARGIN_X);
   for(const x of [-9,9])this.place(this.dugout(),'near',MARGIN_Y+2.2).position.x=x;
-  for(const end of [0,W])scene.add(this.goal(end));
+  this.goals=[0,W].map(end=>{const goal=this.goal(end);scene.add(goal);return goal;});
+  // The corner flags, each a little grid that flaps from its pole.
   const flag=new THREE.MeshStandardMaterial({color:'#ffd23f',roughness:.7,side:THREE.DoubleSide}),pole=this.material('#f4f4f4',.5);
+  this.flags=[];
   for(const x of [-W/2,W/2])for(const z of [-H/2,H/2]){
    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.9,6),pole);stick.position.set(x,.95,z);stick.castShadow=true;scene.add(stick);
-   const cloth=new THREE.Mesh(new THREE.PlaneGeometry(.45,.32),flag);cloth.position.set(x-Math.sign(x)*.23,1.72,z);scene.add(cloth);
+   const away=-Math.sign(x),cloth=new THREE.Mesh(grid([[0,-.16,0],[away*.45,-.16,0],[away*.45,.16,0],[0,.16,0]],point=>[Math.abs(point[0])/.45,point[1]/.32+.5],6,2),flag);
+   cloth.position.set(x,1.72,z);cloth.userData.seed=this.flags.length*1.7;scene.add(cloth);this.flags.push(cloth);
   }
   const ball=this.ball=new THREE.Mesh(new THREE.SphereGeometry(BALL,24,16),new THREE.MeshStandardMaterial({map:this.texture(ballCanvas()),roughness:.45}));
   ball.castShadow=true;scene.add(ball);
   this.blob=new THREE.MeshBasicMaterial({map:this.texture(blobCanvas()),transparent:true,depthWrite:false});
+  // The four faint shadows each floodlight casts, crossed under every player.
+  this.crossBlob=new THREE.MeshBasicMaterial({map:this.blob.map,transparent:true,opacity:.6,depthWrite:false});
   const shadow=this.ballShadow=new THREE.Mesh(new THREE.CircleGeometry(BALL*1.6,20),this.blob);
   shadow.rotation.x=-Math.PI/2;shadow.position.y=.03;shadow.layers.set(OVERLAY);scene.add(shadow);
   const ring=this.ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.15,32),new THREE.MeshBasicMaterial({color:accent,transparent:true,opacity:.9,depthWrite:false}));
@@ -459,7 +485,11 @@ export class Pitch3D{
   const net=new THREE.MeshBasicMaterial({map:this.texture(netCanvas(),[1/NET_CELL,1/NET_CELL]),transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false});
   const at=(x,y,z)=>[x*out,y,z];
   for(const z of [-width/2,width/2])group.add(new THREE.Mesh(panel([at(0,0,z),at(bottom,0,z),at(top,height,z),at(0,height,z)],point=>[Math.abs(point[0]),point[1]]),net));
-  group.add(new THREE.Mesh(panel([at(bottom,0,-width/2),at(bottom,0,width/2),at(top,height,width/2),at(top,height,-width/2)],point=>[point[2],Math.hypot(Math.abs(point[0])-bottom,point[1])]),net));
+  // The back is a supple grid: a ball in the net bulges it (`stadium`).
+  const back=new THREE.Mesh(grid([at(bottom,0,-width/2),at(bottom,0,width/2),at(top,height,width/2),at(top,height,-width/2)],point=>[point[2],Math.hypot(Math.abs(point[0])-bottom,point[1])],NET_GRID[0],NET_GRID[1]),net);
+  const slope=Math.hypot(bottom-top,height);
+  back.userData.outward=[out*height/slope,(bottom-top)/slope,0];
+  group.add(back);group.userData={back,x:end-W/2};
   group.add(new THREE.Mesh(panel([at(0,height,-width/2),at(0,height,width/2),at(top,height,width/2),at(top,height,-width/2)],point=>[point[2],Math.abs(point[0])]),net));
   const stay=this.material('#9aa3ad',.5);
   for(const z of [-width/2,width/2]){const rod=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,Math.hypot(bottom-top,height),6),stay);rod.position.set((top+bottom)/2*out,height/2,z);rod.rotation.z=Math.atan2(bottom-top,height)*out;group.add(rod);}
@@ -543,6 +573,7 @@ export class Pitch3D{
    if(carries)carrier=figure;
   }
   for(const [key,figure] of this.figures)if(!seen.has(key))this.drop(key,figure);
+  this.stadium(time,action,reset);
   this.action=action;
   this.placeBall(ball,carrier);
   this.ring.visible=!!carrier&&!away&&!carrier.hold;
@@ -551,6 +582,43 @@ export class Pitch3D{
   // Whoever the replay points the camera at (the scorer running off), or the ball.
   const focus=replay.focus&&replay.dots[replay.focus.side]?.get(replay.focus.id),framed=focus?toWorld(focus.x,focus.y):ball;
   this.frameCamera(framed,away,reset||!this.cameraReady?10000:Math.min(64,rdt));this.cameraReady=true;
+ }
+ // The ground answers the play: a goal bulges the back of the net where the ball strikes it, a post hit shakes the
+ // frame, and the corner flags flap; all on the replay's clock, so that a pause holds them.
+ stadium(time,action,reset){
+  if(reset){this.netHit=null;this.shake=null;}
+  if(action?.kind==='shot'&&action.net&&time>=action.net.at&&this.netShot!==action){
+   const {x,y,z}=action.net;this.netShot=action;
+   this.netHit={goal:this.goals[x<W/2?0:1],at:action.net.at,height:z*SCALE,across:y-H/2};
+  }
+  if(action?.kind==='shot'&&action.post&&time>=action.t0+action.duration&&this.postShot!==action){
+   this.postShot=action;this.shake={goal:this.goals[action.target.x<W/2?0:1],at:action.t0+action.duration};
+  }
+  for(const goal of this.goals){
+   const hit=this.netHit?.goal===goal?this.netHit:null,back=goal.userData.back,geometry=back.geometry,{cols,rows,base}=geometry.userData;
+   const since=hit?time-hit.at:Infinity,live=since>=0&&since<NET_SETTLE;
+   if(live||back.userData.bulged){
+    const position=geometry.getAttribute('position'),[ox,oy]=back.userData.outward;
+    const swell=live?NET_BULGE*(since<90?smooth(since/90):Math.exp(-(since-90)/320)*Math.cos((since-90)*.011)):0;
+    for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++){
+     const k=j*(cols+1)+i,y=base[k*3+1],z=base[k*3+2];
+     // Held by the posts and the bar, looser where it is pegged to the grass.
+     const reach=swell&&Math.exp(-((z-hit.across)**2+(y-hit.height)**2)/.9)*Math.sin(Math.PI*i/cols)*Math.sin(Math.PI*(.2+.8*j/rows));
+     position.setXYZ(k,base[k*3]+ox*swell*reach,y+oy*swell*reach,z);
+    }
+    position.needsUpdate=true;back.userData.bulged=live;
+   }
+   const shake=this.shake?.goal===goal?time-this.shake.at:Infinity;
+   goal.position.x=goal.userData.x+(shake>=0&&shake<POST_SETTLE?POST_SWAY*Math.sin(shake*POST_RATE)*Math.exp(-shake/160):0);
+  }
+  for(const cloth of this.flags){
+   const position=cloth.geometry.getAttribute('position'),{cols,rows,base}=cloth.geometry.userData,seed=cloth.userData.seed;
+   for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++){
+    const k=j*(cols+1)+i,u=i/cols;
+    position.setXYZ(k,base[k*3]*(1-.06*u*u),base[k*3+1]-.025*u*u,Math.sin(time*.0062+seed-u*3.4)*.07*u+Math.sin(time*.013+seed*2-u*6)*.015*u);
+   }
+   position.needsUpdate=true;
+  }
  }
  // A strike at goal: a keeper who has to reach the ball dives for it.
  begin(action){
@@ -591,7 +659,7 @@ export class Pitch3D{
  // is without the ball; `guard`: he closes down the man on it; `carries`: the ball is at his feet.
  pose(figure,at,ball,rdt,cheer,gestures,time,reset=false,{defending=false,guard=false,carries=false,mood=null}={}){
   let moved=figure.x==null?0:Math.hypot(at.x-figure.x,at.z-figure.z);
-  if(reset||moved>6){moved=0;figure.speed=0;figure.acceleration=0;figure.course=null;figure.yaw=null;if(!reset)figure.dive=null;figure.ready=0;figure.cheer=0;figure.watch=0;figure.guard=0;figure.mood=null;figure.moodWeight=0;figure.phase=figure.style.phase;}
+  if(reset||moved>6){moved=0;figure.speed=0;figure.acceleration=0;figure.course=null;figure.yaw=null;if(!reset)figure.dive=null;figure.ready=0;figure.cheer=0;figure.watch=0;figure.guard=0;figure.mood=null;figure.moodWeight=0;figure.phase=figure.style.phase;figure.stretch=1;figure.transition=null;figure.bend=0;}
   const course=moved>1e-4?Math.atan2(at.x-figure.x,at.z-figure.z):null;
   figure.x=at.x;figure.z=at.z;figure.root.position.set(at.x,0,at.z);
   if(!rdt&&figure.yaw!=null)return;
@@ -599,7 +667,9 @@ export class Pitch3D{
   if(rdt){
    figure.speed+=(measured-figure.speed)*(1-Math.exp(-rdt/100));
    figure.acceleration+=(clamp((figure.speed-previousSpeed)*1000/rdt,-6,6)-figure.acceleration)*(1-Math.exp(-rdt/180));
+   const before=figure.course;
    if(course!=null)figure.course=figure.course==null?course:turn(figure.course,course,1-Math.exp(-rdt/65));
+   figure.bend=before==null||figure.course==null?0:angleDelta(before,figure.course)*1000/rdt;
   }
   const speed=figure.speed,running=speed>JOG&&figure.course!=null,gesture=activeGesture(gestures,time);
   const gaze=Math.atan2(ball.x-at.x,ball.z-at.z),target=gesture?.target;
@@ -621,7 +691,10 @@ export class Pitch3D{
   // Where he travels in his own frame: ahead, backwards or to a side; his feet follow it, not his chest.
   const direction=speed>.25&&figure.course!=null?angleDelta(figure.yaw,figure.course):0;
   figure.direction=direction;
-  figure.phase+=moved/strideLength(measured,figure.style,direction)*Math.PI*2;
+  // Coming to a touch, he lengthens or shortens his strides so that the foot that plays it comes through on time.
+  const cue=this.cue(figure,gestures,time,at),stretch=cue&&speed>1&&cue.at-time>90?strideStretch(figure.phase,cue,speed*(cue.at-time)/1000,strideLength(measured,figure.style,direction)):1;
+  if(!(cue&&cue.at-time<=90))figure.stretch+=(stretch-figure.stretch)*(1-Math.exp(-rdt/110));
+  figure.phase+=moved/strideLength(measured,figure.style,direction,figure.stretch)*Math.PI*2;
   const near=figure.keeper&&!figure.hold&&!running&&Math.hypot(ball.x-at.x,ball.z-at.z)<32?1:0;
   figure.ready+=(near-figure.ready)*(1-Math.exp(-rdt/220));
   figure.cheer=clamp(figure.cheer+(cheer?rdt/300:-rdt/350),0,1);
@@ -632,22 +705,27 @@ export class Pitch3D{
   figure.moodWeight=clamp(figure.moodWeight+(same?rdt/260:-rdt/300),0,1);
   if(!figure.moodWeight&&!reacting)figure.mood=null;
   if(figure.dive&&time>figure.dive.start+figure.dive.duration+1080)figure.dive=null;
-  const p=playerMotion({speed:figure.hold?0:speed,phase:figure.phase,time,seed:figure.seed,style:figure.style,acceleration:figure.acceleration,ready:figure.ready,
-   hold:figure.hold,gesture,foot:this.kickingFoot(figure,gesture,at),turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard,
-   mood:figure.mood&&{kind:figure.mood.kind,weight:smooth(figure.moodWeight)}});
-  for(let side=0;side<2;side++){
-   figure.hips[side].rotation.set(p.hip[side],p.hipYaw[side],p.hipRoll[side]);figure.knees[side].rotation.x=p.knee[side];
-   // The sole stays level when the thigh swings out.
-   figure.ankles[side].rotation.set(p.ankle[side],0,-p.hipRoll[side]);
-   figure.shoulders[side].rotation.set(p.shoulder[side],0,(side?1:-1)*p.spread[side]);figure.elbows[side].rotation.x=p.elbow[side];
-  }
-  figure.body.rotation.set(0,figure.yaw,p.roll);
-  figure.spine.rotation.set(p.lean,p.twist,p.spineRoll);
+  // A hard stop, a burst away from a standstill or a sharp cut at pace plays its captured transition once through.
+  const transition=this.transition(figure,time,previousSpeed,!!gesture||figure.hold||!!figure.dive||figure.ready>.5||figure.moodWeight>.1||carries);
+  const foot=this.kickingFoot(figure,gesture,at),motion=moment=>playerMotion({transition,speed:figure.hold?0:speed,phase:figure.phase,time:moment,seed:figure.seed,
+   style:figure.style,acceleration:figure.acceleration,ready:figure.ready,hold:figure.hold,gesture,foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,
+   direction,crouch:figure.guard,stretch:figure.stretch,mood:figure.mood&&{kind:figure.mood.kind,weight:smooth(figure.moodWeight)}});
+  const p=motion(time),timing=gesture&&gestureTiming(gesture);
+  // A captured strike meets the ball with the boot: the body comes off his spot as he winds up, by what puts the boot of
+  // the contact pose on the back of the ball, CONTACT ahead of his spot.
+  const reach=timing?.captured&&this.reach(figure,gesture,foot,motion);
+  this.articulate(figure,p);
   // Off the ball he checks over his shoulder now and then, for a moment, before looking back at the play.
   const period=2600+figure.seed*450,glance=(time+figure.seed*997)%period,scan=!carries&&!gesture&&!figure.keeper&&!figure.moodWeight&&glance<650
    ?Math.sin(Math.PI*glance/650)*(Math.floor((time+figure.seed*997)/period)%2?.95:-.95):0;
   figure.head.rotation.set(p.headPitch,(clamp(angleDelta(figure.yaw,gaze)+scan,-1.1,1.1)+p.headYaw)*(1-p.diveWeight),-p.spineRoll*.55);
-  figure.body.position.set(Math.cos(figure.yaw)*(p.shift+p.sway),p.lift,-Math.sin(figure.yaw)*(p.shift+p.sway));
+  if(reach){
+   // In before the support foot comes down, out once it has left the grass again: it never slides under him.
+   const elapsed=time-gesture.at,follow=timing.span-timing.lead,plant=(gestureClip(timing.captured)?.plant??.2)*1000;
+   const k=elapsed<0?smooth((elapsed+timing.lead)/Math.max(60,timing.lead-plant-40)):1-smooth((elapsed-follow*.5)/(follow*.5));
+   const along=(CONTACT-BALL-REACH_GAP-reach.along)*k,across=-reach.across*k,yaw=figure.yaw;
+   figure.body.position.x+=across*Math.cos(yaw)+along*Math.sin(yaw);figure.body.position.z+=-across*Math.sin(yaw)+along*Math.cos(yaw);
+  }
   if(figure.dive?.style==='foot'&&p.diveWeight>0){
    // The boot goes to the ball: the replay dot marks the interception.
    figure.root.updateMatrixWorld(true);
@@ -664,6 +742,55 @@ export class Pitch3D{
   }
   figure.name.position.y=LABEL+Math.max(0,figure.body.position.y);
   figure.blob.scale.set(1+Math.abs(p.roll)*.35,1/(1+Math.max(0,p.lift)*.5),1);
+  figure.cross.scale.setScalar(1+Math.max(0,p.lift)*.35);
+ }
+ // Sets the skeleton in pose `p`, facing his heading.
+ articulate(figure,p){
+  for(let side=0;side<2;side++){
+   figure.hips[side].rotation.set(p.hip[side],p.hipYaw[side],p.hipRoll[side]);figure.knees[side].rotation.x=p.knee[side];
+   // The sole stays level when the thigh swings out.
+   figure.ankles[side].rotation.set(p.ankle[side],0,-p.hipRoll[side]);
+   figure.shoulders[side].rotation.set(p.shoulder[side],0,(side?1:-1)*p.spread[side]);figure.elbows[side].rotation.x=p.elbow[side];
+  }
+  // The pelvis's own turn in a captured gesture comes on top of where he faces.
+  figure.body.rotation.set(0,figure.yaw+p.yaw,p.roll);
+  figure.spine.rotation.set(p.lean,p.twist,p.spineRoll);
+  figure.body.position.set(Math.cos(figure.yaw)*(p.shift+p.sway),p.lift,-Math.sin(figure.yaw)*(p.shift+p.sway));
+ }
+ // Where the middle of his boot is at the contact of a captured strike, from his spot: `along` where he faces and
+ // `across` to his left, in metres. Worked out once per strike, by posing him at that instant.
+ reach(figure,gesture,foot,motion){
+  figure.reaches??=new WeakMap();
+  const known=figure.reaches.get(gesture);
+  if(known?.foot===foot)return known;
+  const yaw=figure.yaw,position=figure.root.position.clone();
+  figure.yaw=0;figure.root.position.set(0,0,0);
+  this.articulate(figure,motion(gesture.at));
+  figure.root.updateMatrixWorld(true);
+  const boot=figure.ankles[foot].localToWorld(new THREE.Vector3(...INSTEP));
+  figure.yaw=yaw;figure.root.position.copy(position);
+  const reach={along:boot.z,across:boot.x,foot};
+  figure.reaches.set(gesture,reach);
+  return reach;
+ }
+ // The transition he is in, if any: {name, elapsed, side}. One starts on a hard stop (from above 3.4 m/s, braking at
+ // over 4.2 m/s²), a burst from a walk, or a turn of his course faster than 1.7 rad/s above 3.2 m/s.
+ transition(figure,time,previousSpeed,busy){
+  const now=figure.transition;
+  if(now&&(time<now.at||time>=now.at+transitionLength(now.name)))figure.transition=null;
+  if(!figure.transition&&!busy){
+   const bend=figure.bend||0,name=previousSpeed>3.4&&figure.acceleration<-4.2?'stop':previousSpeed<1.3&&figure.acceleration>3?'start'
+    :figure.speed>3.2&&Math.abs(bend)>1.7?'cut':null;
+   if(name&&transitionLength(name))figure.transition={name,at:time,side:bend>=0?1:-1};
+  }
+  const active=figure.transition;
+  return active&&{name:active.name,elapsed:time-active.at,side:active.side};
+ }
+ // The next touch his stride is timed on: the first contact with his foot coming within the next second and a half.
+ cue(figure,gestures,time,at){
+  let next=null;
+  for(const gesture of gestures||[])if(gesture.at>time&&gesture.at-time<1500&&['kick','touch','cushion'].includes(gesture.kind)&&(!next||gesture.at<next.at))next=gesture;
+  return next&&strideCue(next,this.kickingFoot(figure,next,at));
  }
  // The foot he plays it with: his stronger one, unless the ball goes well across him (a cross, a pass to the side), when
  // he strikes it with the foot away from where it goes, round the ball. Chosen once per gesture.

@@ -1378,13 +1378,21 @@ matières mates ; le tissu, la peau, les chaussures et les gants se distinguent
 par leur couleur et leur réponse à la lumière. Le maillot à manches courtes
 et à revers de la seconde couleur, le short et les chaussettes à bande sont
 peints sur le corps ; le gardien a les manches longues et des gants. Aucune
-bande au col : elle se lirait déchirée sur le maillage. Les gestes suivent le ballon : appuis des courses,
+bande au col : elle se lirait déchirée sur le maillage. Les chaussures ont la
+forme du pied, fines, sur une semelle mince à crampons, avec une bande claire
+sur le côté : jamais de coque autour du pied ni de talon qui déborde. Les gestes suivent le ballon : appuis des courses,
 préparation et accompagnement des passes et des tirs, contrôles, têtes, tacle
 debout (jambe d'appui fléchie, l'autre tendue basse vers le ballon), plongeon
 bas ou haut puis reprise d'appui du gardien. Les foulées sont celles de
-coureurs réels (capture de mouvement) ; les gestes restent procéduraux. Toutes
+coureurs réels (capture de mouvement), comme les frappes (la dernière foulée,
+le pied d'appui posé à côté du ballon, l'élan jambe en arrière, jamais ouverte
+sur le côté, le contact du coup de pied, l'accompagnement), les feintes de
+dribble, les arrêts, les démarrages, les crochets et la joie d'un but ; les
+contrôles, les têtes, les tacles et le gardien restent procéduraux. Toutes
 ces animations restent calées sur les contacts et le temps du résumé, sans
-changer les déplacements ni le résultat du match ; le pied d'appui ne glisse
+changer les déplacements ni le résultat du match ; la foulée s'allonge ou se
+raccourcit à l'approche d'une touche pour que le bon pied arrive au ballon, la
+chaussure, et non le centre du joueur, vient sur le ballon ; le pied d'appui ne glisse
 jamais et aucun pied ne traverse la pelouse. La pause fige l'image, joueurs, ballon, public et caméra
 compris ; les commandes autour du terrain gardent les composants de la charte.
 Les joueurs ont des phases de foulée et des styles de course individuels,
@@ -1409,8 +1417,13 @@ Le rendu suit celui d'une retransmission (`web/replay-3d.js`) :
   elles s'estompent au loin sans se rompre.
 - **Lumière** : un éclairage de stade en soirée. Le stade se reflète dans les
   matières, une lumière principale porte des ombres douces, un contre-jour
-  plus froid éclaire l'autre côté. La courbe neutre garde les couleurs des
+  plus froid éclaire l'autre côté. Sous chaque joueur, quatre ombres pâles et
+  allongées se croisent vers les coins, une par rampe de projecteurs. La courbe neutre garde les couleurs des
   tenues fidèles aux pastilles du replay 2D.
+- **Terrain vivant** : un but gonfle le fond du filet là où le ballon le frappe,
+  puis le filet se calme ; un tir sur le poteau fait trembler le cadre un
+  instant ; les drapeaux de corner flottent. Tout suit le temps du résumé : la
+  pause les fige.
 - **Matières** : les tenues sont en tissu mat au léger reflet velouté sous les
   projecteurs ; la peau est un peu plus satinée que le tissu.
 - **Effets** : une occlusion ambiante pose les joueurs, les buts et les

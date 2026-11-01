@@ -1022,9 +1022,24 @@ message (« il vient d'arriver ») reste dans son infobulle.
   défenseurs prennent chacun un attaquant, d'autant plus serré qu'il approche
   du but, côté but et un peu vers le ballon ; les défenseurs de la ligne n'en
   prennent que le côté, sauf dans la surface. Les paires tiennent un moment
-  avant d'être refaites (`targets`, `mark`). Chacun se replace plus ou moins vite
-  selon sa vitesse. Le joueur éliminé par un dribble tente le tacle, debout ou en
-  glissade, là où allait le ballon, et reste un instant sur place (`lunge`).
+  avant d'être refaites (`targets`, `mark`). Le bloc sans le ballon se resserre
+  et glisse vers le côté du ballon ; le coéquipier le plus proche couvre celui qui
+  sort sur le porteur, quelques pas derrière lui côté but, vers l'axe, et ne marque
+  personne (`covers`). Le camp qui a le ballon bouge pour lui, chacun sur sa propre
+  horloge, comptée depuis le début de l'occasion pour être la même à chaque
+  lecture (`movement`, `RUNS`) : un attaquant part dans le dos de la défense, sur
+  l'épaule du dernier défenseur et en travers de la ligne, puis revient s'offrir ;
+  l'avant-centre décroche quand le ballon est bas ; un latéral dédouble quand le
+  ballon est de son côté dans le camp adverse ; les deux milieux les plus proches
+  offrent un angle, en retrait de part et d'autre du ballon. Le hors-jeu tient
+  toujours. Hors du ballon, un joueur proche de sa place y marche et un joueur
+  loin d'elle court ; il va plus ou moins vite selon sa vitesse, et contourne
+  quiconque se trouve à moins de 1.15 m de lui (`room`) : deux joueurs ne se
+  traversent plus. Le joueur éliminé par un dribble tente le tacle, debout ou en
+  glissade, là où allait le ballon, et reste un instant sur place (`lunge`). Le
+  dribbleur l'élimine d'un geste (`trick`) : un crochet, une feinte de corps ou,
+  d'autant plus souvent que sa technique est sûre, un passement de jambes, le
+  ballon emmené du côté où il s'écarte.
   Le défenseur qui contre une frappe basse tend la jambe ou glisse. Sur un centre,
   son marqueur saute avec le joueur de tête. La faute qui donne un coup franc
   ou un penalty se joue : le joueur fauché reçoit le ballon un peu avant l'endroit
@@ -1058,7 +1073,12 @@ message (« il vient d'arriver ») reste dans son infobulle.
   temps mort, la mi-temps et le coup de sifflet final repassent sur le terrain
   vu de dessus, où les formations se lisent. Le stade a des tribunes pleines (supporters aux couleurs
   des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
-  filets. Le cadrage de retransmission (longue focale), la pelouse dessinée par
+  filets. Le terrain répond au jeu (`stadium`) : sur un but, le ballon franchit
+  la ligne, va au fond du filet qui l'arrête et le laisse tomber (`net` de
+  l'action de tir), et le fond du filet se gonfle là où il l'a frappé, puis se
+  calme ; un tir sur le poteau fait trembler le cadre un instant ; les drapeaux
+  de corner flottent. Sous chaque joueur, quatre ombres pâles se croisent vers
+  les coins, une par rampe de projecteurs. Le cadrage de retransmission (longue focale), la pelouse dessinée par
   son shader, le reflet du stade (`stadiumEnvironment`), les ombres douces et les
   effets (`effects` : occlusion ambiante à demi-résolution, halo des lumières,
   courbe neutre, étalonnage ; passes de `web/vendor/three/addons/`) rendent
@@ -1069,9 +1089,11 @@ message (« il vient d'arriver ») reste dans son infobulle.
   tenant, celui de MakeHuman (CC0), ajusté sur les pivots du squelette et
   articulé par eux : `tools/build_player_model.mjs` en tire
   `web/models/footballer.bin` (9 000 triangles, chargé avec la vue 3D,
-  `ready`), où chaque sommet porte la pièce de la tenue qui le couvre. Les
-  chaussures, les cheveux, l'écusson et le numéro du match (`shirt`) s'y
-  ajoutent ; le maillot, le short et les chaussettes prennent les couleurs du
+  `ready`), où chaque sommet porte la pièce de la tenue qui le couvre. La
+  chaussure est le pied du maillage, à sa couleur, sur une semelle mince à
+  crampons et une bande claire sur le côté (`bootPoints` les donne aux tests) ; les
+  cheveux, l'écusson et le numéro du match (`shirt`) s'y ajoutent. Huit joueurs
+  sur dix sont droitiers ; le maillot, le short et les chaussettes prennent les couleurs du
   camp, les manches et les gants celles du gardien.
   La locomotion (`replay-locomotion.js`) fait avancer chaque foulée avec la
   distance parcourue. Chaque joueur conserve sa phase, sa cadence et son
@@ -1099,15 +1121,34 @@ message (« il vient d'arriver ») reste dans son infobulle.
   la course quand le buste tourne : un virage serré se prend en pas croisés,
   sans glisser. Les gestes
   (`replay-motion.js`) se superposent à ces foulées sans synchroniser les
-  joueurs.
+  joueurs. À l'approche d'une touche, jusqu'à une seconde et demie avant, la
+  foulée s'allonge ou se raccourcit (de 28 % à 40 %, `strideCue`,
+  `strideStretch`), sa longueur suivant sa cadence pour que les pieds ne glissent
+  pas : avant une frappe, le pied d'appui se pose à côté du ballon au moment où
+  la capture le pose ; pour une autre touche, le pied qui joue le ballon arrive
+  en avant au moment où il arrive. Les transitions sont capturées aussi
+  (`transition` de `replay-3d.js`, `transit`) : un arrêt brusque (au-dessus de
+  3.4 m/s, freinage de plus de 4.2 m/s²), un démarrage depuis le pas et un
+  crochet à pleine course (cap qui tourne de plus de 1.7 rad/s) jouent leur
+  capture une fois, buste, bras et tête entiers, les jambes gardant une part de
+  leur foulée.
   Les duels ont leurs gestes : le tacle debout (jambe lancée vers le ballon, l'autre
   genou plié bas), le tacle glissé (au sol sur la hanche, jambe tendue, puis relevé)
   et la chute du joueur fauché, qui reste un moment à terre. Le gardien capte
   un ballon haut les deux mains au-dessus de la tête, genou levé, et relance
   d'un bras par-dessus l'épaule ; la touche se lance des deux mains.
-  Passes, centres et frappes ont leur préparation, leur contact et leur
-  accompagnement ; le pied d'appui se pose à côté du ballon, et la frappe suit
-  sa technique (`technique`) : intérieur du pied, genou ouvert, pour une passe à
+  Passes, centres et frappes sont des frappes réelles capturées (`strike`, sujets
+  10 et 11 du CMU, « soccer - kick ball ») : la dernière foulée, le pied d'appui
+  posé à côté du ballon, l'élan jambe en arrière, le contact et
+  l'accompagnement, le bassin qui tourne avec ; une frappe, un centre ou un long
+  ballon prennent l'élan complet, une passe un élan plus court, d'autant plus
+  court qu'elle est douce. Le contact est celui de la capture, quand la pointe du
+  pied arrive à hauteur du pied d'appui. Le corps se décale de sa place pendant
+  l'élan, avant que le pied d'appui se pose, pour que la chaussure, et non le
+  centre du joueur, vienne sur le ballon (`reach`), puis revient une fois le pied
+  d'appui levé. La frappe suit
+  sa technique (`technique`) : intérieur du pied, la cuisse qui tourne en dehors
+  seulement quand la jambe se tend vers le ballon, pour une passe à
   ras de terre ou une frappe placée, buste en arrière sous un ballon levé ou un
   centre, au-dessus d'une frappe tendue ou rasante, hanches ouvertes et corps
   qui part de côté sur un coup franc, hanche haute pour une reprise de volée.
@@ -1133,7 +1174,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   `match-replay.js`, humeurs datées que la 3D pose sur le geste en cours) : après un
   but, le buteur part vers le poteau de corner de son côté, bras écartés, et la
   caméra le suit ; ses coéquipiers les plus proches le rejoignent en courant,
-  tous lèvent les bras, et les supporters se lèvent. Ceux qui encaissent s'arrêtent,
+  tous lèvent les bras dans une joie capturée (sujet 142, bras jetés en l'air et
+  petits sauts, chacun à son moment), et les supporters se lèvent. Ceux qui encaissent s'arrêtent,
   mains sur les hanches ou penchés, mains sur les genoux, comme leur gardien.
   Après une occasion manquée, le tireur porte les mains à la tête (des
   coéquipiers aussi après un poteau) ; le gardien qui a arrêté le tir se relève

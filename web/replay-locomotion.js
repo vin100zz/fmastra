@@ -24,19 +24,20 @@ export function travelShares(direction=0){
  const ahead=Math.cos(direction),across=Math.sin(direction);
  return {forward:Math.max(0,ahead)**2,back:Math.max(0,-ahead)**2,side:across*across,ahead,across};
 }
-// Going backwards or sideways, a player takes shorter, quicker steps than he does running ahead.
-export function gaitCycle(speed,style=gaitStyle(),direction=0){
+// Going backwards or sideways, a player takes shorter, quicker steps than he does running ahead. `stretch` lengthens
+// (above 1) or shortens his strides at the same pace, to bring a foot to the ball in time.
+export function gaitCycle(speed,style=gaitStyle(),direction=0,stretch=1){
  const v=clamp(speed,0,9.5),run=smooth((v-1.65)/1.9),sprint=smooth((v-4.4)/3.5),{forward}=travelShares(direction);
  const cadence=mix(.72+v*.16,1.35+v*.095,run)*style.cadence;
  const stance=mix(.63,.345-.066*sprint,run)+style.stance;
- const stride=Math.max(.2,v)/cadence*mix(.62,1,forward);
+ const stride=Math.max(.2,v)/cadence*mix(.62,1,forward)*stretch;
  return {run,sprint,cadence:Math.max(.2,v)/stride,stance,stride};
 }
-export const strideLength=(speed,style=gaitStyle(),direction=0)=>gaitCycle(speed,style,direction).stride;
+export const strideLength=(speed,style=gaitStyle(),direction=0,stretch=1)=>gaitCycle(speed,style,direction,stretch).stride;
 
 // The lowest point of the rounded sole when the toe rolls about the ankle.
 export function soleHeight(pitch){
- return .063*Math.cos(pitch)+.055*Math.sin(pitch)+Math.hypot(.018*Math.cos(pitch),.159*Math.sin(pitch));
+ return .069*Math.cos(pitch)+.056*Math.sin(pitch)+Math.hypot(.011*Math.cos(pitch),.123*Math.sin(pitch));
 }
 
 
@@ -75,8 +76,30 @@ function footPath(cycle,gait,style,side){
 // gait is entirely procedural.
 let gaits=null,loadingGaits=null;
 export function setMotionLibrary(library){
- gaits=library?{samples:library.samples,clips:library.clips}:null;
+ gaits=library?{samples:library.samples,clips:library.clips,gestures:library.gestures||{}}:null;
  return gaits;
+}
+
+// The captured gestures (a shot, a pass, a feint, a stop, a start, a cut, a celebration): one stretch of a take each,
+// sampled `fps` times a second, its `contact` the instant it is timed on (the strike of the ball). Captured on the right
+// foot; the left foot plays them mirrored.
+const SIDED=['hip','hipRoll','hipYaw','knee','ankle','shoulder','spread','elbow'],ACROSS=new Set(['hipRoll','hipYaw','yaw','roll','twist','spineRoll']);
+// {contact, length} in seconds, or null without the capture.
+export function gestureClip(name){
+ const gesture=gaits?.gestures?.[name];
+ return gesture?{contact:gesture.contact,length:(gesture.curves.lean.length-1)/gesture.fps,plant:gesture.plant??null}:null;
+}
+// The gesture's channels `t` seconds into its stretch, held at either end.
+export function capturedGesture(name,t,mirror=false){
+ const gesture=gaits?.gestures?.[name];
+ if(!gesture)return null;
+ const last=gesture.curves.lean.length-1,x=clamp(t*gesture.fps,0,last),k=Math.min(Math.floor(x),last-1),f=x-k,values={};
+ for(const [key,curve] of Object.entries(gesture.curves))values[key]=mix(curve[k],curve[k+1],f);
+ if(!mirror)return values;
+ const mirrored={...values};
+ for(const name of SIDED)for(const side of [0,1])mirrored[`${name}${side}`]=values[`${name}${1-side}`]*(ACROSS.has(name)?-1:1);
+ for(const name of ['yaw','roll','twist','spineRoll'])mirrored[name]=-values[name];
+ return mirrored;
 }
 export function loadMotionLibrary(url){
  return loadingGaits??=fetch(url).then(response=>{if(!response.ok)throw new Error(`motions: ${response.status}`);return response.json();})
@@ -134,8 +157,8 @@ export function solveLeg(z,height,lift,pitch,x=0){
 // `direction` is where he travels in his own frame (0 ahead): facing the ball, he backpedals or steps sideways, the
 // feet then moving along his travel and the hips opening to the side. `crouch` (0 to 1) is a defender's guard, low on
 // bent knees, arms out, in front of the man with the ball.
-export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(seed),acceleration=0,turn=0,direction=0,crouch=0}={}){
- const gait=gaitCycle(speed,style,direction),{run,sprint,stance}=gait,moving=smooth((speed-.08)/.9);
+export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(seed),acceleration=0,turn=0,direction=0,crouch=0,stretch=1}={}){
+ const gait=gaitCycle(speed,style,direction,stretch),{run,sprint,stance}=gait,moving=smooth((speed-.08)/.9);
  const travel=travelShares(direction),{forward,back,side:sideways,ahead,across}=travel;
  const cycles=[fract(phase/TAU),fract(phase/TAU+.5)],feet=cycles.map((cycle,i)=>{
   const foot=footPath(cycle,gait,style,i),clearance=foot.height-soleHeight(foot.pitch);
@@ -150,7 +173,7 @@ export function locomotionPose({speed=0,phase=0,time=0,seed=0,style=gaitStyle(se
   return foot;
  });
  const p={hip:[0,0],knee:[0,0],ankle:[0,0],hipYaw:[0,0],hipRoll:[0,0],shoulder:[0,0],spread:[.12,.12],elbow:[-.18,-.18],
-  lift:0,lean:0,roll:0,twist:0,spineRoll:0,headPitch:0,headYaw:0,sway:0,shift:0,diveWeight:0};
+  lift:0,lean:0,roll:0,yaw:0,twist:0,spineRoll:0,headPitch:0,headYaw:0,sway:0,shift:0,diveWeight:0};
  // The capture holds forward gaits only: it fades out as he turns to backpedal or to step sideways.
  const captured=capturedGait(speed,cycles[0],stance),take=captured?captured.weight*moving*forward:0,c=captured?.values;
  const breath=Math.sin(time*(.0023+seed*.00007)+style.idle),weight=Math.sin(time*.0007+style.idle);

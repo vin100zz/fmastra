@@ -62,16 +62,18 @@ function hairCap(theta,[kx,ky,kz],tilt,lean=0){
 export function createPlayerParts(){
  if(!model)throw new Error('the player model is not loaded');
  return {
-  boot:oval(.06,.054,.157).translate(0,-.021,.055),
-  sole:joined([oval(.062,.018,.159).translate(0,-.063,.055),
-   ...[-.034,.034].flatMap(x=>[-.04,.1].map(z=>new THREE.CylinderGeometry(.014,.012,.026,5).translate(x,-.068,z)))]),
-  bootTrim:joined([new THREE.BoxGeometry(.06,.008,.06).rotateX(-.15).translate(0,.029,.083),
-   new THREE.BoxGeometry(.009,.024,.092).translate(-.056,-.016,.055),new THREE.BoxGeometry(.009,.024,.092).translate(.056,-.016,.055)]),
+  // A thin sole the length of the foot, its studs barely proud of it (soleHeight in replay-locomotion.js rolls on it).
+  sole:joined([oval(.045,.011,.123).translate(0,-.069,.056),
+   ...[-.021,.021].flatMap(x=>[-.03,.085,.135].map(z=>new THREE.CylinderGeometry(.006,.005,.008,5).translate(x,-.069-.011*Math.sqrt(1-((z-.056)/.123)**2)+.002,z)))]),
+  bootTrim:joined([new THREE.BoxGeometry(.004,.012,.07).rotateX(-.18).translate(-.043,-.045,.06),new THREE.BoxGeometry(.004,.012,.07).rotateX(-.18).translate(.043,-.045,.06)]),
   hair:hairCap(1.72,[1.15,1.14,1.14],-.3),
   hairFull:hairCap(1.84,[1.19,1.19,1.17],-.22),
   hairSwept:hairCap(1.62,[1.15,1.36,1.16],-.34,-.14),
   front:new THREE.PlaneGeometry(.28,.36),back:new THREE.PlaneGeometry(.29,.31),
   blob:new THREE.CircleGeometry(.62*SCALE,24),
+  // Four long shadows towards the corners, one from each bank of floodlights.
+  cross:joined([1,3,5,7].map(eighth=>{const angle=eighth*Math.PI/4;return new THREE.CircleGeometry(1,16).scale(.9*SCALE,.24*SCALE,1).rotateZ(angle)
+   .translate(Math.cos(angle)*.72*SCALE,Math.sin(angle)*.72*SCALE,0);})),
  };
 }
 
@@ -137,6 +139,19 @@ function label(view,text){
  sprite.scale.set(canvas.width/canvas.height*1.3,1.3,1);sprite.position.y=LABEL;sprite.renderOrder=2;sprite.layers.set(OVERLAY);sprite.visible=false;return sprite;
 }
 
+// The boot of `side` (0 his right, 1 his left) in world space: the vertices of the body's foot, skinned as drawn, and those
+// of its sole and studs. The figure's world matrices must be up to date.
+export function bootPoints(figure,side){
+ const points=[],mesh=figure.skin,sole=figure.ankles[side].getObjectByName('sole'),{region,position}=model.arrays;
+ for(let vertex=0;vertex<region.length;vertex++){
+  if(region[vertex]!==model.regions.boot||(position[vertex*3]<0)!==(side===0))continue;
+  points.push(mesh.localToWorld(mesh.getVertexPosition(vertex,new THREE.Vector3())));
+ }
+ const soles=sole.geometry.getAttribute('position');
+ for(let i=0;i<soles.count;i++)points.push(new THREE.Vector3().fromBufferAttribute(soles,i).applyMatrix4(sole.matrixWorld));
+ return points;
+}
+
 export function createPlayerFigure(view,side,id,keeper){
  const kit=view.replay.teams[side],parts=view.parts,random=seeded(hash(id)),pick=list=>list[Math.floor(random()*list.length)];
  const colour=keeper?kit.keeper:kit.major,trim=keeper?inkOn(colour):kit.minor,skin=SKINS[hash(id)%SKINS.length];
@@ -151,7 +166,7 @@ export function createPlayerFigure(view,side,id,keeper){
   const hip=pivot(body,[sign*at.hip[0],at.hip[1],at.hip[2]]),knee=pivot(hip,[0,-.45,0]),ankle=pivot(knee,[0,-.4,0]);
   // The thigh swings forward and back in the leg's plane first, then out to the side (a side step, a lunge).
   hip.rotation.order='ZXY';
-  mesh(parts.boot,boots,ankle);mesh(parts.sole,sole,ankle,false);mesh(parts.bootTrim,bootTrim,ankle,false);
+  mesh(parts.sole,sole,ankle,false).name='sole';mesh(parts.bootTrim,bootTrim,ankle,false).name='trim';
   hips.push(hip);knees.push(knee);ankles.push(ankle);
  }
  // Spine rotates the shoulders independently of the planted hips. Its local
@@ -183,8 +198,9 @@ export function createPlayerFigure(view,side,id,keeper){
  const bones=[body,hips[0],knees[0],ankles[0],hips[1],knees[1],ankles[1],spine,shoulders[0],elbows[0],wrists[0],shoulders[1],elbows[1],wrists[1],head];
  const skeleton=new THREE.Skeleton(bones);figure.bind(skeleton);
  const blob=new THREE.Mesh(parts.blob,view.blob);blob.rotation.x=-Math.PI/2;blob.position.y=.025;blob.layers.set(OVERLAY);root.add(blob);
+ const cross=new THREE.Mesh(parts.cross,view.crossBlob??view.blob);cross.rotation.x=-Math.PI/2;cross.position.y=.022;cross.layers.set(OVERLAY);root.add(cross);
  const name=label(view,view.replay.names.get(id)||'');root.add(name);view.people.add(root);
  const seed=random()*6,style=gaitStyle(seed);
- return {root,body,hips,knees,ankles,spine,head,shoulders,elbows,wrists,name,blob,keeper,side,id,foot:random()<.2?0:1,seed,style,skin:figure,skeleton,
-  phase:style.phase,speed:0,acceleration:0,course:null,ready:0,cheer:0,watch:0,guard:0,mood:null,moodWeight:0,yaw:null,x:null,z:null,dive:null,hold:false};
+ return {root,body,hips,knees,ankles,spine,head,shoulders,elbows,wrists,name,blob,cross,keeper,side,id,foot:random()<.2?1:0,seed,style,skin:figure,skeleton,
+  phase:style.phase,stretch:1,speed:0,acceleration:0,course:null,ready:0,cheer:0,watch:0,guard:0,mood:null,moodWeight:0,yaw:null,x:null,z:null,dive:null,hold:false};
 }

@@ -4,7 +4,7 @@ import * as THREE from '../../web/vendor/three/three.module.js';
 import {BALL,Pitch3D} from '../../web/replay-3d.js';
 import {CONTACT} from '../../web/match-replay.js';
 import {readFileSync} from 'node:fs';
-import {createPlayerParts,setPlayerModel} from '../../web/replay-player.js';
+import {bootPoints,createPlayerParts,setPlayerModel} from '../../web/replay-player.js';
 
 setPlayerModel(readFileSync(new URL('../../web/models/footballer.bin',import.meta.url)));
 
@@ -34,14 +34,13 @@ function eachVertex(mesh,visit){
  const point=new THREE.Vector3(),positions=mesh.geometry.getAttribute('position');
  for(let i=0;i<positions.count;i++)visit(point.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld));
 }
+// The boot as drawn: the body's skinned foot and the sole under it.
 function bootDistance(figure,side,ball){
- let nearest=Infinity;
- eachVertex(figure.ankles[side].children[0],point=>{nearest=Math.min(nearest,point.distanceTo(ball));});
- return nearest;
+ return Math.min(...bootPoints(figure,side).map(point=>point.distanceTo(ball)));
 }
 function soleHeight(figure,side){
  let lowest=Infinity;
- eachVertex(figure.ankles[side].children[1],point=>{lowest=Math.min(lowest,point.y);});
+ eachVertex(figure.ankles[side].getObjectByName('sole'),point=>{lowest=Math.min(lowest,point.y);});
  return lowest;
 }
 

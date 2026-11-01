@@ -1,14 +1,27 @@
 // Procedural poses in replay time. No renderer or wall clock: pausing and changing
 // playback speed preserve the contact between an animation and the match ball.
-import {SCALE,locomotionPose,soleHeight} from './replay-locomotion.js';
+import {SCALE,capturedGesture,gestureClip,locomotionPose,soleHeight} from './replay-locomotion.js';
 export {gaitCycle,gaitStyle,soleHeight,strideLength} from './replay-locomotion.js';
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const mix=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
 export const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
 
+// The captured strike a kick plays: the full swing of a shot (also a cross or a long ball), or the shorter one of a pass;
+// the last stride into the ball and the follow-through around the contact, in ms.
+export const strikeOf=gesture=>gesture.style==='shot'||gesture.style==='cross'||clamp(gesture.strength??.7)>=.8?'shot':'pass';
+const STRIKE={shot:{lead:480,follow:620},pass:{lead:400,follow:500}};
 export function gestureTiming(gesture){
- if(gesture?.kind==='kick')return gesture.style==='shot'?{lead:240,span:800}:gesture.style==='cross'?{lead:210,span:700}:{lead:170,span:560};
+ if(gesture?.kind==='kick'){
+  const name=strikeOf(gesture),clip=gestureClip(name);
+  if(clip){const {lead,follow}=STRIKE[name];return {lead:Math.min(lead,clip.contact*1000),span:Math.min(lead,clip.contact*1000)+Math.min(follow,(clip.length-clip.contact)*1000),captured:name};}
+  return gesture.style==='shot'?{lead:240,span:800}:gesture.style==='cross'?{lead:210,span:700}:{lead:170,span:560};
+ }
+ if(gesture?.kind==='trick'){
+  const trick=TRICKS[gesture.trick]??TRICKS.cut,clip=trick.clip&&gestureClip(trick.clip);
+  if(clip){const lead=Math.min(trick.lead,clip.contact*1000);return {lead,span:lead+Math.min(trick.follow,(clip.length-clip.contact)*1000),captured:trick.clip};}
+  return {lead:TRICKS.stepover.lead,span:TRICKS.stepover.lead+TRICKS.stepover.follow};
+ }
  return {touch:{lead:90,span:330},cushion:{lead:130,span:440},thigh:{lead:230,span:560},chest:{lead:260,span:660},head:{lead:300,span:640},
   // Challenges: a standing tackle, a sliding one (down, the slide, back on his feet) and a fall after a foul.
   tackle:{lead:260,span:780},slide:{lead:420,span:1700},fall:{lead:60,span:2000},
@@ -66,6 +79,30 @@ function challenge(p,gesture,elapsed,foot,blend){
  p.diveWeight=Math.max(p.diveWeight,down*.6);
 }
 
+// The stride's appointment with a coming touch, played with `foot`: the phase (radians) his stride should be at, and when
+// (ms of replay). Ahead of a captured strike the other foot comes down beside the ball as the capture has it; for any
+// other touch the foot that plays it is reaching forward, about to come down, as the ball arrives. Null for a gesture
+// that does not meet the ball with a foot.
+export function strideCue(gesture,foot){
+ if(!gesture||!['kick','touch','cushion'].includes(gesture.kind))return null;
+ const timing=gestureTiming(gesture),clip=timing?.captured&&gestureClip(timing.captured);
+ if(clip?.plant!=null)return {at:gesture.at-clip.plant*1000,phase:Math.PI*(1-foot)};
+ return {at:gesture.at,phase:Math.PI*2*fract(.92-.5*foot)};
+}
+const fract=x=>x-Math.floor(x);
+// The stretch of his strides (see gaitCycle) that brings his stride to `cue.phase` at `cue.at`, over the `distance` (m)
+// he covers meanwhile at strides of `stride` (m): up to 28 % shorter or 40 % longer, the nearest to his own.
+export function strideStretch(phase,cue,distance,stride){
+ const natural=distance/stride,offset=fract((cue.phase-phase)/(Math.PI*2));
+ let best=1,score=Infinity;
+ for(let turns=Math.max(0,Math.floor(natural)-1);turns<=Math.floor(natural)+1;turns++){
+  const cycles=turns+offset;if(cycles<=.05)continue;
+  const stretch=clamp(natural/cycles,.72,1.4),miss=Math.abs(Math.log(natural/cycles))*(stretch===natural/cycles?1:4);
+  if(miss<score){score=miss;best=stretch;}
+ }
+ return best;
+}
+
 // Keep an outgoing touch through its follow-through, even when the receiver's
 // next action has already been queued. More recent contacts take precedence.
 export function activeGesture(gestures,time){
@@ -79,8 +116,9 @@ export function activeGesture(gestures,time){
 }
 
 // `mood` ({kind, weight}) is how he reacts to what just happened, over whatever he is doing: see `react`.
-export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0,ready=0,hold=false,gesture=null,foot=1,turn=0,cheer=0,dive=null,direction=0,crouch=0,mood=null}={}){
- const p=locomotionPose({speed,phase,time,seed,style,acceleration,turn,direction,crouch});
+export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0,ready=0,hold=false,gesture=null,foot=1,turn=0,cheer=0,dive=null,direction=0,crouch=0,mood=null,stretch=1,transition=null}={}){
+ const p=locomotionPose({speed,phase,time,seed,style,acceleration,turn,direction,crouch,stretch});
+ if(transition)transit(p,transition);
  const blend=(list,value,k)=>{for(let side=0;side<2;side++)list[side]=mix(list[side],typeof value==='function'?value(side):value,k);};
  if(ready){
   // Keep taking steps while tracking a shot. The set stance folds the legs
@@ -105,7 +143,9 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
     // permanently weak overlay can leave a recovering heel far from the ball.
     const touch=gesture.kind==='touch'&&speed>2;
     const weight=envelope*(touch?(before?wind:1-smooth(follow/.7)):1),other=1-foot,sign=foot?1:-1;
-    if(['kick','touch','cushion'].includes(gesture.kind)){
+    if(gesture.kind==='trick')trick(p,gesture,timing,elapsed,blend);
+    else if(timing.captured)strike(p,gesture,timing,elapsed,foot,speed,blend);
+    else if(['kick','touch','cushion'].includes(gesture.kind)){
      const kick=gesture.kind==='kick',control=gesture.kind==='cushion',power=kick?clamp(gesture.strength??.7):control?.18:.27;
      const backswing=kick?.35+power*.6:.12,contact=control?-.52:-.72;
      const swing=before?mix(backswing,contact,wind):mix(contact,control?-.12:-.12-power*.55,Math.sin(follow*Math.PI/2));
@@ -202,7 +242,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
  }
  if(mood?.kind==='cheer')cheer=Math.max(cheer,mood.weight);
  else if(mood?.weight)react(p,mood.kind,mood.weight,speed,time,seed,blend);
- if(cheer){
+ if(cheer&&!joy(p,cheer,time,seed,speed)){
   const bounce=Math.max(0,Math.sin(time*.009+seed))*(1-smooth((speed-1)/2));
   p.lift+=bounce*.16*cheer;
   blend(p.shoulder,side=>-2.5+Math.sin(time*.007+seed+side)*.18,cheer);
@@ -239,14 +279,105 @@ function react(p,kind,weight,speed,time,seed,blend){
  }
 }
 
+// A strike as captured (tools/build_motion_clips.mjs): the last stride into the ball, the plant of the other foot beside
+// it, the swing and the follow-through, timed on the contact `elapsed` ms away. The softer a pass, the shorter the
+// swing of the kicking leg; the support sole stays on the grass unless the capture leaves it.
+function strike(p,gesture,timing,elapsed,foot,speed,blend){
+ const weight=envelope(timing,elapsed),power=clamp(gesture.strength??.7),lead=timing.lead;
+ const c=capturedAt(timing,elapsed,foot===1);
+ // A pass turns the hips through less than a shot.
+ if(timing.captured==='pass')c.yaw*=.7;
+ apply(p,c,weight,{side:foot,weight:weight*(timing.captured==='pass'?.55+.45*power:.8+.2*power)});
+ technique(p,gesture,foot,foot?1:-1,weight,elapsed<0,smooth((elapsed+lead)/lead),blend,true);
+}
+// How much a captured gesture takes over, `elapsed` ms from its contact: in over the first half of its lead, out over the
+// second half of its follow-through.
+function envelope(timing,elapsed){
+ const lead=timing.lead,follow=timing.span-timing.lead;
+ return elapsed<0?smooth((elapsed+lead)/(lead*.45)):1-smooth((elapsed-follow*.45)/(follow*.55));
+}
+const capturedAt=(timing,elapsed,mirror)=>capturedGesture(timing.captured,gestureClip(timing.captured).contact+elapsed/1000,mirror);
+// A captured pose `c` over the running one, by `weight`; `leg` gives one leg its own weight (the kicking leg of a soft
+// pass swings less). The pelvis's turn and side tilt go to the body; the soles stay on the grass unless the capture
+// leaves it.
+function apply(p,c,weight,leg=null,legs=weight){
+ for(let side=0;side<2;side++){
+  const w=leg&&side===leg.side?leg.weight:legs;
+  for(const joint of ['hip','hipRoll','hipYaw','knee','ankle'])p[joint][side]=mix(p[joint][side],c[`${joint}${side}`],w);
+  for(const joint of ['shoulder','spread','elbow'])p[joint][side]=mix(p[joint][side],c[`${joint}${side}`],weight);
+ }
+ for(const channel of ['lean','spineRoll','twist','roll','yaw','headPitch'])p[channel]=mix(p[channel],c[channel],weight);
+ p.lift=Math.max(mix(p.lift,grounded(p)+Math.max(0,c.air-.03)*SCALE,weight),grounded(p));
+}
+
+// A change of pace or of course at speed, as captured: a hard stop, a burst away from a standstill, a cut (captured
+// turning left, mirrored for the right). `transition` is {name, elapsed (ms since it began), side (1 a turn to his
+// left)}. His legs keep a share of his own stride, so that his feet stay with the ground the replay covers; the trunk,
+// the arms and the head are the capture's. The turn itself is the replay's: only how far the hips lead it is kept.
+export function transitionLength(name){const clip=gestureClip(name);return clip?clip.length*1000:0;}
+function transit(p,{name,elapsed,side=1}){
+ const clip=gestureClip(name);
+ if(!clip)return;
+ const length=clip.length*1000,weight=smooth(elapsed/140)*(1-smooth((elapsed-(length-280))/280));
+ if(weight<=0)return;
+ const mirror=name==='cut'&&side<0,c=capturedGesture(name,elapsed/1000,mirror);
+ const first=capturedGesture(name,0,mirror).yaw,last=capturedGesture(name,clip.length,mirror).yaw;
+ c.yaw-=mix(first,last,smooth(elapsed/length));
+ apply(p,c,weight,null,weight*.45);
+}
+// Joy, as captured: the arms flung up and a few hops on the spot, played to and fro so that it goes on as long as the
+// celebration; each player at his own point of it. Over whatever his legs are doing; false without the capture.
+function joy(p,weight,time,seed,speed){
+ const clip=gestureClip('joy');
+ if(!clip)return false;
+ const cycle=(time/1000+seed*.61)%(clip.length*2),c=capturedGesture('joy',cycle<clip.length?cycle:clip.length*2-cycle);
+ for(let side=0;side<2;side++)for(const joint of ['shoulder','spread','elbow'])p[joint][side]=mix(p[joint][side],c[`${joint}${side}`],weight);
+ for(const channel of ['lean','spineRoll','twist','headPitch'])p[channel]=mix(p[channel],c[channel],weight);
+ p.lift+=Math.max(0,c.air-.02)*SCALE*1.6*weight*(1-smooth((speed-1)/2));
+ return true;
+}
+
+// A trick to beat the man in front of him, the ball taken away to `side` (1 his left, -1 his right) at the contact: a
+// cut (the crochet, captured on a run turning left), a body feint (captured faking left to go right), or a step-over.
+// The captures are mirrored for the other side; the change of course itself is the replay's, so the turn of the hips
+// the capture makes over its whole stretch is taken out and only how far they lead it is kept.
+const TRICKS={cut:{clip:'cut',side:1,lead:350,follow:520},feint:{clip:'feint',side:-1,lead:450,follow:650},stepover:{lead:440,follow:420}};
+function trick(p,gesture,timing,elapsed,blend){
+ const side=gesture.side>=0?1:-1,kind=TRICKS[gesture.trick]?gesture.trick:'cut',weight=envelope(timing,elapsed);
+ if(timing.captured){
+  const clip=gestureClip(timing.captured),mirror=side!==TRICKS[kind].side,c=capturedAt(timing,elapsed,mirror);
+  const first=capturedGesture(timing.captured,clip.contact-timing.lead/1000,mirror).yaw,last=capturedGesture(timing.captured,clip.contact+(timing.span-timing.lead)/1000,mirror).yaw;
+  c.yaw-=mix(first,last,smooth((elapsed+timing.lead)/timing.span));
+  apply(p,c,weight);
+  return;
+ }
+ // The step-over: the leg on the side he fakes to lifts and circles round the front of the ball from inside out, the
+ // body dipping after it; then the outside of the other foot takes the ball away.
+ const over=side>0?0:1,out=over?1:-1,push=1-over,circle=clamp((elapsed+timing.lead)/(timing.lead-90)),arc=Math.sin(Math.PI*circle)*weight;
+ p.hip[over]=mix(p.hip[over],-.78,arc);p.knee[over]=mix(p.knee[over],1.2,arc);p.ankle[over]=mix(p.ankle[over],.2,arc);
+ p.hipRoll[over]=mix(p.hipRoll[over],out*mix(-.3,.55,smooth(circle)),arc);p.hipYaw[over]=mix(p.hipYaw[over],out*.3,arc);
+ p.hip[push]=mix(p.hip[push],-.15,arc);p.knee[push]=mix(p.knee[push],.65,arc);
+ p.roll=mix(p.roll,-out*.26,arc);p.twist=mix(p.twist,out*.32,arc);p.lean=mix(p.lean,.22,arc);
+ blend(p.spread,s=>s===over?.55:.3,arc);blend(p.shoulder,s=>s===over?-.5:.15,arc);blend(p.elbow,-.5,arc);
+ const take=elapsed<0?smooth((elapsed+120)/120):1-smooth(elapsed/260),away=side>0?1:0,outside=away?1:-1;
+ p.hip[away]=mix(p.hip[away],-.42,take*weight);p.knee[away]=mix(p.knee[away],.35,take*weight);p.hipRoll[away]=mix(p.hipRoll[away],outside*.3,take*weight);
+ p.roll=mix(p.roll,outside*.16,take*weight);
+ p.lift=Math.max(p.lift,grounded(p));
+}
+
 // How the kick is struck, over its common swing: the support foot planted beside the ball, then the inside of the foot
 // for a pass along the grass or a placed finish (knee turned out), leaning back under a lofted ball or a cross, over a
 // driven or low one, hips open and falling away on a free kick, the hip raised for a volley.
-function technique(p,gesture,foot,sign,weight,before,wind,blend){
+function technique(p,gesture,foot,sign,weight,before,wind,blend,captured=false){
  const kind=gesture.technique,other=1-foot,plant=before?smooth((wind-.45)/.55):1;
- p.hip[other]=mix(p.hip[other],-.34,weight*plant);p.knee[other]=mix(p.knee[other],.36,weight*plant);
- p.hipRoll[other]=mix(p.hipRoll[other],-sign*.12,weight*plant);
- if(kind==='ground'||kind==='placed')p.hipYaw[foot]=mix(p.hipYaw[foot],sign*.75,weight);
+ // The captured strike plants its own support foot.
+ if(!captured){
+  p.hip[other]=mix(p.hip[other],-.34,weight*plant);p.knee[other]=mix(p.knee[other],.36,weight*plant);
+  p.hipRoll[other]=mix(p.hipRoll[other],-sign*.12,weight*plant);
+ }
+ // The inside of the foot: the thigh turns out as the leg straightens into the ball, never while the knee is folded
+ // behind him, where it would throw the shin out to the side.
+ if(kind==='ground'||kind==='placed')p.hipYaw[foot]=mix(p.hipYaw[foot],p.hipYaw[foot]+sign*.7*(1-smooth((p.knee[foot]-.25)/.75)),weight);
  if(kind==='lofted'||kind==='floated'||kind==='whipped')p.lean=mix(p.lean,p.lean-.2,weight);
  if(kind==='driven'||kind==='low')p.lean=mix(p.lean,p.lean+.12,weight);
  if(kind==='free_kick'){p.roll-=sign*.16*weight;p.twist=mix(p.twist,p.twist*1.45,weight);blend(p.spread,.7,weight);}
