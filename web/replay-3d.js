@@ -3,12 +3,24 @@
 // Pitch units are metres: x along the touchline (0 to 105), y across (0 at the far touchline, 68 at the near one).
 // In the scene, x runs along the touchline from the centre spot, z across towards the camera, y up.
 import * as THREE from './vendor/three/three.module.js';
-import {createPlayerParts,createPlayerFigure} from './replay-player.js';
+import {LABEL,OVERLAY,createPlayerParts,createPlayerFigure} from './replay-player.js';
 import {activeGesture,angleDelta,playerMotion,strideLength} from './replay-motion.js';
+import {SCALE} from './replay-locomotion.js';
+import {EffectComposer} from './vendor/three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from './vendor/three/addons/postprocessing/RenderPass.js';
+import {GTAOPass} from './vendor/three/addons/postprocessing/GTAOPass.js';
+import {UnrealBloomPass} from './vendor/three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from './vendor/three/addons/postprocessing/OutputPass.js';
+import {ShaderPass} from './vendor/three/addons/postprocessing/ShaderPass.js';
 
 const W=105,H=68,MARGIN_X=6,MARGIN_Y=5;
-// The players are drawn a little larger than life so that they read from the stand.
-const SCALE=1.25;
+// The broadcast camera works on a long lens from far back, as on television: the perspective flattens and the
+// players keep their size on screen. [height, distance from the halfway line's centre] close to the ball, then
+// for the whole pitch while the clock runs.
+export const LENS=17;
+const CLOSE=[30,82],WIDE=[56,154];
+// The effects in order of cost, dropped one by one when a frame takes longer than FRAME_BUDGET milliseconds on average.
+const QUALITY={full:2,bloom:1,plain:0},FRAME_BUDGET=25,BUDGET_FRAMES=90;
 const SKINS=['#f1c9a0','#d9a577','#b27b52','#8a5a3b','#5e3b27'];
 const BALL=.24;
 // Below this pace, in metres per second of replay, a player walks and faces the ball.
@@ -50,38 +62,118 @@ function extrude(length,profile){
   .rotateY(-Math.PI/2).translate(length/2,0,0);
 }
 
-function pitchCanvas(){
- const scale=20,[node,g]=canvas((W+2*MARGIN_X)*scale,(H+2*MARGIN_Y)*scale);
- g.fillStyle='#2c6c3e';g.fillRect(0,0,node.width,node.height);
- g.save();g.translate(MARGIN_X*scale,MARGIN_Y*scale);g.scale(scale,scale);
- // Ten mowing stripes along the pitch, carried on to the boards.
- g.fillStyle='#337747';
- for(let stripe=-1;stripe<=10;stripe++)if(stripe%2)g.fillRect(stripe*W/10,-MARGIN_Y,W/10,H+2*MARGIN_Y);
- // The goalmouths and the centre circle wear first.
- const wear=(x,y,radius,alpha)=>{const gradient=g.createRadialGradient(x,y,0,x,y,radius);gradient.addColorStop(0,`rgba(128,116,62,${alpha})`);gradient.addColorStop(1,'rgba(128,116,62,0)');g.fillStyle=gradient;g.fillRect(x-radius,y-radius,2*radius,2*radius);};
- wear(2.5,H/2,6.5,.3);wear(W-2.5,H/2,6.5,.3);wear(11,H/2,4,.12);wear(W-11,H/2,4,.12);wear(W/2,H/2,8,.1);
- g.restore();
- // Grain, so that the grass is not flat paint.
- const [grain,n]=canvas(128,128),image=n.createImageData(128,128),random=seeded(7);
- for(let index=0;index<image.data.length;index+=4){image.data[index]=image.data[index+1]=image.data[index+2]=random()*255;image.data[index+3]=255;}
- n.putImageData(image,0,0);
- g.globalAlpha=.09;g.globalCompositeOperation='overlay';g.fillStyle=g.createPattern(grain,'repeat');g.fillRect(0,0,node.width,node.height);
- g.globalAlpha=1;g.globalCompositeOperation='source-over';
- g.translate(MARGIN_X*scale,MARGIN_Y*scale);g.scale(scale,scale);
- g.strokeStyle='#ffffffe6';g.lineWidth=.12;
- const box=(x,y,w,h)=>g.strokeRect(x,y,w,h);
- box(0,0,W,H);
- g.beginPath();g.moveTo(W/2,0);g.lineTo(W/2,H);g.stroke();
- g.beginPath();g.arc(W/2,H/2,9.15,0,Math.PI*2);g.stroke();
- box(0,H/2-20.16,16.5,40.32);box(W-16.5,H/2-20.16,16.5,40.32);
- box(0,H/2-9.16,5.5,18.32);box(W-5.5,H/2-9.16,5.5,18.32);
- const arc=Math.acos(5.5/9.15);
- g.beginPath();g.arc(11,H/2,9.15,-arc,arc);g.stroke();
- g.beginPath();g.arc(W-11,H/2,9.15,Math.PI-arc,Math.PI+arc);g.stroke();
- for(const [x,y,from] of [[0,0,0],[W,0,Math.PI/2],[W,H,Math.PI],[0,H,Math.PI*1.5]]){g.beginPath();g.arc(x,y,1,from,from+Math.PI/2);g.stroke();}
- g.fillStyle='#ffffffe6';
- for(const x of [11,W/2,W-11]){g.beginPath();g.arc(x,H/2,.2,0,Math.PI*2);g.fill();}
- return node;
+// The grass, drawn by its shader on the lit material so that it keeps its shadows and reflections: ten mowing
+// stripes carried on to the boards, the grass laid alternately towards and away from the camera so that their
+// contrast follows the view; tufts and patches on three scales, wear in the goalmouths and at the spots, and the
+// lines measured in metres, as sharp near the camera as at the far touchline.
+const GRASS={light:'#52873d',dark:'#437634',dry:'#7f8150',worn:'#776c4a',paint:'#eef2ea'};
+const GRASS_SHADER=`
+uniform vec3 grassLight,grassDark,grassDry,grassWorn,linePaint;
+varying vec3 vPitch;
+float grassHash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float grassNoise(vec2 p){
+ vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(grassHash(i),grassHash(i+vec2(1,0)),f.x),mix(grassHash(i+vec2(0,1)),grassHash(i+vec2(1,1)),f.x),f.y);
+}
+float segment(vec2 p,vec2 a,vec2 b){vec2 pa=p-a,ba=b-a;return length(pa-ba*clamp(dot(pa,ba)/dot(ba,ba),0.,1.));}
+// Distance in metres to the nearest line, the pitch's corner at the origin.
+float pitchLines(vec2 p){
+ const float W=${W.toFixed(1)},H=${H.toFixed(1)};
+ vec2 end=vec2(min(p.x,W-p.x),p.y),corner=vec2(min(p.x,W-p.x),min(p.y,H-p.y));
+ float d=min(min(segment(p,vec2(0),vec2(W,0)),segment(p,vec2(0,H),vec2(W,H))),min(segment(p,vec2(0),vec2(0,H)),segment(p,vec2(W,0),vec2(W,H))));
+ d=min(d,segment(p,vec2(W*.5,0),vec2(W*.5,H)));
+ d=min(d,abs(length(p-vec2(W,H)*.5)-9.15));
+ for(int box=0;box<2;box++){
+  float depth=box==0?16.5:5.5,across=box==0?20.16:9.16;
+  d=min(d,segment(end,vec2(0,H*.5-across),vec2(depth,H*.5-across)));
+  d=min(d,segment(end,vec2(0,H*.5+across),vec2(depth,H*.5+across)));
+  d=min(d,segment(end,vec2(depth,H*.5-across),vec2(depth,H*.5+across)));
+ }
+ if(end.x>16.5)d=min(d,abs(length(end-vec2(11,H*.5))-9.15));
+ if(corner.x>0.&&corner.y>0.)d=min(d,abs(length(corner)-1.));
+ return d;
+}
+float pitchSpots(vec2 p){
+ const float W=${W.toFixed(1)},H=${H.toFixed(1)};
+ vec2 end=vec2(min(p.x,W-p.x),p.y);
+ return min(length(end-vec2(11,H*.5)),length(p-vec2(W,H)*.5));
+}
+// Paint coverage of a line of the given width, the pixel being the footprint of a pixel on the grass (the
+// distance's own derivative vanishes on the line, where it folds): thinner than a pixel far away, it fades
+// instead of breaking up.
+float paint(float d,float width,float pixel){
+ float drawn=max(width*.5,pixel*.6);
+ return width*.5/drawn*(1.-smoothstep(drawn-pixel*.5,drawn+pixel*.5,d));
+}
+vec3 grassColour(vec3 world){
+ vec2 p=world.xz+vec2(${(W/2).toFixed(1)},${(H/2).toFixed(1)});
+ vec3 view=normalize(cameraPosition-world);
+ float lay=mod(floor(p.x/${(W/10).toFixed(1)}),2.)*2.-1.;
+ vec3 colour=mix(grassDark,grassLight,.5+.5*lay*(.45+.55*clamp(view.z*1.15,-1.,1.)));
+ float broad=grassNoise(p*.09+3.1),tufts=grassNoise(p*.55)*.6+grassNoise(p*2.1)*.4;
+ float fine=grassNoise(p*11.),near=1.-smoothstep(.04,.18,max(fwidth(p.x),fwidth(p.y))*11.);
+ colour=mix(colour,grassDry,smoothstep(.55,.95,broad)*.16);
+ colour*=.9+.2*tufts+(fine-.5)*.16*near;
+ vec2 end=vec2(min(p.x,${W.toFixed(1)}-p.x),p.y);
+ float wear=.75*(1.-smoothstep(0.,6.5,length((end-vec2(2.5,${(H/2).toFixed(1)}))*vec2(1.,.8))))
+  +.3*(1.-smoothstep(0.,3.5,length(end-vec2(11,${(H/2).toFixed(1)}))))+.18*(1.-smoothstep(0.,8.,length(p-vec2(${(W/2).toFixed(1)},${(H/2).toFixed(1)}))));
+ colour=mix(colour,grassWorn,clamp(wear*(.35+.9*tufts),0.,.85));
+ float pixel=max(length(fwidth(p))*.75,1e-4);
+ float lines=max(paint(pitchLines(p),.12,pixel),1.-smoothstep(.2-pixel,.2+pixel,pitchSpots(p)));
+ return mix(colour,linePaint*(.93+.07*tufts),lines*.94);
+}
+`;
+function grassMaterial(){
+ const material=new THREE.MeshStandardMaterial({roughness:1,envMapIntensity:.3});
+ const uniforms=Object.fromEntries(Object.entries({grassLight:'light',grassDark:'dark',grassDry:'dry',grassWorn:'worn',linePaint:'paint'})
+  .map(([name,key])=>[name,{value:new THREE.Color(GRASS[key])}]));
+ material.onBeforeCompile=shader=>{
+  Object.assign(shader.uniforms,uniforms);
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vPitch;')
+   .replace('#include <begin_vertex>','#include <begin_vertex>\nvPitch=(modelMatrix*vec4(transformed,1.)).xyz;');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${GRASS_SHADER}`)
+   .replace('#include <map_fragment>','diffuseColor.rgb=grassColour(vPitch);');
+ };
+ material.customProgramCacheKey=()=>'pitch-grass';
+ return material;
+}
+
+// A floodlit stadium at night for the reflections and the soft light: a dark sky, the stands, the green of the
+// pitch below and a bright strip under each roof.
+function stadiumEnvironment(renderer){
+ const scene=new THREE.Scene(),pmrem=new THREE.PMREMGenerator(renderer);
+ scene.add(new THREE.Mesh(new THREE.SphereGeometry(90,48,24),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,
+  vertexShader:'varying vec3 vDirection;void main(){vDirection=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`varying vec3 vDirection;void main(){
+   float y=vDirection.y;vec3 grass=vec3(.035,.09,.03),stand=vec3(.03,.032,.038),sky=vec3(.008,.014,.03);
+   vec3 colour=y<0.?mix(grass*1.6,grass,clamp(-y*2.,0.,1.)):mix(stand,sky,smoothstep(.3,.55,y));
+   gl_FragColor=vec4(colour,1.);}`})));
+ const lamp=new THREE.MeshBasicMaterial({color:new THREE.Color('#fff4de').multiplyScalar(9)});
+ for(const [x,z,length,angle] of [[0,-42,90,0],[0,46,90,0],[-62,0,60,Math.PI/2],[62,0,60,Math.PI/2]]){
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(length,2.5,2.5),lamp);strip.position.set(x,30,z);strip.rotation.y=angle;scene.add(strip);
+ }
+ const target=pmrem.fromScene(scene,.035);
+ pmrem.dispose();scene.traverse(node=>{node.geometry?.dispose();node.material?.dispose();});
+ return target;
+}
+
+// The last touch, on the displayed image: a gentle contrast curve, a little more saturation and a vignette.
+const GRADE={
+ uniforms:{tDiffuse:{value:null},contrast:{value:.18},saturation:{value:1.02},vignette:{value:.42}},
+ vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:`uniform sampler2D tDiffuse;uniform float contrast,saturation,vignette;varying vec2 vUv;
+ void main(){
+  vec4 texel=texture2D(tDiffuse,vUv);vec3 colour=clamp(texel.rgb,0.,1.);
+  colour=mix(colour,colour*colour*(3.-2.*colour),contrast);
+  colour=mix(vec3(dot(colour,vec3(.2126,.7152,.0722))),colour,saturation);
+  vec2 edge=vUv-.5;colour*=1.-vignette*dot(edge,edge);
+  gl_FragColor=vec4(colour,texel.a);
+ }`,
+};
+
+// Half-resolution occlusion: enough for contact shadows at broadcast distance, at a quarter of the cost.
+class HalfGTAOPass extends GTAOPass{
+ setSize(width,height){super.setSize(Math.max(1,Math.round(width/2)),Math.max(1,Math.round(height/2)));}
 }
 
 // A tile of fans in their seats, in one of three poses: 0 seated, 1 and 2 on their feet for a goal, half of
@@ -182,24 +274,31 @@ export class Pitch3D{
   this.canvas=document.createElement('canvas');
   this.canvas.className='replay-3d';
   this.canvas.setAttribute('aria-hidden','true');
-  const renderer=this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true});
+  // The effects antialias their own buffers; the canvas only receives the finished image.
+  const renderer=this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:false,powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(2,devicePixelRatio));
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+  // The neutral curve keeps the kits' colours true while it softens the floodlit highlights.
+  renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
   this.textures=[];this.materials=new Map();
   const scene=this.scene=new THREE.Scene();
   scene.background=this.texture(skyCanvas());
-  scene.fog=new THREE.Fog('#1b2738',170,430);
-  this.camera=new THREE.PerspectiveCamera(25,1.5,1,500);
-  // An evening match under floodlights: a cool sky light, and one key light high over the main stand for the shadows.
-  scene.add(new THREE.HemisphereLight('#e4efff','#52684b',1.9));
-  const sun=new THREE.DirectionalLight('#fff2db',2.7);
+  scene.fog=new THREE.Fog('#1b2738',230,560);
+  this.environmentTarget=stadiumEnvironment(renderer);
+  scene.environment=this.environmentTarget.texture;
+  this.camera=new THREE.PerspectiveCamera(LENS,1.5,1,700);
+  this.camera.layers.enable(OVERLAY);
+  // An evening match under floodlights: the stadium's reflected light, a key light high over the main stand
+  // whose soft shadows anchor the players, and a cooler fill from the opposite corner.
+  scene.add(new THREE.HemisphereLight('#e4efff','#52684b',.7));
+  const sun=new THREE.DirectionalLight('#fff2db',2.6);
   sun.position.set(-35,70,25);sun.castShadow=true;
   Object.assign(sun.shadow.camera,{left:-62,right:62,top:42,bottom:-42,near:10,far:160});
-  sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
+  sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;sun.shadow.radius=3;
   scene.add(sun);
-  const fill=new THREE.DirectionalLight('#c5dcff',1.15);fill.position.set(35,28,-42);scene.add(fill);
+  const fill=new THREE.DirectionalLight('#c5dcff',.9);fill.position.set(35,28,-42);scene.add(fill);
   this.build();
+  this.effects();
   this.figures=new Map();
   this.look={x:0,z:0};this.last=performance.now();
   replay.stage.prepend(this.canvas);
@@ -220,12 +319,51 @@ export class Pitch3D{
   if(!this.materials.has(key))this.materials.set(key,new THREE.MeshStandardMaterial({color,roughness}));
   return this.materials.get(key);
  }
+ // Kit fabric: matt, with the soft sheen that knitted cloth catches at grazing angles under the floodlights.
+ cloth(color,roughness=.85){
+  const key=`cloth:${color}/${roughness}`;
+  if(!this.materials.has(key))this.materials.set(key,new THREE.MeshPhysicalMaterial({color,roughness,sheen:.7,sheenRoughness:.45,
+   sheenColor:new THREE.Color(color).lerp(new THREE.Color('#ffffff'),.45)}));
+  return this.materials.get(key);
+ }
+ // Render, occlusion, bloom of the lights, tone mapping, then the grade, all at the renderer's pixel ratio.
+ effects(){
+  const renderer=this.renderer,target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:4});
+  const composer=this.composer=new EffectComposer(renderer,target);
+  composer.addPass(new RenderPass(this.scene,this.camera));
+  // The occlusion has its own camera, which follows the main one but leaves out the overlay layer.
+  this.aoCamera=this.camera.clone();this.aoCamera.layers.set(0);
+  const ao=this.ao=new HalfGTAOPass(this.scene,this.aoCamera,2,2);
+  ao.updateGtaoMaterial({radius:.7,distanceExponent:1.4,thickness:1.2,scale:1.1,samples:12});
+  ao.updatePdMaterial({lumaPhi:10,depthPhi:2,normalPhi:3,radius:6,rings:2,samples:12});
+  ao.blendIntensity=.85;
+  composer.addPass(ao);
+  composer.addPass(this.bloom=new UnrealBloomPass(new THREE.Vector2(256,256),.32,.45,1.05));
+  composer.addPass(new OutputPass());
+  composer.addPass(new ShaderPass(GRADE));
+  this.quality=QUALITY.full;this.adaptive=true;this.budget={frames:0,time:0};
+ }
+ // Drops effects down to `level`; below the bloom, the image is also drawn at one pixel per CSS pixel.
+ setQuality(level){
+  this.quality=level;
+  this.ao.enabled=level>=QUALITY.full;this.bloom.enabled=level>=QUALITY.bloom;
+  const ratio=level>QUALITY.plain?Math.min(2,devicePixelRatio):1;
+  if(this.renderer.getPixelRatio()!==ratio){this.renderer.setPixelRatio(ratio);this.composer.setPixelRatio(ratio);this.fit();}
+ }
+ // Keeps the effects that the machine can hold: one level down each time the average frame overruns the budget.
+ measure(dt){
+  if(!this.adaptive||this.quality===QUALITY.plain)return;
+  this.budget.frames++;this.budget.time+=dt;
+  if(this.budget.frames<BUDGET_FRAMES)return;
+  if(this.budget.time/this.budget.frames>FRAME_BUDGET)this.setQuality(this.quality-1);
+  this.budget={frames:0,time:0};
+ }
  build(){
   const scene=this.scene,teams=this.replay.teams;
   const accent=getComputedStyle(this.replay).getPropertyValue('--accent').trim()||'#f2c94c';
   const surround=new THREE.Mesh(new THREE.PlaneGeometry(520,380),this.material('#37413b',1));
   surround.rotation.x=-Math.PI/2;surround.position.y=-.02;scene.add(surround);
-  const grass=new THREE.Mesh(new THREE.PlaneGeometry(W+2*MARGIN_X,H+2*MARGIN_Y),new THREE.MeshStandardMaterial({map:this.texture(pitchCanvas()),roughness:.95}));
+  const grass=new THREE.Mesh(new THREE.PlaneGeometry(W+2*MARGIN_X,H+2*MARGIN_Y),grassMaterial());
   grass.rotation.x=-Math.PI/2;grass.receiveShadow=true;scene.add(grass);
   // The fans: a home crowd all round, the visitors in the far corner of the right-hand end.
   const seat=teams.home.major;
@@ -234,7 +372,8 @@ export class Pitch3D{
    const frames=[0,1,2].map(pose=>this.texture(crowdCanvas(teams[side],seat,pose,seed),[1/(SEATS*SEAT),1/(ROWS*ROW)]));
    this.fans[side]={frames,material:new THREE.MeshLambertMaterial({map:frames[0],color:'#8d9299'})};
   }
-  this.led=new THREE.MeshBasicMaterial({map:this.texture(boardCanvas(teams,accent),[1/BOARD_TILE,1])});
+  // The LED boards and the floodlights shine above white, so that the bloom catches them.
+  this.led=new THREE.MeshBasicMaterial({map:this.texture(boardCanvas(teams,accent),[1/BOARD_TILE,1]),color:new THREE.Color(1,1,1).multiplyScalar(1.25)});
   this.windows=new THREE.MeshBasicMaterial({map:this.texture(boxesCanvas(),[1/BOX_TILE,1]),color:'#c8ccd2'});
   const span=H+2*MARGIN_Y+2*4+2*8,right=span/2-36;
   this.place(this.stand(2*(W/2+MARGIN_X+4+32),MAIN_STAND,[{from:-(W/2+MARGIN_X+36),to:W/2+MARGIN_X+36,fans:'home'}]),'far',MARGIN_Y+4);
@@ -253,9 +392,9 @@ export class Pitch3D{
   ball.castShadow=true;scene.add(ball);
   this.blob=new THREE.MeshBasicMaterial({map:this.texture(blobCanvas()),transparent:true,depthWrite:false});
   const shadow=this.ballShadow=new THREE.Mesh(new THREE.CircleGeometry(.4,20),this.blob);
-  shadow.rotation.x=-Math.PI/2;shadow.position.y=.03;scene.add(shadow);
+  shadow.rotation.x=-Math.PI/2;shadow.position.y=.03;shadow.layers.set(OVERLAY);scene.add(shadow);
   const ring=this.ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.15,32),new THREE.MeshBasicMaterial({color:accent,transparent:true,opacity:.9,depthWrite:false}));
-  ring.rotation.x=-Math.PI/2;ring.position.y=.04;ring.visible=false;scene.add(ring);
+  ring.rotation.x=-Math.PI/2;ring.position.y=.04;ring.visible=false;ring.layers.set(OVERLAY);scene.add(ring);
   this.people=new THREE.Group();scene.add(this.people);
   this.parts=createPlayerParts();
  }
@@ -285,7 +424,7 @@ export class Pitch3D{
   const [front,back,height]=roof;
   const cover=new THREE.Mesh(new THREE.BoxGeometry(length,.5,back-front),this.material('#1a1f25',.9));cover.position.set(0,height,(front+back)/2);
   const fascia=new THREE.Mesh(new THREE.BoxGeometry(length,1.1,.3),this.material('#c3cad2',.6));fascia.position.set(0,height-.2,front);
-  const lights=new THREE.Mesh(new THREE.BoxGeometry(length*.98,.22,.12),new THREE.MeshBasicMaterial({color:'#fff6dc'}));lights.position.set(0,height-.86,front-.1);
+  const lights=new THREE.Mesh(new THREE.BoxGeometry(length*.98,.22,.12),new THREE.MeshBasicMaterial({color:new THREE.Color('#fff6dc').multiplyScalar(5)}));lights.position.set(0,height-.86,front-.1);
   group.add(cover,fascia,lights);
   return group;
  }
@@ -317,6 +456,7 @@ export class Pitch3D{
   group.add(new THREE.Mesh(panel([at(0,height,-width/2),at(0,height,width/2),at(top,height,width/2),at(top,height,-width/2)],point=>[point[2],Math.abs(point[0])]),net));
   const stay=this.material('#9aa3ad',.5);
   for(const z of [-width/2,width/2]){const rod=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,Math.hypot(bottom-top,height),6),stay);rod.position.set((top+bottom)/2*out,height/2,z);rod.rotation.z=Math.atan2(bottom-top,height)*out;group.add(rod);}
+  group.traverse(node=>{if(node.material===net)node.layers.set(OVERLAY);});
   group.position.set(end-W/2,0,0);
   return group;
  }
@@ -332,6 +472,7 @@ export class Pitch3D{
   const {clientWidth:width,clientHeight:height}=this.replay.stage;
   if(!width||!height)return;
   this.renderer.setSize(width,height,false);
+  this.composer.setSize(width,height);
   this.camera.aspect=width/height;this.camera.updateProjectionMatrix();
  }
  dispose(){
@@ -343,6 +484,8 @@ export class Pitch3D{
   for(const geometry of geometries)geometry.dispose();
   for(const material of materials)material.dispose();
   for(const texture of this.textures)texture.dispose();
+  for(const pass of this.composer.passes)pass.dispose?.();
+  this.composer.dispose();this.environmentTarget.dispose();
   this.renderer.dispose();
   this.canvas.remove();
  }
@@ -354,7 +497,12 @@ export class Pitch3D{
   // Nothing to draw while the summary is folded away.
   if(!this.replay.isConnected||!this.canvas.offsetParent)return;
   this.update(dt);
-  this.renderer.render(this.scene,this.camera);
+  this.render();
+  this.measure(dt);
+ }
+ render(){
+  this.aoCamera.copy(this.camera);this.aoCamera.layers.set(0);
+  this.composer.render();
  }
  update(dt){
   const replay=this.replay,stage=replay.stage,away=stage.classList.contains('fast')||stage.classList.contains('cut');
@@ -468,16 +616,16 @@ export class Pitch3D{
    figure.body.position.x+=(at.x-centre.x)*k;figure.body.position.z+=(at.z-centre.z)*k;
    figure.body.position.y=Math.max(Math.min(.025,p.lift),figure.body.position.y+(BALL+figure.dive.height*SCALE-centre.y)*k);
   }
-  figure.name.position.y=2.75+Math.max(0,figure.body.position.y);
+  figure.name.position.y=LABEL+Math.max(0,figure.body.position.y);
   figure.blob.scale.set(1+Math.abs(p.roll)*.35,1/(1+Math.max(0,p.lift)*.5),1);
  }
- // The main camera: high in the stand on the near side, panning with the ball, wider while the clock runs.
+ // The main camera: high on the near side, panning with the ball, wider while the clock runs.
  frameCamera(ball,wide,dt){
   const target=wide?{x:0,z:0}:{x:clamp(ball.x,-40,40),z:ball.z*.48};
   const k=1-Math.exp(-dt/(wide?900:520));
   this.look.x=lerp(this.look.x,target.x,k);this.look.z=lerp(this.look.z,target.z,k);
-  const back=wide?84:39,up=wide?40:25;
-  this.camera.position.set(this.look.x*.85,up,H/2+back-H/2*.3);
+  const [up,back]=wide?WIDE:CLOSE;
+  this.camera.position.set(this.look.x*.85,up,back);
   this.camera.lookAt(this.look.x,.65,this.look.z);
  }
 }

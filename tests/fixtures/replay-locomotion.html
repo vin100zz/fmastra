@@ -51,7 +51,7 @@
   <div class="status"><output id="status">Chargement…</output><span>Marche : 2 et 17 · Course : 7 et 31 · Sprint : 11 et 44</span></div>
   <pre id="error" role="alert"></pre>
   <script type="module">
-    import { Pitch3D } from '../../web/replay-3d.js';
+    import { LENS, Pitch3D } from '../../web/replay-3d.js';
 
     // Positions and the replay clock are the fixture's only animation inputs.
     // Pitch3D creates, poses and renders the same figures used in a real match.
@@ -133,7 +133,7 @@
 
     function inspectCamera(seconds) {
       if (cameraMode === 'game') {
-        view.camera.fov = 25; view.camera.updateProjectionMatrix();
+        view.camera.fov = LENS; view.camera.updateProjectionMatrix();
         return;
       }
       const a = runners[focus * 2], b = runners[focus * 2 + 1];
@@ -158,7 +158,7 @@
       updatePositions(milliseconds / 1000);
       view.update(milliseconds);
       inspectCamera(milliseconds / 1000);
-      view.renderer.render(view.scene, view.camera);
+      view.render();
       const duo = runners.slice(focus * 2, focus * 2 + 2);
       status.textContent = `${paused ? 'Pause' : 'Lecture'} · ${(replay.time / 1000).toFixed(2)} s · ${speed}× · n° ${duo[0].id} / ${duo[1].id} · ${duo[0].speed.toFixed(1)} m/s`;
     }

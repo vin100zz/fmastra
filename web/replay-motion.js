@@ -1,6 +1,6 @@
 // Procedural poses in replay time. No renderer or wall clock: pausing and changing
 // playback speed preserve the contact between an animation and the match ball.
-import {locomotionPose,soleHeight} from './replay-locomotion.js';
+import {SCALE,locomotionPose,soleHeight} from './replay-locomotion.js';
 export {gaitCycle,gaitStyle,soleHeight,strideLength} from './replay-locomotion.js';
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const mix=(a,b,t)=>a+(b-a)*t;
@@ -34,7 +34,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
   const support=()=>Math.min(...p.hip.map((hip,i)=>.93-.45*Math.cos(hip)-.4*Math.cos(hip+p.knee[i])-soleHeight(hip+p.knee[i]+p.ankle[i])));
   const ground=support();
   blend(p.hip,-.42,set);blend(p.knee,.84,set);blend(p.ankle,-.42,set);
-  p.lift+=(ground-support())*1.25;
+  p.lift+=(ground-support())*SCALE;
   blend(p.shoulder,-.38,ready);blend(p.elbow,-1.1,ready);blend(p.spread,.48,ready);
   p.lean=mix(p.lean,.16,ready);
  }
@@ -71,7 +71,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
       p.lean=mix(p.lean,before?-.32:.18,pulse);blend(p.spread,.8,pulse);blend(p.shoulder,-.35,pulse);blend(p.elbow,-.8,pulse);
      }else if(gesture.kind==='head'){
       const jump=gesture.jump||0;
-      p.lift+=jump*1.25*contactPulse;
+      p.lift+=jump*SCALE*contactPulse;
       blend(p.hip,jump?-.38:-.12,pulse);blend(p.knee,jump?.85:.3,pulse);
       blend(p.shoulder,-.9,pulse);blend(p.spread,.65,pulse);blend(p.elbow,-.65,pulse);
       p.lean=mix(p.lean,before?mix(-.22,.12,wind):.28,pulse);p.headPitch=mix(-.15,.32,wind)*pulse;
@@ -90,7 +90,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
   if(time>=dive.start&&recovery>0){
    const low=1-smooth((dive.height-.25)/.75),overhead=smooth((dive.height-1.25)/.65);
    const centralHip=-.28-.82*low,centralKnee=-2*centralHip;
-   const crouch=-(.93-.85*Math.cos(centralHip)-.08)*1.25;
+   const crouch=-(.93-.85*Math.cos(centralHip)-.08)*SCALE;
    p.roll=-side*lateral*(1.48-high*.34)*reach;
    p.lift=mix(p.lift,mix(crouch+overhead*.3,.06+high*.52,lateral)+Math.sin(progress*Math.PI)*.16*lateral,reach);
    p.lean=mix(p.lean,mix(.1+low, .05,lateral),reach);p.twist*=1-reach;

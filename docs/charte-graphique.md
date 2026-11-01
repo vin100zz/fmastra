@@ -1343,6 +1343,32 @@ accompagne l'accélération et les virages. À l'arrêt, les mouvements restent
 discrets et décalés entre joueurs. Le spécimen rapproché de ces allures est
 `tests/fixtures/replay-locomotion.html`.
 
+Le rendu suit celui d'une retransmission (`web/replay-3d.js`) :
+
+- **Cadrage** : une longue focale (17°) depuis loin et haut sur le côté opposé
+  aux tribunes principales. La perspective s'aplatit, les joueurs gardent leur
+  taille à l'écran. Ils sont dessinés un dixième plus grands que nature (2.2 m,
+  `SCALE`, `web/replay-locomotion.js`) pour se lire de si loin ; les buts et la
+  hauteur du ballon suivent la même échelle.
+- **Pelouse** : un vert naturel, peu saturé, en dix bandes de tonte dont le
+  contraste suit l'angle de vue. Touffes et plaques plus sèches sur trois
+  échelles, usure dans les surfaces de but, au point de penalty et au rond
+  central. Les lignes (12 cm) sont calculées au pixel : nettes au premier plan,
+  elles s'estompent au loin sans se rompre.
+- **Lumière** : un éclairage de stade en soirée. Le stade se reflète dans les
+  matières, une lumière principale porte des ombres douces, un contre-jour
+  plus froid éclaire l'autre côté. La courbe neutre garde les couleurs des
+  tenues fidèles aux pastilles du replay 2D.
+- **Matières** : les tenues sont en tissu mat au léger reflet velouté sous les
+  projecteurs ; la peau est un peu plus satinée que le tissu.
+- **Effets** : une occlusion ambiante pose les joueurs, les buts et les
+  panneaux sur la pelouse. Les projecteurs et les panneaux LED diffusent un
+  léger halo. Un étalonnage discret (contraste, vignette) termine l'image. Les
+  noms, les filets, les ombres portées simplifiées et l'anneau du porteur
+  restent hors de l'occlusion. Si la machine ne tient pas le rythme, les
+  effets tombent d'eux-mêmes, du plus coûteux au moins coûteux : l'occlusion,
+  puis le halo et la haute définition.
+
 ## Graphiques
 
 Un texte n'est jamais dans la couleur de ce qu'il mesure : chiffres et libellés

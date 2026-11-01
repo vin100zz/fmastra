@@ -4,6 +4,7 @@ import * as THREE from '../../web/vendor/three/three.module.js';
 import {Pitch3D} from '../../web/replay-3d.js';
 import {createPlayerParts} from '../../web/replay-player.js';
 import {angleDelta,gaitCycle,strideLength} from '../../web/replay-motion.js';
+import {SCALE} from '../../web/replay-locomotion.js';
 
 // Use the real skeleton and its world matrices; canvas drawing does not affect
 // the glove/ball and foot/grass contacts tested here. No WebGL context is needed.
@@ -34,7 +35,7 @@ test('a high diving save reaches the interception with its gloves, on either sid
   figure.dive={start:1000,duration:600,distance:2.4,height:2,side,yaw:.7};
   v.pose(figure,at,{x:10,z:3},16,false,[],1600);
   const gloves=centreOfGloves(figure);
-  near(gloves.x,at.x);near(gloves.z,at.z);near(gloves.y,.24+2*1.25);
+  near(gloves.x,at.x);near(gloves.z,at.z);near(gloves.y,.24+2*SCALE);
   figure.hold=true;v.placeBall({x:30,z:14},figure);
   near(v.ball.position.x,gloves.x);near(v.ball.position.y,gloves.y);near(v.ball.position.z,gloves.z);
  }

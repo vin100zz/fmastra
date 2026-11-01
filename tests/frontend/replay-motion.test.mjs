@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {activeGesture,angleDelta,gaitCycle,gaitStyle,gestureTiming,playerMotion,soleHeight,strideLength} from '../../web/replay-motion.js';
+import {SCALE} from '../../web/replay-locomotion.js';
 
 const near=(actual,expected,tolerance=1e-8)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${actual} is not ${expected}`);
 const finite=pose=>{
@@ -10,8 +11,8 @@ const TAU=Math.PI*2;
 // Forward kinematics of the actual .45 m thigh, .40 m shin and rolling sole.
 const footAt=(pose,side)=>{
  const hip=pose.hip[side],shin=hip+pose.knee[side],pitch=shin+pose.ankle[side];
- return {z:1.25*(-.45*Math.sin(hip)-.4*Math.sin(shin)),
-  y:pose.lift+1.25*(.93-.45*Math.cos(hip)-.4*Math.cos(shin)-soleHeight(pitch)),pitch};
+ return {z:SCALE*(-.45*Math.sin(hip)-.4*Math.sin(shin)),
+  y:pose.lift+SCALE*(.93-.45*Math.cos(hip)-.4*Math.cos(shin)-soleHeight(pitch)),pitch};
 };
 
 test('an outgoing kick keeps its follow-through when a later touch is already queued',()=>{
@@ -112,7 +113,7 @@ test('running includes a flight interval while walking retains an on-ground supp
 test('a running heel folds behind the hip, then the knee drives with the opposite arm',()=>{
  for(const seed of [.2,1.7,3.6])for(const speed of [4,8]){
   const style=gaitStyle(seed),{stance}=gaitCycle(speed,style),sample=t=>playerMotion({speed,seed,style,phase:(stance+(1-stance)*t)*TAU});
-  const recovery=sample(.25),extension=sample(.9),heel=footAt(recovery,0),lead=footAt(extension,0);
+  const recovery=sample(.3),extension=sample(.9),heel=footAt(recovery,0),lead=footAt(extension,0);
   assert.ok(heel.z<-.08,'the heel must first recover behind the pelvis');
   assert.ok(heel.y>.35,'the heel should rise clearly towards the back of the thigh');
   assert.ok(recovery.knee[0]>1.6,'a running recovery folds the knee');

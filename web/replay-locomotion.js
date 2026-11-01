@@ -1,7 +1,10 @@
 // Distance-driven locomotion. During support the foot travels backwards by the
 // exact distance the body covers; recovery folds the heel before driving the knee.
-// All dimensions are those of replay-player.js, before its 1.25 drawing scale.
-const SCALE=1.25,TAU=Math.PI*2;
+// All dimensions are those of replay-player.js, before its drawing scale.
+// The figures are drawn a tenth above life size (2.2 m) to read from the stand; the running support below is a
+// real one (a third of the cycle, a quarter at full sprint), so that their legs reach the whole of each stride.
+export const SCALE=1.1;
+const TAU=Math.PI*2;
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const mix=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
@@ -17,7 +20,7 @@ export function gaitStyle(seed=0){
 export function gaitCycle(speed,style=gaitStyle()){
  const v=clamp(speed,0,9.5),run=smooth((v-1.65)/1.9),sprint=smooth((v-4.4)/3.5);
  const cadence=mix(.72+v*.16,1.35+v*.095,run)*style.cadence;
- const stance=mix(.63,.39-.075*sprint,run)+style.stance;
+ const stance=mix(.63,.345-.066*sprint,run)+style.stance;
  return {run,sprint,cadence,stance,stride:Math.max(.2,v)/cadence};
 }
 export const strideLength=(speed,style=gaitStyle())=>gaitCycle(speed,style).stride;
