@@ -1410,7 +1410,7 @@ match-replay.live .slider input[type=range]{width:96px}
 .card-burst{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:#0a141e59;pointer-events:none;animation:card-veil 3s ease forwards}
 .card-band{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:center;column-gap:var(--s6);width:100%;padding:var(--s4) 0;background:#0a141e;color:#fff;box-shadow:inset 0 var(--mark) 0 var(--team),inset 0 calc(-1*var(--mark)) 0 var(--team),0 20px 40px -10px #0008;animation:goal-band .5s cubic-bezier(.2,.9,.2,1) both}
 .card-pair{display:grid;place-items:center;width:72px;height:88px}
-.card-face{grid-area:1/1;width:52px;height:72px;border-radius:var(--radius);background:var(--bad);box-shadow:0 6px 14px -4px #0009;rotate:-8deg;animation:card-rise .45s .25s cubic-bezier(.2,.9,.2,1) both}
+.card-face{grid-area:1/1;width:52px;height:72px;border-radius:var(--radius);background:var(--card-red);box-shadow:0 6px 14px -4px #0009;rotate:-8deg;animation:card-rise .45s .25s cubic-bezier(.2,.9,.2,1) both}
 .card-face.yellow{background:var(--accent);rotate:-20deg;translate:-12px 4px;animation-delay:.15s}
 .card-text{display:flex;flex-direction:column;gap:var(--s1)}
 .card-label{display:flex;align-items:center;gap:var(--s2);font:700 semi-condensed var(--fs-figure)/20px var(--display);letter-spacing:var(--caps);text-transform:uppercase;opacity:.75;animation:goal-rise .4s .35s both}
@@ -1424,7 +1424,7 @@ match-replay.live .slider input[type=range]{width:96px}
 /* The red cards of a side, in the match band until the whistle, after its name: on a white chip, so that they read on any
    colours, 10 by 14 each, the second over the first. */
 .sent-off{display:flex;align-items:center;flex:none;height:24px;padding:0 6px;border-radius:var(--radius-chip);background:#fff;box-shadow:0 1px 2px #0a141e40}
-.sent-off>i{width:10px;height:14px;border-radius:2px;background:var(--bad);rotate:-8deg}
+.sent-off>i{width:10px;height:14px;border-radius:2px;background:var(--card-red);rotate:-8deg}
 .sent-off>i+i{margin-left:-3px}
 /* A side's players, a line of 30 each: shirt of 24, position, whole name, what he did, note; the user's side adds the
    fatigue and the assistant's advice, the player he would take off on the wash of a warning. */

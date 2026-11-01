@@ -61,6 +61,7 @@ la structure HTML des spécimens.
 | `--gk`, `--def`, `--mid`, `--att` | Postes : couleurs pleines, lettres blanches |
 | `--pitch-a`, `--pitch-b`, `--pitch-line` | Terrain : deux verts de tonte, lignes |
 | `--ball` | Ballon d'un but : blanc, le pentagone du centre et cinq pans coupés au bord, à l'encre `#0b121a` dans les deux thèmes ; dessiné pour 10 (pans larges, contour épais) |
+| `--card-red` | `#d42a20` : le carton rouge de la bande d'expulsion et du bandeau, rouge franc dans les deux thèmes |
 | `--backdrop` | Voile sur la page, sous une boîte de dialogue |
 | `--star`, `--star-soft`, `--star-empty` et `--star-soft-dark`, `--star-empty-dark` | Étoiles : l'or de ce qui est sûr, l'ardoise de ce qui n'est que possible, une étoile vide ; sur le noir d'un bloc de terrain, l'ardoise et le vide éclaircis (voir « Étoiles ») |
 | `--series-1`, `--series-2`, leur `-soft` et leur `-deep` | Deux séries d'un graphique : le trait et les points d'une courbe, les deux côtés d'une répartition ; en pâle, ce qui y est libre ; en foncé, une troisième part de la même série |
@@ -856,9 +857,9 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
   coup de sifflet. Un but fait basculer le chiffre du camp qui marque, et la
   tuile s'entoure un instant de l'accent.
   Les cartons rouges d'un camp se gardent jusqu'au coup de sifflet, après son
-  nom (`.sent-off`) : sur une pastille blanche de 24 aux coins de 4, lisible
-  sur toutes les couleurs, un carton de 10 × 14 par expulsion, le second
-  chevauchant le premier.
+  nom (`.sent-off`) : sur une pastille blanche de 24 aux coins de 4, lisible sur
+  toutes les couleurs, un carton de 10 × 14 (`--card-red`) par expulsion, le
+  second chevauchant le premier.
 - **Terrain** : aussi large que la hauteur de la fenêtre le permet. Pendant une
   action, les pastilles du résumé, sans trace du ballon ; pendant un temps mort,
   les deux équipes à leur formation, celui qui reçoit à gauche attaquant vers la
@@ -945,12 +946,12 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
 - **L'expulsion** (`.card-burst`) : le jeu s'arrête 2.6 s, quelle que soit la
   vitesse. Plus sobre que le but : un voile plus léger, puis une bande à l'encre
   du voile (`#0a141e`, dans les deux thèmes) bordée en haut et en bas (3) de la
-  couleur du camp expulsé traverse le terrain. Le carton rouge en 52 × 72,
-  incliné, se lève ; derrière lui un jaune pour un deuxième avertissement. À
-  côté, l'écusson en 26 et « Carton rouge » avec la minute en capitales de 16,
-  puis le maillot en 48 et le nom en 40, « Deuxième avertissement » dessous en
-  16. Ni lettres frappées, ni secousse, ni reflet. Si c'est son équipe, le match
-  s'arrête ensuite (voir « Tactique »).
+  couleur du camp expulsé traverse le terrain. Le carton rouge (`--card-red`) en
+  52 × 72, incliné, se lève ; derrière lui un jaune pour un deuxième
+  avertissement. À côté, l'écusson en 26 et « Carton rouge » avec la minute en
+  capitales de 16, puis le maillot en 48 et le nom en 40, « Deuxième
+  avertissement » dessous en 16. Ni lettres frappées, ni secousse, ni reflet. Si
+  c'est son équipe, le match s'arrête ensuite (voir « Tactique »).
 - Rien de cela ne bouge sous `prefers-reduced-motion`.
 
 ### Match dans une liste
