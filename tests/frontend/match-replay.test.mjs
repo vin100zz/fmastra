@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {chanceSequences} from '../../web/match-replay.js';
+import {chanceSequences,stopSaid} from '../../web/match-replay.js';
 import {matchScreen} from '../../web/match.js';
 
 const event=(kind,possession,extra={})=>({second:possession*60,period:1,kind,team_id:1,possession_id:possession,...extra});
@@ -85,4 +85,13 @@ test('a played match page carries the replay card',async()=>{
  assert.ok(key);
  assert.match(html,new RegExp(`<section class="card match-replay-card" id="replay-${key}" hidden></section>`));
  assert.doesNotMatch(html,/<match-replay|Occasions reconstituées/);
+});
+
+test('a stop in the viewer’s side reads in his colours at the minute of its fact, even from a server that gives neither',()=>{
+ const replay={homeId:866,clock:5000,live:{state:{side:'home'}}};
+ assert.deepEqual(stopSaid({kind:'red',team_id:866,second:5171},replay),{side:'home',second:5171});
+ assert.deepEqual(stopSaid({kind:'red',team_id:1971,second:300},replay),{side:'away',second:300});
+ // Without its side and its second: the viewer's side, at the clock where the match stands.
+ assert.deepEqual(stopSaid({kind:'red',player:'Amine Gouiri'},replay),{side:'home',second:5000});
+ assert.deepEqual(stopSaid({kind:'injury'},{...replay,live:{state:{side:'away'}}}),{side:'away',second:5000});
 });

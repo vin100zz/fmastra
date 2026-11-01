@@ -44,6 +44,15 @@ export function playerNavigation(nav){
   row:player=>badged(positionBadge(player.position),player.name)}):'';
 }
 
+// Over the live match, the players of the match (`players`, both sides in the order of their lists), each with his position.
+export function matchNavigation(players, id, scope){
+ const index=players.findIndex(player=>player.id===Number(id));
+ if(index<0)return '';
+ const nav={scope:{name:scope},index,total:players.length,items:players,previous:players[index-1]??null,next:players[index+1]??null};
+ return neighbours(nav,{href:player=>`#/player/${player.id}`,scope:`Joueurs du match · ${scope}`,listLabel:`Choisir un joueur du match ${scope}`,
+  row:player=>badged(positionBadge(player.position),player.name)});
+}
+
 // A competition in a list: its badge, then its name.
 const competitionRow=competition=>badged(competitionBadge(competition,{link:false}),competition.name);
 
