@@ -2,7 +2,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../../web/vendor/three/three.module.js';
 import {Pitch3D} from '../../web/replay-3d.js';
-import {createPlayerParts} from '../../web/replay-player.js';
+import {readFileSync} from 'node:fs';
+import {createPlayerParts,setPlayerModel} from '../../web/replay-player.js';
+
+setPlayerModel(readFileSync(new URL('../../web/models/footballer.bin',import.meta.url)));
 
 // Exercise the production skeleton and pose integration. Canvas labels need no
 // drawing here; the meshes and world matrices are the ones used by WebGL.

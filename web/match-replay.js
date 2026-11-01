@@ -262,7 +262,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.stage.classList.toggle('three',on);
   if(!on){this.pitch3d?.dispose();this.pitch3d=null;return;}
   if(this.pitch3d)return;
-  import('./replay-3d.js').then(({Pitch3D})=>{if(this.view3d&&!this.pitch3d&&this.isConnected)this.pitch3d=new Pitch3D(this);})
+  import('./replay-3d.js').then(async ({Pitch3D,ready})=>{await ready;if(this.view3d&&!this.pitch3d&&this.isConnected)this.pitch3d=new Pitch3D(this);})
    .catch(()=>{button.hidden=true;this.setView(false);});
  }
 

@@ -1327,9 +1327,12 @@ sur le terrain : ni passe, ni centre, ni conduite, ni tir.
 
 La vue du match reprend les couleurs et les numéros des maillots dans un stade
 éclairé, cadré depuis la tribune comme une retransmission télévisée. Les joueurs
-ont des volumes anatomiques lisibles, des articulations et des matières mates ;
-le tissu, la peau, les chaussures et les gants se distinguent par leur relief
-et leur réponse à la lumière. Les gestes suivent le ballon : appuis des courses,
+ont un corps humain d'un seul tenant, aux proportions d'un athlète, et des
+matières mates ; le tissu, la peau, les chaussures et les gants se distinguent
+par leur couleur et leur réponse à la lumière. Le maillot à manches courtes
+et à revers de la seconde couleur, le short et les chaussettes à bande sont
+peints sur le corps ; le gardien a les manches longues et des gants. Aucune
+bande au col : elle se lirait déchirée sur le maillage. Les gestes suivent le ballon : appuis des courses,
 préparation et accompagnement des passes et des tirs, contrôles, têtes, plongeon
 bas ou haut puis reprise d'appui du gardien. Ces animations procédurales restent
 calées sur les contacts et le temps du résumé, sans changer les déplacements ni
