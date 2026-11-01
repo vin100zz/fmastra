@@ -42,7 +42,7 @@ html{scrollbar-gutter:stable}
 /* The club's matches, one band read in time: the played on its grey, each by its score on the badge of its outcome, a
    turquoise rule for today, then those to come on the turquoise's wash, the next one marked in it. */
 .next-matches{border:0;border-radius:var(--radius-box);background:var(--panel-2)}
-.next-match{height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2);background:var(--c4-soft)}
+.next-match{max-width:220px;height:var(--h-bar-control);padding:0 var(--s3) 0 var(--s2);background:var(--c4-soft)}
 :is(.next-match,.last-match)+:is(.next-match,.last-match){border-left:1px solid var(--panel)}
 :is(.next-match:first-child,.bar-today+.next-match){box-shadow:inset 0 calc(-1*var(--mark-control)) 0 var(--c4)}
 :is(.next-match:first-child,.bar-today+.next-match) .next-match-when{color:var(--c4)}
@@ -77,6 +77,14 @@ html{scrollbar-gutter:stable}
 .date-block strong{font-size:var(--fs-title)!important;font-weight:700}
 .next-match-who b{font-size:var(--fs-body)}
 .next-match-comp{font-size:var(--fs-small)}
+/* The opponent's rank after the competition, in the ink of where its place leads; a place leading nowhere in grey. */
+.next-match-rank{font-weight:700;color:var(--ink-2)}
+.next-match-rank.good{color:var(--good)}
+.next-match-rank:is(.info,.c1){color:var(--info)}
+.next-match-rank.c3{color:var(--c3)}
+.next-match-rank.c4{color:var(--c4)}
+.next-match-rank.warn{color:var(--warn)}
+.next-match-rank.bad{color:var(--bad)}
 .sidebar-tools>*{height:var(--h-control);border-color:transparent;background:var(--panel-2)}
 main{padding:var(--s2) var(--s4) var(--s3)}
 .page-heading,.toolbar{margin-bottom:var(--s2)}
@@ -247,14 +255,14 @@ th:last-child button:is(.sort-toggle,[data-sort])::after{right:auto;left:-7px}
 /* A place in a table is told by its rank: a badge of 24 on the pale ground of its place, ringed with its colour; the other
    ranks bare, on the same centre. A row is never tinted, nothing runs along it; the row of the user's club is the only one
    coloured. The legend of the places shows the same badge, a square of 12. */
-tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff){background:none!important}
-tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff):nth-child(even){background:var(--stripe)!important}
-tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff):hover{background:var(--panel-3)!important}
+tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff,.europe-eliminated){background:none!important}
+tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff,.europe-eliminated):nth-child(even){background:var(--stripe)!important}
+tbody tr:is(.promoted,.europe-direct,.relegated,.qualified-europe,.europe-playoff,.europe-eliminated):hover{background:var(--panel-3)!important}
 .rank,.rank.first{display:inline-grid;place-items:center;width:24px;height:var(--h-chip);border-radius:var(--radius-chip);font:700 var(--fs-small)/1 var(--text);color:var(--muted);vertical-align:middle}
 .standings tr:is(.promoted,.europe-direct) .rank{background:var(--good-soft);box-shadow:inset 0 0 0 1px var(--good);color:var(--good)}
 .standings tr.qualified-europe .rank{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info);color:var(--info)}
 .standings tr.europe-playoff .rank{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
-.standings tr.relegated .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
+.standings tr:is(.relegated,.europe-eliminated) .rank{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad);color:var(--bad)}
 /* In a league, a place in Europe takes the colour of its cup (C1 blue, C3 violet, C4 teal), the title keeping its green;
    one that hangs on the winner of the national cup has its ring dashed. The legend of the cups shows the same square. */
 .standings tr.europe-c1 .rank{--cup:var(--info);--cup-soft:var(--info-soft)}

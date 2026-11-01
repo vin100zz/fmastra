@@ -243,8 +243,18 @@ marque ouvre à gauche.
     délai en chiffre clé, atténué. Le prochain a son délai et un soulignement en
     sarcelle. Chacun ouvre la fiche de l'adversaire. Sous le pointeur, un voile
     de sa sarcelle (12 %) : ils sont teintés.
-  - **Mesures** : un bloc a 170 de large au plus, 180 pour un match joué, dont
-    le score est plus large que le délai ; un nom plus long y est coupé.
+  - **Rang de l'adversaire** (`.next-match-rank`) : un match à venir de
+    championnat ou de phase de ligue d'une coupe d'Europe suit sa compétition
+    d'un point médian et du rang de l'adversaire ce jour, en ordinal et en gras
+    (« Ligue 1 · 5e », « 1er ») : à l'encre de sa place, comme sa pastille au
+    classement (vert, bleu de la C1, violet de la C3, sarcelle de la C4, jaune
+    du barrage, rouge de la relégation ou de l'élimination), en `--ink-2`
+    pour une place qui ne mène nulle part. Pas de rang pour une coupe, une
+    phase finale, ni avant la première journée ; un match joué garde son
+    score. L'infobulle ajoute le rang et les points
+    (« … · Extérieur · 5e · 31 pts »).
+  - **Mesures** : un bloc à venir a 220 de large au plus, pour son rang, 180
+    pour un match joué ; un nom ou une compétition plus longs y sont coupés.
   - **Selon la place** : trois matchs joués tant que tous les noms de la barre
     se lisent en entier (hors d'un bloc à sa largeur maximale), puis deux, puis
     le score seul après la pastille de l'adversaire (`.last-match.short`, son nom

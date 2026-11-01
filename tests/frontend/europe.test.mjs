@@ -31,6 +31,7 @@ test('Europe navigation and full 36-club table with qualifying zones',async()=>{
   assert.match(html,/<div class="menu" role="menu" aria-label="Choisir une coupe d’Europe"><a href="#\/europe\/C1\/table\?saison=2025" role="menuitemradio" aria-checked="false"><div class="cell"><span class="competition-code europe" title="Ligue des champions">C1<\/span>Ligue des champions<\/div><\/a><a href="#\/europe\/C3\/table\?saison=2025" role="menuitemradio" aria-checked="true">/);
   assert.equal((html.match(/class="europe-direct"/g)||[]).length,8);
   assert.equal((html.match(/class="europe-playoff"/g)||[]).length,16);
+  assert.equal((html.match(/class="europe-eliminated"/g)||[]).length,12);
   assert.match(html,/Club 36/);
   assert.match(html,/<a class="active" href="#\/europe\/C3\/table\?saison=2025" aria-current="page">Classement<\/a><a class="" href="#\/europe\/C3\/calendar\?saison=2025">Phase de ligue<\/a><a class="" href="#\/europe\/C3\/knockout\?saison=2025">Phase finale<\/a>/);
   // The seasons are stepped through at the end of the row of tabs, as a club's.

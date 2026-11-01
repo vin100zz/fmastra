@@ -283,7 +283,28 @@ def club_bar_matches(world, count: int = 3) -> tuple[list[dict], list[dict]]:
     played = [match for match in own if match.result and match.season == world.season][-count:]
     upcoming = [match for match in own if not match.result][:count]
     row = lambda match: {**v.match_row(world, match), "league": match.competition_id == league}
-    return [{**row(match), "outcome": outcome(club_id, match)} for match in played], [row(match) for match in upcoming]
+    tables: dict = {}
+    return ([{**row(match), "outcome": outcome(club_id, match)} for match in played],
+            [{**row(match), "opponent_standing": opponent_standing(world, match, club_id, tables)} for match in upcoming])
+
+
+def opponent_standing(world, match, club_id: int, tables: dict) -> dict | None:
+    """Where the opponent of a match to come stands today in its table, for a league's match or a European cup's league
+    phase: its rank, its points and where its place leads (`movement`, `europe`, as in the table). None for a cup's match,
+    a knockout round, a national team's match, or before the competition has played any."""
+    if match.id in world.international.matches:
+        return None
+    competition = world.competitions[match.competition_id]
+    if not (competition.kind == "league" or
+            competition.kind == "europe" and match.round_number <= world.config.world.europe.league_rounds):
+        return None
+    table = v.league_standings(world, competition.id, tables)
+    if not any(standing["played"] for standing in table.values()):
+        return None
+    standing = table.get(match.away_id if match.home_id == club_id else match.home_id)
+    if standing is None:
+        return None
+    return {key: standing.get(key) for key in ("rank", "points", "played", "movement", "europe")}
 
 
 def router(service: GameService) -> APIRouter:
