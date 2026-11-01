@@ -5,7 +5,7 @@
 import * as THREE from './vendor/three/three.module.js';
 import {LABEL,OVERLAY,createPlayerParts,createPlayerFigure,loadPlayerModel} from './replay-player.js';
 import {activeGesture,angleDelta,playerMotion,strideLength} from './replay-motion.js';
-import {SCALE} from './replay-locomotion.js';
+import {SCALE,loadMotionLibrary} from './replay-locomotion.js';
 import {EffectComposer} from './vendor/three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from './vendor/three/addons/postprocessing/RenderPass.js';
 import {GTAOPass} from './vendor/three/addons/postprocessing/GTAOPass.js';
@@ -18,8 +18,11 @@ const W=105,H=68,MARGIN_X=6,MARGIN_Y=5;
 // players keep their size on screen. [height, distance from the halfway line's centre] close to the ball, then
 // for the whole pitch while the clock runs.
 export const LENS=17;
-// The players' body, fetched with this module in a browser; a Pitch3D is built once it has arrived.
-export const ready=typeof window==='undefined'?Promise.resolve():loadPlayerModel(new URL('./models/footballer.bin',import.meta.url));
+// The players' body and their captured gaits, fetched with this module in a browser; a Pitch3D is built once
+// they have arrived. Without the gaits, the players move on the procedural gait alone.
+export const ready=typeof window==='undefined'?Promise.resolve():Promise.all([
+ loadPlayerModel(new URL('./models/footballer.bin',import.meta.url)),
+ loadMotionLibrary(new URL('./models/motions.json',import.meta.url)).catch(()=>null)]);
 const CLOSE=[30,82],WIDE=[56,154];
 // The effects in order of cost, dropped one by one when a frame takes longer than FRAME_BUDGET milliseconds on average.
 const QUALITY={full:2,bloom:1,plain:0},FRAME_BUDGET=25,BUDGET_FRAMES=90;
