@@ -40,10 +40,14 @@ from .typed_codec import ADAPTER, SaveEnvelope
 from core.config.consistency import validate_consistency
 from .history_migration import upgrade_history, recover_birthdates
 
-SCHEMA_VERSION = 45
+SCHEMA_VERSION = 46
 # Rules introduced by each schema version, newest first, with the value
 # an older embedded configuration receives from the model defaults.
 MIGRATION_DEFAULTS = (
+    # The human club's recruitment cell weighs and shows the players within its reach (see `core.world.recruitment`).
+    (46, ("ia_gestion", "mercato"), {"cellule_recrutement": {
+         "candidats_par_poste": 40, "pistes_par_poste": 5, "age_apport_plein": 31, "baisse_par_an": 0.2, "part_min": 0.2,
+         "age_max_espoir_maison": 23, "a_ceder_max": 6}}),
     # What a club sees of a player is read in stars, its error growing with his youth and shrinking with what he played
     # (see `core.world.estimates` and `_expose_players`).
     (45, ("demographie", "estimation_potentiel"), {
