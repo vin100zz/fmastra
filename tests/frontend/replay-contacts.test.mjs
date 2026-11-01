@@ -1,7 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../../web/vendor/three/three.module.js';
-import {Pitch3D} from '../../web/replay-3d.js';
+import {BALL,Pitch3D} from '../../web/replay-3d.js';
+import {CONTACT} from '../../web/match-replay.js';
 import {readFileSync} from 'node:fs';
 import {createPlayerParts,setPlayerModel} from '../../web/replay-player.js';
 
@@ -45,26 +46,26 @@ function soleHeight(figure,side){
 }
 
 test('a dribbling touch reaches the ball whatever the runner stride phase',()=>{
- const ball=new THREE.Vector3(0,.24,.9);
+ const ball=new THREE.Vector3(0,BALL,CONTACT);
  const gesture={kind:'touch',at:1000,target:{x:52.5,y:60},contact:{x:52.5,y:34.9,z:0}};
  for(const id of [7,31]){
   const {v,figure}=view(id);
   for(const speed of [1.4,4.5,7.5])for(const foot of [0,1])for(let frame=0;frame<120;frame++){
    figure.foot=foot;
    pose(v,figure,{speed,phase:frame/120*Math.PI*2,gesture});
-   const gap=bootDistance(figure,foot,ball)-.24;
+   const gap=bootDistance(figure,foot,ball)-BALL;
    assert.ok(gap<=.015,`dribble misses the ball by ${gap.toFixed(3)} m: id ${id}, speed ${speed}, foot ${foot}, phase ${frame}/120`);
   }
  }
 });
 
 test('passes and shots keep their foot at the grounded ball through different incoming strides',()=>{
- const ball=new THREE.Vector3(0,.24,.9),{v,figure}=view(7);
+ const ball=new THREE.Vector3(0,BALL,CONTACT),{v,figure}=view(7);
  for(const style of ['pass','shot'])for(const foot of [0,1])for(let frame=0;frame<24;frame++){
   figure.foot=foot;
   const gesture={kind:'kick',style,strength:style==='shot'?1:.5,at:1000,target:{x:52.5,y:60},contact:{x:52.5,y:34.9,z:0}};
   pose(v,figure,{speed:5,phase:frame/24*Math.PI*2,gesture});
-  const gap=bootDistance(figure,foot,ball)-.24;
+  const gap=bootDistance(figure,foot,ball)-BALL;
   assert.ok(gap<=.015,`${style} misses the ball by ${gap.toFixed(3)} m: foot ${foot}, phase ${frame}/24`);
  }
 });
@@ -109,4 +110,15 @@ test('a ball played well across him is struck with the foot away from where it g
  const gesture=across(1);
  assert.equal(v.kickingFoot(figure,gesture,{x:0,z:0}),0);figure.course=Math.PI;
  assert.equal(v.kickingFoot(figure,gesture,{x:0,z:0}),0,'chosen once per gesture');
+});
+test('a standing tackle stretches one leg low towards the ball, the support sole kept on the turf',()=>{
+ const {v,figure}=view(4);
+ for(const foot of [0,1])for(const at of [880,1000,1200])for(let frame=0;frame<24;frame++){
+  figure.foot=foot;
+  const gesture={kind:'tackle',at,target:{x:52.5,y:40}};
+  pose(v,figure,{speed:3,phase:frame/24*Math.PI*2,gesture});
+  const feet=[soleHeight(figure,0),soleHeight(figure,1)];
+  assert.ok(Math.min(...feet)>-.01,`a tackle sinks a foot into the turf: ${feet}, foot ${foot}, at ${at}, phase ${frame}/24`);
+  if(at===1000)assert.ok(feet[1-foot]<.03,`the support foot leaves the turf in the lunge: ${feet}, foot ${foot}, phase ${frame}/24`);
+ }
 });

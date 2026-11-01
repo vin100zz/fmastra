@@ -928,7 +928,9 @@ classement. Sous 1100 de large ou 600 de haut, la page défile.
   droite, chaque joueur avec son maillot et son bloc (voir « Terrain et
   maillot »), et en haut à chaque bord la formation et la mentalité de son camp,
   sur l'étiquette sombre. Son équipe y est telle que les changements prévus la
-  laissent (voir « Changer son équipe »). Le terrain ne porte pas d'autre
+  laissent (voir « Changer son équipe »). Avec la 3D, le temps mort repasse
+  sur le terrain vu de dessus, où les formations se lisent à plat ; la vue
+  télévision revient avec l'action suivante. Le terrain ne porte pas d'autre
   texte : « 2e mi-temps » et « Continuer » se posent au bas du terrain.
 - **Fil** (`.ticker`) : une ligne de 44 collée sous le terrain, aux coins du
   bas de 8, à la couleur du camp qui a l'action et dans son encre : l'écusson en
@@ -1377,7 +1379,8 @@ par leur couleur et leur réponse à la lumière. Le maillot à manches courtes
 et à revers de la seconde couleur, le short et les chaussettes à bande sont
 peints sur le corps ; le gardien a les manches longues et des gants. Aucune
 bande au col : elle se lirait déchirée sur le maillage. Les gestes suivent le ballon : appuis des courses,
-préparation et accompagnement des passes et des tirs, contrôles, têtes, plongeon
+préparation et accompagnement des passes et des tirs, contrôles, têtes, tacle
+debout (jambe d'appui fléchie, l'autre tendue basse vers le ballon), plongeon
 bas ou haut puis reprise d'appui du gardien. Les foulées sont celles de
 coureurs réels (capture de mouvement) ; les gestes restent procéduraux. Toutes
 ces animations restent calées sur les contacts et le temps du résumé, sans

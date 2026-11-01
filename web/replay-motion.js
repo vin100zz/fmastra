@@ -21,6 +21,10 @@ const CHALLENGES=new Set(['tackle','slide','fall']);
 // The lift that keeps the sole of `side` on the grass for these leg angles.
 const standing=(p,side)=>SCALE*(.45*Math.cos(p.hip[side])+.4*Math.cos(p.hip[side]+p.knee[side])+soleHeight(p.hip[side]+p.knee[side]+p.ankle[side])-.93);
 
+// The lowest lift at which neither sole goes into the grass, the thighs swung out by their roll.
+const grounded=p=>SCALE*Math.max(...[0,1].map(side=>(.45*Math.cos(p.hip[side])+.4*Math.cos(p.hip[side]+p.knee[side]))*Math.cos(p.hipRoll[side])
+ +soleHeight(p.hip[side]+p.knee[side]+p.ankle[side])-.93));
+
 // A challenge, `elapsed` ms from its contact. `foot` is the leg that goes for the ball (a fall: the side he falls to).
 function challenge(p,gesture,elapsed,foot,blend){
  const out=foot?1:-1,other=1-foot;
@@ -32,7 +36,7 @@ function challenge(p,gesture,elapsed,foot,blend){
   lunge.hip[other]=-.62;lunge.knee[other]=1.3;lunge.ankle[other]=-.55;
   for(const joint of ['hip','knee','ankle'])blend(p[joint],side=>lunge[joint][side],weight);
   p.hipYaw[foot]=mix(p.hipYaw[foot],out*.75,weight);p.hipRoll[foot]=mix(p.hipRoll[foot],out*.28,weight);p.hipRoll[other]=mix(p.hipRoll[other],0,weight);
-  p.lift=mix(p.lift,standing(p,other),weight);
+  p.lift=Math.max(mix(p.lift,standing(p,other),weight),grounded(p));
   p.lean=mix(p.lean,.34,weight);p.roll=mix(p.roll,-out*.12,weight);p.twist=mix(p.twist,out*.2,weight);
   blend(p.spread,.55,weight);blend(p.shoulder,side=>side===foot?-.35:.25,weight);blend(p.elbow,-.5,weight);
   return;
@@ -103,7 +107,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
     const weight=envelope*(touch?(before?wind:1-smooth(follow/.7)):1),other=1-foot,sign=foot?1:-1;
     if(['kick','touch','cushion'].includes(gesture.kind)){
      const kick=gesture.kind==='kick',control=gesture.kind==='cushion',power=kick?clamp(gesture.strength??.7):control?.18:.27;
-     const backswing=kick?.35+power*.6:.12,contact=control?-.52:-.87;
+     const backswing=kick?.35+power*.6:.12,contact=control?-.52:-.72;
      const swing=before?mix(backswing,contact,wind):mix(contact,control?-.12:-.12-power*.55,Math.sin(follow*Math.PI/2));
      p.hip[foot]=mix(p.hip[foot],swing,weight);blend(p.hipRoll,0,weight);
      p.knee[foot]=mix(p.knee[foot],before?mix(.9+power*.5,.12,wind):.12+follow*.55,weight);

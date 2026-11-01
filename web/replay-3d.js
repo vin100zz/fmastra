@@ -27,7 +27,8 @@ const CLOSE=[30,82],WIDE=[56,154];
 // The effects in order of cost, dropped one by one when a frame takes longer than FRAME_BUDGET milliseconds on average.
 const QUALITY={full:2,bloom:1,plain:0},FRAME_BUDGET=25,BUDGET_FRAMES=90;
 const SKINS=['#f1c9a0','#d9a577','#b27b52','#8a5a3b','#5e3b27'];
-const BALL=.24;
+// A regulation ball, 22 cm across, drawn a size up like the players and goals.
+export const BALL=.11*SCALE;
 // Below this pace, in metres per second of replay, a player walks and faces the ball.
 const JOG=1.2;
 // The fans' tile: seats along the stand and rows up its slope, in metres.
@@ -397,7 +398,7 @@ export class Pitch3D{
   const ball=this.ball=new THREE.Mesh(new THREE.SphereGeometry(BALL,24,16),new THREE.MeshStandardMaterial({map:this.texture(ballCanvas()),roughness:.45}));
   ball.castShadow=true;scene.add(ball);
   this.blob=new THREE.MeshBasicMaterial({map:this.texture(blobCanvas()),transparent:true,depthWrite:false});
-  const shadow=this.ballShadow=new THREE.Mesh(new THREE.CircleGeometry(.4,20),this.blob);
+  const shadow=this.ballShadow=new THREE.Mesh(new THREE.CircleGeometry(BALL*1.6,20),this.blob);
   shadow.rotation.x=-Math.PI/2;shadow.position.y=.03;shadow.layers.set(OVERLAY);scene.add(shadow);
   const ring=this.ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.15,32),new THREE.MeshBasicMaterial({color:accent,transparent:true,opacity:.9,depthWrite:false}));
   ring.rotation.x=-Math.PI/2;ring.position.y=.04;ring.visible=false;ring.layers.set(OVERLAY);scene.add(ring);
@@ -502,7 +503,8 @@ export class Pitch3D{
   this.frame=requestAnimationFrame(next=>this.tick(next));
   const dt=Math.min(64,now-this.last);this.last=now;
   // Nothing to draw while the summary is folded away.
-  if(!this.replay.isConnected||!this.canvas.offsetParent)return;
+  // Live, a dead time hides the view for the top-down pitch: it comes back framed afresh on the next chance.
+  if(!this.replay.isConnected||!this.canvas.offsetParent){if(this.replay.stage?.classList.contains('fast'))this.wasAway=true;return;}
   this.update(dt);
   this.render();
   this.measure(dt);

@@ -1333,6 +1333,10 @@ match-replay.live{display:flex;flex-direction:column;gap:var(--s2);width:min(100
 match-replay.live .replay-stage{border-radius:var(--radius-box) var(--radius-box) 0 0}
 match-replay.live .replay-pitch{max-height:none}
 match-replay.live .replay-progress{justify-content:flex-end;padding-bottom:var(--s6);background:#0b0f1433}
+/* With the 3D view on, a dead time goes back to the top-down pitch: the formations read on its flat grass, and the
+   television view comes back with the next chance. */
+match-replay.live .replay-stage.three.fast .replay-3d{display:none}
+match-replay.live .replay-stage.three.fast .replay-pitch>*{visibility:visible}
 .live-formations{position:absolute;inset:0}
 .live-formations .pitch-player{transform:translate(-50%,-50%)}
 /* While the pitch shows both sides, the user's shirts take a player dropped on them; the one about to take a place ringed

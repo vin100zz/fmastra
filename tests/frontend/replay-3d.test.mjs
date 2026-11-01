@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../../web/vendor/three/three.module.js';
-import {Pitch3D} from '../../web/replay-3d.js';
+import {BALL,Pitch3D} from '../../web/replay-3d.js';
 import {readFileSync} from 'node:fs';
 import {createPlayerParts,setPlayerModel} from '../../web/replay-player.js';
 
@@ -38,7 +38,7 @@ test('a high diving save reaches the interception with its gloves, on either sid
   figure.dive={start:1000,duration:600,distance:2.4,height:2,side,yaw:.7};
   v.pose(figure,at,{x:10,z:3},16,false,[],1600);
   const gloves=centreOfGloves(figure);
-  near(gloves.x,at.x);near(gloves.z,at.z);near(gloves.y,.24+2*SCALE);
+  near(gloves.x,at.x);near(gloves.z,at.z);near(gloves.y,BALL+2*SCALE);
   figure.hold=true;v.placeBall({x:30,z:14},figure);
   near(v.ball.position.x,gloves.x);near(v.ball.position.y,gloves.y);near(v.ball.position.z,gloves.z);
  }
@@ -49,7 +49,7 @@ test('a low save stays at ground level and the held ball follows the recovery',(
  figure.dive={start:1000,duration:600,distance:2.4,height:0,side:-1,yaw:-.8};
  v.pose(figure,at,{x:10,z:3},16,false,[],1600);
  const low=centreOfGloves(figure);
- assert.ok(low.y>=.2&&low.y<.4,'gloves reach the rolling ball');
+ assert.ok(low.y>=BALL&&low.y<=2*BALL+.05,'gloves reach the rolling ball');
  figure.hold=true;
  v.pose(figure,at,{x:10,z:3},16,false,[],2400);
  v.placeBall({x:30,z:14},figure);
@@ -79,7 +79,7 @@ test('a straight low shot is smothered with bent knees and hands near the turf',
  figure.dive={start:1000,duration:600,distance:0,height:0,side:1,yaw:0};
  v.pose(figure,at,{x:10,z:3},16,false,[],1600);
  const hands=centreOfGloves(figure);
- assert.ok(hands.y<.4&&hands.y>=.2,'hands must not reach above the head for a rolling shot');
+ assert.ok(hands.y>=BALL&&hands.y<=2*BALL,'hands gather the rolling ball, not above it');
  for(const knee of figure.knees)assert.ok(knee.rotation.x>1.5,'knees fold into the low gather');
  near(figure.body.rotation.z,0);
 });

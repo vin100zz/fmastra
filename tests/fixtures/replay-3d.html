@@ -70,6 +70,8 @@
         start: [2, 1], progress: [[8, 3, 1]] },
       { id: 97, second: 4560, team: 2, label: '6 · Faute, coup franc et mur', shot: 111, keeper: 1, outcome: 'goal', kind: 'free_kick',
         start: [2, 1], progress: [], foul: [4, 110] },
+      { id: 103, second: 4980, team: 1, label: '7 · Relance du gardien et tacle', shot: 10, keeper: 101, outcome: 'off_target', claim: 1,
+        start: [1, 1], progress: [[1, 1, 1], [7, 2, 1], [7, 3, 1]] },
     ];
     const events = [{ kind: 'kickoff', period: 1, second: 0, team_id: 1 }];
     for (const scene of scenes) {
@@ -79,6 +81,8 @@
       // The loss of the ball that gave the chance, in the possession before it: [winner, loser, how].
       if (scene.recovery) add('turnover', { ...named(scene.recovery[0]), ...secondary(scene.recovery[1]), possession_id: scene.id - 1,
         zone: scene.start[0], lane: scene.start[1], detail: scene.recovery[2] });
+      // A keeper's catch ends the possession before: the replay starts with the ball in his hands.
+      if (scene.claim) add('turnover', { ...named(scene.claim), possession_id: scene.id - 1, zone: 0, lane: 1, detail: 'claim' });
       add('possession', { zone: scene.start[0], lane: scene.start[1], detail: scene.counter ? 'counter' : 'recovery' });
       if (scene.throwIn) add('throw_in', { zone: scene.throwIn[0], lane: scene.throwIn[1] });
       for (const [id, zone, lane, defender] of scene.progress) add('progress', { ...named(id), zone, lane, detail: defender ? 'dribble' : 'pass', ...(defender ? secondary(defender) : {}) });

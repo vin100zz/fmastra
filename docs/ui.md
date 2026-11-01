@@ -1006,7 +1006,16 @@ message (« il vient d'arriver ») reste dans son infobulle.
   passe au-dessus d'un mur de quatre joueurs. Les joueurs courent à l'allure d'un
   footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
   la reprise et le défenseur qui contrera la frappe font leur course pendant
-  l'action.
+  l'action. Le gardien joue depuis sa surface : quand il a récupéré le ballon,
+  il le garde dans sa surface et le relance vers le point de départ de
+  l'action ; quand le moteur lui attribue une progression, il la joue d'une
+  passe au partenaire le plus proche de l'endroit visé (un partenaire qui lui
+  remet le ballon le lui donne dans sa surface), jamais balle au pied. Un
+  adversaire sort sur le porteur : il laisse un gardien qui tient le ballon
+  dans ses mains, attend à deux pas celui qui l'a au pied, et se met sur la
+  route de celui qui le conduit, là où va le ballon ; à portée, il tente le
+  tacle, le manque (le moteur a laissé passer le porteur), perd un instant sa
+  course puis repart.
   La défense joue : la ligne des quatre défenseurs tient une même profondeur,
   qui recule quand le ballon passe derrière elle, et les attaquants ne la
   dépassent pas tant que le ballon ne l'a pas fait (hors-jeu). Les autres
@@ -1045,7 +1054,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   Le bouton « 3D » des contrôles bascule sur une vue télévision (`replay-3d.js`,
   Three.js dans `web/vendor/three/`, chargé au premier usage) qui dessine les
   mêmes positions et la même hauteur de ballon ; le choix est retenu, sans WebGL
-  le bouton disparaît. Le stade a des tribunes pleines (supporters aux couleurs
+  le bouton disparaît. Au direct, elle ne sert que pendant les actions : un
+  temps mort, la mi-temps et le coup de sifflet final repassent sur le terrain
+  vu de dessus, où les formations se lisent. Le stade a des tribunes pleines (supporters aux couleurs
   des deux clubs, les visiteurs dans un coin), des loges, des panneaux LED et des
   filets. Le cadrage de retransmission (longue focale), la pelouse dessinée par
   son shader, le reflet du stade (`stadiumEnvironment`), les ombres douces et les
@@ -1134,7 +1145,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   `tests/fixtures/replay-3d.html` permet de revoir des scènes déterministes de
   récupérations (interception, tacle, duel aérien, prise du gardien, dégagement),
   de passes, de conduite, de frappes, de centres et de têtes, d'arrêts bas et hauts,
-  de tir contré, de faute et de coup franc, avec ralenti et arrêt sur image.
+  de tir contré, de faute et de coup franc, de relance du gardien et de tacle du
+  presseur, avec ralenti et arrêt sur image.
   `tests/fixtures/replay-locomotion.html` compare six joueurs en marche, course
   et sprint, ou à allure identique, le ballon devant eux, derrière ou de côté
   (course arrière et pas chassés), avec caméra de profil ou trois quarts,
