@@ -1095,7 +1095,16 @@ message (« il vient d'arriver ») reste dans son infobulle.
   un ballon haut les deux mains au-dessus de la tête, genou levé, et relance
   d'un bras par-dessus l'épaule ; la touche se lance des deux mains.
   Passes, centres et frappes ont leur préparation, leur contact et leur
-  accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
+  accompagnement ; le pied d'appui se pose à côté du ballon, et la frappe suit
+  sa technique (`technique`) : intérieur du pied, genou ouvert, pour une passe à
+  ras de terre ou une frappe placée, buste en arrière sous un ballon levé ou un
+  centre, au-dessus d'une frappe tendue ou rasante, hanches ouvertes et corps
+  qui part de côté sur un coup franc, hanche haute pour une reprise de volée.
+  Un ballon joué loin en travers (un centre, une passe sur le côté) part du pied
+  opposé à sa direction, sinon du pied fort du joueur (`kickingFoot`). Sur un
+  coup de pied arrêté, le tireur arrive en courbe derrière le ballon, dans l'axe
+  de sa frappe. La touche se joue à la main : le joueur, juste hors du terrain,
+  tient le ballon au-dessus de la tête et le lance des deux mains ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
   La touche de conduite rejoint le ballon brièvement puis revient à la foulée.
   Le gardien se place sur la droite qui joint le milieu de son but au ballon

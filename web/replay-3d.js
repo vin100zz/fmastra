@@ -531,7 +531,7 @@ export class Pitch3D{
    if(!figure){figure=this.figure(side,id,keeper);this.figures.set(key,figure);}
    seen.add(key);
    const carries=replay.carrier?.side===side&&replay.carrier.id===id;
-   figure.hold=keeper&&carries&&holding;
+   figure.hold=(keeper||!!dot.hands)&&carries&&holding;
    if(reset){figure.dive=null;figure.yaw=null;}
    if(keeper&&action?.keeper?.side===side&&action.keeper.id===id&&(action!==this.action||reset))this.begin(action);
    const defending=!!possession&&side!==possession;
@@ -631,7 +631,7 @@ export class Pitch3D{
   if(!figure.moodWeight&&!reacting)figure.mood=null;
   if(figure.dive&&time>figure.dive.start+figure.dive.duration+1080)figure.dive=null;
   const p=playerMotion({speed:figure.hold?0:speed,phase:figure.phase,time,seed:figure.seed,style:figure.style,acceleration:figure.acceleration,ready:figure.ready,
-   hold:figure.hold,gesture,foot:gesture?.foot??figure.foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard,
+   hold:figure.hold,gesture,foot:this.kickingFoot(figure,gesture,at),turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard,
    mood:figure.mood&&{kind:figure.mood.kind,weight:smooth(figure.moodWeight)}});
   for(let side=0;side<2;side++){
    figure.hips[side].rotation.set(p.hip[side],p.hipYaw[side],p.hipRoll[side]);figure.knees[side].rotation.x=p.knee[side];
@@ -662,6 +662,19 @@ export class Pitch3D{
   }
   figure.name.position.y=LABEL+Math.max(0,figure.body.position.y);
   figure.blob.scale.set(1+Math.abs(p.roll)*.35,1/(1+Math.max(0,p.lift)*.5),1);
+ }
+ // The foot he plays it with: his stronger one, unless the ball goes well across him (a cross, a pass to the side), when
+ // he strikes it with the foot away from where it goes, round the ball. Chosen once per gesture.
+ kickingFoot(figure,gesture,at){
+  if(!gesture)return figure.foot;
+  if(gesture.foot!=null)return gesture.foot;
+  if(gesture.kind!=='kick'||!gesture.target||figure.yaw==null)return figure.foot;
+  figure.feet??=new WeakMap();
+  if(!figure.feet.has(gesture)){
+   const off=angleDelta(figure.course??figure.yaw,Math.atan2(gesture.target.x-W/2-at.x,gesture.target.y-H/2-at.z));
+   figure.feet.set(gesture,Math.abs(off)>.6?(off>0?0:1):figure.foot);
+  }
+  return figure.feet.get(gesture);
  }
  // The main camera: high on the near side, panning with the ball, wider while the clock runs.
  frameCamera(ball,wide,dt){

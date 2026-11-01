@@ -1,7 +1,7 @@
 // The defending side: its line, the offside it gives, its marking, and the challenges it makes.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {path} from '../../web/replay-physics.js';
+import {ballAt,path} from '../../web/replay-physics.js';
 import {activeGesture,gestureTiming,playerMotion,soleHeight} from '../../web/replay-motion.js';
 import {SCALE} from '../../web/replay-locomotion.js';
 
@@ -115,7 +115,7 @@ test('a slide and a fall take him to the ground, then back on his feet when they
 // to its end, so that the cues on the way apply.
 function played(){
  const replay=fixture();
- Object.assign(replay,{names:new Map(),drawDots(){},drawBall(){},highlight(){},caption(){},
+ Object.assign(replay,{names:new Map(),drawDots(){},drawBall(){},highlight(){},caption(){},stage:{classList:{add(){},remove(){},toggle(){},contains:()=>false}},
   perform(action){action.t0??=this.start();this.action=action;this.cursor=action.t0+action.duration;this.time=this.cursor;
    while(this.cues.length&&this.cues[0].at<=this.time)this.cues.shift().apply();return Promise.resolve(true);}});
  return replay;
@@ -228,4 +228,34 @@ test('a low save near him is kept out with a foot, the body dropping onto the ot
  assert.ok(pose.knee[0]>1.2,'the other knee bends');
  assert.ok(Math.abs(footY(pose,0))<.01,'on the grass');
  assert.ok(Math.abs(pose.roll)<.2,'he stays up, no dive');
+});
+
+test('a throw-in is thrown from off the touchline, the ball held above the head, then thrown to the next man',async()=>{
+ const replay=played();replay.ballAt={x:40,y:34};
+ const sequence={shot:{detail:'shot',player_id:10,team_id:1,lane:1},start:{zone:1,lane:1},
+  trail:[{kind:'throw_in',team_id:1,zone:2,lane:0},{kind:'progress',player_id:8,team_id:1,zone:3,lane:1}]};
+ const moves=replay.plan(sequence,{side:'home',holder:{side:'home',id:7},title:'Nice',name:event=>event?.player||'—'});
+ const restart=moves.find(move=>move.type==='restart'),pass=moves[moves.indexOf(restart)+1];
+ assert.ok(restart.throwIn);
+ assert.equal(pass.type,'pass');assert.ok(pass.throw,'the pass after it is thrown');
+ assert.equal(moves.filter(move=>move.throw).length,1,'only that one');
+ await replay.restart(restart,pass);
+ const taker=replay.dot(replay.carrier);
+ assert.ok(taker.hands,'he holds it');
+ assert.ok(taker.y<0||taker.y>68,'from off the pitch');
+ assert.equal(taker.gestures.at(-1).kind,'throwin');
+ replay.time+=10;
+ await replay.pass(pass,null,null);
+ assert.ok(!taker.hands,'released');
+ assert.ok(Math.abs(ballAt(replay.ballPath,replay.action.t0).z-2.1)<1e-9,'out of his hands above his head');
+});
+
+test('a set-piece taker curves in behind the ball onto the line of his strike',()=>{
+ const replay=played(),taker={side:'home',id:11};
+ Object.assign(replay.dot(taker),{x:80,y:30});
+ const ball={x:84,y:34},goal={x:105,y:34};
+ replay.runUp(taker,ball,{type:'shot',point:goal},850);
+ const run=replay.runs.get('home:11');
+ assert.ok(Math.abs(run.to.y-34)<1e-9&&run.to.x<84,'he arrives behind the ball, on its line to goal');
+ assert.ok(run.v1.x>0&&Math.abs(run.v1.y)<1e-9,'running along that line');
 });

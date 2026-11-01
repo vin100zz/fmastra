@@ -88,3 +88,25 @@ test('a ready goalkeeper moves his legs while walking to cover the goal',()=>{
  assert.ok(Math.max(...hips)-Math.min(...hips)>.12,'the ready stance must not freeze the walking hips');
  assert.ok(Math.max(...knees)-Math.min(...knees)>.12,'the ready stance must not freeze the walking knees');
 });
+
+test('every technique of kick still meets the grounded ball with its foot',()=>{
+ const ball=new THREE.Vector3(0,.24,.9),{v,figure}=view(7);
+ for(const technique of ['ground','driven','lofted','placed','low','floated','whipped','free_kick'])for(const foot of [0,1])for(let frame=0;frame<12;frame++){
+  figure.foot=foot;
+  const gesture={kind:'kick',style:technique==='floated'||technique==='whipped'?'cross':'shot',technique,strength:.8,at:1000,target:{x:52.5,y:60},contact:{x:52.5,y:34.9,z:0}};
+  pose(v,figure,{speed:4,phase:frame/12*Math.PI*2,gesture});
+  const gap=bootDistance(figure,foot,ball)-.24;
+  assert.ok(gap<=.03,`${technique} misses the ball by ${gap.toFixed(3)} m: foot ${foot}, phase ${frame}/12`);
+ }
+});
+
+test('a ball played well across him is struck with the foot away from where it goes',()=>{
+ const {v,figure}=view(7);figure.yaw=0;figure.course=0;figure.foot=1;
+ const across=side=>({kind:'kick',style:'cross',at:1000,target:{x:52.5+side*20,y:34+5}});
+ assert.equal(v.kickingFoot(figure,across(1),{x:0,z:0}),0,'to his +x side: the -x foot');
+ assert.equal(v.kickingFoot(figure,across(-1),{x:0,z:0}),1,'to his -x side: the +x foot');
+ assert.equal(v.kickingFoot(figure,{kind:'kick',at:1000,target:{x:52.5,y:60}},{x:0,z:0}),1,'straight ahead: his own foot');
+ const gesture=across(1);
+ assert.equal(v.kickingFoot(figure,gesture,{x:0,z:0}),0);figure.course=Math.PI;
+ assert.equal(v.kickingFoot(figure,gesture,{x:0,z:0}),0,'chosen once per gesture');
+});

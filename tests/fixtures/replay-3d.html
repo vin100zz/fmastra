@@ -64,8 +64,8 @@
         start: [1, 1], progress: [[108, 2, 1], [110, 3, 1]] },
       { id: 46, second: 2100, team: 1, label: '3 · Duel aérien, centre et tête', shot: 10, keeper: 101, outcome: 'goal', kind: 'cross', delivery: 9, recovery: [4, 110, 'aerial'],
         start: [1, 0], progress: [[7, 2, 0], [9, 3, 0]] },
-      { id: 6, second: 3180, team: 2, label: '4 · Prise du gardien, frappe et arrêt haut', shot: 110, keeper: 1, outcome: 'save', recovery: [101, 9, 'claim'],
-        start: [2, 1], progress: [[108, 3, 1]] },
+      { id: 6, second: 3180, team: 2, label: '4 · Prise du gardien, touche, frappe et arrêt haut', shot: 110, keeper: 1, outcome: 'save', recovery: [101, 9, 'claim'],
+        start: [2, 1], throwIn: [2, 0], progress: [[108, 3, 1]] },
       { id: 82, second: 3810, team: 1, label: '5 · Dégagement et tir contré', shot: 11, keeper: 101, outcome: 'off_target', blocker: 103, recovery: [3, 109, 'clearance'],
         start: [2, 1], progress: [[8, 3, 1]] },
       { id: 97, second: 4560, team: 2, label: '6 · Faute, coup franc et mur', shot: 111, keeper: 1, outcome: 'goal', kind: 'free_kick',
@@ -80,6 +80,7 @@
       if (scene.recovery) add('turnover', { ...named(scene.recovery[0]), ...secondary(scene.recovery[1]), possession_id: scene.id - 1,
         zone: scene.start[0], lane: scene.start[1], detail: scene.recovery[2] });
       add('possession', { zone: scene.start[0], lane: scene.start[1], detail: scene.counter ? 'counter' : 'recovery' });
+      if (scene.throwIn) add('throw_in', { zone: scene.throwIn[0], lane: scene.throwIn[1] });
       for (const [id, zone, lane, defender] of scene.progress) add('progress', { ...named(id), zone, lane, detail: defender ? 'dribble' : 'pass', ...(defender ? secondary(defender) : {}) });
       if (scene.foul) add('foul', { ...named(scene.foul[0]), ...secondary(scene.foul[1]), team_id: scene.team === 1 ? 2 : 1, zone: 0, lane: 1 });
       if (scene.kind === 'free_kick') add('free_kick', { ...named(scene.shot), zone: 3, lane: 1 });

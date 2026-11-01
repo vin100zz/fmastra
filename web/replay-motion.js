@@ -114,6 +114,7 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
      p.twist=mix(p.twist,sign*(before?mix(-.32,.16,wind):mix(.16,.42,follow))*power,weight);
      p.lean=mix(p.lean,control?.05:before?mix(-.1,.12,wind):.12+power*.16,weight);
      p.roll+=sign*.055*weight;p.lift=mix(p.lift,-.025,weight);
+     if(kick)technique(p,gesture,foot,sign,weight,before,wind,blend);
     }else{
      const pulse=Math.sin(Math.PI*g),contactPulse=before?wind:1-smooth(follow);
      if(gesture.kind==='thigh'){
@@ -232,4 +233,19 @@ function react(p,kind,weight,speed,time,seed,blend){
  }else if(kind==='call'){
   p.shoulder[1]=mix(p.shoulder[1],-2.75,weight);p.spread[1]=mix(p.spread[1],.3,weight);p.elbow[1]=mix(p.elbow[1],-.25,weight);
  }
+}
+
+// How the kick is struck, over its common swing: the support foot planted beside the ball, then the inside of the foot
+// for a pass along the grass or a placed finish (knee turned out), leaning back under a lofted ball or a cross, over a
+// driven or low one, hips open and falling away on a free kick, the hip raised for a volley.
+function technique(p,gesture,foot,sign,weight,before,wind,blend){
+ const kind=gesture.technique,other=1-foot,plant=before?smooth((wind-.45)/.55):1;
+ p.hip[other]=mix(p.hip[other],-.34,weight*plant);p.knee[other]=mix(p.knee[other],.36,weight*plant);
+ p.hipRoll[other]=mix(p.hipRoll[other],-sign*.12,weight*plant);
+ if(kind==='ground'||kind==='placed')p.hipYaw[foot]=mix(p.hipYaw[foot],sign*.75,weight);
+ if(kind==='lofted'||kind==='floated'||kind==='whipped')p.lean=mix(p.lean,p.lean-.2,weight);
+ if(kind==='driven'||kind==='low')p.lean=mix(p.lean,p.lean+.12,weight);
+ if(kind==='free_kick'){p.roll-=sign*.16*weight;p.twist=mix(p.twist,p.twist*1.45,weight);blend(p.spread,.7,weight);}
+ const high=(gesture.contact?.z??0)>.45;
+ if(high){p.hip[foot]=mix(p.hip[foot],p.hip[foot]-.4,weight);p.roll-=sign*.22*weight;}
 }
