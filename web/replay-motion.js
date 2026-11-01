@@ -9,7 +9,7 @@ export const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
 
 export function gestureTiming(gesture){
  if(gesture?.kind==='kick')return gesture.style==='shot'?{lead:240,span:800}:gesture.style==='cross'?{lead:210,span:700}:{lead:170,span:560};
- return {touch:{lead:90,span:330},cushion:{lead:130,span:440},thigh:{lead:230,span:560},chest:{lead:260,span:660},head:{lead:300,span:640}}[gesture?.kind];
+ return {tackle:{lead:200,span:760},touch:{lead:90,span:330},cushion:{lead:130,span:440},thigh:{lead:230,span:560},chest:{lead:260,span:660},head:{lead:300,span:640}}[gesture?.kind];
 }
 
 // Keep an outgoing touch through its follow-through, even when the receiver's
@@ -62,6 +62,17 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
      p.twist=mix(p.twist,sign*(before?mix(-.32,.16,wind):mix(.16,.42,follow))*power,weight);
      p.lean=mix(p.lean,control?.05:before?mix(-.1,.12,wind):.12+power*.16,weight);
      p.roll+=sign*.055*weight;p.lift=mix(p.lift,-.025,weight);
+    }else if(gesture.kind==='tackle'){
+     // A standing tackle: the support knee bends, its sole kept on the turf, the other leg stretches low towards the
+     // ball, the arms out for balance; he holds the lunge a moment before getting back on his stride.
+     const reach=before?wind:1-smooth((follow-.25)/.75);
+     p.hip[other]=mix(p.hip[other],-.42,reach);p.knee[other]=mix(p.knee[other],.84,reach);p.ankle[other]=mix(p.ankle[other],-.42,reach);
+     p.hip[foot]=mix(p.hip[foot],-.72,reach);p.knee[foot]=mix(p.knee[foot],.08,reach);p.ankle[foot]=mix(p.ankle[foot],.22,reach);
+     // Whichever leg was on the ground, the pelvis sits so that the lower sole rests on the turf.
+     const drop=Math.min(...[0,1].map(i=>.93-.45*Math.cos(p.hip[i])-.4*Math.cos(p.hip[i]+p.knee[i])-soleHeight(p.hip[i]+p.knee[i]+p.ankle[i])));
+     p.lift=mix(p.lift,-drop*SCALE,reach);
+     blend(p.spread,side=>side===foot?.35:.7,reach);blend(p.shoulder,side=>side===foot?-.5:.3,reach);blend(p.elbow,-.45,reach);
+     p.lean=mix(p.lean,.24,reach);p.twist=mix(p.twist,sign*.18,reach);
     }else{
      const pulse=Math.sin(Math.PI*g),contactPulse=before?wind:1-smooth(follow);
      if(gesture.kind==='thigh'){

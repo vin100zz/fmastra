@@ -1379,7 +1379,8 @@ par leur couleur et leur réponse à la lumière. Le maillot à manches courtes
 et à revers de la seconde couleur, le short et les chaussettes à bande sont
 peints sur le corps ; le gardien a les manches longues et des gants. Aucune
 bande au col : elle se lirait déchirée sur le maillage. Les gestes suivent le ballon : appuis des courses,
-préparation et accompagnement des passes et des tirs, contrôles, têtes, plongeon
+préparation et accompagnement des passes et des tirs, contrôles, têtes, tacle
+debout (jambe d'appui fléchie, l'autre tendue basse vers le ballon), plongeon
 bas ou haut puis reprise d'appui du gardien. Les foulées sont celles de
 coureurs réels (capture de mouvement) ; les gestes restent procéduraux. Toutes
 ces animations restent calées sur les contacts et le temps du résumé, sans

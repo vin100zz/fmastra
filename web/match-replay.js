@@ -33,6 +33,9 @@ const NOTABLE={yellow:'Carton jaune',red:'Carton rouge',injury:'Blessure',substi
 // A scripted run (a receiver meeting a pass, a scorer attacking a cross) is given time for REACH on average, a
 // sprint at its peak.
 const JOG=.006,PRESS=.0072,REACH=.0062;
+// The man who goes in on a carrier and misses: how close the ball must come, how long he is off his stride, and how long
+// before he can go in again (ms of replay).
+const TACKLE_REACH=1.9,TACKLE_STALL=650,TACKLE_AGAIN=1500,STALL=.0016;
 // Speeding up and braking, in metres per ms²: about 5 and 7 m/s², so that nobody starts or stops dead.
 const ACCEL=5e-6,BRAKE=7e-6;
 // The ball meets a player this far in front of him, where his boot reaches it in the 3D view. A touch dies quickly
@@ -317,7 +320,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  // Every player's target given the ball: both blocks slide with it, the side in possession stretched,
  // the other compact, and one defender closes the ball down (kept until another is clearly closer, or the man
  // a dribbler takes on).
- targets(ball,attacking){
+ targets(ball,attacking,lead=ball){
   const targets=new Map();
   for(const side of ['home','away']){
    const local=this.toLocal(side,ball),attack=side===attacking;
@@ -337,7 +340,14 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
     if(held&&this.rosters[side].some(player=>player.id===current)&&distance(held,ball)<gap*1.3)best=current;
     if(lock&&lock.side===side&&this.time<lock.until&&this.dots[side].has(lock.id))best=lock.id;
     this.pressers[side]=best;
-    if(best!=null){const goal=this.toPitch(side,0,.5),length=distance(goal,ball)||1;spots.set(best,{x:ball.x+(goal.x-ball.x)/length*2.4,y:ball.y+(goal.y-ball.y)/length*2.4});}
+    // He stands off a keeper with the ball in his hands, waits on a man with it at his feet, and steps into the way
+    // of a carrier, where the ball is going, close enough to go in.
+    if(best!=null){
+     const carrier=this.carrier,carrying=carrier?.side===attacking&&this.action?.kind==='carry';
+     const aim=carrying?lead:ball,goal=this.toPitch(side,0,.5),length=distance(goal,aim)||1;
+     const gap=carrying?1.1:this.isKeeper(carrier)&&this.action?.kind==='wait'?6:2.4;
+     spots.set(best,{x:aim.x+(goal.x-aim.x)/length*gap,y:aim.y+(goal.y-aim.y)/length*gap});
+    }
    }
    targets.set(side,spots);
   }
@@ -387,20 +397,22 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   // A beat that ends during this frame is drawn at its end: the next touch takes over from there, not from beyond.
   const time=action&&k>=1?Math.min(now,action.t0+action.duration):now;
   const ball=ballAt(this.ballPath,time);
-  const targets=this.targets(ball,this.carrier?.side??this.lastSide??'home');
+  const lead=this.carrier&&action?.kind==='carry'?ballAt(this.ballPath,time+400):ball;
+  const targets=this.targets(ball,this.carrier?.side??this.lastSide??'home',lead);
   for(const side of ['home','away'])for(const [id,dot] of this.dots[side]){
    const key=`${side}:${id}`,run=this.runs.get(key),previous={x:dot.x,y:dot.y};
    if(run&&time<=run.t1+EXTEND_MS){const point=runAt(run,time);dot.x=point.x;dot.y=point.y;}
    else{
     if(run)this.runs.delete(key);
     const spot=this.posts.get(key)||targets.get(side).get(id);
-    if(spot)steer(dot,spot,dt,id===this.pressers[side]?PRESS:JOG);
+    if(spot)steer(dot,spot,dt,id!==this.pressers[side]?JOG:dot.stall>time?STALL:PRESS);
    }
    dot.vx=(dot.x-previous.x)/dt;dot.vy=(dot.y-previous.y)/dt;
    // Leaving a scripted run, he keeps its pace.
    if(this.runs.has(key)){dot.sx=dot.vx;dot.sy=dot.vy;}
    dot.node.setAttribute('transform',`translate(${dot.x.toFixed(2)} ${dot.y.toFixed(2)})`);
   }
+  this.challenge(ball,time);
   this.rebound(ball,time);
   this.ballAt={x:ball.x,y:ball.y};this.ballZ=ball.z;
   this.drawBall();
@@ -408,6 +420,16 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   if(action&&k>=1)this.settle(true);
   const holding=this.carrier?`${this.carrier.side}:${this.carrier.id}`:'';
   if(holding!==this.holding){this.holding=holding;this.highlight(this.named);}
+ }
+ // The man closing a carrier down goes in once the ball comes within reach of his foot, and misses: the engine let the
+ // carrier through, so the ball is pushed on just before. He is off his stride a moment, then turns and goes again.
+ challenge(ball,time){
+  const carrier=this.carrier;
+  if(!carrier||this.action?.kind!=='carry'||this.isKeeper(carrier))return;
+  const side=this.opponent(carrier.side),id=this.pressers[side],dot=this.dots[side].get(id);
+  if(!dot||time<(dot.again??0)||distance(dot,ball)>TACKLE_REACH)return;
+  this.gesture({side,id},{kind:'tackle',target:{x:ball.x,y:ball.y}},time+120);
+  dot.stall=time+TACKLE_STALL;dot.again=time+TACKLE_AGAIN;
  }
  // A ball that leaves the pitch comes back off the boards, slowly.
  rebound(ball,time){
@@ -525,7 +547,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   this.runs.clear();this.posts.clear();this.wall=null;this.pressLock=null;
   for(let pass=0;pass<2;pass++){
    const targets=this.targets(point,side);
-   for(const team of ['home','away'])for(const [id,dot] of this.dots[team]){const spot=targets.get(team).get(id);dot.gesture=null;dot.gestures=[];if(spot){dot.x=spot.x;dot.y=spot.y;dot.vx=dot.vy=dot.sx=dot.sy=0;}}
+   for(const team of ['home','away'])for(const [id,dot] of this.dots[team]){const spot=targets.get(team).get(id);dot.gesture=null;dot.gestures=[];dot.stall=dot.again=0;if(spot){dot.x=spot.x;dot.y=spot.y;dot.vx=dot.vy=dot.sx=dot.sy=0;}}
   }
   carrier=carrier&&this.dot(carrier)?carrier:this.nearest(side,point,{exclude});
   const dot=this.dot(carrier);
@@ -544,6 +566,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   }
   return best;
  }
+ isKeeper(who){return !!who&&this.rosters[who.side]?.some(player=>player.id===who.id&&player.position==='GB');}
  keeperOf(side){const player=this.rosters[side].find(item=>item.position==='GB');return player?{side,id:player.id}:null;}
 
  // Puts the match as it stood just before `second`: score, period, lineups, and a kick-off shape.
@@ -1161,12 +1184,20 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
  }
 
  // The move as a list of touches: how each step of the engine's trail is played and taken, then the finish.
- plan(sequence,{side,holder,title,name}){
+ plan(sequence,{side,holder,title,name,distribute=null}){
   const random=this.random,at=(u,v)=>this.toPitch(side,u,v),jitter=(value,amount)=>clamp(value+(random()-.5)*2*amount,.02,.98);
   const who=id=>id!=null&&this.dots[side].has(id)?{side,id}:null;
   const shot=sequence.shot,kind=shot.detail,counter=sequence.start?.detail==='counter',moves=[];
   let owner=holder,ball=this.ballAt,lane=sequence.start?.lane,foul=null;
   const fouled=event=>`Faute de ${name(event)} sur ${e(event.secondary||'—')}`;
+  // The keeper plays from his area: where the move starts beyond it, or goes on from him, he gives the ball to the
+  // teammate nearest to where it goes, and a teammate who brings the ball back to him passes it into his area.
+  const area=keeper=>{const local=this.toLocal(side,this.dot(keeper)||at(.05,.5));return at(Math.min(.09,local.u),clamp(local.v,.36,.64));};
+  const relaunch=(keeper,point,note)=>{
+   if(owner?.id!==keeper.id)passTo(keeper,area(keeper),null,{lift:'ground',then:'two'});
+   const mate=this.nearest(side,point,{exclude:[keeper.id]});
+   if(mate)passTo(mate,point,note);
+  };
   // First time, controlled then played, or carried on: first time more often on the break and the surer a player's
   // touch, carried the more often the quicker he is.
   const taking=(player,carry=.2)=>{const one=(counter?.5:.32)*(.6+.8*this.skill(player)),draw=random();return draw<one?'one':draw<one+carry*(.6+.8*this.quickness(player))?'carry':'two';};
@@ -1183,7 +1214,10 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    if(then==='carry')moves.push({type:'carry',who:player,point,dribble});
    owner=player;ball=point;
   };
-  for(const event of sequence.trail??sequence.progress){
+  const trail=sequence.trail??sequence.progress;
+  if(distribute&&holder&&!(trail[0]?.kind==='progress'&&trail[0].player_id===holder.id))
+   relaunch(holder,distribute,[holder.id,`${title} · Relance de ${name(sequence.recovery)}`]);
+  for(const event of trail){
    if(event.kind==='circulation'){
     // Kept on the ground from one teammate to the next, square or back, towards where the run of passes ended.
     const count=Math.min(CIRCULATION_SHOWN,Number(event.detail)||1),from=this.toLocal(side,ball);
@@ -1215,6 +1249,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
    let note=[event.player_id,`${title} · ${dribble!=null?`${name(event)} élimine ${e(event.secondary||'—')}`:event.detail==='long'?`Long ballon de ${name(event)}`:`${name(event)} fait avancer le jeu`}`];
    lane=event.lane;
    if(!player)continue;
+   if(this.isKeeper(player)){relaunch(player,point,[event.player_id,`${title} · Relance de ${name(event)}`]);continue;}
    if(event.detail==='long'){
     // He hits it over two lines, to the teammate nearest where it comes down, who takes it on his chest or his head.
     if(owner?.id!==player.id)passTo(player,lerpPoint(this.dot(player),ball,.2),null,{lift:'ground',then:'two'});
@@ -1325,7 +1360,7 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   // The move starts where the engine recovered the ball, where the shot before it in the possession left it (in the box
   // for a rebound), or just short of the shot for saves without a trail.
   const follow=sequence.follow,rebound=shot.detail==='rebound';
-  const start=sequence.start?at(jitter(ZONE_U[sequence.start.zone],.04),jitter(LANE_V[sequence.start.lane],.06))
+  let start=sequence.start?at(jitter(ZONE_U[sequence.start.zone],.04),jitter(LANE_V[sequence.start.lane],.06))
    :follow&&rebound?at(jitter(.93,.015),jitter(.5,.1))
    :follow?at(ZONE_U[follow.zone??3],LANE_V[follow.lane??1])
    :at(ZONE_U[Math.max(0,(shot.zone??3)-1)],LANE_V[shot.lane??1]);
@@ -1335,13 +1370,16 @@ class MatchReplay extends (globalThis.HTMLElement??class{}){
   // rebound, with it at his feet.
   const first=rebound?shot.player_id:sequence.recovery?.player_id;
   const recoverer=first!=null&&this.dots[side].has(first)?{side,id:first}:null;
+  // A keeper who won the ball holds it in his area and plays it out to where the move starts.
+  let distribute=null;
+  if(!rebound&&this.isKeeper(recoverer)){const local=this.toLocal(side,start);if(local.u>.09){distribute=start;start=at(.07,clamp(local.v,.38,.62));}}
   const holder=this.snap(start,side,sequence.progress.slice(0,1).map(event=>event.player_id),recoverer);
   this.faded=false;
   this.stage.classList.remove('fast');
   const again=follow?.kind==='save'?(follow.detail==='corner'?'Arrêt en corner':'Le gardien repousse'):follow?.detail==='post'?'Sur le poteau !'
    :follow?.detail==='blocked'?'Second ballon':'Occasion';
   note(rebound?null:recoverer?.id??null,`${title} · ${counter?'Contre-attaque !':follow?again:recoverer?`Ballon récupéré par ${name(sequence.recovery)}`:sequence.start?'Récupération':'Occasion'}`);
-  const moves=this.plan(sequence,{side,holder,title,name});
+  const moves=this.plan(sequence,{side,holder,title,name,distribute});
   const outcome=sequence.outcome?.kind,blocked=outcome==='off_target'&&sequence.outcome.detail==='blocked';
   const finish=moves.find(move=>move.type==='shot'),before=moves[moves.indexOf(finish)-1];
   finish.keeper=shot.secondary_id!=null&&this.dots[other].has(shot.secondary_id)?{side:other,id:shot.secondary_id}:this.keeperOf(other);
