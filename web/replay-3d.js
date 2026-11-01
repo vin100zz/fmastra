@@ -621,7 +621,7 @@ export class Pitch3D{
   figure.cheer=clamp(figure.cheer+(cheer?rdt/300:-rdt/350),0,1);
   if(figure.dive&&time>figure.dive.start+figure.dive.duration+1080)figure.dive=null;
   const p=playerMotion({speed:figure.hold?0:speed,phase:figure.phase,time,seed:figure.seed,style:figure.style,acceleration:figure.acceleration,ready:figure.ready,
-   hold:figure.hold,gesture,foot:figure.foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard});
+   hold:figure.hold,gesture,foot:gesture?.foot??figure.foot,turn:angularSpeed,cheer:figure.cheer,dive:figure.dive,direction,crouch:figure.guard});
   for(let side=0;side<2;side++){
    figure.hips[side].rotation.set(p.hip[side],p.hipYaw[side],p.hipRoll[side]);figure.knees[side].rotation.x=p.knee[side];
    // The sole stays level when the thigh swings out.

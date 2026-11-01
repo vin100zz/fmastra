@@ -9,7 +9,55 @@ export const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
 
 export function gestureTiming(gesture){
  if(gesture?.kind==='kick')return gesture.style==='shot'?{lead:240,span:800}:gesture.style==='cross'?{lead:210,span:700}:{lead:170,span:560};
- return {touch:{lead:90,span:330},cushion:{lead:130,span:440},thigh:{lead:230,span:560},chest:{lead:260,span:660},head:{lead:300,span:640}}[gesture?.kind];
+ return {touch:{lead:90,span:330},cushion:{lead:130,span:440},thigh:{lead:230,span:560},chest:{lead:260,span:660},head:{lead:300,span:640},
+  // Challenges: a standing tackle, a sliding one (down, the slide, back on his feet) and a fall after a foul.
+  tackle:{lead:260,span:780},slide:{lead:420,span:1700},fall:{lead:60,span:2000}}[gesture?.kind];
+}
+// The kinds of gesture that take the whole body to the ground or into a lunge, rather than meet the ball.
+const CHALLENGES=new Set(['tackle','slide','fall']);
+
+// The lift that keeps the sole of `side` on the grass for these leg angles.
+const standing=(p,side)=>SCALE*(.45*Math.cos(p.hip[side])+.4*Math.cos(p.hip[side]+p.knee[side])+soleHeight(p.hip[side]+p.knee[side]+p.ankle[side])-.93);
+
+// A challenge, `elapsed` ms from its contact. `foot` is the leg that goes for the ball (a fall: the side he falls to).
+function challenge(p,gesture,elapsed,foot,blend){
+ const out=foot?1:-1,other=1-foot;
+ if(gesture.kind==='tackle'){
+  // A lunge: the leg thrown out at the ball, the inside of the boot towards it, the other knee bent low under him.
+  const weight=elapsed<0?smooth((elapsed+260)/260):1-smooth((elapsed-200)/320);
+  const lunge={hip:[0,0],knee:[0,0],ankle:[0,0]};
+  lunge.hip[foot]=-1.05;lunge.knee[foot]=.12;lunge.ankle[foot]=.3;
+  lunge.hip[other]=-.62;lunge.knee[other]=1.3;lunge.ankle[other]=-.55;
+  for(const joint of ['hip','knee','ankle'])blend(p[joint],side=>lunge[joint][side],weight);
+  p.hipYaw[foot]=mix(p.hipYaw[foot],out*.75,weight);p.hipRoll[foot]=mix(p.hipRoll[foot],out*.28,weight);p.hipRoll[other]=mix(p.hipRoll[other],0,weight);
+  p.lift=mix(p.lift,standing(p,other),weight);
+  p.lean=mix(p.lean,.34,weight);p.roll=mix(p.roll,-out*.12,weight);p.twist=mix(p.twist,out*.2,weight);
+  blend(p.spread,.55,weight);blend(p.shoulder,side=>side===foot?-.35:.25,weight);blend(p.elbow,-.5,weight);
+  return;
+ }
+ // On the ground: rolled onto the hip, the leg out at the ball (a slide), or curled up (a fall), then up again.
+ const slide=gesture.kind==='slide';
+ const down=slide?smooth((elapsed+420)/300)*(1-smooth((elapsed-880)/400)):smooth((elapsed-140)/460)*(1-smooth((elapsed-1380)/560));
+ const support=slide?other:foot,toward=support?1:-1;
+ if(slide){
+  p.hip[foot]=mix(p.hip[foot],-1.32,down);p.knee[foot]=mix(p.knee[foot],.1,down);p.ankle[foot]=mix(p.ankle[foot],.32,down);
+  p.hip[other]=mix(p.hip[other],-.55,down);p.knee[other]=mix(p.knee[other],1.5,down);p.ankle[other]=mix(p.ankle[other],-.3,down);
+  p.lean=mix(p.lean,-.32,down);
+  // The arm on the ground side takes his weight; the other comes across for balance.
+  p.shoulder[support]=mix(p.shoulder[support],-.25,down);p.spread[support]=mix(p.spread[support],1.15,down);p.elbow[support]=mix(p.elbow[support],-.12,down);
+  p.shoulder[foot]=mix(p.shoulder[foot],-.85,down);p.spread[foot]=mix(p.spread[foot],.35,down);p.elbow[foot]=mix(p.elbow[foot],-.6,down);
+ }else{
+  // Tripped: he stumbles forward, arms out, goes down on his side and stays there a moment before getting up.
+  const stumble=smooth((elapsed+60)/220)*(1-down);
+  p.lean=mix(p.lean,.55,stumble);blend(p.shoulder,-1.1,stumble);blend(p.spread,.5,stumble);
+  blend(p.hip,side=>side===foot?-.95:-.5,down);blend(p.knee,side=>side===foot?1.35:.9,down);blend(p.ankle,-.2,down);
+  p.lean=mix(p.lean,.35,down);blend(p.shoulder,-1.5,down);blend(p.elbow,-1.25,down);blend(p.spread,.3,down);
+  p.headPitch=mix(p.headPitch,.25,down);
+ }
+ blend(p.hipRoll,0,down);blend(p.hipYaw,0,down);
+ p.roll=mix(p.roll,toward*1.22,down);p.twist=mix(p.twist,0,down);
+ p.lift=mix(p.lift,slide?-.1:-.06,down);
+ p.diveWeight=Math.max(p.diveWeight,down*.6);
 }
 
 // Keep an outgoing touch through its follow-through, even when the receiver's
@@ -42,7 +90,8 @@ export function playerMotion({speed=0,phase=0,time=0,seed=0,style,acceleration=0
   const timing=gestureTiming(gesture);
   if(timing){
    const elapsed=time-gesture.at,g=(elapsed+timing.lead)/timing.span;
-   if(g>=0&&g<1){
+   if(g>=0&&g<1&&CHALLENGES.has(gesture.kind))challenge(p,gesture,elapsed,foot,blend);
+   else if(g>=0&&g<1){
     const before=elapsed<0,wind=smooth((elapsed+timing.lead)/timing.lead),follow=clamp(elapsed/(timing.span-timing.lead));
     const envelope=before?smooth(wind*4):1-smooth((follow-.38)/.62);
     // A running touch is brief, but still reaches its full contact pose. A

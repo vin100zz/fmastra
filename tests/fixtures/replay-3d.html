@@ -68,8 +68,8 @@
         start: [2, 1], progress: [[108, 3, 1]] },
       { id: 82, second: 3810, team: 1, label: '5 · Tir contré', shot: 11, keeper: 101, outcome: 'off_target', blocker: 103,
         start: [2, 1], progress: [[8, 3, 1]] },
-      { id: 97, second: 4560, team: 2, label: '6 · Coup franc et mur', shot: 111, keeper: 1, outcome: 'goal', kind: 'free_kick',
-        start: [3, 1], progress: [] },
+      { id: 97, second: 4560, team: 2, label: '6 · Faute, coup franc et mur', shot: 111, keeper: 1, outcome: 'goal', kind: 'free_kick',
+        start: [2, 1], progress: [], foul: [4, 110] },
     ];
     const events = [{ kind: 'kickoff', period: 1, second: 0, team_id: 1 }];
     for (const scene of scenes) {
@@ -78,6 +78,7 @@
       const add = (kind, detail = {}) => events.push({ ...common, kind, second: second++, ...detail });
       add('possession', { zone: scene.start[0], lane: scene.start[1], detail: scene.counter ? 'counter' : 'recovery' });
       for (const [id, zone, lane, defender] of scene.progress) add('progress', { ...named(id), zone, lane, detail: defender ? 'dribble' : 'pass', ...(defender ? secondary(defender) : {}) });
+      if (scene.foul) add('foul', { ...named(scene.foul[0]), ...secondary(scene.foul[1]), team_id: scene.team === 1 ? 2 : 1, zone: 0, lane: 1 });
       if (scene.kind === 'free_kick') add('free_kick', { ...named(scene.shot), zone: 3, lane: 1 });
       if (scene.delivery) add('delivery', { ...named(scene.delivery), zone: 3, lane: 0, detail: 'cross' });
       add('shot', { ...named(scene.shot), ...secondary(scene.keeper), shot_id: scene.id, detail: scene.kind || 'shot', zone: 3, lane: 1, xg: 0.26 });
@@ -134,6 +135,21 @@
     }
     playScene(selected);
     if (params.get('autoplay') === '0') replay.pause();
+    // ?close=1: an inspection camera, low and near the ball, to judge the players' gestures (not the match framing).
+    if (params.has('close')) {
+      const closeUp = () => {
+        const view = replay.pitch3d;
+        if (!view) { requestAnimationFrame(closeUp); return; }
+        view.frameCamera = function (ball, wide, dt) {
+          const k = 1 - Math.exp(-dt / 250);
+          this.look.x += (ball.x - this.look.x) * k; this.look.z += (ball.z - this.look.z) * k;
+          this.camera.fov = 30; this.camera.updateProjectionMatrix();
+          this.camera.position.set(this.look.x, 9, this.look.z + 24);
+          this.camera.lookAt(this.look.x, .8, this.look.z);
+        };
+      };
+      closeUp();
+    }
     const status = document.querySelector('#status');
     function observe() {
       const action = replay.action;

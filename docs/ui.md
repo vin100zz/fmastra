@@ -1007,6 +1007,20 @@ message (« il vient d'arriver ») reste dans son infobulle.
   footballeur, un sprint au plus, accélèrent et freinent comme lui ; l'auteur de
   la reprise et le défenseur qui contrera la frappe font leur course pendant
   l'action.
+  La défense joue : la ligne des quatre défenseurs tient une même profondeur,
+  qui recule quand le ballon passe derrière elle, et les attaquants ne la
+  dépassent pas tant que le ballon ne l'a pas fait (hors-jeu). Les autres
+  défenseurs prennent chacun un attaquant, d'autant plus serré qu'il approche
+  du but, côté but et un peu vers le ballon ; les défenseurs de la ligne n'en
+  prennent que le côté, sauf dans la surface. Les paires tiennent un moment
+  avant d'être refaites (`targets`, `mark`). Chacun se replace plus ou moins vite
+  selon sa vitesse. Le joueur éliminé par un dribble tente le tacle, debout ou en
+  glissade, là où allait le ballon, et reste un instant sur place (`lunge`).
+  Le défenseur qui contre une frappe basse tend la jambe ou glisse. Sur un centre,
+  son marqueur saute avec le joueur de tête. La faute qui donne un coup franc
+  ou un penalty se joue : le joueur fauché reçoit le ballon un peu avant l'endroit
+  de l'arrêt de jeu, le fautif le tacle ou glisse, il tombe, et la coupure vient
+  ensuite (`foul`).
   Chaque joueur est une pastille de même taille, son numéro dessus, taillée dans
   le maillot de son camp : le visiteur porte sa tenue extérieure quand les deux
   maillots domicile se confondent (`replayTeams`, `web/match.js` ; `away_kit`
@@ -1066,6 +1080,9 @@ message (« il vient d'arriver ») reste dans son infobulle.
   sans glisser. Les gestes
   (`replay-motion.js`) se superposent à ces foulées sans synchroniser les
   joueurs.
+  Les duels ont leurs gestes : le tacle debout (jambe lancée vers le ballon, l'autre
+  genou plié bas), le tacle glissé (au sol sur la hanche, jambe tendue, puis relevé)
+  et la chute du joueur fauché, qui reste un moment à terre.
   Passes, centres et frappes ont leur préparation, leur contact et leur
   accompagnement ; la conduite, les contrôles du pied, de la cuisse ou de la
   poitrine et les têtes suivent les contacts transmis par `match-replay.js`.
@@ -1083,6 +1100,8 @@ message (« il vient d'arriver ») reste dans son infobulle.
   et sprint, ou à allure identique, le ballon devant eux, derrière ou de côté
   (course arrière et pas chassés), avec caméra de profil ou trois quarts,
   ralenti et progression image par image sur le même squelette que le match.
+  Sur la page des scènes, `?close=1` rapproche la caméra du ballon pour juger
+  les gestes.
 
 ### Composition
 
